@@ -46,7 +46,7 @@
     "shelljs": "0.8.5",
     "sqlite3": "4.0.9",
     "swagger-ui-express": "4.0.7",
-    "typeorm": "0.2.25"
+    "typeorm": "0.3.31"
   },
   "devDependencies": {
     "@nestjs/testing": "6.5.3",
