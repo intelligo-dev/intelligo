@@ -24,7 +24,7 @@
     "test:e2e": "jest --coverage --config ./e2e/jest.e2e.config.json"
   },
   "dependencies": {
-    "@nestjs/common": "6.5.3",
+    "@nestjs/common": "11.1.28",
     "@nestjs/core": "6.5.3",
     "@nestjs/jwt": "6.1.1",
     "@nestjs/passport": "6.1.0",
