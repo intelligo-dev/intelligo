@@ -12,7 +12,7 @@
   },
   "private": true,
   "dependencies": {
-    "@angular-devkit/build-angular": "~0.900.3",
+    "@angular-devkit/build-angular": "~22.1.0",
     "@angular/animations": "~9.0.2",
     "@angular/cli": "~9.0.3",
     "@angular/common": "~9.0.2",
