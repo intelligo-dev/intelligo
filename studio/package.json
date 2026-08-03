@@ -16,7 +16,7 @@
     "@angular/cdk": "9.0.0",
     "@angular/common": "~9.0.0",
     "@angular/compiler": "~9.0.0",
-    "@angular/core": "~9.0.0",
+    "@angular/core": "~20.3.27",
     "@angular-devkit/build-angular": "~0.900.1",
     "@angular/cli": "~9.0.1",
     "@angular/compiler-cli": "~9.0.0",
