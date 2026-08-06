@@ -20,7 +20,7 @@
     "@angular/common": "~9.0.2",
     "@angular/compiler": "~9.0.2",
     "@angular/compiler-cli": "~9.0.2",
-    "@angular/core": "~9.0.2",
+    "@angular/core": "~20.3.27",
     "@angular/forms": "~9.0.2",
     "@angular/material": "~9.0.1",
     "@angular/platform-browser": "~9.0.2",
