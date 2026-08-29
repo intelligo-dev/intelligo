@@ -49,12 +49,12 @@ export const RULES: Rule[] = [
     body: "A private import inside a registry item fails the build.",
     file: "tests/architecture/registry.test.ts",
     passing: "✓ references only public packages and declared dependencies",
-    violation: "import { careerTools } from \"@example/product\"  // inside registry/base/chat",
+    violation: "import { privateTools } from \"@acme/private-tools\"  // inside registry/base/chat",
     output: [
       "FAIL tests/architecture/registry.test.ts",
       "× registry items › import no private, deprecated, or @intelligo-dev/ui packages",
-      "AssertionError: chat: components/chat/tool-renderer.tsx imports @example/product (private)",
-      "expected [ 'chat: … @example/product (private)' ] to deeply equal []",
+      "AssertionError: chat: components/chat/tool-renderer.tsx imports @acme/private-tools (private)",
+      "expected [ 'chat: … @acme/private-tools (private)' ] to deeply equal []",
     ],
   },
   {
@@ -68,7 +68,7 @@ export const RULES: Rule[] = [
       "FAIL tests/architecture/model-registry.test.ts",
       "× model registry › every model id used in the source is registered",
       "AssertionError: model ids that are not in MODEL_CONFIGS — these run on Gemini Flash and bill at Claude rates:",
-      "  product/app/lib/chat-config.tsx: anthropic/claude-5-turbo",
+      "  lib/chat-config.tsx: anthropic/claude-5-turbo",
     ],
   },
 ];

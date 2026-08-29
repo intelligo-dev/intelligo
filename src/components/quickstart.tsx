@@ -3,31 +3,49 @@ import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/copy-button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Typewriter } from "@/components/elements/typewriter";
+import { SITE } from "@/lib/site";
 
+/**
+ * Three steps, every command real:
+ *   1. `intelligo create` — the published CLI (bin: intelligo); the
+ *      "Next:" lines are what it prints (packages/cli/src/commands/create.ts).
+ *   2. `shadcn add <url>` — the hosted registry this site serves at /r.
+ *   3. `pnpm dev` — the scaffold's own script.
+ * Database, env and provider setup are in the docs, not here.
+ */
 const STEPS = [
   {
-    title: "Install",
-    cmd: "pnpm install",
-    note: "Node 22 · pnpm 9 · PostgreSQL.",
-    out: ["Packages: +1,412", "Done in 24.1s"],
-  },
-  {
-    title: "Create your app",
+    title: "Create",
     cmd: "pnpm dlx @intelligo-dev/cli@beta create my-app",
-    note: "shadcn, Tailwind 4, next-intl, a composition root.",
-    out: ["✓ my-app/lib/intelligo.ts — composition root", "✓ my-app/lib/plans.ts", "✓ my-app/i18n/routing.ts", "✓ intelligo.manifest.json — generated files hashed"],
+    note: "Next.js 16, shadcn, Tailwind 4, next-intl, a composition root wired to the execution boundary.",
+    out: [
+      "✓ my-app/lib/intelligo.ts — composition root",
+      "✓ my-app/lib/plans.ts",
+      "✓ my-app/intelligo.manifest.json — generated files hashed",
+      "",
+      "Next:",
+      "  cd my-app",
+      "  cp .env.example .env.local   # then fill it in",
+      "  pnpm install",
+      "  pnpm dev",
+    ],
   },
   {
-    title: "Install the pages",
-    cmd: "pnpm exec shadcn add https://intelligo.dev/r/app-shell.json --yes",
-    note: "Repeat per item. Each lands as your source.",
-    out: ["✓ app/[locale]/(app)/layout.tsx", "✓ components/shell/*.tsx", "✓ lib/nav-config.ts · lib/shell-config.tsx", "✓ messages/en/app-shell.json"],
+    title: "Add UI",
+    cmd: `pnpm exec shadcn add ${SITE.registryBase}/app-shell.json`,
+    note: "Repeat per page family. Each lands as your own source.",
+    out: [
+      "✓ app/[locale]/(app)/layout.tsx",
+      "✓ components/shell/*.tsx",
+      "✓ lib/nav-config.ts · lib/shell-config.tsx",
+      "✓ messages/en/app-shell.json",
+    ],
   },
   {
     title: "Run",
-    cmd: "pnpm db:push && pnpm dev",
-    note: "Set DATABASE_URL and BETTER_AUTH_SECRET first.",
-    out: ["✓ schema pushed", "▲ ready on http://localhost:3000", "sign-up → workspace → billing → chat — no model key yet"],
+    cmd: "pnpm dev",
+    note: "Set DATABASE_URL and BETTER_AUTH_SECRET in .env.local first. Chat streams against a built-in stub model — no provider key needed yet.",
+    out: ["▲ ready on http://localhost:3000", "sign-up → workspace → billing → chat"],
   },
 ];
 
@@ -42,11 +60,11 @@ export function Quickstart() {
           {STEPS.map((st, n) => (
             <li key={st.title} className={cn("flex items-start gap-1 border-b border-line pr-2 transition-colors", n === i && "bg-paper-raised")}>
               <button type="button" onMouseEnter={() => setI(n)} onFocus={() => setI(n)} onClick={() => setI(n)} className="flex min-w-0 flex-1 items-start gap-3 px-3 py-3 text-left">
-                <span className={cn("mono mt-0.5 text-[0.72rem] tabular-nums", n === i ? "text-amber" : "text-ink-faint")}>{n + 1}</span>
+                <span className={cn("mono mt-0.5 text-[0.72rem] tabular-nums", n === i ? "text-amber" : "text-ink-faint")}>0{n + 1}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[0.95rem] font-medium text-ink">{st.title}</span>
-                  <span className="mono mt-0.5 block truncate text-[0.72rem] text-ink-dim">$ {st.cmd}</span>
-                  <span className="mt-1 block text-[0.82rem] text-ink-faint">{st.note}</span>
+                  <span className="mono block text-[0.66rem] uppercase tracking-[0.08em] text-ink-faint">{st.title}</span>
+                  <span className="mono mt-0.5 block truncate text-[0.8rem] text-ink">$ {st.cmd}</span>
+                  <span className="mt-1 block text-[0.82rem] text-ink-dim">{st.note}</span>
                 </span>
               </button>
               <CopyButton text={st.cmd} className="mt-2.5 shrink-0" />
@@ -59,14 +77,14 @@ export function Quickstart() {
             <span className="size-2 rounded-full bg-line-strong" /><span className="size-2 rounded-full bg-line-strong" /><span className="size-2 rounded-full bg-line-strong" />
             <span className="mono ml-2 text-[0.66rem] text-ink-faint">my-app — zsh</span>
           </div>
-          <div className="mono min-h-[220px] p-4 text-[0.78rem] leading-relaxed">
+          <div className="mono min-h-[240px] overflow-x-auto p-4 text-[0.78rem] leading-relaxed">
             <div className="text-ink">
               <span className="text-ink-faint">$ </span>
               <Typewriter key={i} text={s.cmd} speed={12} cursor={false} />
             </div>
             <div className="mt-2 space-y-0.5">
               {s.out.map((o, n) => (
-                <div key={o} className={cn("animate-in fade-in", o.startsWith("✓") ? "text-settle" : o.startsWith("▲") ? "text-amber" : "text-ink-dim")} style={{ animationDelay: `${400 + n * 180}ms`, animationFillMode: "backwards" }}>
+                <div key={`${n}-${o}`} className={cn("animate-in fade-in min-h-[1em] whitespace-pre", o.startsWith("✓") ? "text-settle" : o.startsWith("▲") ? "text-amber" : "text-ink-dim")} style={{ animationDelay: `${400 + n * 140}ms`, animationFillMode: "backwards" }}>
                   {o}
                 </div>
               ))}

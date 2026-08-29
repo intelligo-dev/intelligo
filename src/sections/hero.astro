@@ -1,40 +1,29 @@
 ---
 import { HeroTitle } from "@/components/hero-title";
-import { ProductWalkthrough } from "@/components/product-walkthrough";
 import { LogoStrip } from "@/components/logo-strip";
 import { SITE } from "@/lib/site";
 ---
 <header id="top">
-  <!-- hero: centered, radial glow, badge, headline, two small buttons -->
   <div class="relative overflow-hidden">
     <div class="hero-glow" aria-hidden="true"></div>
     <div class="relative mx-auto flex max-w-[840px] flex-col items-center px-6 pb-16 pt-24 text-center md:pb-20 md:pt-32">
-      <a href={SITE.adrs} class="mb-6 inline-flex h-7 items-center overflow-hidden rounded-md border border-border bg-background text-[0.78rem] no-underline">
-        <span class="px-2.5 font-medium text-foreground">Apache-2.0 · pre-release</span>
+      <a href={SITE.npm} class="mb-6 inline-flex h-7 items-center overflow-hidden rounded-md border border-border bg-background text-[0.78rem] no-underline">
+        <span class="px-2.5 font-medium text-foreground">Apache-2.0 · {SITE.status}</span>
         <span class="h-full w-px bg-border" aria-hidden="true"></span>
-        <span class="px-2.5 text-muted-foreground transition-colors hover:text-foreground">Read the decisions ↗</span>
+        <span class="px-2.5 text-muted-foreground transition-colors hover:text-foreground">@intelligo-dev ↗</span>
       </a>
 
       <HeroTitle client:load />
 
-      <p class="mx-auto mt-5 max-w-[52ch] text-[1.05rem] leading-relaxed text-ink-dim">
-        Auth, workspaces, billing, credits, pages, admin — shipped, tested, yours. Your AI framework stays native.
+      <p class="mx-auto mt-5 max-w-[56ch] text-[1.05rem] leading-relaxed text-ink-dim">
+        Auth, workspaces, billing, credits, pages and operations — shipped as versioned packages and consumer-owned source.
+        <span class="text-foreground">Your AI framework stays native.</span>
       </p>
 
       <div class="mt-7 flex items-center gap-2">
-        <a href="#boundary" class="btn btn-outline">Explore</a>
+        <a href={SITE.github} class="btn btn-outline">GitHub</a>
         <a href="#quickstart" class="btn btn-primary">Get started</a>
       </div>
-    </div>
-  </div>
-
-  <!-- the walkthrough sits in its own cell, like efferd's category grid -->
-  <div class="xline">
-    <div class="p-4 md:p-6">
-      <div class="card top-shade p-4 md:p-6">
-        <ProductWalkthrough client:load />
-      </div>
-      <p class="mt-3 text-center text-[0.8rem] text-muted-foreground">The reference app — public packages and registry items, nothing else.</p>
     </div>
   </div>
 

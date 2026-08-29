@@ -2,40 +2,48 @@
 import SectionHead from "@/components/section-head.astro";
 import { DoctorTerminal } from "@/components/doctor-terminal";
 
-const ROWS = [
-  ["Cloned once as a snapshot", "Installed as long-lived versioned packages"],
-  ["Diverges from upstream", "Keeps receiving compatible releases"],
-  ["Upgrades are manual copying", "SemVer, migrations, doctor, codemods"],
-  ["Admin is another copied page set", "A reusable operational control surface"],
-];
+const STARTER = ["clone", "modify", "diverge", "maintain alone"];
+const INTELLIGO = ["install", "customize", "upgrade", "keep shipping"];
+const MECHANISMS = ["SemVer", "migrations shipped in core", "intelligo doctor", "migrate --check", "upgrade --check", "registry re-installs"];
 ---
 <section id="upgrade" class="xline">
   <div class="px-6 py-14 md:px-10 md:py-20">
     <SectionHead
-      tag="not a snapshot"
-      title="A boilerplate is a fork you maintain alone.<br />This stays a dependency."
-      lede="SemVer, migrations, and a doctor that knows which files you changed and won't overwrite them."
+      tag="not a boilerplate"
+      title="A boilerplate is a snapshot.<br />Intelligo keeps moving with your application."
+      lede="Services stay versioned packages. Installed pages stay yours. A doctor that hashes every generated file refuses to overwrite what you changed."
     />
     <div class="mt-8 grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:gap-10">
       <DoctorTerminal client:visible />
+
       <div class="reveal">
-        <div class="overflow-x-auto border border-line">
-          <table class="w-full min-w-[420px] border-collapse text-[0.88rem]">
-            <thead>
-              <tr>
-                <th class="mono bg-paper-raised px-4 py-2.5 text-left text-[0.68rem] font-medium uppercase tracking-[0.08em] text-ink-faint">a starter kit</th>
-                <th class="mono bg-paper-raised px-4 py-2.5 text-left text-[0.68rem] font-medium uppercase tracking-[0.08em] text-ink-faint">intelligo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ROWS.map(([a, b]) => (
-                <tr>
-                  <td class="border-t border-line px-4 py-2.5 align-top text-ink-dim">{a}</td>
-                  <td class="border-t border-line px-4 py-2.5 align-top font-medium text-ink">{b}</td>
-                </tr>
+        <div class="grid grid-cols-2 gap-px border border-line bg-line">
+          <div class="bg-paper p-4">
+            <div class="mono text-[0.66rem] uppercase tracking-[0.08em] text-ink-faint">starter kit</div>
+            <ol class="mono mt-3 space-y-1 text-[0.82rem]">
+              {STARTER.map((s, i) => (
+                <li class:list={["flex items-center gap-2", i === STARTER.length - 1 ? "text-fail" : "text-ink-dim"]}>
+                  {i > 0 && <span class="text-ink-faint" aria-hidden="true">↓</span>}{s}
+                </li>
               ))}
-            </tbody>
-          </table>
+            </ol>
+          </div>
+          <div class="bg-paper-raised p-4">
+            <div class="mono text-[0.66rem] uppercase tracking-[0.08em] text-amber">intelligo</div>
+            <ol class="mono mt-3 space-y-1 text-[0.82rem]">
+              {INTELLIGO.map((s, i) => (
+                <li class:list={["flex items-center gap-2", i === INTELLIGO.length - 1 ? "text-settle" : "text-ink"]}>
+                  {i > 0 && <span class="text-ink-faint" aria-hidden="true">↓</span>}{s}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="tag">how</div>
+          <div class="mono mt-2 flex flex-wrap gap-1 text-[0.72rem]">
+            {MECHANISMS.map((m) => <span class="border border-line px-2 py-1 text-ink-dim">{m}</span>)}
+          </div>
         </div>
       </div>
     </div>

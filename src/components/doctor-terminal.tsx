@@ -4,24 +4,25 @@ import { cn } from "@/lib/utils";
 import { CliOutput } from "@/components/elements/cli-output";
 
 /**
- * `intelligo doctor`, line by line. Uses @elements/cli-output for the
- * terminal and ANSI parsing; the typing is a simple scheduler so the
- * run can be restarted.
+ * `intelligo doctor` and `intelligo upgrade --check`, line by line.
+ * The file states (current / customized / outdated / conflict) are the
+ * ones packages/cli/src/commands/upgrade-check.ts reports; the manifest
+ * is intelligo.manifest.json, a content hash per generated file.
  */
 const SCRIPT: { text: string; ms: number }[] = [
   { text: "intelligo doctor", ms: 300 },
-  { text: "\x1b[90mreading intelligo.lock · 12 generated files\x1b[0m", ms: 420 },
+  { text: "\x1b[90mreading intelligo.manifest.json · 12 generated files\x1b[0m", ms: 420 },
   { text: "\x1b[32m✓\x1b[0m lib/intelligo.ts — composition root, unchanged", ms: 160 },
   { text: "\x1b[32m✓\x1b[0m lib/plans.ts — unchanged", ms: 140 },
   { text: "\x1b[33m●\x1b[0m lib/nav-config.ts — customized (hash differs), will not clobber", ms: 220 },
   { text: "\x1b[33m●\x1b[0m lib/chat-config.tsx — customized, will not clobber", ms: 200 },
-  { text: "\x1b[32m✓\x1b[0m migrations — up to date with @intelligo-dev/core 0.4.0", ms: 260 },
+  { text: "\x1b[32m✓\x1b[0m migrations — up to date with @intelligo-dev/core 1.0.0-beta.1", ms: 260 },
   { text: "\x1b[32m✓\x1b[0m model ids — 3 used, 3 registered", ms: 200 },
   { text: "\x1b[90mno problems found\x1b[0m", ms: 500 },
   { text: "intelligo upgrade --check", ms: 300 },
-  { text: "\x1b[90m@intelligo-dev/auth 0.4.0 → 0.5.0\x1b[0m", ms: 260 },
-  { text: "\x1b[33m1 codemod available\x1b[0m · rename requireWorkspace → requireActiveWorkspace", ms: 220 },
-  { text: "\x1b[32m0 breaking\x1b[0m · your 2 customized files are untouched", ms: 200 },
+  { text: "\x1b[90m@intelligo-dev/cli 1.0.0-beta.1 → 1.0.0-beta.2 · 12 generated files compared\x1b[0m", ms: 260 },
+  { text: "\x1b[32m10 current\x1b[0m · \x1b[33m2 customized\x1b[0m · 0 outdated · 0 conflict", ms: 220 },
+  { text: "\x1b[90mnothing to do — your 2 customized files are untouched\x1b[0m", ms: 200 },
 ];
 
 export function DoctorTerminal({ className }: { className?: string }) {

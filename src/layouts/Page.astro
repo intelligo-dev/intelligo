@@ -1,0 +1,46 @@
+---
+/**
+ * A secondary page: the material the homepage only summarises
+ * (/pages, /architecture, /why-intelligo, /compare). Same rails,
+ * same nav, a page header instead of the hero.
+ */
+import Base from "@/layouts/Base.astro";
+import Footer from "@/components/footer.astro";
+import { Nav } from "@/components/nav";
+import { SITE } from "@/lib/site";
+
+interface Props {
+  path: string;
+  tag: string;
+  title: string;
+  lede?: string;
+  description?: string;
+}
+const { path, tag, title, lede, description } = Astro.props;
+const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
+---
+<Base title={pageTitle} description={description ?? lede ?? SITE.description}>
+  <Nav client:load current={path} />
+  <main class="rails">
+    <header class="xline">
+      <div class="px-6 pb-10 pt-14 md:px-10 md:pb-12 md:pt-20">
+        <div class="section-head">
+          <span class="tag">{tag}</span>
+          <h1 class="heading text-[clamp(1.9rem,3.4vw,3rem)] font-medium leading-[1.04] tracking-[-0.01em]" set:html={title} />
+          {lede && <p class="mt-3 max-w-[60ch] text-[1rem] text-muted-foreground">{lede}</p>}
+        </div>
+      </div>
+    </header>
+    <slot />
+    <section class="xline">
+      <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-10 md:px-10">
+        <p class="text-[0.95rem] text-muted-foreground">Ready to try it? The homepage quickstart is three commands.</p>
+        <div class="flex items-center gap-2">
+          <a href={SITE.github} class="btn btn-outline">GitHub</a>
+          <a href="/#quickstart" class="btn btn-primary">Get started</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div class="rails"><Footer /></div>
+</Base>

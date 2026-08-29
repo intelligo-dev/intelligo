@@ -1,0 +1,57 @@
+---
+import SectionHead from "@/components/section-head.astro";
+import { INTELLIGO_LAYER, YOUR_LAYER } from "@/lib/capabilities";
+---
+<section id="framework" class="xline">
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag="the 70%"
+      title="An AI product is two halves.<br />Only one of them is yours."
+      lede="The interesting half is your agent. The other half is the same in every AI SaaS ever built — and it is already here."
+    />
+
+    <div class="reveal mt-8 grid gap-6 lg:grid-cols-[1fr_1.6fr] lg:gap-10">
+      <!-- your differentiated layer -->
+      <div>
+        <div class="tag">your layer — the 30%</div>
+        <ul class="mt-3 border-t border-line-strong">
+          {YOUR_LAYER.map((y) => (
+            <li class="flex items-baseline justify-between gap-4 border-b border-line py-3">
+              <span class="text-[1.15rem] font-semibold leading-tight text-ink">{y.title}</span>
+              <span class="text-right text-[0.84rem] text-ink-dim">{y.note}</span>
+            </li>
+          ))}
+        </ul>
+        <p class="mt-4 text-[0.9rem] text-ink-dim">
+          Written in your AI framework of choice. Intelligo never touches it.
+        </p>
+      </div>
+
+      <!-- the intelligo layer, grouped -->
+      <div>
+        <div class="tag">intelligo layer — the 70%</div>
+        <div class="mt-3 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+          {INTELLIGO_LAYER.map((g) => (
+            <div class="bg-paper p-4">
+              <div class="flex items-baseline justify-between gap-2">
+                <span class="mono text-[0.68rem] uppercase tracking-[0.08em] text-ink-faint">{g.label}</span>
+                <span class="mono text-[0.64rem] text-ink-faint">{g.pkg}</span>
+              </div>
+              <ul class="mt-2 space-y-1">
+                {g.items.map((it) => (
+                  <li class="flex items-center gap-2 text-[0.95rem] text-ink">
+                    <span class="text-settle" aria-hidden="true">✓</span>{it}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          <div class="flex flex-col justify-between bg-paper-raised p-4">
+            <p class="text-[0.88rem] text-ink-dim">Typed services, tested against a real database. Installed as packages; surfaced as pages you own.</p>
+            <a href="/why-intelligo#capabilities" class="mono mt-3 text-[0.78rem] text-ink no-underline hover:text-amber">Explore all capabilities →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

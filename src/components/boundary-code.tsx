@@ -3,22 +3,24 @@ import { cn } from "@/lib/utils";
 import { TextMorph } from "@/components/ui/text-morph";
 
 /**
- * The boundary, as code. The bracket never changes; only the middle
- * line morphs between frameworks. Hovering a lifecycle row highlights
- * the line of code it describes, and vice versa.
+ * The boundary, as code — the same shape as packages/executions/src/lifecycle.ts:
+ * begin() → complete() / fail(). The bracket never changes; only the
+ * middle line morphs between frameworks. Hovering a lifecycle row
+ * highlights the line of code it describes, and vice versa.
  */
 const TABS = [
-  { id: "mastra", label: "Mastra", line: "const result = await careerAgent.generate(messages);" },
+  { id: "mastra", label: "Mastra", line: "const result = await yourAgent.generate(messages);" },
   { id: "ai-sdk", label: "Vercel AI SDK", line: "const result = await generateText({ model, messages });" },
   { id: "any", label: "anything", line: "const result = await yourFramework.run(input);" },
 ] as const;
 
-type Row = "admit" | "agent" | "settle" | "fail";
+type Row = "admit" | "run" | "settle" | "fail";
 
 const LIFECYCLE: { id: Row; label: string; strong: string; rest: string }[] = [
-  { id: "admit", label: "ADMIT", strong: "Entitlement checked", rest: ", worst-case cost reserved, row written." },
-  { id: "settle", label: "SETTLE", strong: "Usage recorded", rest: ", credits charged. Idempotent." },
-  { id: "fail", label: "FAIL", strong: "Reservation released", rest: ", error recorded, audit event written." },
+  { id: "admit", label: "ADMIT", strong: "Entitlements and reservation.", rest: " Plan checked through a port, worst-case cost held, execution row written." },
+  { id: "run", label: "RUN", strong: "Your agent, native.", rest: " No wrapper, no new agent API — the handle knows nothing about messages or tools." },
+  { id: "settle", label: "SETTLE", strong: "Usage and credits.", rest: " Tokens and cost recorded, credits charged. Idempotent — a duplicate complete() cannot double-bill." },
+  { id: "fail", label: "FAIL", strong: "Release and audit.", rest: " Reservation released, error recorded, audit event written." },
 ];
 
 export function BoundaryCode() {
@@ -47,10 +49,10 @@ export function BoundaryCode() {
             <span className="text-amber">if</span> (!run.allowed) <span className="text-amber">return</span> refuse(run.reason);
           </span>
           {"\n"}
-          <span className={cn(lineCls("agent"), "text-ink-faint italic")} onMouseEnter={() => setHot("agent")} onMouseLeave={() => setHot(null)}>
+          <span className={cn(lineCls("run"), "text-ink-faint italic")} onMouseEnter={() => setHot("run")} onMouseLeave={() => setHot(null)}>
             {"// your framework, unmodified"}
           </span>
-          <span className={lineCls("agent")} onMouseEnter={() => setHot("agent")} onMouseLeave={() => setHot(null)}>
+          <span className={lineCls("run")} onMouseEnter={() => setHot("run")} onMouseLeave={() => setHot(null)}>
             <TextMorph words={TABS.map((t) => t.line)} interval={3200} morphDuration={720} className="inline" />
           </span>
           {"\n"}
@@ -76,26 +78,16 @@ export function BoundaryCode() {
                 hot && !on(l.id) && "opacity-55"
               )}
             >
-              <span className="mono w-[4.6rem] shrink-0 pt-0.5 text-[0.72rem] tracking-wide text-ink-faint">{l.label}</span>
+              <span className={cn("mono w-[4.6rem] shrink-0 pt-0.5 text-[0.72rem] tracking-wide", l.id === "run" ? "text-amber" : "text-ink-faint")}>{l.label}</span>
               <p className="text-[0.93rem] text-ink-dim">
                 <strong className="font-semibold text-ink">{l.strong}</strong>
                 {l.rest}
               </p>
             </li>
           ))}
-          <li
-            onMouseEnter={() => setHot("agent")}
-            onMouseLeave={() => setHot(null)}
-            className={cn("-mx-2 flex gap-4 border-b border-line px-2 py-3.5 transition-colors", on("agent") && "bg-amber-soft/60", hot && !on("agent") && "opacity-55")}
-          >
-            <span className="mono w-[4.6rem] shrink-0 pt-0.5 text-[0.72rem] tracking-wide text-ink-faint">AGENT</span>
-            <p className="text-[0.93rem] text-ink-dim">
-              <strong className="font-semibold text-ink">Yours, native.</strong> No wrapper, no new agent API.
-            </p>
-          </li>
         </ol>
         <p className="mono mt-4 text-[0.74rem] leading-relaxed text-ink-faint">
-          Unrecorded usage is never reported as success — a failed settlement stays <span className="text-ink-dim">running</span> and gets reported.
+          Unrecorded usage is never reported as success — a settlement that dies mid-way stays <span className="text-ink-dim">settling</span> and is swept and reported.
         </p>
       </div>
     </div>

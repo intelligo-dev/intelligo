@@ -1,16 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { AGENT_FRAMEWORKS, WALKTHROUGH, type WalkthroughStep } from "@/lib/walkthrough";
+import { WALKTHROUGH, type WalkthroughStep } from "@/lib/walkthrough";
 import { Showcase, type SceneId } from "@/showcase/scenes";
 
 const STEP_MS = 2800;
 
-/* ---------- mini UI vocabulary (HTML/CSS, themed, no screenshots) ---------- */
-
-function Line({ w = "w-24", className }: { w?: string; className?: string }) {
-  return <span className={cn("block h-1.5 rounded-sm bg-line", w, className)} />;
-}
+/* ---------- the one sketched surface: the admin console ---------- */
 
 function Pill({ children, tone = "ink" }: { children: React.ReactNode; tone?: "ink" | "amber" | "settle" | "fail" }) {
   const tones = {
@@ -23,33 +19,6 @@ function Pill({ children, tone = "ink" }: { children: React.ReactNode; tone?: "i
     <span className={cn("mono inline-block rounded-full border px-1.5 py-px text-[9px] leading-tight", tones[tone])}>
       {children}
     </span>
-  );
-}
-
-function Btn({ children, primary }: { children: React.ReactNode; primary?: boolean }) {
-  return (
-    <span
-      className={cn(
-        "mono inline-block rounded-sm px-2 py-1 text-[9px] leading-none",
-        primary ? "bg-ink text-paper" : "border border-line-strong text-ink-dim"
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
-function AuthCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="grid h-full place-items-center bg-paper-sunken p-4">
-      <div className="w-[min(100%,220px)] border border-line-strong bg-paper-raised p-3.5">
-        <div className="mono mb-2 flex items-center gap-1.5 text-[10px] font-semibold">
-          <span className="inline-block size-1.5 bg-amber" /> intelligo
-        </div>
-        <div className="mb-2 text-[11px] font-semibold text-ink">{title}</div>
-        {children}
-      </div>
-    </div>
   );
 }
 
@@ -90,47 +59,6 @@ function Shell({ active, title, children, right }: { active: string; title: stri
   );
 }
 
-/* ---------- scenes ---------- */
-
-
-
-
-
-
-
-
-function SceneChat({ frameworkIndex }: { frameworkIndex: number }) {
-  return (
-    <Shell active="chat" title="New conversation" right={<Pill tone="settle">stub model</Pill>}>
-      <div className="flex h-full flex-col gap-1.5">
-        <div className="self-end rounded-sm bg-paper-sunken px-2 py-1 text-[9px] text-ink">What's in this quarter's tickets?</div>
-        <div className="rounded-sm border border-line px-2 py-1 text-[9px] text-ink-dim">
-          Three themes: onboarding friction, billing questions, and export requests…
-        </div>
-        <div className="relative mt-auto border border-dashed border-amber bg-amber-soft/60 px-2 py-1.5">
-          <div className="mono text-[8px] uppercase tracking-wide text-amber">your agent goes here</div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-ink">
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={frameworkIndex}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.25 }}
-                className="font-semibold"
-              >
-                {AGENT_FRAMEWORKS[frameworkIndex % AGENT_FRAMEWORKS.length]}
-              </motion.span>
-            </AnimatePresence>
-            <span className="text-ink-faint">— unmodified</span>
-          </div>
-        </div>
-      </div>
-    </Shell>
-  );
-}
-
-
 function SceneAdmin() {
   return (
     <Shell active="admin" title="Admin · platform" right={<Pill tone="fail">impersonating maria — audited</Pill>}>
@@ -168,10 +96,9 @@ const REAL: Partial<Record<WalkthroughStep["scene"], SceneId>> = {
   artifacts: "artifacts",
 };
 
-function Scene({ step, frameworkIndex }: { step: WalkthroughStep; frameworkIndex: number }) {
+function Scene({ step }: { step: WalkthroughStep }) {
   const real = REAL[step.scene];
   if (real) return <Showcase scene={real} />;
-  if (step.scene === "chat") return <SceneChat frameworkIndex={frameworkIndex} />;
   return <SceneAdmin />;
 }
 
@@ -182,7 +109,6 @@ export function ProductWalkthrough() {
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [fw, setFw] = useState(0);
   const root = useRef<HTMLDivElement>(null);
   const step = WALKTHROUGH[i]!;
 
@@ -198,20 +124,21 @@ export function ProductWalkthrough() {
 
   useEffect(() => {
     if (!playing) return;
-    const t = window.setTimeout(() => setI((n) => (n + 1) % WALKTHROUGH.length), step.scene === "chat" ? STEP_MS * 1.6 : STEP_MS);
+    const t = window.setTimeout(() => setI((n) => (n + 1) % WALKTHROUGH.length), STEP_MS);
     return () => window.clearTimeout(t);
-  }, [playing, i, step.scene]);
-
-  useEffect(() => {
-    if (step.scene !== "chat") return;
-    const t = window.setInterval(() => setFw((n) => n + 1), 1200);
-    return () => window.clearInterval(t);
-  }, [step.scene]);
+  }, [playing, i]);
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowRight") { e.preventDefault(); setI((n) => (n + 1) % WALKTHROUGH.length); }
     if (e.key === "ArrowLeft") { e.preventDefault(); setI((n) => (n - 1 + WALKTHROUGH.length) % WALKTHROUGH.length); }
   };
+
+  const meta: [string, string][] = [
+    ["route", step.route],
+    ["registry item", step.item],
+    ["service", step.pkg],
+    ["ui ownership", step.ownership],
+  ];
 
   return (
     <div
@@ -221,7 +148,7 @@ export function ProductWalkthrough() {
       onMouseLeave={() => setPaused(false)}
       onKeyDown={onKey}
       tabIndex={0}
-      aria-label="Product walkthrough. Use left and right arrow keys to move between steps."
+      aria-label="Reference application walkthrough. Use left and right arrow keys to move between steps."
     >
       {/* rail */}
       <ol className="mono flex gap-1 overflow-x-auto md:flex-col md:gap-0 md:overflow-visible" aria-label="Steps">
@@ -245,7 +172,7 @@ export function ProductWalkthrough() {
                   className="absolute bottom-0 left-0 h-px bg-amber"
                   initial={{ width: 0 }}
                   animate={{ width: "100%" }}
-                  transition={{ duration: (step.scene === "chat" ? STEP_MS * 1.6 : STEP_MS) / 1000, ease: "linear" }}
+                  transition={{ duration: STEP_MS / 1000, ease: "linear" }}
                 />
               )}
             </button>
@@ -253,7 +180,7 @@ export function ProductWalkthrough() {
         ))}
       </ol>
 
-      {/* browser */}
+      {/* browser + the mapping to the capability underneath */}
       <div>
         <div className="rounded-md border border-line bg-paper-raised">
           <div className="flex h-8 items-center gap-2 border-b border-line px-3">
@@ -279,20 +206,22 @@ export function ProductWalkthrough() {
                 exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
                 transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               >
-                <Scene step={step} frameworkIndex={fw} />
+                <Scene step={step} />
               </motion.div>
             </AnimatePresence>
           </div>
         </div>
-        <div className="mono mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.72rem] text-ink-faint">
-          <span>
-            item <span className="text-ink">{step.item}</span>
-          </span>
-          <span aria-hidden="true">·</span>
-          <span>
-            package <span className="text-ink">{step.pkg}</span>
-          </span>
-          <span className="ml-auto hidden sm:inline">{paused ? "paused" : playing ? "auto-playing" : ""}</span>
+        <dl className="mono mt-2 grid grid-cols-2 gap-px border border-line bg-line text-[0.72rem] sm:grid-cols-4">
+          {meta.map(([k, v]) => (
+            <div key={k} className="bg-paper px-3 py-2">
+              <dt className="text-[0.62rem] uppercase tracking-[0.08em] text-ink-faint">{k}</dt>
+              <dd className={cn("mt-0.5 truncate", v === "package runtime" ? "text-amber" : "text-ink")}>{v}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="mono mt-2 flex items-center justify-between gap-3 text-[0.7rem] text-ink-faint">
+          <span>every screen but admin is the installed registry item, rendered from the same files <span className="text-ink-dim">shadcn add</span> writes</span>
+          <span className="hidden sm:inline">{paused ? "paused" : playing ? "auto-playing" : ""}</span>
         </div>
       </div>
     </div>

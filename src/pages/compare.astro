@@ -1,0 +1,17 @@
+---
+import Page from "@/layouts/Page.astro";
+import { Alternatives } from "@/components/alternatives";
+---
+<Page
+  path="/compare"
+  tag="compared to the alternatives"
+  title="Not a boilerplate.<br />Not an agent platform."
+  lede="Pick the plan you'd otherwise follow and see what changes — what you keep, what you drop."
+  description="Intelligo compared to building in-house, SaaS boilerplates, all-in-one AI platforms, prompting from zero, and wiring primitives yourself."
+>
+  <section class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <Alternatives client:load />
+    </div>
+  </section>
+</Page>

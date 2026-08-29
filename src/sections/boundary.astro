@@ -8,8 +8,30 @@ import { SITE } from "@/lib/site";
     <SectionHead
       tag="the execution boundary"
       title="Every AI run is bracketed,<br />never wrapped."
-      lede="Intelligo admits, settles and records the run. Your framework does the rest, unmodified."
+      lede="Intelligo handles admission, accounting and settlement. Your application's AI framework stays native in the middle."
     />
+
+    <!-- the mental model, in one strip -->
+    <div class="reveal mt-8 grid grid-cols-[1fr_auto_1fr_auto_1fr] items-stretch gap-0 overflow-x-auto border border-line-strong bg-paper-raised text-center">
+      <div class="p-4">
+        <div class="tag">intelligo</div>
+        <div class="mono mt-2 text-[0.95rem] text-ink">begin()</div>
+        <div class="mt-0.5 text-[0.78rem] text-ink-dim">admit &amp; reserve</div>
+      </div>
+      <div class="mono self-center px-2 text-ink-faint" aria-hidden="true">→</div>
+      <div class="border-x border-dashed border-amber bg-amber-soft/40 p-4">
+        <div class="tag text-amber">your app</div>
+        <div class="mono mt-2 text-[0.95rem] text-ink">yourAgent()</div>
+        <div class="mt-0.5 text-[0.78rem] text-ink-dim">native, unmodified</div>
+      </div>
+      <div class="mono self-center px-2 text-ink-faint" aria-hidden="true">→</div>
+      <div class="p-4">
+        <div class="tag">intelligo</div>
+        <div class="mono mt-2 text-[0.95rem] text-ink"><span class="text-settle">complete()</span> <span class="text-ink-faint">/</span> <span class="text-fail">fail()</span></div>
+        <div class="mt-0.5 text-[0.78rem] text-ink-dim">settle or release</div>
+      </div>
+    </div>
+
     <div class="mt-8">
       <BoundaryCode client:visible />
     </div>

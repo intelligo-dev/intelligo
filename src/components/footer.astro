@@ -1,0 +1,36 @@
+---
+import { SITE } from "@/lib/site";
+---
+<footer class="xline">
+  <div class="flex flex-wrap items-start justify-between gap-8 px-6 py-10 md:px-10">
+    <div>
+      <span class="heading flex items-center gap-2 text-[1.05rem] font-semibold tracking-tight">
+        <span class="inline-block size-3 rounded-[3px] bg-foreground" aria-hidden="true"></span>{SITE.name}
+      </span>
+      <p class="mt-3 text-[0.85rem] text-muted-foreground">You build the agent. Intelligo is everything around it.</p>
+      <p class="mt-6 text-[0.75rem] text-muted-foreground">Apache-2.0 · {SITE.status}</p>
+    </div>
+    <div class="grid grid-cols-2 gap-x-14 gap-y-2 text-[0.85rem] sm:grid-cols-3">
+      <div class="flex flex-col gap-2">
+        <span class="font-medium text-foreground">Product</span>
+        <a href="/#framework" class="text-muted-foreground no-underline hover:text-foreground">Framework</a>
+        <a href="/pages" class="text-muted-foreground no-underline hover:text-foreground">Pages</a>
+        <a href="/architecture" class="text-muted-foreground no-underline hover:text-foreground">Architecture</a>
+        <a href="/#quickstart" class="text-muted-foreground no-underline hover:text-foreground">Get started</a>
+      </div>
+      <div class="flex flex-col gap-2">
+        <span class="font-medium text-foreground">Read more</span>
+        <a href="/why-intelligo" class="text-muted-foreground no-underline hover:text-foreground">Why Intelligo</a>
+        <a href="/compare" class="text-muted-foreground no-underline hover:text-foreground">Compare</a>
+        <a href={SITE.adrs} class="text-muted-foreground no-underline hover:text-foreground">Decisions</a>
+      </div>
+      <div class="flex flex-col gap-2">
+        <span class="font-medium text-foreground">Project</span>
+        <a href={SITE.github} class="text-muted-foreground no-underline hover:text-foreground">GitHub</a>
+        <a href={SITE.npm} class="text-muted-foreground no-underline hover:text-foreground">npm</a>
+        <a href={SITE.docs} class="text-muted-foreground no-underline hover:text-foreground">Docs</a>
+        <a href={SITE.license} class="text-muted-foreground no-underline hover:text-foreground">License</a>
+      </div>
+    </div>
+  </div>
+</footer>

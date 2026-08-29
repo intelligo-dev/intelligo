@@ -1,0 +1,37 @@
+---
+import Page from "@/layouts/Page.astro";
+import { ScrollLedger } from "@/components/scroll-ledger";
+import { BlockerCards } from "@/components/blocker-cards";
+---
+<Page
+  path="/why-intelligo"
+  tag="why intelligo"
+  title="The half you keep rebuilding,<br />and why a good agent doesn't fix it."
+  lede="The recurring problems behind every AI product — who is signed in, what their plan allows, what a run cost, who to bill, what to tell an auditor — and why they belong in a dependency, not in a prompt."
+  description="Why Intelligo exists: the undifferentiated 70% of every AI SaaS, counted, and the three reasons a well-prompted agent still gets it wrong."
+>
+  <section id="capabilities" class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <div class="section-head">
+        <span class="tag">the other half, counted</span>
+        <h2>Every line is a service or surface<br />that exists in the packages today.</h2>
+      </div>
+      <div class="mt-8">
+        <ScrollLedger client:visible />
+      </div>
+    </div>
+  </section>
+
+  <section id="agents" class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <div class="section-head">
+        <span class="tag">the agent objection</span>
+        <h2>Your agent is good.<br />It doesn't know what it doesn't know.</h2>
+        <p>Three ways a well-prompted coding agent still gets the boring half wrong — and what shipping it finished changes.</p>
+      </div>
+      <div class="mt-4">
+        <BlockerCards client:visible />
+      </div>
+    </div>
+  </section>
+</Page>

@@ -1,0 +1,66 @@
+---
+import SectionHead from "@/components/section-head.astro";
+import { PROOF } from "@/lib/proof";
+
+const words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen"];
+const n = words[PROOF.packages] ?? String(PROOF.packages);
+const Count = n.charAt(0).toUpperCase() + n.slice(1);
+
+const MAIN = ["auth", "billing", "executions", "core", "jobs", "admin"];
+const REST = ["audit", "billing-core", "mastra", "ui", "cli"];
+
+const PRINCIPLES = [
+  ["Typed services", "Business logic lives behind explicit APIs and ports. Pages and route handlers stay thin transports."],
+  ["Enforced boundaries", "Dependency direction, tenant scoping and registry hygiene are tests. An invalid import fails the build, not a review."],
+  ["Simple operational model", "One PostgreSQL database with explicit per-table ownership. pgvector rides along. No Redis, no second store, until the product genuinely needs one."],
+];
+---
+<section id="architecture" class="xline">
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag="architecture"
+      title={`${Count} packages. One database.<br />No Redis.`}
+      lede="The whole system, at the altitude that matters. The full dependency graph is one click away."
+    />
+
+    <div class="reveal mt-8 grid gap-6 lg:grid-cols-[1fr_1fr] lg:gap-10">
+      <!-- the stack -->
+      <div class="border border-line-strong bg-paper-raised">
+        <div class="px-4 py-3.5">
+          <div class="tag">your application</div>
+          <div class="mono mt-2 flex flex-wrap gap-1 text-[0.72rem]">
+            {["installed pages", "thin actions", "your AI framework"].map((l) => (
+              <span class="border border-line px-2 py-1 text-ink">{l}</span>
+            ))}
+          </div>
+        </div>
+        <div class="mono border-t border-line px-4 py-1 text-center text-[0.8rem] text-ink-faint" aria-hidden="true">↓</div>
+        <div class="border-t border-line px-4 py-3.5">
+          <div class="tag">@intelligo-dev/*</div>
+          <div class="mono mt-2 flex flex-wrap gap-1 text-[0.72rem]">
+            {MAIN.map((p) => <span class="border border-amber bg-amber-soft px-2 py-1 text-amber">{p}</span>)}
+            {REST.map((p) => <span class="border border-line px-2 py-1 text-ink-dim">{p}</span>)}
+          </div>
+        </div>
+        <div class="mono border-t border-line px-4 py-1 text-center text-[0.8rem] text-ink-faint" aria-hidden="true">↓</div>
+        <div class="border-t border-line px-4 py-3.5">
+          <div class="tag">postgresql</div>
+          <p class="mono mt-2 break-words text-[0.72rem] text-ink-dim">one database · per-table ownership · migrations shipped in @intelligo-dev/core</p>
+        </div>
+      </div>
+
+      <!-- three principles -->
+      <div>
+        <ul class="border-t border-line">
+          {PRINCIPLES.map(([h, b]) => (
+            <li class="border-b border-line py-4">
+              <div class="text-[1.02rem] font-semibold text-ink">{h}</div>
+              <p class="mt-1 text-[0.9rem] text-ink-dim">{b}</p>
+            </li>
+          ))}
+        </ul>
+        <a href="/architecture" class="btn btn-outline mt-5">Explore the architecture →</a>
+      </div>
+    </div>
+  </div>
+</section>
