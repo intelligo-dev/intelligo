@@ -47,6 +47,16 @@ as `@intelligo-dev/*`.
 - `@intelligo-dev/billing` no longer exports `./plugin-adapter`, whose
   source had already been removed.
 
+### Fixed
+
+- `deleteTrailingMessages` deleted the anchor message as well: it
+  compared `created_at` against a JS `Date` the driver had truncated to
+  milliseconds. The comparison now happens in SQL, and `saveMessages`
+  stamps each row of a batch one millisecond apart so "the messages
+  after this one" is well defined.
+- `exportIdentity` records its own audit row before reading the trail,
+  so an export contains the export.
+
 ### Infrastructure
 
 - Release workflow: a `v*` tag publishes every package, with the npm
