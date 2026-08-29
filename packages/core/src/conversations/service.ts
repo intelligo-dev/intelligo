@@ -337,7 +337,18 @@ export async function saveMessages(
     );
   }
 
-  const inserted = await db.insert(messages).values(messagesToSave).returning();
+  // A batch arrives in conversation order, but `defaultNow()` would
+  // stamp every row with the same transaction time, and a tie in
+  // created_at makes "the messages after this one" undefined — a
+  // regenerate could then delete nothing or everything. One millisecond
+  // per position keeps the order the caller gave.
+  const base = Date.now();
+  const stamped = messagesToSave.map((message, index) => ({
+    ...message,
+    createdAt: message.createdAt ?? new Date(base + index),
+  }));
+
+  const inserted = await db.insert(messages).values(stamped).returning();
 
   await db
     .update(conversations)
