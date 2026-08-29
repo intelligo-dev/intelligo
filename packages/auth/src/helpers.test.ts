@@ -30,7 +30,7 @@ vi.mock("next/headers", () => ({
   headers: headersMock,
 }));
 
-vi.mock("@intelligo/core/db", () => ({
+vi.mock("@intelligo-dev/core/db", () => ({
   db: {
     update: () => ({
       set: (values: unknown) => ({
@@ -40,7 +40,7 @@ vi.mock("@intelligo/core/db", () => ({
   },
 }));
 
-vi.mock("@intelligo/core/db/schema", () => ({
+vi.mock("@intelligo-dev/core/db/schema", () => ({
   users: { id: "id", role: "role" },
 }));
 

@@ -6,16 +6,16 @@
  *
  */
 
-import { db } from "@intelligo/core/db";
+import { db } from "@intelligo-dev/core/db";
 import {
   referralCodes,
   referrals,
   plans,
   subscriptions,
   member,
-} from "@intelligo/core/db/schema";
+} from "@intelligo-dev/core/db/schema";
 import { eq, count } from "drizzle-orm";
-import { createNotification } from "@intelligo/core/notifications";
+import { createNotification } from "@intelligo-dev/core/notifications";
 
 const REQUIRED_REFERRALS = 3;
 

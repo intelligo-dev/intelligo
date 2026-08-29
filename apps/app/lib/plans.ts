@@ -2,7 +2,7 @@
  * The reference product's plan catalogue and feature matrix.
  *
  * Lives in the application because plan data is the product's, not the
- * framework's (ADR-0006). The shape is all that @intelligo/billing
+ * framework's (ADR-0006). The shape is all that @intelligo-dev/billing
  * knows; the names, prices, and limits are entirely ours — and
  * deliberately have nothing to do with Support, which is the point of
  * this app existing.
@@ -13,7 +13,7 @@
  * only `priceOneTime` hides the toggle entirely.
  */
 
-import type { PlanConfig } from "@intelligo/billing/plans";
+import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
 export const REFERENCE_PLANS: Record<string, PlanConfig> = {
   free: {

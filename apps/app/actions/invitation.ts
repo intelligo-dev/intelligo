@@ -3,7 +3,7 @@
 /**
  * Invitation accept/decline server actions.
  *
- * Thin transport over `@intelligo/auth`'s team service, bound with
+ * Thin transport over `@intelligo-dev/auth`'s team service, bound with
  * this consumer's ports at `@/lib/team` (installed by the
  * `team-settings` registry item — see its module doc for the exact
  * port bindings). All authorization, invitation-ownership checks, and
@@ -16,7 +16,10 @@
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
-import { isTeamServiceError, type TeamServiceErrorCode } from "@intelligo/auth";
+import {
+  isTeamServiceError,
+  type TeamServiceErrorCode,
+} from "@intelligo-dev/auth";
 
 import { team } from "@/lib/team";
 

@@ -47,6 +47,6 @@ export * from "./identity";
 
 // RAG documents table (AI-ARCHITECTURE Phase H)
 // Single shared table that backs every collection in
-// @intelligo/agents/rag. Per-collection wrappers live in the
+// @intelligo-dev/agents/rag. Per-collection wrappers live in the
 // product packages.
 export * from "./rag";

@@ -2,7 +2,7 @@
  * Product plan registry.
  *
  * Wave 4 of the architecture decoupling extracts the actual plan data
- * (Free / Standard / Pro) out of @intelligo/billing and into the
+ * (Free / Standard / Pro) out of @intelligo-dev/billing and into the
  * vertical product packages that own them. The registry here is the
  * runtime hand-off point: a product calls `registerProductPlans()`
  * during server bootstrap, and the billing engine reads through the
@@ -115,7 +115,7 @@ const productFeatures = new Map<string, ProductFeatureMatrix>();
  *
  * Feature names are product vocabulary — `detailed_assessment`,
  * `scholarship_international` — so the matrix belongs to the vertical,
- * exactly like the plan catalogue. It lived in @intelligo/billing as a
+ * exactly like the plan catalogue. It lived in @intelligo-dev/billing as a
  * hardcoded constant until Phase 3, which put the whole Support feature
  * list inside a package headed for publication (ADR-0006).
  */
@@ -205,7 +205,7 @@ const productActionLimitKeys = new Map<string, ActionLimitKeyMap>();
  * entirely — `getActionLimitKey` falls through to the action slug.
  * Support needs it because its limits predate the action slugs
  * (`chat` is capped by `chatMessages`), and that remap was hardcoded
- * in @intelligo/billing: three support slugs sitting in the quota
+ * in @intelligo-dev/billing: three support slugs sitting in the quota
  * engine of a package that is supposed to know nothing about the
  * vertical (ADR-0006).
  */
@@ -232,7 +232,7 @@ export function clearActionLimitKeys(): void {
 /**
  * What a new workspace gets before it pays anything.
  *
- * This was `TRIAL_CONFIG` in @intelligo/billing — "100,000 tokens,
+ * This was `TRIAL_CONFIG` in @intelligo-dev/billing — "100,000 tokens,
  * 5,000₮, 14 days" hardcoded in a package headed for publication
  * (ADR-0006). Those three numbers are the vertical's first-impression
  * offer, written on its pricing page; they are not engine policy, and
@@ -299,7 +299,7 @@ const productTeamLimits = new Map<string, TeamMemberLimitMap>();
  * How many people a plan may have in one workspace.
  *
  * Hardcoded as `TEAM_MEMBER_LIMITS = { free: 1, standard: 1, pro: 1 }`
- * in @intelligo/billing until now — per-plan packaging in the engine,
+ * in @intelligo-dev/billing until now — per-plan packaging in the engine,
  * and self-contradicting at that, since a plan sold as a team plan
  * capped at one seat.
  */
@@ -352,7 +352,7 @@ const productRateLimits = new Map<string, RateLimitMap>();
  * Per-plan request ceilings.
  *
  * Was `RATE_LIMITS = { free: 10, pro: 60, enterprise: 300 }` in
- * @intelligo/billing. Two of those three names are Support's plans and
+ * @intelligo-dev/billing. Two of those three names are Support's plans and
  * the third, `enterprise`, was not a plan at all — `PlanSlug` is
  * `free | standard | pro`, so the 300/min tier was unreachable and
  * `standard` silently fell through to the free ceiling.

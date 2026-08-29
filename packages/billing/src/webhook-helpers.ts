@@ -5,18 +5,18 @@
  * workspace owners, subscription details, and plan information.
  */
 
-import { db } from "@intelligo/core/db";
+import { db } from "@intelligo-dev/core/db";
 import {
   organization,
   member,
   users,
   subscriptions,
   plans,
-} from "@intelligo/core/db/schema";
+} from "@intelligo-dev/core/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { formatPrice } from "./plans";
 import { handleSubscriptionConfirmedEmail } from "./email-triggers";
-import { createLogger } from "@intelligo/core/logger";
+import { createLogger } from "@intelligo-dev/core/logger";
 
 const log = createLogger("WebhookHelpers");
 

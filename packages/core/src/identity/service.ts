@@ -9,7 +9,7 @@
  * `../documents/service.ts` and `../conversations/service.ts` for the
  * same move): the tables (`user_facts`, `user_memories`,
  * `user_profile_snapshots`, `user_memory_audit`) always lived in
- * `@intelligo/core`'s schema (`../db/schema/identity.ts`, documented
+ * `@intelligo-dev/core`'s schema (`../db/schema/identity.ts`, documented
  * there as "a platform-level memory primitive — separate from any
  * single product"); only the service layer sat in the product
  * application.
@@ -17,24 +17,24 @@
  * What did NOT come with it (stays product/agents-side):
  *   - `updateMyFactImportance` and the `synthesizeProfile()` re-trigger
  *     Acme's `deleteMyFact` ran after deleting — synthesis is
- *     `@intelligo/agents`' concern (deprecated, dissolving under
+ *     `@intelligo-dev/agents`' concern (deprecated, dissolving under
  *     ADR-0008), and this package cannot depend on it. `deleteFact`
  *     below does not touch the cached snapshot; a caller that also
  *     owns a synthesis engine re-triggers it after calling this.
  *
  * Callers pass a resolved actor (workspaceId, userId) rather than this
- * module resolving one itself — `@intelligo/core` cannot depend on
- * `@intelligo/auth` (see tests/architecture/dependency-direction.test.ts).
+ * module resolving one itself — `@intelligo-dev/core` cannot depend on
+ * `@intelligo-dev/auth` (see tests/architecture/dependency-direction.test.ts).
  * Every query filters by workspaceId AND userId internally; the actor
  * is never trusted to have done that itself.
  *
  * Every mutation writes a `user_memory_audit` row via the internal
  * `recordMemoryAudit` (./audit.ts). See that file's doc comment for
- * why the writer lives here rather than in `@intelligo/audit`, which
+ * why the writer lives here rather than in `@intelligo-dev/audit`, which
  * is where ADR-0008 names its destination — the allowlist only grants
  * audit -> core, never core -> audit
  * (tests/architecture/dependency-direction.test.ts), so
- * `@intelligo/audit` exports the event *contract* only.
+ * `@intelligo-dev/audit` exports the event *contract* only.
  *
  * Failure is reported by throwing `IdentityServiceError` rather than
  * returning a `{ success, error }` envelope — see ./errors.ts.

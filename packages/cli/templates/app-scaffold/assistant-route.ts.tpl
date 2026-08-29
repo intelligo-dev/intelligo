@@ -8,7 +8,7 @@
  * changes (ADR-0003).
  */
 
-import { requireWorkspace } from "@intelligo/auth";
+import { requireWorkspace } from "@intelligo-dev/auth";
 
 import { CAPABILITIES, composeIntelligo, executions } from "@/lib/intelligo";
 

@@ -3,7 +3,7 @@
 /**
  * Profile settings server actions — thin transport over the bound
  * profile service (`@/lib/profile`): parse input with the schema from
- * `@intelligo/auth`, call the service, map any `ProfileServiceError` to
+ * `@intelligo-dev/auth`, call the service, map any `ProfileServiceError` to
  * a friendly message, and revalidate. No business rules here — those
  * live in the service.
  */
@@ -15,7 +15,7 @@ import {
   isProfileServiceError,
   updateProfileSchema,
   type UpdateProfileInput,
-} from "@intelligo/auth";
+} from "@intelligo-dev/auth";
 
 import { profile } from "@/lib/profile";
 

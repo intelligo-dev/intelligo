@@ -1,4 +1,4 @@
-import { getAuthSession } from "@intelligo/auth";
+import { getAuthSession } from "@intelligo-dev/auth";
 import { getLocale } from "next-intl/server";
 
 import { redirect } from "@/i18n/navigation";

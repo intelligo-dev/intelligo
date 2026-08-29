@@ -5,7 +5,7 @@
  * it from `@/lib/auth-validation` once installed (see those items'
  * descriptions for the cross-item dependency). Mirrors the semantics of
  * Acme's `lib/validations/auth.ts` (password strength rule included) —
- * plain zod, no `@intelligo/*` imports, so it works identically before
+ * plain zod, no `@intelligo-dev/*` imports, so it works identically before
  * and after the request reaches the Better-Auth client SDK.
  *
  * Validation copy is user-facing, so these schemas do not carry literal

@@ -6,17 +6,17 @@
  * every chat request doesn't issue a round-trip to Neon. The DB row is
  * authoritative and can be hot-updated without a code deploy.
  *
- * The defaults come from @intelligo/executions constants — they're used when
+ * The defaults come from @intelligo-dev/executions constants — they're used when
  * the table is empty (first boot, tests).
  */
 
-import { db } from "@intelligo/core/db";
-import { billingSettings } from "@intelligo/core/db/schema";
+import { db } from "@intelligo-dev/core/db";
+import { billingSettings } from "@intelligo-dev/core/db/schema";
 import { eq } from "drizzle-orm";
 import {
   DEFAULT_BILLING_MARGIN,
   DEFAULT_USD_TO_MNT_RATE,
-} from "@intelligo/executions/pricing";
+} from "@intelligo-dev/executions/pricing";
 
 export type ResolvedBillingSettings = {
   usdToMntRate: number;

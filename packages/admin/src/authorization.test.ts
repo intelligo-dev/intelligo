@@ -19,11 +19,11 @@ const mocks = vi.hoisted(() => ({
   recordAuditEventOrThrow: vi.fn(),
 }));
 
-vi.mock("@intelligo/auth", () => ({
+vi.mock("@intelligo-dev/auth", () => ({
   requirePlatformAdmin: mocks.requirePlatformAdmin,
 }));
 
-vi.mock("@intelligo/audit", () => ({
+vi.mock("@intelligo-dev/audit", () => ({
   recordAuditEvent: mocks.recordAuditEvent,
   recordAuditEventOrThrow: mocks.recordAuditEventOrThrow,
 }));

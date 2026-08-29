@@ -12,7 +12,7 @@
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
-import { isOnboardingServiceError } from "@intelligo/auth";
+import { isOnboardingServiceError } from "@intelligo-dev/auth";
 
 import { profile } from "@/lib/onboarding-profile";
 import { onboarding } from "@/lib/onboarding";

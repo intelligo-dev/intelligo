@@ -3,8 +3,8 @@
  *
  * Runs only when DATABASE_URL is set (mirrors
  * packages/auth/src/workspace/service.integration.test.ts and
- * packages/core/src/db/__tests__/audit-trigger.int.test.ts). @intelligo/core
- * has no dependency on @intelligo/auth (see
+ * packages/core/src/db/__tests__/audit-trigger.int.test.ts). @intelligo-dev/core
+ * has no dependency on @intelligo-dev/auth (see
  * tests/architecture/dependency-direction.test.ts), so fixtures are
  * inserted with a raw `pg` client rather than Better-Auth's sign-up API.
  *

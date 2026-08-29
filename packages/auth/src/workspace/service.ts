@@ -6,12 +6,12 @@
  *
  * Mirrors `createTeamService(ports)` (./../team/service.ts) one
  * directory over: a factory over optional ports, so this package's
- * allowlisted dependency (`@intelligo/core` only — see
+ * allowlisted dependency (`@intelligo-dev/core` only — see
  * tests/architecture/dependency-direction.test.ts) never grows to
  * include billing. A consumer binds that in at its composition root:
  *
  *   const workspaceService = createWorkspaceService({
- *     checkWorkspaceLimit: ...,   // adapts @intelligo/billing's checkPlanLimit
+ *     checkWorkspaceLimit: ...,   // adapts @intelligo-dev/billing's checkPlanLimit
  *   });
  *
  * Authorization (`requireAuth`/`requireWorkspace`/`requireRole`) lives
@@ -26,7 +26,7 @@
  * `createWorkspace` has no workspace to check the plan of yet — it is
  * the thing being created. Acme's original action worked around this
  * by reading the caller's *existing* workspaces and using the first
- * one's id to look up a plan via `@intelligo/billing`'s
+ * one's id to look up a plan via `@intelligo-dev/billing`'s
  * `checkPlanLimit(workspaceId, "workspaces", currentCount)`, i.e. it
  * borrowed an arbitrary existing workspace's subscription as a stand-in
  * for "the caller's plan". That borrowing is a binding-layer concern,
@@ -69,7 +69,7 @@
 
 import { headers } from "next/headers";
 import type { ZodType } from "zod";
-import { createLogger } from "@intelligo/core/logger";
+import { createLogger } from "@intelligo-dev/core/logger";
 
 import { auth } from "../server";
 import { requireAuth, requireRole, requireWorkspace } from "../helpers";

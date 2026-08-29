@@ -48,7 +48,7 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
     results.push({
       name: "migrations",
       status: "warn",
-      detail: `No migrations directory (looked in ${MIGRATION_LOCATIONS.join(", ")}) — run from the workspace root, with @intelligo/core installed?`,
+      detail: `No migrations directory (looked in ${MIGRATION_LOCATIONS.join(", ")}) — run from the workspace root, with @intelligo-dev/core installed?`,
     });
   } else {
     const chain = readMigrationChain(migrationsDir);

@@ -2,21 +2,21 @@
  * Memory-audit write — the ADR-0008 destination, reconciled with the
  * allowlist.
  *
- * ADR-0008 names `@intelligo/audit` as `recordMemoryAudit`'s
+ * ADR-0008 names `@intelligo-dev/audit` as `recordMemoryAudit`'s
  * destination. `tests/architecture/dependency-direction.test.ts` only
- * grants the audit -> core edge (`audit: ["@intelligo/core"]`);
- * `@intelligo/core`'s own allowlist entry is empty
+ * grants the audit -> core edge (`audit: ["@intelligo-dev/core"]`);
+ * `@intelligo-dev/core`'s own allowlist entry is empty
  * (`core: []` — see `../documents/service.ts`'s doc comment for the
- * same constraint against `@intelligo/auth`). This module — part of
- * `@intelligo/core/identity`, which owns `user_memory_audit` alongside
+ * same constraint against `@intelligo-dev/auth`). This module — part of
+ * `@intelligo-dev/core/identity`, which owns `user_memory_audit` alongside
  * the rest of the identity graph (see `../db/schema/identity.ts`) —
- * therefore cannot import `@intelligo/audit` to call a writer defined
+ * therefore cannot import `@intelligo-dev/audit` to call a writer defined
  * there.
  *
- * `@intelligo/audit` exports the event *contract* only
+ * `@intelligo-dev/audit` exports the event *contract* only
  * (`packages/audit/src/memory-audit.ts`, re-exported from its index).
  * This file is the faithful, in-package port of the write itself,
- * ported verbatim from `@intelligo/agents/memory/audit.ts` (ADR-0008),
+ * ported verbatim from `@intelligo-dev/agents/memory/audit.ts` (ADR-0008),
  * kept local so `./service.ts`'s mutations (`deleteFact`,
  * `exportIdentity`) never cross the disallowed core -> audit edge.
  * Not re-exported from `./index.ts`: it is this module's own

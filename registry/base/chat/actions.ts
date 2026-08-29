@@ -2,7 +2,7 @@
 
 /**
  * Chat conversation actions — thin transport over
- * `@intelligo/core/conversations` (ADR-0009): resolve the caller's actor
+ * `@intelligo-dev/core/conversations` (ADR-0009): resolve the caller's actor
  * via `requireWorkspace()`, call the core service, map any
  * `ConversationServiceError` to a friendly message, and reshape the
  * result for the page and its client components. Sending a message and
@@ -22,8 +22,8 @@ import type { UIMessage } from "ai";
 import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 
-import { requireWorkspace } from "@intelligo/auth";
-import { saveDocument } from "@intelligo/core/documents";
+import { requireWorkspace } from "@intelligo-dev/auth";
+import { saveDocument } from "@intelligo-dev/core/documents";
 import {
   deleteConversation as deleteConversationRow,
   getConversation,
@@ -31,7 +31,7 @@ import {
   isConversationServiceError,
   listConversations,
   renameConversation as renameConversationRow,
-} from "@intelligo/core/conversations";
+} from "@intelligo-dev/core/conversations";
 
 export type ChatActionResult<T> =
   | { success: true; data: T }
@@ -196,7 +196,7 @@ export async function deleteConversation(
 /**
  * Saves one assistant reply as a document artifact, so a useful answer
  * doesn't only live in a conversation. This is the manual counterpart
- * to a `saveArtifact` tool: same destination (`@intelligo/core`'s
+ * to a `saveArtifact` tool: same destination (`@intelligo-dev/core`'s
  * document persistence, ADR-0009), same `/artifacts` page, just driven
  * by the reader instead of the model.
  *

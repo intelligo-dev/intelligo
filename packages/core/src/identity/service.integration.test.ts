@@ -3,8 +3,8 @@
  *
  * Runs only when DATABASE_URL is set (mirrors
  * ../documents/service.integration.test.ts and
- * ../conversations/service.integration.test.ts). @intelligo/core has
- * no dependency on @intelligo/auth (see
+ * ../conversations/service.integration.test.ts). @intelligo-dev/core has
+ * no dependency on @intelligo-dev/auth (see
  * tests/architecture/dependency-direction.test.ts), so fixtures are
  * inserted with a raw `pg` client rather than Better-Auth's sign-up
  * API. The service has no fact-creation entry point of its own (facts

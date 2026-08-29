@@ -2,7 +2,7 @@
  * Model registry and cost accounting.
  *
  * Moved here with the code (ADR-0008). No provider SDK mocks: the
- * point of splitting the registry out of `@intelligo/ai` is that
+ * point of splitting the registry out of `@intelligo-dev/ai` is that
  * pricing needs nothing from a provider client, and a test file that
  * still had to stub three of them would say the split had not
  * happened.

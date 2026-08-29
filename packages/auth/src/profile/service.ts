@@ -7,14 +7,14 @@
  * Mirrors `createTeamService(ports)` / `createWorkspaceService(ports)`
  * (../team/service.ts, ../workspace/service.ts) one directory over: a
  * factory over optional ports, so this package's allowlisted dependency
- * (`@intelligo/core` only — see
+ * (`@intelligo-dev/core` only — see
  * tests/architecture/dependency-direction.test.ts) never grows to
  * include an email-sending concern of its own. A consumer binds the
  * account-deletion confirmation email in at its composition root:
  *
  *   const profileService = createProfileService({
  *     onAccountDeleted: ({ email, name }) =>
- *       sendEmail({ to: email, subject: ..., html: ... }), // @intelligo/core/email
+ *       sendEmail({ to: email, subject: ..., html: ... }), // @intelligo-dev/core/email
  *   });
  *
  * Authorization (`requireAuth`) lives INSIDE each method, not at the
@@ -27,8 +27,8 @@
  * ---------------------------------------------------------------------
  * The product application's original `deleteAccount()`
  * calls `sendEmail` from
- * `@intelligo/core/email` directly, inline, with a hardcoded English
- * HTML template. `@intelligo/auth` already imports `@intelligo/core/email`
+ * `@intelligo-dev/core/email` directly, inline, with a hardcoded English
+ * HTML template. `@intelligo-dev/auth` already imports `@intelligo-dev/core/email`
  * elsewhere (`server.ts`'s Better-Auth hooks — verification, password
  * reset, welcome, invitation emails), so nothing in the allowlist
  * (auth → core only) would technically block importing `sendEmail`
@@ -46,9 +46,9 @@
 import { headers } from "next/headers";
 import type { ZodType } from "zod";
 import { eq } from "drizzle-orm";
-import { createLogger } from "@intelligo/core/logger";
-import { db } from "@intelligo/core/db";
-import { users, sessions } from "@intelligo/core/db/schema";
+import { createLogger } from "@intelligo-dev/core/logger";
+import { db } from "@intelligo-dev/core/db";
+import { users, sessions } from "@intelligo-dev/core/db/schema";
 
 import { auth } from "../server";
 import { requireAuth } from "../helpers";

@@ -34,15 +34,15 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: [
-    "@intelligo/admin",
-    "@intelligo/audit",
-    "@intelligo/auth",
-    "@intelligo/billing",
-    "@intelligo/billing-core",
-    "@intelligo/core",
-    "@intelligo/executions",
-    "@intelligo/jobs",
-    "@intelligo/ui",
+    "@intelligo-dev/admin",
+    "@intelligo-dev/audit",
+    "@intelligo-dev/auth",
+    "@intelligo-dev/billing",
+    "@intelligo-dev/billing-core",
+    "@intelligo-dev/core",
+    "@intelligo-dev/executions",
+    "@intelligo-dev/jobs",
+    "@intelligo-dev/ui",
   ],
 };
 

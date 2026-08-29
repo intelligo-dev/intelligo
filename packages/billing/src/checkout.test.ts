@@ -43,14 +43,14 @@ vi.mock("./queries", () => ({
   getWorkspaceBilling: mocks.getWorkspaceBilling,
 }));
 
-vi.mock("@intelligo/core/db", () => ({
+vi.mock("@intelligo-dev/core/db", () => ({
   db: {
     select: mocks.select,
     insert: mocks.insert,
   },
 }));
 
-vi.mock("@intelligo/core/db/schema", () => ({
+vi.mock("@intelligo-dev/core/db/schema", () => ({
   users: { id: "id", email: "email", name: "name" },
   creditPurchases: { id: "id" },
 }));

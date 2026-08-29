@@ -23,9 +23,9 @@
  * without racing.
  */
 
-import { db } from "@intelligo/core/db";
-import { createLogger } from "@intelligo/core/logger";
-import { recordAuditEvent } from "@intelligo/audit";
+import { db } from "@intelligo-dev/core/db";
+import { createLogger } from "@intelligo-dev/core/logger";
+import { recordAuditEvent } from "@intelligo-dev/audit";
 import { and, eq } from "drizzle-orm";
 
 import { executions } from "./db/schema";

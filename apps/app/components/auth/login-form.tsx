@@ -2,7 +2,7 @@
 
 /**
  * Email + password login form. Calls the Better-Auth client SDK
- * (`@intelligo/auth/client`) directly — no raw `fetch("/api/auth/*")`.
+ * (`@intelligo-dev/auth/client`) directly — no raw `fetch("/api/auth/*")`.
  */
 
 import { useState } from "react";
@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Loader2 } from "lucide-react";
 
-import { authClient } from "@intelligo/auth/client";
+import { authClient } from "@intelligo-dev/auth/client";
 
 import { Link, useRouter } from "@/i18n/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";

@@ -41,23 +41,23 @@ Env: workspace apps load the **repository root `.env`** as fallback (app-local `
 
 ### Registry (`registry/`)
 
-`registry.json` (official shadcn schema) + `base/<item>/**` source; build output `registry/public/r/` is gitignored. Items: smoke, app-shell, dashboard, auth-login/signup/password-reset/email-verification, onboarding, invitation-accept, workspace/team/profile/privacy-settings, pricing, checkout, billing-settings, usage, notifications, chat, artifacts, route-error. `tests/architecture/registry.test.ts` enforces: schema shape, no orphans, no private/deprecated/`@intelligo/ui` imports, declared `@intelligo/*` dependencies.
+`registry.json` (official shadcn schema) + `base/<item>/**` source; build output `registry/public/r/` is gitignored. Items: smoke, app-shell, dashboard, auth-login/signup/password-reset/email-verification, onboarding, invitation-accept, workspace/team/profile/privacy-settings, pricing, checkout, billing-settings, usage, notifications, chat, artifacts, route-error. `tests/architecture/registry.test.ts` enforces: schema shape, no orphans, no private/deprecated/`@intelligo-dev/ui` imports, declared `@intelligo-dev/*` dependencies.
 
 ### Packages
 
-| Package                   | Responsibility                                                                                                                                        |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@intelligo/core`         | DB schema (Drizzle + Neon + pgvector), email, logger, env, notifications, **conversations, documents, identity** (ADR-0009)                           |
-| `@intelligo/auth`         | Better-Auth multi-tenant workspaces, RBAC, `requireAuth/Workspace/Role`, typed `orgApi`, **team / workspace / profile / onboarding services** (ports) |
-| `@intelligo/billing-core` | Plan definitions, plan registry, payment provider interface                                                                                           |
-| `@intelligo/billing`      | Quota engine, credits, Stripe, feature gates, trials, rate limiting, **checkout + billing-overview service**                                          |
-| `@intelligo/executions`   | Execution lifecycle via ports (`createExecutions`), queries, `/pricing` model registry + cost math                                                    |
-| `@intelligo/audit`        | Append-only audit events + memory-audit contract                                                                                                      |
-| `@intelligo/jobs`         | Postgres-backed job queue                                                                                                                             |
-| `@intelligo/mastra`       | Optional bridge from a native agent to the execution boundary                                                                                         |
-| `@intelligo/admin`        | Operational console (Intelligo-owned, excluded from the registry)                                                                                     |
-| `@intelligo/cli`          | `create` / `add` / `doctor` / `migrate --check` / `upgrade --check`; scaffold is registry-ready (shadcn + Tailwind 4 + next-intl + composition root)  |
-| `@intelligo/ui`           | Legacy design system — still used by admin; **not** part of the page contract                                                                         |
+| Package                       | Responsibility                                                                                                                                        |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@intelligo-dev/core`         | DB schema (Drizzle + Neon + pgvector), email, logger, env, notifications, **conversations, documents, identity** (ADR-0009)                           |
+| `@intelligo-dev/auth`         | Better-Auth multi-tenant workspaces, RBAC, `requireAuth/Workspace/Role`, typed `orgApi`, **team / workspace / profile / onboarding services** (ports) |
+| `@intelligo-dev/billing-core` | Plan definitions, plan registry, payment provider interface                                                                                           |
+| `@intelligo-dev/billing`      | Quota engine, credits, Stripe, feature gates, trials, rate limiting, **checkout + billing-overview service**                                          |
+| `@intelligo-dev/executions`   | Execution lifecycle via ports (`createExecutions`), queries, `/pricing` model registry + cost math                                                    |
+| `@intelligo-dev/audit`        | Append-only audit events + memory-audit contract                                                                                                      |
+| `@intelligo-dev/jobs`         | Postgres-backed job queue                                                                                                                             |
+| `@intelligo-dev/mastra`       | Optional bridge from a native agent to the execution boundary                                                                                         |
+| `@intelligo-dev/admin`        | Operational console (Intelligo-owned, excluded from the registry)                                                                                     |
+| `@intelligo-dev/cli`          | `create` / `add` / `doctor` / `migrate --check` / `upgrade --check`; scaffold is registry-ready (shadcn + Tailwind 4 + next-intl + composition root)  |
+| `@intelligo-dev/ui`           | Legacy design system — still used by admin; **not** part of the page contract                                                                         |
 
 `config/public-packages.json` is the allowlist of what is published; `tests/architecture/public-export.test.ts` audits it (licence metadata, no credentials, no deployment-specific identifiers).
 
@@ -72,7 +72,7 @@ Server Actions are thin transports over package services (installed `actions/*`)
 ## Key Patterns
 
 - **Ports over dependencies** — services take ports (`checkMemberLimit`, `onAccountDeleted`, `checkEntitlement`…); consumers bind them in `lib/*.ts`. auth never imports billing; core imports nothing.
-- **Model ids are registry keys** — every provider-prefixed literal must exist in `MODEL_CONFIGS` (`@intelligo/executions/pricing`). Unregistered ids silently run on the fallback model and bill wrongly; an architecture test enforces registration.
+- **Model ids are registry keys** — every provider-prefixed literal must exist in `MODEL_CONFIGS` (`@intelligo-dev/executions/pricing`). Unregistered ids silently run on the fallback model and bill wrongly; an architecture test enforces registration.
 - **Tenant scoping** — every query filters `workspaceId` (+ `userId` where user-private); core services take resolved actor ids, transports gate with `requireWorkspace`/`requireRole` first.
 - **Optimistic middleware, authoritative server** — middleware only redirects; real checks are server-side. Middleware never touches the DB.
 - **`sessions.activeOrganizationId` exists** — workspace switching persists; always pass explicit `organizationId` to Better-Auth reads anyway.

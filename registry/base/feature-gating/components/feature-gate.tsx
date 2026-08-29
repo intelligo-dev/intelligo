@@ -4,7 +4,7 @@
  * isn't.
  *
  * Server component on purpose — the check is `hasFeature` from
- * `@intelligo/billing`, and running it on the server means the gated
+ * `@intelligo-dev/billing`, and running it on the server means the gated
  * content is never sent to a browser that isn't allowed to see it.
  * A client-side gate is a hint; this is the real thing. (It is still
  * not authorization: the action or route behind the feature must check
@@ -18,8 +18,11 @@
 
 import { getTranslations } from "next-intl/server";
 
-import { getWorkspacePlan, hasFeature } from "@intelligo/billing";
-import { getDefaultProductSlug, getPlanBySlug } from "@intelligo/billing/plans";
+import { getWorkspacePlan, hasFeature } from "@intelligo-dev/billing";
+import {
+  getDefaultProductSlug,
+  getPlanBySlug,
+} from "@intelligo-dev/billing/plans";
 
 import { featureCatalog } from "@/lib/feature-catalog";
 import { UpgradePrompt } from "./upgrade-prompt";

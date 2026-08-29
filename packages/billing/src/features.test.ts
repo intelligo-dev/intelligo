@@ -16,13 +16,13 @@ const mocks = vi.hoisted(() => ({
   select: vi.fn(),
 }));
 
-vi.mock("@intelligo/core/db", () => ({
+vi.mock("@intelligo-dev/core/db", () => ({
   db: {
     select: mocks.select,
   },
 }));
 
-vi.mock("@intelligo/core/db/schema", () => ({
+vi.mock("@intelligo-dev/core/db/schema", () => ({
   featureFlags: { name: "name" },
 }));
 

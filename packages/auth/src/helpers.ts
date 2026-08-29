@@ -15,9 +15,9 @@
 
 import { headers } from "next/headers";
 import { auth } from "./server";
-import { createLogger } from "@intelligo/core/logger";
-import { db } from "@intelligo/core/db";
-import { users } from "@intelligo/core/db/schema";
+import { createLogger } from "@intelligo-dev/core/logger";
+import { db } from "@intelligo-dev/core/db";
+import { users } from "@intelligo-dev/core/db/schema";
 import { eq } from "drizzle-orm";
 import type { Session, User } from "better-auth/types";
 import { PLATFORM_ADMIN_ROLE } from "./roles";

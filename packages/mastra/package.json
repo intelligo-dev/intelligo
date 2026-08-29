@@ -1,5 +1,5 @@
 {
-  "name": "@intelligo/mastra",
+  "name": "@intelligo-dev/mastra",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "repository": {
@@ -22,7 +22,7 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@intelligo/executions": "workspace:*"
+    "@intelligo-dev/executions": "workspace:*"
   },
   "peerDependencies": {
     "@mastra/core": ">=1.0.0"

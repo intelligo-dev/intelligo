@@ -1,10 +1,10 @@
 /**
- * @intelligo/billing-core — CE (Community Edition) billing primitives.
+ * @intelligo-dev/billing-core — CE (Community Edition) billing primitives.
  *
  * Plan types, plan registry, quota types, payment provider interface,
  * and pure helper functions. No Stripe, no enforcement, no DB queries.
  *
- * EE billing (@intelligo/billing) re-exports everything from here
+ * EE billing (@intelligo-dev/billing) re-exports everything from here
  * and adds enforcement, Stripe webhooks, trial system, referrals.
  */
 

@@ -9,7 +9,7 @@
    This is a consumer-owned copy, not an @import: apps/app is the
    canonical registry-installed result (Gate E of
    docs/intelligo-page-registry-migration-plan.md), and a registry
-   consumer never depends on @intelligo/ui at runtime. Update by hand
+   consumer never depends on @intelligo-dev/ui at runtime. Update by hand
    if the source tokens change.
    ============================================================ */
 
@@ -36,10 +36,10 @@
   --status-info-dark: hsl(224 76% 48%);
 
   /* Brand — Monochrome */
-  --brand-primary: #18181B;
+  --brand-primary: #18181b;
   --brand-primary-foreground: #ffffff;
-  --brand-accent: #27272A;
-  --brand-accent-end: #3F3F46;
+  --brand-accent: #27272a;
+  --brand-accent-end: #3f3f46;
 
   /* Spacing (semantic aliases) */
   --space-xs: 0.25rem;
@@ -52,7 +52,8 @@
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-glow-primary: 0 0 40px rgba(255, 255, 255, 0.1);
 
   /* Z-index scale */
@@ -63,13 +64,13 @@
   --z-toast: 300;
 
   /* Typography */
-  --font-size-xs: 0.75rem;     /* 12px */
-  --font-size-sm: 0.875rem;    /* 14px */
-  --font-size-base: 1rem;      /* 16px */
-  --font-size-lg: 1.125rem;    /* 18px */
-  --font-size-xl: 1.25rem;     /* 20px */
-  --font-size-2xl: 1.5rem;     /* 24px */
-  --font-size-3xl: 1.875rem;   /* 30px */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-2xl: 1.5rem; /* 24px */
+  --font-size-3xl: 1.875rem; /* 30px */
 
   --line-height-tight: 1.25;
   --line-height-snug: 1.375;
@@ -89,12 +90,20 @@
   --agent-parent: #92400e;
 
   /* Weather (decorative/thematic) */
-  --weather-day-start: hsl(200 95% 65%);     /* sky-400 equivalent */
-  --weather-day-mid: hsl(217 91% 60%);       /* blue-500 equivalent */
-  --weather-day-end: hsl(221 83% 53%);       /* blue-600 equivalent */
-  --weather-night-start: hsl(244 47% 20%);   /* indigo-900 equivalent */
-  --weather-night-mid: hsl(269 67% 18%);     /* purple-900 equivalent */
-  --weather-night-end: hsl(222 47% 11%);     /* slate-900 equivalent */     --sidebar: hsl(0 0% 98%);     --sidebar-foreground: hsl(240 5.3% 26.1%);     --sidebar-primary: hsl(240 5.9% 10%);     --sidebar-primary-foreground: hsl(0 0% 98%);     --sidebar-accent: hsl(240 4.8% 95.9%);     --sidebar-accent-foreground: hsl(240 5.9% 10%);     --sidebar-border: hsl(220 13% 91%);     --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --weather-day-start: hsl(200 95% 65%); /* sky-400 equivalent */
+  --weather-day-mid: hsl(217 91% 60%); /* blue-500 equivalent */
+  --weather-day-end: hsl(221 83% 53%); /* blue-600 equivalent */
+  --weather-night-start: hsl(244 47% 20%); /* indigo-900 equivalent */
+  --weather-night-mid: hsl(269 67% 18%); /* purple-900 equivalent */
+  --weather-night-end: hsl(222 47% 11%); /* slate-900 equivalent */
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 91%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
 /* ---- Dark mode overrides ---- */
@@ -120,7 +129,7 @@
   --status-info-dark: hsl(217 91% 85%);
 
   /* Brand (dark) — Monochrome */
-  --brand-primary: #E8E8E8;
+  --brand-primary: #e8e8e8;
   --brand-primary-foreground: #121212;
   --brand-accent: #888888;
   --brand-accent-end: #555555;

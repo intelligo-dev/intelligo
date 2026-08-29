@@ -1,5 +1,5 @@
 /**
- * @intelligo/executions database schema.
+ * @intelligo-dev/executions database schema.
  *
  * One row per AI execution: who ran what capability, whether it was
  * admitted, how it ended, and what it cost. This is the narrow SaaS
@@ -29,7 +29,7 @@ import {
   jsonb,
   index,
 } from "drizzle-orm/pg-core";
-import { organization, users } from "@intelligo/core/db/schema";
+import { organization, users } from "@intelligo-dev/core/db/schema";
 
 export const executions = pgTable(
   "executions",

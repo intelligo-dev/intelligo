@@ -6,16 +6,16 @@ import "server-only";
  * Cross-tenant by design — that is what makes them admin queries and
  * why every caller must pass through `requireAdmin` first. They read
  * through the owning packages' own APIs where those exist
- * (`@intelligo/executions`, `@intelligo/audit`) so the console does
+ * (`@intelligo-dev/executions`, `@intelligo-dev/audit`) so the console does
  * not become a second, drifting definition of what an execution is.
  */
 
-import { db } from "@intelligo/core/db";
-import { organization, users } from "@intelligo/core/db/schema";
-import { executions } from "@intelligo/executions";
-import { PLATFORM_ADMIN_ROLE } from "@intelligo/auth";
-import { queryAuditEvents } from "@intelligo/audit";
-import { listFailedJobs } from "@intelligo/jobs";
+import { db } from "@intelligo-dev/core/db";
+import { organization, users } from "@intelligo-dev/core/db/schema";
+import { executions } from "@intelligo-dev/executions";
+import { PLATFORM_ADMIN_ROLE } from "@intelligo-dev/auth";
+import { queryAuditEvents } from "@intelligo-dev/audit";
+import { listFailedJobs } from "@intelligo-dev/jobs";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 
 export type PlatformOverview = {

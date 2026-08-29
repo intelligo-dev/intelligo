@@ -9,18 +9,18 @@
  */
 
 import type Stripe from "stripe";
-import { db } from "@intelligo/core/db";
+import { db } from "@intelligo-dev/core/db";
 import {
   subscriptions,
   creditPurchases,
   creditBalances,
-} from "@intelligo/core/db/schema";
+} from "@intelligo-dev/core/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { getStripe } from "./stripe";
 import { resetMonthlyQuota } from "./quota";
 import { convertTrialToPaid } from "./trial";
 import { invalidateFeatureCache } from "./features";
-import { createLogger } from "@intelligo/core/logger";
+import { createLogger } from "@intelligo-dev/core/logger";
 import {
   getSubscriptionByStripeId,
   sendSubscriptionConfirmation,

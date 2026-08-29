@@ -8,7 +8,7 @@
  * for existing facts under the same (workspace, category, key)
  * before writing, so reruns and partial runs are safe.
  *
- *   pnpm --filter @intelligo/core tsx scripts/migrate-assessment-state-to-facts.ts [--dry-run]
+ *   pnpm --filter @intelligo-dev/core tsx scripts/migrate-assessment-state-to-facts.ts [--dry-run]
  *
  * After this script ships, the chat handler can stop reading
  * assessment state out of conversations.metadata for personalization

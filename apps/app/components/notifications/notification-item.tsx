@@ -51,7 +51,7 @@ function RelativeTime({ iso }: { iso: string }) {
 
 /**
  * Icon + color for a notification `type`. These match the built-in
- * types in `@intelligo/core/notifications` (`NotificationType`); an
+ * types in `@intelligo-dev/core/notifications` (`NotificationType`); an
  * unrecognized type — e.g. a product's own custom type — falls back to
  * a plain bell rather than failing.
  */

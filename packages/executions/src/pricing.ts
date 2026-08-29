@@ -7,9 +7,9 @@
  * (ADR-0003), and the price of a token is the last of those.
  *
  * Deliberately a leaf module — no database, no provider SDK, no
- * imports at all — and reachable as `@intelligo/executions/pricing`
+ * imports at all — and reachable as `@intelligo-dev/executions/pricing`
  * so a client bundle can read a display name or a price without
- * pulling in Drizzle. `@intelligo/ai` re-exports it, so the ids that
+ * pulling in Drizzle. `@intelligo-dev/ai` re-exports it, so the ids that
  * pick a provider and the ids that carry a price stay one list; two
  * lists is how a model runs on Gemini and bills at Claude rates.
  */

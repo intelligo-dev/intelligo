@@ -16,7 +16,7 @@
  * Consumer contract: this route imports `{ composeIntelligo, executions }`
  * from `@/lib/intelligo` — this scaffold's composition root (ADR-0005).
  * `executions` must be an `Executions` instance
- * (`@intelligo/executions`'s `createExecutions(ports)`) with its
+ * (`@intelligo-dev/executions`'s `createExecutions(ports)`) with its
  * entitlement/settlement ports already bound to this deployment's
  * billing rules; `composeIntelligo()` must be idempotent and safe to
  * call on every request (Next does not guarantee one module instance
@@ -34,7 +34,7 @@
  *
  * `chatServerConfig.featureKey` ("chat" by default) must be registered
  * for at least one plan via `registerProductFeatures`
- * (`@intelligo/billing/plans`) or every request is feature-gated out —
+ * (`@intelligo-dev/billing/plans`) or every request is feature-gated out —
  * see `@/lib/plans.ts`.
  *
  * i18n: this route lives at `app/api/chat/route.ts`, outside the
@@ -59,19 +59,19 @@ import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
-import { requireWorkspace } from "@intelligo/auth";
+import { requireWorkspace } from "@intelligo-dev/auth";
 import {
   checkRateLimit,
   getWorkspaceBilling,
   hasFeature,
-} from "@intelligo/billing";
+} from "@intelligo-dev/billing";
 import {
   createConversation,
   getConversation,
   isConversationServiceError,
   upsertMessages,
-} from "@intelligo/core/conversations";
-import { createLogger } from "@intelligo/core/logger";
+} from "@intelligo-dev/core/conversations";
+import { createLogger } from "@intelligo-dev/core/logger";
 
 import { routing } from "@/i18n/routing";
 import { composeIntelligo, executions } from "@/lib/intelligo";
@@ -338,7 +338,7 @@ export async function POST(request: Request) {
     generateId,
     onFinish: async ({ messages: finishedMessages }) => {
       // Settling can throw (unrecorded usage must not be reported as
-      // success — see @intelligo/executions). Log and continue so a
+      // success — see @intelligo-dev/executions). Log and continue so a
       // settlement failure doesn't also cost the user their message
       // history.
       try {

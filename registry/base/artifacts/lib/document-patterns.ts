@@ -4,7 +4,7 @@ import "server-only";
  * Document title-pattern registration — composition-root extension
  * point for the `artifacts` item.
  *
- * `@intelligo/core/documents` keeps a small classifier registry
+ * `@intelligo-dev/core/documents` keeps a small classifier registry
  * (`registerDocumentPatterns`) that maps a document's title to a human
  * agent label (rendered on every artifact card) and to the "Reports"
  * filter tab (`isProductDocument`, used by `@/actions/documents`). Per
@@ -32,7 +32,7 @@ export function registerDefaultDocumentPatterns(): void {
 // custom agent label and fold them into the "Reports" filter (uncomment
 // and adjust; remove the no-op export above):
 //
-// import { registerDocumentPatterns } from "@intelligo/core/documents";
+// import { registerDocumentPatterns } from "@intelligo-dev/core/documents";
 //
 // export function registerDefaultDocumentPatterns(): void {
 //   registerDocumentPatterns({

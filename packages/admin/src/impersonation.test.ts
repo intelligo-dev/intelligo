@@ -17,13 +17,13 @@ const mocks = vi.hoisted(() => ({
   stopImpersonating: vi.fn(),
 }));
 
-vi.mock("@intelligo/auth", () => ({
+vi.mock("@intelligo-dev/auth", () => ({
   requirePlatformAdmin: mocks.requirePlatformAdmin,
   impersonateUser: mocks.impersonateUser,
   stopImpersonating: mocks.stopImpersonating,
 }));
 
-vi.mock("@intelligo/audit", () => ({
+vi.mock("@intelligo-dev/audit", () => ({
   recordAuditEvent: mocks.recordAuditEvent,
   recordAuditEventOrThrow: mocks.recordAuditEventOrThrow,
 }));

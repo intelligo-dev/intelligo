@@ -18,7 +18,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 
-import { authClient } from "@intelligo/auth/client";
+import { authClient } from "@intelligo-dev/auth/client";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";

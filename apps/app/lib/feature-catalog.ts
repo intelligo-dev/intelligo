@@ -2,7 +2,7 @@
  * Feature catalogue — consumer-owned.
  *
  * Which features exist, what to call them, and which plan unlocks them
- * is product data, not framework data: `@intelligo/billing` answers
+ * is product data, not framework data: `@intelligo-dev/billing` answers
  * "is this workspace entitled to feature X" (`hasFeature`), and this
  * file answers "what should we say when it isn't".
  *

@@ -17,8 +17,8 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 
-import type { FeatureQuotaResult } from "@intelligo/billing";
-import type { PlanConfig } from "@intelligo/billing/plans";
+import type { FeatureQuotaResult } from "@intelligo-dev/billing";
+import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";

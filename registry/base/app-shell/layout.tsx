@@ -10,7 +10,7 @@ import { getLocale } from "next-intl/server";
  *    authoritative server" convention). No session → `/login`.
  *
  * 2. Onboarding required. Reads `users.onboardingCompleted` directly via
- *    `@intelligo/core/db` — no dedicated `@intelligo/auth` helper exists
+ *    `@intelligo-dev/core/db` — no dedicated `@intelligo-dev/auth` helper exists
  *    for this yet, and a single-row, two-column lookup is cheap enough
  *    to keep inline here rather than invent a package API for one call
  *    site. Incomplete → `/onboarding`.
@@ -26,13 +26,13 @@ import { getLocale } from "next-intl/server";
  *    pathname header, or simpler, a route-group check) before this
  *    redirect fires.
  *
- * 3. Active workspace required. `ensureUserWorkspace` (`@intelligo/auth`)
+ * 3. Active workspace required. `ensureUserWorkspace` (`@intelligo-dev/auth`)
  *    creates one if none exists. First-workspace provisioning (trial
  *    credits, referral bonuses, anything else your product wants to do
  *    exactly once) is bound through `@/lib/workspace-bootstrap` — never
  *    imported directly here (ADR-0005: explicit composition-root
  *    wiring, not an import side effect; it also keeps this file, and
- *    `@intelligo/auth`, free of a hard dependency on billing).
+ *    `@intelligo-dev/auth`, free of a hard dependency on billing).
  */
 
 import { eq } from "drizzle-orm";
@@ -44,9 +44,9 @@ import {
   ensureUserWorkspace,
   getAuthSession,
   getWorkspaceContextById,
-} from "@intelligo/auth";
-import { db } from "@intelligo/core/db";
-import { users } from "@intelligo/core/db/schema";
+} from "@intelligo-dev/auth";
+import { db } from "@intelligo-dev/core/db";
+import { users } from "@intelligo-dev/core/db/schema";
 
 import { AppSidebar } from "@/components/shell/app-sidebar";
 import { ShellHeader } from "@/components/shell/shell-header";

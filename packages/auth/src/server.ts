@@ -34,7 +34,7 @@ import { PLATFORM_ADMIN_ROLE } from "./roles";
 const accessControl = createAccessControl(defaultStatements);
 const platformAdminRole = accessControl.newRole(adminAc.statements);
 const userRole = accessControl.newRole(userAc.statements);
-import { db } from "@intelligo/core/db";
+import { db } from "@intelligo-dev/core/db";
 import {
   users,
   sessions,
@@ -43,13 +43,13 @@ import {
   organization as organizationTable,
   member,
   invitation,
-} from "@intelligo/core/db/schema";
+} from "@intelligo-dev/core/db/schema";
 import {
   sendVerifyEmail,
   sendPasswordResetEmail,
   sendWelcomeEmail,
   sendInvitationEmail,
-} from "@intelligo/core/email";
+} from "@intelligo-dev/core/email";
 import { eq } from "drizzle-orm";
 
 export const auth = betterAuth({

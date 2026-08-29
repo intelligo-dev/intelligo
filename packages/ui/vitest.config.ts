@@ -7,7 +7,7 @@ export default defineConfig({
     jsx: { runtime: "automatic" },
   },
   test: {
-    name: "@intelligo/ui",
+    name: "@intelligo-dev/ui",
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
   },

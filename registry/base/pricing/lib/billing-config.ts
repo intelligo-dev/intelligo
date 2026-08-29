@@ -20,7 +20,7 @@
  * deployment needs bundle names in more than one language.
  */
 
-import type { CreditBundle } from "@intelligo/billing";
+import type { CreditBundle } from "@intelligo-dev/billing";
 
 export const PRODUCT_SLUG = "default";
 
@@ -32,7 +32,7 @@ export const PRODUCT_SLUG = "default";
  * and no hardcoded symbol anywhere in a component.
  *
  * It must match what your payment provider actually charges in, and
- * the currency your settlement math produces: `@intelligo/billing`
+ * the currency your settlement math produces: `@intelligo-dev/billing`
  * converts raw model cost with the `usdToMntRate` on the billing
  * settings row (`ensureBillingSettingsRow`, editable from the admin
  * console). A deployment that charges in USD sets that rate to 1; one

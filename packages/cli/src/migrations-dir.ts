@@ -13,7 +13,7 @@ import path from "node:path";
  */
 export const MIGRATION_LOCATIONS = [
   "packages/core/src/db/migrations",
-  "node_modules/@intelligo/core/src/db/migrations",
+  "node_modules/@intelligo-dev/core/src/db/migrations",
 ] as const;
 
 export function resolveMigrationsDir(root: string): string | null {

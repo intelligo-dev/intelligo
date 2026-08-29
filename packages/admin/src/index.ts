@@ -1,5 +1,5 @@
 /**
- * @intelligo/admin — the Intelligo-owned operational console.
+ * @intelligo-dev/admin — the Intelligo-owned operational console.
  *
  * Framework-owned because it manages Intelligo's concepts, not any
  * product's customer experience (ADR-0002). It is mounted by the

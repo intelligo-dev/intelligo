@@ -1,5 +1,5 @@
 {
-  "name": "@intelligo/auth",
+  "name": "@intelligo-dev/auth",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "repository": {
@@ -24,7 +24,7 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@intelligo/core": "workspace:*",
+    "@intelligo-dev/core": "workspace:*",
     "better-auth": "~1.6.30",
     "drizzle-orm": "^0.45.1",
     "server-only": "^0.0.1",

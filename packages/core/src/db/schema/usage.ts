@@ -58,7 +58,7 @@ export const usageRecords = pgTable(
     /** Request correlation id for log tracing */
     requestId: text("request_id"),
     /**
-     * Owning execution (@intelligo/executions). No FK: the executions
+     * Owning execution (@intelligo-dev/executions). No FK: the executions
      * table is owned by another package and this column is written by
      * the settlement path, which may run before or after the execution
      * row's terminal update.

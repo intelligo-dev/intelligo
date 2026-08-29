@@ -15,13 +15,13 @@ import {
   checkQuota,
   recordTokenUsage,
   releaseReservation,
-} from "@intelligo/billing";
+} from "@intelligo-dev/billing";
 import {
   registerProductFeatures,
   registerProductPlans,
   setDefaultProductSlug,
-} from "@intelligo/billing/plans";
-import { createExecutions } from "@intelligo/executions";
+} from "@intelligo-dev/billing/plans";
+import { createExecutions } from "@intelligo-dev/executions";
 
 import { REFERENCE_FEATURES, REFERENCE_PLANS } from "./plans";
 

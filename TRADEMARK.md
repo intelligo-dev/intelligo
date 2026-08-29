@@ -32,4 +32,4 @@ a user can tell whether the thing in front of them is this project. A
 permissive licence and a protected name are not in tension — together
 they are what makes both promises keepable.
 
-Requests: **legal@intelligo.mn**.
+Requests: **legal@intelligo.dev**.

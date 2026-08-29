@@ -8,7 +8,7 @@
  * reads them directly: `monthlyCreditMnt` and `rolloverEnabled`.
  */
 
-import type { PlanConfig } from "@intelligo/billing/plans";
+import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
 export const PLANS: Record<string, PlanConfig> = {
   free: {

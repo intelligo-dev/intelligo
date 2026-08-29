@@ -5,12 +5,12 @@
  * it, `intelligo upgrade --check` reports the upstream change as a
  * diff and leaves your version alone (ADR-0002).
  *
- * It reads through @intelligo/executions' query API rather than the
+ * It reads through @intelligo-dev/executions' query API rather than the
  * database directly, so it keeps working across schema changes.
  */
 
-import { requireWorkspace } from "@intelligo/auth";
-import { listExecutions, summarizeExecutions } from "@intelligo/executions";
+import { requireWorkspace } from "@intelligo-dev/auth";
+import { listExecutions, summarizeExecutions } from "@intelligo-dev/executions";
 
 export default async function UsagePage() {
   const { workspace } = await requireWorkspace();

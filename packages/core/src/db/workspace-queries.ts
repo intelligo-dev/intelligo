@@ -18,8 +18,8 @@
  *   MUST use the helpers below to enforce workspace-scoped data isolation.
  *
  * USAGE PATTERN (for future phases):
- *   import { withWorkspaceFilter } from "@intelligo/core/db/workspace-queries";
- *   import { requireWorkspace } from "@intelligo/auth";
+ *   import { withWorkspaceFilter } from "@intelligo-dev/core/db/workspace-queries";
+ *   import { requireWorkspace } from "@intelligo-dev/auth";
  *
  *   const { workspace } = await requireWorkspace();
  *   const conversations = await db

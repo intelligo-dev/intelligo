@@ -1,7 +1,7 @@
 /**
  * Conversation service error type.
  *
- * Mirrors `./documents/errors.ts` and `@intelligo/auth`'s
+ * Mirrors `./documents/errors.ts` and `@intelligo-dev/auth`'s
  * `WorkspaceServiceError` exactly: the conversations service
  * (./service.ts) throws this for every failure it recognizes rather
  * than returning an ad-hoc `{ success, error }` envelope. Shaping to a

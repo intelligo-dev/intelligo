@@ -20,7 +20,7 @@ export type CreateOptions = {
   templatesDir: string;
   frameworkVersion: string;
   /**
-   * Emit `workspace:*` for the @intelligo/* dependencies instead of a
+   * Emit `workspace:*` for the @intelligo-dev/* dependencies instead of a
    * version range. Only meaningful when scaffolding inside this
    * monorepo — outside it, pnpm fails the install with "workspace
    * protocol used outside a workspace", which is the first thing a new

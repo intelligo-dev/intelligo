@@ -1,8 +1,8 @@
 /**
  * Integration test for the execution lifecycle against a real database.
  *
- * Every other test of this package mocks `@intelligo/core/db`,
- * `@intelligo/audit`, and drizzle, so they verify the control flow and
+ * Every other test of this package mocks `@intelligo-dev/core/db`,
+ * `@intelligo-dev/audit`, and drizzle, so they verify the control flow and
  * nothing about the SQL. The verification audit named this precisely:
  * the boundary had never once run begin→complete against a real
  * Postgres, a real audit table, or a real conditional UPDATE.

@@ -186,7 +186,7 @@ const mocks = vi.hoisted(() => {
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock("@intelligo/core/db", () => ({
+vi.mock("@intelligo-dev/core/db", () => ({
   db: {
     select: mocks.mockSelect,
     insert: mocks.mockInsert,
@@ -194,7 +194,7 @@ vi.mock("@intelligo/core/db", () => ({
   },
 }));
 
-vi.mock("@intelligo/core/db/schema", () => ({
+vi.mock("@intelligo-dev/core/db/schema", () => ({
   userQuotas: {
     userId: "userId",
     workspaceId: "workspaceId",

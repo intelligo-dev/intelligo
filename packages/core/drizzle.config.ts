@@ -1,7 +1,7 @@
 import { defineConfig } from "drizzle-kit";
 import { config } from "dotenv";
 
-// Environment for the drizzle-kit CLI. A published @intelligo/core
+// Environment for the drizzle-kit CLI. A published @intelligo-dev/core
 // cannot assume the consumer's layout, so the default is the repository
 // root and anything else is INTELLIGO_ENV_FILE. This workspace sets it
 // in the root package.json's db:* scripts — keeping the product

@@ -19,11 +19,11 @@ const mocks = vi.hoisted(() => ({
   recordAuditEvent: vi.fn(),
 }));
 
-vi.mock("@intelligo/core/db", () => ({
+vi.mock("@intelligo-dev/core/db", () => ({
   db: { insert: mocks.insert, update: mocks.update },
 }));
 
-vi.mock("@intelligo/core/logger", () => ({
+vi.mock("@intelligo-dev/core/logger", () => ({
   createLogger: () => ({
     debug: vi.fn(),
     info: vi.fn(),
@@ -32,7 +32,7 @@ vi.mock("@intelligo/core/logger", () => ({
   }),
 }));
 
-vi.mock("@intelligo/audit", () => ({
+vi.mock("@intelligo-dev/audit", () => ({
   recordAuditEvent: mocks.recordAuditEvent,
 }));
 

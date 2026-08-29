@@ -1,5 +1,5 @@
 /**
- * @intelligo/jobs database schema.
+ * @intelligo-dev/jobs database schema.
  *
  * A DB-backed job queue — the default adapter behind the job contract.
  * No Redis, no external broker: Postgres `FOR UPDATE SKIP LOCKED` is
@@ -18,7 +18,7 @@ import {
   jsonb,
   index,
 } from "drizzle-orm/pg-core";
-import { organization } from "@intelligo/core/db/schema";
+import { organization } from "@intelligo-dev/core/db/schema";
 
 export const jobs = pgTable(
   "jobs",

@@ -1,8 +1,8 @@
 "use server";
 
 /**
- * Billing server actions — thin transport over `@intelligo/billing`'s
- * checkout service: authorize with `@intelligo/auth`, resolve this
+ * Billing server actions — thin transport over `@intelligo-dev/billing`'s
+ * checkout service: authorize with `@intelligo-dev/auth`, resolve this
  * deployment's product slug and credit bundles from `@/lib/billing`,
  * call the service, and map any `BillingServiceError` to a friendly,
  * translated message. No checkout/Stripe logic here — that lives in
@@ -21,13 +21,13 @@ import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
-import { requireRole } from "@intelligo/auth";
+import { requireRole } from "@intelligo-dev/auth";
 import {
   createBillingPortal,
   createCreditCheckout,
   createSubscriptionCheckout,
   isBillingServiceError,
-} from "@intelligo/billing";
+} from "@intelligo-dev/billing";
 
 import { PRODUCT_SLUG, getCreditBundle } from "@/lib/billing";
 

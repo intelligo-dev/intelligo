@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-import { getAuthSession } from "@intelligo/auth";
+import { getAuthSession } from "@intelligo-dev/auth";
 
 import { Link } from "@/i18n/navigation";
 import { AuthCard } from "@/components/auth/auth-card";

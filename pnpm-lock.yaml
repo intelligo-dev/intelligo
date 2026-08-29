@@ -93,34 +93,34 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.1(react@19.2.4))
-      '@intelligo/admin':
+      '@intelligo-dev/admin':
         specifier: workspace:*
         version: link:../../packages/admin
-      '@intelligo/audit':
+      '@intelligo-dev/audit':
         specifier: workspace:*
         version: link:../../packages/audit
-      '@intelligo/auth':
+      '@intelligo-dev/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@intelligo/billing':
+      '@intelligo-dev/billing':
         specifier: workspace:*
         version: link:../../packages/billing
-      '@intelligo/billing-core':
+      '@intelligo-dev/billing-core':
         specifier: workspace:*
         version: link:../../packages/billing-core
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@intelligo/executions':
+      '@intelligo-dev/executions':
         specifier: workspace:*
         version: link:../../packages/executions
-      '@intelligo/jobs':
+      '@intelligo-dev/jobs':
         specifier: workspace:*
         version: link:../../packages/jobs
-      '@intelligo/mastra':
+      '@intelligo-dev/mastra':
         specifier: workspace:^
         version: link:../../packages/mastra
-      '@intelligo/ui':
+      '@intelligo-dev/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@radix-ui/react-avatar':
@@ -284,22 +284,22 @@ importers:
 
   packages/admin:
     dependencies:
-      '@intelligo/audit':
+      '@intelligo-dev/audit':
         specifier: workspace:*
         version: link:../audit
-      '@intelligo/auth':
+      '@intelligo-dev/auth':
         specifier: workspace:*
         version: link:../auth
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
-      '@intelligo/executions':
+      '@intelligo-dev/executions':
         specifier: workspace:*
         version: link:../executions
-      '@intelligo/jobs':
+      '@intelligo-dev/jobs':
         specifier: workspace:*
         version: link:../jobs
-      '@intelligo/ui':
+      '@intelligo-dev/ui':
         specifier: workspace:*
         version: link:../ui
       drizzle-orm:
@@ -321,13 +321,13 @@ importers:
 
   packages/agents:
     dependencies:
-      '@intelligo/ai':
+      '@intelligo-dev/ai':
         specifier: workspace:*
         version: link:../ai
-      '@intelligo/auth':
+      '@intelligo-dev/auth':
         specifier: workspace:*
         version: link:../auth
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
       '@sentry/nextjs':
@@ -361,10 +361,10 @@ importers:
       '@ai-sdk/openai':
         specifier: ^3.0.26
         version: 3.0.26(zod@3.25.76)
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
-      '@intelligo/executions':
+      '@intelligo-dev/executions':
         specifier: workspace:*
         version: link:../executions
       ai:
@@ -389,7 +389,7 @@ importers:
 
   packages/audit:
     dependencies:
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
       drizzle-orm:
@@ -405,7 +405,7 @@ importers:
 
   packages/auth:
     dependencies:
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
       better-auth:
@@ -433,13 +433,13 @@ importers:
 
   packages/billing:
     dependencies:
-      '@intelligo/billing-core':
+      '@intelligo-dev/billing-core':
         specifier: workspace:*
         version: link:../billing-core
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
-      '@intelligo/executions':
+      '@intelligo-dev/executions':
         specifier: workspace:*
         version: link:../executions
       drizzle-orm:
@@ -467,7 +467,7 @@ importers:
 
   packages/billing-core:
     dependencies:
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
       drizzle-orm:
@@ -504,16 +504,16 @@ importers:
       '@codemirror/view':
         specifier: ^6.39.13
         version: 6.39.13
-      '@intelligo/agents':
+      '@intelligo-dev/agents':
         specifier: workspace:*
         version: link:../agents
-      '@intelligo/ai':
+      '@intelligo-dev/ai':
         specifier: workspace:*
         version: link:../ai
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
-      '@intelligo/ui':
+      '@intelligo-dev/ui':
         specifier: workspace:*
         version: link:../ui
       '@radix-ui/react-use-controllable-state':
@@ -726,10 +726,10 @@ importers:
 
   packages/executions:
     dependencies:
-      '@intelligo/audit':
+      '@intelligo-dev/audit':
         specifier: workspace:*
         version: link:../audit
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
       drizzle-orm:
@@ -751,7 +751,7 @@ importers:
 
   packages/jobs:
     dependencies:
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
       drizzle-orm:
@@ -767,7 +767,7 @@ importers:
 
   packages/mastra:
     dependencies:
-      '@intelligo/executions':
+      '@intelligo-dev/executions':
         specifier: workspace:*
         version: link:../executions
       '@mastra/core':
@@ -868,19 +868,19 @@ importers:
 
   product/app:
     dependencies:
-      '@intelligo/agents':
+      '@intelligo-dev/agents':
         specifier: workspace:*
         version: link:../../packages/agents
-      '@intelligo/ai':
+      '@intelligo-dev/ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@intelligo/billing':
+      '@intelligo-dev/billing':
         specifier: workspace:*
         version: link:../../packages/billing
-      '@intelligo/chat':
+      '@intelligo-dev/chat':
         specifier: workspace:*
         version: link:../../packages/chat
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../../packages/core
       ai:
@@ -911,13 +911,13 @@ importers:
 
   private/ee-governance:
     dependencies:
-      '@intelligo/audit':
+      '@intelligo-dev/audit':
         specifier: workspace:*
         version: link:../../packages/audit
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@intelligo/jobs':
+      '@intelligo-dev/jobs':
         specifier: workspace:*
         version: link:../../packages/jobs
       drizzle-orm:
@@ -945,49 +945,49 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.1(react@19.2.4))
-      '@intelligo/admin':
+      '@intelligo-dev/admin':
         specifier: workspace:*
         version: link:../../packages/admin
-      '@intelligo/agents':
+      '@intelligo-dev/agents':
         specifier: workspace:*
         version: link:../../packages/agents
-      '@intelligo/ai':
+      '@intelligo-dev/ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@intelligo/audit':
+      '@intelligo-dev/audit':
         specifier: workspace:*
         version: link:../../packages/audit
-      '@intelligo/auth':
+      '@intelligo-dev/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@intelligo/billing':
+      '@intelligo-dev/billing':
         specifier: workspace:*
         version: link:../../packages/billing
-      '@intelligo/billing-core':
+      '@intelligo-dev/billing-core':
         specifier: workspace:^
         version: link:../../packages/billing-core
-      '@intelligo/support':
+      '@example/product':
         specifier: workspace:*
         version: link:../support
-      '@intelligo/chat':
+      '@intelligo-dev/chat':
         specifier: workspace:*
         version: link:../../packages/chat
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@intelligo/ee-governance':
+      '@intelligo-dev/ee-governance':
         specifier: workspace:^
         version: link:../ee-governance
-      '@intelligo/executions':
+      '@intelligo-dev/executions':
         specifier: workspace:*
         version: link:../../packages/executions
-      '@intelligo/jobs':
+      '@intelligo-dev/jobs':
         specifier: workspace:*
         version: link:../../packages/jobs
-      '@intelligo/mastra':
+      '@intelligo-dev/mastra':
         specifier: workspace:^
         version: link:../../packages/mastra
-      '@intelligo/ui':
+      '@intelligo-dev/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@mastra/core':
@@ -1231,10 +1231,10 @@ importers:
 
   product/app-web:
     dependencies:
-      '@intelligo/core':
+      '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@intelligo/ui':
+      '@intelligo-dev/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@mdx-js/loader':

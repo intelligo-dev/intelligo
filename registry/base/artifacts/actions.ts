@@ -2,11 +2,11 @@
 
 /**
  * Artifact (document) server actions — thin transport over
- * `@intelligo/core/documents` (ADR-0009): resolve the caller's actor via
+ * `@intelligo-dev/core/documents` (ADR-0009): resolve the caller's actor via
  * `requireWorkspace()`, call the core documents service, map any
  * `DocumentServiceError` to a friendly message, and reshape the result
  * for the page and its components. No business rules here — those live
- * in `@intelligo/core/documents`.
+ * in `@intelligo-dev/core/documents`.
  *
  * Only `getUserDocuments` and `deleteDocumentVersions` are wired here:
  * this item is a read/browse artifact library page, not the artifact
@@ -28,7 +28,7 @@
  * `components/document-actions.tsx`'s confirm dialog says so.
  *
  * Product-specific document title patterns (for custom agent labels and
- * the "report" filter) register through `@intelligo/core/documents`'s
+ * the "report" filter) register through `@intelligo-dev/core/documents`'s
  * `registerDocumentPatterns` — see `@/lib/document-patterns.ts`, this
  * item's composition-root extension point. Nothing in this file calls
  * it: per ADR-0005 (no import-side-effect registration), that
@@ -39,14 +39,14 @@
 
 import { getTranslations } from "next-intl/server";
 
-import { requireWorkspace } from "@intelligo/auth";
+import { requireWorkspace } from "@intelligo-dev/auth";
 import {
   deleteDocumentVersions,
   getUserDocuments,
   isDocumentServiceError,
   isProductDocument,
   type DocumentListItem,
-} from "@intelligo/core/documents";
+} from "@intelligo-dev/core/documents";
 
 export type ActionResult<T> =
   | { success: true; data: T }

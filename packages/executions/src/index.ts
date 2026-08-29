@@ -1,5 +1,5 @@
 /**
- * @intelligo/executions — the SaaS execution boundary.
+ * @intelligo-dev/executions — the SaaS execution boundary.
  *
  * Wraps a native AI run (Mastra, AI SDK, anything) with entitlement,
  * credit hold, usage/cost recording, and audit — and records nothing
@@ -44,7 +44,7 @@ export type { Execution, InsertExecution } from "./db/schema";
 
 /**
  * Model registry and cost accounting. Also reachable as
- * `@intelligo/executions/pricing`, which is the import to use from
+ * `@intelligo-dev/executions/pricing`, which is the import to use from
  * anything that reaches a browser — this barrel pulls in the database.
  */
 export {

@@ -25,8 +25,8 @@
  * Pattern: Server-side only, used by AI request middleware.
  */
 
-import { db } from "@intelligo/core/db";
-import { rateLimitEntries } from "@intelligo/core/db/schema";
+import { db } from "@intelligo-dev/core/db";
+import { rateLimitEntries } from "@intelligo-dev/core/db/schema";
 import { lt, sql } from "drizzle-orm";
 import { getRateLimit } from "./plan-registry";
 

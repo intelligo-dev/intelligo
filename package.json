@@ -17,11 +17,11 @@
     "test:watch": "vitest",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,mdx}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,mdx}\"",
-    "db:push": "pnpm --filter @intelligo/core db:push",
-    "db:generate": "pnpm --filter @intelligo/core db:generate",
-    "db:migrate": "pnpm --filter @intelligo/core db:migrate",
-    "db:studio": "pnpm --filter @intelligo/core db:studio",
-    "db:check": "pnpm --filter @intelligo/core db:check"
+    "db:push": "pnpm --filter @intelligo-dev/core db:push",
+    "db:generate": "pnpm --filter @intelligo-dev/core db:generate",
+    "db:migrate": "pnpm --filter @intelligo-dev/core db:migrate",
+    "db:studio": "pnpm --filter @intelligo-dev/core db:studio",
+    "db:check": "pnpm --filter @intelligo-dev/core db:check"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

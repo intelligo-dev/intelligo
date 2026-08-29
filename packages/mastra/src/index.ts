@@ -1,5 +1,5 @@
 /**
- * @intelligo/mastra — the thin bridge between a native Mastra agent and
+ * @intelligo-dev/mastra — the thin bridge between a native Mastra agent and
  * the Intelligo execution boundary.
  *
  * What this package deliberately is NOT: a wrapper. There is no
@@ -22,7 +22,7 @@
  * or Eve call that happens to fit the same shape.
  */
 
-import type { Executions } from "@intelligo/executions";
+import type { Executions } from "@intelligo-dev/executions";
 
 /**
  * The slice of a Mastra result the boundary reads. Deliberately

@@ -1,5 +1,5 @@
 {
-  "name": "@intelligo/executions",
+  "name": "@intelligo-dev/executions",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "repository": {
@@ -24,8 +24,8 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@intelligo/audit": "workspace:*",
-    "@intelligo/core": "workspace:*",
+    "@intelligo-dev/audit": "workspace:*",
+    "@intelligo-dev/core": "workspace:*",
     "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {

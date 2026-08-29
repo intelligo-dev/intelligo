@@ -4,7 +4,7 @@
  * Three cards: a GDPR-style data export, a per-category listing of the
  * caller's own facts with per-fact delete, and a read-only audit trail
  * of every mutation to their identity graph. Everything reads through
- * the framework's identity service (`@intelligo/core/identity`) via
+ * the framework's identity service (`@intelligo-dev/core/identity`) via
  * `actions/privacy.ts` — no direct database access here.
  */
 

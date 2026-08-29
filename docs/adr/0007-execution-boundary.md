@@ -8,13 +8,13 @@
 
 ADR-0003 says Intelligo records the SaaS execution boundary and nothing else, but it does not say what that costs the calling code or which package owns which half. Phase 2 had to answer three questions the plan leaves open:
 
-1. Where does the entitlement decision live, given that `entitlements` and `credits` do not exist yet and all of it is inside `@intelligo/billing`?
+1. Where does the entitlement decision live, given that `entitlements` and `credits` do not exist yet and all of it is inside `@intelligo-dev/billing`?
 2. What happens to an execution whose usage cannot be recorded?
 3. How does a streaming route — which can finish through usage-resolved, client-abort, or error — avoid racing itself?
 
 ## Decision
 
-**The boundary is `begin() → complete()/fail()`.** `@intelligo/executions` owns one table (`executions`) and one handle. It records actor, workspace, capability, entitlement outcome, status, usage, cost, and duration. It records nothing about agents, tools, messages, or streams.
+**The boundary is `begin() → complete()/fail()`.** `@intelligo-dev/executions` owns one table (`executions`) and one handle. It records actor, workspace, capability, entitlement outcome, status, usage, cost, and duration. It records nothing about agents, tools, messages, or streams.
 
 **Entitlement and settlement arrive through ports.** `executions` does not depend on `billing`. It declares `checkEntitlement`, `settleUsage`, and `releaseHold`, and the consumer's composition root binds implementations (`product/app/lib/executions.ts`). Both ports are optional: unbound, executions still record the lifecycle without gating or charging, which is what a non-metered capability and the reference app want.
 
@@ -26,7 +26,7 @@ Rationale: binding to `billing` now would create an edge that the `entitlements`
 
 **The credit hold is the reservation from Phase 1.** `executions.requestId` is the correlation key shared with `credit_reservations` and `usage_records`. Admission reserves the worst-case estimate; settlement releases it by charging; `fail()` releases it without charging; an abandoned hold expires after a TTL longer than `maxDuration` and is dropped rather than charged.
 
-**The AI-framework bridge is optional and structural.** `@intelligo/mastra` depends on `executions` and nothing else; `@mastra/core` is an optional peer dependency it never imports. The agent arrives as an argument typed by the narrowest structural shape that makes the call work, so the bridge installs without Mastra and fits any comparable call. That is ADR-0003's "thin and removable" satisfied by construction rather than by discipline.
+**The AI-framework bridge is optional and structural.** `@intelligo-dev/mastra` depends on `executions` and nothing else; `@mastra/core` is an optional peer dependency it never imports. The agent arrives as an argument typed by the narrowest structural shape that makes the call work, so the bridge installs without Mastra and fits any comparable call. That is ADR-0003's "thin and removable" satisfied by construction rather than by discipline.
 
 ## Consequences
 

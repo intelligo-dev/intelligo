@@ -1,7 +1,7 @@
 /**
  * The Intelligo operational console, mounted in your app.
  *
- * The screen itself ships from @intelligo/admin so every deployment
+ * The screen itself ships from @intelligo-dev/admin so every deployment
  * shows the same operational truth — a fork could quietly stop showing
  * you unsettled executions. What is generated here is only the mount:
  * the route, the authorization call, and your own page chrome
@@ -16,8 +16,8 @@ import {
   listUnsettledExecutions,
   listWorkspaces,
   requireAdmin,
-} from "@intelligo/admin";
-import { PlatformOverviewView } from "@intelligo/admin/views";
+} from "@intelligo-dev/admin";
+import { PlatformOverviewView } from "@intelligo-dev/admin/views";
 
 import { composeIntelligo } from "@/lib/intelligo";
 

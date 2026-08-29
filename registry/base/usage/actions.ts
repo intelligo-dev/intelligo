@@ -5,9 +5,9 @@
  * billing package's entitlement/trial reads.
  *
  * No business math lives here: `summarizeExecutions`/`listExecutions`
- * (`@intelligo/executions`) own the token/charge aggregation, and
+ * (`@intelligo-dev/executions`) own the token/charge aggregation, and
  * `getQuotaThresholds`/`getTrialStatus`/`getWorkspaceBilling`
- * (`@intelligo/billing`) own quota, trial, and plan state. This file
+ * (`@intelligo-dev/billing`) own quota, trial, and plan state. This file
  * only authenticates the caller, calls those, and reshapes the result
  * for the page and its components.
  *
@@ -18,17 +18,17 @@
 
 import { getTranslations } from "next-intl/server";
 
-import { requireWorkspace } from "@intelligo/auth";
+import { requireWorkspace } from "@intelligo-dev/auth";
 import {
   getQuotaThresholds,
   getTrialStatus,
   getWorkspaceBilling,
-} from "@intelligo/billing";
+} from "@intelligo-dev/billing";
 import {
   listExecutions,
   summarizeExecutions,
   summarizeExecutionsByDay,
-} from "@intelligo/executions";
+} from "@intelligo-dev/executions";
 
 export type UsagePeriod = "7d" | "30d" | "current";
 

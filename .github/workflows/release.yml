@@ -6,7 +6,7 @@ name: Release
 #
 # The tag must equal the version in the package manifests; a mismatch
 # fails before anything is published. Needs an `NPM_TOKEN` repository
-# secret (an npm automation token with publish rights on @intelligo).
+# secret (an npm automation token with publish rights on @intelligo-dev).
 
 on:
   push:

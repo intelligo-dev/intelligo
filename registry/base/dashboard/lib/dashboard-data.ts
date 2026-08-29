@@ -24,7 +24,7 @@ import "server-only";
  * rather than rendered empty.
  */
 
-import { listConversations } from "@intelligo/core/conversations";
+import { listConversations } from "@intelligo-dev/core/conversations";
 
 export interface ResumeActor {
   workspaceId: string;

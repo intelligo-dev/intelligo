@@ -6,7 +6,7 @@
  * registry item) and renders one of three reachable states.
  *
  * A note on state coverage: `team.getUserInvitations()` is the only
- * read this item's dependency (the team service in `@intelligo/auth`)
+ * read this item's dependency (the team service in `@intelligo-dev/auth`)
  * exposes for this page. It wraps Better-Auth's
  * `/organization/list-user-invitations` endpoint, which the
  * organization plugin pre-filters to `status === "pending"` before it
@@ -24,7 +24,7 @@
 
 import { getFormatter, getTranslations } from "next-intl/server";
 
-import { requireAuth } from "@intelligo/auth";
+import { requireAuth } from "@intelligo-dev/auth";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {

@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import { requireWorkspace } from "@intelligo/auth";
+import { requireWorkspace } from "@intelligo-dev/auth";
 
 import { team } from "@/lib/team";
 import { InviteMemberForm } from "@/components/team/invite-member-form";

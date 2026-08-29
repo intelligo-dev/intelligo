@@ -18,14 +18,14 @@ const mocks = vi.hoisted(() => ({
   del: vi.fn(),
 }));
 
-vi.mock("@intelligo/core/db", () => ({
+vi.mock("@intelligo-dev/core/db", () => ({
   db: {
     insert: mocks.insert,
     delete: mocks.del,
   },
 }));
 
-vi.mock("@intelligo/core/db/schema", () => ({
+vi.mock("@intelligo-dev/core/db/schema", () => ({
   rateLimitEntries: {
     id: "id",
     workspaceId: "workspaceId",

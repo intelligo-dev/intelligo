@@ -2,7 +2,7 @@
 
 /**
  * Notification server actions — thin wrappers over
- * `@intelligo/core/notifications`: parse nothing (no user input beyond an
+ * `@intelligo-dev/core/notifications`: parse nothing (no user input beyond an
  * id), authenticate with `requireAuth()`, call the core CRUD functions,
  * reshape rows for the client, and revalidate this item's own page.
  *
@@ -19,14 +19,14 @@
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
-import { requireAuth } from "@intelligo/auth";
+import { requireAuth } from "@intelligo-dev/auth";
 import {
   getNotifications as coreGetNotifications,
   getUnreadNotifications as coreGetUnreadNotifications,
   getNotificationCount,
   markAsRead,
   markAllAsRead,
-} from "@intelligo/core/notifications";
+} from "@intelligo-dev/core/notifications";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -49,7 +49,7 @@ export type NotificationData = {
    *
    * The `notifications` table (`packages/core/src/db/schema/notifications.ts`)
    * has no dedicated link column, and none of the built-in trigger functions
-   * in `@intelligo/core/notifications/triggers` set one today. `metadata` is
+   * in `@intelligo-dev/core/notifications/triggers` set one today. `metadata` is
    * free-form (`Record<string, unknown>` on `CreateNotificationParams`), so
    * this reads an optional `metadata.href` string when a product's own
    * `createNotification()`/trigger call chooses to include one — e.g.
@@ -60,7 +60,7 @@ export type NotificationData = {
 };
 
 // A page size the caller can grow ("Load more") and a hard ceiling —
-// `getNotifications`/`getUnreadNotifications` in `@intelligo/core` take a
+// `getNotifications`/`getUnreadNotifications` in `@intelligo-dev/core` take a
 // plain `limit`, not an offset or cursor, so there is no true page-based
 // pagination to forward. See `notification-list.tsx` for how "Load more"
 // is built on top of that: it re-fetches with a larger limit rather than
@@ -167,7 +167,7 @@ export async function getUnreadCount(): Promise<ActionResult<number>> {
 // ---------------------------------------------------------------------------
 
 /**
- * Mark one notification as read. `markAsRead` in `@intelligo/core` scopes
+ * Mark one notification as read. `markAsRead` in `@intelligo-dev/core` scopes
  * the update to `(notificationId, userId)`, so this can't touch another
  * user's notification.
  */

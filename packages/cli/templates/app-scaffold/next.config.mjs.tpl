@@ -7,12 +7,12 @@ const nextConfig = {
   // Intelligo packages ship TypeScript source, so Next compiles them
   // with your app.
   transpilePackages: [
-    "@intelligo/admin",
-    "@intelligo/audit",
-    "@intelligo/auth",
-    "@intelligo/billing",
-    "@intelligo/core",
-    "@intelligo/executions",
+    "@intelligo-dev/admin",
+    "@intelligo-dev/audit",
+    "@intelligo-dev/auth",
+    "@intelligo-dev/billing",
+    "@intelligo-dev/core",
+    "@intelligo-dev/executions",
   ],
 };
 

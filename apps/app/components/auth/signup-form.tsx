@@ -2,12 +2,12 @@
 
 /**
  * Name + email + password + confirm registration form. Calls the
- * Better-Auth client SDK (`@intelligo/auth/client`) directly — no raw
+ * Better-Auth client SDK (`@intelligo-dev/auth/client`) directly — no raw
  * `fetch("/api/auth/*")`.
  *
  * Post-signup routing depends on whether the server has email
  * verification turned on (`emailAndPassword.requireEmailVerification`
- * in `@intelligo/auth`'s server config). When it's on, `signUp.email()`
+ * in `@intelligo-dev/auth`'s server config). When it's on, `signUp.email()`
  * creates the user but returns `token: null` — no session — instead of
  * signing them in, so this form sends the visitor to `/verify-email`
  * with their address instead of the dashboard. When it's off (or the
@@ -21,7 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Loader2 } from "lucide-react";
 
-import { authClient } from "@intelligo/auth/client";
+import { authClient } from "@intelligo-dev/auth/client";
 
 import { Link, useRouter } from "@/i18n/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";

@@ -3,7 +3,7 @@
 /**
  * Workspace settings server actions — thin transport over the bound
  * workspace service (`@/lib/workspace`): parse input with the schemas
- * from `@intelligo/auth`, call the service, map any
+ * from `@intelligo-dev/auth`, call the service, map any
  * `WorkspaceServiceError` to a friendly message, and revalidate the
  * page. No business rules here — those live in the service.
  *
@@ -20,7 +20,7 @@ import {
   isWorkspaceServiceError,
   updateWorkspaceSchema,
   type UpdateWorkspaceInput,
-} from "@intelligo/auth";
+} from "@intelligo-dev/auth";
 
 import { workspace } from "@/lib/workspace";
 

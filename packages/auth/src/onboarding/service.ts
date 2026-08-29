@@ -6,7 +6,7 @@
  *
  * Unlike `../team/service.ts` and `../workspace/service.ts`, this
  * service has no Better-Auth organization-plugin calls to make — it
- * reads and writes exactly two columns on `@intelligo/core`'s `users`
+ * reads and writes exactly two columns on `@intelligo-dev/core`'s `users`
  * table (`onboardingCompleted`, `onboardingStep`) directly via Drizzle.
  *
  * No ports: `complete()` and `skip()` only flip those two columns and
@@ -20,7 +20,7 @@
  * `lib/workspace-bootstrap.ts`, which already runs once per new
  * workspace. Duplicating it here would either double-provision (it
  * would fire again on every onboarding completion, not just the first
- * workspace) or force this package to depend on `@intelligo/billing`,
+ * workspace) or force this package to depend on `@intelligo-dev/billing`,
  * which the allowlist in
  * `tests/architecture/dependency-direction.test.ts` forbids.
  *
@@ -54,8 +54,8 @@
  */
 
 import { eq } from "drizzle-orm";
-import { db } from "@intelligo/core/db";
-import { users } from "@intelligo/core/db/schema";
+import { db } from "@intelligo-dev/core/db";
+import { users } from "@intelligo-dev/core/db/schema";
 
 import { requireAuth } from "../helpers";
 import { setStepSchema } from "./schemas";

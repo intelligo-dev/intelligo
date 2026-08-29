@@ -1,6 +1,6 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 
-import { requireAuth } from "@intelligo/auth";
+import { requireAuth } from "@intelligo-dev/auth";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {

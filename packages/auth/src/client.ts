@@ -5,7 +5,7 @@
  * This module uses "better-auth/react" which is a client-side module.
  *
  * IMPORTANT: Only import this in "use client" components.
- * For server-side auth, use @intelligo/auth (server.ts)
+ * For server-side auth, use @intelligo-dev/auth (server.ts)
  */
 
 import { createAuthClient } from "better-auth/react";

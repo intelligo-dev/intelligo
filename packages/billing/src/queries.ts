@@ -14,12 +14,12 @@
 // For now, workspace owners can switch to credit mode by purchasing credits.
 // TODO(v0.3): Add setWorkspaceBillingMode() triggered by first product usage.
 
-import { db } from "@intelligo/core/db";
+import { db } from "@intelligo-dev/core/db";
 import {
   plans,
   subscriptions,
   creditBalances,
-} from "@intelligo/core/db/schema";
+} from "@intelligo-dev/core/db/schema";
 import { eq } from "drizzle-orm";
 import { getStripe } from "./stripe";
 

@@ -6,9 +6,9 @@
  * trail. See ./service.ts for the full module doc comment, including
  * what stayed agents-side (profile re-synthesis) and why the
  * memory-audit writer lives in this module rather than in
- * `@intelligo/audit`.
+ * `@intelligo-dev/audit`.
  *
- * Use via subpath import: @intelligo/core/identity
+ * Use via subpath import: @intelligo-dev/core/identity
  */
 
 export {

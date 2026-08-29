@@ -41,8 +41,8 @@ const DEPRECATED_PACKAGES = allowlist.deprecated;
 
 /** Names that must never appear in a package headed for publication. */
 const PRIVATE_VOCABULARY = [
-  "@intelligo/support",
-  "@intelligo/acme",
+  "@example/product",
+  "@example/product",
   "product/app",
   "product/app",
   "product/app-web",
@@ -93,11 +93,7 @@ const SECRET_PATTERNS: {
  * installs the package. A product hostname inside a framework package
  * is both a leak and a boundary violation.
  */
-const INTERNAL_IDENTIFIERS = [
-  "app.example.com",
-  "example.com",
-  "intelligo-dev",
-];
+const INTERNAL_IDENTIFIERS = ["app.example.com", "example.com"];
 
 const IGNORED_DIRS = new Set([
   "node_modules",

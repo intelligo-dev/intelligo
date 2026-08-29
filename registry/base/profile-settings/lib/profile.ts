@@ -3,8 +3,8 @@ import "server-only";
 /**
  * Profile service binding — the composition-root wiring for the
  * profile-settings item. Binds a plain-English account-deletion
- * confirmation email via `@intelligo/core/email`'s `sendEmail` into the
- * framework-owned profile service (`@intelligo/auth`).
+ * confirmation email via `@intelligo-dev/core/email`'s `sendEmail` into the
+ * framework-owned profile service (`@intelligo-dev/auth`).
  *
  * `sendEmail` never throws (it swallows provider errors into its own
  * result object) and the service itself already treats
@@ -15,8 +15,8 @@ import "server-only";
 
 import { getTranslations } from "next-intl/server";
 
-import { createProfileService } from "@intelligo/auth";
-import { sendEmail } from "@intelligo/core/email";
+import { createProfileService } from "@intelligo-dev/auth";
+import { sendEmail } from "@intelligo-dev/core/email";
 
 export const profile = createProfileService({
   onAccountDeleted: async ({ email }) => {

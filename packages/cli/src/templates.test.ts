@@ -66,8 +66,8 @@ describe("template catalogue", () => {
           path.join(TEMPLATES_DIR, file.template),
           "utf8"
         );
-        expect(body).not.toContain("@intelligo/support");
-        expect(body).not.toContain("@intelligo/acme");
+        expect(body).not.toContain("@example/product");
+        expect(body).not.toContain("@example/product");
         expect(body).not.toContain("private/");
       }
     });

@@ -10,6 +10,6 @@ import "server-only";
  * both and want one instance, re-export it from here.
  */
 
-import { createProfileService } from "@intelligo/auth";
+import { createProfileService } from "@intelligo-dev/auth";
 
 export const profile = createProfileService();

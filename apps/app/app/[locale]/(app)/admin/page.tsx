@@ -2,7 +2,7 @@
  * The admin console mounted by a consumer application.
  *
  * The point of this page existing in the reference app: proving the
- * same `@intelligo/admin` package serves any product, and that
+ * same `@intelligo-dev/admin` package serves any product, and that
  * mounting it takes a route plus an authorization call rather than a
  * fork (ADR-0002). Acme mounts the same package the same way.
  *
@@ -27,13 +27,13 @@ import {
   listWorkspaces,
   queryAuditEvents,
   requireAdmin,
-} from "@intelligo/admin";
+} from "@intelligo-dev/admin";
 import {
   ImpersonationPanel,
   IntegrationHealthView,
   OperationsView,
   PlatformOverviewView,
-} from "@intelligo/admin/views";
+} from "@intelligo-dev/admin/views";
 
 import { impersonateUserAction } from "@/actions/impersonation";
 import { composeIntelligo } from "@/lib/intelligo";

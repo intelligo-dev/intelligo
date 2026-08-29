@@ -5,7 +5,7 @@ import { Badge } from "./badge";
  * Workspace members and their roles.
  *
  * The middle of the three levels, like {@link CreditBalance}: the
- * headless service (`@intelligo/auth`) owns membership, this draws it,
+ * headless service (`@intelligo-dev/auth`) owns membership, this draws it,
  * and the CLI's settings template wires them together.
  *
  * Presentational only. The role list arrives as a prop rather than

@@ -3,7 +3,7 @@
  * and, in Phase 5, the Intelligo admin console.
  */
 
-import { db } from "@intelligo/core/db";
+import { db } from "@intelligo-dev/core/db";
 import { and, desc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 
 import { executions } from "./db/schema";

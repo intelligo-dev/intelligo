@@ -5,7 +5,7 @@
  * ownership and workspace/user access checks. See ./service.ts for
  * the full module doc comment.
  *
- * Use via subpath import: @intelligo/core/documents
+ * Use via subpath import: @intelligo-dev/core/documents
  */
 
 export {

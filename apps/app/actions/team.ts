@@ -3,7 +3,7 @@
 /**
  * Team settings server actions — thin transport over the bound team
  * service (`@/lib/team`): parse input with the schemas from
- * `@intelligo/auth`, call the service, map any `TeamServiceError` to a
+ * `@intelligo-dev/auth`, call the service, map any `TeamServiceError` to a
  * friendly message, and revalidate the page. No business rules here —
  * those live in the service.
  */
@@ -17,7 +17,7 @@ import {
   updateRoleSchema,
   type InviteMemberInput,
   type UpdateRoleInput,
-} from "@intelligo/auth";
+} from "@intelligo-dev/auth";
 
 import { team } from "@/lib/team";
 

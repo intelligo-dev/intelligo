@@ -1,5 +1,5 @@
 /**
- * @intelligo/jobs — job contract plus a Postgres-backed default adapter.
+ * @intelligo-dev/jobs — job contract plus a Postgres-backed default adapter.
  *
  * The contract is what consumers code against; the adapter is what runs
  * when nobody supplies a better one. Swapping in a real queue later
@@ -10,8 +10,8 @@
  * the same queue without double-processing.
  */
 
-import { db } from "@intelligo/core/db";
-import { createLogger } from "@intelligo/core/logger";
+import { db } from "@intelligo-dev/core/db";
+import { createLogger } from "@intelligo-dev/core/logger";
 import { and, eq, lte, sql } from "drizzle-orm";
 
 import { jobs } from "./db/schema";

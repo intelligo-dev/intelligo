@@ -17,17 +17,17 @@
  * Pattern: Server-side only, called by quota engine and workspace creation flow.
  */
 
-import { db } from "@intelligo/core/db";
+import { db } from "@intelligo-dev/core/db";
 import {
   trialCredits,
   notificationHistory,
   organization,
   users,
   member,
-} from "@intelligo/core/db/schema";
+} from "@intelligo-dev/core/db/schema";
 import { eq, and, gt, gte, lt } from "drizzle-orm";
-import type { TrialCredit } from "@intelligo/core/db/schema";
-import { sendTrialExpiryEmail } from "@intelligo/core/email";
+import type { TrialCredit } from "@intelligo-dev/core/db/schema";
+import { sendTrialExpiryEmail } from "@intelligo-dev/core/email";
 import { getWorkspaceSubscription, ensureFreeSubscription } from "./queries";
 import { getTrialConfig, type TrialStatus } from "./trial-types";
 import { normalizeEmailForAbuseCheck, checkTrialAbuse } from "./trial-abuse";

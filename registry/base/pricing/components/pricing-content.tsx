@@ -12,7 +12,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { PlanConfig } from "@intelligo/billing/plans";
+import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
 import { IntervalToggle } from "./interval-toggle";
 import { PlanCard } from "./plan-card";

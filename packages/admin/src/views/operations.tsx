@@ -1,5 +1,5 @@
-import type { AuditEvent } from "@intelligo/audit";
-import type { Job } from "@intelligo/jobs";
+import type { AuditEvent } from "@intelligo-dev/audit";
+import type { Job } from "@intelligo-dev/jobs";
 
 /**
  * Failed jobs and recent audit events.

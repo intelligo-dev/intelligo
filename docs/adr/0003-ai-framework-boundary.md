@@ -6,7 +6,7 @@
 
 ## Context
 
-`@intelligo/ai` and `@intelligo/agents` currently own model registry, tool loop, memory, RAG, context injection, and provider behavior — an Intelligo-owned AI runtime. Competing with Mastra, Vercel AI SDK, and Eve on agent abstractions is a losing position and couples every product to our runtime's limitations.
+`@intelligo-dev/ai` and `@intelligo-dev/agents` currently own model registry, tool loop, memory, RAG, context injection, and provider behavior — an Intelligo-owned AI runtime. Competing with Mastra, Vercel AI SDK, and Eve on agent abstractions is a losing position and couples every product to our runtime's limitations.
 
 ## Decision
 
@@ -34,7 +34,7 @@ try {
 
 ## Consequences
 
-- The AI-runtime portions of `@intelligo/ai` (model registry, tool-loop plumbing) and `@intelligo/agents` (memory, RAG, tool middleware, context/windowing) were **legacy pending classification** here. The Phase 1 inventory classified them and [ADR-0008](0008-dissolving-the-undecided-packages.md) dissolved both packages: nothing in either is published. No new features land on them.
-- Cost/usage calculation (`calculateCost`, `calculateChargedMnt`) survives — it belongs to the execution/accounting boundary, not the runtime. It now lives there: `@intelligo/executions/pricing` (ADR-0008).
+- The AI-runtime portions of `@intelligo-dev/ai` (model registry, tool-loop plumbing) and `@intelligo-dev/agents` (memory, RAG, tool middleware, context/windowing) were **legacy pending classification** here. The Phase 1 inventory classified them and [ADR-0008](0008-dissolving-the-undecided-packages.md) dissolved both packages: nothing in either is published. No new features land on them.
+- Cost/usage calculation (`calculateCost`, `calculateChargedMnt`) survives — it belongs to the execution/accounting boundary, not the runtime. It now lives there: `@intelligo-dev/executions/pricing` (ADR-0008).
 - The current AI path keeps working behind compatibility adapters until the Mastra migration completes (Phases 2–3).
 - The Mastra integration package must remain thin and removable; a second framework recording executions without new abstractions is the validation test (Phase 6).

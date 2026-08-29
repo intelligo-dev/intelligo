@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-import { requireWorkspace } from "@intelligo/auth";
-import { getTrialStatus, getWorkspaceBilling } from "@intelligo/billing";
-import { listConversations } from "@intelligo/core/conversations";
-import { summarizeExecutions } from "@intelligo/executions";
+import { requireWorkspace } from "@intelligo-dev/auth";
+import { getTrialStatus, getWorkspaceBilling } from "@intelligo-dev/billing";
+import { listConversations } from "@intelligo-dev/core/conversations";
+import { summarizeExecutions } from "@intelligo-dev/executions";
 
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { PlanSummary } from "@/components/dashboard/plan-summary";

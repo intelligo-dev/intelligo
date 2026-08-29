@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
-import { authClient } from "@intelligo/auth/client";
+import { authClient } from "@intelligo-dev/auth/client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useRouter } from "@/i18n/navigation";

@@ -1,7 +1,7 @@
 /**
  * Onboarding service unit tests.
  *
- * Mocks `../helpers` (requireAuth) and `@intelligo/core/db`'s
+ * Mocks `../helpers` (requireAuth) and `@intelligo-dev/core/db`'s
  * select/update chain — the same seam
  * `the product application/actions/__tests__/onboarding.test.ts` mocked for the
  * server action this service replaces. Focused on state reads, step
@@ -45,11 +45,11 @@ vi.mock("../helpers", () => ({
   requireAuth: mocks.requireAuth,
 }));
 
-vi.mock("@intelligo/core/db", () => ({
+vi.mock("@intelligo-dev/core/db", () => ({
   db: { select: mocks.select, update: mocks.update },
 }));
 
-vi.mock("@intelligo/core/db/schema", () => ({
+vi.mock("@intelligo-dev/core/db/schema", () => ({
   users: {
     id: "id",
     onboardingCompleted: "onboardingCompleted",

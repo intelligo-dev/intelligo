@@ -1,5 +1,5 @@
 /**
- * Payment Providers — re-exports from @intelligo/billing-core.
+ * Payment Providers — re-exports from @intelligo-dev/billing-core.
  */
 
 export {
@@ -9,11 +9,11 @@ export {
   mockCompletePayment,
   getMockPayment,
   mockPaymentProvider,
-} from "@intelligo/billing-core";
+} from "@intelligo-dev/billing-core";
 
 export type {
   PaymentProvider,
   PaymentStatus,
   CreatePaymentResult,
   PaymentCheckResult,
-} from "@intelligo/billing-core";
+} from "@intelligo-dev/billing-core";

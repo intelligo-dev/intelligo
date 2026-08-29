@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-import { requireWorkspace } from "@intelligo/auth";
-import { getBillingOverview } from "@intelligo/billing";
+import { requireWorkspace } from "@intelligo-dev/auth";
+import { getBillingOverview } from "@intelligo-dev/billing";
 
 import { getPlans } from "@/lib/billing";
 import { PricingContent } from "@/components/billing/pricing-content";

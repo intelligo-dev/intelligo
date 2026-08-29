@@ -10,7 +10,7 @@ import { dirname } from "path";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 
-// A published @intelligo/core cannot assume where the consumer keeps
+// A published @intelligo-dev/core cannot assume where the consumer keeps
 // its env file, so the default is the repository root and anything
 // else is INTELLIGO_ENV_FILE.
 const __filename = fileURLToPath(import.meta.url);
@@ -60,7 +60,7 @@ async function checkDatabase() {
 
     if (tableNames.length === 0) {
       console.log("\n⚠ No auth tables found.");
-      console.log("Fix: pnpm --filter @intelligo/core db:push");
+      console.log("Fix: pnpm --filter @intelligo-dev/core db:push");
       process.exit(1);
     } else if (tableNames.length < 4) {
       const missing = ["users", "sessions", "accounts", "verifications"].filter(
@@ -68,7 +68,7 @@ async function checkDatabase() {
       );
       console.log(`\n⚠ Only ${tableNames.length}/4 auth tables found.`);
       console.log("Missing:", missing);
-      console.log("Fix: pnpm --filter @intelligo/core db:push");
+      console.log("Fix: pnpm --filter @intelligo-dev/core db:push");
       process.exit(1);
     } else {
       console.log("\n✓ All auth tables exist!");
@@ -80,7 +80,7 @@ async function checkDatabase() {
 
       if (count === 0 || count === "0") {
         console.log("\n💡 No users yet. Create admin user:");
-        console.log("   pnpm --filter @intelligo/core db:seed");
+        console.log("   pnpm --filter @intelligo-dev/core db:seed");
       }
     }
 

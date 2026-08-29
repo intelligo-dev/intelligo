@@ -1,7 +1,10 @@
 import { getTranslations } from "next-intl/server";
 
-import { getWorkspacePlan, hasFeature } from "@intelligo/billing";
-import { getDefaultProductSlug, getPlanBySlug } from "@intelligo/billing/plans";
+import { getWorkspacePlan, hasFeature } from "@intelligo-dev/billing";
+import {
+  getDefaultProductSlug,
+  getPlanBySlug,
+} from "@intelligo-dev/billing/plans";
 
 import { featureCatalog } from "@/lib/feature-catalog";
 import { UpgradePrompt } from "./upgrade-prompt";

@@ -5,7 +5,7 @@ import { Progress } from "./progress";
  * Remaining credit for a workspace.
  *
  * The middle of the three levels a capability ships at: the headless
- * service (`@intelligo/billing`) computes the numbers, this draws
+ * service (`@intelligo-dev/billing`) computes the numbers, this draws
  * them, and the CLI's billing template wires the two together. A
  * consumer that wants a different design uses the service and skips
  * this; a consumer in a hurry drops it in.
@@ -16,7 +16,7 @@ import { Progress } from "./progress";
  *   - `formatAmount`, because this package must not decide that money
  *     is written "₮5,000". The default is a plain grouped number,
  *     which is wrong for nobody in particular.
- *   - `labels`, because @intelligo/ui has no i18n runtime and should
+ *   - `labels`, because @intelligo-dev/ui has no i18n runtime and should
  *     not acquire one to render six words.
  */
 

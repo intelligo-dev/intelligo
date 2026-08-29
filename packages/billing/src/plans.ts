@@ -1,9 +1,9 @@
 /**
- * Plan Configuration — re-exports from @intelligo/billing-core.
+ * Plan Configuration — re-exports from @intelligo-dev/billing-core.
  *
  * All plan types, constants, and pure helpers now live in
- * @intelligo/billing-core (CE package). This file re-exports
- * them so existing `from "@intelligo/billing/plans"` imports
+ * @intelligo-dev/billing-core (CE package). This file re-exports
+ * them so existing `from "@intelligo-dev/billing/plans"` imports
  * continue working unchanged.
  */
 
@@ -32,7 +32,7 @@ export {
   registerRateLimits,
   getRateLimit,
   DEFAULT_REQUESTS_PER_MINUTE,
-} from "@intelligo/billing-core/plans";
+} from "@intelligo-dev/billing-core/plans";
 
 export type {
   PlanSlug,
@@ -41,4 +41,4 @@ export type {
   TrialConfig,
   TeamMemberLimitMap,
   RateLimitMap,
-} from "@intelligo/billing-core/plans";
+} from "@intelligo-dev/billing-core/plans";

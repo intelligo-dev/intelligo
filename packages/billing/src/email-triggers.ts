@@ -11,8 +11,8 @@
  * - handlePaymentFailedEmail: call from invoice.payment_failed webhook event
  */
 
-import { sendSubscriptionConfirmedEmail } from "@intelligo/core/email";
-import { triggerPaymentFailedNotification } from "@intelligo/core/notifications";
+import { sendSubscriptionConfirmedEmail } from "@intelligo-dev/core/email";
+import { triggerPaymentFailedNotification } from "@intelligo-dev/core/notifications";
 
 /**
  * Called by the Stripe webhook handler when a subscription is confirmed.

@@ -4,8 +4,8 @@
  * Atomic deduction functions for trial credits (token-based and MNT-based).
  */
 
-import { db } from "@intelligo/core/db";
-import { trialCredits } from "@intelligo/core/db/schema";
+import { db } from "@intelligo-dev/core/db";
+import { trialCredits } from "@intelligo-dev/core/db/schema";
 import { eq, and, gt, sql } from "drizzle-orm";
 
 /**

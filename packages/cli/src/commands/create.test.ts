@@ -30,7 +30,7 @@ function writeScaffoldTemplate() {
   mkdirSync(path.join(templatesDir, "app-scaffold"), { recursive: true });
   writeFileSync(
     path.join(templatesDir, "app-scaffold", "pkg.tpl"),
-    '{ "name": "__APP_NAME__", "dependencies": { "@intelligo/core": "__INTELLIGO_DEP__" } }\n'
+    '{ "name": "__APP_NAME__", "dependencies": { "@intelligo-dev/core": "__INTELLIGO_DEP__" } }\n'
   );
   writeFileSync(
     path.join(templatesDir, "app-scaffold", "slug.tpl"),
@@ -141,7 +141,7 @@ describe("createApp", () => {
     create(target);
 
     expect(readFileSync(path.join(target, "package.json"), "utf8")).toContain(
-      '"@intelligo/core": "^1.2.3"'
+      '"@intelligo-dev/core": "^1.2.3"'
     );
   });
 
@@ -150,7 +150,7 @@ describe("createApp", () => {
     create(target, true);
 
     expect(readFileSync(path.join(target, "package.json"), "utf8")).toContain(
-      '"@intelligo/core": "workspace:*"'
+      '"@intelligo-dev/core": "workspace:*"'
     );
   });
 });

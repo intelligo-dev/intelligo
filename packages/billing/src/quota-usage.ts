@@ -2,8 +2,8 @@
  * Usage tracking helpers for quota enforcement.
  */
 
-import { db } from "@intelligo/core/db";
-import { monthlyUsage } from "@intelligo/core/db/schema";
+import { db } from "@intelligo-dev/core/db";
+import { monthlyUsage } from "@intelligo-dev/core/db/schema";
 import { eq, and } from "drizzle-orm";
 
 /**

@@ -1,16 +1,16 @@
 import "server-only";
 
-import { getAuthSession } from "@intelligo/auth";
-import { createNotification } from "@intelligo/core/notifications";
-import { createLogger } from "@intelligo/core/logger";
+import { getAuthSession } from "@intelligo-dev/auth";
+import { createNotification } from "@intelligo-dev/core/notifications";
+import { createLogger } from "@intelligo-dev/core/logger";
 
 /**
  * Workspace bootstrap — composition-root binding for the app shell's one
  * extension point: what happens the first time `ensureUserWorkspace`
- * (`@intelligo/auth`) has to create a workspace for a user, instead of
+ * (`@intelligo-dev/auth`) has to create a workspace for a user, instead of
  * finding an existing one.
  *
- * `@intelligo/auth` must not import `@intelligo/billing` — a product's
+ * `@intelligo-dev/auth` must not import `@intelligo-dev/billing` — a product's
  * trial/referral/welcome-bonus rules are a business decision, not a
  * framework one, and importing them directly would recreate the very
  * auth → billing cycle `ensureUserWorkspace`'s callback parameter exists

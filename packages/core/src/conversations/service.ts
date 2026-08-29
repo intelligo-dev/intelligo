@@ -6,7 +6,7 @@
  * Ported from the product application's conversation server actions
  * and chat-route persistence helper (ADR-0009) — the tables
  * (`conversations`, `messages`, `votes`) always lived in
- * @intelligo/core's schema, only the service layer sat in the product
+ * @intelligo-dev/core's schema, only the service layer sat in the product
  * application.
  *
  * What did NOT come with it (stays product-side, native AI code):
@@ -24,8 +24,8 @@
  *     accepts an already-resolved agentId/modelId.
  *
  * Callers pass a resolved actor (workspaceId, userId) rather than this
- * module resolving one itself — @intelligo/core cannot depend on
- * @intelligo/auth (see tests/architecture/dependency-direction.test.ts).
+ * module resolving one itself — @intelligo-dev/core cannot depend on
+ * @intelligo-dev/auth (see tests/architecture/dependency-direction.test.ts).
  * Every query still filters by workspaceId AND userId internally
  * (conversations are USER-PRIVATE within a workspace); the actor is
  * never trusted to have done that itself.

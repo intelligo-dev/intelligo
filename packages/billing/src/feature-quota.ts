@@ -13,8 +13,8 @@
  * slugs the vertical uses.
  */
 
-import { db } from "@intelligo/core/db";
-import { userQuotas } from "@intelligo/core/db/schema";
+import { db } from "@intelligo-dev/core/db";
+import { userQuotas } from "@intelligo-dev/core/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { getDefaultProductSlug, getPlanConfigs } from "./plans";
 import {

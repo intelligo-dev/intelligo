@@ -36,14 +36,14 @@ const mocks = vi.hoisted(() => {
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock("@intelligo/core/db", () => ({
+vi.mock("@intelligo-dev/core/db", () => ({
   db: {
     select: mocks.mockSelect,
     insert: mocks.mockInsert,
   },
 }));
 
-vi.mock("@intelligo/core/db/schema", () => ({
+vi.mock("@intelligo-dev/core/db/schema", () => ({
   imageGenerations: {
     workspaceId: "workspaceId",
     createdAt: "createdAt",

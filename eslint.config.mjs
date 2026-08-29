@@ -10,7 +10,7 @@ import reactHooks from "eslint-plugin-react-hooks";
  * `tests/architecture/dependency-direction.test.ts` is the authority
  * and stays the authority — it walks every manifest and every import
  * and knows the exact allowed edge per package. What it cannot do is
- * tell you before you run it: a developer importing `@intelligo/support`
+ * tell you before you run it: a developer importing `@example/product`
  * inside a public package sees a green editor until CI. These rules
  * are the coarse, drift-free half of the same check — the edges that
  * are wrong no matter which package you are in.
@@ -28,12 +28,12 @@ const allowlist = JSON.parse(
 /** Product application and private vertical — never a package's business. */
 const PRIVATE_PATTERNS = [
   {
-    group: ["@intelligo/support", "@intelligo/support/*"],
+    group: ["@example/product", "@example/product/*"],
     message:
       "A reusable package must not import the vertical (ADR-0006). Take what you need as a parameter, or register it from the composition root.",
   },
   {
-    group: ["@intelligo/acme", "@intelligo/acme/*", "@/*"],
+    group: ["@example/product", "@example/product/*", "@/*"],
     message:
       "A reusable package must not import the product application (ADR-0006). `@/...` resolves inside product/app.",
   },
@@ -41,8 +41,8 @@ const PRIVATE_PATTERNS = [
 
 /** Packages ADR-0008 dissolved: nothing published may point at one. */
 const DISSOLVED_PATTERNS = allowlist.deprecated.map((name) => ({
-  group: [`@intelligo/${name}`, `@intelligo/${name}/*`],
-  message: `@intelligo/${name} is dissolving (ADR-0008) and is never published. A public package that depends on it cannot be extracted.`,
+  group: [`@intelligo-dev/${name}`, `@intelligo-dev/${name}/*`],
+  message: `@intelligo-dev/${name} is dissolving (ADR-0008) and is never published. A public package that depends on it cannot be extracted.`,
 }));
 
 export default [
@@ -97,7 +97,11 @@ export default [
         {
           patterns: [
             {
-              group: ["@intelligo/acme", "@intelligo/acme/*", "@/*"],
+              group: [
+                "@example/product",
+                "@example/product/*",
+                "@/*",
+              ],
               message:
                 "The vertical must not import the product application (ADR-0006) — extracting Support for a second product would become impossible.",
             },

@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
  *
  * Lists every artifact (AI-generated document — report, code, text,
  * sheet, image, or a product's own custom kind) this user has created
- * in the active workspace, backed by `@intelligo/core/documents`
+ * in the active workspace, backed by `@intelligo-dev/core/documents`
  * (ADR-0009). Filtering by type and the content-preview dialog are
  * client-side (`components/artifacts/document-list.tsx`); this page
  * only fetches the full, unfiltered set once.

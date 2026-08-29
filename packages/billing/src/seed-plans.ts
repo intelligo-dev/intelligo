@@ -10,7 +10,7 @@
  */
 
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { plans, featureFlags } from "@intelligo/core/db/schema";
+import { plans, featureFlags } from "@intelligo-dev/core/db/schema";
 import { getPlanConfigs, type PlanConfig } from "./plans.js";
 import { getDefaultProductSlug, getProductFeatures } from "./plan-registry.js";
 

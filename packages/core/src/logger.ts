@@ -9,7 +9,7 @@
  *
  * Usage:
  * ```typescript
- * import { createLogger } from "@intelligo/core/logger";
+ * import { createLogger } from "@intelligo-dev/core/logger";
  * const log = createLogger("MyModule");
  * log.info("User created", { email: "user@example.com" });
  * // Production: {"level":30,"module":"MyModule","msg":"User created","email":"u***@example.com"}

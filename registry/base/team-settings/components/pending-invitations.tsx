@@ -9,7 +9,7 @@ import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
-import type { OrgInvitation } from "@intelligo/auth";
+import type { OrgInvitation } from "@intelligo-dev/auth";
 
 import { cancelInvitation } from "@/actions/team";
 import { RoleBadge } from "./role-badge";

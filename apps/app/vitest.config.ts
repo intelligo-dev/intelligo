@@ -10,7 +10,7 @@ import path from "path";
  * decisions live, and nothing else in the suite reaches them.
  *
  * Mirrors the product application's config — same JSX transform, same
- * `@intelligo/*` no-externalize, same `server-only` stub; see that file
+ * `@intelligo-dev/*` no-externalize, same `server-only` stub; see that file
  * for why each is needed.
  */
 export default defineConfig({

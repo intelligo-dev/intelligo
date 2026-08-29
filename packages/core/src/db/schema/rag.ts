@@ -2,7 +2,7 @@
  * RAG documents schema (Phase H).
  *
  * Single shared table that backs every collection in
- * @intelligo/agents/rag. Each collection (e.g., support.universities,
+ * @intelligo-dev/agents/rag. Each collection (e.g., support.universities,
  * support.scholarships, support.majors) lives as a `collection` slug
  * filter on this table — so adding a new collection means writing a
  * Collection<TMeta> instance, not a migration.
@@ -10,10 +10,10 @@
  * Schema choices:
  *  - `collection` is indexed for the per-collection filter clause.
  *  - `metadata` is freeform JSONB; the typed Collection wrapper in
- *    @intelligo/agents validates with Zod at write time.
+ *    @intelligo-dev/agents validates with Zod at write time.
  *  - `embedding` is a 1536-dim pgvector to match
  *    OpenAI text-embedding-3-small (the embeddings module in
- *    @intelligo/ai already targets that model).
+ *    @intelligo-dev/ai already targets that model).
  *  - `external_id` lets ingestion be idempotent — re-running a seed
  *    upserts on (collection, external_id) instead of duplicating.
  *

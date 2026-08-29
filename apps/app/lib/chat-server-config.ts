@@ -11,7 +11,7 @@ import "server-only";
  * `saveArtifact` closes both: the stub model in `lib/chat-model.ts`
  * calls it whenever a message starts with "save", so a clean install
  * with no API keys still demonstrates the whole path — tool call →
- * document written through `@intelligo/core` (ADR-0009) →
+ * document written through `@intelligo-dev/core` (ADR-0009) →
  * `ArtifactLinkCard` in the transcript → the document on `/artifacts`.
  *
  * Swapping the stub for a real provider changes nothing here: the tool
@@ -22,7 +22,7 @@ import "server-only";
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
 
-import { saveDocument } from "@intelligo/core/documents";
+import { saveDocument } from "@intelligo-dev/core/documents";
 
 export interface ChatToolContext {
   workspaceId: string;

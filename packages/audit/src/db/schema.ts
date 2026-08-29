@@ -1,5 +1,5 @@
 /**
- * @intelligo/audit database schema.
+ * @intelligo-dev/audit database schema.
  *
  * One append-only table recording who did what to which resource.
  * Owned by this package per ADR-0004; scanned by drizzle-kit alongside
@@ -13,7 +13,7 @@
  */
 
 import { pgTable, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
-import { organization, users } from "@intelligo/core/db/schema";
+import { organization, users } from "@intelligo-dev/core/db/schema";
 
 export const auditEvents = pgTable(
   "audit_events",

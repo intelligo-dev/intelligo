@@ -14,7 +14,7 @@
 
 import { getTranslations } from "next-intl/server";
 
-import { requireAuth } from "@intelligo/auth";
+import { requireAuth } from "@intelligo-dev/auth";
 
 import {
   checkLocalPaymentStatus,

@@ -75,7 +75,7 @@ async function runMigrateCheck(): Promise<number> {
   const migrationsDir = resolveMigrationsDir(process.cwd());
   if (!migrationsDir) {
     console.error(
-      `No migrations directory (looked in ${MIGRATION_LOCATIONS.join(", ")}) — run from the workspace root, with @intelligo/core installed.`
+      `No migrations directory (looked in ${MIGRATION_LOCATIONS.join(", ")}) — run from the workspace root, with @intelligo-dev/core installed.`
     );
     return 1;
   }

@@ -7,7 +7,7 @@
  * with zero imports so client-safe code and tests can load it without
  * dragging in the server-only persistence chain (db).
  *
- * Ported from @intelligo/agents/documents/classifier (ADR-0009) —
+ * Ported from @intelligo-dev/agents/documents/classifier (ADR-0009) —
  * unchanged.
  */
 

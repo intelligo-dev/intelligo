@@ -14,7 +14,7 @@
  * you add can point at any namespace you own.
  *
  * The framework only persists step *progression* — which step id the
- * caller is on (`@intelligo/auth`'s `createOnboardingService`) — via
+ * caller is on (`@intelligo-dev/auth`'s `createOnboardingService`) — via
  * `actions/onboarding.ts`. It knows nothing about your fields. Field
  * answers become durable through `onStepSubmit`, which runs
  * server-side every time the wizard advances past a step. The shipped

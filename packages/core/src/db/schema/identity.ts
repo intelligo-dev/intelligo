@@ -22,8 +22,8 @@
  *
  * Migration: src/db/migrations/0018_identity_graph.sql creates all four
  * tables, their indexes, and the append-only triggers on
- * user_memory_audit. Apply via `pnpm --filter @intelligo/core db:push`
- * before any code path calls into @intelligo/agents/memory.
+ * user_memory_audit. Apply via `pnpm --filter @intelligo-dev/core db:push`
+ * before any code path calls into @intelligo-dev/agents/memory.
  */
 
 import {

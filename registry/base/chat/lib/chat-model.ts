@@ -11,7 +11,7 @@ import "server-only";
  * streams a real `createUIMessageStream` response end to end.
  *
  * `CHAT_MODEL_ID` is deliberately a real, already-registered id
- * (`@intelligo/executions/pricing`'s `MODEL_CONFIGS`) even though the
+ * (`@intelligo-dev/executions/pricing`'s `MODEL_CONFIGS`) even though the
  * stub never calls that provider: the execution boundary bills
  * whatever id `app/api/chat/route.ts` hands to `run.complete()`
  * (ADR-0003), and an id that isn't in `MODEL_CONFIGS` silently prices
@@ -81,7 +81,7 @@ type StubStreamPart =
       };
     };
 
-/** Must be a key in `@intelligo/executions/pricing`'s `MODEL_CONFIGS`. */
+/** Must be a key in `@intelligo-dev/executions/pricing`'s `MODEL_CONFIGS`. */
 export const CHAT_MODEL_ID = "google/gemini-2.5-flash";
 
 function lastUserText(

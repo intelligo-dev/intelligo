@@ -29,7 +29,7 @@ All tables currently live in `packages/core/src/db/schema/` plus `packages/suppo
 | `referral_codes, referrals`                                                                                           | **to-migrate** → billing schema file (Phase 1)                                  |
 | `notifications, notification_history, feature_flags, jobs (future), audit (future)`                                   | Intelligo `core`/`jobs`/`audit`                                                 |
 | `conversations, messages, votes, documents, suggestions, document_types, knowledge_*, image_*, agents, rag_documents` | pending Phase 1 classification (chat/agents boundary)                           |
-| `competitions, competition_entries, shared_reports, user_profiles` (in `@intelligo/support`)                           | consumer (Acme/Support, private)                                               |
+| `competitions, competition_entries, shared_reports, user_profiles` (in `@example/product`)                       | consumer (Acme/Support, private)                                               |
 | `user_facts, user_memories, user_profile_snapshots, user_memory_audit, pending_extractions`                           | pending classification (replace-with-native Mastra memory vs. private)          |
 
 ## Consequences

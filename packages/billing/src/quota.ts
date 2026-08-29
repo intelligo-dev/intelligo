@@ -19,21 +19,21 @@
  * Pattern: Server-side only, used by AI route handlers and server actions.
  */
 
-import { db } from "@intelligo/core/db";
+import { db } from "@intelligo-dev/core/db";
 import {
   usageRecords,
   monthlyUsage,
   creditBalances,
   creditReservations,
   trialCredits,
-} from "@intelligo/core/db/schema";
+} from "@intelligo-dev/core/db/schema";
 import { eq, sql, and, gte, lte, gt } from "drizzle-orm";
 import { hasActiveTrialMnt } from "./trial";
 import { checkNotificationTriggers } from "./notifications";
 import {
   calculateChargedMnt,
   estimateWorstCaseChargedMnt,
-} from "@intelligo/executions/pricing";
+} from "@intelligo-dev/executions/pricing";
 import { getBillingSettings } from "./billing-settings";
 import { getWorkspaceBilling } from "./queries";
 import type {

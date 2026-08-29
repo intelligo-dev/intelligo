@@ -23,17 +23,17 @@ const mocks = vi.hoisted(() => ({
   getWorkspaceBilling: vi.fn(),
 }));
 
-vi.mock("@intelligo/auth", () => ({
+vi.mock("@intelligo-dev/auth", () => ({
   requireWorkspace: mocks.requireWorkspace,
 }));
 
-vi.mock("@intelligo/executions", () => ({
+vi.mock("@intelligo-dev/executions", () => ({
   summarizeExecutions: mocks.summarizeExecutions,
   summarizeExecutionsByDay: mocks.summarizeExecutionsByDay,
   listExecutions: mocks.listExecutions,
 }));
 
-vi.mock("@intelligo/billing", () => ({
+vi.mock("@intelligo-dev/billing", () => ({
   getQuotaThresholds: mocks.getQuotaThresholds,
   getTrialStatus: mocks.getTrialStatus,
   getWorkspaceBilling: mocks.getWorkspaceBilling,

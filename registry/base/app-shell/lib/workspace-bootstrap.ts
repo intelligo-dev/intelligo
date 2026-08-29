@@ -3,10 +3,10 @@ import "server-only";
 /**
  * Workspace bootstrap — composition-root binding for the app shell's one
  * extension point: what happens the first time `ensureUserWorkspace`
- * (`@intelligo/auth`) has to create a workspace for a user, instead of
+ * (`@intelligo-dev/auth`) has to create a workspace for a user, instead of
  * finding an existing one.
  *
- * `@intelligo/auth` must not import `@intelligo/billing` — a product's
+ * `@intelligo-dev/auth` must not import `@intelligo-dev/billing` — a product's
  * trial/referral/welcome-bonus rules are a business decision, not a
  * framework one, and importing them directly would recreate the very
  * auth → billing cycle `ensureUserWorkspace`'s callback parameter exists
@@ -18,7 +18,7 @@ import "server-only";
  * Ships provisioning nothing: a fresh install has no trial or referral
  * program to wire up. Bind whatever your product actually wants to
  * happen on first workspace creation — the commented example below
- * shows the shape once `@intelligo/billing` is installed.
+ * shows the shape once `@intelligo-dev/billing` is installed.
  */
 export async function onWorkspaceCreated(_params: {
   workspaceId: string;
@@ -28,10 +28,10 @@ export async function onWorkspaceCreated(_params: {
 }
 
 // Example — grant trial credits on first workspace creation once
-// `@intelligo/billing` is installed (uncomment and adjust; remove the
+// `@intelligo-dev/billing` is installed (uncomment and adjust; remove the
 // no-op export above):
 //
-// import { provisionTrialCredits } from "@intelligo/billing";
+// import { provisionTrialCredits } from "@intelligo-dev/billing";
 //
 // export async function onWorkspaceCreated({
 //   workspaceId,

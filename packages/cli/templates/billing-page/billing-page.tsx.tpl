@@ -6,15 +6,15 @@
  * your prices is a change to your own `lib/plans.ts` (ADR-0006).
  */
 
-import { requireWorkspace } from "@intelligo/auth";
-import { getWorkspaceBilling } from "@intelligo/billing";
-import { getPlanConfigs } from "@intelligo/billing/plans";
-import { CreditBalance } from "@intelligo/ui";
+import { requireWorkspace } from "@intelligo-dev/auth";
+import { getWorkspaceBilling } from "@intelligo-dev/billing";
+import { getPlanConfigs } from "@intelligo-dev/billing/plans";
+import { CreditBalance } from "@intelligo-dev/ui";
 
 import { PRODUCT_SLUG } from "@/lib/intelligo";
 
 /**
- * Your currency, in one place. @intelligo/ui takes a formatter rather
+ * Your currency, in one place. @intelligo-dev/ui takes a formatter rather
  * than assuming one, because a framework package deciding that money
  * is written "5,000₮" is wrong everywhere but here.
  */

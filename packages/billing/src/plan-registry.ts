@@ -1,5 +1,5 @@
 /**
- * Plan Registry — re-exports from @intelligo/billing-core.
+ * Plan Registry — re-exports from @intelligo-dev/billing-core.
  *
  * The plan registry now lives in billing-core (CE). This file
  * re-exports everything so internal billing imports and external
@@ -35,7 +35,7 @@ export {
   getRateLimit,
   clearRateLimits,
   DEFAULT_REQUESTS_PER_MINUTE,
-} from "@intelligo/billing-core/plan-registry";
+} from "@intelligo-dev/billing-core/plan-registry";
 
 export type {
   ProductPlanMap,
@@ -44,6 +44,6 @@ export type {
   TrialConfig,
   TeamMemberLimitMap,
   RateLimitMap,
-} from "@intelligo/billing-core/plan-registry";
+} from "@intelligo-dev/billing-core/plan-registry";
 
-export type { ProductFeatureMatrix } from "@intelligo/billing-core/plan-registry";
+export type { ProductFeatureMatrix } from "@intelligo-dev/billing-core/plan-registry";

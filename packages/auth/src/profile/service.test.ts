@@ -2,7 +2,7 @@
  * Profile service unit tests.
  *
  * Mocks `../helpers` (requireAuth), `../server` (auth.api.updateUser),
- * and `@intelligo/core/db` (the soft-delete + session-wipe queries) —
+ * and `@intelligo-dev/core/db` (the soft-delete + session-wipe queries) —
  * the same seam `../team/service.test.ts` and `../workspace/service.test.ts`
  * mock one directory over. Focused on the auth gate, input validation,
  * the soft-delete + session-invalidation sequence, and the
@@ -33,7 +33,7 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("next/headers", () => ({ headers: mocks.headersMock }));
 
-vi.mock("@intelligo/core/logger", () => ({
+vi.mock("@intelligo-dev/core/logger", () => ({
   createLogger: () => ({
     debug: vi.fn(),
     info: vi.fn(),
@@ -42,7 +42,7 @@ vi.mock("@intelligo/core/logger", () => ({
   }),
 }));
 
-vi.mock("@intelligo/core/db", () => ({
+vi.mock("@intelligo-dev/core/db", () => ({
   db: {
     update: () => ({
       set: (values: unknown) => ({
@@ -56,7 +56,7 @@ vi.mock("@intelligo/core/db", () => ({
   },
 }));
 
-vi.mock("@intelligo/core/db/schema", () => ({
+vi.mock("@intelligo-dev/core/db/schema", () => ({
   users: { id: "id" },
   sessions: { userId: "userId" },
 }));

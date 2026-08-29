@@ -19,12 +19,12 @@ produces is itself a defect this app exists to catch.
 
 ## What it demonstrates
 
-- signup / login / workspace creation (`@intelligo/auth`)
+- signup / login / workspace creation (`@intelligo-dev/auth`)
 - an assistant route that runs a model call inside the execution
   boundary — entitlement, credit hold, usage, cost, audit
-  (`@intelligo/executions`)
+  (`@intelligo-dev/executions`)
 - plans and feature gates registered by the _app_, not baked into
-  billing (`@intelligo/billing` + the plan registry)
+  billing (`@intelligo-dev/billing` + the plan registry)
 - usage and execution history read back through the packages' own
   query APIs
 - real registry items — pages, components, actions — installed
@@ -40,7 +40,7 @@ primitives in `components/ui/` exist so a registry item's
 `registryDependencies` resolve the same way they would in a consumer
 project outside this monorepo. The design tokens in `app/globals.css`
 are a consumer-owned copy of `packages/ui/src/tokens.css` — this app
-does not import `@intelligo/ui` at runtime for styling, because a
+does not import `@intelligo-dev/ui` at runtime for styling, because a
 registry consumer outside the monorepo can't either.
 
 ## What it must never do

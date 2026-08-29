@@ -1,5 +1,5 @@
 /**
- * @intelligo/audit — append-only record of who did what.
+ * @intelligo-dev/audit — append-only record of who did what.
  *
  * Emitting is deliberately failure-tolerant: an audit write must never
  * break the operation being audited. `recordAuditEvent` swallows and
@@ -7,8 +7,8 @@
  * support actions — Phase 5) use `recordAuditEventOrThrow`.
  */
 
-import { db } from "@intelligo/core/db";
-import { createLogger } from "@intelligo/core/logger";
+import { db } from "@intelligo-dev/core/db";
+import { createLogger } from "@intelligo-dev/core/logger";
 import { and, desc, eq, lt } from "drizzle-orm";
 
 import { auditEvents } from "./db/schema";

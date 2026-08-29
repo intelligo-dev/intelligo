@@ -2,7 +2,7 @@
 
 /**
  * Renders one `UIMessage`'s parts. Text uses `streamdown` (the same
- * markdown-while-streaming renderer the dissolving `@intelligo/chat`
+ * markdown-while-streaming renderer the dissolving `@intelligo-dev/chat`
  * package used) rather than a plain `<pre>` — chat replies are
  * routinely lists, code blocks and headings, and re-parsing a partial
  * markdown document on every token is exactly the incremental-parsing

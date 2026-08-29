@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
 }));
 
-vi.mock("@intelligo/core/db", () => ({
+vi.mock("@intelligo-dev/core/db", () => ({
   db: {
     execute: mocks.execute,
     insert: mocks.insert,
@@ -26,7 +26,7 @@ vi.mock("@intelligo/core/db", () => ({
   },
 }));
 
-vi.mock("@intelligo/core/logger", () => ({
+vi.mock("@intelligo-dev/core/logger", () => ({
   createLogger: () => ({
     debug: vi.fn(),
     info: vi.fn(),

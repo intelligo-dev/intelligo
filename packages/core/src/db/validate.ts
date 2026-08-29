@@ -37,7 +37,7 @@ export async function validateDatabaseConnection(): Promise<DatabaseValidationRe
       tablesExist,
       error: tablesExist
         ? undefined
-        : "Auth tables do not exist. Run 'pnpm --filter @intelligo/core db:push' to create them.",
+        : "Auth tables do not exist. Run 'pnpm --filter @intelligo-dev/core db:push' to create them.",
     };
   } catch (error) {
     return {
@@ -66,8 +66,8 @@ export async function requireDatabaseConnection(): Promise<void> {
     throw new Error(
       `❌ Database tables do not exist.\n\n` +
         `Run the following commands to set up the database:\n` +
-        `  1. pnpm --filter @intelligo/core db:push\n` +
-        `  2. pnpm --filter @intelligo/core db:seed (optional - creates admin user)`
+        `  1. pnpm --filter @intelligo-dev/core db:push\n` +
+        `  2. pnpm --filter @intelligo-dev/core db:seed (optional - creates admin user)`
     );
   }
 

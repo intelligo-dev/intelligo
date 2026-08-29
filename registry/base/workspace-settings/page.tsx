@@ -8,7 +8,7 @@
 
 import { getTranslations } from "next-intl/server";
 
-import { requireWorkspace } from "@intelligo/auth";
+import { requireWorkspace } from "@intelligo-dev/auth";
 
 import { WorkspaceSettingsForm } from "@/components/workspace/workspace-settings-form";
 

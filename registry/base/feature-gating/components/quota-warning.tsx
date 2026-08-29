@@ -9,7 +9,7 @@
  * `@/lib/feature-gating-config`.
  *
  * The copy is this item's own, computed from `remaining`, rather than
- * the `warning` string `@intelligo/billing` returns: that string is
+ * the `warning` string `@intelligo-dev/billing` returns: that string is
  * produced by a package that cannot know the caller's locale. Pass
  * `message` to override.
  */
@@ -17,7 +17,7 @@
 import { AlertTriangle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import type { FeatureQuotaResult } from "@intelligo/billing";
+import type { FeatureQuotaResult } from "@intelligo-dev/billing";
 import { cn } from "@/lib/utils";
 import { featureGatingConfig } from "@/lib/feature-gating-config";
 

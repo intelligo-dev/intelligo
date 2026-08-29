@@ -3,7 +3,7 @@
 /**
  * Tool-call renderer seam.
  *
- * `@intelligo/chat`'s dissolving package (ADR-0008) kept a runtime
+ * `@intelligo-dev/chat`'s dissolving package (ADR-0008) kept a runtime
  * `Map` that a product registered into at client bootstrap — a
  * package-level registry a consumer could never see, let alone edit.
  * This item's replacement is the opposite of clever: `TOOL_RENDERERS`

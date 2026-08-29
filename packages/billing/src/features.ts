@@ -8,8 +8,8 @@
  * IMPORTANT: DB query with graceful degradation - falls back to constants on error.
  */
 
-import { db } from "@intelligo/core/db";
-import { featureFlags } from "@intelligo/core/db/schema";
+import { db } from "@intelligo-dev/core/db";
+import { featureFlags } from "@intelligo-dev/core/db/schema";
 import { eq } from "drizzle-orm";
 import { getWorkspaceSubscription } from "./queries";
 import { hasActiveTrial } from "./trial";

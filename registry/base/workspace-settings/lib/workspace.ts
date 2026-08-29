@@ -3,8 +3,8 @@ import "server-only";
 /**
  * Workspace service binding — the composition-root wiring for the
  * workspace-settings item. Binds the plan-defined workspace limit
- * (`@intelligo/billing`'s `checkPlanLimit`) into the framework-owned
- * workspace service (`@intelligo/auth`).
+ * (`@intelligo-dev/billing`'s `checkPlanLimit`) into the framework-owned
+ * workspace service (`@intelligo-dev/auth`).
  *
  * `checkPlanLimit` is keyed by `workspaceId`, but the service's
  * `checkWorkspaceLimit` port is keyed by `userId` — a new workspace
@@ -17,10 +17,10 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 
-import { db } from "@intelligo/core/db";
-import { member } from "@intelligo/core/db/schema";
-import { createWorkspaceService } from "@intelligo/auth";
-import { checkPlanLimit } from "@intelligo/billing";
+import { db } from "@intelligo-dev/core/db";
+import { member } from "@intelligo-dev/core/db/schema";
+import { createWorkspaceService } from "@intelligo-dev/auth";
+import { checkPlanLimit } from "@intelligo-dev/billing";
 
 export const workspace = createWorkspaceService({
   checkWorkspaceLimit: async (userId, currentCount) => {

@@ -16,7 +16,7 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { Check, ChevronsUpDown } from "lucide-react";
 
-import { authClient } from "@intelligo/auth/client";
+import { authClient } from "@intelligo-dev/auth/client";
 
 import {
   DropdownMenu,

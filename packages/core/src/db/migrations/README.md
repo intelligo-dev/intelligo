@@ -15,7 +15,7 @@ journal and the directory drift apart again.
 
 ## Adding a migration
 
-Prefer `pnpm --filter @intelligo/core db:generate`, which writes both
+Prefer `pnpm --filter @intelligo-dev/core db:generate`, which writes both
 the `.sql` file and its journal entry. A hand-written file needs its
 tag added to `meta/_journal.json` by hand — `doctor` will tell you if
 you forget.

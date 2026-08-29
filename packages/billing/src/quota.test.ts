@@ -55,13 +55,13 @@ vi.mock("./quota-plan", () => ({
   getPlanMonthlyCreditMnt: (slug: string) => (slug === "free" ? 2000 : 30000),
   getPlanMessageLimit: () => 100,
 }));
-vi.mock("@intelligo/executions/pricing", () => ({
+vi.mock("@intelligo-dev/executions/pricing", () => ({
   estimateWorstCaseChargedMnt: mocks.estimateWorstCaseChargedMnt,
   calculateChargedMnt: mocks.calculateChargedMnt,
   calculateCost: mocks.calculateCost,
 }));
 
-vi.mock("@intelligo/core/logger", () => ({
+vi.mock("@intelligo-dev/core/logger", () => ({
   createLogger: () => ({
     debug: vi.fn(),
     info: vi.fn(),
@@ -70,7 +70,7 @@ vi.mock("@intelligo/core/logger", () => ({
   }),
 }));
 
-vi.mock("@intelligo/core/db/schema", () => ({
+vi.mock("@intelligo-dev/core/db/schema", () => ({
   usageRecords: {},
   monthlyUsage: {},
   subscriptions: {},
@@ -85,7 +85,7 @@ vi.mock("@intelligo/core/db/schema", () => ({
   },
 }));
 
-vi.mock("@intelligo/core/db", () => {
+vi.mock("@intelligo-dev/core/db", () => {
   // A minimal tx whose select() sums the in-memory active reservations
   // and whose insert() appends to the store. The advisory lock execute()
   // is a no-op — serialization is simulated by running admissions

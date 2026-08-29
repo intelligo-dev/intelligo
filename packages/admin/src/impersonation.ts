@@ -27,11 +27,11 @@ import "server-only";
  * a review.
  */
 
-import { impersonateUser, stopImpersonating } from "@intelligo/auth";
+import { impersonateUser, stopImpersonating } from "@intelligo-dev/auth";
 
 import { requireAdminOrRefuse } from "./authorization";
 
-export type { ImpersonatedSession as ImpersonationResult } from "@intelligo/auth";
+export type { ImpersonatedSession as ImpersonationResult } from "@intelligo-dev/auth";
 
 /**
  * Begin acting as a user.

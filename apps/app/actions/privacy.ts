@@ -2,7 +2,7 @@
 
 /**
  * Privacy settings server actions — thin transport over the
- * framework's identity service (`@intelligo/core/identity`):
+ * framework's identity service (`@intelligo-dev/core/identity`):
  * authenticate the caller, call the service, map any
  * `IdentityServiceError` to a friendly message, and revalidate. No
  * business rules here — fact ownership checks, the memory-audit write,
@@ -12,7 +12,7 @@
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
-import { requireWorkspace } from "@intelligo/auth";
+import { requireWorkspace } from "@intelligo-dev/auth";
 import {
   deleteFact as deleteFactService,
   exportIdentity as exportIdentityService,
@@ -22,7 +22,7 @@ import {
   type IdentityExport,
   type UserFact,
   type UserMemoryAuditRow,
-} from "@intelligo/core/identity";
+} from "@intelligo-dev/core/identity";
 
 export type PrivacyActionResult<T = undefined> =
   | { success: true; data: T }

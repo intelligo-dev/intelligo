@@ -19,8 +19,8 @@
  * Pattern: Server-side only, used by /api/tools/generate route handler.
  */
 
-import { db } from "@intelligo/core/db";
-import { imageGenerations } from "@intelligo/core/db/schema";
+import { db } from "@intelligo-dev/core/db";
+import { imageGenerations } from "@intelligo-dev/core/db/schema";
 import { eq, and, gte, ne, sql } from "drizzle-orm";
 import { getWorkspaceBilling } from "./queries";
 // ---------------------------------------------------------------------------

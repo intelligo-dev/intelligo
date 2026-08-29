@@ -5,7 +5,7 @@
  *
  * Thin by design (ADR-0005): the policy — platform-admin gate,
  * audit-or-refuse, mandatory reason, time cap — is
- * `@intelligo/admin`'s, and these actions only adapt it to a form
+ * `@intelligo-dev/admin`'s, and these actions only adapt it to a form
  * submission and a redirect. Reimplementing any of it here would
  * create a second place that can disagree about who may act as whom.
  *
@@ -17,8 +17,8 @@
 
 import { redirect } from "next/navigation";
 
-import { startImpersonation, stopImpersonation } from "@intelligo/admin";
-import { createLogger } from "@intelligo/core/logger";
+import { startImpersonation, stopImpersonation } from "@intelligo-dev/admin";
+import { createLogger } from "@intelligo-dev/core/logger";
 
 const log = createLogger("Impersonation");
 

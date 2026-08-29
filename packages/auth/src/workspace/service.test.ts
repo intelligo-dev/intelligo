@@ -46,7 +46,7 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("next/headers", () => ({ headers: mocks.headersMock }));
 
-vi.mock("@intelligo/core/logger", () => ({
+vi.mock("@intelligo-dev/core/logger", () => ({
   createLogger: () => ({
     debug: vi.fn(),
     info: vi.fn(),

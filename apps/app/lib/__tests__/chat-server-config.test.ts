@@ -13,7 +13,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@intelligo/core/documents", () => ({
+vi.mock("@intelligo-dev/core/documents", () => ({
   saveDocument: vi.fn(),
 }));
 

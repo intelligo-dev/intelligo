@@ -23,7 +23,7 @@ import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { deleteFact } from "@/actions/privacy";
-import type { UserFact } from "@intelligo/core/db/schema";
+import type { UserFact } from "@intelligo-dev/core/db/schema";
 
 function titleCase(value: string): string {
   return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());

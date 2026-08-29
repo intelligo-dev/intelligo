@@ -19,7 +19,7 @@
 
 import { auth } from "./server";
 import type { User } from "better-auth/types";
-import { createLogger } from "@intelligo/core/logger";
+import { createLogger } from "@intelligo-dev/core/logger";
 
 const log = createLogger("WorkspaceInit");
 

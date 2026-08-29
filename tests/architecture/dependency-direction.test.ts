@@ -3,10 +3,10 @@
  *
  * Enforces the package boundary at two levels:
  *   1. package.json — each package may declare only its allowlisted
- *      @intelligo/* dependencies;
+ *      @intelligo-dev/* dependencies;
  *   2. source imports — every `from "..."`/dynamic import in a package's
- *      src/ must resolve to an allowlisted @intelligo/* package, and no
- *      package may import app code (`@intelligo/acme`, `@intelligo/web`,
+ *      src/ must resolve to an allowlisted @intelligo-dev/* package, and no
+ *      package may import app code (`@example/product`, `@intelligo-dev/web`,
  *      `@/...`, or a relative path escaping packages/).
  *
  * The allowlist is the CURRENT accepted graph. Tightening it is done
@@ -24,26 +24,26 @@ import { hasIgniteApp, hasPrivateWorkspace } from "./scope";
 const ROOT = path.resolve(__dirname, "../..");
 const PACKAGES_DIR = path.join(ROOT, "packages");
 
-/** Accepted @intelligo/* dependency edges, by package directory name. */
+/** Accepted @intelligo-dev/* dependency edges, by package directory name. */
 const ALLOWED_DEPS: Record<string, readonly string[]> = {
   core: [],
   ui: [],
   // The registry and the cost math moved to executions (ADR-0008);
   // what is left re-exports them beside the provider clients.
-  ai: ["@intelligo/core", "@intelligo/executions"],
-  auth: ["@intelligo/core"],
-  audit: ["@intelligo/core"],
-  jobs: ["@intelligo/core"],
-  "billing-core": ["@intelligo/core"],
+  ai: ["@intelligo-dev/core", "@intelligo-dev/executions"],
+  auth: ["@intelligo-dev/core"],
+  audit: ["@intelligo-dev/core"],
+  jobs: ["@intelligo-dev/core"],
+  "billing-core": ["@intelligo-dev/core"],
   // executions owns the SaaS boundary and must NOT depend on billing —
   // entitlement and settlement arrive through ports bound by the
-  // composition root (ADR-0005). Adding @intelligo/billing here would
+  // composition root (ADR-0005). Adding @intelligo-dev/billing here would
   // undo the whole point of the package.
-  executions: ["@intelligo/core", "@intelligo/audit"],
+  executions: ["@intelligo-dev/core", "@intelligo-dev/audit"],
   // The Mastra bridge is deliberately removable: it depends on the
   // execution boundary and NOTHING else, and reaches @mastra/core only
   // through an optional peer dependency it never imports.
-  mastra: ["@intelligo/executions"],
+  mastra: ["@intelligo-dev/executions"],
   // The CLI inspects a workspace from the outside — reading files,
   // talking to Postgres — so it deliberately imports no runtime
   // package. Adding one would make `doctor` need the app to boot
@@ -54,24 +54,24 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
   // shows about credits comes from executions, so the console cannot
   // drift into a second definition of what a charge is.
   admin: [
-    "@intelligo/core",
-    "@intelligo/auth",
-    "@intelligo/audit",
-    "@intelligo/executions",
-    "@intelligo/jobs",
-    "@intelligo/ui",
+    "@intelligo-dev/core",
+    "@intelligo-dev/auth",
+    "@intelligo-dev/audit",
+    "@intelligo-dev/executions",
+    "@intelligo-dev/jobs",
+    "@intelligo-dev/ui",
   ],
   billing: [
-    "@intelligo/core",
-    "@intelligo/billing-core",
-    "@intelligo/executions",
+    "@intelligo-dev/core",
+    "@intelligo-dev/billing-core",
+    "@intelligo-dev/executions",
   ],
-  agents: ["@intelligo/core", "@intelligo/ai", "@intelligo/auth"],
+  agents: ["@intelligo-dev/core", "@intelligo-dev/ai", "@intelligo-dev/auth"],
   chat: [
-    "@intelligo/core",
-    "@intelligo/ai",
-    "@intelligo/agents",
-    "@intelligo/ui",
+    "@intelligo-dev/core",
+    "@intelligo-dev/ai",
+    "@intelligo-dev/agents",
+    "@intelligo-dev/ui",
   ],
 };
 
@@ -83,23 +83,23 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
  */
 const PRIVATE_ALLOWED_DEPS: Record<string, readonly string[]> = {
   support: [
-    "@intelligo/core",
-    "@intelligo/ai",
-    "@intelligo/agents",
-    "@intelligo/billing",
-    "@intelligo/billing-core",
-    "@intelligo/chat",
-    "@intelligo/ui",
+    "@intelligo-dev/core",
+    "@intelligo-dev/ai",
+    "@intelligo-dev/agents",
+    "@intelligo-dev/billing",
+    "@intelligo-dev/billing-core",
+    "@intelligo-dev/chat",
+    "@intelligo-dev/ui",
   ],
   // The product app composes everything, including the vertical.
   acme: null as unknown as readonly string[],
 };
 
 /** Packages that must never appear as a dependency of a reusable package. */
-const APP_PACKAGES = ["@intelligo/acme", "@intelligo/web"];
+const APP_PACKAGES = ["@example/product", "@intelligo-dev/web"];
 
 /** The private vertical: nothing reusable may reference it. */
-const PRIVATE_PACKAGES = ["@intelligo/support"];
+const PRIVATE_PACKAGES = ["@example/product"];
 
 function listPackages(): string[] {
   return listDir(PACKAGES_DIR);
@@ -147,7 +147,7 @@ function importSpecifiers(source: string): string[] {
   const patterns = [
     /(?:^|\n)\s*(?:import|export)\s[^"'`]*?from\s*["']([^"']+)["']/g,
     /(?:^|\n)\s*import\s*["']([^"']+)["']/g, // side-effect import
-    // Quoted AND backtick specifiers: `await import(\`@intelligo/support\`)`
+    // Quoted AND backtick specifiers: `await import(\`@example/product\`)`
     // slipped past a quote-only pattern.
     /\bimport\s*\(\s*[`"']([^`"']+)[`"']\s*\)/g,
     /\brequire\s*\(\s*[`"']([^`"']+)[`"']\s*\)/g,
@@ -190,7 +190,7 @@ describe("package dependency direction", () => {
     const pkgDir = path.join(PACKAGES_DIR, pkg);
     const allowed = ALLOWED_DEPS[pkg] ?? [];
 
-    it("declares only allowlisted @intelligo/* dependencies", () => {
+    it("declares only allowlisted @intelligo-dev/* dependencies", () => {
       const manifest = JSON.parse(
         readFileSync(path.join(pkgDir, "package.json"), "utf8")
       ) as Record<string, Record<string, string> | undefined>;
@@ -198,7 +198,7 @@ describe("package dependency direction", () => {
         ...manifest.dependencies,
         ...manifest.devDependencies,
         ...manifest.peerDependencies,
-      }).filter((name) => name.startsWith("@intelligo/"));
+      }).filter((name) => name.startsWith("@intelligo-dev/"));
 
       const violations = declared.filter((dep) => !allowed.includes(dep));
       expect(
@@ -207,7 +207,7 @@ describe("package dependency direction", () => {
       ).toEqual([]);
     });
 
-    it("imports only allowlisted @intelligo/* packages and no app code", () => {
+    it("imports only allowlisted @intelligo-dev/* packages and no app code", () => {
       // Whole package, not just src/: scripts and root config files are
       // where the escapes actually were.
       const files = walkSources(pkgDir);
@@ -216,9 +216,9 @@ describe("package dependency direction", () => {
       for (const file of files) {
         const rel = path.relative(ROOT, file);
         for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
-          if (spec.startsWith("@intelligo/")) {
+          if (spec.startsWith("@intelligo-dev/")) {
             const dep = spec.split("/").slice(0, 2).join("/");
-            const isSelf = dep === `@intelligo/${pkg}`;
+            const isSelf = dep === `@intelligo-dev/${pkg}`;
             if (!isSelf && !allowed.includes(dep)) {
               violations.push(`${rel} → ${spec}`);
             }
@@ -259,7 +259,7 @@ describe.skipIf(!hasPrivateWorkspace)("private package direction", () => {
   describe.each(privatePackages)("%s", (pkg) => {
     const pkgDir = path.join(PRIVATE_DIR, pkg);
 
-    it("declares only allowlisted @intelligo/* dependencies", () => {
+    it("declares only allowlisted @intelligo-dev/* dependencies", () => {
       const allowed = PRIVATE_ALLOWED_DEPS[pkg];
       if (!allowed) return; // acme composes everything
 
@@ -270,7 +270,7 @@ describe.skipIf(!hasPrivateWorkspace)("private package direction", () => {
         ...manifest.dependencies,
         ...manifest.devDependencies,
         ...manifest.peerDependencies,
-      }).filter((name) => name.startsWith("@intelligo/"));
+      }).filter((name) => name.startsWith("@intelligo-dev/"));
 
       const violations = declared.filter((dep) => !allowed.includes(dep));
       expect(
@@ -279,7 +279,7 @@ describe.skipIf(!hasPrivateWorkspace)("private package direction", () => {
       ).toEqual([]);
     });
 
-    it("imports only allowlisted @intelligo/* packages", () => {
+    it("imports only allowlisted @intelligo-dev/* packages", () => {
       const allowed = PRIVATE_ALLOWED_DEPS[pkg];
       if (!allowed) return; // acme composes everything
 
@@ -287,9 +287,9 @@ describe.skipIf(!hasPrivateWorkspace)("private package direction", () => {
       for (const file of walkSources(pkgDir)) {
         const rel = path.relative(ROOT, file);
         for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
-          if (!spec.startsWith("@intelligo/")) continue;
+          if (!spec.startsWith("@intelligo-dev/")) continue;
           const dep = spec.split("/").slice(0, 2).join("/");
-          if (dep === `@intelligo/${pkg}`) continue;
+          if (dep === `@intelligo-dev/${pkg}`) continue;
           if (!allowed.includes(dep)) violations.push(`${rel} → ${spec}`);
         }
       }
@@ -310,7 +310,7 @@ describe.skipIf(!hasPrivateWorkspace)("private package direction", () => {
       });
 
       if (pkg === "acme") return;
-      expect(declared).not.toContain("@intelligo/acme");
+      expect(declared).not.toContain("@example/product");
     });
   });
 });
@@ -341,7 +341,7 @@ describe("apps", () => {
       for (const file of walkSources(appDir)) {
         const rel = path.relative(ROOT, file);
         for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
-          const dep = spec.startsWith("@intelligo/")
+          const dep = spec.startsWith("@intelligo-dev/")
             ? spec.split("/").slice(0, 2).join("/")
             : null;
           if (dep && PRIVATE_PACKAGES.includes(dep)) {
@@ -370,7 +370,7 @@ describe("apps", () => {
       const undeclared = new Set<string>();
       for (const file of walkSources(appDir)) {
         for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
-          if (!spec.startsWith("@intelligo/")) continue;
+          if (!spec.startsWith("@intelligo-dev/")) continue;
           const dep = spec.split("/").slice(0, 2).join("/");
           if (!declared.has(dep)) undeclared.add(dep);
         }
@@ -474,7 +474,7 @@ describe("public packages do not depend on the dissolved set", () => {
     readFileSync(path.join(ROOT, "config/public-packages.json"), "utf8")
   ) as { public: string[]; deprecated: string[] };
 
-  const dissolved = allowlist.deprecated.map((p) => `@intelligo/${p}`);
+  const dissolved = allowlist.deprecated.map((p) => `@intelligo-dev/${p}`);
 
   it("has a dissolved set to rule on", () => {
     // Once the moves land and these directories are gone, this rule

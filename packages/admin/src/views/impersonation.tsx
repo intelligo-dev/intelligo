@@ -6,7 +6,7 @@
  * designing against are a click made without thinking and an access
  * nobody can explain later.
  *
- * The action is the consumer's — @intelligo/admin never imports app
+ * The action is the consumer's — @intelligo-dev/admin never imports app
  * code — so the page passes it in.
  */
 

@@ -1,15 +1,15 @@
 /**
  * Memory-audit event contract (ADR-0008).
  *
- * ADR-0008 names `@intelligo/audit` as `recordMemoryAudit`'s
+ * ADR-0008 names `@intelligo-dev/audit` as `recordMemoryAudit`'s
  * destination ("`recordMemoryAudit` to `audit`"). The dependency
  * allowlist doesn't cooperate with a literal move, though
  * (tests/architecture/dependency-direction.test.ts): this package may
- * depend on `@intelligo/core` (`audit: ["@intelligo/core"]`), but
- * `@intelligo/core` may depend on nothing (`core: []`) — the same
+ * depend on `@intelligo-dev/core` (`audit: ["@intelligo-dev/core"]`), but
+ * `@intelligo-dev/core` may depend on nothing (`core: []`) — the same
  * constraint `packages/core/src/documents/service.ts` and
  * `.../conversations/service.ts` already document for
- * `@intelligo/auth`. `user_facts`/`user_memories`/
+ * `@intelligo-dev/auth`. `user_facts`/`user_memories`/
  * `user_profile_snapshots`/`user_memory_audit` are owned by
  * `packages/core/src/identity` (see that module's doc comment), and
  * that module cannot import this package to call a writer defined
@@ -22,9 +22,9 @@
  * `packages/core/src/identity/audit.ts`, used internally by the
  * identity service (`deleteFact`, `exportIdentity`) so it never
  * crosses the disallowed core -> audit edge. This module is the public
- * seam for anyone else who depends on `@intelligo/audit` (executions,
+ * seam for anyone else who depends on `@intelligo-dev/audit` (executions,
  * admin, billing) and wants to describe a memory-audit event without
- * reaching into `@intelligo/core/identity`'s internals.
+ * reaching into `@intelligo-dev/core/identity`'s internals.
  *
  * `packages/audit/src/db/schema.ts` already documents where this
  * settles: `user_memory_audit` folds into `audit_events` once the
@@ -39,7 +39,7 @@ import type {
   AuditActorKind,
   UserMemoryAuditRow,
   InsertUserMemoryAudit,
-} from "@intelligo/core/db/schema";
+} from "@intelligo-dev/core/db/schema";
 
 export type {
   AuditTargetKind,
@@ -52,8 +52,8 @@ export type {
 /**
  * The shape `recordMemoryAudit`
  * (`packages/core/src/identity/audit.ts`) accepts. Kept here — not in
- * `@intelligo/core/identity` — so a package that depends on
- * `@intelligo/audit` but not on the identity service directly has a
+ * `@intelligo-dev/core/identity` — so a package that depends on
+ * `@intelligo-dev/audit` but not on the identity service directly has a
  * stable type to code against.
  */
 export type RecordMemoryAuditInput = {

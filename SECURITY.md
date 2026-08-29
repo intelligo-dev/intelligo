@@ -4,7 +4,7 @@
 
 Report security issues privately — **do not open a public issue**.
 
-Email **security@intelligo.mn** with:
+Email **security@intelligo.dev** with:
 
 - what the issue is and which package or route it affects,
 - the steps or request needed to reproduce it,
@@ -16,7 +16,7 @@ otherwise, credited in the release notes.
 
 ## What is in scope
 
-The published `@intelligo/*` packages and the reference application.
+The published `@intelligo-dev/*` packages and the reference application.
 The parts most worth your attention, because getting them wrong is how
 a tenant sees another tenant's data or a customer is charged wrongly:
 

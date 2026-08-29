@@ -1,5 +1,5 @@
 {
-  "name": "@intelligo/admin",
+  "name": "@intelligo-dev/admin",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "repository": {
@@ -24,12 +24,12 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@intelligo/audit": "workspace:*",
-    "@intelligo/auth": "workspace:*",
-    "@intelligo/core": "workspace:*",
-    "@intelligo/executions": "workspace:*",
-    "@intelligo/jobs": "workspace:*",
-    "@intelligo/ui": "workspace:*",
+    "@intelligo-dev/audit": "workspace:*",
+    "@intelligo-dev/auth": "workspace:*",
+    "@intelligo-dev/core": "workspace:*",
+    "@intelligo-dev/executions": "workspace:*",
+    "@intelligo-dev/jobs": "workspace:*",
+    "@intelligo-dev/ui": "workspace:*",
     "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {

@@ -34,8 +34,8 @@ function asUser(cookie: string) {
 }
 
 d("workspace service — real DB integration", () => {
-  let db: typeof import("@intelligo/core/db").db;
-  let users: typeof import("@intelligo/core/db/schema").users;
+  let db: typeof import("@intelligo-dev/core/db").db;
+  let users: typeof import("@intelligo-dev/core/db/schema").users;
   let auth: typeof import("../server").auth;
   let createWorkspaceService: typeof import("./service").createWorkspaceService;
   let isWorkspaceServiceError: typeof import("./errors").isWorkspaceServiceError;
@@ -71,8 +71,8 @@ d("workspace service — real DB integration", () => {
   const createdOrgs: Array<{ orgId: string; ownerCookie: string }> = [];
 
   beforeAll(async () => {
-    ({ db } = await import("@intelligo/core/db"));
-    ({ users } = await import("@intelligo/core/db/schema"));
+    ({ db } = await import("@intelligo-dev/core/db"));
+    ({ users } = await import("@intelligo-dev/core/db/schema"));
     ({ auth } = await import("../server"));
     ({ createWorkspaceService } = await import("./service"));
     ({ isWorkspaceServiceError } = await import("./errors"));

@@ -4,9 +4,9 @@ import "server-only";
  * Session-level impersonation.
  *
  * This module owns only the session mechanics, because that is what
- * @intelligo/auth owns: it holds the Better-Auth instance and the
+ * @intelligo-dev/auth owns: it holds the Better-Auth instance and the
  * request headers. The *policy* — who may do it, that it is audited or
- * refused, that a reason is mandatory — lives in @intelligo/admin, and
+ * refused, that a reason is mandatory — lives in @intelligo-dev/admin, and
  * these functions must not be called without going through it.
  *
  * Nothing here re-checks authorization. Splitting the check from the

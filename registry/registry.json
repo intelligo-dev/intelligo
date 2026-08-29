@@ -95,9 +95,9 @@
         "table"
       ],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/core",
-        "@intelligo/billing",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
+        "@intelligo-dev/billing",
         "sonner",
         "server-only",
         "next-intl"
@@ -170,9 +170,9 @@
         "button"
       ],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/billing",
-        "@intelligo/executions",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/executions",
         "next-intl",
         "lucide-react"
       ],
@@ -231,8 +231,8 @@
       "description": "Accept or decline a workspace invitation via the team service. Requires the team-settings item (provides lib/team.ts and the role badge); install it first.",
       "registryDependencies": ["alert", "card", "skeleton", "button"],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/core",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
         "sonner",
         "next-intl"
       ],
@@ -281,8 +281,8 @@
         "sidebar"
       ],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/core",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
         "next-themes",
         "drizzle-orm",
         "lucide-react",
@@ -391,9 +391,9 @@
         "skeleton"
       ],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/core",
-        "@intelligo/billing",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
+        "@intelligo-dev/billing",
         "drizzle-orm",
         "sonner",
         "server-only",
@@ -444,7 +444,7 @@
       "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first.",
       "registryDependencies": ["alert", "button", "input", "label", "skeleton"],
       "dependencies": [
-        "@intelligo/auth",
+        "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
         "@hookform/resolvers@^5.2.2",
         "zod@^3.25.76",
@@ -506,7 +506,7 @@
       "description": "Email/password and OAuth account creation. Requires the auth-login item (provides the shared AuthCard shell, SocialLoginButtons, and lib/auth-validation.ts schemas); install it first. Redirects to auth-email-verification's /verify-email route when the server requires email verification.",
       "registryDependencies": ["alert", "button", "input", "label"],
       "dependencies": [
-        "@intelligo/auth",
+        "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
         "@hookform/resolvers@^5.2.2",
         "lucide-react",
@@ -537,7 +537,7 @@
       "description": "Forgot-password and reset-password pages, backed by the Better-Auth client SDK's requestPasswordReset/resetPassword actions. Requires the auth-login item (provides the shared AuthCard shell and lib/auth-validation.ts schemas); install it first.",
       "registryDependencies": ["alert", "button", "input", "label"],
       "dependencies": [
-        "@intelligo/auth",
+        "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
         "@hookform/resolvers@^5.2.2",
         "lucide-react",
@@ -577,7 +577,7 @@
       "title": "Auth: Email Verification",
       "description": "Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action. Reads the ?error=/?email= search params Better-Auth's own /verify-email link handler redirects back with. Requires the auth-login item (provides the shared AuthCard shell); install it first.",
       "registryDependencies": ["alert", "button", "input", "label"],
-      "dependencies": ["@intelligo/auth", "lucide-react", "next-intl"],
+      "dependencies": ["@intelligo-dev/auth", "lucide-react", "next-intl"],
       "files": [
         {
           "path": "base/auth-email-verification/page.tsx",
@@ -623,9 +623,9 @@
       "description": "Dismissable trial-status strip for the app shell's bannerTop seam: days and credits remaining with an upgrade CTA, urgency-ramped visuals, dismiss-for-today, and a consumer config (lib/trial-banner-config.ts) for the CTA target and route suppression (hidden on /chat by default). Bind TrialBannerContainer as shellConfig.bannerTop.",
       "registryDependencies": ["button"],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/billing",
-        "@intelligo/core",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/core",
         "lucide-react",
         "next-intl"
       ],
@@ -665,8 +665,8 @@
         "skeleton"
       ],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/core",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
         "lucide-react",
         "next-intl"
       ],
@@ -725,8 +725,8 @@
       "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on \u2014 install this item first.",
       "registryDependencies": ["alert", "badge", "button", "card", "skeleton"],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/billing",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
         "zod@^3.25.76",
         "lucide-react",
         "server-only",
@@ -797,8 +797,8 @@
       "description": "Checkout-success page that verifies the Stripe session directly through the framework's checkout service, covering the webhook-race window between the browser redirect and Stripe's webhook delivery.",
       "registryDependencies": ["alert", "badge", "button", "card", "skeleton"],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/billing",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
         "lucide-react",
         "next-intl"
       ],
@@ -832,8 +832,8 @@
       "description": "Workspace billing management: current plan, credit balance, credit bundle purchase, and the Stripe billing portal, shaped server-side by role (member/admin/owner). Requires the pricing item (provides lib/billing.ts and actions/billing.ts); install it first.",
       "registryDependencies": ["alert", "button", "card", "skeleton"],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/billing",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
         "lucide-react",
         "next-intl"
       ],
@@ -876,7 +876,7 @@
       "title": "Feature Gating",
       "description": "The vocabulary for selling a plan: a server-side FeatureGate that renders gated content only to entitled workspaces, three densities of upgrade prompt (full, compact, inline), a quota warning that escalates as a limit approaches, and a preview paywall that blurs content instead of hiding it. Which features exist and which plan unlocks them is consumer config (lib/feature-catalog.ts). Install pricing or billing-settings for somewhere to send the user.",
       "registryDependencies": ["button", "card", "dialog"],
-      "dependencies": ["@intelligo/billing", "lucide-react", "next-intl"],
+      "dependencies": ["@intelligo-dev/billing", "lucide-react", "next-intl"],
       "files": [
         {
           "path": "base/feature-gating/components/feature-gate.tsx",
@@ -932,7 +932,7 @@
       "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic \u2014 QPay, SocialPay, PIX, UPI, PromptPay all fit \u2014 through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
       "registryDependencies": ["button", "dialog"],
       "dependencies": [
-        "@intelligo/auth",
+        "@intelligo-dev/auth",
         "lucide-react",
         "server-only",
         "next-intl"
@@ -979,8 +979,8 @@
         "skeleton"
       ],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/core",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
         "sonner",
         "server-only",
         "next-intl"
@@ -1030,7 +1030,7 @@
       "description": "A generic multi-step onboarding wizard driven by a consumer-owned steps config: text and single-select-card fields, a completion screen, skip, and back/next - backed by the framework's onboarding service (durable step progress, no vertical-specific UI).",
       "registryDependencies": ["button", "input", "label", "skeleton"],
       "dependencies": [
-        "@intelligo/auth",
+        "@intelligo-dev/auth",
         "lucide-react",
         "server-only",
         "next-intl"
@@ -1100,10 +1100,10 @@
       "description": "An AI-first workspace home: a hero with starter prompts, a sticky prompt bar that opens a new conversation, a resume affordance for unfinished work, recent conversations, and a compact plan/usage strip. Configurable through lib/dashboard-config.tsx (copy, starters, chat base path, shortcuts) and lib/dashboard-data.ts (what \"resume\" means). Pairs with the chat item for its /chat routes and the pricing item for lib/billing-config.ts's CURRENCY; install those first.",
       "registryDependencies": ["progress", "skeleton"],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/billing",
-        "@intelligo/core",
-        "@intelligo/executions",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/core",
+        "@intelligo-dev/executions",
         "lucide-react",
         "server-only",
         "next-intl"
@@ -1176,8 +1176,8 @@
         "skeleton"
       ],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/core",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
         "lucide-react",
         "sonner",
         "server-only",
@@ -1233,8 +1233,8 @@
       "description": "GDPR-style data export, a read-only memory-audit trail, and per-category fact listing with delete, backed by the framework's identity service.",
       "registryDependencies": ["button", "card", "skeleton"],
       "dependencies": [
-        "@intelligo/auth",
-        "@intelligo/core",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
         "lucide-react",
         "sonner",
         "next-intl"
@@ -1298,10 +1298,10 @@
         "lucide-react",
         "sonner",
         "server-only",
-        "@intelligo/auth",
-        "@intelligo/billing",
-        "@intelligo/core",
-        "@intelligo/executions",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/core",
+        "@intelligo-dev/executions",
         "next-intl"
       ],
       "files": [

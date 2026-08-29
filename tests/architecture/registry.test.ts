@@ -5,7 +5,7 @@
  * The registry (`registry/`) ships shadcn-compatible page/component
  * source that becomes ordinary consumer-owned source once installed.
  * Nothing in it may leak a private import, a dissolved-package import,
- * or a duplicate `@intelligo/ui` runtime dependency, and every file it
+ * or a duplicate `@intelligo-dev/ui` runtime dependency, and every file it
  * ships must actually be wired into an item.
  *
  * Schema check: the official schema lives at
@@ -222,7 +222,7 @@ describe.skipIf(!hasRegistry)("registry", () => {
     const allowlist = JSON.parse(
       readFileSync(path.join(ROOT, "config/public-packages.json"), "utf8")
     ) as { deprecated: string[] };
-    const dissolved = allowlist.deprecated.map((p) => `@intelligo/${p}`);
+    const dissolved = allowlist.deprecated.map((p) => `@intelligo-dev/${p}`);
 
     it("has a dissolved set to rule on", () => {
       expect(dissolved.length).toBeGreaterThan(0);
@@ -231,7 +231,7 @@ describe.skipIf(!hasRegistry)("registry", () => {
     describe.each(registry.items)("item: $name", (item) => {
       const itemRoot = path.join(BASE_DIR, item.name);
 
-      it("imports no private, dissolved, or @intelligo/ui path", () => {
+      it("imports no private, dissolved, or @intelligo-dev/ui path", () => {
         const violations: string[] = [];
 
         for (const file of item.files) {
@@ -245,26 +245,29 @@ describe.skipIf(!hasRegistry)("registry", () => {
               continue;
             }
             if (
-              spec === "@intelligo/acme" ||
-              spec.startsWith("@intelligo/acme/")
+              spec === "@example/product" ||
+              spec.startsWith("@example/product/")
             ) {
               violations.push(`${rel} → ${spec} (private app)`);
               continue;
             }
             if (
-              spec === "@intelligo/support" ||
-              spec.startsWith("@intelligo/support/")
+              spec === "@example/product" ||
+              spec.startsWith("@example/product/")
             ) {
               violations.push(`${rel} → ${spec} (private vertical)`);
               continue;
             }
-            if (spec === "@intelligo/ui" || spec.startsWith("@intelligo/ui/")) {
+            if (
+              spec === "@intelligo-dev/ui" ||
+              spec.startsWith("@intelligo-dev/ui/")
+            ) {
               violations.push(
-                `${rel} → ${spec} (registry items use consumer @/components/ui/*, not @intelligo/ui)`
+                `${rel} → ${spec} (registry items use consumer @/components/ui/*, not @intelligo-dev/ui)`
               );
               continue;
             }
-            if (spec.startsWith("@intelligo/")) {
+            if (spec.startsWith("@intelligo-dev/")) {
               const dep = spec.split("/").slice(0, 2).join("/");
               if (dissolved.includes(dep)) {
                 violations.push(`${rel} → ${spec} (dissolved package)`);
@@ -301,11 +304,11 @@ describe.skipIf(!hasRegistry)("registry", () => {
     });
   });
 
-  describe("@intelligo/* imports are declared in the item's dependencies", () => {
+  describe("@intelligo-dev/* imports are declared in the item's dependencies", () => {
     const registry = readRegistry();
 
     describe.each(registry.items)("item: $name", (item) => {
-      it("declares every @intelligo/* package it imports", () => {
+      it("declares every @intelligo-dev/* package it imports", () => {
         const declared = new Set(item.dependencies ?? []);
         const undeclared = new Set<string>();
 
@@ -314,7 +317,7 @@ describe.skipIf(!hasRegistry)("registry", () => {
           const source = statSyncSafe(abs) ? readFileSync(abs, "utf8") : "";
 
           for (const spec of importSpecifiers(source)) {
-            if (!spec.startsWith("@intelligo/")) continue;
+            if (!spec.startsWith("@intelligo-dev/")) continue;
             const dep = spec.split("/").slice(0, 2).join("/");
             if (!declared.has(dep)) undeclared.add(dep);
           }
@@ -363,7 +366,7 @@ describe.skipIf(!hasRegistry)("registry", () => {
 
           for (const spec of importSpecifiers(source)) {
             if (spec.startsWith(".") || spec.startsWith("@/")) continue;
-            if (spec.startsWith("@intelligo/")) continue; // covered above
+            if (spec.startsWith("@intelligo-dev/")) continue; // covered above
             if (spec.startsWith("node:")) continue;
             const pkg = packageName(spec);
             if (IMPLICIT_NPM.has(pkg)) continue;
@@ -495,7 +498,7 @@ describe.skipIf(!hasRegistry)("registry", () => {
   describe("money is formatted per deployment, not per package", () => {
     const registry = readRegistry();
 
-    // `formatPrice` (@intelligo/billing/plans) hardcodes the tugrik
+    // `formatPrice` (@intelligo-dev/billing/plans) hardcodes the tugrik
     // symbol and the Mongolian word for "free". Installed pages format
     // money through next-intl against `CURRENCY` in the consumer's
     // lib/billing-config.ts instead, so one deployment's currency can

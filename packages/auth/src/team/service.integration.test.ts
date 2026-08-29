@@ -67,8 +67,8 @@ d("team service — real DB integration", () => {
   // execute before `./service` (and transitively `../server`) is
   // imported, so every import below is dynamic and deferred to
   // beforeAll.
-  let db: typeof import("@intelligo/core/db").db;
-  let users: typeof import("@intelligo/core/db/schema").users;
+  let db: typeof import("@intelligo-dev/core/db").db;
+  let users: typeof import("@intelligo-dev/core/db/schema").users;
   let auth: typeof import("../server").auth;
   let createTeamService: typeof import("./service").createTeamService;
   let isTeamServiceError: typeof import("./errors").isTeamServiceError;
@@ -117,8 +117,8 @@ d("team service — real DB integration", () => {
   const createdOrgs: Array<{ orgId: string; ownerCookie: string }> = [];
 
   beforeAll(async () => {
-    ({ db } = await import("@intelligo/core/db"));
-    ({ users } = await import("@intelligo/core/db/schema"));
+    ({ db } = await import("@intelligo-dev/core/db"));
+    ({ users } = await import("@intelligo-dev/core/db/schema"));
     ({ auth } = await import("../server"));
     ({ createTeamService } = await import("./service"));
     ({ isTeamServiceError } = await import("./errors"));

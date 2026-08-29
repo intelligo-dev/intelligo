@@ -6,15 +6,15 @@
  *
  * Mirrors `createExecutions(ports)` (packages/executions/src/lifecycle.ts):
  * a factory over optional ports, so this package's allowlisted
- * dependency (`@intelligo/core` only — see
+ * dependency (`@intelligo-dev/core` only — see
  * tests/architecture/dependency-direction.test.ts) never grows to
  * include billing, email, or notifications. A consumer binds those in
  * at its composition root:
  *
  *   const teamService = createTeamService({
- *     checkMemberLimit: checkTeamMemberLimit,       // @intelligo/billing
+ *     checkMemberLimit: checkTeamMemberLimit,       // @intelligo-dev/billing
  *     sendInvitationEmail: ...,                     // see note below
- *     notifyMemberJoined: triggerTeamMemberJoinedNotification, // @intelligo/core/notifications
+ *     notifyMemberJoined: triggerTeamMemberJoinedNotification, // @intelligo-dev/core/notifications
  *   });
  *
  * Authorization (`requireAuth`/`requireWorkspace`/`requireRole`) lives
@@ -39,7 +39,7 @@
  * makes — there is no code path where it does not.
  *
  * acme's current `actions/team.ts` ALSO calls
- * `@intelligo/core/email`'s `sendInvitationEmail` directly after the
+ * `@intelligo-dev/core/email`'s `sendInvitationEmail` directly after the
  * same `/organization/invite-member` call. That means **two** emails
  * go out per invitation today. This is a live duplication bug, not a
  * hypothetical.
@@ -79,7 +79,7 @@
 
 import { headers } from "next/headers";
 import type { ZodType } from "zod";
-import { createLogger } from "@intelligo/core/logger";
+import { createLogger } from "@intelligo-dev/core/logger";
 
 import { auth } from "../server";
 import { requireAuth, requireRole, requireWorkspace } from "../helpers";

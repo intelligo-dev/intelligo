@@ -1,8 +1,8 @@
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { requireWorkspace } from "@intelligo/auth";
-import { getCheckoutSession } from "@intelligo/billing";
+import { requireWorkspace } from "@intelligo-dev/auth";
+import { getCheckoutSession } from "@intelligo-dev/billing";
 
 import { Link, redirect } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,7 @@ interface CheckoutSuccessPageProps {
  * Checkout success page.
  *
  * Verifies the session by querying Stripe directly through
- * `getCheckoutSession` (`@intelligo/billing`) rather than trusting the
+ * `getCheckoutSession` (`@intelligo-dev/billing`) rather than trusting the
  * workspace's local subscription row. Stripe's webhook can arrive
  * 15-20% slower than the browser's redirect to this page; reading the
  * checkout session itself is what makes this page show the right plan

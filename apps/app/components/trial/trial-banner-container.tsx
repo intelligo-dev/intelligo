@@ -1,6 +1,6 @@
-import { getWorkspaceContext } from "@intelligo/auth";
-import { getTrialStatus } from "@intelligo/billing";
-import { createLogger } from "@intelligo/core/logger";
+import { getWorkspaceContext } from "@intelligo-dev/auth";
+import { getTrialStatus } from "@intelligo-dev/billing";
+import { createLogger } from "@intelligo-dev/core/logger";
 
 import { TrialBanner } from "./trial-banner";
 

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations } from "next-intl/server";
 
-import { requireWorkspace } from "@intelligo/auth";
-import { getBillingOverview } from "@intelligo/billing";
+import { requireWorkspace } from "@intelligo-dev/auth";
+import { getBillingOverview } from "@intelligo-dev/billing";
 
 import { Link } from "@/i18n/navigation";
 import { Card } from "@/components/ui/card";
@@ -18,13 +18,13 @@ export async function generateMetadata(): Promise<Metadata> {
  * Billing settings page — server component.
  *
  * Reads the caller's role from `requireWorkspace()` and the
- * role-shaped billing state from `getBillingOverview` (`@intelligo/billing`
+ * role-shaped billing state from `getBillingOverview` (`@intelligo-dev/billing`
  * — moved server-side out of what used to be a client component's own
  * three-way branch). `member` and `admin` get a read-only summary;
  * `owner` gets the full plan/credit/payment-method view.
  *
  * `overview.subscription.status` is left untranslated and rendered
- * verbatim: `@intelligo/billing` types it as a plain `string` mirrored
+ * verbatim: `@intelligo-dev/billing` types it as a plain `string` mirrored
  * from Stripe's own (larger-than-documented) subscription status
  * vocabulary, not a closed enum, so keying a translation off it risks
  * a missing-message error for any status this deployment hasn't

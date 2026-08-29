@@ -2,7 +2,7 @@
  * Better-Auth Server Exports
  *
  * Server-side authentication utilities.
- * For client-side auth, use @intelligo/auth/client
+ * For client-side auth, use @intelligo-dev/auth/client
  */
 
 export { auth } from "./server";

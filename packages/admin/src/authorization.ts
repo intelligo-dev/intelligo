@@ -16,8 +16,8 @@ import "server-only";
  * someone may later need to explain.
  */
 
-import { requirePlatformAdmin } from "@intelligo/auth";
-import { recordAuditEvent } from "@intelligo/audit";
+import { requirePlatformAdmin } from "@intelligo-dev/auth";
+import { recordAuditEvent } from "@intelligo-dev/audit";
 
 export type AdminActor = {
   userId: string;
@@ -69,7 +69,7 @@ export async function requireAdminOrRefuse(
   const { user } = await requirePlatformAdmin();
   const actor: AdminActor = { userId: user.id, email: user.email ?? "" };
 
-  const { recordAuditEventOrThrow } = await import("@intelligo/audit");
+  const { recordAuditEventOrThrow } = await import("@intelligo-dev/audit");
   await recordAuditEventOrThrow({
     workspaceId: resource.workspaceId ?? null,
     actorId: actor.userId,

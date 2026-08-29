@@ -24,13 +24,13 @@ import path from "node:path";
 const ROOT = path.resolve(__dirname, "../..");
 
 // The registry lives with execution cost accounting (ADR-0008), not
-// with the provider clients — and unlike `@intelligo/ai`, it is in
+// with the provider clients — and unlike `@intelligo-dev/ai`, it is in
 // the public foundation, so this rule still has a subject there.
 const MODELS_FILE = "packages/executions/src/pricing.ts";
 
 /**
  * The registry is read out of the source rather than imported: this
- * project is not a workspace package and cannot resolve @intelligo/*.
+ * project is not a workspace package and cannot resolve @intelligo-dev/*.
  * Parsing also keeps the check honest about what is *written* in the
  * file, which is what every other literal in the repo has to match.
  */

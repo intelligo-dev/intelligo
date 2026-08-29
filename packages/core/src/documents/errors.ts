@@ -1,7 +1,7 @@
 /**
  * Document service error type.
  *
- * Mirrors `@intelligo/auth`'s `WorkspaceServiceError` exactly (see that
+ * Mirrors `@intelligo-dev/auth`'s `WorkspaceServiceError` exactly (see that
  * file's doc comment for the full rationale): the documents service
  * (./service.ts) throws this for every failure it recognizes rather
  * than returning an ad-hoc `{ success, error }` envelope — that

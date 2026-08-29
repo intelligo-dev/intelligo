@@ -360,7 +360,7 @@ export const knowledgeArticles = pgTable(
 // the vertical package's schema in Wave 2 of the architecture
 // decoupling. They use support-specific scoring (assessment count) and
 // will graduate to a generic leaderboard primitive in
-// @intelligo/agents/db when a second vertical needs them.
+// @intelligo-dev/agents/db when a second vertical needs them.
 
 /**
  * Referral Codes table - Unique referral codes per user

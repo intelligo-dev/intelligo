@@ -10,7 +10,7 @@ import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
-import type { OrgMember } from "@intelligo/auth";
+import type { OrgMember } from "@intelligo-dev/auth";
 
 import { removeMember, updateMemberRole } from "@/actions/team";
 import { RoleBadge } from "./role-badge";
@@ -42,7 +42,7 @@ import {
 
 /**
  * `getFullOrganization()` returns a richer member record than the
- * `OrgMember` type declared in `@intelligo/auth` (documented there as
+ * `OrgMember` type declared in `@intelligo-dev/auth` (documented there as
  * the "minimal" shape: `id`, `userId`, `role`) — Better-Auth also
  * joins the `user` record and a `createdAt` timestamp onto each
  * member. Both are declared optional here so the table still renders

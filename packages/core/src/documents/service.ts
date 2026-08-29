@@ -3,13 +3,13 @@
  *
  * Core CRUD operations for AI-generated document artifacts with
  * workspace + user isolation. Ported from
- * @intelligo/agents/documents (ADR-0009): the tables (`documents`,
- * `document_types`) always lived in @intelligo/core's schema, only the
+ * @intelligo-dev/agents/documents (ADR-0009): the tables (`documents`,
+ * `document_types`) always lived in @intelligo-dev/core's schema, only the
  * service layer sat in a dissolving package.
  *
  * Callers pass a resolved actor (workspaceId, userId) rather than this
- * module resolving one itself — @intelligo/core cannot depend on
- * @intelligo/auth (see tests/architecture/dependency-direction.test.ts),
+ * module resolving one itself — @intelligo-dev/core cannot depend on
+ * @intelligo-dev/auth (see tests/architecture/dependency-direction.test.ts),
  * so `requireWorkspace()` moved to the caller. Every query still
  * filters by workspaceId AND userId internally; the actor is never
  * trusted to have done that itself.

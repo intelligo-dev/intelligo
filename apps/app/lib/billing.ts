@@ -7,14 +7,14 @@ import "server-only";
  * shipping its own copy — see billing-settings' description).
  *
  * `PRODUCT_SLUG` must match whatever slug your composition root passes
- * to `registerProductPlans`/`setDefaultProductSlug` (`@intelligo/billing`,
+ * to `registerProductPlans`/`setDefaultProductSlug` (`@intelligo-dev/billing`,
  * ADR-0006) — that registry call is what actually populates the plan
  * catalogue `getPlans`/`getPlan` read below. Replace the placeholder
  * with your product's real slug.
  *
  * `CREDIT_BUNDLES` is the one-time credit packaging this deployment
  * sells. Bundle packaging is product config, not framework or
- * `@intelligo/billing` policy — the checkout service takes a bundle as
+ * `@intelligo-dev/billing` policy — the checkout service takes a bundle as
  * a parameter (`createCreditCheckout`) rather than owning a bundle
  * registry, exactly like the plan catalogue is registered rather than
  * hardcoded. Edit the list to match what you actually sell, or remove
@@ -27,8 +27,8 @@ import "server-only";
  * through `messages/en.json` (ADR-0010).
  */
 
-import { getPlanBySlug, type PlanConfig } from "@intelligo/billing";
-import { getProductPlans } from "@intelligo/billing/plans";
+import { getPlanBySlug, type PlanConfig } from "@intelligo-dev/billing";
+import { getProductPlans } from "@intelligo-dev/billing/plans";
 
 import { PRODUCT_SLUG } from "./billing-config";
 export {

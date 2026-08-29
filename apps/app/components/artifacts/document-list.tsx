@@ -6,7 +6,7 @@
  *
  * Generalizes the original Acme `document-list.tsx`: the "Reports"
  * filter is `doc.isReport`, computed server-side in `@/actions/documents`
- * from `@intelligo/core/documents`'s classifier registry — not a
+ * from `@intelligo-dev/core/documents`'s classifier registry — not a
  * hardcoded Support title-pattern match — and the kind tabs are derived
  * from whatever `kind` values are actually present in the data, so a
  * product that saves a custom kind beyond text/code/sheet/image still

@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 // Each `db.select().from().where()` resolves to the next queued count.
-vi.mock("@intelligo/core/db", () => ({
+vi.mock("@intelligo-dev/core/db", () => ({
   db: {
     execute: mocks.execute,
     select: () => ({
@@ -27,11 +27,11 @@ vi.mock("@intelligo/core/db", () => ({
   },
 }));
 
-vi.mock("@intelligo/executions", () => ({
+vi.mock("@intelligo-dev/executions", () => ({
   executions: { status: "status", startedAt: "startedAt" },
 }));
 
-vi.mock("@intelligo/jobs", () => ({
+vi.mock("@intelligo-dev/jobs", () => ({
   jobs: {
     status: "status",
     runAt: "runAt",

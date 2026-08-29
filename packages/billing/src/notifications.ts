@@ -12,20 +12,20 @@
  * Pattern: Fire-and-forget after recordTokenUsage (non-blocking).
  */
 
-import { db } from "@intelligo/core/db";
+import { db } from "@intelligo-dev/core/db";
 import {
   notificationHistory,
   organization,
   users,
   member,
-} from "@intelligo/core/db/schema";
+} from "@intelligo-dev/core/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getQuotaThresholds } from "./quota";
 import { getTrialStatus } from "./trial";
 import {
   triggerQuotaNotification,
   triggerTrialNotification,
-} from "@intelligo/core/notifications";
+} from "@intelligo-dev/core/notifications";
 import { getPlanMonthlyCreditMnt } from "./quota-plan";
 import { getCurrentMonthlyUsage } from "./quota-usage";
 import { getWorkspaceBilling } from "./queries";

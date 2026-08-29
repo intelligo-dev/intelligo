@@ -16,7 +16,7 @@ import {
   runWithExecution,
   streamWithExecution,
 } from "./index";
-import type { Executions } from "@intelligo/executions";
+import type { Executions } from "@intelligo-dev/executions";
 
 function fakeExecutions(overrides: Record<string, unknown> = {}) {
   const complete = vi.fn().mockResolvedValue(undefined);

@@ -30,7 +30,7 @@ import { Card } from "@/components/ui/card";
 
 import { CheckoutButton } from "./checkout-button";
 import { CURRENCY } from "@/lib/billing-config";
-import type { PlanConfig } from "@intelligo/billing/plans";
+import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
 interface PlanCardProps {
   plan: PlanConfig;

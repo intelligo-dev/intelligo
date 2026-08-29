@@ -6,7 +6,7 @@
  * settled, audit emitted. No Support, no private package, no framework
  * file edited to make it work.
  *
- * It runs through `runWithExecution` from @intelligo/mastra — and this
+ * It runs through `runWithExecution` from @intelligo-dev/mastra — and this
  * app has no Mastra installed. `@mastra/core` is an optional peer that
  * the bridge never imports; the callable arrives as an argument, typed
  * structurally. So the bridge is not a Mastra adapter wearing a
@@ -20,8 +20,8 @@
  * this file.
  */
 
-import { requireWorkspace } from "@intelligo/auth";
-import { ExecutionRefusedError, runWithExecution } from "@intelligo/mastra";
+import { requireWorkspace } from "@intelligo-dev/auth";
+import { ExecutionRefusedError, runWithExecution } from "@intelligo-dev/mastra";
 
 import { CAPABILITIES, composeIntelligo, executions } from "@/lib/intelligo";
 

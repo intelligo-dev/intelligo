@@ -21,9 +21,9 @@ import "server-only";
  * down.
  */
 
-import { db } from "@intelligo/core/db";
-import { executions as executionsTable } from "@intelligo/executions";
-import { jobs } from "@intelligo/jobs";
+import { db } from "@intelligo-dev/core/db";
+import { executions as executionsTable } from "@intelligo-dev/executions";
+import { jobs } from "@intelligo-dev/jobs";
 import { and, gte, inArray, lt, sql } from "drizzle-orm";
 
 export type HealthStatus = "ok" | "degraded" | "down" | "unconfigured";
