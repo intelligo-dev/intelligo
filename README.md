@@ -16,7 +16,7 @@ Intelligo is everything around it — tested, typed, and yours.
 
 </div>
 
-> **Status: pre-release.** Not on npm yet; APIs are settling. Everything on this page exists and runs in this repository today — nothing is aspirational.
+> **Status: 1.0 beta.** Published to npm under the `beta` dist-tag (`@intelligo-dev/*@beta`); APIs are settling until 1.0. Everything on this page exists and runs today — nothing is aspirational.
 
 ## Why
 

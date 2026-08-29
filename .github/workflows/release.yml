@@ -2,7 +2,7 @@ name: Release
 
 # Publishes every public package to npm when a version tag is pushed.
 #
-#   git tag v0.1.0 && git push origin v0.1.0
+#   git tag v1.0.0-beta.1 && git push origin v1.0.0-beta.1
 #
 # The tag must equal the version in the package manifests; a mismatch
 # fails before anything is published. Needs an `NPM_TOKEN` repository
@@ -36,7 +36,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The npm dist-tag follows the version: `1.0.0-beta.2` publishes
+      # under `beta`, `1.0.0-rc.1` under `rc`, and a plain `1.0.0` under
+      # `latest`. A prerelease therefore never becomes what a bare
+      # `npm install` resolves to.
       - name: Tag matches the package version
+        id: version
         run: |
           set -euo pipefail
           tag="${GITHUB_REF_NAME#v}"
@@ -47,6 +52,12 @@ jobs:
               exit 1
             fi
           done
+          case "$tag" in
+            *-*) dist_tag="${tag#*-}"; dist_tag="${dist_tag%%.*}" ;;
+            *)   dist_tag="latest" ;;
+          esac
+          echo "dist-tag=$dist_tag" >> "$GITHUB_OUTPUT"
+          echo "publishing $tag under dist-tag $dist_tag"
 
       - run: pnpm turbo build
 
@@ -60,6 +71,6 @@ jobs:
       # ranges to the published version, and skips versions already on
       # the registry — so a re-run after a partial failure is safe.
       - name: Publish
-        run: pnpm publish -r --access public --no-git-checks
+        run: pnpm publish -r --access public --no-git-checks --tag "${{ steps.version.outputs.dist-tag }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
