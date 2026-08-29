@@ -163,7 +163,11 @@ jobs:
           # the execution boundary.
           test "$code" = "401"
 
+          # `kill %1` only reaches the pnpm wrapper; the `next start` child
+          # it spawned kept :3000 and answered the next step's probe with
+          # the wrong app (a 404, then a 307, on a page that existed).
           kill %1 2>/dev/null || true
+          pkill -f "next start" 2>/dev/null || true
 
       - name: Registry items install into the generated app
         run: |
@@ -192,14 +196,19 @@ jobs:
           pnpm install --no-frozen-lockfile
           pnpm --filter generated-smoke build
 
-          pnpm --filter generated-smoke start &
+          # Its own port, so a server left over from the boot step can
+          # never answer for this one. The default locale carries no URL
+          # prefix (localePrefix "as-needed"), so /registry-smoke is the
+          # canonical address; /en/registry-smoke would 307 to it.
+          PORT=3100 pnpm --filter generated-smoke start &
           code=000
           for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/en/registry-smoke || true)
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3100/registry-smoke || true)
             [ "$code" != "000" ] && break
             sleep 2
           done
           kill %1 2>/dev/null || true
+          pkill -f "next start" 2>/dev/null || true
           echo "registry smoke page answered $code"
           test "$code" = "200"
 

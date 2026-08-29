@@ -29,6 +29,7 @@
     "vitest.config.ts",
     "pnpm-workspace.yaml",
     "docker-compose.yml",
+    "CHANGELOG.md",
     "README.md"
   ],
   "directories": [
