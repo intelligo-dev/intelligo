@@ -11,6 +11,7 @@
  * needed, and picks an exit code.
  */
 
+import { createRequire } from "node:module";
 import path from "node:path";
 
 import { addFeature, formatAddResult, readCatalogue } from "./commands/add.js";
@@ -27,7 +28,7 @@ import {
   upgradeCheckExitCode,
 } from "./commands/upgrade-check.js";
 
-const MIGRATIONS_DIR = "packages/core/src/db/migrations";
+import { MIGRATION_LOCATIONS, resolveMigrationsDir } from "./migrations-dir.js";
 
 /** Templates ship with the CLI package. */
 const TEMPLATES_DIR = path.resolve(
@@ -36,8 +37,15 @@ const TEMPLATES_DIR = path.resolve(
   "templates"
 );
 
-/** Recorded in the manifest so an upgrade knows what wrote a file. */
-const FRAMEWORK_VERSION = "0.0.0";
+/**
+ * Recorded in the manifest so an upgrade knows what wrote a file, and
+ * emitted as the dependency range of a scaffolded app. Read from this
+ * package's own manifest so a release cannot ship with a stale literal
+ * — `../package.json` resolves from src/ and from dist/ alike.
+ */
+const FRAMEWORK_VERSION: string = createRequire(import.meta.url)(
+  "../package.json"
+).version;
 
 function usage(): string {
   return [
@@ -64,9 +72,17 @@ async function runMigrateCheck(): Promise<number> {
   const { Client } = await import("pg");
   const client = new Client({ connectionString: url });
   await client.connect();
+  const migrationsDir = resolveMigrationsDir(process.cwd());
+  if (!migrationsDir) {
+    console.error(
+      `No migrations directory (looked in ${MIGRATION_LOCATIONS.join(", ")}) — run from the workspace root, with @intelligo/core installed.`
+    );
+    return 1;
+  }
+
   try {
     const result = await migrateCheck(
-      path.join(process.cwd(), MIGRATIONS_DIR),
+      migrationsDir,
       async (sql) => (await client.query<{ hash: string }>(sql)).rows
     );
     console.log(formatMigrateCheck(result));

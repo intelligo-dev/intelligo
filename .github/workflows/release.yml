@@ -1,0 +1,65 @@
+name: Release
+
+# Publishes every public package to npm when a version tag is pushed.
+#
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+# The tag must equal the version in the package manifests; a mismatch
+# fails before anything is published. Needs an `NPM_TOKEN` repository
+# secret (an npm automation token with publish rights on @intelligo).
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Tag matches the package version
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          for dir in packages/*/; do
+            version=$(node -p "require('./$dir/package.json').version")
+            if [ "$version" != "$tag" ]; then
+              echo "$dir is $version but the tag is $tag"
+              exit 1
+            fi
+          done
+
+      - run: pnpm turbo build
+
+      # Every package's tests, not only the packed-package check: a
+      # release is the one place a red suite must not be argued past.
+      - run: pnpm test
+        env:
+          DATABASE_URL: ""
+
+      # `pnpm publish -r` orders by dependency, rewrites workspace:*
+      # ranges to the published version, and skips versions already on
+      # the registry — so a re-run after a partial failure is safe.
+      - name: Publish
+        run: pnpm publish -r --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

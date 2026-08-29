@@ -1,7 +1,16 @@
 {
   "name": "@intelligo/ui",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/intelligo-mn/framework.git",
+    "directory": "packages/ui"
+  },
+  "homepage": "https://github.com/intelligo-mn/framework#readme",
+  "bugs": {
+    "url": "https://github.com/intelligo-mn/framework/issues"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts",

@@ -1,15 +1,23 @@
 {
   "name": "@intelligo/billing",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/intelligo-mn/framework.git",
+    "directory": "packages/billing"
+  },
+  "homepage": "https://github.com/intelligo-mn/framework#readme",
+  "bugs": {
+    "url": "https://github.com/intelligo-mn/framework/issues"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./plans": "./src/plans.ts",
     "./payment": "./src/payment.ts",
     "./rate-limit": "./src/rate-limit.ts",
-    "./quota": "./src/quota.ts",
-    "./plugin-adapter": "./src/plugin-adapter.ts"
+    "./quota": "./src/quota.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
@@ -60,10 +68,6 @@
       "./quota": {
         "types": "./dist/quota.d.ts",
         "default": "./dist/quota.js"
-      },
-      "./plugin-adapter": {
-        "types": "./dist/plugin-adapter.d.ts",
-        "default": "./dist/plugin-adapter.js"
       }
     }
   }

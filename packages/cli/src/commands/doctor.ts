@@ -11,6 +11,10 @@ import { existsSync } from "node:fs";
 
 import { inspectMigrationChain, readMigrationChain } from "../migrations.js";
 import { readManifest } from "../manifest.js";
+import {
+  MIGRATION_LOCATIONS,
+  resolveMigrationsDir,
+} from "../migrations-dir.js";
 
 export type CheckResult = {
   name: string;
@@ -24,8 +28,6 @@ export type DoctorOptions = {
   /** Environment to validate; defaults to process.env. */
   env?: NodeJS.ProcessEnv;
 };
-
-const MIGRATIONS_DIR = "packages/core/src/db/migrations";
 
 /** Variables the app cannot boot without. */
 const REQUIRED_ENV = [
@@ -41,12 +43,12 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
 
   // 1. Migration chain — the journal/disk drift that made the .sql
   //    files documentation rather than a provisioning mechanism.
-  const migrationsDir = path.join(root, MIGRATIONS_DIR);
-  if (!existsSync(migrationsDir)) {
+  const migrationsDir = resolveMigrationsDir(root);
+  if (!migrationsDir) {
     results.push({
       name: "migrations",
       status: "warn",
-      detail: `No migrations directory at ${MIGRATIONS_DIR} — run from the workspace root?`,
+      detail: `No migrations directory (looked in ${MIGRATION_LOCATIONS.join(", ")}) — run from the workspace root, with @intelligo/core installed?`,
     });
   } else {
     const chain = readMigrationChain(migrationsDir);
