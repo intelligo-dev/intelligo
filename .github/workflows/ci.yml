@@ -163,11 +163,11 @@ jobs:
           # the execution boundary.
           test "$code" = "401"
 
-          # `kill %1` only reaches the pnpm wrapper; the `next start` child
-          # it spawned kept :3000 and answered the next step's probe with
-          # the wrong app (a 404, then a 307, on a page that existed).
+          # `kill %1` only reaches the pnpm wrapper, and killing the `next
+          # start` CLI orphans its `next-server` child, which kept :3000
+          # and answered the next step's probe with the wrong app.
           kill %1 2>/dev/null || true
-          pkill -f "next start" 2>/dev/null || true
+          pkill -f "next-server|next start" 2>/dev/null || true
 
       - name: Registry items install into the generated app
         run: |
@@ -200,7 +200,9 @@ jobs:
           # never answer for this one. The default locale carries no URL
           # prefix (localePrefix "as-needed"), so /registry-smoke is the
           # canonical address; /en/registry-smoke would 307 to it.
-          PORT=3100 pnpm --filter generated-smoke start &
+          # The scaffold's start script pins --port 3000, so PORT is not
+          # enough; invoke next directly on the other port.
+          pnpm --filter generated-smoke exec next start --port 3100 &
           code=000
           for i in $(seq 1 30); do
             code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3100/registry-smoke || true)
@@ -208,7 +210,7 @@ jobs:
             sleep 2
           done
           kill %1 2>/dev/null || true
-          pkill -f "next start" 2>/dev/null || true
+          pkill -f "next-server|next start" 2>/dev/null || true
           echo "registry smoke page answered $code"
           test "$code" = "200"
 
