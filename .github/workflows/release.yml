@@ -59,6 +59,20 @@ jobs:
           echo "dist-tag=$dist_tag" >> "$GITHUB_OUTPUT"
           echo "publishing $tag under dist-tag $dist_tag"
 
+      # A tag can be pushed after a maintainer already published from a
+      # workstation. Publishing is then a no-op, and this run stays green
+      # instead of failing on a duplicate version (or a missing token).
+      - name: Already on npm?
+        id: check
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          if npm view "@intelligo-dev/core@$tag" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "@intelligo-dev/core@$tag is already on npm — build and test only"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - run: pnpm turbo build
 
       # Every package's tests, not only the packed-package check: a
@@ -71,6 +85,7 @@ jobs:
       # ranges to the published version, and skips versions already on
       # the registry — so a re-run after a partial failure is safe.
       - name: Publish
+        if: steps.check.outputs.published != 'true'
         run: pnpm publish -r --access public --no-git-checks --tag "${{ steps.version.outputs.dist-tag }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
