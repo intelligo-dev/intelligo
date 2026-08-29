@@ -326,7 +326,7 @@ jobs:
       # And the schema pushes cleanly onto an empty database, which is
       # how every development environment is actually provisioned.
       - name: Push schema
-        run: pnpm db:push -- --force
+        run: pnpm db:push --force
 
       # The service suites that need real tables — tenant scoping,
       # invitation lifecycle, ownership checks — against the pushed
