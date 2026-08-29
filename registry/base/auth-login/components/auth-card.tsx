@@ -10,7 +10,7 @@
  * auth-* item reuse it as-is.
  */
 
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 interface AuthCardProps {
   title: string;
