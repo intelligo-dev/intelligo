@@ -195,7 +195,7 @@ jobs:
           pnpm --filter generated-smoke start &
           code=000
           for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/registry-smoke || true)
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/en/registry-smoke || true)
             [ "$code" != "000" ] && break
             sleep 2
           done
