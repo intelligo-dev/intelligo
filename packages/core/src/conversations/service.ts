@@ -445,12 +445,20 @@ export async function deleteTrailingMessages(
 
   await verifyConversation(actor, message.conversationId);
 
+  // Compare inside SQL rather than against the JS Date read above: the
+  // driver truncates Postgres microseconds to milliseconds, so a message
+  // whose real timestamp is 12:00:00.123456 reads back as .123, and
+  // `created_at > .123` then matches the message itself — deleting the
+  // row a regenerate was supposed to keep.
   const deleted = await db
     .delete(messages)
     .where(
       and(
         eq(messages.conversationId, message.conversationId),
-        gt(messages.createdAt, message.createdAt)
+        gt(
+          messages.createdAt,
+          sql`(select ${messages.createdAt} from ${messages} where ${messages.id} = ${params.id})`
+        )
       )
     )
     .returning();

@@ -186,6 +186,19 @@ export async function deleteFact(
 export async function exportIdentity(
   actor: IdentityActor
 ): Promise<IdentityExport> {
+  // Recorded before the reads so the export's own audit row is part of
+  // the export — the trail a user downloads should show that download.
+  await recordMemoryAudit({
+    userId: actor.userId,
+    workspaceId: actor.workspaceId,
+    targetKind: "snapshot",
+    targetId: actor.userId,
+    action: "export",
+    actorKind: "user",
+    actorId: actor.userId,
+    reason: "user requested data export",
+  });
+
   const [facts, memories, snapshotRows, audit] = await Promise.all([
     db
       .select()
@@ -226,17 +239,6 @@ export async function exportIdentity(
       )
       .orderBy(desc(userMemoryAudit.createdAt)),
   ]);
-
-  await recordMemoryAudit({
-    userId: actor.userId,
-    workspaceId: actor.workspaceId,
-    targetKind: "snapshot",
-    targetId: actor.userId,
-    action: "export",
-    actorKind: "user",
-    actorId: actor.userId,
-    reason: "user requested data export",
-  });
 
   return {
     exportedAt: new Date().toISOString(),

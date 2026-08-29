@@ -331,7 +331,13 @@ jobs:
       # The service suites that need real tables — tenant scoping,
       # invitation lifecycle, ownership checks — against the pushed
       # schema. They gate on DATABASE_URL and skip everywhere else.
+      # RESEND_API_KEY is emptied here: the job-level dummy makes
+      # better-auth require email verification, and sign-up then issues
+      # no session — which is what these suites sign up to get.
       - name: Service integration tests (real database)
+        env:
+          RESEND_API_KEY: ""
+          EMAIL_PROVIDER: ""
         run: |
           pnpm vitest run \
             packages/core/src/conversations/service.integration.test.ts \
