@@ -1,0 +1,69 @@
+---
+import SectionHead from "@/components/section-head.astro";
+import { RuleToggles } from "@/components/rule-toggles";
+import { StatProofCard } from "@/components/stat-proof-card";
+import { CommitHeatmap } from "@/components/commit-heatmap";
+import { PROOF, PROOF_STATS } from "@/lib/proof";
+
+const year = new Date().getFullYear();
+---
+<section id="dogfood" class="xline">
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag="proof of use"
+      title="We didn't build this to sell it.<br />Our own product needed it."
+      lede="The same packages run Acme in production. Every change is verified there first."
+    />
+
+    <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_1.4fr] lg:gap-10">
+      <!-- Acme card -->
+      <div class="reveal card top-shade overflow-hidden">
+        <div class="flex h-8 items-center gap-1.5 border-b border-line px-3">
+          <span class="size-2 rounded-full bg-line-strong"></span><span class="size-2 rounded-full bg-line-strong"></span><span class="size-2 rounded-full bg-line-strong"></span>
+          <span class="mono ml-2 text-[0.68rem] text-ink-faint">app.example.com</span>
+          <span class="mono ml-auto rounded-full border border-settle px-2 py-px text-[0.62rem] text-settle">production</span>
+        </div>
+        <div class="p-5">
+          <div class="text-[1.15rem] font-semibold text-ink">Acme — AI support advisor</div>
+          <p class="mt-1 text-[0.88rem] text-ink-dim">
+            Support guidance for Mongolian students before the national exam. Bilingual, credit-billed, QR payments, Mastra agent.
+          </p>
+          <dl class="mono mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.72rem]">
+            <dt class="text-ink-faint">pages</dt><dd class="text-ink">every reusable family, installed verbatim</dd>
+            <dt class="text-ink-faint">languages</dt><dd class="text-ink">mn · en — message files only</dd>
+            <dt class="text-ink-faint">agent</dt><dd class="text-ink">native Mastra, bracketed by executions</dd>
+            <dt class="text-ink-faint">payments</dt><dd class="text-ink">QPay via the payment-poll item</dd>
+          </dl>
+          <p class="mono mt-4 border-t border-line pt-3 text-[0.7rem] text-ink-faint">
+            The support logic stays private. The framework underneath is this one.
+          </p>
+        </div>
+      </div>
+
+      <!-- rules as tests -->
+      <div>
+        <div class="tag mb-2">architecture as failing tests</div>
+        <RuleToggles client:visible />
+        <p class="mono mt-3 text-[0.72rem] text-ink-faint">
+          Enforced by tests, not by a style guide.
+        </p>
+      </div>
+    </div>
+
+    <!-- counted -->
+    <div class="mt-12">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <span class="tag">not a pitch — a count</span>
+        <span class="mono text-[0.7rem] text-ink-faint">
+          {`counted from the framework repository · ${PROOF.sampledAt} · v${PROOF.version}`}
+        </span>
+      </div>
+      <div class="reveal mt-3 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
+        {PROOF_STATS.map((stat) => <StatProofCard client:visible stat={stat} />)}
+      </div>
+      <div class="reveal mt-6 border border-line bg-paper-raised p-4">
+        <CommitHeatmap client:visible days={PROOF.days} year={year} commits={PROOF.commits} firstCommit={PROOF.firstCommit} />
+      </div>
+    </div>
+  </div>
+</section>

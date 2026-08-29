@@ -1,0 +1,16 @@
+---
+import SectionHead from "@/components/section-head.astro";
+import { ScrollLedger } from "@/components/scroll-ledger";
+---
+<section id="why" class="xline">
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag="why this exists"
+      title="An AI product is two halves.<br />Only one of them is yours."
+      lede="Your agent is the interesting half. The other half is the same in every AI SaaS ever built."
+    />
+    <div class="mt-10">
+      <ScrollLedger client:visible />
+    </div>
+  </div>
+</section>

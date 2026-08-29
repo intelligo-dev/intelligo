@@ -1,0 +1,35 @@
+---
+import Base from "@/layouts/Base.astro";
+import { Nav } from "@/components/nav";
+import Hero from "@/sections/hero.astro";
+import Features from "@/sections/features.astro";
+import Why from "@/sections/why.astro";
+import Agents from "@/sections/agents.astro";
+import Boundary from "@/sections/boundary.astro";
+import Packages from "@/sections/packages.astro";
+import Pages from "@/sections/pages.astro";
+import Upgrade from "@/sections/upgrade.astro";
+import Dogfood from "@/sections/dogfood.astro";
+import Compare from "@/sections/compare.astro";
+import Quickstart from "@/sections/quickstart.astro";
+import Faq from "@/sections/faq.astro";
+import Cta from "@/sections/cta.astro";
+---
+<Base>
+  <Nav client:load />
+  <main class="rails">
+    <Hero />
+    <Features />
+    <Why />
+    <Agents />
+    <Boundary />
+    <Packages />
+    <Pages />
+    <Upgrade />
+    <Dogfood />
+    <Compare />
+    <Quickstart />
+    <Faq />
+    <Cta />
+  </main>
+</Base>

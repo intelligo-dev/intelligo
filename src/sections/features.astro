@@ -1,0 +1,16 @@
+---
+import SectionHead from "@/components/section-head.astro";
+import { FeatureBento } from "@/components/feature-bento";
+---
+<section id="features" class="xline">
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag="what ships"
+      title="The whole undifferentiated half.<br />Finished."
+      lede="Everything around your agent. Running, not planned."
+    />
+    <div class="mt-8">
+      <FeatureBento client:visible />
+    </div>
+  </div>
+</section>

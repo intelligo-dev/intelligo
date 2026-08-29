@@ -1,0 +1,14 @@
+---
+interface Props {
+  tag: string;
+  title: string;
+  lede?: string;
+  class?: string;
+}
+const { tag, title, lede, class: cls } = Astro.props;
+---
+<div class:list={["section-head reveal", cls]}>
+  <span class="tag">{tag}</span>
+  <h2 set:html={title} />
+  {lede && <p>{lede}</p>}
+</div>

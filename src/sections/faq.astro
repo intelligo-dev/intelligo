@@ -1,0 +1,25 @@
+---
+import { FAQ } from "@/lib/faq";
+import { SITE } from "@/lib/site";
+---
+<section id="faq" class="xline">
+  <div class="grid md:grid-cols-2">
+    <div class="px-6 py-14 md:px-10 md:py-20">
+      <div class="section-head reveal">
+        <span class="tag">before you ask</span>
+        <h2>Frequently asked<br />questions</h2>
+        <p>
+          Something else? <a href={SITE.github} class="text-foreground hover:underline">Open an issue on GitHub</a>.
+        </p>
+      </div>
+    </div>
+    <div class="reveal border-t border-border md:border-l md:border-t-0">
+      {FAQ.map((f, i) => (
+        <details class:list={["q", i === 0 && "first:border-t-0"]} name="faq" open={i === 0}>
+          <summary>{f.q}</summary>
+          <div class="a">{f.a}</div>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>

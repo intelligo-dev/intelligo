@@ -1,0 +1,72 @@
+---
+import "../styles/global.css";
+import { SITE } from "@/lib/site";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const { title = SITE.title, description = SITE.description } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23171717'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline>
+      // Stamp data-theme before first paint so tokens and `dark:` agree.
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var mq = window.matchMedia("(prefers-color-scheme: dark)");
+          var apply = function () {
+            var t = stored === "light" || stored === "dark" ? stored : mq.matches ? "dark" : "light";
+            document.documentElement.dataset.theme = t;
+          };
+          apply();
+          mq.addEventListener("change", function () {
+            stored = localStorage.getItem("theme");
+            apply();
+          });
+        } catch (e) {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <slot />
+    <script>
+      // Scroll reveal: flip .reveal → .is-in once.
+      const els = document.querySelectorAll<HTMLElement>(".reveal");
+      if ("IntersectionObserver" in window && els.length) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                e.target.classList.add("is-in");
+                io.unobserve(e.target);
+              }
+            }
+          },
+          { rootMargin: "0px 0px -8% 0px", threshold: 0.05 }
+        );
+        els.forEach((el) => io.observe(el));
+      } else {
+        els.forEach((el) => el.classList.add("is-in"));
+      }
+    </script>
+  </body>
+</html>

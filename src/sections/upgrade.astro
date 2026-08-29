@@ -1,0 +1,43 @@
+---
+import SectionHead from "@/components/section-head.astro";
+import { DoctorTerminal } from "@/components/doctor-terminal";
+
+const ROWS = [
+  ["Cloned once as a snapshot", "Installed as long-lived versioned packages"],
+  ["Diverges from upstream", "Keeps receiving compatible releases"],
+  ["Upgrades are manual copying", "SemVer, migrations, doctor, codemods"],
+  ["Admin is another copied page set", "A reusable operational control surface"],
+];
+---
+<section id="upgrade" class="xline">
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag="not a snapshot"
+      title="A boilerplate is a fork you maintain alone.<br />This stays a dependency."
+      lede="SemVer, migrations, and a doctor that knows which files you changed and won't overwrite them."
+    />
+    <div class="mt-8 grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:gap-10">
+      <DoctorTerminal client:visible />
+      <div class="reveal">
+        <div class="overflow-x-auto border border-line">
+          <table class="w-full min-w-[420px] border-collapse text-[0.88rem]">
+            <thead>
+              <tr>
+                <th class="mono bg-paper-raised px-4 py-2.5 text-left text-[0.68rem] font-medium uppercase tracking-[0.08em] text-ink-faint">a starter kit</th>
+                <th class="mono bg-paper-raised px-4 py-2.5 text-left text-[0.68rem] font-medium uppercase tracking-[0.08em] text-ink-faint">intelligo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ROWS.map(([a, b]) => (
+                <tr>
+                  <td class="border-t border-line px-4 py-2.5 align-top text-ink-dim">{a}</td>
+                  <td class="border-t border-line px-4 py-2.5 align-top font-medium text-ink">{b}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

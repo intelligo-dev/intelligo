@@ -1,0 +1,19 @@
+---
+import SectionHead from "@/components/section-head.astro";
+import { PackageMap } from "@/components/package-map";
+---
+<section id="packages" class="xline">
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag="what's inside"
+      title="Ten packages. One database. No Redis."
+      lede="Typed services behind ports. Hover to see imports, click to see what each owns."
+    />
+    <div class="mt-8">
+      <PackageMap client:visible />
+    </div>
+    <p class="mono mt-4 text-[0.72rem] text-ink-faint">
+      Real imports. No <span class="text-ink-dim">auth → billing</span>, no <span class="text-ink-dim">executions → anything</span> — a test fails the build otherwise.
+    </p>
+  </div>
+</section>
