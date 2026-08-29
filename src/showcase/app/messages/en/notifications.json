@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "Notifications",
+    "subtitle": "Quota, billing, and team updates for your account, across every workspace."
+  },
+  "list": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "emptyTitle": "No notifications yet",
+    "emptyDescription": "Quota, billing, and team updates will show up here.",
+    "loading": "Loading…",
+    "loadMore": "Load more"
+  },
+  "bell": {
+    "ariaLabel": "Notifications",
+    "ariaLabelUnread": "Notifications ({count} unread)",
+    "viewAll": "View all"
+  },
+  "errors": {
+    "loadNotifications": "Failed to load notifications",
+    "loadUnreadNotifications": "Failed to load unread notifications",
+    "loadUnreadCount": "Failed to load unread count",
+    "markRead": "Failed to mark notification as read",
+    "markAllRead": "Failed to mark all notifications as read"
+  }
+}

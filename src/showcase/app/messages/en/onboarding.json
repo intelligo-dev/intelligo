@@ -1,0 +1,50 @@
+{
+  "step": {
+    "back": "Back",
+    "continue": "Continue",
+    "saving": "Saving…"
+  },
+  "wizard": {
+    "skip": "Skip for now",
+    "skipping": "Skipping…",
+    "progressLabel": "Onboarding progress",
+    "finishing": "Finishing…"
+  },
+  "errors": {
+    "forbidden": "Please sign in and try again.",
+    "unexpected": "Something went wrong. Please try again.",
+    "generic": "Something went wrong."
+  },
+  "steps": {
+    "purpose": {
+      "title": "What will you use this workspace for?",
+      "description": "This helps us tailor your experience.",
+      "label": "Purpose",
+      "options": {
+        "personal": {
+          "label": "A personal project",
+          "description": "Just me, exploring on my own"
+        },
+        "team": {
+          "label": "My team or company",
+          "description": "I'll invite others to this workspace"
+        },
+        "clients": {
+          "label": "Client work",
+          "description": "I'm working on behalf of clients"
+        }
+      }
+    },
+    "profile": {
+      "title": "What should we call you?",
+      "description": "Your display name is shown to teammates you invite.",
+      "label": "Display name",
+      "placeholder": "Ada Lovelace"
+    }
+  },
+  "complete": {
+    "title": "You're all set",
+    "description": "Your workspace is ready to go.",
+    "cta": "Go to dashboard"
+  }
+}

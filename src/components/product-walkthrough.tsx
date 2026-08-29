@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { AGENT_FRAMEWORKS, WALKTHROUGH, type WalkthroughStep } from "@/lib/walkthrough";
+import { Showcase, type SceneId } from "@/showcase/scenes";
 
 const STEP_MS = 2800;
 
@@ -91,143 +92,12 @@ function Shell({ active, title, children, right }: { active: string; title: stri
 
 /* ---------- scenes ---------- */
 
-function SceneSignup() {
-  return (
-    <AuthCard title="Create your account">
-      <div className="flex flex-col gap-1.5">
-        <div className="h-5 border border-line bg-paper px-1.5 pt-1 text-[9px] text-ink-faint">you@company.com</div>
-        <div className="h-5 border border-line bg-paper px-1.5 pt-1 text-[9px] text-ink-faint">••••••••••</div>
-        <Btn primary>Sign up</Btn>
-        <div className="mono mt-1 flex items-center gap-1 text-[8px] text-ink-faint">
-          <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
-        </div>
-        <div className="grid grid-cols-2 gap-1"><Btn>Google</Btn><Btn>GitHub</Btn></div>
-      </div>
-    </AuthCard>
-  );
-}
 
-function SceneVerify() {
-  return (
-    <AuthCard title="Check your inbox">
-      <p className="text-[9px] leading-snug text-ink-dim">
-        We sent a verification link to <span className="text-ink">you@company.com</span>.
-      </p>
-      <div className="mt-2 flex items-center gap-1.5">
-        <Pill tone="settle">✓ email sent</Pill>
-        <Btn>Resend</Btn>
-      </div>
-    </AuthCard>
-  );
-}
 
-function SceneWorkspace() {
-  return (
-    <AuthCard title="Set up your workspace">
-      <div className="mb-2 flex gap-1">
-        {[1, 2, 3].map((i) => (
-          <span key={i} className={cn("h-1 flex-1 rounded-sm", i < 3 ? "bg-amber" : "bg-line")} />
-        ))}
-      </div>
-      <div className="h-5 border border-line bg-paper px-1.5 pt-1 text-[9px] text-ink">Acme Research</div>
-      <div className="mono mt-1 text-[8px] text-ink-faint">app.example.com/<span className="text-ink">acme-research</span></div>
-      <div className="mt-2 flex justify-between"><Btn>Back</Btn><Btn primary>Continue</Btn></div>
-    </AuthCard>
-  );
-}
 
-function SceneDashboard() {
-  return (
-    <Shell active="dashboard" title="Good morning" right={<Pill>Free · 1,000 credits</Pill>}>
-      <div className="grid gap-2">
-        <div className="rounded-md border border-line bg-paper-raised p-2">
-          <div className="mono text-[8px] text-ink-faint">ask anything</div>
-          <div className="mt-1 flex items-center justify-between">
-            <span className="text-[10px] text-ink-faint">Summarise this quarter's tickets…</span>
-            <Btn primary>→</Btn>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-1.5">
-          {["Draft a brief", "Compare plans", "Explain a log"].map((s) => (
-            <span key={s} className="border border-line px-1.5 py-1 text-[9px] text-ink-dim">{s}</span>
-          ))}
-        </div>
-        <div className="mono text-[8px] text-ink-faint">recent</div>
-        {["Onboarding copy v3", "Pricing page audit"].map((c) => (
-          <div key={c} className="flex items-center justify-between border-t border-line pt-1 text-[9px] text-ink">
-            {c}<span className="text-ink-faint">2h</span>
-          </div>
-        ))}
-      </div>
-    </Shell>
-  );
-}
 
-function SceneTeam() {
-  const rows = [
-    ["you", "owner"],
-    ["maria", "admin"],
-    ["li", "member"],
-  ];
-  return (
-    <Shell active="settings" title="Team" right={<Btn primary>Invite</Btn>}>
-      <div className="border border-line">
-        {rows.map(([n, r]) => (
-          <div key={n} className="flex items-center gap-2 border-b border-line px-2 py-1.5 last:border-b-0">
-            <span className="size-3.5 rounded-full bg-line-strong" />
-            <span className="text-[9px] text-ink">{n}@acme.io</span>
-            <span className="ml-auto"><Pill tone={r === "owner" ? "amber" : "ink"}>{r}</Pill></span>
-          </div>
-        ))}
-      </div>
-      <div className="mono mt-2 text-[8px] text-ink-faint">pending · <span className="text-ink">sam@acme.io</span> · expires in 6d</div>
-    </Shell>
-  );
-}
 
-function SceneBilling() {
-  return (
-    <Shell active="settings" title="Plans" right={<Pill>monthly · yearly</Pill>}>
-      <div className="grid grid-cols-3 gap-1.5">
-        {[
-          ["Free", "$0", false],
-          ["Pro", "$29", true],
-          ["Team", "$99", false],
-        ].map(([n, p, hot]) => (
-          <div key={n as string} className={cn("border p-2", hot ? "border-amber" : "border-line")}>
-            <div className="text-[9px] font-semibold text-ink">{n}</div>
-            <div className="mono text-[13px] text-ink">{p}</div>
-            <Line w="w-full" className="mt-1.5" /><Line w="w-3/4" className="mt-1" />
-            <div className="mt-2"><Btn primary={!!hot}>{hot ? "Checkout" : "Choose"}</Btn></div>
-          </div>
-        ))}
-      </div>
-      <div className="mono mt-2 text-[8px] text-ink-faint">stripe · QR / invoice via payment-poll</div>
-    </Shell>
-  );
-}
 
-function SceneUsage() {
-  const bars = [30, 55, 40, 70, 62, 85, 48];
-  return (
-    <Shell active="usage" title="Usage" right={<Pill>this period</Pill>}>
-      <div className="grid grid-cols-3 gap-1.5">
-        {[["runs", "1,284"], ["tokens", "2.1M"], ["cost", "$41.20"]].map(([l, v]) => (
-          <div key={l} className="border border-line p-1.5">
-            <div className="mono text-[8px] text-ink-faint">{l}</div>
-            <div className="mono text-[12px] text-ink">{v}</div>
-          </div>
-        ))}
-      </div>
-      <div className="mt-2 flex h-10 items-end gap-1 border-b border-line">
-        {bars.map((b, i) => (
-          <span key={i} className={cn("flex-1 rounded-t-sm", i === 5 ? "bg-amber" : "bg-line-strong")} style={{ height: `${b}%` }} />
-        ))}
-      </div>
-      <div className="mono mt-1.5 text-[8px] text-ink-faint">chat.message · support.recommendation · document.summarise</div>
-    </Shell>
-  );
-}
 
 function SceneChat({ frameworkIndex }: { frameworkIndex: number }) {
   return (
@@ -260,21 +130,6 @@ function SceneChat({ frameworkIndex }: { frameworkIndex: number }) {
   );
 }
 
-function SceneArtifacts() {
-  return (
-    <Shell active="artifacts" title="Artifacts" right={<Pill>all · documents · code</Pill>}>
-      <div className="grid grid-cols-2 gap-1.5">
-        {[["Q3 summary.md", "v3"], ["pricing-audit.md", "v1"], ["onboarding-copy.md", "v5"], ["export.csv", "v1"]].map(([n, v]) => (
-          <div key={n} className="border border-line p-1.5">
-            <div className="mono text-[9px] text-ink">{n}</div>
-            <Line w="w-full" className="mt-1" /><Line w="w-2/3" className="mt-1" />
-            <div className="mt-1.5"><Pill>{v}</Pill></div>
-          </div>
-        ))}
-      </div>
-    </Shell>
-  );
-}
 
 function SceneAdmin() {
   return (
@@ -295,19 +150,29 @@ function SceneAdmin() {
   );
 }
 
+/**
+ * Every step but the admin console is the real registry item, rendered
+ * from the same files `shadcn add` installs (see src/showcase). The
+ * admin console is a package, not a registry item, so it keeps the
+ * sketch.
+ */
+const REAL: Partial<Record<WalkthroughStep["scene"], SceneId>> = {
+  signup: "signup",
+  verify: "verify",
+  workspace: "onboarding",
+  dashboard: "dashboard",
+  team: "team",
+  billing: "pricing",
+  usage: "usage",
+  chat: "chat",
+  artifacts: "artifacts",
+};
+
 function Scene({ step, frameworkIndex }: { step: WalkthroughStep; frameworkIndex: number }) {
-  switch (step.scene) {
-    case "signup": return <SceneSignup />;
-    case "verify": return <SceneVerify />;
-    case "workspace": return <SceneWorkspace />;
-    case "dashboard": return <SceneDashboard />;
-    case "team": return <SceneTeam />;
-    case "billing": return <SceneBilling />;
-    case "usage": return <SceneUsage />;
-    case "chat": return <SceneChat frameworkIndex={frameworkIndex} />;
-    case "artifacts": return <SceneArtifacts />;
-    case "admin": return <SceneAdmin />;
-  }
+  const real = REAL[step.scene];
+  if (real) return <Showcase scene={real} />;
+  if (step.scene === "chat") return <SceneChat frameworkIndex={frameworkIndex} />;
+  return <SceneAdmin />;
 }
 
 /* ---------- the walkthrough ---------- */
@@ -404,7 +269,7 @@ export function ProductWalkthrough() {
               {step.hotspot}
             </span>
           </div>
-          <div className="relative h-[300px] overflow-hidden sm:h-[320px]">
+          <div className="relative h-[340px] overflow-hidden sm:h-[380px]">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={step.id}

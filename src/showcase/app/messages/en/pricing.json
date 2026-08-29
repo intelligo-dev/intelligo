@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "title": "Pricing"
+  },
+  "page": {
+    "title": "Pricing",
+    "description": "Start free, upgrade when you need more."
+  },
+  "planCard": {
+    "recommended": "Recommended",
+    "current": "Current",
+    "oneTime": "one-time",
+    "currentPlanButton": "Current plan",
+    "freeForever": "Free forever",
+    "askOwner": "Ask an owner to change plans",
+    "switchTo": "Switch to {planName}",
+    "free": "Free",
+    "perMonth": "per month",
+    "perYear": "per year"
+  },
+  "intervalToggle": {
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "checkoutButton": {
+    "redirecting": "Redirecting…"
+  },
+  "content": {
+    "canceled": "Checkout was canceled. You were not charged."
+  },
+  "error": {
+    "title": "Something went wrong while loading pricing. Please try again.",
+    "tryAgain": "Try again",
+    "goHome": "Go home"
+  },
+  "errors": {
+    "invalidPlan": "That plan isn't available.",
+    "checkoutUnavailable": "This plan isn't set up for checkout yet. Contact support.",
+    "invalidBundle": "That credit bundle isn't available.",
+    "noBillingAccount": "No billing account found. Subscribe to a plan or purchase credits first.",
+    "providerError": "Something went wrong. Please try again.",
+    "invalidInput": "Invalid input",
+    "genericFailure": "Something went wrong."
+  }
+}

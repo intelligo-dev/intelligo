@@ -1,0 +1,95 @@
+{
+  "conversationPage": {
+    "title": "Chat",
+    "unavailableTitle": "Chat unavailable"
+  },
+  "header": {
+    "newChatTitle": "New chat",
+    "renameSave": "Save title",
+    "renameCancel": "Cancel rename",
+    "renameEdit": "Rename conversation",
+    "historyTrigger": "History",
+    "historyEmpty": "No past conversations",
+    "historyUntitled": "Untitled conversation",
+    "newChat": "New",
+    "delete": "Delete conversation"
+  },
+  "agent": {
+    "defaultName": "Assistant"
+  },
+  "input": {
+    "placeholder": "Send a message…",
+    "stop": "Stop generating",
+    "send": "Send message"
+  },
+  "emptyState": {
+    "title": "Start a conversation",
+    "description": "Ask a question to get started. Your conversation is saved automatically."
+  },
+  "message": {
+    "reasoning": "Reasoning"
+  },
+  "stub": {
+    "preface": "This is the stub chat model from lib/chat-model.ts — it echoes your message instead of calling a real provider. Edit getChatModel() to wire up @ai-sdk/anthropic, @ai-sdk/openai, or @ai-sdk/google.",
+    "youSaid": "You said:",
+    "savingArtifact": "Saving that as an artifact — check the Artifacts page in a moment."
+  },
+  "error": {
+    "generic": "Something went wrong. Please try again."
+  },
+  "toolCard": {
+    "calling": "calling…",
+    "running": "running…",
+    "needsApproval": "needs approval",
+    "approved": "approved…",
+    "done": "done",
+    "error": "error",
+    "denied": "denied"
+  },
+  "actions": {
+    "conversationNotFound": "That conversation no longer exists.",
+    "conversationForbidden": "You don't have permission to view this conversation.",
+    "invalidTitle": "That title isn't valid.",
+    "databaseError": "Something went wrong. Please try again.",
+    "genericError": "Something went wrong.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Couldn't copy to the clipboard.",
+    "retry": "Retry",
+    "save": "Save",
+    "savedToArtifacts": "Saved to artifacts.",
+    "emptyArtifact": "There's nothing in this reply to save."
+  },
+  "route": {
+    "invalidBody": "Invalid request body.",
+    "unauthorized": "Unauthorized.",
+    "rateLimited": "Rate limit exceeded. Try again in {seconds}s.",
+    "featureGated": "Chat isn't included in your current plan.",
+    "internalError": "Something went wrong.",
+    "quotaExceeded": "Usage quota exceeded. Upgrade your plan or purchase credits.",
+    "messageTooLong": "Message is too long (max {max, plural, one {# character} other {# characters}}).",
+    "streamError": "Something went wrong while generating a response."
+  },
+  "deleteDialog": {
+    "title": "Delete this conversation?",
+    "description": "The conversation and its messages are deleted permanently. This can't be undone.",
+    "cancel": "Cancel",
+    "confirm": "Delete"
+  },
+  "artifactCard": {
+    "saved": "Saved to your artifacts",
+    "open": "Open"
+  },
+  "sidebar": {
+    "label": "Conversations",
+    "searchPlaceholder": "Search conversations",
+    "noMatches": "No conversations match that.",
+    "count": "{count, plural, =0 {No conversations} one {# conversation} other {# conversations}}",
+    "groups": {
+      "today": "Today",
+      "week": "This week",
+      "month": "This month",
+      "older": "Older"
+    }
+  }
+}

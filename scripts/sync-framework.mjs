@@ -118,6 +118,91 @@ const proof = {
 };
 writeFileSync(join(SITE, "src/data/proof.json"), JSON.stringify(proof, null, 2) + "\n");
 
+// --- showcase: the real registry components, installed into the site -------
+//
+// The hero walkthrough and the registry explorer render the items'
+// actual client components (not mock-ups). They are copied from the
+// registry exactly as `shadcn add` would place them, with four import
+// specifiers rewritten so they run outside Next.js:
+//   @/…                      → @showcase/…      (the site's own alias root)
+//   next-intl                → use-intl         (the same hooks, framework-free)
+//   next/navigation          → a shim
+//   @intelligo-dev/auth/client → a shim (sign-in is simulated in a preview)
+// Server files (pages, actions, anything importing server-only or
+// next-intl/server) are not copied; src/showcase/overrides/** is copied
+// last and wins, which is where hand-written type stubs and mocks live.
+const SHOWCASE_ITEMS = [
+  "auth-login",
+  "auth-signup",
+  "auth-email-verification",
+  "onboarding",
+  "app-shell",
+  "dashboard",
+  "team-settings",
+  "pricing",
+  "billing-settings",
+  "usage",
+  "notifications",
+  "chat",
+  "artifacts",
+  "trial-banner",
+  "feature-gating",
+];
+const SERVER_MARKERS = ['"server-only"', "next-intl/server", "next/headers", "next/cache", '"use server"'];
+const showcaseRoot = join(SITE, "src/showcase/app");
+
+function rewrite(source) {
+  return source
+    .split("\n")
+    .filter((line) => !/^import "server-only";?$/.test(line.trim()))
+    .join("\n")
+    .replace(/from "@\//g, 'from "@showcase/')
+    .replace(/from "next-intl"/g, 'from "use-intl"')
+    .replace(/from "next\/navigation"/g, 'from "@showcase/shims/next-navigation"')
+    .replace(/from "@intelligo-dev\/auth\/client"/g, 'from "@showcase/shims/auth-client"');
+}
+
+function install(sourcePath, target) {
+  const dest = join(showcaseRoot, target);
+  mkdirSync(dirname(dest), { recursive: true });
+  const raw = readFileSync(sourcePath, "utf8");
+  writeFileSync(dest, /\.(ts|tsx)$/.test(target) ? rewrite(raw) : raw);
+}
+
+let installed = 0;
+for (const name of SHOWCASE_ITEMS) {
+  const item = registry.items.find((i) => i.name === name);
+  if (!item) throw new Error(`showcase item ${name} is not in registry.json`);
+  for (const file of item.files ?? []) {
+    const { path: relPath, target, type } = file;
+    if (!target || target.startsWith("app/") || target.startsWith("actions/")) continue;
+    if (!["registry:component", "registry:hook", "registry:file"].includes(type)) continue;
+    const source = join(FRAMEWORK, "registry", relPath);
+    if (/\.(ts|tsx)$/.test(target)) {
+      const text = readFileSync(source, "utf8");
+      if (SERVER_MARKERS.some((m) => text.includes(m))) continue;
+    }
+    install(source, target);
+    installed++;
+  }
+}
+
+// The shadcn primitives the items render with, from the reference app —
+// the same files `shadcn add` would install for a consumer.
+const primitives = join(FRAMEWORK, "apps/app/components/ui");
+for (const f of readdirSync(primitives)) {
+  if (f === "sonner.tsx") continue; // next-themes; the preview mounts <Toaster /> itself
+  install(join(primitives, f), `components/ui/${f}`);
+  installed++;
+}
+install(join(FRAMEWORK, "apps/app/lib/utils.ts"), "lib/utils.ts");
+
+// Hand-written stubs and mocks, copied last so they win.
+const overrides = join(SITE, "src/showcase/overrides");
+if (existsSync(overrides)) cpSync(overrides, showcaseRoot, { recursive: true });
+
+console.log(`showcase: ${installed} files from ${SHOWCASE_ITEMS.length} items into src/showcase/app`);
+
 console.log(
   `proof: v${version}, ${packages} packages, ${testCases} tests in ${testFiles.length} files, ${architectureTests} architecture suites, ${registryItems} items, ${adrs} ADRs, ${commits} commits since ${firstCommit} (${proof.historyFrom})`
 );

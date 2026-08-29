@@ -19,6 +19,6 @@ Everything the site says about the framework — the registry items, the test/AD
 pnpm sync
 ```
 
-It writes `src/data/registry.json`, `src/data/proof.json` and `public/r/*.json` (run `pnpm registry:build` in the framework first so the built items exist). Re-run it after a framework release and commit the result.
+It writes `src/data/registry.json`, `src/data/proof.json` and `public/r/*.json` (run `pnpm registry:build` in the framework first so the built items exist), and installs the registry items' real client components into `src/showcase/app/` — the hero walkthrough and the registry explorer render those, not mock-ups. Four import specifiers are rewritten on install so they run outside Next.js (`@/` → `@showcase/`, `next-intl` → `use-intl`, `next/navigation` and `@intelligo-dev/auth/client` → shims); `src/showcase/overrides/` holds the shims, type stubs and stand-in server actions with fixture data, and is copied last. Re-run `pnpm sync` after a framework release and commit the result.
 
 See [BRIEF.md](BRIEF.md) for the structure and copywriting brief.

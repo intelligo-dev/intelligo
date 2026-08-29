@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { Showcase, SCENE_FOR_ITEM } from "@/showcase/scenes";
 import { CopyButton } from "@/components/copy-button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { REGISTRY_ITEMS, type RegistryGroup, type RegistryItem } from "@/lib/registry-items";
@@ -224,8 +225,13 @@ export function RegistryExplorer() {
               </span>
             )}
             <div className="mono ml-auto flex items-center gap-1 text-[0.7rem]">
-              <span className="text-ink-faint">same component ·</span>
-              {(["en", "mn"] as Locale[]).map((l) => (
+              {SCENE_FOR_ITEM[item.name] ? (
+                <span className="text-ink-faint">
+                  the real component · <span className="text-ink">messages/en</span>
+                </span>
+              ) : null}
+              {!SCENE_FOR_ITEM[item.name] && <span className="text-ink-faint">same component ·</span>}
+              {!SCENE_FOR_ITEM[item.name] && (["en", "mn"] as Locale[]).map((l) => (
                 <button
                   key={l}
                   type="button"
@@ -245,10 +251,10 @@ export function RegistryExplorer() {
               <span className="mono ml-2 text-[0.66rem] text-ink-faint">app/[{locale}]/…</span>
               <span className="mono ml-auto text-[0.62rem] text-ink-faint">messages/{locale}/{item.name}.json</span>
             </div>
-            <div className="relative h-[250px] overflow-hidden">
+            <div className="relative h-[300px] overflow-hidden">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div key={`${item.name}-${locale}`} className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
-                  <Preview item={item} l={locale} />
+                  {SCENE_FOR_ITEM[item.name] ? <Showcase scene={SCENE_FOR_ITEM[item.name]!} /> : <Preview item={item} l={locale} />}
                 </motion.div>
               </AnimatePresence>
             </div>

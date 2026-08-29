@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "title": "Usage"
+  },
+  "page": {
+    "title": "Usage",
+    "description": "Track this workspace's AI usage, charges, and plan quota."
+  },
+  "emptyState": {
+    "defaultTitle": "No usage yet",
+    "defaultDescription": "Usage will show up here once this workspace starts making AI requests.",
+    "cta": "Start a chat"
+  },
+  "recordsTable": {
+    "title": "Recent requests",
+    "emptyTitle": "No requests yet",
+    "emptyDescription": "Recent AI requests for this workspace will appear here.",
+    "empty": "—",
+    "columns": {
+      "started": "Started",
+      "capability": "Capability",
+      "model": "Model",
+      "status": "Status",
+      "tokens": "Tokens",
+      "chargedAmount": "Charged amount"
+    },
+    "status": {
+      "succeeded": "Succeeded",
+      "running": "Running",
+      "settling": "Settling",
+      "failed": "Failed",
+      "refused": "Refused"
+    }
+  },
+  "summaryCards": {
+    "periods": {
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "current": "This month"
+    },
+    "tokensUsed": "Tokens used",
+    "chargedAmount": "Charged amount",
+    "requests": "Requests",
+    "planQuota": "Plan quota",
+    "quotaBadge": {
+      "limitReached": "Limit reached",
+      "nearingLimit": "Nearing limit",
+      "withinLimit": "Within limit"
+    },
+    "quotaAllowance": "{percentage}% of the {planName} plan's monthly allowance",
+    "quotaAllowanceCredit": "{percentage}% of the {planName} plan's monthly allowance (credit balance)",
+    "trialCredits": "Trial credits",
+    "trialRemaining": "{count} remaining",
+    "trialOf": "of {count}"
+  },
+  "unavailable": {
+    "title": "Usage unavailable"
+  },
+  "errors": {
+    "loadOverview": "Failed to load usage",
+    "loadSummary": "Failed to load usage summary"
+  },
+  "chart": {
+    "title": "Tokens per day",
+    "ariaLabel": "Tokens used per day over the current period",
+    "tokensOnDay": "{tokens, number} tokens",
+    "tableCaption": "Daily usage for the current period",
+    "columns": {
+      "date": "Date",
+      "tokens": "Tokens",
+      "requests": "Requests"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "title": "Log in",
+    "description": "Log in to your account."
+  },
+  "card": {
+    "title": "Welcome back",
+    "description": "Log in to your account"
+  },
+  "loginForm": {
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "forgotPassword": "Forgot password?",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "noAccount": "Don't have an account?",
+    "signUpLink": "Sign up",
+    "errors": {
+      "invalidCredentials": "Incorrect email or password.",
+      "unexpected": "Something went wrong. Please try again."
+    }
+  },
+  "socialLogin": {
+    "connecting": "Connecting…",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithGithub": "Continue with GitHub",
+    "orContinueWith": "Or continue with"
+  },
+  "validation": {
+    "emailInvalid": "Please enter a valid email address",
+    "passwordTooShort": "Password must be at least 8 characters"
+  }
+}

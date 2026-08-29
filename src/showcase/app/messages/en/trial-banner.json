@@ -1,0 +1,8 @@
+{
+  "label": "Trial",
+  "expiresToday": "Expires today!",
+  "daysRemaining": "{days, plural, one {# day remaining} other {# days remaining}}",
+  "creditsLeft": "{remaining} of {initial} trial credits left",
+  "upgrade": "Upgrade",
+  "dismiss": "Dismiss banner"
+}

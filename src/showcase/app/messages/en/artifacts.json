@@ -1,0 +1,57 @@
+{
+  "page": {
+    "title": "Artifacts",
+    "heading": "Artifacts",
+    "description": "All the documents your AI agents have created for you, in one place.",
+    "unavailableTitle": "Artifacts unavailable"
+  },
+  "actions": {
+    "notFound": "This artifact no longer exists.",
+    "forbidden": "You don't have permission to change this artifact.",
+    "invalidInput": "This artifact is more than 30 days old and can't be deleted from here.",
+    "databaseError": "Something went wrong. Please try again.",
+    "genericError": "Something went wrong.",
+    "invalidTimestamp": "Invalid artifact timestamp."
+  },
+  "error": {
+    "description": "Something went wrong while loading your artifacts. Please try again.",
+    "retry": "Try again",
+    "goHome": "Go home"
+  },
+  "filters": {
+    "all": "All",
+    "reports": "Reports",
+    "kind": {
+      "text": "Text",
+      "code": "Code",
+      "sheet": "Sheet",
+      "image": "Image"
+    }
+  },
+  "badge": {
+    "report": "Report"
+  },
+  "emptyState": {
+    "title": "No artifacts yet",
+    "description": "Artifacts your AI agents create — reports, code, text, and more — will show up here.",
+    "cta": "Start a chat"
+  },
+  "filteredEmptyState": {
+    "title": "No {filterLabel} artifacts",
+    "description": "No artifacts match the “{filterLabel}” filter. Try a different filter."
+  },
+  "documentActions": {
+    "copySuccess": "Copied to clipboard",
+    "copyErrorTitle": "Failed to copy",
+    "copyErrorDescription": "Could not copy to clipboard. Please try again.",
+    "copyTooltipCopied": "Copied!",
+    "copyTooltipDefault": "Copy to clipboard",
+    "deleteTooltip": "Delete",
+    "deleteDialogTitle": "Delete artifact",
+    "deleteDialogDescription": "This removes the version shown here. If this artifact has earlier saved versions, it reverts to the previous one instead of disappearing entirely. Artifacts older than 30 days can't be deleted from this page.",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleteSuccess": "Artifact deleted"
+  },
+  "noContent": "No content available for this artifact."
+}
