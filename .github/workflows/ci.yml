@@ -60,7 +60,14 @@ jobs:
 
       # The real suite: root vitest projects config covering every
       # package, the reference app, and the architecture project.
+      #
+      # DATABASE_URL is emptied for this step only: the job-level dummy
+      # exists for `next build`, but the real-database suites gate on
+      # the variable being set and would try to connect to it. They run
+      # against a live Postgres in the `database` job below.
       - name: Unit tests and architecture rules
+        env:
+          DATABASE_URL: ""
         run: pnpm test
 
       # doctor reports the drift that otherwise only shows up when
@@ -309,3 +316,15 @@ jobs:
       # how every development environment is actually provisioned.
       - name: Push schema
         run: pnpm db:push -- --force
+
+      # The service suites that need real tables — tenant scoping,
+      # invitation lifecycle, ownership checks — against the pushed
+      # schema. They gate on DATABASE_URL and skip everywhere else.
+      - name: Service integration tests (real database)
+        run: |
+          pnpm vitest run \
+            packages/core/src/conversations/service.integration.test.ts \
+            packages/core/src/documents/service.integration.test.ts \
+            packages/core/src/identity/service.integration.test.ts \
+            packages/auth/src/team/service.integration.test.ts \
+            packages/auth/src/workspace/service.integration.test.ts
