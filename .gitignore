@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+.turbo/
+.open-next/
+dist/
+build/
+out/
+*.tsbuildinfo
+.wrangler/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Editor directories
+.vscode/
+.idea/
+.claude/worktrees/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+RESEARCH/*
+test-results/
+playwright/
+e2e/
+docs/handover/
+.playwright-mcp/
+.claude/
+playwright-report/
+apps/web/tsconfig.tsbuildinfo
+
+# Scaffolded by the CLI gate (CI) or by hand; never committed.
+apps/generated-smoke/
+
+# Registry build output (shadcn `registry:build`); regenerated from
+# registry/base/** and never committed.
+registry/public/

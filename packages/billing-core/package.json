@@ -1,0 +1,46 @@
+{
+  "name": "@intelligo/billing-core",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./plans": "./src/plans.ts",
+    "./plan-registry": "./src/plan-registry.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@intelligo/core": "workspace:*",
+    "drizzle-orm": "^0.45.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./plans": {
+        "types": "./dist/plans.d.ts",
+        "default": "./dist/plans.js"
+      },
+      "./plan-registry": {
+        "types": "./dist/plan-registry.d.ts",
+        "default": "./dist/plan-registry.js"
+      }
+    }
+  }
+}

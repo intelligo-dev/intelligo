@@ -1,0 +1,311 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Dummy values for modules that instantiate at import time (better-auth,
+# stripe client, resend) — without them `next build`'s page-data
+# collection throws even though no real request is served.
+env:
+  DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_build
+  AUTH_SECRET: ci_dummy_secret_0000000000000000000000000000000000
+  BETTER_AUTH_SECRET: ci_dummy_secret_0000000000000000000000000000000000
+  CRON_SECRET: ci_dummy_secret_0000000000000000000000000000000000
+  NEXT_PUBLIC_APP_URL: http://localhost:4002
+  STRIPE_SECRET_KEY: sk_test_dummy
+  STRIPE_WEBHOOK_SECRET: whsec_dummy
+  RESEND_API_KEY: re_dummy
+  OPENAI_API_KEY: sk-dummy
+  ANTHROPIC_API_KEY: sk-ant-dummy
+  GOOGLE_GENERATIVE_AI_API_KEY: dummy
+
+jobs:
+  # Every job carries a timeout. Without one a hung step burns the
+  # default six hours of runner time before anyone notices.
+  verify:
+    name: Typecheck, lint, unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          # Node 22 — matches Vercel's default runtime for Next.js 16
+          # and has util.markAsUncloneable (added in 21.0.0) which
+          # zod v4 / ai@6 call during page-data collection.
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm turbo type-check
+
+      - name: Lint
+        run: pnpm turbo lint
+
+      # The real suite: root vitest projects config covering every
+      # package, the reference app, and the architecture project.
+      - name: Unit tests and architecture rules
+        run: pnpm test
+
+      # doctor reports the drift that otherwise only shows up when
+      # someone provisions a database from the migrations. Blocking:
+      # a migration added without a journal entry fails the build
+      # instead of silently never running.
+      - name: Doctor
+        run: pnpm exec tsx packages/cli/src/bin.ts doctor
+
+      # Packed-package compatibility, not only workspace:*. The failures
+      # it catches are silent under workspace links: a missing `files`
+      # entry, an exports map pointing at something that did not ship,
+      # extensionless ESM imports Node refuses to resolve.
+      - name: Packed-package compatibility
+        run: |
+          set -euo pipefail
+          pnpm turbo build
+          out=$(mktemp -d)
+
+          for dir in packages/*/; do
+            name=$(node -p "require('./$dir/package.json').name")
+            (cd "$dir" && pnpm pack --pack-destination "$out" >/dev/null)
+            tgz=$(ls "$out"/*.tgz | head -1)
+            node -e "
+              const {execSync} = require('node:child_process');
+              const pkg = require('./$dir/package.json');
+              const exp = (pkg.publishConfig && pkg.publishConfig.exports) || {};
+              const listed = execSync('tar -tzf ' + JSON.stringify('$tgz'), {encoding:'utf8'})
+                .split('\n').map(l => l.replace(/^package\//, ''));
+              const missing = [];
+              for (const entry of Object.values(exp)) {
+                for (const p of typeof entry === 'string' ? [entry] : Object.values(entry)) {
+                  if (typeof p !== 'string' || !p.startsWith('./')) continue;
+                  if (!listed.includes(p.slice(2))) missing.push(p);
+                }
+              }
+              if (missing.length) {
+                console.error(pkg.name + ' publishes exports that are not in the tarball: ' + missing.join(', '));
+                process.exit(1);
+              }
+              console.log(pkg.name + ' ok');
+            "
+            rm -f "$out"/*.tgz
+          done
+
+          # The CLI additionally has to run from the tarball, since it
+          # is executed by Node rather than bundled.
+          (cd packages/cli && pnpm pack --pack-destination "$out" >/dev/null)
+          tar -xzf "$out"/*.tgz -C "$out"
+          cd "$out/package"
+          node dist/bin.js help
+          node dist/bin.js create "$out/scaffolded"
+          test -f "$out/scaffolded/lib/intelligo.ts"
+          test -f "$out/scaffolded/intelligo.manifest.json"
+
+      # A developer can create and run an app without editing framework
+      # internals: the generated app installs, compiles, boots in
+      # production mode, and its route answers.
+      - name: A generated app builds and boots
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/unused
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+        run: |
+          set -euo pipefail
+          rm -rf apps/generated-smoke
+
+          # --link-workspace because this generates inside the monorepo.
+          pnpm exec tsx packages/cli/src/bin.ts create apps/generated-smoke --link-workspace
+
+          # A new workspace member changes the lockfile, so this cannot
+          # be --frozen-lockfile. The runner is thrown away afterwards.
+          pnpm install --no-frozen-lockfile
+          pnpm --filter generated-smoke build
+
+          pnpm --filter generated-smoke start &
+
+          # Poll for any answer. A 401 is the expected one, and `curl -f`
+          # would treat it as a failure, so this waits on the status
+          # code being anything at all rather than on success.
+          code=000
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /tmp/gen-body -w '%{http_code}' -X POST \
+              http://localhost:3000/api/assistant \
+              -H 'content-type: application/json' -d '{"prompt":"ping"}' || true)
+            [ "$code" != "000" ] && break
+            sleep 2
+          done
+
+          echo "generated app answered $code: $(cat /tmp/gen-body 2>/dev/null)"
+
+          # Unauthenticated is the correct answer, and getting it proves
+          # the whole chain ran: composition root, auth, the caller of
+          # the execution boundary.
+          test "$code" = "401"
+
+          kill %1 2>/dev/null || true
+
+      - name: Registry items install into the generated app
+        run: |
+          set -euo pipefail
+          pnpm registry:build
+
+          cd apps/generated-smoke
+
+          # The item list is derived from registry.json, never hand-kept.
+          # The named items go first because other items' descriptions
+          # say so (team-settings ships lib/team.ts, pricing ships
+          # lib/billing-config.ts, auth-login ships the shared AuthCard,
+          # route-error ships the component every error.tsx renders).
+          FIRST="route-error team-settings pricing auth-login"
+          REST=$(node -e '
+            const registry = require(process.env.GITHUB_WORKSPACE + "/registry/registry.json");
+            const first = process.argv[1].split(" ");
+            console.log(registry.items.map((i) => i.name).filter((n) => !first.includes(n)).join(" "));
+          ' "$FIRST")
+
+          echo "installing: $FIRST $REST"
+          for item in $FIRST $REST; do
+            pnpm exec shadcn add "$GITHUB_WORKSPACE/registry/public/r/$item.json" --yes --overwrite
+          done
+          cd "$GITHUB_WORKSPACE"
+          pnpm install --no-frozen-lockfile
+          pnpm --filter generated-smoke build
+
+          pnpm --filter generated-smoke start &
+          code=000
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/registry-smoke || true)
+            [ "$code" != "000" ] && break
+            sleep 2
+          done
+          kill %1 2>/dev/null || true
+          echo "registry smoke page answered $code"
+          test "$code" = "200"
+
+      - name: Check formatting
+        run: pnpm format:check
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo build
+
+  database:
+    name: Migrations and database integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: verify
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: intelligo_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/intelligo_ci
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      # The pgvector image ships the extension but does not enable it in
+      # new databases; the schema's vector() columns need the type to
+      # exist before anything can create them.
+      - name: Enable pgvector
+        run: psql "$DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+
+      # Replaying the committed .sql files against an empty database is
+      # the only thing that proves they are a usable provisioning
+      # mechanism.
+      - name: Replay the migration chain on a fresh database
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -c 'CREATE DATABASE migration_replay;'
+          REPLAY_URL="${DATABASE_URL%/*}/migration_replay"
+          psql -v ON_ERROR_STOP=1 "$REPLAY_URL" -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+          for f in packages/core/src/db/migrations/*.sql; do
+            echo "--- $f"
+            psql -v ON_ERROR_STOP=1 -q "$REPLAY_URL" -f "$f"
+          done
+          # Columns the running code depends on, which a chain that
+          # merely "applied without error" can still be missing.
+          psql -v ON_ERROR_STOP=1 "$REPLAY_URL" \
+            -c 'SELECT minute_bucket, count FROM rate_limit_entries LIMIT 0;' \
+            -c 'SELECT id, request_id, status FROM executions LIMIT 0;' \
+            -c 'SELECT id, request_id, expires_at FROM credit_reservations LIMIT 0;' \
+            -c 'SELECT id, action, resource_kind FROM audit_events LIMIT 0;' \
+            -c 'SELECT execution_id FROM usage_records LIMIT 0;'
+
+      # The append-only audit guard is a Postgres trigger (no mock can
+      # observe it) and the execution lifecycle rests on a
+      # compare-and-swap whose behaviour under concurrent writers a mock
+      # proves nothing about. Against the replayed database, because the
+      # trigger and the tables come from migrations.
+      - name: Database integration tests
+        env:
+          TEST_PG_URL: postgresql://ci:ci@localhost:5432/migration_replay
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/migration_replay
+        run: |
+          pnpm vitest run \
+            packages/core/src/db/__tests__ \
+            packages/executions/src/__tests__
+
+      # The replay applied the files directly with psql, so drizzle has
+      # no record of them — exactly the "unmanaged" state a
+      # push-provisioned database is in. `migrate --check` must say so.
+      - name: Migration check reports the replayed database as unmanaged
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/migration_replay
+        run: |
+          out=$(pnpm exec tsx packages/cli/src/bin.ts migrate --check || true)
+          echo "$out"
+          echo "$out" | grep -q "baseline"
+
+      # And the schema pushes cleanly onto an empty database, which is
+      # how every development environment is actually provisioned.
+      - name: Push schema
+        run: pnpm db:push -- --force

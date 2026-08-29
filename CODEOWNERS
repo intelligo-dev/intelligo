@@ -1,0 +1,24 @@
+# Code ownership, in the sense ADR-0002 and ADR-0006 mean it: which
+# boundary a path belongs to, so a change that crosses one is visible
+# in review rather than only in CI.
+
+# Everything defaults to the maintainer.
+*                           @tortuvshin
+
+# --- Foundation ---------------------------------------------------------
+# Changes here ship to every consumer. Product vocabulary is not allowed
+# in these paths; the dependency-direction test enforces the import
+# graph, review enforces the rest.
+/packages/                  @tortuvshin
+/registry/                  @tortuvshin
+/docs/adr/                  @tortuvshin
+
+# --- Boundary-defining files -------------------------------------------
+# Touching these changes what the architecture permits, not just what
+# the code does.
+/tests/architecture/        @tortuvshin
+/config/                    @tortuvshin
+/turbo.json                 @tortuvshin
+/pnpm-workspace.yaml        @tortuvshin
+/.github/workflows/         @tortuvshin
+/packages/core/src/db/migrations/  @tortuvshin

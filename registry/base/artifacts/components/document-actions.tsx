@@ -1,0 +1,154 @@
+"use client";
+
+/**
+ * DocumentActions — per-artifact action cluster: copy full content to
+ * the clipboard, and delete (with a confirm dialog whose copy matches
+ * what `deleteLatestVersion` (`@/actions/documents`) actually does — see
+ * that file's module doc comment for the underlying semantics: this can
+ * revert an artifact to an earlier saved version rather than remove it
+ * outright, and it refuses artifacts older than 30 days).
+ */
+
+import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
+import { Check, Copy, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
+import { useRouter } from "@/i18n/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import { deleteLatestVersion } from "@/actions/documents";
+
+interface DocumentActionsProps {
+  documentId: string;
+  content: string | null;
+  createdAt: string;
+  /** Called after a successful delete, e.g. to drop the item from local state. */
+  onDeleted?: () => void;
+  buttonClassName?: string;
+}
+
+export function DocumentActions({
+  documentId,
+  content,
+  createdAt,
+  onDeleted,
+  buttonClassName,
+}: DocumentActionsProps) {
+  const t = useTranslations("artifacts");
+  const router = useRouter();
+  const [copied, setCopied] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isDeleting, startDeleting] = useTransition();
+
+  async function handleCopy() {
+    if (!content) return;
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      toast.success(t("documentActions.copySuccess"));
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error(t("documentActions.copyErrorTitle"), {
+        description: t("documentActions.copyErrorDescription"),
+      });
+    }
+  }
+
+  function handleDelete() {
+    startDeleting(async () => {
+      const result = await deleteLatestVersion(documentId, createdAt);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(t("documentActions.deleteSuccess"));
+      setConfirmOpen(false);
+      onDeleted?.();
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      {content && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={(event) => {
+            event.stopPropagation();
+            void handleCopy();
+          }}
+          className={buttonClassName}
+          title={
+            copied
+              ? t("documentActions.copyTooltipCopied")
+              : t("documentActions.copyTooltipDefault")
+          }
+        >
+          {copied ? (
+            <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </Button>
+      )}
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={(event) => {
+          event.stopPropagation();
+          setConfirmOpen(true);
+        }}
+        className={buttonClassName}
+        title={t("documentActions.deleteTooltip")}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent onClick={(event) => event.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>{t("documentActions.deleteDialogTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("documentActions.deleteDialogDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              disabled={isDeleting}
+            >
+              {t("documentActions.cancel")}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                t("documentActions.delete")
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

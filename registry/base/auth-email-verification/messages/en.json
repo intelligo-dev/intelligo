@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "title": "Verify your email",
+    "description": "Confirm your email address."
+  },
+  "verifiedState": {
+    "title": "Email verified",
+    "description": "Your email address has been confirmed",
+    "message": "You're all set — your account is fully active.",
+    "dashboardLink": "Go to dashboard"
+  },
+  "pendingState": {
+    "title": "Verify your email",
+    "description": "We've sent a verification link to your email. Click it to activate your account."
+  },
+  "failedState": {
+    "title": "Verification failed"
+  },
+  "backToLogin": "Back to login",
+  "errors": {
+    "INVALID_TOKEN": "This verification link is invalid. Request a new one below.",
+    "TOKEN_EXPIRED": "This verification link has expired. Request a new one below.",
+    "USER_NOT_FOUND": "We couldn't find an account for this verification link.",
+    "UNKNOWN": "This verification link could not be used. Request a new one below."
+  },
+  "resend": {
+    "emailLabel": "Email",
+    "submit": "Resend verification email",
+    "sending": "Sending…",
+    "sent": "Verification email sent",
+    "success": "Verification email sent. Check your inbox.",
+    "errors": {
+      "missingEmail": "Enter your email address first.",
+      "unexpected": "Failed to send verification email."
+    }
+  }
+}

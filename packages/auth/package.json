@@ -1,0 +1,55 @@
+{
+  "name": "@intelligo/auth",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./edge": "./src/edge.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@intelligo/core": "workspace:*",
+    "better-auth": "~1.6.30",
+    "drizzle-orm": "^0.45.1",
+    "server-only": "^0.0.1",
+    "zod": "^3.24.1"
+  },
+  "peerDependencies": {
+    "next": "^15.0.0 || ^16.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.10",
+    "next": "^16.0.7",
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./src/index.ts",
+        "default": "./dist/index.js"
+      },
+      "./client": {
+        "types": "./src/client.ts",
+        "default": "./dist/client.js"
+      },
+      "./edge": {
+        "types": "./src/edge.ts",
+        "default": "./dist/edge.js"
+      }
+    }
+  }
+}

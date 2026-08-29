@@ -1,0 +1,21 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: intelligo-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: intelligo
+    ports:
+      - "5445:5432"
+    volumes:
+      - intelligo-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d intelligo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  intelligo-db:

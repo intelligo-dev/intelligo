@@ -1,0 +1,25 @@
+{
+  "title": "{label} — {amount}",
+  "qrAlt": "Payment QR code",
+  "orChooseApp": "Or open your banking app",
+  "timedOutHelp": "We stopped checking after a few minutes. If you've already paid, it may still land — otherwise start a new payment.",
+  "retry": "Try again",
+  "close": "Close",
+  "paidTitle": "Payment received",
+  "paidBody": "{label} is active.",
+  "failedTitle": "Payment failed",
+  "state": {
+    "creating": "Preparing your payment…",
+    "waiting": "Scan the code or choose your bank",
+    "polling": "Waiting for payment…",
+    "timedOut": "Still waiting?",
+    "paid": "All set",
+    "failed": "Something went wrong"
+  },
+  "errors": {
+    "unauthorized": "Please sign in and try again.",
+    "createFailed": "We couldn't start the payment. Try again in a moment.",
+    "statusFailed": "We couldn't check the payment status.",
+    "declined": "The payment was declined."
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "actions": {
+    "tryAgain": "Try again",
+    "goToDashboard": "Go to dashboard",
+    "viewBillingSettings": "View billing settings",
+    "checkBillingSettings": "Check billing settings"
+  },
+  "error": {
+    "description": "Something went wrong while confirming your payment. If you were charged, it will still be applied — check your billing settings."
+  },
+  "success": {
+    "title": "You're all set",
+    "subscriptionActive": "Your subscription is active.",
+    "planActive": "You're now on the {planName} plan.",
+    "planLabel": "{planName} plan",
+    "billedMonthly": "Billed monthly",
+    "billedYearly": "Billed yearly",
+    "status": "Active",
+    "receiptSent": "A receipt was sent to {email}."
+  },
+  "pending": {
+    "title": "Finishing up",
+    "description": "We're confirming your payment. This usually takes a few seconds."
+  },
+  "received": {
+    "title": "Payment received",
+    "description": "Your payment went through. It may take a moment to reflect in your billing settings."
+  },
+  "fallback": {
+    "title": "Thank you",
+    "description": "Your payment is being processed.",
+    "note": "Check your billing settings for the latest status."
+  }
+}

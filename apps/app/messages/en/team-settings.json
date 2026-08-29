@@ -1,0 +1,71 @@
+{
+  "page": {
+    "title": "Team",
+    "descriptionManage": "Manage who has access to {workspace}.",
+    "descriptionReadOnly": "People with access to {workspace}."
+  },
+  "inviteForm": {
+    "title": "Invite a team member",
+    "description": "Send an invitation to join this workspace.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "colleague@example.com",
+    "roleLabel": "Role",
+    "rolePlaceholder": "Select a role",
+    "submit": "Send invitation",
+    "submitPending": "Sending…",
+    "inviteSent": "Invitation sent to {email}"
+  },
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "member": "Member"
+  },
+  "memberList": {
+    "heading": "Members ({count})",
+    "empty": "No members yet.",
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "joined": "Joined",
+      "actions": "Actions"
+    },
+    "you": "(You)",
+    "roleUpdated": "Role updated",
+    "memberRemoved": "{name} removed from the workspace",
+    "removeDialog": {
+      "trigger": "Remove",
+      "triggerPending": "Removing…",
+      "title": "Remove member",
+      "description": "Are you sure you want to remove {name} from the workspace? They will lose access to everything in it.",
+      "confirm": "Remove",
+      "confirmPending": "Removing…"
+    },
+    "emptyHint": "Invite someone above to share this workspace."
+  },
+  "pendingInvitations": {
+    "heading": "Pending invitations ({count})",
+    "empty": "No pending invitations.",
+    "columns": {
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "expires": "Expires",
+      "actions": "Actions"
+    },
+    "expired": "Expired",
+    "cancel": "Cancel",
+    "cancelPending": "Canceling…",
+    "canceled": "Invitation canceled",
+    "emptyHint": "Invitations you send appear here until they're accepted."
+  },
+  "errors": {
+    "invitationNotFound": "That invitation no longer exists.",
+    "soleOwner": "You're the only owner of this workspace. Transfer ownership before leaving.",
+    "forbidden": "You don't have permission to do that.",
+    "acceptVerificationFailed": "We couldn't confirm the invitation. Please try again.",
+    "providerError": "Something went wrong. Please try again.",
+    "somethingWentWrong": "Something went wrong.",
+    "invalidInput": "Invalid input"
+  }
+}

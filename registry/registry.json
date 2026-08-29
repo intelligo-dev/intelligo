@@ -1,0 +1,1396 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "intelligo",
+  "homepage": "https://intelligo.dev",
+  "items": [
+    {
+      "name": "smoke",
+      "type": "registry:block",
+      "title": "Registry Smoke Test",
+      "description": "Permanent canary item that proves the registry build and install pipeline end to end.",
+      "registryDependencies": ["button", "card"],
+      "files": [
+        {
+          "path": "base/smoke/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/registry-smoke/page.tsx"
+        },
+        {
+          "path": "base/smoke/components/smoke-card.tsx",
+          "type": "registry:component",
+          "target": "components/smoke/smoke-card.tsx"
+        },
+        {
+          "path": "base/smoke/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/smoke.json"
+        }
+      ],
+      "dependencies": ["next-intl"]
+    },
+    {
+      "name": "route-error",
+      "type": "registry:block",
+      "title": "Route Error States",
+      "description": "The app's error surfaces: a shared RouteError component every error.tsx renders, message-based error classification, an (app) group boundary, a translated 404, and a dependency-free global-error. Error reporting goes through the lib/error-reporting.ts seam (a no-op until you bind a reporter), so no SDK enters the registry. Items that ship an error.tsx depend on this one - install it first.",
+      "registryDependencies": ["alert", "button"],
+      "dependencies": ["lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/route-error/components/route-error.tsx",
+          "type": "registry:component",
+          "target": "components/shared/route-error.tsx"
+        },
+        {
+          "path": "base/route-error/lib/get-error-type.ts",
+          "type": "registry:file",
+          "target": "lib/errors/get-error-type.ts"
+        },
+        {
+          "path": "base/route-error/lib/error-reporting.ts",
+          "type": "registry:file",
+          "target": "lib/error-reporting.ts"
+        },
+        {
+          "path": "base/route-error/app-error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/error.tsx"
+        },
+        {
+          "path": "base/route-error/not-found.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/not-found.tsx"
+        },
+        {
+          "path": "base/route-error/root-not-found.tsx",
+          "type": "registry:page",
+          "target": "app/not-found.tsx"
+        },
+        {
+          "path": "base/route-error/global-error.tsx",
+          "type": "registry:page",
+          "target": "app/global-error.tsx"
+        },
+        {
+          "path": "base/route-error/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/route-error.json"
+        }
+      ]
+    },
+    {
+      "name": "team-settings",
+      "type": "registry:block",
+      "title": "Team Settings",
+      "description": "Workspace team management: invite members, change roles, remove members, and manage pending invitations, backed by the framework's team service.",
+      "registryDependencies": [
+        "badge",
+        "button",
+        "card",
+        "dialog",
+        "input",
+        "label",
+        "select",
+        "skeleton",
+        "table"
+      ],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/core",
+        "@intelligo/billing",
+        "sonner",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/team-settings/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/team/page.tsx"
+        },
+        {
+          "path": "base/team-settings/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/team/loading.tsx"
+        },
+        {
+          "path": "base/team-settings/components/member-list.tsx",
+          "type": "registry:component",
+          "target": "components/team/member-list.tsx"
+        },
+        {
+          "path": "base/team-settings/components/invite-member-form.tsx",
+          "type": "registry:component",
+          "target": "components/team/invite-member-form.tsx"
+        },
+        {
+          "path": "base/team-settings/components/pending-invitations.tsx",
+          "type": "registry:component",
+          "target": "components/team/pending-invitations.tsx"
+        },
+        {
+          "path": "base/team-settings/components/role-badge.tsx",
+          "type": "registry:component",
+          "target": "components/team/role-badge.tsx"
+        },
+        {
+          "path": "base/team-settings/actions.ts",
+          "type": "registry:file",
+          "target": "actions/team.ts"
+        },
+        {
+          "path": "base/team-settings/lib/team.ts",
+          "type": "registry:file",
+          "target": "lib/team.ts"
+        },
+        {
+          "path": "base/team-settings/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/team-settings.json"
+        },
+        {
+          "path": "base/team-settings/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/team/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "usage",
+      "type": "registry:block",
+      "title": "Usage",
+      "description": "Workspace usage dashboard: current-period summary tiles, a period selector, and a table of recent AI execution records.",
+      "registryDependencies": [
+        "badge",
+        "card",
+        "progress",
+        "skeleton",
+        "table",
+        "tabs",
+        "button"
+      ],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/billing",
+        "@intelligo/executions",
+        "next-intl",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "base/usage/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/usage/page.tsx"
+        },
+        {
+          "path": "base/usage/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/usage/loading.tsx"
+        },
+        {
+          "path": "base/usage/actions.ts",
+          "type": "registry:file",
+          "target": "actions/usage.ts"
+        },
+        {
+          "path": "base/usage/components/usage-summary-cards.tsx",
+          "type": "registry:component",
+          "target": "components/usage/usage-summary-cards.tsx"
+        },
+        {
+          "path": "base/usage/components/usage-chart.tsx",
+          "type": "registry:component",
+          "target": "components/usage/usage-chart.tsx"
+        },
+        {
+          "path": "base/usage/components/usage-records-table.tsx",
+          "type": "registry:component",
+          "target": "components/usage/usage-records-table.tsx"
+        },
+        {
+          "path": "base/usage/components/usage-empty-state.tsx",
+          "type": "registry:component",
+          "target": "components/usage/usage-empty-state.tsx"
+        },
+        {
+          "path": "base/usage/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/usage.json"
+        },
+        {
+          "path": "base/usage/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/usage/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "invitation-accept",
+      "type": "registry:block",
+      "title": "Invitation Accept",
+      "description": "Accept or decline a workspace invitation via the team service. Requires the team-settings item (provides lib/team.ts and the role badge); install it first.",
+      "registryDependencies": ["alert", "card", "skeleton", "button"],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/core",
+        "sonner",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/invitation-accept/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/accept-invitation/[id]/page.tsx"
+        },
+        {
+          "path": "base/invitation-accept/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/accept-invitation/[id]/loading.tsx"
+        },
+        {
+          "path": "base/invitation-accept/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/accept-invitation/[id]/error.tsx"
+        },
+        {
+          "path": "base/invitation-accept/components/invitation-actions.tsx",
+          "type": "registry:component",
+          "target": "components/invitation/invitation-actions.tsx"
+        },
+        {
+          "path": "base/invitation-accept/actions.ts",
+          "type": "registry:file",
+          "target": "actions/invitation.ts"
+        },
+        {
+          "path": "base/invitation-accept/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/invitation-accept.json"
+        }
+      ]
+    },
+    {
+      "name": "app-shell",
+      "type": "registry:block",
+      "title": "App Shell",
+      "description": "Authenticated application shell: session and onboarding gate, workspace bootstrap, and a collapsible sidebar with workspace switcher, configurable nav, and user menu.",
+      "registryDependencies": [
+        "avatar",
+        "dropdown-menu",
+        "separator",
+        "sidebar"
+      ],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/core",
+        "next-themes",
+        "drizzle-orm",
+        "lucide-react",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/app-shell/layout.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/layout.tsx"
+        },
+        {
+          "path": "base/app-shell/components/app-sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/shell/app-sidebar.tsx"
+        },
+        {
+          "path": "base/app-shell/components/workspace-switcher.tsx",
+          "type": "registry:component",
+          "target": "components/shell/workspace-switcher.tsx"
+        },
+        {
+          "path": "base/app-shell/components/user-menu.tsx",
+          "type": "registry:component",
+          "target": "components/shell/user-menu.tsx"
+        },
+        {
+          "path": "base/app-shell/components/shell-header.tsx",
+          "type": "registry:component",
+          "target": "components/shell/shell-header.tsx"
+        },
+        {
+          "path": "base/app-shell/components/theme-provider.tsx",
+          "type": "registry:component",
+          "target": "components/shell/theme-provider.tsx"
+        },
+        {
+          "path": "base/app-shell/lib/workspace-bootstrap.ts",
+          "type": "registry:file",
+          "target": "lib/workspace-bootstrap.ts"
+        },
+        {
+          "path": "base/app-shell/lib/shell-config.tsx",
+          "type": "registry:file",
+          "target": "lib/shell-config.tsx"
+        },
+        {
+          "path": "base/app-shell/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/app-shell.json"
+        },
+        {
+          "path": "base/app-shell/lib/nav-config.ts",
+          "type": "registry:file",
+          "target": "lib/nav-config.ts"
+        }
+      ]
+    },
+    {
+      "name": "settings-shell",
+      "type": "registry:block",
+      "title": "Settings Shell",
+      "description": "The shared frame around every /settings page: layout with heading and width constraint, a configurable tab bar (lib/settings-nav.ts), and a /settings index that redirects to the first tab. Install alongside the settings items - without it they render unframed and plain /settings links 404.",
+      "registryDependencies": ["tabs"],
+      "dependencies": ["lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/settings-shell/layout.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/layout.tsx"
+        },
+        {
+          "path": "base/settings-shell/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/page.tsx"
+        },
+        {
+          "path": "base/settings-shell/components/settings-tabs.tsx",
+          "type": "registry:component",
+          "target": "components/settings/settings-tabs.tsx"
+        },
+        {
+          "path": "base/settings-shell/lib/settings-nav.ts",
+          "type": "registry:file",
+          "target": "lib/settings-nav.ts"
+        },
+        {
+          "path": "base/settings-shell/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/settings-shell.json"
+        }
+      ]
+    },
+    {
+      "name": "workspace-settings",
+      "type": "registry:block",
+      "title": "Workspace Settings",
+      "description": "Workspace name/URL editing and owner-only deletion, backed by the framework's workspace service.",
+      "registryDependencies": [
+        "button",
+        "card",
+        "dialog",
+        "input",
+        "label",
+        "skeleton"
+      ],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/core",
+        "@intelligo/billing",
+        "drizzle-orm",
+        "sonner",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/workspace-settings/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/workspace/page.tsx"
+        },
+        {
+          "path": "base/workspace-settings/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/workspace/loading.tsx"
+        },
+        {
+          "path": "base/workspace-settings/components/workspace-settings-form.tsx",
+          "type": "registry:component",
+          "target": "components/workspace/workspace-settings-form.tsx"
+        },
+        {
+          "path": "base/workspace-settings/actions.ts",
+          "type": "registry:file",
+          "target": "actions/workspace.ts"
+        },
+        {
+          "path": "base/workspace-settings/lib/workspace.ts",
+          "type": "registry:file",
+          "target": "lib/workspace.ts"
+        },
+        {
+          "path": "base/workspace-settings/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/workspace-settings.json"
+        },
+        {
+          "path": "base/workspace-settings/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/workspace/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "auth-login",
+      "type": "registry:block",
+      "title": "Auth: Login",
+      "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first.",
+      "registryDependencies": ["alert", "button", "input", "label", "skeleton"],
+      "dependencies": [
+        "@intelligo/auth",
+        "react-hook-form@^7.71.1",
+        "@hookform/resolvers@^5.2.2",
+        "zod@^3.25.76",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/auth-login/layout.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/layout.tsx"
+        },
+        {
+          "path": "base/auth-login/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/login/page.tsx"
+        },
+        {
+          "path": "base/auth-login/components/auth-card.tsx",
+          "type": "registry:component",
+          "target": "components/auth/auth-card.tsx"
+        },
+        {
+          "path": "base/auth-login/components/login-form.tsx",
+          "type": "registry:component",
+          "target": "components/auth/login-form.tsx"
+        },
+        {
+          "path": "base/auth-login/components/social-login-buttons.tsx",
+          "type": "registry:component",
+          "target": "components/auth/social-login-buttons.tsx"
+        },
+        {
+          "path": "base/auth-login/lib/auth-validation.ts",
+          "type": "registry:file",
+          "target": "lib/auth-validation.ts"
+        },
+        {
+          "path": "base/auth-login/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/auth-login.json"
+        },
+        {
+          "path": "base/auth-login/auth-error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/error.tsx"
+        },
+        {
+          "path": "base/auth-login/auth-loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/loading.tsx"
+        }
+      ]
+    },
+    {
+      "name": "auth-signup",
+      "type": "registry:block",
+      "title": "Auth: Signup",
+      "description": "Email/password and OAuth account creation. Requires the auth-login item (provides the shared AuthCard shell, SocialLoginButtons, and lib/auth-validation.ts schemas); install it first. Redirects to auth-email-verification's /verify-email route when the server requires email verification.",
+      "registryDependencies": ["alert", "button", "input", "label"],
+      "dependencies": [
+        "@intelligo/auth",
+        "react-hook-form@^7.71.1",
+        "@hookform/resolvers@^5.2.2",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/auth-signup/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/signup/page.tsx"
+        },
+        {
+          "path": "base/auth-signup/components/signup-form.tsx",
+          "type": "registry:component",
+          "target": "components/auth/signup-form.tsx"
+        },
+        {
+          "path": "base/auth-signup/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/auth-signup.json"
+        }
+      ]
+    },
+    {
+      "name": "auth-password-reset",
+      "type": "registry:block",
+      "title": "Auth: Password Reset",
+      "description": "Forgot-password and reset-password pages, backed by the Better-Auth client SDK's requestPasswordReset/resetPassword actions. Requires the auth-login item (provides the shared AuthCard shell and lib/auth-validation.ts schemas); install it first.",
+      "registryDependencies": ["alert", "button", "input", "label"],
+      "dependencies": [
+        "@intelligo/auth",
+        "react-hook-form@^7.71.1",
+        "@hookform/resolvers@^5.2.2",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/auth-password-reset/forgot-page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/forgot-password/page.tsx"
+        },
+        {
+          "path": "base/auth-password-reset/reset-page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/reset-password/page.tsx"
+        },
+        {
+          "path": "base/auth-password-reset/components/forgot-password-form.tsx",
+          "type": "registry:component",
+          "target": "components/auth/forgot-password-form.tsx"
+        },
+        {
+          "path": "base/auth-password-reset/components/reset-password-form.tsx",
+          "type": "registry:component",
+          "target": "components/auth/reset-password-form.tsx"
+        },
+        {
+          "path": "base/auth-password-reset/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/auth-password-reset.json"
+        }
+      ]
+    },
+    {
+      "name": "auth-email-verification",
+      "type": "registry:block",
+      "title": "Auth: Email Verification",
+      "description": "Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action. Reads the ?error=/?email= search params Better-Auth's own /verify-email link handler redirects back with. Requires the auth-login item (provides the shared AuthCard shell); install it first.",
+      "registryDependencies": ["alert", "button", "input", "label"],
+      "dependencies": ["@intelligo/auth", "lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/auth-email-verification/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/verify-email/page.tsx"
+        },
+        {
+          "path": "base/auth-email-verification/components/resend-verification-button.tsx",
+          "type": "registry:component",
+          "target": "components/auth/resend-verification-button.tsx"
+        },
+        {
+          "path": "base/auth-email-verification/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/auth-email-verification.json"
+        }
+      ]
+    },
+    {
+      "name": "language-switcher",
+      "type": "registry:block",
+      "title": "Language Switcher",
+      "description": "Locale dropdown over the locales i18n/routing.ts declares, labeled with each language's own name. Renders nothing in a single-locale deployment, so it is safe to mount unconditionally (e.g. in shellConfig.headerRight). Adding a locale to routing.ts plus a messages directory is the whole job.",
+      "registryDependencies": ["button", "dropdown-menu"],
+      "dependencies": ["lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/language-switcher/components/language-switcher.tsx",
+          "type": "registry:component",
+          "target": "components/layout/language-switcher.tsx"
+        },
+        {
+          "path": "base/language-switcher/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/language-switcher.json"
+        }
+      ]
+    },
+    {
+      "name": "trial-banner",
+      "type": "registry:block",
+      "title": "Trial Banner",
+      "description": "Dismissable trial-status strip for the app shell's bannerTop seam: days and credits remaining with an upgrade CTA, urgency-ramped visuals, dismiss-for-today, and a consumer config (lib/trial-banner-config.ts) for the CTA target and route suppression (hidden on /chat by default). Bind TrialBannerContainer as shellConfig.bannerTop.",
+      "registryDependencies": ["button"],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/billing",
+        "@intelligo/core",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/trial-banner/components/trial-banner-container.tsx",
+          "type": "registry:component",
+          "target": "components/trial/trial-banner-container.tsx"
+        },
+        {
+          "path": "base/trial-banner/components/trial-banner.tsx",
+          "type": "registry:component",
+          "target": "components/trial/trial-banner.tsx"
+        },
+        {
+          "path": "base/trial-banner/lib/trial-banner-config.ts",
+          "type": "registry:file",
+          "target": "lib/trial-banner-config.ts"
+        },
+        {
+          "path": "base/trial-banner/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/trial-banner.json"
+        }
+      ]
+    },
+    {
+      "name": "notifications",
+      "type": "registry:block",
+      "title": "Notifications",
+      "description": "Notification bell with an unread badge and dropdown, plus a full notifications page with mark-as-read and load-more, backed by the framework's notification records.",
+      "registryDependencies": [
+        "button",
+        "popover",
+        "scroll-area",
+        "separator",
+        "skeleton"
+      ],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/core",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/notifications/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/notifications/page.tsx"
+        },
+        {
+          "path": "base/notifications/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/notifications/loading.tsx"
+        },
+        {
+          "path": "base/notifications/components/notification-bell.tsx",
+          "type": "registry:component",
+          "target": "components/notifications/notification-bell.tsx"
+        },
+        {
+          "path": "base/notifications/components/notification-list.tsx",
+          "type": "registry:component",
+          "target": "components/notifications/notification-list.tsx"
+        },
+        {
+          "path": "base/notifications/components/notification-item.tsx",
+          "type": "registry:component",
+          "target": "components/notifications/notification-item.tsx"
+        },
+        {
+          "path": "base/notifications/hooks/use-notifications.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-notifications.ts"
+        },
+        {
+          "path": "base/notifications/actions.ts",
+          "type": "registry:file",
+          "target": "actions/notifications.ts"
+        },
+        {
+          "path": "base/notifications/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/notifications.json"
+        },
+        {
+          "path": "base/notifications/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/notifications/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "pricing",
+      "type": "registry:block",
+      "title": "Pricing",
+      "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on \u2014 install this item first.",
+      "registryDependencies": ["alert", "badge", "button", "card", "skeleton"],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/billing",
+        "zod@^3.25.76",
+        "lucide-react",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/pricing/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/pricing/page.tsx"
+        },
+        {
+          "path": "base/pricing/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/pricing/loading.tsx"
+        },
+        {
+          "path": "base/pricing/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/pricing/error.tsx"
+        },
+        {
+          "path": "base/pricing/components/pricing-content.tsx",
+          "type": "registry:component",
+          "target": "components/billing/pricing-content.tsx"
+        },
+        {
+          "path": "base/pricing/components/plan-card.tsx",
+          "type": "registry:component",
+          "target": "components/billing/plan-card.tsx"
+        },
+        {
+          "path": "base/pricing/components/interval-toggle.tsx",
+          "type": "registry:component",
+          "target": "components/billing/interval-toggle.tsx"
+        },
+        {
+          "path": "base/pricing/components/checkout-button.tsx",
+          "type": "registry:component",
+          "target": "components/billing/checkout-button.tsx"
+        },
+        {
+          "path": "base/pricing/actions.ts",
+          "type": "registry:file",
+          "target": "actions/billing.ts"
+        },
+        {
+          "path": "base/pricing/lib/billing.ts",
+          "type": "registry:file",
+          "target": "lib/billing.ts"
+        },
+        {
+          "path": "base/pricing/lib/billing-config.ts",
+          "type": "registry:file",
+          "target": "lib/billing-config.ts"
+        },
+        {
+          "path": "base/pricing/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/pricing.json"
+        }
+      ]
+    },
+    {
+      "name": "checkout",
+      "type": "registry:block",
+      "title": "Checkout",
+      "description": "Checkout-success page that verifies the Stripe session directly through the framework's checkout service, covering the webhook-race window between the browser redirect and Stripe's webhook delivery.",
+      "registryDependencies": ["alert", "badge", "button", "card", "skeleton"],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/billing",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/checkout/success-page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/checkout/success/page.tsx"
+        },
+        {
+          "path": "base/checkout/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/checkout/success/loading.tsx"
+        },
+        {
+          "path": "base/checkout/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/checkout/success/error.tsx"
+        },
+        {
+          "path": "base/checkout/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/checkout.json"
+        }
+      ]
+    },
+    {
+      "name": "billing-settings",
+      "type": "registry:block",
+      "title": "Billing Settings",
+      "description": "Workspace billing management: current plan, credit balance, credit bundle purchase, and the Stripe billing portal, shaped server-side by role (member/admin/owner). Requires the pricing item (provides lib/billing.ts and actions/billing.ts); install it first.",
+      "registryDependencies": ["alert", "button", "card", "skeleton"],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/billing",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/billing-settings/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/billing/page.tsx"
+        },
+        {
+          "path": "base/billing-settings/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/billing/loading.tsx"
+        },
+        {
+          "path": "base/billing-settings/components/portal-button.tsx",
+          "type": "registry:component",
+          "target": "components/billing/portal-button.tsx"
+        },
+        {
+          "path": "base/billing-settings/components/credit-bundles.tsx",
+          "type": "registry:component",
+          "target": "components/billing/credit-bundles.tsx"
+        },
+        {
+          "path": "base/billing-settings/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/billing-settings.json"
+        },
+        {
+          "path": "base/billing-settings/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/billing/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "feature-gating",
+      "type": "registry:block",
+      "title": "Feature Gating",
+      "description": "The vocabulary for selling a plan: a server-side FeatureGate that renders gated content only to entitled workspaces, three densities of upgrade prompt (full, compact, inline), a quota warning that escalates as a limit approaches, and a preview paywall that blurs content instead of hiding it. Which features exist and which plan unlocks them is consumer config (lib/feature-catalog.ts). Install pricing or billing-settings for somewhere to send the user.",
+      "registryDependencies": ["button", "card", "dialog"],
+      "dependencies": ["@intelligo/billing", "lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/feature-gating/components/feature-gate.tsx",
+          "type": "registry:component",
+          "target": "components/billing/feature-gate.tsx"
+        },
+        {
+          "path": "base/feature-gating/components/upgrade-prompt.tsx",
+          "type": "registry:component",
+          "target": "components/billing/upgrade-prompt.tsx"
+        },
+        {
+          "path": "base/feature-gating/components/inline-upgrade-banner.tsx",
+          "type": "registry:component",
+          "target": "components/billing/inline-upgrade-banner.tsx"
+        },
+        {
+          "path": "base/feature-gating/components/quota-warning.tsx",
+          "type": "registry:component",
+          "target": "components/billing/quota-warning.tsx"
+        },
+        {
+          "path": "base/feature-gating/components/quota-limit-dialog.tsx",
+          "type": "registry:component",
+          "target": "components/billing/quota-limit-dialog.tsx"
+        },
+        {
+          "path": "base/feature-gating/components/paywall-blur.tsx",
+          "type": "registry:component",
+          "target": "components/billing/paywall-blur.tsx"
+        },
+        {
+          "path": "base/feature-gating/lib/feature-catalog.ts",
+          "type": "registry:file",
+          "target": "lib/feature-catalog.ts"
+        },
+        {
+          "path": "base/feature-gating/lib/feature-gating-config.ts",
+          "type": "registry:file",
+          "target": "lib/feature-gating-config.ts"
+        },
+        {
+          "path": "base/feature-gating/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/feature-gating.json"
+        }
+      ]
+    },
+    {
+      "name": "payment-poll",
+      "type": "registry:block",
+      "title": "QR Payment (poll)",
+      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic \u2014 QPay, SocialPay, PIX, UPI, PromptPay all fit \u2014 through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
+      "registryDependencies": ["button", "dialog"],
+      "dependencies": [
+        "@intelligo/auth",
+        "lucide-react",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/payment-poll/components/local-payment-modal.tsx",
+          "type": "registry:component",
+          "target": "components/billing/local-payment-modal.tsx"
+        },
+        {
+          "path": "base/payment-poll/actions.ts",
+          "type": "registry:file",
+          "target": "actions/payment.ts"
+        },
+        {
+          "path": "base/payment-poll/lib/local-payment.ts",
+          "type": "registry:file",
+          "target": "lib/local-payment.ts"
+        },
+        {
+          "path": "base/payment-poll/lib/payment-poll-config.ts",
+          "type": "registry:file",
+          "target": "lib/payment-poll-config.ts"
+        },
+        {
+          "path": "base/payment-poll/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/payment-poll.json"
+        }
+      ]
+    },
+    {
+      "name": "profile-settings",
+      "type": "registry:block",
+      "title": "Profile Settings",
+      "description": "User profile name editing, read-only email, and account deletion with typed confirmation, backed by the framework's profile service.",
+      "registryDependencies": [
+        "button",
+        "card",
+        "dialog",
+        "input",
+        "label",
+        "skeleton"
+      ],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/core",
+        "sonner",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/profile-settings/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/profile/page.tsx"
+        },
+        {
+          "path": "base/profile-settings/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/profile/loading.tsx"
+        },
+        {
+          "path": "base/profile-settings/components/profile-settings-form.tsx",
+          "type": "registry:component",
+          "target": "components/profile/profile-settings-form.tsx"
+        },
+        {
+          "path": "base/profile-settings/actions.ts",
+          "type": "registry:file",
+          "target": "actions/profile.ts"
+        },
+        {
+          "path": "base/profile-settings/lib/profile.ts",
+          "type": "registry:file",
+          "target": "lib/profile.ts"
+        },
+        {
+          "path": "base/profile-settings/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/profile-settings.json"
+        },
+        {
+          "path": "base/profile-settings/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/profile/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "onboarding",
+      "type": "registry:block",
+      "title": "Onboarding",
+      "description": "A generic multi-step onboarding wizard driven by a consumer-owned steps config: text and single-select-card fields, a completion screen, skip, and back/next - backed by the framework's onboarding service (durable step progress, no vertical-specific UI).",
+      "registryDependencies": ["button", "input", "label", "skeleton"],
+      "dependencies": [
+        "@intelligo/auth",
+        "lucide-react",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/onboarding/layout.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/onboarding/layout.tsx"
+        },
+        {
+          "path": "base/onboarding/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/onboarding/page.tsx"
+        },
+        {
+          "path": "base/onboarding/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/onboarding/loading.tsx"
+        },
+        {
+          "path": "base/onboarding/components/onboarding-wizard.tsx",
+          "type": "registry:component",
+          "target": "components/onboarding/onboarding-wizard.tsx"
+        },
+        {
+          "path": "base/onboarding/components/onboarding-step.tsx",
+          "type": "registry:component",
+          "target": "components/onboarding/onboarding-step.tsx"
+        },
+        {
+          "path": "base/onboarding/actions.ts",
+          "type": "registry:file",
+          "target": "actions/onboarding.ts"
+        },
+        {
+          "path": "base/onboarding/lib/onboarding.ts",
+          "type": "registry:file",
+          "target": "lib/onboarding.ts"
+        },
+        {
+          "path": "base/onboarding/lib/onboarding-steps.ts",
+          "type": "registry:file",
+          "target": "lib/onboarding-steps.ts"
+        },
+        {
+          "path": "base/onboarding/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/onboarding.json"
+        },
+        {
+          "path": "base/onboarding/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/onboarding/error.tsx"
+        },
+        {
+          "path": "base/onboarding/lib/onboarding-profile.ts",
+          "type": "registry:file",
+          "target": "lib/onboarding-profile.ts"
+        }
+      ]
+    },
+    {
+      "name": "dashboard",
+      "type": "registry:block",
+      "title": "Dashboard",
+      "description": "An AI-first workspace home: a hero with starter prompts, a sticky prompt bar that opens a new conversation, a resume affordance for unfinished work, recent conversations, and a compact plan/usage strip. Configurable through lib/dashboard-config.tsx (copy, starters, chat base path, shortcuts) and lib/dashboard-data.ts (what \"resume\" means). Pairs with the chat item for its /chat routes and the pricing item for lib/billing-config.ts's CURRENCY; install those first.",
+      "registryDependencies": ["progress", "skeleton"],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/billing",
+        "@intelligo/core",
+        "@intelligo/executions",
+        "lucide-react",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/dashboard/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/dashboard/page.tsx"
+        },
+        {
+          "path": "base/dashboard/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/dashboard/loading.tsx"
+        },
+        {
+          "path": "base/dashboard/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/dashboard.json"
+        },
+        {
+          "path": "base/dashboard/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/dashboard/error.tsx"
+        },
+        {
+          "path": "base/dashboard/components/dashboard-hero.tsx",
+          "type": "registry:component",
+          "target": "components/dashboard/dashboard-hero.tsx"
+        },
+        {
+          "path": "base/dashboard/components/prompt-bar.tsx",
+          "type": "registry:component",
+          "target": "components/dashboard/prompt-bar.tsx"
+        },
+        {
+          "path": "base/dashboard/components/recent-conversations.tsx",
+          "type": "registry:component",
+          "target": "components/dashboard/recent-conversations.tsx"
+        },
+        {
+          "path": "base/dashboard/components/plan-summary.tsx",
+          "type": "registry:component",
+          "target": "components/dashboard/plan-summary.tsx"
+        },
+        {
+          "path": "base/dashboard/lib/dashboard-config.tsx",
+          "type": "registry:file",
+          "target": "lib/dashboard-config.tsx"
+        },
+        {
+          "path": "base/dashboard/lib/dashboard-data.ts",
+          "type": "registry:file",
+          "target": "lib/dashboard-data.ts"
+        }
+      ]
+    },
+    {
+      "name": "artifacts",
+      "type": "registry:block",
+      "title": "Artifacts",
+      "description": "Browse and manage AI-generated document artifacts: filterable list, full-content preview, copy-to-clipboard, and version delete, backed by the framework's document persistence service.",
+      "registryDependencies": [
+        "alert",
+        "badge",
+        "button",
+        "card",
+        "dialog",
+        "scroll-area",
+        "skeleton"
+      ],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/core",
+        "lucide-react",
+        "sonner",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/artifacts/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/artifacts/page.tsx"
+        },
+        {
+          "path": "base/artifacts/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/artifacts/loading.tsx"
+        },
+        {
+          "path": "base/artifacts/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/artifacts/error.tsx"
+        },
+        {
+          "path": "base/artifacts/actions.ts",
+          "type": "registry:file",
+          "target": "actions/documents.ts"
+        },
+        {
+          "path": "base/artifacts/lib/document-patterns.ts",
+          "type": "registry:file",
+          "target": "lib/document-patterns.ts"
+        },
+        {
+          "path": "base/artifacts/components/document-list.tsx",
+          "type": "registry:component",
+          "target": "components/artifacts/document-list.tsx"
+        },
+        {
+          "path": "base/artifacts/components/document-actions.tsx",
+          "type": "registry:component",
+          "target": "components/artifacts/document-actions.tsx"
+        },
+        {
+          "path": "base/artifacts/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/artifacts.json"
+        }
+      ]
+    },
+    {
+      "name": "privacy-settings",
+      "type": "registry:block",
+      "title": "Privacy Settings",
+      "description": "GDPR-style data export, a read-only memory-audit trail, and per-category fact listing with delete, backed by the framework's identity service.",
+      "registryDependencies": ["button", "card", "skeleton"],
+      "dependencies": [
+        "@intelligo/auth",
+        "@intelligo/core",
+        "lucide-react",
+        "sonner",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/privacy-settings/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/privacy/page.tsx"
+        },
+        {
+          "path": "base/privacy-settings/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/privacy/loading.tsx"
+        },
+        {
+          "path": "base/privacy-settings/actions.ts",
+          "type": "registry:file",
+          "target": "actions/privacy.ts"
+        },
+        {
+          "path": "base/privacy-settings/components/export-data-button.tsx",
+          "type": "registry:component",
+          "target": "components/privacy/export-data-button.tsx"
+        },
+        {
+          "path": "base/privacy-settings/components/fact-list.tsx",
+          "type": "registry:component",
+          "target": "components/privacy/fact-list.tsx"
+        },
+        {
+          "path": "base/privacy-settings/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/privacy-settings.json"
+        },
+        {
+          "path": "base/privacy-settings/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/privacy/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "chat",
+      "type": "registry:block",
+      "title": "Chat",
+      "description": "A self-contained AI chat surface: streaming conversation UI, a history switcher, a tool-call renderer seam you own, and a Route Handler that runs every turn through the execution boundary. Ships with a deterministic stub model so a clean install streams with no API keys. The Route Handler imports lib/intelligo.ts (the composition root) and lib/plans.ts, which are provided by the `intelligo create` scaffold, not by any registry item - in a hand-rolled app, create both before installing (see the CLI's app-scaffold templates).",
+      "registryDependencies": [
+        "button",
+        "dropdown-menu",
+        "input",
+        "skeleton",
+        "textarea",
+        "alert-dialog"
+      ],
+      "dependencies": [
+        "ai",
+        "@ai-sdk/react",
+        "streamdown",
+        "zod@^3.25.76",
+        "lucide-react",
+        "sonner",
+        "server-only",
+        "@intelligo/auth",
+        "@intelligo/billing",
+        "@intelligo/core",
+        "@intelligo/executions",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/chat/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/chat/page.tsx"
+        },
+        {
+          "path": "base/chat/conversation-page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/chat/[id]/page.tsx"
+        },
+        {
+          "path": "base/chat/conversation-loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/chat/[id]/loading.tsx"
+        },
+        {
+          "path": "base/chat/route.ts",
+          "type": "registry:file",
+          "target": "app/api/chat/route.ts"
+        },
+        {
+          "path": "base/chat/actions.ts",
+          "type": "registry:file",
+          "target": "actions/chat.ts"
+        },
+        {
+          "path": "base/chat/lib/chat-model.ts",
+          "type": "registry:file",
+          "target": "lib/chat-model.ts"
+        },
+        {
+          "path": "base/chat/lib/chat-renderers.tsx",
+          "type": "registry:file",
+          "target": "lib/chat-renderers.tsx"
+        },
+        {
+          "path": "base/chat/components/chat-panel.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-panel.tsx"
+        },
+        {
+          "path": "base/chat/components/message-list.tsx",
+          "type": "registry:component",
+          "target": "components/chat/message-list.tsx"
+        },
+        {
+          "path": "base/chat/components/message.tsx",
+          "type": "registry:component",
+          "target": "components/chat/message.tsx"
+        },
+        {
+          "path": "base/chat/components/chat-input.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-input.tsx"
+        },
+        {
+          "path": "base/chat/components/conversation-header.tsx",
+          "type": "registry:component",
+          "target": "components/chat/conversation-header.tsx"
+        },
+        {
+          "path": "base/chat/components/conversation-sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/chat/conversation-sidebar.tsx"
+        },
+        {
+          "path": "base/chat/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/chat.json"
+        },
+        {
+          "path": "base/chat/lib/chat-config.tsx",
+          "type": "registry:file",
+          "target": "lib/chat-config.tsx"
+        },
+        {
+          "path": "base/chat/conversation-error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/chat/[id]/error.tsx"
+        },
+        {
+          "path": "base/chat/lib/chat-server-config.ts",
+          "type": "registry:file",
+          "target": "lib/chat-server-config.ts"
+        }
+      ]
+    }
+  ]
+}

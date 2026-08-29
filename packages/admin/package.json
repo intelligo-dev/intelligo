@@ -1,0 +1,54 @@
+{
+  "name": "@intelligo/admin",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./views": "./src/views/index.ts",
+    "./health": "./src/health.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@intelligo/audit": "workspace:*",
+    "@intelligo/auth": "workspace:*",
+    "@intelligo/core": "workspace:*",
+    "@intelligo/executions": "workspace:*",
+    "@intelligo/jobs": "workspace:*",
+    "@intelligo/ui": "workspace:*",
+    "drizzle-orm": "^0.45.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "react": ">=19"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./views": {
+        "types": "./dist/views/index.d.ts",
+        "default": "./dist/views/index.js"
+      },
+      "./health": {
+        "types": "./dist/health.d.ts",
+        "default": "./dist/health.js"
+      }
+    }
+  }
+}

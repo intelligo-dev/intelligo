@@ -1,0 +1,30 @@
+{
+  "genericFeature": "This feature",
+  "prompt": {
+    "title": "{feature} requires {plan}",
+    "description": "{feature} is included from the {plan} plan up. Upgrade to unlock it.",
+    "currentPlan": "You're currently on the <strong>{plan}</strong> plan.",
+    "cta": "Upgrade to {plan}"
+  },
+  "inline": {
+    "message": "Upgrade to {plan} to use {feature}",
+    "cta": "Upgrade"
+  },
+  "quota": {
+    "remaining": "{count, plural, one {# use left this period} other {# uses left this period}}",
+    "exhausted": "You've used everything included this period."
+  },
+  "paywall": {
+    "title": "See the full version",
+    "description": "Upgrade to read this in full, and to keep everything you generate.",
+    "cta": "Upgrade"
+  },
+  "limitDialog": {
+    "title": "You've used all your {action}",
+    "genericAction": "included usage",
+    "description": "You've used {used} of {limit} this period. Upgrading raises the limit right away.",
+    "planCta": "Upgrade to {plan} — {price}",
+    "planCtaNoPrice": "Upgrade to {plan}",
+    "dismiss": "Not now"
+  }
+}

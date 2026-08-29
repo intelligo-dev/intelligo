@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "title": "Dashboard"
+  },
+  "hero": {
+    "title": "What can I help with?",
+    "subtitle": "Ask a question, draft something, or pick up where you left off. Every turn is metered against your plan.",
+    "resume": "Continue where you left off"
+  },
+  "starters": {
+    "first": "Explain what this workspace can do",
+    "second": "Draft a short update for my team",
+    "third": "Summarize the key points of an idea"
+  },
+  "promptBar": {
+    "placeholder": "Ask anything…",
+    "send": "Send"
+  },
+  "recent": {
+    "title": "Recent",
+    "untitled": "New conversation"
+  },
+  "plan": {
+    "title": "Plan & usage",
+    "freeName": "Free",
+    "subscription": "Subscription billing",
+    "credit": "Credit billing",
+    "requests": "{count, plural, =0 {No requests this month} one {# request this month} other {# requests this month}}",
+    "trialRemaining": "{remaining} of {initial} trial credits left",
+    "trialDays": "{days, plural, one {# day left} other {# days left}}",
+    "viewUsage": "View usage",
+    "viewPlans": "View plans"
+  },
+  "shortcuts": {
+    "artifacts": "Artifacts",
+    "usage": "Usage",
+    "team": "Team"
+  }
+}

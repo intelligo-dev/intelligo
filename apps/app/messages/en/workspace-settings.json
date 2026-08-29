@@ -1,0 +1,35 @@
+{
+  "page": {
+    "title": "Workspace settings",
+    "description": "Manage your workspace's name and URL."
+  },
+  "form": {
+    "generalTitle": "General",
+    "generalDescription": "Update your workspace's name and URL.",
+    "nameLabel": "Workspace name",
+    "urlLabel": "Workspace URL",
+    "save": "Save changes",
+    "savePending": "Saving…",
+    "readOnlyNote": "Only workspace owners and admins can edit these settings.",
+    "updated": "Workspace updated"
+  },
+  "dangerZone": {
+    "title": "Danger zone",
+    "description": "Deleting this workspace permanently removes it and all associated data. This cannot be undone.",
+    "trigger": "Delete workspace",
+    "dialogTitle": "Delete workspace",
+    "dialogDescription": "Are you sure you want to delete {name}? This action cannot be undone and all workspace data will be permanently deleted.",
+    "cancel": "Cancel",
+    "confirm": "Delete workspace",
+    "confirmPending": "Deleting…",
+    "deleted": "Workspace deleted"
+  },
+  "errors": {
+    "forbidden": "You don't have permission to do that.",
+    "notFound": "This workspace no longer exists.",
+    "workspaceLimitReached": "Your plan's workspace limit has been reached. Upgrade to create more workspaces.",
+    "providerError": "Something went wrong. Please try again.",
+    "somethingWentWrong": "Something went wrong.",
+    "invalidInput": "Invalid input"
+  }
+}

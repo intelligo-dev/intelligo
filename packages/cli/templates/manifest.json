@@ -1,0 +1,116 @@
+{
+  "usage-page": {
+    "templateVersion": "1.0.0",
+    "description": "A usage page listing executions and cost for the current workspace",
+    "files": [
+      {
+        "template": "usage-page/usage-page.tsx.tpl",
+        "target": "app/usage/page.tsx"
+      }
+    ],
+    "deprecated": "Superseded by the `usage` registry item \u2014 install it with the shadcn CLI from the Intelligo registry instead; it ships a full page, components and thin actions as consumer-owned source."
+  },
+  "app-scaffold": {
+    "templateVersion": "1.4.0",
+    "description": "A new application: composition root, plans, an assistant route, config, next-intl i18n plumbing, and a registry-consuming shadcn/Tailwind setup",
+    "files": [
+      {
+        "template": "app-scaffold/package.json.tpl",
+        "target": "package.json"
+      },
+      {
+        "template": "app-scaffold/next.config.mjs.tpl",
+        "target": "next.config.mjs"
+      },
+      {
+        "template": "app-scaffold/tsconfig.json.tpl",
+        "target": "tsconfig.json"
+      },
+      {
+        "template": "app-scaffold/env.example.tpl",
+        "target": ".env.example"
+      },
+      {
+        "template": "app-scaffold/intelligo.ts.tpl",
+        "target": "lib/intelligo.ts"
+      },
+      {
+        "template": "app-scaffold/plans.ts.tpl",
+        "target": "lib/plans.ts"
+      },
+      {
+        "template": "app-scaffold/assistant-route.ts.tpl",
+        "target": "app/api/assistant/route.ts"
+      },
+      {
+        "template": "app-scaffold/components.json.tpl",
+        "target": "components.json"
+      },
+      {
+        "template": "app-scaffold/postcss.config.mjs.tpl",
+        "target": "postcss.config.mjs"
+      },
+      {
+        "template": "app-scaffold/globals.css.tpl",
+        "target": "app/globals.css"
+      },
+      {
+        "template": "app-scaffold/lib-utils.ts.tpl",
+        "target": "lib/utils.ts"
+      },
+      {
+        "template": "app-scaffold/layout.tsx.tpl",
+        "target": "app/[locale]/layout.tsx"
+      },
+      {
+        "template": "app-scaffold/theme-provider.tsx.tpl",
+        "target": "components/shell/theme-provider.tsx"
+      },
+      {
+        "template": "app-scaffold/sonner.tsx.tpl",
+        "target": "components/ui/sonner.tsx"
+      },
+      {
+        "template": "app-scaffold/i18n-routing.ts.tpl",
+        "target": "i18n/routing.ts"
+      },
+      {
+        "template": "app-scaffold/i18n-navigation.ts.tpl",
+        "target": "i18n/navigation.ts"
+      },
+      {
+        "template": "app-scaffold/i18n-request.ts.tpl",
+        "target": "i18n/request.ts"
+      },
+      {
+        "template": "app-scaffold/middleware.ts.tpl",
+        "target": "middleware.ts"
+      },
+      {
+        "template": "app-scaffold/messages-en-app.json.tpl",
+        "target": "messages/en/app.json"
+      }
+    ]
+  },
+  "billing-page": {
+    "templateVersion": "1.0.0",
+    "description": "A billing page reading your registered plan catalogue",
+    "files": [
+      {
+        "template": "billing-page/billing-page.tsx.tpl",
+        "target": "app/billing/page.tsx"
+      }
+    ],
+    "deprecated": "Superseded by the `pricing` and `billing-settings` registry items \u2014 install them with the shadcn CLI from the Intelligo registry instead."
+  },
+  "admin-page": {
+    "templateVersion": "1.0.0",
+    "description": "Mount the Intelligo operational console at /admin",
+    "files": [
+      {
+        "template": "admin-page/admin-page.tsx.tpl",
+        "target": "app/admin/page.tsx"
+      }
+    ]
+  }
+}

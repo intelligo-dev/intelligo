@@ -1,0 +1,32 @@
+{
+  // Declarations are deliberately OFF for this package, and only this
+  // package.
+  //
+  // Better-Auth's configured instance types reference module paths that
+  // neither `better-auth` nor `zod` list in their `exports` maps
+  // (`better-auth/dist/client/query.mjs`, `zod/v4/core`). TypeScript
+  // cannot name them through a package specifier, so it falls back to
+  // `../node_modules/...` and refuses to emit — TS2742. Nothing in this
+  // repository can fix that: it is upstream packaging. It only surfaced
+  // when the extracted public tree was built from a fresh install,
+  // because pnpm's layout there differs from this workspace's.
+  //
+  // Rather than publish weakened hand-written types, the package ships
+  // compiled JS from `dist` and TYPES FROM SOURCE — `publishConfig`
+  // points `types` at `src/*.ts` and `files` includes `src`. Consumers
+  // get the full inferred surface, including plugin methods, which an
+  // explicit annotation would have erased. Rechecked on 1.6.30: still
+  // unfixed. Revisit when Better-Auth exports those paths.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "jsx": "react-jsx"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "node_modules", "dist"]
+}

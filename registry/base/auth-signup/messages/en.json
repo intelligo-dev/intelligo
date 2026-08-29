@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "title": "Sign up",
+    "description": "Create an account."
+  },
+  "card": {
+    "title": "Create an account",
+    "description": "Get started for free"
+  },
+  "signupForm": {
+    "nameLabel": "Name",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "confirmPasswordLabel": "Confirm password",
+    "submit": "Create account",
+    "submitting": "Creating account…",
+    "alreadyHaveAccount": "Already have an account?",
+    "logInLink": "Log in",
+    "errors": {
+      "accountExists": "An account with this email already exists.",
+      "unexpected": "Something went wrong. Please try again."
+    }
+  },
+  "validation": {
+    "nameTooShort": "Name must be at least 2 characters",
+    "nameTooLong": "Name must be less than 50 characters",
+    "emailInvalid": "Please enter a valid email address",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordTooLong": "Password must be less than 128 characters",
+    "passwordWeak": "Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number",
+    "passwordMismatch": "Passwords do not match"
+  }
+}

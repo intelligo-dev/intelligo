@@ -1,0 +1,47 @@
+"use client";
+
+/**
+ * Client error boundary for the checkout success route. Self-contained
+ * per the repo-wide registry standard: no shared app-internal error
+ * component, no error-reporting SDK.
+ */
+
+import { useEffect } from "react";
+import { useTranslations } from "next-intl";
+
+import { Link } from "@/i18n/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+
+export default function CheckoutSuccessError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  const t = useTranslations("checkout");
+
+  useEffect(() => {
+    console.error("[checkout/success] error boundary caught:", error);
+  }, [error]);
+
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-4">
+        <Alert variant="destructive">
+          <AlertDescription>{t("error.description")}</AlertDescription>
+        </Alert>
+
+        <div className="flex justify-center gap-3">
+          <Button onClick={reset}>{t("actions.tryAgain")}</Button>
+          <Button asChild variant="outline">
+            <Link href="/settings/billing">
+              {t("actions.viewBillingSettings")}
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

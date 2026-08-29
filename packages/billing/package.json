@@ -1,0 +1,70 @@
+{
+  "name": "@intelligo/billing",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./plans": "./src/plans.ts",
+    "./payment": "./src/payment.ts",
+    "./rate-limit": "./src/rate-limit.ts",
+    "./quota": "./src/quota.ts",
+    "./plugin-adapter": "./src/plugin-adapter.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "db:seed-plans": "tsx src/seed-plans.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@intelligo/billing-core": "workspace:*",
+    "@intelligo/core": "workspace:*",
+    "@intelligo/executions": "workspace:*",
+    "drizzle-orm": "^0.45.1",
+    "server-only": "^0.0.1",
+    "stripe": "^20.3.1",
+    "zod": "^3.24.1"
+  },
+  "peerDependencies": {
+    "next": "^15.0.0 || ^16.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "tsx": "^4.21.0",
+    "next": "^16.0.7"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./plans": {
+        "types": "./dist/plans.d.ts",
+        "default": "./dist/plans.js"
+      },
+      "./payment": {
+        "types": "./dist/payment.d.ts",
+        "default": "./dist/payment.js"
+      },
+      "./rate-limit": {
+        "types": "./dist/rate-limit.d.ts",
+        "default": "./dist/rate-limit.js"
+      },
+      "./quota": {
+        "types": "./dist/quota.d.ts",
+        "default": "./dist/quota.js"
+      },
+      "./plugin-adapter": {
+        "types": "./dist/plugin-adapter.d.ts",
+        "default": "./dist/plugin-adapter.js"
+      }
+    }
+  }
+}

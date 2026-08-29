@@ -1,0 +1,167 @@
+#!/usr/bin/env node
+/**
+ * intelligo <command>
+ *
+ * The shebang targets node because that is what runs the *published*
+ * binary from dist/. In this workspace the source is run with
+ * `pnpm exec tsx packages/cli/src/bin.ts`.
+ *
+ * Deliberately tiny: the commands are library functions, and this file
+ * only maps argv onto them, opens a database connection when one is
+ * needed, and picks an exit code.
+ */
+
+import path from "node:path";
+
+import { addFeature, formatAddResult, readCatalogue } from "./commands/add.js";
+import { createApp, formatCreateResult } from "./commands/create.js";
+import { exitCodeFor, formatResults, runChecks } from "./commands/doctor.js";
+import {
+  formatMigrateCheck,
+  migrateCheck,
+  migrateCheckExitCode,
+} from "./commands/migrate-check.js";
+import {
+  formatUpgradeReport,
+  upgradeCheck,
+  upgradeCheckExitCode,
+} from "./commands/upgrade-check.js";
+
+const MIGRATIONS_DIR = "packages/core/src/db/migrations";
+
+/** Templates ship with the CLI package. */
+const TEMPLATES_DIR = path.resolve(
+  path.dirname(new URL(import.meta.url).pathname),
+  "..",
+  "templates"
+);
+
+/** Recorded in the manifest so an upgrade knows what wrote a file. */
+const FRAMEWORK_VERSION = "0.0.0";
+
+function usage(): string {
+  return [
+    "intelligo <command>",
+    "",
+    "  create <dir>      Scaffold a new application",
+    "  doctor            Report configuration and migration-chain problems",
+    "  migrate --check   Compare this checkout's migrations to a database",
+    "  add <feature>     Generate consumer-owned source (--force to overwrite)",
+    "  upgrade --check   Show what a template upgrade would change",
+    "",
+  ].join("\n");
+}
+
+async function runMigrateCheck(): Promise<number> {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    console.error("DATABASE_URL is required for `migrate --check`.");
+    return 1;
+  }
+
+  // Imported lazily so `doctor` — the command you reach for when the
+  // app will not start — never needs a database driver to load.
+  const { Client } = await import("pg");
+  const client = new Client({ connectionString: url });
+  await client.connect();
+  try {
+    const result = await migrateCheck(
+      path.join(process.cwd(), MIGRATIONS_DIR),
+      async (sql) => (await client.query<{ hash: string }>(sql)).rows
+    );
+    console.log(formatMigrateCheck(result));
+    return migrateCheckExitCode(result);
+  } finally {
+    await client.end();
+  }
+}
+
+async function main(): Promise<number> {
+  const [, , command = "help", ...rest] = process.argv;
+
+  switch (command) {
+    case "doctor": {
+      const results = runChecks();
+      console.log(formatResults(results));
+      return exitCodeFor(results);
+    }
+    case "migrate": {
+      if (!rest.includes("--check")) {
+        console.error("Only `migrate --check` is implemented.");
+        console.error("Applying migrations stays with drizzle-kit for now.");
+        return 1;
+      }
+      return runMigrateCheck();
+    }
+    case "create": {
+      const target = rest.find((a) => !a.startsWith("--"));
+      if (!target) {
+        console.error("Usage: intelligo create <directory>");
+        return 1;
+      }
+      const result = createApp({
+        target,
+        templatesDir: TEMPLATES_DIR,
+        frameworkVersion: FRAMEWORK_VERSION,
+        // `--link-workspace` is for scaffolding inside the Intelligo
+        // monorepo, where the packages are workspace members. The
+        // default is a version range, because that is what works
+        // everywhere else.
+        linkWorkspace: rest.includes("--link-workspace"),
+      });
+      console.log(formatCreateResult(target, result));
+      return 0;
+    }
+    case "add": {
+      const feature = rest.find((a) => !a.startsWith("--"));
+      if (!feature) {
+        const catalogue = readCatalogue(TEMPLATES_DIR);
+        console.error("Usage: intelligo add <feature>\n");
+        for (const [name, spec] of Object.entries(catalogue)) {
+          console.error(`  ${name.padEnd(16)} ${spec.description}`);
+        }
+        return 1;
+      }
+      const result = addFeature(feature, {
+        appRoot: process.cwd(),
+        templatesDir: TEMPLATES_DIR,
+        frameworkVersion: FRAMEWORK_VERSION,
+        force: rest.includes("--force"),
+      });
+      console.log(formatAddResult(result));
+      return 0;
+    }
+    case "upgrade": {
+      if (!rest.includes("--check")) {
+        console.error("Only `upgrade --check` is implemented.");
+        console.error(
+          "Applying an upgrade means re-running `intelligo add` for the " +
+            "features it reports as outdated — deliberately your call, " +
+            "since the files are yours."
+        );
+        return 1;
+      }
+      const report = upgradeCheck({
+        appRoot: process.cwd(),
+        templatesDir: TEMPLATES_DIR,
+      });
+      console.log(formatUpgradeReport(report));
+      return upgradeCheckExitCode(report);
+    }
+    case "help":
+      console.log(usage());
+      return 0;
+    default:
+      console.error(`Unknown command: ${command}\n`);
+      console.error(usage());
+      return 1;
+  }
+}
+
+main().then(
+  (code) => process.exit(code),
+  (error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+);
