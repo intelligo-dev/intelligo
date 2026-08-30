@@ -14,6 +14,33 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Fixed
+
+- **`@intelligo-dev/core`: Neon deployments get a driver that can run
+  transactions.** The client chose `drizzle-orm/neon-http` for any Neon
+  URL. That driver has no session, so `db.transaction()` throws — and
+  quota admission (advisory lock + reservation) and usage settlement
+  are transactions, so every metered request on Neon was refused with
+  a driver error. Neon URLs now use `drizzle-orm/neon-serverless`
+  (WebSocket; Node 22's global `WebSocket` is picked up automatically),
+  and `INTELLIGO_DB_DRIVER=pg | neon-serverless` forces a choice.
+  `neon-http` is refused by name. Found by the Phase 1 documentation
+  audit; the selection rule is now a pure, tested function.
+
+### Added
+
+- **`intelligo migrate`** applies the framework's migration chain with
+  drizzle's migrator, into the default records table `migrate --check`
+  reads; it refuses a push-provisioned database (tables, no records)
+  and a database ahead of the checkout. The scaffold ships a
+  `drizzle.config.ts` for the consumer's own chain (`__app_migrations`)
+  and `db:generate` / `db:migrate` / `db:check` scripts.
+- **`apps/site`** — intelligo.dev, the public site and the hosted page
+  registry at `/r`, now lives in this repository; its content is
+  generated from the tree by `pnpm --filter site sync`.
+
 ## [1.0.0-beta.1] — 2026-08-29
 
 The first public release, published to npm under the `beta` dist-tag

@@ -3,6 +3,7 @@
   "globalEnv": [
     "NODE_ENV",
     "DATABASE_URL",
+    "INTELLIGO_DB_DRIVER",
     "AUTH_SECRET",
     "BETTER_AUTH_SECRET",
     "CRON_SECRET",

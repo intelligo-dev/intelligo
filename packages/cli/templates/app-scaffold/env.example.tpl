@@ -1,5 +1,8 @@
 # Required — the app will not boot without these.
 DATABASE_URL=
+# Driver is chosen from the URL (Neon hosts get the WebSocket driver,
+# everything else node-postgres). Force it with pg | neon-serverless.
+# INTELLIGO_DB_DRIVER=
 BETTER_AUTH_SECRET=
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
