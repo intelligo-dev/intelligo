@@ -38,7 +38,6 @@ import { getBillingSettings } from "./billing-settings";
 import { getWorkspaceBilling } from "./queries";
 import type {
   QuotaCheckResult,
-  QuotaRefusalCode,
   QuotaEstimate,
   QuotaAdmission,
   RecordUsageParams,
