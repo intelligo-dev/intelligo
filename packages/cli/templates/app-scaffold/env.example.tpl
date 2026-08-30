@@ -11,6 +11,14 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 # variable is here so CLI tooling can check it without booting the app.
 INTELLIGO_BILLING_PRODUCT=__APP_SLUG__
 
+# Stripe: the webhook endpoint at /api/webhooks/stripe verifies with this.
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+# Bearer token your scheduler sends to /api/cron/maintenance
+# (`intelligo add maintenance`). At least 32 characters.
+CRON_SECRET=
+
 # Comma-separated emails allowed to reach the Intelligo admin console.
 # Closed by default: with no value, nobody is a platform admin.
 PLATFORM_ADMIN_EMAILS=

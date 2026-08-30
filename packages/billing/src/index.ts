@@ -5,6 +5,11 @@
  */
 
 export { getStripe } from "./stripe";
+export {
+  createStripeWebhookHandler,
+  dispatchStripeEvent,
+} from "./webhook-route";
+export type { StripeWebhookOptions } from "./webhook-route";
 export { getPlanBySlug, formatPrice, isUnlimited } from "./plans";
 export type { PlanSlug, PlanConfig, PlanLimits } from "./plans";
 

@@ -134,6 +134,25 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
     );
   }
 
+  // 4b. Maintenance route. It refuses to serve without a strong
+  //     CRON_SECRET, and a scheduler hitting a 403 every five minutes
+  //     is easy to miss.
+  if (existsSync(path.join(root, "app/api/cron/maintenance/route.ts"))) {
+    const cronSecret = env.CRON_SECRET ?? "";
+    results.push(
+      cronSecret.length >= 32
+        ? { name: "maintenance", status: "ok", detail: "CRON_SECRET set" }
+        : {
+            name: "maintenance",
+            status: "error",
+            detail:
+              "app/api/cron/maintenance/route.ts exists but CRON_SECRET is " +
+              (cronSecret ? "shorter than 32 chars" : "unset") +
+              " — the route answers 403 until it is",
+          }
+    );
+  }
+
   // 5. Generated source. A conflict — template and consumer both
   //    moved — is the one state an upgrade cannot resolve on its own.
   const manifest = readManifest(root);

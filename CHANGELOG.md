@@ -136,6 +136,24 @@ it explains a framework decision.
 
 ### Added
 
+- **`createStripeWebhookHandler()` in `@intelligo-dev/billing`**, and a
+  `POST /api/webhooks/stripe` route in the scaffold and the reference
+  app. The framework shipped webhook _handlers_ but no receiver; the
+  only implementation lived in a private product, acknowledged a
+  throwing handler with 202 (Stripe never retried — the event was
+  lost) and wrote its `finance_events` row after the handlers. The
+  receiver records the receipt first, claims it with an
+  `UPDATE … WHERE processed_at IS NULL` so concurrent duplicates run
+  the handlers once, answers 500 on a handler error (Stripe retries)
+  and releases the claim, and 400 on a bad signature.
+- **`intelligo add maintenance`** — the cron the code's comments
+  assumed. A `CRON_SECRET`-gated `GET /api/cron/maintenance` that
+  reconciles stale executions through `executions.reconcile`, drops
+  expired reservations and rate-limit buckets, expires trials and sends
+  their reminders, and prunes week-old jobs; `doctor` errors when the
+  route exists without a 32-character `CRON_SECRET`. The reference app
+  mounts it. (`app-scaffold` 1.7.0 also adds `@intelligo-dev/jobs`, the
+  webhook route, and the secrets to `.env.example`.)
 - **`executions.reconcile(executionId, { abandonRunningAfterMs? })`** — a
   way out of `settling`. The lifecycle claimed a row and, if the charge
   threw or the process died before the final status flip, left it
