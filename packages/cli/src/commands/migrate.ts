@@ -14,6 +14,11 @@
  * own `drizzle.config.ts`, into a table of its own (the scaffold sets
  * `migrations.table` to `__app_migrations`).
  *
+ * Migrations are selected by content hash (what `migrate --check`
+ * compares), not by drizzle's journal-timestamp rule, and are recorded
+ * in the same table drizzle's migrator writes — see
+ * `readPendingMigrations` for why.
+ *
  * The one thing this refuses to do is guess. A database with the
  * framework's tables but no migration records was provisioned with
  * `db:push`; applying the whole chain to it would fail part-way (not
@@ -22,7 +27,14 @@
  * step — see `packages/core/src/db/migrations/README.md`.
  */
 
-import { migrateCheck, type MigrateCheckResult } from "./migrate-check.js";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
+import {
+  hashMigration,
+  migrateCheck,
+  type MigrateCheckResult,
+} from "./migrate-check.js";
 
 export type ApplyDecision =
   | { action: "apply"; pending: string[] }
@@ -67,12 +79,72 @@ export function decideApply(
 
 type QueryFn = (sql: string) => Promise<Array<Record<string, unknown>>>;
 
+/**
+ * One migration ready to run: its statements and the journal entry it
+ * will be recorded under. `createdAt` is the journal's `when`, which is
+ * what drizzle-kit writes to `created_at` too, so records made here and
+ * records made by drizzle's own migrator are indistinguishable.
+ */
+export type PendingMigration = {
+  tag: string;
+  hash: string;
+  createdAt: number;
+  statements: string[];
+};
+
+/**
+ * Read the pending migrations off disk, in journal order.
+ *
+ * The chain is applied by content hash — the same key `migrate --check`
+ * compares — and not by drizzle's rule of "every entry whose journal
+ * timestamp is greater than the last applied row's". That rule depends
+ * on `when` values increasing monotonically, and this repository's do
+ * not (entries 12–41 were hand-numbered below entry 11), so drizzle's
+ * migrator silently skipped any later hand-numbered entry on a database
+ * that had already been migrated while this command reported it applied.
+ * Selecting by hash makes "pending" mean exactly what the check says.
+ */
+export function readPendingMigrations(
+  migrationsDir: string,
+  pendingTags: string[]
+): PendingMigration[] {
+  const journal = JSON.parse(
+    readFileSync(path.join(migrationsDir, "meta", "_journal.json"), "utf8")
+  ) as {
+    entries?: Array<{ tag: string; when: number; breakpoints?: boolean }>;
+  };
+  const byTag = new Map((journal.entries ?? []).map((e) => [e.tag, e]));
+
+  return pendingTags.map((tag) => {
+    const entry = byTag.get(tag);
+    if (!entry) throw new Error(`${tag} is pending but not in the journal`);
+    const sql = readFileSync(path.join(migrationsDir, `${tag}.sql`), "utf8");
+    const statements = (
+      entry.breakpoints === false
+        ? [sql]
+        : sql.split("--> statement-breakpoint")
+    )
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    return { tag, hash: hashMigration(sql), createdAt: entry.when, statements };
+  });
+}
+
+/** The records table drizzle's migrator uses, created the way it creates it. */
+export const MIGRATIONS_TABLE_SQL = [
+  `CREATE SCHEMA IF NOT EXISTS "drizzle"`,
+  `CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (id SERIAL PRIMARY KEY, hash text NOT NULL, created_at bigint)`,
+];
+
 export type ApplyMigrationsOptions = {
   migrationsDir: string;
   /** Runs a read-only query and returns its rows. */
   query: QueryFn;
-  /** Applies every pending migration in journal order, transactionally. */
-  run: () => Promise<void>;
+  /**
+   * Applies the given migrations in order, all in one transaction,
+   * recording each in `drizzle.__drizzle_migrations` as it goes.
+   */
+  run: (pending: PendingMigration[]) => Promise<void>;
 };
 
 export type ApplyMigrationsResult = ApplyDecision & {
@@ -98,7 +170,11 @@ export async function applyMigrations(
   const schemaExists = probe.length > 0 && probe[0]!.rel != null;
 
   const decision = decideApply(check, schemaExists);
-  if (decision.action === "apply") await options.run();
+  if (decision.action === "apply") {
+    await options.run(
+      readPendingMigrations(options.migrationsDir, decision.pending)
+    );
+  }
 
   return { ...decision, chainLength: check.chain.length };
 }

@@ -27,7 +27,11 @@ import "server-only";
  * a review.
  */
 
-import { impersonateUser, stopImpersonating } from "@intelligo-dev/auth";
+import {
+  getAuthSession,
+  impersonateUser,
+  stopImpersonating,
+} from "@intelligo-dev/auth";
 
 import { requireAdminOrRefuse } from "./authorization";
 
@@ -66,6 +70,15 @@ export async function startImpersonation(input: {
 /**
  * Stop acting as a user and return to the admin's own session.
  *
+ * While impersonating, the request's session cookie belongs to the
+ * *target*: Better-Auth issues a session for the target user stamped
+ * with `impersonatedBy` and parks the admin's own token in a separate
+ * cookie. So the caller here is not a platform admin, and gating this
+ * on `requirePlatformAdmin` refused every legitimate stop — the admin
+ * had to wait out the 30-minute cap. The authority to stop is the
+ * session's own `impersonatedBy` stamp; the admin it names is the
+ * actor the audit event records.
+ *
  * Records the end before ending it, for the same reason the start is
  * recorded before it begins: the trail must not depend on the happy
  * path completing.
@@ -73,9 +86,28 @@ export async function startImpersonation(input: {
 export async function stopImpersonation(input: {
   targetUserId: string;
 }): Promise<void> {
-  await requireAdminOrRefuse("admin.impersonation.stopped", {
-    kind: "user",
-    id: input.targetUserId,
+  const current = await getAuthSession();
+  const impersonatedBy = (
+    current?.session as { impersonatedBy?: string | null } | undefined
+  )?.impersonatedBy;
+
+  if (!current || !impersonatedBy) {
+    throw new Error("Not impersonating anyone.");
+  }
+  if (current.user.id !== input.targetUserId) {
+    throw new Error(
+      "This session impersonates a different user than the one being stopped."
+    );
+  }
+
+  const { recordAuditEventOrThrow } = await import("@intelligo-dev/audit");
+  await recordAuditEventOrThrow({
+    workspaceId: null,
+    actorId: impersonatedBy,
+    actorKind: "support",
+    action: "admin.impersonation.stopped",
+    resourceKind: "user",
+    resourceId: input.targetUserId,
   });
 
   await stopImpersonating();

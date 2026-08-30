@@ -19,11 +19,13 @@ import {
   applyMigrations,
   decideApply,
   formatApplyResult,
+  type PendingMigration,
 } from "./migrate.js";
 
 let dir: string;
 /** Distinct per tag: drizzle records by content hash, and a Set of one hash is one applied migration. */
-const sqlFor = (tag: string) => `-- ${tag}\nSELECT 1;`;
+const sqlFor = (tag: string) =>
+  `-- ${tag}\nSELECT 1;\n--> statement-breakpoint\nSELECT 2;`;
 let tags: string[] = [];
 
 function chain(list: string[]) {
@@ -35,10 +37,11 @@ function chain(list: string[]) {
     JSON.stringify({
       version: "7",
       dialect: "postgresql",
+      // `when` deliberately NOT monotonic — the applier must not care.
       entries: tags.map((tag, idx) => ({
         idx,
         version: "7",
-        when: idx,
+        when: 1000 - idx,
         tag,
         breakpoints: true,
       })),
@@ -124,18 +127,28 @@ describe("decideApply", () => {
 });
 
 describe("applyMigrations", () => {
-  it("runs the migrator once on an empty database", async () => {
+  it("hands the runner every migration, split into statements, on an empty database", async () => {
     chain(["0000_a", "0001_b"]);
     let runs = 0;
+    let received: PendingMigration[] = [];
     const r = await applyMigrations({
       migrationsDir: dir,
       query: database({ applied: "no-table", schema: false }),
-      run: async () => {
+      run: async (pending) => {
         runs++;
+        received = pending;
       },
     });
     expect(r.action).toBe("apply");
     expect(runs).toBe(1);
+    expect(received.map((m) => m.tag)).toEqual(["0000_a", "0001_b"]);
+    expect(received[0]!.statements).toEqual([
+      "-- 0000_a\nSELECT 1;",
+      "SELECT 2;",
+    ]);
+    expect(received[0]!.hash).toBe(hashMigration(sqlFor("0000_a")));
+    // Recorded under the journal's `when`, as drizzle would.
+    expect(received.map((m) => m.createdAt)).toEqual([1000, 999]);
     expect(applyExitCode(r)).toBe(0);
     expect(formatApplyResult(r)).toContain("Applied 2 migration(s)");
   });
@@ -154,6 +167,22 @@ describe("applyMigrations", () => {
     expect(runs).toBe(0);
     expect(applyExitCode(r)).toBe(1);
     expect(formatApplyResult(r)).toContain("README");
+  });
+
+  it("applies only what is pending, by hash, regardless of journal timestamps", async () => {
+    chain(["0000_a", "0001_b", "0002_c"]);
+    let received: PendingMigration[] = [];
+    const r = await applyMigrations({
+      migrationsDir: dir,
+      query: database({ applied: 2, schema: true }),
+      run: async (pending) => {
+        received = pending;
+      },
+    });
+    expect(r.action).toBe("apply");
+    // 0002_c's `when` (998) is below the applied rows' — drizzle's
+    // timestamp rule would skip it; the hash rule does not.
+    expect(received.map((m) => m.tag)).toEqual(["0002_c"]);
   });
 
   it("does not run the migrator when nothing is pending", async () => {

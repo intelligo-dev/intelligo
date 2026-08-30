@@ -23,6 +23,7 @@ import {
   migrateCheckExitCode,
 } from "./commands/migrate-check.js";
 import {
+  MIGRATIONS_TABLE_SQL,
   applyExitCode,
   applyMigrations,
   formatApplyResult,
@@ -99,18 +100,32 @@ async function runMigrate(mode: "check" | "apply"): Promise<number> {
       return migrateCheckExitCode(result);
     }
 
-    // drizzle's own migrator, on the same connection, so the records it
-    // writes are exactly what `migrate --check` reads back (default
-    // table, sha256 of the file contents, journal order, one
-    // transaction).
-    const [{ drizzle }, { migrate }] = await Promise.all([
-      import("drizzle-orm/node-postgres"),
-      import("drizzle-orm/node-postgres/migrator"),
-    ]);
+    // Applied here rather than by drizzle's migrator: the pending set is
+    // chosen by content hash — what `migrate --check` compares — and
+    // recorded in drizzle's own table, in one transaction, so a failure
+    // part-way leaves neither statements nor records behind.
     const result = await applyMigrations({
       migrationsDir,
       query: async (sql) => (await client.query(sql)).rows,
-      run: () => migrate(drizzle(client), { migrationsFolder: migrationsDir }),
+      run: async (pending) => {
+        await client.query("BEGIN");
+        try {
+          for (const ddl of MIGRATIONS_TABLE_SQL) await client.query(ddl);
+          for (const migration of pending) {
+            for (const statement of migration.statements) {
+              await client.query(statement);
+            }
+            await client.query(
+              `INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at") VALUES ($1, $2)`,
+              [migration.hash, migration.createdAt]
+            );
+          }
+          await client.query("COMMIT");
+        } catch (error) {
+          await client.query("ROLLBACK");
+          throw error;
+        }
+      },
     });
     console.log(formatApplyResult(result));
     return applyExitCode(result);

@@ -26,8 +26,9 @@ const log = createLogger("WorkspaceInit");
 /**
  * Ensure user has at least one workspace (WORK-01).
  *
- * If user has organizations, sets the first as active. If none exist,
- * creates a personal workspace — this serves as a fallback in case the
+ * If the session already has a valid active workspace, returns it
+ * untouched; otherwise sets the first workspace as active. If none
+ * exist, creates a personal workspace — this serves as a fallback in case the
  * user.create hook (server.ts databaseHooks) hasn't completed yet, and
  * also handles users created via non-Better-Auth flows (e.g. admin panel).
  *
@@ -60,8 +61,20 @@ export async function ensureUserWorkspace(
   log.info("Found organizations", { count: orgs?.length ?? 0 });
 
   if (orgs && orgs.length > 0 && orgs[0]) {
-    log.debug("User has workspaces, setting first as active");
-    // User has workspaces - ensure one is active
+    // The session already names a workspace the user switched to, and
+    // they are still a member of it: keep it. Resetting to orgs[0] on
+    // every authenticated render — which is what this did — undid every
+    // switch as soon as the layout re-rendered.
+    const current = await auth.api.getSession({ headers });
+    const active = (
+      current?.session as { activeOrganizationId?: string | null } | undefined
+    )?.activeOrganizationId;
+    if (active && orgs.some((org) => org.id === active)) {
+      log.debug("Active workspace still valid, keeping it", { orgId: active });
+      return active;
+    }
+
+    log.debug("No valid active workspace, setting first as active");
     try {
       await auth.api.setActiveOrganization({
         headers,

@@ -42,6 +42,47 @@ it explains a framework decision.
   now read after the lock, and settlement takes the same lock, so the
   window is closed. `checkQuota` without `requestId` is still a
   read-only estimate.
+- **`@intelligo-dev/cli`: `intelligo migrate` applies by content hash, not
+  by journal timestamp.** The framework's journal `when` values are not
+  monotonic (entries 12–41 were hand-numbered below entry 11), and
+  drizzle's migrator applies only entries whose timestamp exceeds the
+  last applied row's — so on an already-migrated database a later
+  hand-numbered migration was skipped silently while the CLI reported
+  it applied. `migrate` now selects exactly the migrations `--check`
+  reports pending, runs their statements in one transaction and records
+  them in drizzle's own table with the journal's `when`, so records
+  from either tool remain interchangeable. The CLI no longer depends
+  on `drizzle-orm`.
+- **`@intelligo-dev/admin`: impersonation can be stopped.**
+  `stopImpersonation` required a platform-admin session, but during
+  impersonation the cookie is the target's session; a non-admin target
+  never passed, and the admin waited out the 30-minute cap. The stop is
+  now authorized by the session's own `impersonatedBy` stamp, which is
+  also the actor the audit event records; it refuses a session that is
+  not impersonating and one impersonating a different user.
+- **`@intelligo-dev/auth`: switching workspaces sticks.**
+  `ensureUserWorkspace` set the first-listed workspace active on every
+  authenticated render, undoing every switch as soon as the layout
+  re-rendered. A valid active workspace is now kept; only a missing or
+  stale one is replaced.
+- **`chat` registry item: whole-run billing, abort accounting, no
+  free turns.** The route read `result.usage` — the last step's usage,
+  so a multi-step tool turn was billed for one step — and passed no
+  `abortSignal`, so a closed tab ran the model to completion unbilled
+  to anyone's benefit and could settle zero tokens as `succeeded`. It
+  now captures `totalUsage` from streamText's `onFinish`, aborts the
+  model with the request, settles the completed steps on `onAbort`, and
+  fails (releasing the hold) if the stream ends without usage.
+- **`intelligo create`: a fresh scaffold can chat.** The scaffold's
+  feature matrix registered only `assistant`; the `chat` item gates on
+  `chat` and an unregistered key is denied, so every message returned 403. `app-scaffold` 1.6.0 registers `chat` for every plan.
+- **`intelligo upgrade --check` no longer misreports substituted files.**
+  The manifest recorded hashes of placeholder-substituted content while
+  the check hashed the raw template, so `package.json` and
+  `lib/intelligo.ts` read `outdated` forever and `conflict` the moment
+  the composition root was edited. The manifest now records the
+  variables a feature was generated with and the check hashes the
+  template as it would be written for that app.
 - **`@intelligo-dev/core`: Neon deployments get a driver that can run
   transactions.** The client chose `drizzle-orm/neon-http` for any Neon
   URL. That driver has no session, so `db.transaction()` throws — and

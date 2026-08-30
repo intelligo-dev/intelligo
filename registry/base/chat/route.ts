@@ -158,6 +158,33 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+type TokenUsage = {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+};
+
+function pickUsage(usage: TokenUsage | undefined): TokenUsage {
+  return {
+    inputTokens: usage?.inputTokens,
+    outputTokens: usage?.outputTokens,
+    totalTokens: usage?.totalTokens,
+  };
+}
+
+/** Whole-run usage from the steps that completed before an abort. */
+function sumStepUsage(
+  steps: ReadonlyArray<{ usage?: TokenUsage }>
+): TokenUsage {
+  let inputTokens = 0;
+  let outputTokens = 0;
+  for (const step of steps) {
+    inputTokens += step.usage?.inputTokens ?? 0;
+    outputTokens += step.usage?.outputTokens ?? 0;
+  }
+  return { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
+}
+
 // ---------------------------------------------------------------------------
 // POST — stream a reply
 // ---------------------------------------------------------------------------
@@ -302,18 +329,43 @@ export async function POST(request: Request) {
     body.messages as UIMessage[]
   );
 
-  // Captured inside `execute` (where the `streamText` result lives)
-  // and read back in the outer `onFinish` below — `result.usage` only
-  // resolves once the stream has fully drained.
-  let capturedUsage:
-    | { inputTokens?: number; outputTokens?: number; totalTokens?: number }
-    | undefined;
+  // Whole-run usage, captured from streamText's own `onFinish` (which
+  // fires when the model run ends, before the UI stream drains) and
+  // read back in the outer `onFinish` below. `totalUsage`, not `usage`:
+  // with tools bound, `usage` is the LAST step only and a five-step
+  // turn would be billed for one.
+  let capturedUsage: TokenUsage | undefined;
 
   // Tools may close over the turn's tenancy (see chat-server-config).
   const tools =
     typeof chatServerConfig.tools === "function"
       ? await chatServerConfig.tools({ ...actor, conversationId: body.id })
       : chatServerConfig.tools;
+
+  const settle = async (
+    usage: TokenUsage,
+    extra: Record<string, unknown> = {}
+  ) => {
+    // Settling can throw (unrecorded usage must not be reported as
+    // success — see @intelligo-dev/executions). Log and continue so a
+    // settlement failure doesn't also cost the user their message
+    // history. complete() is compare-and-swap, so whichever of finish /
+    // abort / error settles first wins and the others are no-ops.
+    try {
+      await run.complete({
+        usage,
+        model: CHAT_MODEL_ID,
+        metadata: { conversationId: body.id, ...extra },
+      });
+    } catch (error) {
+      log.error("Execution settlement failed", {
+        conversationId: body.id,
+        executionId: run.id,
+        requestId: run.requestId,
+        error: errorMessage(error),
+      });
+    }
+  };
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
@@ -324,35 +376,34 @@ export async function POST(request: Request) {
         ...(tools && Object.keys(tools).length > 0
           ? { tools, stopWhen: stepCountIs(chatServerConfig.maxSteps) }
           : {}),
+        // Stop the model when the client goes away. Without this the
+        // run continues server-side to completion — billed in full for
+        // a reply nobody receives — and `onAbort` never fires.
+        abortSignal: request.signal,
+        onFinish: ({ totalUsage }) => {
+          capturedUsage = pickUsage(totalUsage);
+        },
+        // Settle whatever was generated before the client went away.
+        // `steps` holds the calls that completed, so a step still in
+        // flight is missed — under-counting by at most one step beats
+        // charging nothing and leaving the hold to expire.
+        onAbort: async ({ steps }) => {
+          await settle(sumStepUsage(steps), { aborted: true });
+        },
       });
 
       writer.merge(result.toUIMessageStream());
-
-      const usage = await result.usage;
-      capturedUsage = {
-        inputTokens: usage?.inputTokens,
-        outputTokens: usage?.outputTokens,
-        totalTokens: usage?.totalTokens,
-      };
     },
     generateId,
     onFinish: async ({ messages: finishedMessages }) => {
-      // Settling can throw (unrecorded usage must not be reported as
-      // success — see @intelligo-dev/executions). Log and continue so a
-      // settlement failure doesn't also cost the user their message
-      // history.
-      try {
-        await run.complete({
-          usage: capturedUsage,
-          model: CHAT_MODEL_ID,
-          metadata: { conversationId: body.id },
-        });
-      } catch (error) {
-        log.error("Execution settlement failed", {
-          conversationId: body.id,
-          executionId: run.id,
-          error: errorMessage(error),
-        });
+      if (capturedUsage) {
+        await settle(capturedUsage);
+      } else {
+        // The stream closed without the model run reporting usage and
+        // without an abort or error having settled it. Failing releases
+        // the hold and leaves a `failed` row an operator can see —
+        // settling zero tokens as `succeeded` would hide it.
+        void run.fail({ error: new Error("stream ended without usage") });
       }
 
       try {

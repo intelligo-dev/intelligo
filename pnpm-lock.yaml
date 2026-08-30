@@ -457,9 +457,6 @@ importers:
 
   packages/cli:
     dependencies:
-      drizzle-orm:
-        specifier: '>=0.45.2'
-        version: 0.45.2(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(kysely@0.28.16)(pg@8.18.0)
       pg:
         specifier: 8.18.0
         version: 8.18.0

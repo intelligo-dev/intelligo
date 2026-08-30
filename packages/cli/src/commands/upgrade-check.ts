@@ -11,7 +11,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { readCatalogue } from "./add.js";
+import { readCatalogue, substitute } from "./add.js";
 import { hashContents, readManifest, type Manifest } from "../manifest.js";
 
 export type UpgradeItem = {
@@ -71,11 +71,17 @@ export function upgradeCheck(options: UpgradeCheckOptions): UpgradeReport {
       const localHash = hashContents(readFileSync(abs, "utf8"));
       const customized = localHash !== file.hash;
 
+      // Compare against the template as it would be written for THIS
+      // app: the recorded hash is of substituted content, so the raw
+      // template never matched for any file carrying a placeholder.
       const templateRel = targetToTemplate.get(file.path);
       let templateChanged = false;
       if (templateRel) {
         const templateHash = hashContents(
-          readFileSync(path.join(options.templatesDir, templateRel), "utf8")
+          substitute(
+            readFileSync(path.join(options.templatesDir, templateRel), "utf8"),
+            entry.variables
+          )
         );
         templateChanged = templateHash !== file.hash;
       }

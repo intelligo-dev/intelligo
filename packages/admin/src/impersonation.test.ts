@@ -11,6 +11,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   requirePlatformAdmin: vi.fn(),
+  getAuthSession: vi.fn(),
   recordAuditEvent: vi.fn(),
   recordAuditEventOrThrow: vi.fn(),
   impersonateUser: vi.fn(),
@@ -19,6 +20,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@intelligo-dev/auth", () => ({
   requirePlatformAdmin: mocks.requirePlatformAdmin,
+  getAuthSession: mocks.getAuthSession,
   impersonateUser: mocks.impersonateUser,
   stopImpersonating: mocks.stopImpersonating,
 }));
@@ -45,6 +47,12 @@ beforeEach(() => {
     expiresAt,
   });
   mocks.stopImpersonating.mockResolvedValue(undefined);
+  // During impersonation the cookie is the TARGET's session, stamped
+  // with the admin who started it.
+  mocks.getAuthSession.mockResolvedValue({
+    session: { impersonatedBy: "u-admin" },
+    user: { id: "u-target", email: "target@example.test" },
+  });
 });
 
 describe("startImpersonation", () => {
@@ -128,27 +136,56 @@ describe("startImpersonation", () => {
 });
 
 describe("stopImpersonation", () => {
-  it("records the end — a start with no end reads as still open", async () => {
+  it("records the end, attributed to the admin the session names — a start with no end reads as still open", async () => {
     await stopImpersonation({ targetUserId: "u-target" });
 
     expect(mocks.recordAuditEventOrThrow).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "admin.impersonation.stopped",
+        actorId: "u-admin",
         resourceId: "u-target",
       })
     );
     expect(mocks.stopImpersonating).toHaveBeenCalled();
   });
 
-  it("refuses a non-admin", async () => {
+  it("does not gate on the caller being an admin — the caller is the target while impersonating", async () => {
     mocks.requirePlatformAdmin.mockRejectedValue(
       new Error("Insufficient permissions")
     );
 
     await expect(
       stopImpersonation({ targetUserId: "u-target" })
-    ).rejects.toThrow("Insufficient permissions");
+    ).resolves.toBeUndefined();
+    expect(mocks.requirePlatformAdmin).not.toHaveBeenCalled();
+  });
 
+  it("refuses a session that is not impersonating anyone", async () => {
+    mocks.getAuthSession.mockResolvedValue({
+      session: {},
+      user: { id: "u-target" },
+    });
+
+    await expect(
+      stopImpersonation({ targetUserId: "u-target" })
+    ).rejects.toThrow(/Not impersonating/);
+    expect(mocks.stopImpersonating).not.toHaveBeenCalled();
+    expect(mocks.recordAuditEventOrThrow).not.toHaveBeenCalled();
+  });
+
+  it("refuses to stop for a user other than the one the session impersonates", async () => {
+    await expect(
+      stopImpersonation({ targetUserId: "u-someone-else" })
+    ).rejects.toThrow(/different user/);
+    expect(mocks.stopImpersonating).not.toHaveBeenCalled();
+  });
+
+  it("does not end the session when the audit write fails", async () => {
+    mocks.recordAuditEventOrThrow.mockRejectedValue(new Error("audit down"));
+
+    await expect(
+      stopImpersonation({ targetUserId: "u-target" })
+    ).rejects.toThrow("audit down");
     expect(mocks.stopImpersonating).not.toHaveBeenCalled();
   });
 });

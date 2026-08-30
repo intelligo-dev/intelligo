@@ -32,6 +32,13 @@ export type GeneratedFile = {
 export type FeatureEntry = {
   templateVersion: string;
   files: GeneratedFile[];
+  /**
+   * Placeholder substitutions the files were generated with
+   * (`__APP_NAME__` → "acme"). Recorded so an upgrade check can hash the
+   * template *as it would be written for this app* — hashing the raw
+   * template made every substituted file look permanently outdated.
+   */
+  variables?: Record<string, string>;
 };
 
 export type Manifest = {
@@ -102,13 +109,16 @@ export function recordFeature(
   manifest: Manifest,
   feature: string,
   templateVersion: string,
-  files: GeneratedFile[]
+  files: GeneratedFile[],
+  variables?: Record<string, string>
 ): Manifest {
   return {
     ...manifest,
     features: {
       ...manifest.features,
-      [feature]: { templateVersion, files },
+      [feature]: variables
+        ? { templateVersion, files, variables }
+        : { templateVersion, files },
     },
   };
 }

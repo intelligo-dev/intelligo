@@ -61,7 +61,7 @@ export type AddOptions = {
   variables?: Record<string, string>;
 };
 
-function substitute(
+export function substitute(
   contents: string,
   variables: Record<string, string> | undefined
 ): string {
@@ -133,7 +133,13 @@ export function addFeature(feature: string, options: AddOptions): AddResult {
 
   writeManifest(
     options.appRoot,
-    recordFeature(manifest, feature, spec.templateVersion, recorded)
+    recordFeature(
+      manifest,
+      feature,
+      spec.templateVersion,
+      recorded,
+      options.variables
+    )
   );
 
   return result;

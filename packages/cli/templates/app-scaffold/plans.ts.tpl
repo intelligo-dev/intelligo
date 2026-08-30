@@ -37,7 +37,15 @@ export const PLANS: Record<string, PlanConfig> = {
   },
 };
 
-/** Which plans grant which feature. An unregistered feature is denied. */
+/**
+ * Which plans grant which feature. An unregistered feature is denied —
+ * a registry item whose `featureKey` is missing here returns 403 on
+ * every request, so add the key when you install the item.
+ */
 export const FEATURES: Record<string, readonly string[]> = {
   assistant: ["free", "pro"],
+  // POST /api/chat (the `chat` registry item). Every plan, so a clean
+  // install can chat with no configuration; tighten to ["pro"] to put
+  // chat behind a paywall.
+  chat: ["free", "pro"],
 };

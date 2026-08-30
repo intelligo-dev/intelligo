@@ -177,6 +177,25 @@ describe("upgradeCheck", () => {
     expect(upgradeCheckExitCode(report)).toBe(1);
   });
 
+  it("compares substituted templates against the substituted file, not the raw template", () => {
+    // `create` writes files with placeholders replaced. Hashing the raw
+    // template on the upgrade side made every such file read as
+    // outdated forever, and conflict the moment the consumer edited the
+    // composition root they are told to own.
+    writeTemplates("1.0.0", 'export const NAME = "__APP_NAME__";\n');
+    addFeature("demo", {
+      appRoot,
+      templatesDir,
+      frameworkVersion: "0.0.0",
+      variables: { __APP_NAME__: "acme" },
+    });
+
+    expect(check().items[0]!.state).toBe("current");
+
+    writeFileSync(target(), 'export const NAME = "acme"; // mine\n');
+    expect(check().items[0]!.state).toBe("customized");
+  });
+
   it("reports a file the consumer deleted", () => {
     add();
     rmSync(target());
