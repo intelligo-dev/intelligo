@@ -117,7 +117,7 @@ export const creditPurchases = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     amount: integer("amount").notNull(), // cents paid
-    credits: integer("credits").notNull(), // credits received
+    credits: integer("credits").notNull(), // balance units credited (same unit as credit_balances.balance_mnt)
     stripePaymentIntentId: text("stripe_payment_intent_id"),
     stripeCheckoutSessionId: text("stripe_checkout_session_id"),
     status: text("status").notNull().default("pending"), // pending|completed|failed

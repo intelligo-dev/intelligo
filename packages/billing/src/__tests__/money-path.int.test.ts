@@ -1,0 +1,337 @@
+/**
+ * The money path, end to end, against a real database.
+ *
+ * The billing unit tests mock drizzle and the execution integration
+ * test binds stub ports, so the one composition nobody else runs is
+ * the real one: `checkQuota` admission with its advisory lock and
+ * reservation, `recordTokenUsage` settlement with its ordered debit,
+ * and the Stripe checkout handler crediting a balance that admission
+ * can then spend. Being wrong here costs money in both directions.
+ *
+ * What it pins down:
+ *   a purchase is spendable; one charge debits the pools exactly once
+ *   (allowance first, top-up for the remainder); a failed run releases
+ *   its hold; a refusal charges nothing; and two concurrent admissions
+ *   against a balance that fits one admit exactly one.
+ *
+ * Runs only when TEST_PG_URL is set (CI points it at the replayed
+ * database). DATABASE_URL must point at the same database.
+ */
+
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { Client } from "pg";
+
+const PG_URL = process.env.TEST_PG_URL;
+const d = PG_URL ? describe : describe.skip;
+
+d("money path (integration)", () => {
+  const client = new Client({ connectionString: PG_URL });
+  const suffix = Date.now();
+  const workspaceId = `money-ws-${suffix}`;
+  const userId = `money-user-${suffix}`;
+  const product = `money-it-${suffix}`;
+  const FREE_ALLOWANCE = 2_000;
+
+  // Imported lazily: these modules read DATABASE_URL at first use, and
+  // importing them at module load would bind the driver before the
+  // suite decides whether it is running at all.
+  let executions: ReturnType<
+    typeof import("@intelligo-dev/executions").createExecutions
+  >;
+  let handleCheckoutCompleted: typeof import("../webhook-handlers").handleCheckoutCompleted;
+
+  async function balanceMnt(): Promise<number> {
+    const { rows } = await client.query<{ balance_mnt: number }>(
+      `SELECT balance_mnt FROM credit_balances WHERE workspace_id = $1`,
+      [workspaceId]
+    );
+    return Number(rows[0]?.balance_mnt ?? 0);
+  }
+
+  async function monthlyChargedMnt(): Promise<number> {
+    const { rows } = await client.query<{ charged_mnt: number }>(
+      `SELECT charged_mnt FROM monthly_usage WHERE workspace_id = $1`,
+      [workspaceId]
+    );
+    return Number(rows[0]?.charged_mnt ?? 0);
+  }
+
+  async function activeReservations(): Promise<number> {
+    const { rows } = await client.query<{ n: string }>(
+      `SELECT count(*) AS n FROM credit_reservations
+        WHERE workspace_id = $1 AND status = 'active'`,
+      [workspaceId]
+    );
+    return Number(rows[0]?.n ?? 0);
+  }
+
+  /**
+   * Period bounds computed exactly as quota-usage.ts computes them.
+   * Writing `date_trunc('month', now())` in SQL instead would agree
+   * only while Postgres and Node share a timezone.
+   */
+  function periodBounds(): { start: Date; end: Date } {
+    const now = new Date();
+    return {
+      start: new Date(now.getFullYear(), now.getMonth(), 1),
+      end: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999),
+    };
+  }
+
+  async function setAllowanceUsed(mnt: number): Promise<void> {
+    const { start, end } = periodBounds();
+    await client.query(
+      `INSERT INTO monthly_usage (id, workspace_id, period_start, period_end, charged_mnt)
+            VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (workspace_id, period_start)
+       DO UPDATE SET charged_mnt = EXCLUDED.charged_mnt`,
+      [`mu-${suffix}`, workspaceId, start, end, mnt]
+    );
+  }
+
+  async function setBalance(mnt: number): Promise<void> {
+    await client.query(
+      `INSERT INTO credit_balances (id, workspace_id, balance_mnt)
+            VALUES ($1, $2, $3)
+       ON CONFLICT (workspace_id)
+       DO UPDATE SET balance_mnt = EXCLUDED.balance_mnt`,
+      [`cb-${suffix}`, workspaceId, mnt]
+    );
+  }
+
+  const begin = () =>
+    executions.begin({
+      workspaceId,
+      userId,
+      capability: "chat.message",
+      model: "openai/gpt-5-mini",
+    });
+
+  beforeAll(async () => {
+    await client.connect();
+    await client.query(
+      `INSERT INTO users (id, name, email, email_verified, created_at, updated_at)
+       VALUES ($1, 'Money IT', $2, true, now(), now())`,
+      [userId, `money-it-${suffix}@example.test`]
+    );
+    await client.query(
+      `INSERT INTO organization (id, name, slug, created_at, updated_at)
+       VALUES ($1, 'Money IT WS', $2, now(), now())`,
+      [workspaceId, product]
+    );
+
+    // The FX rate and margin come from a singleton row; without it
+    // every estimate is zero and admission becomes meaningless.
+    const { ensureBillingSettingsRow } = await import("../billing-settings");
+    await ensureBillingSettingsRow();
+
+    // Compose in-test what a consumer's lib/intelligo.ts composes: a
+    // product with a free plan, and the three ports bound to billing.
+    const { setDefaultProductSlug, registerProductPlans } =
+      await import("@intelligo-dev/billing-core/plans");
+    setDefaultProductSlug(product);
+    registerProductPlans(product, {
+      free: {
+        name: "Free",
+        slug: "free",
+        description: "",
+        descriptionMn: "",
+        priceOneTime: 0,
+        targetAudience: "",
+        aiModelLabel: "",
+        limits: {
+          monthlyCreditMnt: FREE_ALLOWANCE,
+          rolloverEnabled: false,
+          chatMessages: 30,
+        },
+        features: [],
+        featuresMn: [],
+      },
+    });
+
+    const { checkQuota, recordTokenUsage, releaseReservation } =
+      await import("../quota");
+    const { createExecutions } = await import("@intelligo-dev/executions");
+    executions = createExecutions({
+      async checkEntitlement({ workspaceId: ws, requestId, model }) {
+        const q = await checkQuota(ws, { modelId: model, requestId });
+        return {
+          allowed: q.allowed,
+          reason: q.reason,
+          estimatedMnt: q.estimatedMnt,
+          usingTrialCredits: q.usingTrialCredits,
+        };
+      },
+      settleUsage: (s) =>
+        recordTokenUsage({
+          workspaceId: s.workspaceId,
+          userId: s.userId ?? "",
+          model: s.model ?? "unknown",
+          agent: s.capability,
+          inputTokens: s.inputTokens,
+          outputTokens: s.outputTokens,
+          totalTokens: s.totalTokens,
+          usingTrialCredits: s.usingTrialCredits,
+          requestId: s.requestId,
+          metadata: s.metadata,
+        }),
+      releaseHold: ({ requestId }) => releaseReservation(requestId),
+    });
+
+    ({ handleCheckoutCompleted } = await import("../webhook-handlers"));
+  });
+
+  afterAll(async () => {
+    for (const table of [
+      "usage_records",
+      "monthly_usage",
+      "credit_reservations",
+      "credit_balances",
+      "credit_purchases",
+      "executions",
+      "audit_events",
+    ]) {
+      await client
+        .query(`DELETE FROM ${table} WHERE workspace_id = $1`, [workspaceId])
+        .catch(() => {});
+    }
+    await client.query(`DELETE FROM organization WHERE id = $1`, [workspaceId]);
+    await client.query(`DELETE FROM users WHERE id = $1`, [userId]);
+    await client.end();
+  });
+
+  beforeEach(async () => {
+    for (const table of [
+      "credit_reservations",
+      "usage_records",
+      "monthly_usage",
+      "credit_purchases",
+    ]) {
+      await client.query(`DELETE FROM ${table} WHERE workspace_id = $1`, [
+        workspaceId,
+      ]);
+    }
+    await setBalance(0);
+  });
+
+  it("makes a purchase spendable: refused before the credit, admitted after", async () => {
+    await setAllowanceUsed(FREE_ALLOWANCE);
+    expect((await begin()).allowed).toBe(false);
+
+    const purchaseId = `cp-${suffix}`;
+    await client.query(
+      `INSERT INTO credit_purchases (id, workspace_id, amount, credits, stripe_checkout_session_id, status)
+       VALUES ($1, $2, 500, 50000, 'pending', 'pending')`,
+      [purchaseId, workspaceId]
+    );
+    await handleCheckoutCompleted({
+      id: `cs_${suffix}`,
+      mode: "payment",
+      metadata: { workspaceId, purchaseId },
+    } as never);
+
+    expect(await balanceMnt()).toBe(50_000);
+
+    // A replayed webhook must not credit twice.
+    await handleCheckoutCompleted({
+      id: `cs_${suffix}`,
+      mode: "payment",
+      metadata: { workspaceId, purchaseId },
+    } as never);
+    expect(await balanceMnt()).toBe(50_000);
+
+    const run = await begin();
+    expect(run.allowed).toBe(true);
+    await run.fail({ error: new Error("cleanup") });
+  });
+
+  it("charges exactly once: allowance first, top-up for the remainder", async () => {
+    // 200₮ of allowance left and a funded top-up: a charge larger than
+    // 200₮ must take 200 from the allowance and the rest from the
+    // balance — not the full amount from both.
+    await setAllowanceUsed(FREE_ALLOWANCE - 200);
+    await setBalance(50_000);
+
+    const run = await begin();
+    expect(run.allowed).toBe(true);
+    await run.complete({
+      usage: { inputTokens: 20_000, outputTokens: 4_000, totalTokens: 24_000 },
+      model: "openai/gpt-5-mini",
+    });
+
+    const { rows } = await client.query<{ charged_mnt: number }>(
+      `SELECT charged_mnt FROM usage_records WHERE workspace_id = $1`,
+      [workspaceId]
+    );
+    expect(rows).toHaveLength(1);
+    const charged = Number(rows[0]!.charged_mnt);
+    expect(charged).toBeGreaterThan(200);
+
+    const planPortion = (await monthlyChargedMnt()) - (FREE_ALLOWANCE - 200);
+    const topupPortion = 50_000 - (await balanceMnt());
+    expect(planPortion).toBe(200);
+    expect(planPortion + topupPortion).toBe(charged);
+    expect(await activeReservations()).toBe(0);
+  });
+
+  it("funds a charge entirely from the allowance without touching the top-up", async () => {
+    await setBalance(50_000);
+
+    const run = await begin();
+    expect(run.allowed).toBe(true);
+    await run.complete({
+      usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
+      model: "openai/gpt-5-mini",
+    });
+
+    expect(await balanceMnt()).toBe(50_000);
+    expect(await monthlyChargedMnt()).toBeGreaterThan(0);
+  });
+
+  it("releases the hold when the run fails, and charges nothing", async () => {
+    await setBalance(50_000);
+
+    const run = await begin();
+    expect(run.allowed).toBe(true);
+    await run.fail({ error: new Error("provider exploded") });
+
+    expect(await activeReservations()).toBe(0);
+    expect(await balanceMnt()).toBe(50_000);
+    expect(await monthlyChargedMnt()).toBe(0);
+  });
+
+  it("refuses when nothing is left, and leaves no reservation behind", async () => {
+    await setAllowanceUsed(FREE_ALLOWANCE);
+
+    const run = await begin();
+    expect(run.allowed).toBe(false);
+    expect(run.reason).toBeTruthy();
+    expect(await activeReservations()).toBe(0);
+
+    const { rows } = await client.query<{ status: string }>(
+      `SELECT status FROM executions WHERE id = $1`,
+      [run.id]
+    );
+    expect(rows[0]?.status).toBe("refused");
+  });
+
+  it("admits exactly one of two concurrent runs when the balance fits one", async () => {
+    await setAllowanceUsed(FREE_ALLOWANCE);
+
+    const probe = await begin();
+    expect(probe.allowed).toBe(false);
+    const estimate = probe.estimatedMnt ?? 0;
+    expect(estimate).toBeGreaterThan(0);
+
+    await setBalance(estimate);
+
+    const [a, b] = await Promise.all([begin(), begin()]);
+    const admitted = [a, b].filter((r) => r.allowed);
+    expect(admitted).toHaveLength(1);
+    expect(await activeReservations()).toBe(1);
+
+    await Promise.all(
+      admitted.map((r) => r.fail({ error: new Error("cleanup") }))
+    );
+  });
+});

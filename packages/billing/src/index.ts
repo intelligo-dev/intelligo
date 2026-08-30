@@ -56,6 +56,7 @@ export {
 export type {
   QuotaCheckResult,
   RecordUsageParams,
+  SettlementOutcome,
   UsageSummary,
 } from "./quota";
 

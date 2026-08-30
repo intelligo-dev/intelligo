@@ -55,7 +55,9 @@ export const executions = createExecutions({
   },
 
   async settleUsage(settlement) {
-    await recordTokenUsage({
+    // Returns what was charged and which pool funded it; the lifecycle
+    // records chargedMnt on the execution row.
+    return recordTokenUsage({
       workspaceId: settlement.workspaceId,
       userId: settlement.userId ?? "",
       model: settlement.model ?? "unknown",

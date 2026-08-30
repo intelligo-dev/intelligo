@@ -39,9 +39,12 @@ import { getWorkspaceBilling } from "./queries";
 import type {
   QuotaCheckResult,
   RecordUsageParams,
+  SettlementOutcome,
   UsageSummary,
 } from "./quota-types";
 import { getPlanMonthlyCreditMnt, getPlanMessageLimit } from "./quota-plan";
+
+export type { SettlementOutcome } from "./quota-types";
 import {
   getCurrentMonthlyUsage,
   getCurrentPeriodStart,
@@ -53,37 +56,28 @@ import {
 // ---------------------------------------------------------------------------
 
 /**
- * Check whether a workspace is allowed to make an AI request.
+ * The three pools a workspace can spend from, read once per decision.
  *
- * Cost-based MNT enforcement (replaces legacy message-count quota):
- *   1. Plan grants a monthly MNT allowance (free 2K, std 30K, pro 120K)
- *   2. Top-ups land in credit_balances.balance_mnt
- *   3. Trial users have a separate credits_remaining_mnt grant
+ *   remainingMnt = max(0, planAllowance − monthly.chargedMnt) + topupBalanceMnt + trialRemainingMnt
  *
- * remainingMnt = max(0, planAllowance - monthly.chargedMnt) + topupBalanceMnt + trialBalanceMnt
- *
- * We refuse the request when remainingMnt < estimatedWorstCaseMnt for
- * the chosen model, so a single expensive turn can't push a user
- * arbitrarily into the red.
- *
- * NOTE: Grace overage was removed — with worst-case request cost ~138K MNT
- * and monthly allowance 2K MNT, a single request always exceeds any realistic
- * grace buffer. The grace period concept only made sense when requests were
- * << monthly allowance.
- *
- * Reservation (B-06): pass options.requestId to make admission atomic.
- * The decision then runs in a transaction serialized per workspace by a
- * pg advisory xact lock: the sum of other ACTIVE unexpired reservations
- * is subtracted from the available balance, and a reservation row for
- * this request's worst-case estimate is inserted before returning
- * allowed=true. recordTokenUsage settles the reservation by requestId;
- * abandoned reservations stop counting after RESERVATION_TTL_MS.
- * Without requestId the check stays a read-only estimate (dashboards).
+ * `monthly.chargedMnt` is the part of this period's spend that the plan
+ * allowance funded — `recordTokenUsage` increments it only up to the
+ * allowance and sends the remainder to top-up or trial — so the three
+ * pools never count one charge twice.
  */
-export async function checkQuota(
-  workspaceId: string,
-  options?: { modelId?: string; requestId?: string }
-): Promise<QuotaCheckResult> {
+type Pools = {
+  planSlug: string;
+  monthlyAllowanceMnt: number;
+  usedMnt: number;
+  planRemainingMnt: number;
+  topupBalanceMnt: number;
+  trialActive: boolean;
+  trialRemainingMnt: number;
+  usdToMntRate: number;
+  marginMultiplier: number;
+};
+
+async function readPools(workspaceId: string): Promise<Pools> {
   const [billing, monthly, trial, settings] = await Promise.all([
     getWorkspaceBilling(workspaceId),
     getCurrentMonthlyUsage(workspaceId),
@@ -93,74 +87,122 @@ export async function checkQuota(
 
   const planSlug = billing.plan?.slug ?? "free";
   const monthlyAllowanceMnt = getPlanMonthlyCreditMnt(planSlug);
-
   const usedMnt = monthly.chargedMnt ?? 0;
-  const planRemainingMnt = Math.max(0, monthlyAllowanceMnt - usedMnt);
-  const topupBalanceMnt = Math.max(0, billing.creditBalance.balanceMnt ?? 0);
-  const trialRemainingMnt = trial.active ? trial.remainingMnt : 0;
-  const remainingMnt = planRemainingMnt + topupBalanceMnt + trialRemainingMnt;
 
-  const modelId = options?.modelId ?? "google/gemini-2.5-flash";
-  const estimatedMnt = estimateWorstCaseChargedMnt(
-    modelId,
-    settings.usdToMntRate,
-    settings.marginMultiplier
-  );
-
-  const percentage =
-    monthlyAllowanceMnt > 0
-      ? Math.min(100, Math.round((usedMnt / monthlyAllowanceMnt) * 100))
-      : 0;
-
-  const base = {
-    billingMode: "subscription" as const,
-    usage: { used: usedMnt, limit: monthlyAllowanceMnt, percentage },
-    creditBalanceMnt: topupBalanceMnt,
-    estimatedMnt,
-    remainingMnt,
-    graceActive: false,
+  return {
+    planSlug,
+    monthlyAllowanceMnt,
+    usedMnt,
+    planRemainingMnt: Math.max(0, monthlyAllowanceMnt - usedMnt),
+    topupBalanceMnt: Math.max(0, billing.creditBalance.balanceMnt ?? 0),
+    trialActive: trial.active,
+    trialRemainingMnt: trial.active ? trial.remainingMnt : 0,
+    usdToMntRate: settings.usdToMntRate,
+    marginMultiplier: settings.marginMultiplier,
   };
+}
 
-  const refusal = (): QuotaCheckResult => ({
-    allowed: false,
-    reason:
-      remainingMnt > 0
-        ? `Insufficient credits for this request (need ~${estimatedMnt}₮, have ${remainingMnt}₮). Top up to continue.`
-        : "Monthly credit allowance depleted. Top up or upgrade your plan to continue.",
-    usingTrialCredits: false,
-    ...base,
-  });
+/**
+ * Check whether a workspace is allowed to make an AI request.
+ *
+ * Cost-based enforcement: the plan grants a monthly allowance, top-ups
+ * land in `credit_balances.balance_mnt`, and a trial is a separate
+ * grant used last. The request is refused when the remaining total is
+ * below the worst-case cost of one turn on the chosen model, so a
+ * single expensive turn cannot push a workspace into the red. (Worst
+ * case at current constants: ~343₮ for Gemini Flash, ~2 319₮ for
+ * Claude or any unregistered id.)
+ *
+ * Two behaviours, selected by `options.requestId`:
+ *
+ * - **Without `requestId`: a read-only estimate.** Nothing is locked
+ *   or written. Dashboards and previews use this; it must never gate a
+ *   run, because two such checks can both pass against one balance.
+ *
+ * - **With `requestId`: atomic admission.** The decision runs in a
+ *   transaction serialized per workspace by `pg_advisory_xact_lock`.
+ *   Balances are read only after the lock is held — settlement takes
+ *   the same lock, so no charge can land between the snapshot and the
+ *   reservation — the sum of other active, unexpired reservations is
+ *   subtracted, and a reservation for this request's worst-case
+ *   estimate is inserted before `allowed: true` is returned.
+ *   `recordTokenUsage` settles the reservation by `requestId`;
+ *   abandoned reservations stop counting after RESERVATION_TTL_MS.
+ */
+export async function checkQuota(
+  workspaceId: string,
+  options?: { modelId?: string; requestId?: string }
+): Promise<QuotaCheckResult> {
+  const modelId = options?.modelId ?? "google/gemini-2.5-flash";
 
-  const decide = (reservedMnt: number): QuotaCheckResult => {
-    // Grace period removed — see docstring above.
-    // Use plan + topup balance first; trial is fallback only.
+  const decide = (pools: Pools, reservedMnt: number): QuotaCheckResult => {
+    const {
+      monthlyAllowanceMnt,
+      usedMnt,
+      planRemainingMnt,
+      topupBalanceMnt,
+      trialActive,
+      trialRemainingMnt,
+    } = pools;
+    const remainingMnt = planRemainingMnt + topupBalanceMnt + trialRemainingMnt;
+    const estimatedMnt = estimateWorstCaseChargedMnt(
+      modelId,
+      pools.usdToMntRate,
+      pools.marginMultiplier
+    );
+    const percentage =
+      monthlyAllowanceMnt > 0
+        ? Math.min(100, Math.round((usedMnt / monthlyAllowanceMnt) * 100))
+        : 0;
+
+    const base = {
+      billingMode: "subscription" as const,
+      usage: { used: usedMnt, limit: monthlyAllowanceMnt, percentage },
+      creditBalanceMnt: topupBalanceMnt,
+      estimatedMnt,
+      remainingMnt,
+      graceActive: false,
+    };
+
+    // Plan + top-up first; trial is fallback only.
     const nonTrialRemaining = planRemainingMnt + topupBalanceMnt - reservedMnt;
     if (nonTrialRemaining >= estimatedMnt) {
       return { allowed: true, usingTrialCredits: false, ...base };
     }
-    // Trial fallback: reservations count against the trial pool once the
-    // non-trial pool (minus reservations) can no longer cover them.
+    // Reservations count against the trial pool once the non-trial
+    // pool (minus reservations) can no longer cover them.
     const trialAvailable =
       trialRemainingMnt -
       Math.max(0, reservedMnt - (planRemainingMnt + topupBalanceMnt));
-    if (trial.active && trialAvailable >= estimatedMnt) {
+    if (trialActive && trialAvailable >= estimatedMnt) {
       return { allowed: true, usingTrialCredits: true, ...base };
     }
-    return refusal();
+    return {
+      allowed: false,
+      reason:
+        remainingMnt > 0
+          ? `Insufficient credits for this request (need ~${estimatedMnt}₮, have ${remainingMnt}₮). Top up to continue.`
+          : "Monthly credit allowance depleted. Top up or upgrade your plan to continue.",
+      usingTrialCredits: false,
+      ...base,
+    };
   };
 
   const requestId = options?.requestId;
   if (!requestId) {
     // Read-only estimate (no admission) — dashboards, previews.
-    return decide(0);
+    return decide(await readPools(workspaceId), 0);
   }
 
-  // Atomic admission: serialize per workspace, count active reservations,
-  // and reserve this request's estimate in the same transaction.
   return db.transaction(async (tx) => {
     await tx.execute(
       sql`SELECT pg_advisory_xact_lock(hashtext(${workspaceId}))`
     );
+
+    // Only now read the balances: every settlement holds this same
+    // lock for the duration of its writes, so what we read here cannot
+    // be consumed between this snapshot and our reservation.
+    const pools = await readPools(workspaceId);
 
     const reservedRows = await tx
       .select({
@@ -176,14 +218,14 @@ export async function checkQuota(
       );
     const reservedMnt = Number(reservedRows[0]?.total ?? 0);
 
-    const decision = decide(reservedMnt);
+    const decision = decide(pools, reservedMnt);
     if (!decision.allowed) return decision;
 
     await tx.insert(creditReservations).values({
       id: crypto.randomUUID(),
       workspaceId,
       requestId,
-      estimatedMnt,
+      estimatedMnt: decision.estimatedMnt ?? 0,
       status: "active",
       expiresAt: new Date(Date.now() + RESERVATION_TTL_MS),
     });
@@ -241,27 +283,32 @@ export async function releaseReservation(requestId: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 /**
- * Record token consumption for an AI request.
+ * Record token consumption for an AI request and charge it.
  *
- * Atomically performs operations inside a single transaction:
- * 1. Insert detailed usage_record for reporting
- * 2. Upsert monthly_usage counter (ON CONFLICT DO UPDATE with SQL increment)
- * 3. Deduct from EITHER trial_credits OR credit_balances — never both.
- *    A single authoritative check inside FOR UPDATE locks on both rows
- *    determines which balance to charge. This closes the race window
- *    where trial exhausted between checkQuota and recordTokenUsage.
+ * One transaction, serialized per workspace by the same advisory lock
+ * `checkQuota` takes for admission:
  *
- * Race condition safety:
- * - monthly_usage increment uses sql`` template (not JS arithmetic)
- * - credit deduction uses sql`` template (not read-modify-write)
- * - Trial deduction uses same SQL arithmetic pattern
- * - Transaction ensures all-or-nothing: if any step fails, all roll back
- * - FOR UPDATE on both trial_credits and credit_balances serializes
- *   concurrent requests so only one can make the deduct decision at a time
+ * 1. Insert the `usage_records` row (the full charge, for reporting).
+ * 2. Charge the plan allowance first: `monthly_usage.charged_mnt` grows
+ *    by at most what is left of the allowance this period.
+ * 3. Send the remainder — if any — to exactly one of the trial grant
+ *    (when the request was admitted on trial credits and the grant
+ *    still covers it) or the top-up balance. Never both, and never the
+ *    part the allowance already funded: admission sums the three pools,
+ *    so charging two of them for one turn would count it twice.
+ * 4. Settle the admission reservation by `requestId`.
+ *
+ * The `monthly_usage` and `trial_credits` rows are read `FOR UPDATE`
+ * and every decrement is SQL arithmetic, so nothing here is
+ * read-modify-write in JavaScript.
+ *
+ * Not idempotent per `requestId`: calling this twice for one request
+ * records and charges twice. The execution lifecycle's compare-and-swap
+ * is what guarantees a single call per execution.
  */
 export async function recordTokenUsage(
   params: RecordUsageParams
-): Promise<void> {
+): Promise<SettlementOutcome> {
   const periodStart = getCurrentPeriodStart();
   const periodEnd = getCurrentPeriodEnd();
 
@@ -284,7 +331,11 @@ export async function recordTokenUsage(
       : undefined) ??
     null;
 
-  await db.transaction(async (tx) => {
+  const outcome = await db.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext(${params.workspaceId}))`
+    );
+
     await tx.insert(usageRecords).values({
       id: crypto.randomUUID(),
       workspaceId: params.workspaceId,
@@ -309,6 +360,11 @@ export async function recordTokenUsage(
       metadata: params.metadata ? JSON.stringify(params.metadata) : null,
     });
 
+    // The plan allowance funds the charge first. Make sure the period
+    // row exists, lock it, and take only what is left of the allowance.
+    const billing = await getWorkspaceBilling(params.workspaceId);
+    const allowanceMnt = getPlanMonthlyCreditMnt(billing.plan?.slug ?? "free");
+
     await tx
       .insert(monthlyUsage)
       .values({
@@ -316,91 +372,115 @@ export async function recordTokenUsage(
         workspaceId: params.workspaceId,
         periodStart,
         periodEnd,
-        tokensUsed: params.totalTokens,
-        chargedMnt,
-        requestCount: 1,
+        tokensUsed: 0,
+        chargedMnt: 0,
+        requestCount: 0,
       })
-      .onConflictDoUpdate({
+      .onConflictDoNothing({
         target: [monthlyUsage.workspaceId, monthlyUsage.periodStart],
-        set: {
-          tokensUsed: sql`${monthlyUsage.tokensUsed} + ${params.totalTokens}`,
-          chargedMnt: sql`${monthlyUsage.chargedMnt} + ${chargedMnt}`,
-          requestCount: sql`${monthlyUsage.requestCount} + 1`,
-          updatedAt: new Date(),
-        },
       });
 
-    // B-01/B-02 fix: Single authoritative deduction decision inside FOR UPDATE locks.
-    // Lock both trial_credits and credit_balances rows, then decide which to deduct.
-    // This prevents:
-    // - Double deduction (trial + credit balance both charged)
-    // - 2x balance consumption (two concurrent requests slipping through checkQuota)
-    //
-    // Strategy:
-    // - If usingTrialCredits=true AND trial row has creditsRemainingMnt > chargedMnt:
-    //   deduct from trial only.
-    // - Otherwise: deduct from creditBalances (covers both non-trial and
-    //   trial-exhausted-at-record-time cases).
-    //
-    // The FOR UPDATE lock serializes concurrent recordTokenUsage calls so they
-    // queue up and make the deduction decision one at a time.
-
-    // Lock trial_credits row if it exists for this workspace
-    const trialRow = await tx
-      .select()
-      .from(trialCredits)
+    const periodRows = await tx
+      .select({ chargedMnt: monthlyUsage.chargedMnt })
+      .from(monthlyUsage)
       .where(
         and(
-          eq(trialCredits.workspaceId, params.workspaceId),
-          eq(trialCredits.status, "active")
+          eq(monthlyUsage.workspaceId, params.workspaceId),
+          eq(monthlyUsage.periodStart, periodStart)
         )
       )
       .for("update")
       .limit(1);
+    const allowanceUsedMnt = Number(periodRows[0]?.chargedMnt ?? 0);
+    const planMnt = Math.min(
+      chargedMnt,
+      Math.max(0, allowanceMnt - allowanceUsedMnt)
+    );
+    const remainderMnt = chargedMnt - planMnt;
 
-    const trialHasSufficient =
-      params.usingTrialCredits &&
-      trialRow.length > 0 &&
-      (trialRow[0]?.creditsRemainingMnt ?? 0) >= chargedMnt;
+    await tx
+      .update(monthlyUsage)
+      .set({
+        tokensUsed: sql`${monthlyUsage.tokensUsed} + ${params.totalTokens}`,
+        chargedMnt: sql`${monthlyUsage.chargedMnt} + ${planMnt}`,
+        requestCount: sql`${monthlyUsage.requestCount} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(monthlyUsage.workspaceId, params.workspaceId),
+          eq(monthlyUsage.periodStart, periodStart)
+        )
+      );
 
-    if (trialHasSufficient) {
-      // Deduct from trial credits only — single atomic update
-      await tx
-        .update(trialCredits)
-        .set({
-          creditsRemainingMnt: sql`GREATEST(${trialCredits.creditsRemainingMnt} - ${chargedMnt}, 0)`,
-          creditsUsedMnt: sql`${trialCredits.creditsUsedMnt} + ${chargedMnt}`,
-          creditsRemaining: sql`GREATEST(${trialCredits.creditsRemaining} - ${params.totalTokens}, 0)`,
-          creditsUsed: sql`${trialCredits.creditsUsed} + ${params.totalTokens}`,
-          status: sql`CASE WHEN GREATEST(${trialCredits.creditsRemainingMnt} - ${chargedMnt}, 0) <= 0 THEN 'depleted' ELSE ${trialCredits.status} END`,
-          depletedAt: sql`CASE WHEN GREATEST(${trialCredits.creditsRemainingMnt} - ${chargedMnt}, 0) <= 0 THEN NOW() ELSE ${trialCredits.depletedAt} END`,
-        })
-        .where(eq(trialCredits.workspaceId, params.workspaceId));
-    } else {
-      // Deduct from credit balance only — sql`` arithmetic prevents negative balance
-      await tx
-        .update(creditBalances)
-        .set({
-          balanceMnt: sql`GREATEST(${creditBalances.balanceMnt} - ${chargedMnt}, 0)`,
-          totalUsedMnt: sql`${creditBalances.totalUsedMnt} + ${chargedMnt}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(creditBalances.workspaceId, params.workspaceId));
+    let trialMnt = 0;
+    let topupMnt = 0;
+
+    if (remainderMnt > 0) {
+      // Lock the trial row (if any) so the pool decision is made once.
+      const trialRow = await tx
+        .select()
+        .from(trialCredits)
+        .where(
+          and(
+            eq(trialCredits.workspaceId, params.workspaceId),
+            eq(trialCredits.status, "active")
+          )
+        )
+        .for("update")
+        .limit(1);
+
+      const trialHasSufficient =
+        params.usingTrialCredits &&
+        trialRow.length > 0 &&
+        (trialRow[0]?.creditsRemainingMnt ?? 0) >= remainderMnt;
+
+      if (trialHasSufficient) {
+        trialMnt = remainderMnt;
+        await tx
+          .update(trialCredits)
+          .set({
+            creditsRemainingMnt: sql`GREATEST(${trialCredits.creditsRemainingMnt} - ${remainderMnt}, 0)`,
+            creditsUsedMnt: sql`${trialCredits.creditsUsedMnt} + ${remainderMnt}`,
+            creditsRemaining: sql`GREATEST(${trialCredits.creditsRemaining} - ${params.totalTokens}, 0)`,
+            creditsUsed: sql`${trialCredits.creditsUsed} + ${params.totalTokens}`,
+            status: sql`CASE WHEN GREATEST(${trialCredits.creditsRemainingMnt} - ${remainderMnt}, 0) <= 0 THEN 'depleted' ELSE ${trialCredits.status} END`,
+            depletedAt: sql`CASE WHEN GREATEST(${trialCredits.creditsRemainingMnt} - ${remainderMnt}, 0) <= 0 THEN NOW() ELSE ${trialCredits.depletedAt} END`,
+          })
+          .where(eq(trialCredits.workspaceId, params.workspaceId));
+      } else {
+        // Top-up balance. GREATEST keeps the stored balance at zero when
+        // the charge exceeds it; total_used_mnt still records the full
+        // remainder so the shortfall is visible.
+        topupMnt = remainderMnt;
+        await tx
+          .update(creditBalances)
+          .set({
+            balanceMnt: sql`GREATEST(${creditBalances.balanceMnt} - ${remainderMnt}, 0)`,
+            totalUsedMnt: sql`${creditBalances.totalUsedMnt} + ${remainderMnt}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(creditBalances.workspaceId, params.workspaceId));
+      }
     }
 
-    // Settle the admission reservation (B-06) so it stops counting
-    // against the workspace's available balance.
+    // Settle the admission reservation so it stops counting against
+    // the workspace's available balance.
     if (requestId) {
       await tx
         .update(creditReservations)
         .set({ status: "settled", settledAt: new Date() })
         .where(eq(creditReservations.requestId, requestId));
     }
+
+    return { chargedMnt, planMnt, topupMnt, trialMnt };
   });
 
   checkNotificationTriggers(params.workspaceId).catch((err) =>
     console.error("[Notifications] Error checking triggers:", err)
   );
+
+  return outcome;
 }
 
 // ---------------------------------------------------------------------------

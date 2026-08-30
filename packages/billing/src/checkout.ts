@@ -488,7 +488,7 @@ export async function getBillingOverview(
           stripeCustomerId: billing.subscription.stripeCustomerId,
         }
       : null,
-    creditBalance: billing.creditBalance.balance,
+    creditBalance: billing.creditBalance.balanceMnt,
     billingMode: billing.billingMode,
   };
 }

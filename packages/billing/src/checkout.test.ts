@@ -335,7 +335,7 @@ describe("getBillingOverview", () => {
       cancelAtPeriodEnd: false,
       stripeCustomerId: "cus_123",
     },
-    creditBalance: { balance: 4200 },
+    creditBalance: { balanceMnt: 4200 },
     billingMode: "subscription" as const,
   };
 
@@ -396,7 +396,7 @@ describe("getBillingOverview", () => {
     mocks.getWorkspaceBilling.mockResolvedValue({
       plan: null,
       subscription: null,
-      creditBalance: { balance: 0 },
+      creditBalance: { balanceMnt: 0 },
       billingMode: "subscription" as const,
     });
 

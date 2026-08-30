@@ -38,6 +38,20 @@ export type RecordUsageParams = {
   requestId?: string;
 };
 
+/**
+ * What one settlement charged and which pools funded it.
+ * `chargedMnt === planMnt + topupMnt + trialMnt`.
+ */
+export type SettlementOutcome = {
+  chargedMnt: number;
+  /** Funded by this period's plan allowance. */
+  planMnt: number;
+  /** Debited from the top-up balance. */
+  topupMnt: number;
+  /** Debited from the trial grant. */
+  trialMnt: number;
+};
+
 export type UsageSummary = {
   currentPeriod: {
     tokensUsed: number;

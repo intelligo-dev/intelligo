@@ -18,6 +18,30 @@ it explains a framework decision.
 
 ### Fixed
 
+- **`@intelligo-dev/billing`: purchased credits are spendable.** The
+  Stripe checkout handler credited the legacy `balance` column;
+  admission reads and settlement debits `balance_mnt`, so a customer's
+  purchase showed on the billing page and was ignored by enforcement.
+  Purchases now land in `balance_mnt` / `total_purchased_mnt`, the
+  billing overview reports that column, and a real-database test
+  drives purchase → admission.
+- **`@intelligo-dev/billing`: one charge, one debit.** `recordTokenUsage`
+  incremented the monthly allowance counter _and_ decremented the
+  top-up (or trial) balance by the full charge; admission sums both
+  pools, so a workspace holding both lost twice the charge per turn.
+  Settlement now funds the plan allowance first and sends only the
+  remainder to exactly one of trial / top-up; `monthly_usage.charged_mnt`
+  is the allowance consumed, `usage_records.charged_mnt` the full
+  charge. `recordTokenUsage` returns a `SettlementOutcome`
+  (`chargedMnt`, `planMnt`, `topupMnt`, `trialMnt`) which the
+  execution row records.
+- **`@intelligo-dev/billing`: admission reads balances under the lock.**
+  `checkQuota` read the balance snapshot before taking the
+  per-workspace advisory lock, so a settlement landing in between let a
+  second request pass against funds already consumed. The snapshot is
+  now read after the lock, and settlement takes the same lock, so the
+  window is closed. `checkQuota` without `requestId` is still a
+  read-only estimate.
 - **`@intelligo-dev/core`: Neon deployments get a driver that can run
   transactions.** The client chose `drizzle-orm/neon-http` for any Neon
   URL. That driver has no session, so `db.transaction()` throws — and

@@ -172,23 +172,25 @@ export async function handleCheckoutCompleted(
         .where(eq(creditPurchases.id, purchase.id));
     }
 
-    // Use a single atomic upsert for both status and credit balance.
-    // onConflictDoUpdate with arithmetic SQL ensures no double-credit on replay.
+    // Credit the balance admission reads and settlement debits
+    // (`balance_mnt`, in the deployment's charging unit — the bundle's
+    // `credits` is denominated in that unit). The legacy `balance`
+    // column is not the balance; writing there made purchases invisible
+    // to enforcement. Arithmetic SQL so a replay cannot double-credit.
     await db
       .insert(creditBalances)
       .values({
         id: crypto.randomUUID(),
         workspaceId,
-        balance: purchase.credits,
-        totalPurchased: purchase.credits,
-        totalUsed: 0,
+        balanceMnt: purchase.credits,
+        totalPurchasedMnt: purchase.credits,
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
         target: creditBalances.workspaceId,
         set: {
-          balance: sql`${creditBalances.balance} + ${purchase.credits}`,
-          totalPurchased: sql`${creditBalances.totalPurchased} + ${purchase.credits}`,
+          balanceMnt: sql`${creditBalances.balanceMnt} + ${purchase.credits}`,
+          totalPurchasedMnt: sql`${creditBalances.totalPurchasedMnt} + ${purchase.credits}`,
           updatedAt: new Date(),
         },
       });

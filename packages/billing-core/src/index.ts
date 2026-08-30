@@ -56,6 +56,7 @@ export { GRACE_OVERAGE_PERCENTAGE } from "./quota-types";
 export type {
   QuotaCheckResult,
   RecordUsageParams,
+  SettlementOutcome,
   UsageSummary,
 } from "./quota-types";
 
