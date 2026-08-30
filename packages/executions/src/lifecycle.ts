@@ -74,6 +74,8 @@ export type ExecutionRun = {
   requestId: string;
   /** False when entitlement refused; complete()/fail() are then no-ops. */
   allowed: boolean;
+  /** Stable refusal code from the entitlement port; set when allowed is false. */
+  code?: string;
   /** Set when allowed is false. */
   reason?: string;
   estimatedMnt?: number;
@@ -131,6 +133,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         metadata: {
           capability: input.capability,
           requestId,
+          code: decision.code,
           reason: decision.reason,
         },
       });
@@ -139,6 +142,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         id,
         requestId,
         allowed: false,
+        code: decision.code,
         reason: decision.reason,
         estimatedMnt: decision.estimatedMnt,
         usingTrialCredits,

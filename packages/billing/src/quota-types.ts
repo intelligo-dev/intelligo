@@ -6,6 +6,9 @@ export { GRACE_OVERAGE_PERCENTAGE } from "@intelligo-dev/billing-core";
 
 export type {
   QuotaCheckResult,
+  QuotaRefusalCode,
+  QuotaEstimate,
+  QuotaAdmission,
   RecordUsageParams,
   SettlementOutcome,
   UsageSummary,

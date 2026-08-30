@@ -45,6 +45,8 @@ export type { ResolvedBillingSettings } from "./billing-settings";
 // Quota enforcement engine (Phase 12-01)
 export {
   checkQuota,
+  estimateQuota,
+  reserveQuota,
   recordTokenUsage,
   resetMonthlyQuota,
   getUsageSummary,
@@ -55,6 +57,9 @@ export {
 } from "./quota";
 export type {
   QuotaCheckResult,
+  QuotaRefusalCode,
+  QuotaEstimate,
+  QuotaAdmission,
   RecordUsageParams,
   SettlementOutcome,
   UsageSummary,

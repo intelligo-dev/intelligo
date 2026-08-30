@@ -124,15 +124,18 @@ describe("begin", () => {
 
   it("refuses the run and records it when entitlement says no", async () => {
     const executions = createExecutions({
-      checkEntitlement: vi
-        .fn()
-        .mockResolvedValue({ allowed: false, reason: "Out of credits" }),
+      checkEntitlement: vi.fn().mockResolvedValue({
+        allowed: false,
+        code: "allowance_depleted",
+        reason: "Out of credits",
+      }),
       settleUsage: vi.fn(),
     });
 
     const run = await executions.begin(beginInput);
 
     expect(run.allowed).toBe(false);
+    expect(run.code).toBe("allowance_depleted");
     expect(run.reason).toBe("Out of credits");
     expect(insertedRow()).toMatchObject({
       status: "refused",

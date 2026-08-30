@@ -15,6 +15,12 @@
 
 export type EntitlementDecision = {
   allowed: boolean;
+  /**
+   * Stable, machine-readable refusal code from the entitlement port
+   * (e.g. billing's `insufficient_credits`), for transports to map to a
+   * status and to localize. Opaque to the lifecycle.
+   */
+  code?: string;
   /** Human-readable refusal, surfaced to the caller and recorded. */
   reason?: string;
   /** Worst-case charge held for this execution, in MNT. */

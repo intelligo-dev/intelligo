@@ -65,6 +65,7 @@ export {
   registerProductFeatures,
   getProductFeatures,
   setDefaultProductSlug,
+  BillingNotConfiguredError,
   getDefaultProductSlug,
   registerUpgradeMessages,
   registerActionLabels,

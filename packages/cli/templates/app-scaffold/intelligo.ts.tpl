@@ -14,7 +14,7 @@ import "server-only";
  */
 
 import {
-  checkQuota,
+  reserveQuota,
   recordTokenUsage,
   releaseReservation,
 } from "@intelligo-dev/billing";
@@ -54,9 +54,10 @@ export const executions = createExecutions({
     // Passing requestId makes admission atomic: the worst-case cost is
     // reserved in the same transaction that reads the balance, so
     // concurrent requests cannot all pass.
-    const quota = await checkQuota(workspaceId, { modelId: model, requestId });
+    const quota = await reserveQuota(workspaceId, { modelId: model, requestId });
     return {
       allowed: quota.allowed,
+      code: quota.code,
       reason: quota.reason,
       estimatedMnt: quota.estimatedMnt,
       usingTrialCredits: quota.usingTrialCredits,

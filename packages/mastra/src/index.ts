@@ -97,7 +97,9 @@ export class ExecutionRefusedError extends Error {
   readonly code = "EXECUTION_REFUSED";
   constructor(
     message: string,
-    readonly executionId: string
+    readonly executionId: string,
+    /** The entitlement port's stable refusal code, when it gave one. */
+    readonly reasonCode?: string
   ) {
     super(message);
     this.name = "ExecutionRefusedError";
@@ -135,7 +137,8 @@ export async function runWithExecution<T extends NativeResult>(
   if (!execution.allowed) {
     throw new ExecutionRefusedError(
       execution.reason ?? "Execution refused",
-      execution.id
+      execution.id,
+      execution.code
     );
   }
 

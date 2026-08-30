@@ -96,6 +96,20 @@ it explains a framework decision.
 
 ### Changed
 
+- **`@intelligo-dev/billing`: `checkQuota` splits into `estimateQuota`
+  and `reserveQuota`, and refusals carry a code.** One name meant two
+  things depending on an optional argument — a read-only estimate that
+  must never gate a run, and an atomic reservation. They are now two
+  functions with two result types (`QuotaEstimate` never carries a
+  reservation; `QuotaAdmission` always does when allowed). `checkQuota`
+  remains as a deprecated wrapper for one release. Every refusal now
+  carries `code: "insufficient_credits" | "allowance_depleted" |
+"billing_not_configured"` beside the human-readable `reason`; the
+  code travels through `EntitlementDecision`, `ExecutionRun` and
+  `ExecutionRefusedError.reasonCode`, and both reference routes map it
+  the same way (402, or 503 for an unconfigured deployment — the
+  assistant route answered 429 before). An unconfigured deployment is
+  refused rather than thrown at (`BillingNotConfiguredError`).
 - **`@intelligo-dev/auth`: `requireRole` accepts multi-role members** —
   Better-Auth stores roles as a comma-separated string; a member holding
   `owner,admin` was refused by every role gate. `getWorkspaceContext`

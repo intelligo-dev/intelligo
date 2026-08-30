@@ -38,13 +38,22 @@ import { getBillingSettings } from "./billing-settings";
 import { getWorkspaceBilling } from "./queries";
 import type {
   QuotaCheckResult,
+  QuotaRefusalCode,
+  QuotaEstimate,
+  QuotaAdmission,
   RecordUsageParams,
   SettlementOutcome,
   UsageSummary,
 } from "./quota-types";
 import { getPlanMonthlyCreditMnt, getPlanMessageLimit } from "./quota-plan";
+import { BillingNotConfiguredError } from "@intelligo-dev/billing-core";
 
-export type { SettlementOutcome } from "./quota-types";
+export type {
+  SettlementOutcome,
+  QuotaRefusalCode,
+  QuotaEstimate,
+  QuotaAdmission,
+} from "./quota-types";
 import {
   getCurrentMonthlyUsage,
   getCurrentPeriodStart,
@@ -102,8 +111,50 @@ async function readPools(workspaceId: string): Promise<Pools> {
   };
 }
 
+const DEFAULT_MODEL_ID = "google/gemini-2.5-flash";
+
+/** What `estimateQuota`/`reserveQuota` return when billing is unconfigured. */
+function notConfigured(): QuotaCheckResult {
+  return {
+    allowed: false,
+    code: "billing_not_configured",
+    reason:
+      "Billing is not configured for this deployment: no product or plans are registered.",
+    billingMode: "subscription",
+    usage: { used: 0, limit: 0, percentage: 0 },
+    creditBalanceMnt: 0,
+    estimatedMnt: 0,
+    remainingMnt: 0,
+    usingTrialCredits: false,
+    graceActive: false,
+  };
+}
+
 /**
- * Check whether a workspace is allowed to make an AI request.
+ * Read-only estimate of whether a workspace could run a turn on
+ * `modelId` right now. Nothing is locked or written, and outstanding
+ * reservations are NOT subtracted, so two estimates can both say yes
+ * against one balance — this is for dashboards and previews and must
+ * never gate a run. Use `reserveQuota` for that.
+ */
+export async function estimateQuota(
+  workspaceId: string,
+  options?: { modelId?: string }
+): Promise<QuotaEstimate> {
+  try {
+    return decideQuota(
+      await readPools(workspaceId),
+      options?.modelId ?? DEFAULT_MODEL_ID,
+      0
+    );
+  } catch (error) {
+    if (error instanceof BillingNotConfiguredError) return notConfigured();
+    throw error;
+  }
+}
+
+/**
+ * Atomic admission: decide, and hold the worst-case cost, in one step.
  *
  * Cost-based enforcement: the plan grants a monthly allowance, top-ups
  * land in `credit_balances.balance_mnt`, and a trial is a separate
@@ -113,29 +164,99 @@ async function readPools(workspaceId: string): Promise<Pools> {
  * case at current constants: ~343₮ for Gemini Flash, ~2 319₮ for
  * Claude or any unregistered id.)
  *
- * Two behaviours, selected by `options.requestId`:
+ * The decision runs in a transaction serialized per workspace by
+ * `pg_advisory_xact_lock`. Balances are read only after the lock is
+ * held — settlement takes the same lock, so no charge can land between
+ * the snapshot and the reservation — the sum of other active, unexpired
+ * reservations is subtracted, and a reservation for this request's
+ * worst-case estimate is inserted before `allowed: true` is returned.
+ * `recordTokenUsage` settles the reservation by `requestId`; abandoned
+ * reservations stop counting after RESERVATION_TTL_MS.
  *
- * - **Without `requestId`: a read-only estimate.** Nothing is locked
- *   or written. Dashboards and previews use this; it must never gate a
- *   run, because two such checks can both pass against one balance.
- *
- * - **With `requestId`: atomic admission.** The decision runs in a
- *   transaction serialized per workspace by `pg_advisory_xact_lock`.
- *   Balances are read only after the lock is held — settlement takes
- *   the same lock, so no charge can land between the snapshot and the
- *   reservation — the sum of other active, unexpired reservations is
- *   subtracted, and a reservation for this request's worst-case
- *   estimate is inserted before `allowed: true` is returned.
- *   `recordTokenUsage` settles the reservation by `requestId`;
- *   abandoned reservations stop counting after RESERVATION_TTL_MS.
+ * A refusal carries a stable `code` (`QuotaRefusalCode`) for transports
+ * to map; `reason` is the human-readable form.
+ */
+export async function reserveQuota(
+  workspaceId: string,
+  options: { modelId?: string; requestId: string }
+): Promise<QuotaAdmission> {
+  const modelId = options.modelId ?? DEFAULT_MODEL_ID;
+  const { requestId } = options;
+  if (!requestId) {
+    throw new Error("reserveQuota requires a requestId to reserve against.");
+  }
+
+  try {
+    return await db.transaction(async (tx): Promise<QuotaAdmission> => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext(${workspaceId}))`
+      );
+
+      // Only now read the balances: every settlement holds this same
+      // lock for the duration of its writes, so what we read here cannot
+      // be consumed between this snapshot and our reservation.
+      const pools = await readPools(workspaceId);
+
+      const reservedRows = await tx
+        .select({
+          total: sql<number>`coalesce(sum(${creditReservations.estimatedMnt}), 0)`,
+        })
+        .from(creditReservations)
+        .where(
+          and(
+            eq(creditReservations.workspaceId, workspaceId),
+            eq(creditReservations.status, "active"),
+            gt(creditReservations.expiresAt, new Date())
+          )
+        );
+      const reservedMnt = Number(reservedRows[0]?.total ?? 0);
+
+      const decision = decideQuota(pools, modelId, reservedMnt);
+      if (!decision.allowed) return decision as QuotaAdmission;
+
+      await tx.insert(creditReservations).values({
+        id: crypto.randomUUID(),
+        workspaceId,
+        requestId,
+        estimatedMnt: decision.estimatedMnt ?? 0,
+        status: "active",
+        expiresAt: new Date(Date.now() + RESERVATION_TTL_MS),
+      });
+
+      return { ...decision, allowed: true, reservedRequestId: requestId };
+    });
+  } catch (error) {
+    if (error instanceof BillingNotConfiguredError) {
+      return notConfigured() as QuotaAdmission;
+    }
+    throw error;
+  }
+}
+
+/**
+ * @deprecated One name for two behaviours: with `requestId` this is
+ * `reserveQuota` (atomic admission), without it `estimateQuota` (a
+ * read-only estimate that must never gate a run). Call the one you
+ * mean; this wrapper stays for one release.
  */
 export async function checkQuota(
   workspaceId: string,
   options?: { modelId?: string; requestId?: string }
 ): Promise<QuotaCheckResult> {
-  const modelId = options?.modelId ?? "google/gemini-2.5-flash";
+  return options?.requestId
+    ? reserveQuota(workspaceId, {
+        modelId: options.modelId,
+        requestId: options.requestId,
+      })
+    : estimateQuota(workspaceId, { modelId: options?.modelId });
+}
 
-  const decide = (pools: Pools, reservedMnt: number): QuotaCheckResult => {
+function decideQuota(
+  pools: Pools,
+  modelId: string,
+  reservedMnt: number
+): QuotaCheckResult {
+  {
     const {
       monthlyAllowanceMnt,
       usedMnt,
@@ -177,61 +298,23 @@ export async function checkQuota(
     if (trialActive && trialAvailable >= estimatedMnt) {
       return { allowed: true, usingTrialCredits: true, ...base };
     }
-    return {
-      allowed: false,
-      reason:
-        remainingMnt > 0
-          ? `Insufficient credits for this request (need ~${estimatedMnt}₮, have ${remainingMnt}₮). Top up to continue.`
-          : "Monthly credit allowance depleted. Top up or upgrade your plan to continue.",
-      usingTrialCredits: false,
-      ...base,
-    };
-  };
-
-  const requestId = options?.requestId;
-  if (!requestId) {
-    // Read-only estimate (no admission) — dashboards, previews.
-    return decide(await readPools(workspaceId), 0);
+    return remainingMnt > 0
+      ? {
+          allowed: false,
+          code: "insufficient_credits",
+          reason: `Insufficient credits for this request (need ~${estimatedMnt}₮, have ${remainingMnt}₮). Top up to continue.`,
+          usingTrialCredits: false,
+          ...base,
+        }
+      : {
+          allowed: false,
+          code: "allowance_depleted",
+          reason:
+            "Monthly credit allowance depleted. Top up or upgrade your plan to continue.",
+          usingTrialCredits: false,
+          ...base,
+        };
   }
-
-  return db.transaction(async (tx) => {
-    await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${workspaceId}))`
-    );
-
-    // Only now read the balances: every settlement holds this same
-    // lock for the duration of its writes, so what we read here cannot
-    // be consumed between this snapshot and our reservation.
-    const pools = await readPools(workspaceId);
-
-    const reservedRows = await tx
-      .select({
-        total: sql<number>`coalesce(sum(${creditReservations.estimatedMnt}), 0)`,
-      })
-      .from(creditReservations)
-      .where(
-        and(
-          eq(creditReservations.workspaceId, workspaceId),
-          eq(creditReservations.status, "active"),
-          gt(creditReservations.expiresAt, new Date())
-        )
-      );
-    const reservedMnt = Number(reservedRows[0]?.total ?? 0);
-
-    const decision = decide(pools, reservedMnt);
-    if (!decision.allowed) return decision;
-
-    await tx.insert(creditReservations).values({
-      id: crypto.randomUUID(),
-      workspaceId,
-      requestId,
-      estimatedMnt: decision.estimatedMnt ?? 0,
-      status: "active",
-      expiresAt: new Date(Date.now() + RESERVATION_TTL_MS),
-    });
-
-    return { ...decision, reservedRequestId: requestId };
-  });
 }
 
 /**

@@ -12,7 +12,7 @@ import "server-only";
  */
 
 import {
-  checkQuota,
+  reserveQuota,
   recordTokenUsage,
   releaseReservation,
 } from "@intelligo-dev/billing";
@@ -45,9 +45,13 @@ export function composeIntelligo(): void {
 
 export const executions = createExecutions({
   async checkEntitlement({ workspaceId, requestId, model }) {
-    const quota = await checkQuota(workspaceId, { modelId: model, requestId });
+    const quota = await reserveQuota(workspaceId, {
+      modelId: model,
+      requestId,
+    });
     return {
       allowed: quota.allowed,
+      code: quota.code,
       reason: quota.reason,
       estimatedMnt: quota.estimatedMnt,
       usingTrialCredits: quota.usingTrialCredits,

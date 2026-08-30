@@ -20,6 +20,7 @@ export type { PlanSlug, PlanConfig, PlanLimits } from "./plans";
 // Plan registry
 export {
   registerProductPlans,
+  BillingNotConfiguredError,
   registerUpgradeMessages,
   registerActionLabels,
   registerActionLimitKeys,
@@ -55,6 +56,9 @@ export type {
 export { GRACE_OVERAGE_PERCENTAGE } from "./quota-types";
 export type {
   QuotaCheckResult,
+  QuotaRefusalCode,
+  QuotaEstimate,
+  QuotaAdmission,
   RecordUsageParams,
   SettlementOutcome,
   UsageSummary,

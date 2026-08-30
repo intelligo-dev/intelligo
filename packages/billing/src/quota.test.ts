@@ -50,11 +50,19 @@ vi.mock("./billing-settings", () => ({
 vi.mock("./notifications", () => ({
   checkNotificationTriggers: mocks.checkNotificationTriggers,
 }));
-vi.mock("./quota-plan", () => ({
-  // free plan: 2000₮ monthly allowance
-  getPlanMonthlyCreditMnt: (slug: string) => (slug === "free" ? 2000 : 30000),
-  getPlanMessageLimit: () => 100,
-}));
+vi.mock("./quota-plan", async () => {
+  const { BillingNotConfiguredError } =
+    await import("@intelligo-dev/billing-core");
+  return {
+    // free plan: 2000₮ monthly allowance; "unconfigured" simulates a
+    // deployment whose composition root never registered a product.
+    getPlanMonthlyCreditMnt: (slug: string) => {
+      if (slug === "unconfigured") throw new BillingNotConfiguredError();
+      return slug === "free" ? 2000 : 30000;
+    },
+    getPlanMessageLimit: () => 100,
+  };
+});
 vi.mock("@intelligo-dev/executions/pricing", () => ({
   estimateWorstCaseChargedMnt: mocks.estimateWorstCaseChargedMnt,
   calculateChargedMnt: mocks.calculateChargedMnt,
@@ -124,7 +132,8 @@ vi.mock("@intelligo-dev/core/db", () => {
   };
 });
 
-import { checkQuota } from "./quota";
+import { checkQuota, estimateQuota, reserveQuota } from "./quota";
+import { db } from "@intelligo-dev/core/db";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -295,5 +304,67 @@ describe("checkQuota — reserving mode (with requestId)", () => {
     expect(first.usingTrialCredits).toBe(true);
     // 1600₮ trial fits one 1500₮ reservation, not two.
     expect(second.allowed).toBe(false);
+  });
+});
+
+describe("estimateQuota / reserveQuota", () => {
+  it("estimateQuota never opens a transaction or reserves", async () => {
+    vi.mocked(db.transaction).mockClear();
+    const r = await estimateQuota("ws-1", {
+      modelId: "google/gemini-2.5-flash",
+    });
+    expect(r.allowed).toBe(true);
+    expect("reservedRequestId" in r).toBe(false);
+    expect(db.transaction).not.toHaveBeenCalled();
+    expect(store.reservations).toHaveLength(0);
+  });
+
+  it("reserveQuota returns the reservation id it created", async () => {
+    const r = await reserveQuota("ws-1", {
+      modelId: "google/gemini-2.5-flash",
+      requestId: "req-reserve-1",
+    });
+    expect(r.allowed).toBe(true);
+    if (r.allowed) expect(r.reservedRequestId).toBe("req-reserve-1");
+    expect(store.reservations.map((x) => x.requestId)).toEqual([
+      "req-reserve-1",
+    ]);
+  });
+
+  it("reserveQuota refuses to run without a requestId", async () => {
+    await expect(
+      reserveQuota("ws-1", { requestId: "" as string })
+    ).rejects.toThrow(/requestId/);
+  });
+
+  it("codes a refusal: insufficient_credits when something remains", async () => {
+    // 2000₮ allowance, 300₮ used → 1700 left; estimate 2000 → refused.
+    mocks.getCurrentMonthlyUsage.mockResolvedValue({ chargedMnt: 300 });
+    mocks.estimateWorstCaseChargedMnt.mockReturnValue(2000);
+    const r = await reserveQuota("ws-1", { requestId: "req-code-1" });
+    expect(r.allowed).toBe(false);
+    if (!r.allowed) expect(r.code).toBe("insufficient_credits");
+  });
+
+  it("codes a refusal: allowance_depleted when nothing remains", async () => {
+    mocks.getCurrentMonthlyUsage.mockResolvedValue({ chargedMnt: 2000 });
+    const r = await reserveQuota("ws-1", { requestId: "req-code-2" });
+    expect(r.allowed).toBe(false);
+    if (!r.allowed) expect(r.code).toBe("allowance_depleted");
+  });
+
+  it("refuses with billing_not_configured instead of throwing when no product is registered", async () => {
+    mocks.getWorkspaceBilling.mockResolvedValue({
+      plan: { slug: "unconfigured" },
+      creditBalance: { balanceMnt: 0 },
+    });
+    const r = await reserveQuota("ws-1", { requestId: "req-code-3" });
+    expect(r.allowed).toBe(false);
+    if (!r.allowed) expect(r.code).toBe("billing_not_configured");
+    expect(store.reservations).toHaveLength(0);
+
+    const e = await estimateQuota("ws-1");
+    expect(e.allowed).toBe(false);
+    expect(e.code).toBe("billing_not_configured");
   });
 });

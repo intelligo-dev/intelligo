@@ -156,16 +156,28 @@ export function setDefaultProductSlug(slug: string): void {
 }
 
 /**
- * @throws when no product has been configured — a loud failure at the
- * call site beats silently billing against an empty catalogue.
+ * Thrown when billing is asked to decide anything before a product has
+ * been configured. Typed so admission can turn it into a refusal
+ * (`billing_not_configured`) instead of a 500.
  */
-export function getDefaultProductSlug(): string {
-  if (!defaultProductSlug) {
-    throw new Error(
+export class BillingNotConfiguredError extends Error {
+  readonly code = "billing_not_configured";
+  constructor() {
+    super(
       "No billing product configured. Call setDefaultProductSlug() from " +
         "the composition root, or set INTELLIGO_BILLING_PRODUCT."
     );
+    this.name = "BillingNotConfiguredError";
   }
+}
+
+/**
+ * @throws {BillingNotConfiguredError} when no product has been
+ * configured — a loud failure at the call site beats silently billing
+ * against an empty catalogue.
+ */
+export function getDefaultProductSlug(): string {
+  if (!defaultProductSlug) throw new BillingNotConfiguredError();
   return defaultProductSlug;
 }
 

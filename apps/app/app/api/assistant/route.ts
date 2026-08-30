@@ -85,9 +85,16 @@ export async function POST(request: Request) {
     // A refusal is a distinct outcome, not a failure — the bridge
     // throws a typed error so it cannot be mistaken for an empty result.
     if (error instanceof ExecutionRefusedError) {
+      // Same mapping as the chat route: a refusal the workspace can fix
+      // by paying is 402, an unconfigured deployment is 503.
+      const notConfigured = error.reasonCode === "billing_not_configured";
       return Response.json(
-        { error: error.message, code: "QUOTA_EXCEEDED" },
-        { status: 429 }
+        {
+          error: error.message,
+          code: notConfigured ? "BILLING_NOT_CONFIGURED" : "QUOTA_EXCEEDED",
+          reasonCode: error.reasonCode,
+        },
+        { status: notConfigured ? 503 : 402 }
       );
     }
     return Response.json({ error: "assistant failed" }, { status: 500 });

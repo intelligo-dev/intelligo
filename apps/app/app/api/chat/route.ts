@@ -312,12 +312,17 @@ export async function POST(request: Request) {
   });
 
   if (!run.allowed) {
+    // The entitlement port's stable code decides the status; the reason
+    // string is for humans. 402 for anything the workspace can fix by
+    // paying, 503 when this deployment has no billing configured at all.
+    const notConfigured = run.code === "billing_not_configured";
     return Response.json(
       {
         error: run.reason ?? t("route.quotaExceeded"),
-        code: "QUOTA_EXCEEDED",
+        code: notConfigured ? "BILLING_NOT_CONFIGURED" : "QUOTA_EXCEEDED",
+        reasonCode: run.code,
       },
-      { status: 402 }
+      { status: notConfigured ? 503 : 402 }
     );
   }
 
