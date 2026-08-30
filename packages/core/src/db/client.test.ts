@@ -15,25 +15,25 @@ describe("selectDriver", () => {
   it("gives Neon hosts the WebSocket driver", () => {
     expect(
       selectDriver(
-        "postgres://u:p@ep-example-123456-pooler.ap-southeast-1.aws.neon.tech/neondb"
+        "postgres://ep-example-123456-pooler.ap-southeast-1.aws.neon.tech/neondb"
       )
     ).toBe("neon-serverless");
   });
 
   it("recognises a Neon endpoint id without the neon.tech host", () => {
-    expect(selectDriver("postgres://u:p@ep-abc-123.example.internal/db")).toBe(
+    expect(selectDriver("postgres://host@ep-abc-123.example.internal/db")).toBe(
       "neon-serverless"
     );
   });
 
   it("gives ordinary Postgres node-postgres", () => {
-    expect(selectDriver("postgresql://ci:ci@localhost:5432/ci_build")).toBe(
+    expect(selectDriver("postgresql://localhost:5432/ci_build")).toBe(
       "pg"
     );
   });
 
   it("lets INTELLIGO_DB_DRIVER override the URL rule", () => {
-    expect(selectDriver("postgres://u:p@ep-abc.neon.tech/db", "pg")).toBe("pg");
+    expect(selectDriver("postgres://ep-abc.neon.tech/db", "pg")).toBe("pg");
     expect(selectDriver("postgresql://localhost/db", "neon-serverless")).toBe(
       "neon-serverless"
     );
