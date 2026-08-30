@@ -150,10 +150,19 @@ export async function getWorkspaceContext(): Promise<{
 
   log.debug("getWorkspaceContext: session found");
 
-  // Get active organization from session
-  let activeOrg = await auth.api.getFullOrganization({
-    headers: await headers(),
-  });
+  // Get active organization from session. Better-Auth throws FORBIDDEN
+  // when the session's active organization no longer admits this user
+  // (removed member) and clears the session's pointer; treat that as
+  // "no active workspace" so the fallback below runs instead of the
+  // provider error escaping as an unexplained failure.
+  let activeOrg = await auth.api
+    .getFullOrganization({ headers: await headers() })
+    .catch((error: unknown) => {
+      log.debug("getWorkspaceContext: active org not readable", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    });
 
   log.debug("getWorkspaceContext: active org", { hasOrg: !!activeOrg });
 
@@ -249,7 +258,12 @@ export async function requireRole(allowedRoles: WorkspaceRole[]): Promise<{
   membership: { id: string; role: WorkspaceRole };
 }> {
   const context = await requireWorkspace();
-  if (!allowedRoles.includes(context.membership.role)) {
+  // Better-Auth stores roles as a comma-separated string, so a member
+  // may hold more than one; any of them may satisfy the check.
+  const held = String(context.membership.role)
+    .split(",")
+    .map((r) => r.trim()) as WorkspaceRole[];
+  if (!held.some((r) => allowedRoles.includes(r))) {
     throw new Error("Insufficient permissions");
   }
   return context;

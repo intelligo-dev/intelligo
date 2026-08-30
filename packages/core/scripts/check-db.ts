@@ -60,7 +60,7 @@ async function checkDatabase() {
 
     if (tableNames.length === 0) {
       console.log("\n⚠ No auth tables found.");
-      console.log("Fix: pnpm --filter @intelligo-dev/core db:push");
+      console.log("Fix: intelligo migrate");
       process.exit(1);
     } else if (tableNames.length < 4) {
       const missing = ["users", "sessions", "accounts", "verifications"].filter(
@@ -68,7 +68,7 @@ async function checkDatabase() {
       );
       console.log(`\n⚠ Only ${tableNames.length}/4 auth tables found.`);
       console.log("Missing:", missing);
-      console.log("Fix: pnpm --filter @intelligo-dev/core db:push");
+      console.log("Fix: intelligo migrate");
       process.exit(1);
     } else {
       console.log("\n✓ All auth tables exist!");

@@ -94,6 +94,23 @@ it explains a framework decision.
   `neon-http` is refused by name. Found by the Phase 1 documentation
   audit; the selection rule is now a pure, tested function.
 
+### Changed
+
+- **`@intelligo-dev/auth`: `requireRole` accepts multi-role members** —
+  Better-Auth stores roles as a comma-separated string; a member holding
+  `owner,admin` was refused by every role gate. `getWorkspaceContext`
+  treats a Better-Auth `FORBIDDEN` on the session's active organization
+  (a removed member) as "no active workspace" and falls back, instead
+  of letting the provider error escape.
+- Documentation and comments brought back in line with the code: ADR-0007
+  and the execution schema/queries now describe `settling` (and its two
+  readings); the `settleUsage` port no longer promises retries; stale
+  notes claiming `sessions.activeOrganizationId` and the organization
+  tables are absent are gone; `validate.ts`/`check-db` recommend
+  `intelligo migrate` rather than `db:push`; the README counts
+  twenty-five page families and names `intelligo.dev/r` as the hosted
+  registry.
+
 ### Added
 
 - **`intelligo migrate`** applies the framework's migration chain with

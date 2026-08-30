@@ -153,10 +153,16 @@ export async function summarizeExecutionsByDay(
 }
 
 /**
- * Executions stuck in a non-terminal state past a cutoff — a stream
- * that died without reaching complete()/fail() (`running`), or a
- * settlement that threw partway (`settling`). The cleanup cron reports
- * these; they are the operational signal that usage went unrecorded.
+ * Executions stuck in a non-terminal state past a cutoff.
+ *
+ * `running`: the stream died without reaching complete()/fail() —
+ * tokens were consumed and nothing was charged. `settling`: the charge
+ * was claimed but never confirmed — EITHER `settleUsage` threw and the
+ * workspace was not charged, OR the charge committed and the process
+ * died before the final `settling → succeeded` flip, in which case the
+ * workspace WAS charged. A `usage_records` row (or a `settled`
+ * reservation) for the same `requestId` distinguishes the two. This
+ * only reports; nothing in the framework repairs these rows.
  */
 export async function findStaleExecutions(olderThan: Date, limit = 100) {
   return db

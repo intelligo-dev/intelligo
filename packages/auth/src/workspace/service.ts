@@ -55,16 +55,13 @@
  *    original `actions/workspace.ts` already called these four by
  *    their correct `auth.api` names directly (it never went through a
  *    path-keyed cast), so there is no method-name bug to fix here.
- * 2. `sessions.activeOrganizationId` does not exist on this repo's
- *    Drizzle schema. Acme's original `getActiveWorkspace()` called
- *    `auth.api.getFullOrganization({ headers })` with no
- *    `organizationId` — the exact bug documented in
- *    `../team/service.ts`'s module comment: that resolves to *no*
- *    organization regardless of what the caller most recently
- *    activated. This service's `getActiveWorkspace` instead resolves
- *    the caller's workspace via `requireWorkspace()` first (which has
- *    its own explicit-id fallback) and passes that id explicitly to
- *    `getFullOrganization`.
+ * 2. `sessions.activeOrganizationId` exists and persists switches, but
+ *    a bare `auth.api.getFullOrganization({ headers })` resolves to
+ *    *no* organization whenever the session has none set (see
+ *    `../team/service.ts`'s module comment). This service's
+ *    `getActiveWorkspace` therefore resolves the caller's workspace via
+ *    `requireWorkspace()` first (which has its own explicit-id
+ *    fallback) and passes that id explicitly to `getFullOrganization`.
  */
 
 import { headers } from "next/headers";

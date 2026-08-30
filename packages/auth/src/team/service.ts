@@ -60,21 +60,16 @@
  * ---------------------------------------------------------------------
  * Better-Auth's organization plugin resolves "the caller's active
  * workspace" from `session.activeOrganizationId` when a call omits an
- * explicit `organizationId`. That column does not exist on this repo's
- * Drizzle `sessions` schema (`packages/core/src/db/schema/auth.ts`), so
- * every bare `auth.api.getFullOrganization({ headers })` call —
- * acme's original pattern in `listMembers`, `listInvitations`, and
- * the sole-owner check in `leaveWorkspace` — resolves to *no*
- * organization, regardless of what the caller most recently activated.
- * `requireWorkspace()` (packages/auth/src/helpers.ts) never hits this:
- * it has its own fallback that lists the caller's organizations and
- * fetches the first one by explicit id. This service does the same —
+ * explicit `organizationId`. That column exists
+ * (`packages/core/src/db/schema/auth.ts`) and persists switches, but a
+ * bare `auth.api.getFullOrganization({ headers })` still resolves to
+ * *no* organization whenever the session has none set — a fresh user,
+ * a user removed from their active workspace — and the original code
+ * relied on it. This service therefore never depends on session state:
  * every `getFullOrganization` call below passes an explicit
  * `organizationId` sourced from `requireWorkspace`/`requireRole`'s
  * resolved `workspace.id` (or, in `acceptInvitation`, the invitation's
- * own `organizationId`) rather than relying on session state. This is
- * a behavior fix, not a stylistic change: without it, a fresh
- * single-workspace user's own membership list comes back empty.
+ * own `organizationId`).
  */
 
 import { headers } from "next/headers";

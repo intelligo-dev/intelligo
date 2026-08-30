@@ -4,10 +4,12 @@
  * Theme provider — mounted by `app/[locale]/layout.tsx` so any theme
  * switcher (e.g. the app-shell item's user menu) actually works.
  *
- * The same file ships with the `app-shell` registry item at the same
- * path; installing app-shell simply overwrites this copy with an
- * identical one. Defaults: class-attribute strategy (Tailwind's `.dark`
- * tokens), system preference honored, no transition flash on switch.
+ * The `app-shell` registry item ships its own provider at this same
+ * path; installing app-shell (with --overwrite) replaces this starter
+ * copy, and the manifest will report the file as customized from then
+ * on — that is expected. Defaults: class-attribute strategy (Tailwind's
+ * `.dark` tokens), system preference honored, no transition flash on
+ * switch.
  */
 
 import { ThemeProvider as NextThemesProvider } from "next-themes";

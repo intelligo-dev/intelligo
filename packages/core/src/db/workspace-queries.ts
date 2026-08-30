@@ -8,7 +8,9 @@
  *
  *   Better-Auth API isolation guarantees:
  *   - auth.api.listOrganizations() — returns ONLY organizations the authenticated user belongs to
- *   - auth.api.getFullOrganization() — returns ONLY the active organization (set via session)
+ *   - auth.api.getFullOrganization({ query: { organizationId } }) — returns that organization
+ *     only if the caller is a member (FORBIDDEN otherwise); without an id it resolves the
+ *     session's active organization, or nothing
  *   - auth.api.createInvitation() — requires organizationId from requireWorkspace() (authenticated context)
  *   - auth.api.removeMember() — scoped to the organizationId from requireWorkspace()
  *   - All other org API methods operate on the authenticated user's session context

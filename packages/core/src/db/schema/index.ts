@@ -8,19 +8,13 @@
 // Auth tables (Better-Auth managed)
 export * from "./auth";
 
-// Organization/Workspace tables are managed by Better-Auth organization plugin (Phase 10)
-// Tables: organization, member, invitation (auto-created by plugin on first API use)
-// These tables are NOT in our Drizzle schema — Better-Auth manages them directly.
-// Access via Better-Auth API: auth.api.listOrganizations(), auth.api.createInvitation(), etc.
-//
-// Organization plugin indexes (TECH-02 verified pattern):
-// Better-Auth's organization plugin creates these indexes automatically:
-// - member.organizationId (workspace member lookup)
-// - member.userId (user's memberships lookup)
-// - invitation.organizationId (workspace invitations lookup)
-// - invitation.email (invited email lookup)
-// These indexes are created by Better-Auth when tables are auto-created on first use.
-// No manual migration needed — plugin handles all schema management.
+// Organization/workspace tables (organization, member, invitation) are
+// defined in ./auth alongside users/sessions and created by the
+// migration chain like every other table; Better-Auth's organization
+// plugin reads and writes them through the Drizzle adapter. Product
+// code still goes through the Better-Auth API (auth.api.listOrganizations(),
+// auth.api.createInvitation(), …) rather than querying them directly, so
+// membership and role rules stay in one place.
 
 // Billing tables (Phase 11)
 export * from "./billing";

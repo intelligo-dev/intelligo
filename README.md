@@ -119,7 +119,7 @@ await run.complete({ usage }); // or run.fail({ error })
 
 ## Pages
 
-Nineteen page families install into your application as **source you own**, through the official [shadcn registry](https://ui.shadcn.com/docs/registry) protocol — pages, components, loading/empty/error states, and thin actions, rendered by your own shadcn primitives:
+Twenty-five page families install into your application as **source you own**, through the official [shadcn registry](https://ui.shadcn.com/docs/registry) protocol — pages, components, loading/empty/error states, and thin actions, rendered by your own shadcn primitives:
 
 |                      |                     |                       |                           |
 | -------------------- | ------------------- | --------------------- | ------------------------- |
@@ -171,7 +171,7 @@ Recorded as ADRs in [docs/adr](docs/adr/README.md):
 
 ## What it is not
 
-Not an AI framework, and not a wrapper over one. Not a component library — the registry ships pages; primitives come from shadcn's own registry. Not a hosted platform; you deploy it like any Next.js application. The registry is not yet served over HTTP (items install from the built artifacts), and there is no runtime plugin system — composition is build-time, on purpose.
+Not an AI framework, and not a wrapper over one. Not a component library — the registry ships pages; primitives come from shadcn's own registry. Not a hosted platform; you deploy it like any Next.js application. There is no runtime plugin system — composition is build-time, on purpose. The registry is served at `https://intelligo.dev/r/<item>.json` by `apps/site`; a checkout can also install from the locally built artifacts.
 
 ## Development
 

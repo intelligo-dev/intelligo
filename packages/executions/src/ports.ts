@@ -60,8 +60,10 @@ export type ExecutionPorts = {
   ) => Promise<EntitlementDecision>;
 
   /**
-   * Record real usage and release the hold. Called after a successful
-   * run. Must be idempotent per requestId — the lifecycle may retry.
+   * Record real usage and release the hold. Called at most once per
+   * execution: the lifecycle claims the row by compare-and-swap before
+   * calling this and never retries it, so the port itself need not be
+   * idempotent (the reference binding, `recordTokenUsage`, is not).
    */
   settleUsage?: (
     settlement: UsageSettlement

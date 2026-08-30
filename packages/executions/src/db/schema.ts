@@ -52,7 +52,11 @@ export const executions = pgTable(
      * usage_records. Unique per execution attempt.
      */
     requestId: text("request_id").notNull().unique(),
-    /** running | succeeded | failed | refused */
+    /**
+     * running | settling | succeeded | failed | refused.
+     * `settling` is the window between claiming the row and confirming
+     * the charge; a row that stays there needs an operator.
+     */
     status: text("status").notNull().default("running"),
     /** Model actually used; null until the run reports one. */
     model: text("model"),
