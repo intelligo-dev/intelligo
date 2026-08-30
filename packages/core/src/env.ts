@@ -24,9 +24,10 @@ const ENV_VARS: EnvVar[] = [
     description: "PostgreSQL connection string",
   },
   {
-    name: "AUTH_SECRET",
+    name: "BETTER_AUTH_SECRET",
     required: true,
-    description: "Better-Auth session encryption key",
+    description:
+      "Better-Auth session encryption key (AUTH_SECRET is accepted as a legacy alias)",
     minLength: 32,
   },
   {
@@ -91,7 +92,20 @@ export function validateEnv(): {
   const warnings: string[] = [];
 
   for (const envVar of ENV_VARS) {
-    const value = process.env[envVar.name];
+    let value = process.env[envVar.name];
+    // One canonical name for the auth secret. Better-Auth itself reads
+    // BETTER_AUTH_SECRET then AUTH_SECRET; the CLI's doctor, the
+    // scaffold and this validator agree on the former.
+    if (
+      envVar.name === "BETTER_AUTH_SECRET" &&
+      !value &&
+      process.env.AUTH_SECRET
+    ) {
+      value = process.env.AUTH_SECRET;
+      warnings.push(
+        "AUTH_SECRET is set but BETTER_AUTH_SECRET is not — rename it; AUTH_SECRET is a legacy alias"
+      );
+    }
     if (!value || value.trim() === "") {
       if (envVar.required) {
         errors.push(
@@ -122,11 +136,12 @@ export function validateEnv(): {
       );
     }
     if (!process.env.CRON_SECRET || process.env.CRON_SECRET.length < 32) {
-      // Promote to error in production — an unset or weak cron secret
-      // means the cron endpoints are wide open to anyone who guesses
-      // the path.
-      errors.push(
-        "CRON_SECRET must be set (≥32 chars) in production for /api/cron/* auth"
+      // A warning, not an error: the framework ships no cron route of
+      // its own, so a deployment without one has nothing to protect.
+      // The maintenance route (`intelligo add maintenance`) refuses to
+      // serve without it.
+      warnings.push(
+        "CRON_SECRET unset or shorter than 32 chars — required by any /api/cron/* route you mount"
       );
     }
   }

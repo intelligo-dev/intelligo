@@ -198,7 +198,19 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         // complete() racing a fail() — charged the workspace again and
         // then quietly discovered it had lost the race. Status and
         // audit were idempotent; the deduction was not.
-        if (!(await transition("running", "settling"))) return;
+        // The usage is written with the claim, before any money moves,
+        // so a crash after this point leaves enough on the row for
+        // reconcile() to finish the job.
+        if (
+          !(await transition("running", "settling", {
+            model: model ?? null,
+            inputTokens,
+            outputTokens,
+            totalTokens,
+          }))
+        ) {
+          return;
+        }
 
         let chargedMnt: number | undefined;
         if (ports.settleUsage) {
@@ -316,7 +328,170 @@ export function createExecutions(ports: ExecutionPorts = {}) {
     };
   }
 
-  return { begin };
+  /**
+   * Finish an execution the happy path did not.
+   *
+   * `settling` has two readings — the charge never happened, or it
+   * committed and the process died before the final flip — and only
+   * the ledger can tell them apart, so the `findSettlement` port is
+   * asked first. A charge that exists is confirmed onto the row; one
+   * that does not is re-run from the usage the claim recorded. A
+   * `running` row older than `abandonRunningAfterMs` (the stream died
+   * without reaching complete()/fail()) is failed and its hold
+   * released; without that option `running` rows are left alone.
+   *
+   * Every transition is the same compare-and-swap the lifecycle uses,
+   * so a reconcile racing a late complete()/fail() cannot double
+   * charge or double release.
+   */
+  async function reconcile(
+    executionId: string,
+    options: { abandonRunningAfterMs?: number } = {}
+  ): Promise<ReconcileResult> {
+    const rows = await db
+      .select()
+      .from(executions)
+      .where(eq(executions.id, executionId))
+      .limit(1);
+    const row = rows[0];
+    if (!row) return { action: "noop", status: "missing" };
+
+    const finish = (fields: Record<string, unknown>) => {
+      const finishedAt = new Date();
+      return {
+        finishedAt,
+        durationMs: finishedAt.getTime() - row.startedAt.getTime(),
+        ...fields,
+      };
+    };
+    const cas = async (
+      from: ExecutionStatus,
+      to: ExecutionStatus,
+      fields: Record<string, unknown>
+    ) => {
+      const updated = await db
+        .update(executions)
+        .set({ status: to, ...fields })
+        .where(and(eq(executions.id, executionId), eq(executions.status, from)))
+        .returning();
+      return updated.length > 0;
+    };
+    const audit = (how: string, extra: Record<string, unknown> = {}) =>
+      recordAuditEvent({
+        workspaceId: row.workspaceId,
+        actorId: null,
+        actorKind: "system",
+        action: "execution.reconciled",
+        resourceKind: "execution",
+        resourceId: executionId,
+        metadata: { requestId: row.requestId, how, ...extra },
+      });
+
+    if (row.status === "running") {
+      const cutoff = options.abandonRunningAfterMs;
+      if (
+        cutoff === undefined ||
+        Date.now() - row.startedAt.getTime() < cutoff
+      ) {
+        return { action: "noop", status: "running" };
+      }
+      const moved = await cas(
+        "running",
+        "failed",
+        finish({ errorMessage: "abandoned: no completion within the cutoff" })
+      );
+      if (!moved) return { action: "noop", status: "running" };
+      if (ports.releaseHold) {
+        try {
+          await ports.releaseHold({
+            workspaceId: row.workspaceId,
+            requestId: row.requestId,
+          });
+        } catch (releaseError) {
+          log.warn("Hold release failed during reconcile", {
+            executionId,
+            error: errorMessage(releaseError),
+          });
+        }
+      }
+      await audit("abandoned");
+      return { action: "abandoned" };
+    }
+
+    if (row.status !== "settling") {
+      return { action: "noop", status: row.status as ExecutionStatus };
+    }
+
+    if (!ports.findSettlement) {
+      // Without a way to ask the ledger, re-running settlement could
+      // charge a second time. Refuse to guess.
+      return {
+        action: "noop",
+        status: "settling",
+        reason:
+          "no findSettlement port bound; cannot tell whether the charge exists",
+      };
+    }
+
+    const existing = await ports.findSettlement({
+      workspaceId: row.workspaceId,
+      requestId: row.requestId,
+    });
+
+    if (existing) {
+      const moved = await cas(
+        "settling",
+        "succeeded",
+        finish({ chargedMnt: existing.chargedMnt ?? null })
+      );
+      if (moved) await audit("confirmed", { chargedMnt: existing.chargedMnt });
+      return { action: "confirmed", chargedMnt: existing.chargedMnt };
+    }
+
+    if (!ports.settleUsage || row.totalTokens === null) {
+      return {
+        action: "noop",
+        status: "settling",
+        reason: "no usage recorded on the row to settle from",
+      };
+    }
+
+    const settled = await ports.settleUsage({
+      workspaceId: row.workspaceId,
+      userId: row.userId,
+      requestId: row.requestId,
+      capability: row.capability,
+      model: row.model ?? undefined,
+      inputTokens: row.inputTokens ?? 0,
+      outputTokens: row.outputTokens ?? 0,
+      totalTokens: row.totalTokens,
+      usingTrialCredits: false,
+      metadata: row.metadata ?? undefined,
+    });
+    const chargedMnt = settled?.chargedMnt;
+    await cas(
+      "settling",
+      "succeeded",
+      finish({ chargedMnt: chargedMnt ?? null })
+    );
+    await audit("settled", { chargedMnt });
+    return { action: "settled", chargedMnt };
+  }
+
+  return { begin, reconcile };
 }
+
+export type ReconcileResult =
+  | {
+      action: "noop";
+      status: ExecutionStatus | "missing";
+      reason?: string;
+    }
+  /** The ledger already held the charge; the row now says so. */
+  | { action: "confirmed"; chargedMnt?: number }
+  /** Settlement was re-run from the recorded usage. */
+  | { action: "settled"; chargedMnt?: number }
+  /** A stale `running` row was failed and its hold released. */
+  | { action: "abandoned" };
 
 export type Executions = ReturnType<typeof createExecutions>;

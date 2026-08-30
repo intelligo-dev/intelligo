@@ -17,12 +17,14 @@ import {
   reserveQuota,
   recordTokenUsage,
   releaseReservation,
+  findSettlementByRequestId,
 } from "@intelligo-dev/billing";
 import {
   registerProductFeatures,
   registerProductPlans,
   setDefaultProductSlug,
 } from "@intelligo-dev/billing/plans";
+import { assertEnv } from "@intelligo-dev/core/env";
 import { createExecutions } from "@intelligo-dev/executions";
 
 import { PLANS, FEATURES } from "./plans";
@@ -43,6 +45,11 @@ let composed = false;
 export function composeIntelligo(): void {
   if (composed) return;
   composed = true;
+
+  // Fail on the first request rather than on the first query: a
+  // missing DATABASE_URL or auth secret is a configuration error, not
+  // something to discover deep inside a handler.
+  assertEnv();
 
   setDefaultProductSlug(PRODUCT_SLUG);
   registerProductPlans(PRODUCT_SLUG, PLANS);
@@ -84,4 +91,9 @@ export const executions = createExecutions({
   async releaseHold({ requestId }) {
     await releaseReservation(requestId);
   },
+
+  // Lets executions.reconcile() tell a settling row whose charge
+  // committed from one whose charge never happened.
+  findSettlement: ({ workspaceId, requestId }) =>
+    findSettlementByRequestId(workspaceId, requestId),
 });

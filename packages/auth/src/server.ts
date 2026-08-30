@@ -53,6 +53,10 @@ import {
 import { eq } from "drizzle-orm";
 
 export const auth = betterAuth({
+  // Explicit, so the name the framework documents (doctor, scaffold,
+  // env validation) is the one that is honoured; AUTH_SECRET stays a
+  // legacy alias.
+  secret: process.env.BETTER_AUTH_SECRET ?? process.env.AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: "pg",
     // Map our schema tables to Better-Auth's expected names

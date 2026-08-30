@@ -18,6 +18,7 @@ export type {
   Executions,
   ExecutionStatus,
   ExecutionRun,
+  ReconcileResult,
   BeginExecutionInput,
   CompleteExecutionInput,
 } from "./lifecycle";
@@ -28,6 +29,7 @@ export type {
   EntitlementRequest,
   UsageSettlement,
   SettlementResult,
+  SettlementQuery,
 } from "./ports";
 
 export {

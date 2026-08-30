@@ -566,6 +566,29 @@ export async function recordTokenUsage(
   return outcome;
 }
 
+/**
+ * Was this request already charged? Answers `executions.reconcile()`'s
+ * question for a row stuck in `settling`: a `usage_records` row for
+ * the request means settlement committed; none means it did not.
+ */
+export async function findSettlementByRequestId(
+  workspaceId: string,
+  requestId: string
+): Promise<{ chargedMnt: number } | null> {
+  const rows = await db
+    .select({ chargedMnt: usageRecords.chargedMnt })
+    .from(usageRecords)
+    .where(
+      and(
+        eq(usageRecords.workspaceId, workspaceId),
+        eq(usageRecords.requestId, requestId)
+      )
+    )
+    .limit(1);
+  const row = rows[0];
+  return row ? { chargedMnt: Number(row.chargedMnt ?? 0) } : null;
+}
+
 // ---------------------------------------------------------------------------
 // resetMonthlyQuota (QUOTA-06)
 // ---------------------------------------------------------------------------

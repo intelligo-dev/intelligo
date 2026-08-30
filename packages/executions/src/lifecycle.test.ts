@@ -17,10 +17,20 @@ const mocks = vi.hoisted(() => ({
   updateSet: vi.fn(),
   update: vi.fn(),
   recordAuditEvent: vi.fn(),
+  /** Rows `reconcile()` reads back. */
+  selectRows: vi.fn(),
 }));
 
 vi.mock("@intelligo-dev/core/db", () => ({
-  db: { insert: mocks.insert, update: mocks.update },
+  db: {
+    insert: mocks.insert,
+    update: mocks.update,
+    select: () => ({
+      from: () => ({
+        where: () => ({ limit: mocks.selectRows }),
+      }),
+    }),
+  },
 }));
 
 vi.mock("@intelligo-dev/core/logger", () => ({
@@ -361,5 +371,126 @@ describe("fail", () => {
     await run.fail({ error: new Error("x".repeat(5000)) });
 
     expect((updatedFields().errorMessage as string).length).toBe(1000);
+  });
+});
+
+describe("reconcile", () => {
+  const settlingRow = (over: Record<string, unknown> = {}) => ({
+    id: "e-1",
+    workspaceId: "ws-1",
+    userId: "u-1",
+    capability: "support.recommendation",
+    requestId: "req-1",
+    status: "settling",
+    model: "google/gemini-2.5-flash",
+    inputTokens: 100,
+    outputTokens: 50,
+    totalTokens: 150,
+    startedAt: new Date(Date.now() - 60_000),
+    metadata: null,
+    ...over,
+  });
+
+  it("confirms a settling row whose charge the ledger already holds — without charging again", async () => {
+    mocks.selectRows.mockResolvedValue([settlingRow()]);
+    const settleUsage = vi.fn();
+    const executions = createExecutions({
+      settleUsage,
+      findSettlement: vi.fn().mockResolvedValue({ chargedMnt: 42 }),
+    });
+
+    const r = await executions.reconcile("e-1");
+
+    expect(r).toEqual({ action: "confirmed", chargedMnt: 42 });
+    expect(settleUsage).not.toHaveBeenCalled();
+    expect(updatedFields(0)).toMatchObject({
+      status: "succeeded",
+      chargedMnt: 42,
+    });
+    expect(auditActions()).toEqual(["execution.reconciled"]);
+  });
+
+  it("re-runs settlement from the recorded usage when the ledger has no charge", async () => {
+    mocks.selectRows.mockResolvedValue([settlingRow()]);
+    const settleUsage = vi.fn().mockResolvedValue({ chargedMnt: 7 });
+    const executions = createExecutions({
+      settleUsage,
+      findSettlement: vi.fn().mockResolvedValue(null),
+    });
+
+    const r = await executions.reconcile("e-1");
+
+    expect(r).toEqual({ action: "settled", chargedMnt: 7 });
+    expect(settleUsage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestId: "req-1",
+        inputTokens: 100,
+        outputTokens: 50,
+        totalTokens: 150,
+      })
+    );
+    expect(updatedFields(0)).toMatchObject({
+      status: "succeeded",
+      chargedMnt: 7,
+    });
+  });
+
+  it("refuses to guess when no findSettlement port is bound", async () => {
+    mocks.selectRows.mockResolvedValue([settlingRow()]);
+    const settleUsage = vi.fn();
+    const executions = createExecutions({ settleUsage });
+
+    const r = await executions.reconcile("e-1");
+
+    expect(r.action).toBe("noop");
+    expect(settleUsage).not.toHaveBeenCalled();
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("abandons a running row past the cutoff and releases its hold", async () => {
+    mocks.selectRows.mockResolvedValue([
+      settlingRow({
+        status: "running",
+        startedAt: new Date(Date.now() - 3_600_000),
+      }),
+    ]);
+    const releaseHold = vi.fn();
+    const executions = createExecutions({ releaseHold });
+
+    const r = await executions.reconcile("e-1", {
+      abandonRunningAfterMs: 600_000,
+    });
+
+    expect(r).toEqual({ action: "abandoned" });
+    expect(updatedFields(0)).toMatchObject({ status: "failed" });
+    expect(releaseHold).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      requestId: "req-1",
+    });
+  });
+
+  it("leaves a running row alone without a cutoff, and terminal rows always", async () => {
+    mocks.selectRows.mockResolvedValue([settlingRow({ status: "running" })]);
+    const executions = createExecutions({ releaseHold: vi.fn() });
+    expect(await executions.reconcile("e-1")).toEqual({
+      action: "noop",
+      status: "running",
+    });
+
+    mocks.selectRows.mockResolvedValue([settlingRow({ status: "succeeded" })]);
+    expect(await executions.reconcile("e-1")).toEqual({
+      action: "noop",
+      status: "succeeded",
+    });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("reports a missing execution", async () => {
+    mocks.selectRows.mockResolvedValue([]);
+    const executions = createExecutions();
+    expect(await executions.reconcile("nope")).toEqual({
+      action: "noop",
+      status: "missing",
+    });
   });
 });

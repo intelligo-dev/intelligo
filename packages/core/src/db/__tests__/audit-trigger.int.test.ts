@@ -103,3 +103,55 @@ d("user_memory_audit append-only trigger", () => {
     expect(res.rows[0]?.id).toBe(freshId);
   });
 });
+
+d("audit_events append-only trigger (migration 0041)", () => {
+  const client = new Client({ connectionString: PG_URL });
+  const suffix = Date.now();
+  const rowId = `audit-events-it-${suffix}`;
+  const workspaceId = `audit-events-ws-${suffix}`;
+
+  beforeAll(async () => {
+    await client.connect();
+    await client.query(
+      `INSERT INTO organization (id, name, slug, created_at, updated_at)
+       VALUES ($1, 'Audit Events IT WS', $2, now(), now())`,
+      [workspaceId, `audit-events-${suffix}`]
+    );
+    await client.query(
+      `INSERT INTO audit_events (id, workspace_id, actor_kind, action, resource_kind)
+       VALUES ($1, $2, 'system', 'test.event', 'test')`,
+      [rowId, workspaceId]
+    );
+  });
+
+  afterAll(async () => {
+    await client.end();
+  });
+
+  it("rejects UPDATE with ERRCODE P0001", async () => {
+    await expect(
+      client.query(`UPDATE audit_events SET outcome = 'failed' WHERE id = $1`, [
+        rowId,
+      ])
+    ).rejects.toMatchObject({
+      code: "P0001",
+      message: expect.stringContaining("append-only"),
+    });
+  });
+
+  it("rejects DELETE with ERRCODE P0001", async () => {
+    await expect(
+      client.query(`DELETE FROM audit_events WHERE id = $1`, [rowId])
+    ).rejects.toMatchObject({ code: "P0001" });
+  });
+
+  it("keeps the row, with workspace_id nulled, when its workspace is deleted", async () => {
+    await client.query(`DELETE FROM organization WHERE id = $1`, [workspaceId]);
+    const { rows } = await client.query<{ workspace_id: string | null }>(
+      `SELECT workspace_id FROM audit_events WHERE id = $1`,
+      [rowId]
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.workspace_id).toBeNull();
+  });
+});

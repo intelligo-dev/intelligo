@@ -19,9 +19,13 @@ export const auditEvents = pgTable(
   "audit_events",
   {
     id: text("id").primaryKey(),
-    /** Null for platform-level events with no tenant. */
+    /**
+     * Null for platform-level events with no tenant — and, since
+     * migration 0041, for events whose workspace was since deleted:
+     * the trail outlives the tenant (set null, not cascade).
+     */
     workspaceId: text("workspace_id").references(() => organization.id, {
-      onDelete: "cascade",
+      onDelete: "set null",
     }),
     /** Null for system actors (cron, webhook, job runner). */
     actorId: text("actor_id").references(() => users.id, {

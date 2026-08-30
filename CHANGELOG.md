@@ -96,6 +96,15 @@ it explains a framework decision.
 
 ### Changed
 
+- **One auth secret name.** `env.ts` required `AUTH_SECRET`, `doctor`
+  and the scaffold required `BETTER_AUTH_SECRET`, and `betterAuth()`
+  named neither. `BETTER_AUTH_SECRET` is canonical everywhere;
+  `AUTH_SECRET` is accepted as a legacy alias with a warning; the auth
+  instance passes `secret` explicitly. The scaffold's composition root
+  now calls `assertEnv()` once, so a missing `DATABASE_URL` or secret
+  fails on the first request rather than inside a handler. A missing
+  `CRON_SECRET` is a warning, not a production error — the framework
+  ships no cron route; the maintenance route checks it itself.
 - **`@intelligo-dev/billing`: `checkQuota` splits into `estimateQuota`
   and `reserveQuota`, and refusals carry a code.** One name meant two
   things depending on an optional argument — a read-only estimate that
@@ -127,6 +136,22 @@ it explains a framework decision.
 
 ### Added
 
+- **`executions.reconcile(executionId, { abandonRunningAfterMs? })`** — a
+  way out of `settling`. The lifecycle claimed a row and, if the charge
+  threw or the process died before the final status flip, left it
+  `settling` forever; `fail()` only moves `running` rows, so nothing
+  could finish it. `reconcile` asks the new `findSettlement` port
+  whether the ledger already holds the charge (confirming the row if
+  so), otherwise re-runs `settleUsage` from the usage the claim now
+  records on the row, and — when given a cutoff — fails a `running` row
+  the stream abandoned and releases its hold. Every step is the same
+  compare-and-swap the lifecycle uses. `@intelligo-dev/billing` exports
+  `findSettlementByRequestId`; the reference composition root binds it.
+- **`audit_events` is append-only at the database** (migration 0041):
+  the same `P0001` trigger `user_memory_audit` has had since 0018, and
+  `workspace_id` is `SET NULL` on workspace delete instead of cascading
+  — the trail outlives the tenant. Covered by the real-database
+  trigger suite.
 - **`intelligo migrate`** applies the framework's migration chain with
   drizzle's migrator, into the default records table `migrate --check`
   reads; it refuses a push-provisioned database (tables, no records)

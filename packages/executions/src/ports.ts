@@ -56,6 +56,11 @@ export type SettlementResult = {
   chargedMnt?: number;
 };
 
+export type SettlementQuery = {
+  workspaceId: string;
+  requestId: string;
+};
+
 export type ExecutionPorts = {
   /**
    * Decide whether this execution may run and hold the worst-case
@@ -74,6 +79,15 @@ export type ExecutionPorts = {
   settleUsage?: (
     settlement: UsageSettlement
   ) => Promise<SettlementResult | void>;
+
+  /**
+   * Answer "was this request already charged?" for `reconcile()`: a
+   * row stuck in `settling` may mean the charge never happened OR that
+   * it committed and the process died before the final status flip.
+   * Return the charge if one exists, null otherwise. Optional; without
+   * it, reconcile cannot tell the two apart and leaves the row alone.
+   */
+  findSettlement?: (query: SettlementQuery) => Promise<SettlementResult | null>;
 
   /**
    * Release a hold without charging (run failed before producing

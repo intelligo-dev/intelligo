@@ -5,7 +5,11 @@ describe("validateEnv", () => {
   beforeEach(() => {
     // Stub all required env vars
     vi.stubEnv("DATABASE_URL", "postgresql://test");
-    vi.stubEnv("AUTH_SECRET", "test-secret-padded-to-thirty-two-chars-long");
+    vi.stubEnv(
+      "BETTER_AUTH_SECRET",
+      "test-secret-padded-to-thirty-two-chars-long"
+    );
+    vi.stubEnv("AUTH_SECRET", "");
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000");
     vi.stubEnv("NODE_ENV", "development");
   });
@@ -26,11 +30,21 @@ describe("validateEnv", () => {
     expect(result.errors.some((e) => e.includes("DATABASE_URL"))).toBe(true);
   });
 
-  it("returns error for missing AUTH_SECRET", () => {
-    vi.stubEnv("AUTH_SECRET", "");
+  it("returns error for missing BETTER_AUTH_SECRET", () => {
+    vi.stubEnv("BETTER_AUTH_SECRET", "");
     const result = validateEnv();
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.includes("AUTH_SECRET"))).toBe(true);
+    expect(result.errors.some((e) => e.includes("BETTER_AUTH_SECRET"))).toBe(
+      true
+    );
+  });
+
+  it("accepts the legacy AUTH_SECRET alias with a warning", () => {
+    vi.stubEnv("BETTER_AUTH_SECRET", "");
+    vi.stubEnv("AUTH_SECRET", "legacy-secret-padded-to-thirty-two-chars-x");
+    const result = validateEnv();
+    expect(result.valid).toBe(true);
+    expect(result.warnings.some((w) => w.includes("legacy alias"))).toBe(true);
   });
 
   it("returns error for missing NEXT_PUBLIC_APP_URL", () => {
@@ -74,7 +88,10 @@ describe("validateEnv", () => {
 describe("assertEnv", () => {
   beforeEach(() => {
     vi.stubEnv("DATABASE_URL", "postgresql://test");
-    vi.stubEnv("AUTH_SECRET", "test-secret-padded-to-thirty-two-chars-long");
+    vi.stubEnv(
+      "BETTER_AUTH_SECRET",
+      "test-secret-padded-to-thirty-two-chars-long"
+    );
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000");
   });
   afterEach(() => {

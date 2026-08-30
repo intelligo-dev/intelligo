@@ -295,6 +295,13 @@
       "when": 1700000041000,
       "tag": "0040_ee_audit_chain",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1788096433043,
+      "tag": "0041_audit_events_append_only",
+      "breakpoints": true
     }
   ]
 }

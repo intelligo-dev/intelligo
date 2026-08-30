@@ -53,6 +53,7 @@ export {
   getQuotaThresholds,
   cleanupExpiredReservations,
   releaseReservation,
+  findSettlementByRequestId,
   RESERVATION_TTL_MS,
 } from "./quota";
 export type {
