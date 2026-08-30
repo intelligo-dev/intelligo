@@ -8,7 +8,13 @@ const STEP_MS = 2800;
 
 /* ---------- the one sketched surface: the admin console ---------- */
 
-function Pill({ children, tone = "ink" }: { children: React.ReactNode; tone?: "ink" | "amber" | "settle" | "fail" }) {
+function Pill({
+  children,
+  tone = "ink",
+}: {
+  children: React.ReactNode;
+  tone?: "ink" | "amber" | "settle" | "fail";
+}) {
   const tones = {
     ink: "border-line text-ink-dim",
     amber: "border-amber text-amber",
@@ -16,20 +22,43 @@ function Pill({ children, tone = "ink" }: { children: React.ReactNode; tone?: "i
     fail: "border-fail text-fail",
   };
   return (
-    <span className={cn("mono inline-block rounded-full border px-1.5 py-px text-[9px] leading-tight", tones[tone])}>
+    <span
+      className={cn(
+        "mono inline-block rounded-full border px-1.5 py-px text-[9px] leading-tight",
+        tones[tone]
+      )}
+    >
       {children}
     </span>
   );
 }
 
-const NAV_ITEMS = ["dashboard", "chat", "artifacts", "usage", "settings", "admin"];
+const NAV_ITEMS = [
+  "dashboard",
+  "chat",
+  "artifacts",
+  "usage",
+  "settings",
+  "admin",
+];
 
-function Shell({ active, title, children, right }: { active: string; title: string; children: React.ReactNode; right?: React.ReactNode }) {
+function Shell({
+  active,
+  title,
+  children,
+  right,
+}: {
+  active: string;
+  title: string;
+  children: React.ReactNode;
+  right?: React.ReactNode;
+}) {
   return (
     <div className="grid h-full grid-cols-[92px_1fr] bg-paper">
       <aside className="flex flex-col gap-2 border-r border-line bg-paper-raised p-2.5">
         <div className="mono flex items-center gap-1 rounded-sm border border-line px-1.5 py-1 text-[9px] text-ink">
-          <span className="inline-block size-1.5 bg-amber" /> Acme <span className="ml-auto text-ink-faint">▾</span>
+          <span className="inline-block size-1.5 bg-amber" /> Acme{" "}
+          <span className="ml-auto text-ink-faint">▾</span>
         </div>
         <div className="mt-1 flex flex-col gap-1">
           {NAV_ITEMS.map((n) => (
@@ -45,7 +74,8 @@ function Shell({ active, title, children, right }: { active: string; title: stri
           ))}
         </div>
         <div className="mono mt-auto flex items-center gap-1 text-[9px] text-ink-faint">
-          <span className="inline-block size-3 rounded-full bg-line-strong" /> you
+          <span className="inline-block size-3 rounded-full bg-line-strong" />{" "}
+          you
         </div>
       </aside>
       <div className="flex min-w-0 flex-col">
@@ -61,9 +91,17 @@ function Shell({ active, title, children, right }: { active: string; title: stri
 
 function SceneAdmin() {
   return (
-    <Shell active="admin" title="Admin · platform" right={<Pill tone="fail">impersonating maria — audited</Pill>}>
+    <Shell
+      active="admin"
+      title="Admin · platform"
+      right={<Pill tone="fail">impersonating maria — audited</Pill>}
+    >
       <div className="grid grid-cols-3 gap-1.5">
-        {[["workspaces", "212"], ["running", "3"], ["failed 24h", "0"]].map(([l, v]) => (
+        {[
+          ["workspaces", "212"],
+          ["running", "3"],
+          ["failed 24h", "0"],
+        ].map(([l, v]) => (
           <div key={l} className="border border-line p-1.5">
             <div className="mono text-[8px] text-ink-faint">{l}</div>
             <div className="mono text-[12px] text-ink">{v}</div>
@@ -71,8 +109,17 @@ function SceneAdmin() {
         ))}
       </div>
       <div className="mono mt-2 text-[8px] text-ink-faint">audit</div>
-      {["execution.settled · acme · chat.message", "member.role_changed · acme · li → admin", "impersonation.started · maria"].map((e) => (
-        <div key={e} className="mono border-t border-line py-1 text-[8.5px] text-ink-dim">{e}</div>
+      {[
+        "execution.settled · acme · chat.message",
+        "member.role_changed · acme · li → admin",
+        "impersonation.started · maria",
+      ].map((e) => (
+        <div
+          key={e}
+          className="mono border-t border-line py-1 text-[8.5px] text-ink-dim"
+        >
+          {e}
+        </div>
       ))}
     </Shell>
   );
@@ -115,7 +162,10 @@ export function ProductWalkthrough() {
   useEffect(() => {
     const el = root.current;
     if (!el) return;
-    const io = new IntersectionObserver(([e]) => setVisible(!!e?.isIntersecting), { threshold: 0.3 });
+    const io = new IntersectionObserver(
+      ([e]) => setVisible(!!e?.isIntersecting),
+      { threshold: 0.3 }
+    );
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -124,13 +174,22 @@ export function ProductWalkthrough() {
 
   useEffect(() => {
     if (!playing) return;
-    const t = window.setTimeout(() => setI((n) => (n + 1) % WALKTHROUGH.length), STEP_MS);
+    const t = window.setTimeout(
+      () => setI((n) => (n + 1) % WALKTHROUGH.length),
+      STEP_MS
+    );
     return () => window.clearTimeout(t);
   }, [playing, i]);
 
   const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowRight") { e.preventDefault(); setI((n) => (n + 1) % WALKTHROUGH.length); }
-    if (e.key === "ArrowLeft") { e.preventDefault(); setI((n) => (n - 1 + WALKTHROUGH.length) % WALKTHROUGH.length); }
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      setI((n) => (n + 1) % WALKTHROUGH.length);
+    }
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      setI((n) => (n - 1 + WALKTHROUGH.length) % WALKTHROUGH.length);
+    }
   };
 
   const meta: [string, string][] = [
@@ -151,7 +210,10 @@ export function ProductWalkthrough() {
       aria-label="Reference application walkthrough. Use left and right arrow keys to move between steps."
     >
       {/* rail */}
-      <ol className="mono flex gap-1 overflow-x-auto md:flex-col md:gap-0 md:overflow-visible" aria-label="Steps">
+      <ol
+        className="mono flex gap-1 overflow-x-auto md:flex-col md:gap-0 md:overflow-visible"
+        aria-label="Steps"
+      >
         {WALKTHROUGH.map((s, n) => (
           <li key={s.id}>
             <button
@@ -160,11 +222,18 @@ export function ProductWalkthrough() {
               aria-current={n === i ? "step" : undefined}
               className={cn(
                 "group relative flex w-full items-center gap-2 whitespace-nowrap border-l-2 py-1.5 pl-3 pr-2 text-left text-[0.78rem] transition-colors md:py-[7px]",
-                n === i ? "border-amber text-ink" : "border-line text-ink-faint hover:text-ink-dim",
+                n === i
+                  ? "border-amber text-ink"
+                  : "border-line text-ink-faint hover:text-ink-dim",
                 n < i && "text-ink-dim"
               )}
             >
-              <span className={cn("hidden size-1.5 rounded-full md:inline-block", n === i ? "bg-amber" : n < i ? "bg-settle" : "bg-line-strong")} />
+              <span
+                className={cn(
+                  "hidden size-1.5 rounded-full md:inline-block",
+                  n === i ? "bg-amber" : n < i ? "bg-settle" : "bg-line-strong"
+                )}
+              />
               {s.label}
               {n === i && playing && (
                 <motion.span
@@ -214,14 +283,29 @@ export function ProductWalkthrough() {
         <dl className="mono mt-2 grid grid-cols-2 gap-px border border-line bg-line text-[0.72rem] sm:grid-cols-4">
           {meta.map(([k, v]) => (
             <div key={k} className="bg-paper px-3 py-2">
-              <dt className="text-[0.62rem] uppercase tracking-[0.08em] text-ink-faint">{k}</dt>
-              <dd className={cn("mt-0.5 truncate", v === "package runtime" ? "text-amber" : "text-ink")}>{v}</dd>
+              <dt className="text-[0.62rem] uppercase tracking-[0.08em] text-ink-faint">
+                {k}
+              </dt>
+              <dd
+                className={cn(
+                  "mt-0.5 truncate",
+                  v === "package runtime" ? "text-amber" : "text-ink"
+                )}
+              >
+                {v}
+              </dd>
             </div>
           ))}
         </dl>
         <div className="mono mt-2 flex items-center justify-between gap-3 text-[0.7rem] text-ink-faint">
-          <span>every screen but admin is the installed registry item, rendered from the same files <span className="text-ink-dim">shadcn add</span> writes</span>
-          <span className="hidden sm:inline">{paused ? "paused" : playing ? "auto-playing" : ""}</span>
+          <span>
+            every screen but admin is the installed registry item, rendered from
+            the same files <span className="text-ink-dim">shadcn add</span>{" "}
+            writes
+          </span>
+          <span className="hidden sm:inline">
+            {paused ? "paused" : playing ? "auto-playing" : ""}
+          </span>
         </div>
       </div>
     </div>

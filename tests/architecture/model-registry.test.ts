@@ -52,8 +52,18 @@ const IGNORED_DIRS = new Set([
   "dist",
   ".next",
   ".turbo",
+  ".astro",
+  ".wrangler",
   "coverage",
 ]);
+
+/**
+ * Trees that are prose about the framework rather than code that calls
+ * a provider. apps/site quotes this rule's own failure output — with a
+ * deliberately unregistered id — to show what the rule catches; scanning
+ * it would make the demonstration the violation.
+ */
+const IGNORED_TREES = ["apps/site"];
 
 /**
  * A provider-prefixed model id. Matching the shape rather than a list
@@ -117,6 +127,8 @@ describe("model registry", () => {
 
     for (const root of ROOTS) {
       for (const file of walk(path.join(ROOT, root))) {
+        const rel = path.relative(ROOT, file).split(path.sep).join("/");
+        if (IGNORED_TREES.some((t) => rel.startsWith(t + "/"))) continue;
         // models.ts defines the registry; the audit that scans for
         // unregistered ids necessarily names one.
         const relative = path.relative(ROOT, file);

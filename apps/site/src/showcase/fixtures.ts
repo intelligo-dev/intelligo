@@ -14,7 +14,12 @@ export { DOCUMENTS } from "@showcase/actions/documents";
 export { CONVERSATIONS } from "@showcase/actions/chat";
 export { USAGE_OVERVIEW } from "@showcase/actions/usage";
 
-export const USER = { id: "user_you", name: "You", email: "you@company.com", image: null };
+export const USER = {
+  id: "user_you",
+  name: "You",
+  email: "you@company.com",
+  image: null,
+};
 
 export const WORKSPACES: Workspace[] = [
   { id: "ws_acme", name: "Acme Research", slug: "acme-research" },
@@ -23,32 +28,104 @@ export const WORKSPACES: Workspace[] = [
 export const WORKSPACE = WORKSPACES[0]!;
 
 export const MEMBERS: TeamMember[] = [
-  { id: "m_you", userId: "user_you", role: "owner", user: { name: "You", email: "you@company.com" }, createdAt: daysAgo(40) },
-  { id: "m_maria", userId: "user_maria", role: "admin", user: { name: "Maria Chen", email: "maria@acme.co" }, createdAt: daysAgo(12) },
-  { id: "m_li", userId: "user_li", role: "member", user: { name: "Li Wei", email: "li@acme.co" }, createdAt: daysAgo(3) },
+  {
+    id: "m_you",
+    userId: "user_you",
+    role: "owner",
+    user: { name: "You", email: "you@company.com" },
+    createdAt: daysAgo(40),
+  },
+  {
+    id: "m_maria",
+    userId: "user_maria",
+    role: "admin",
+    user: { name: "Maria Chen", email: "maria@acme.co" },
+    createdAt: daysAgo(12),
+  },
+  {
+    id: "m_li",
+    userId: "user_li",
+    role: "member",
+    user: { name: "Li Wei", email: "li@acme.co" },
+    createdAt: daysAgo(3),
+  },
 ];
 
 export const INVITATIONS: OrgInvitation[] = [
-  { id: "inv_sam", email: "sam@acme.co", role: "member", status: "pending", expiresAt: daysAgo(-6), organizationId: "ws_acme", inviterEmail: "you@company.com" },
+  {
+    id: "inv_sam",
+    email: "sam@acme.co",
+    role: "member",
+    status: "pending",
+    expiresAt: daysAgo(-6),
+    organizationId: "ws_acme",
+    inviterEmail: "you@company.com",
+  },
 ];
 
-const limits = (monthlyCreditMnt: number, members: number) => ({ monthlyCreditMnt, rolloverEnabled: false, teamMembers: members });
+const limits = (monthlyCreditMnt: number, members: number) => ({
+  monthlyCreditMnt,
+  rolloverEnabled: false,
+  teamMembers: members,
+});
 
 export const PLANS: Record<string, PlanConfig> = {
   free: {
-    name: "Free", slug: "free", description: "Try the product on a small monthly allowance.", descriptionMn: "", priceOneTime: 0, priceMonthly: 0, priceYearly: 0,
-    targetAudience: "Individuals", aiModelLabel: "Standard models", limits: limits(1_000, 1),
-    features: ["1,000 credits / month", "1 workspace member", "Community support"], featuresMn: [],
+    name: "Free",
+    slug: "free",
+    description: "Try the product on a small monthly allowance.",
+    descriptionMn: "",
+    priceOneTime: 0,
+    priceMonthly: 0,
+    priceYearly: 0,
+    targetAudience: "Individuals",
+    aiModelLabel: "Standard models",
+    limits: limits(1_000, 1),
+    features: [
+      "1,000 credits / month",
+      "1 workspace member",
+      "Community support",
+    ],
+    featuresMn: [],
   },
   pro: {
-    name: "Pro", slug: "pro", description: "For people who use it every day.", descriptionMn: "", priceOneTime: 0, priceMonthly: 29, priceYearly: 290,
-    targetAudience: "Professionals", aiModelLabel: "Frontier models", limits: limits(25_000, 5),
-    features: ["25,000 credits / month", "5 workspace members", "Artifacts & exports", "Priority support"], featuresMn: [],
+    name: "Pro",
+    slug: "pro",
+    description: "For people who use it every day.",
+    descriptionMn: "",
+    priceOneTime: 0,
+    priceMonthly: 29,
+    priceYearly: 290,
+    targetAudience: "Professionals",
+    aiModelLabel: "Frontier models",
+    limits: limits(25_000, 5),
+    features: [
+      "25,000 credits / month",
+      "5 workspace members",
+      "Artifacts & exports",
+      "Priority support",
+    ],
+    featuresMn: [],
   },
   team: {
-    name: "Team", slug: "team", description: "Shared workspaces, admin console, audit trail.", descriptionMn: "", priceOneTime: 0, priceMonthly: 99, priceYearly: 990,
-    targetAudience: "Teams", aiModelLabel: "Frontier models", limits: limits(120_000, 25),
-    features: ["120,000 credits / month", "25 workspace members", "Role-based access", "Audit log & impersonation", "SSO (soon)"], featuresMn: [],
+    name: "Team",
+    slug: "team",
+    description: "Shared workspaces, admin console, audit trail.",
+    descriptionMn: "",
+    priceOneTime: 0,
+    priceMonthly: 99,
+    priceYearly: 990,
+    targetAudience: "Teams",
+    aiModelLabel: "Frontier models",
+    limits: limits(120_000, 25),
+    features: [
+      "120,000 credits / month",
+      "25 workspace members",
+      "Role-based access",
+      "Audit log & impersonation",
+      "SSO (soon)",
+    ],
+    featuresMn: [],
   },
 };
 
@@ -59,7 +136,13 @@ export const RECENT: RecentConversation[] = [
 ];
 
 export const CHAT_MESSAGES: UIMessage[] = [
-  { id: "m1", role: "user", parts: [{ type: "text", text: "What's in this quarter's support tickets?" }] },
+  {
+    id: "m1",
+    role: "user",
+    parts: [
+      { type: "text", text: "What's in this quarter's support tickets?" },
+    ],
+  },
   {
     id: "m2",
     role: "assistant",

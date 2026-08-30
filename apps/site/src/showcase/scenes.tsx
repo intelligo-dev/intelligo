@@ -34,10 +34,29 @@ import { DocumentList } from "@showcase/components/artifacts/document-list";
 import { TrialBanner } from "@showcase/components/trial/trial-banner";
 import { PaywallBlur } from "@showcase/components/billing/paywall-blur";
 import { UpgradePrompt } from "@showcase/components/billing/upgrade-prompt";
-import { Card, CardContent, CardHeader, CardTitle } from "@showcase/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@showcase/components/ui/card";
 
 import { ShowcaseProvider, ScaledCanvas } from "./provider";
-import { CHAT_MESSAGES, CONVERSATIONS, DOCUMENTS, INVITATIONS, MEMBERS, NOTIFICATIONS, PLANS, RECENT, RESUME, USAGE_OVERVIEW, USER, WORKSPACE, WORKSPACES } from "./fixtures";
+import {
+  CHAT_MESSAGES,
+  CONVERSATIONS,
+  DOCUMENTS,
+  INVITATIONS,
+  MEMBERS,
+  NOTIFICATIONS,
+  PLANS,
+  RECENT,
+  RESUME,
+  USAGE_OVERVIEW,
+  USER,
+  WORKSPACE,
+  WORKSPACES,
+} from "./fixtures";
 
 export type SceneId =
   | "login"
@@ -93,7 +112,13 @@ const ROUTE: Record<SceneId, string> = {
 
 /* ---------- frames: the app-shell item around app pages, a centred card around auth ---------- */
 
-function AppFrame({ children, banner }: { children: ReactNode; banner?: ReactNode }) {
+function AppFrame({
+  children,
+  banner,
+}: {
+  children: ReactNode;
+  banner?: ReactNode;
+}) {
   return (
     <SidebarProvider defaultOpen className="h-full min-h-0">
       <AppSidebar workspace={WORKSPACE} workspaces={WORKSPACES} user={USER} />
@@ -107,15 +132,29 @@ function AppFrame({ children, banner }: { children: ReactNode; banner?: ReactNod
 }
 
 function AuthFrame({ children }: { children: ReactNode }) {
-  return <div className="flex h-full items-center justify-center bg-muted/40 p-8">{children}</div>;
+  return (
+    <div className="flex h-full items-center justify-center bg-muted/40 p-8">
+      {children}
+    </div>
+  );
 }
 
-function PageHeading({ ns, title, description }: { ns: string; title: string; description?: string }) {
+function PageHeading({
+  ns,
+  title,
+  description,
+}: {
+  ns: string;
+  title: string;
+  description?: string;
+}) {
   const t = useTranslations(ns);
   return (
     <div className="mb-6">
       <h1 className="text-2xl font-semibold">{t(title)}</h1>
-      {description && <p className="text-sm text-muted-foreground">{t(description)}</p>}
+      {description && (
+        <p className="text-sm text-muted-foreground">{t(description)}</p>
+      )}
     </div>
   );
 }
@@ -159,7 +198,10 @@ function Verify() {
   return (
     <AuthFrame>
       <div className="w-full max-w-md">
-        <AuthCard title={t("pendingState.title")} description={t("pendingState.description")}>
+        <AuthCard
+          title={t("pendingState.title")}
+          description={t("pendingState.description")}
+        >
           <ResendVerificationButton email={USER.email} />
         </AuthCard>
       </div>
@@ -220,12 +262,16 @@ function BillingSettings() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t("owner.currentPlanLabel")}</CardTitle>
+            <CardTitle className="text-base">
+              {t("owner.currentPlanLabel")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-2xl font-semibold">Pro</div>
             <div className="text-sm text-muted-foreground">
-              {t("owner.creditBalanceLabel")}: <span className="font-medium text-foreground">917</span> {t("owner.creditsUnit")}
+              {t("owner.creditBalanceLabel")}:{" "}
+              <span className="font-medium text-foreground">917</span>{" "}
+              {t("owner.creditsUnit")}
             </div>
             <PortalButton>{t("owner.manageSubscription")}</PortalButton>
           </CardContent>
@@ -239,9 +285,19 @@ function BillingSettings() {
 function Usage() {
   return (
     <AppFrame>
-      <PageHeading ns="usage" title="page.title" description="page.description" />
+      <PageHeading
+        ns="usage"
+        title="page.title"
+        description="page.description"
+      />
       <div className="space-y-6">
-        <UsageSummaryCards initialPeriodSummary={USAGE_OVERVIEW.currentPeriod} plan={USAGE_OVERVIEW.plan} billingMode={USAGE_OVERVIEW.billingMode} quota={USAGE_OVERVIEW.quota} trial={USAGE_OVERVIEW.trial} />
+        <UsageSummaryCards
+          initialPeriodSummary={USAGE_OVERVIEW.currentPeriod}
+          plan={USAGE_OVERVIEW.plan}
+          billingMode={USAGE_OVERVIEW.billingMode}
+          quota={USAGE_OVERVIEW.quota}
+          trial={USAGE_OVERVIEW.trial}
+        />
         <UsageChart points={USAGE_OVERVIEW.daily} />
       </div>
     </AppFrame>
@@ -251,7 +307,11 @@ function Usage() {
 function Notifications() {
   return (
     <AppFrame>
-      <PageHeading ns="notifications" title="page.title" description="page.subtitle" />
+      <PageHeading
+        ns="notifications"
+        title="page.title"
+        description="page.subtitle"
+      />
       <div className="max-w-2xl">
         <NotificationList notifications={NOTIFICATIONS} variant="full" />
       </div>
@@ -265,14 +325,21 @@ function Chat() {
     <AppFrame>
       <div className="-m-6 grid h-[calc(100%+3rem)] grid-cols-[260px_1fr]">
         <div className="border-r">
-          <ConversationSidebar conversations={CONVERSATIONS} activeId="conv_1" />
+          <ConversationSidebar
+            conversations={CONVERSATIONS}
+            activeId="conv_1"
+          />
         </div>
         <div className="flex min-h-0 flex-col">
           <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
             <MessageList messages={messages} isStreaming={false} />
           </div>
           <div className="border-t px-6 py-3">
-            <ChatInput onSend={() => {}} onStop={() => {}} isStreaming={false} />
+            <ChatInput
+              onSend={() => {}}
+              onStop={() => {}}
+              isStreaming={false}
+            />
           </div>
         </div>
       </div>
@@ -283,7 +350,11 @@ function Chat() {
 function Artifacts() {
   return (
     <AppFrame>
-      <PageHeading ns="artifacts" title="page.heading" description="page.description" />
+      <PageHeading
+        ns="artifacts"
+        title="page.heading"
+        description="page.description"
+      />
       <DocumentList documents={DOCUMENTS} />
     </AppFrame>
   );
@@ -291,7 +362,15 @@ function Artifacts() {
 
 function Trial() {
   return (
-    <AppFrame banner={<TrialBanner daysRemaining={9} creditsRemaining={612} initialCredits={1000} />}>
+    <AppFrame
+      banner={
+        <TrialBanner
+          daysRemaining={9}
+          creditsRemaining={612}
+          initialCredits={1000}
+        />
+      }
+    >
       <div className="space-y-8 py-6">
         <DashboardHero resume={null} />
         <PromptBar />
@@ -303,12 +382,20 @@ function Trial() {
 function FeatureGating() {
   return (
     <AppFrame>
-      <PageHeading ns="usage" title="page.title" description="page.description" />
+      <PageHeading
+        ns="usage"
+        title="page.title"
+        description="page.description"
+      />
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <PaywallBlur isLocked>
           <UsageChart points={USAGE_OVERVIEW.daily} />
         </PaywallBlur>
-        <UpgradePrompt feature="Usage export" requiredPlan="Pro" currentPlan="Free" />
+        <UpgradePrompt
+          feature="Usage export"
+          requiredPlan="Pro"
+          currentPlan="Free"
+        />
       </div>
     </AppFrame>
   );
@@ -334,7 +421,11 @@ const SCENES: Record<SceneId, () => ReactNode> = {
 /** A real page, scaled to whatever box it is given (position: relative on the parent). */
 export function Showcase({ scene }: { scene: SceneId }) {
   const Scene = SCENES[scene];
-  const auth = scene === "login" || scene === "signup" || scene === "verify" || scene === "onboarding";
+  const auth =
+    scene === "login" ||
+    scene === "signup" ||
+    scene === "verify" ||
+    scene === "onboarding";
   return (
     <ScaledCanvas width={auth ? 960 : 1180}>
       <ShowcaseProvider pathname={ROUTE[scene]}>

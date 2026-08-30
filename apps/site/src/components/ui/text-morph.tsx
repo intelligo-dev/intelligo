@@ -53,7 +53,7 @@ function setLayerStyles(
   element: HTMLSpanElement,
   opacity: number,
   blur: number,
-  scale: number,
+  scale: number
 ) {
   element.style.opacity = opacity.toFixed(4);
   element.style.filter = blur > 0.01 ? `blur(${blur.toFixed(2)}px)` : "none";
@@ -111,7 +111,7 @@ export function TextMorph({
       stage.style.width = `${width}px`;
       stage.style.height = `${height}px`;
     },
-    [reducedMotion],
+    [reducedMotion]
   );
 
   useLayoutEffect(() => {
@@ -184,13 +184,13 @@ export function TextMorph({
           currentLayer,
           Math.pow(1 - outgoing, 0.55),
           MORPH_BLUR * outgoing,
-          1 - outgoing * 0.012,
+          1 - outgoing * 0.012
         );
         setLayerStyles(
           nextLayer,
           Math.pow(incoming, 0.55),
           MORPH_BLUR * (1 - incoming),
-          0.988 + incoming * 0.012,
+          0.988 + incoming * 0.012
         );
       }
 
@@ -221,7 +221,7 @@ export function TextMorph({
 
     holdTimerRef.current = window.setTimeout(
       beginMorph,
-      Math.max(400, interval),
+      Math.max(400, interval)
     );
 
     return () => {
@@ -240,7 +240,7 @@ export function TextMorph({
         window.cancelAnimationFrame(frameRef.current);
       }
     },
-    [],
+    []
   );
 
   useEffect(() => {
@@ -252,7 +252,7 @@ export function TextMorph({
     <span
       className={cn(
         "relative inline-block max-w-full align-baseline",
-        className,
+        className
       )}
       aria-label={currentWord}
       aria-live="off"

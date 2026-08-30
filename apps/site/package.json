@@ -1,10 +1,9 @@
 {
-  "name": "intelligo.dev",
+  "name": "site",
   "version": "0.0.0",
   "private": true,
   "description": "intelligo.dev — the public site of the Intelligo framework, and the hosted page registry at /r",
   "type": "module",
-  "packageManager": "pnpm@9.15.4",
   "engines": {
     "node": ">=22"
   },
@@ -45,9 +44,9 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
-    "@intelligo-dev/auth": "1.0.0-beta.1",
-    "@intelligo-dev/billing": "1.0.0-beta.1",
-    "@intelligo-dev/core": "1.0.0-beta.1",
+    "@intelligo-dev/auth": "workspace:*",
+    "@intelligo-dev/billing": "workspace:*",
+    "@intelligo-dev/core": "workspace:*",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "typescript": "^5.7.2",

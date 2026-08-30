@@ -33,7 +33,7 @@ const DEFAULT_SPEED = 30;
 function normalize(text: TypewriterProps["text"]) {
   const segments = Array.isArray(text) ? text : [text];
   return segments.map((segment) =>
-    typeof segment === "string" ? { text: segment } : segment,
+    typeof segment === "string" ? { text: segment } : segment
   );
 }
 
@@ -68,7 +68,7 @@ function TypewriterBase({
           observer.disconnect();
         }
       },
-      { threshold: 0.1 },
+      { threshold: 0.1 }
     );
     observer.observe(node);
     return () => observer.disconnect();
@@ -132,7 +132,7 @@ function TypewriterBase({
         ...segment,
         key: `${idx}-${segment.text.slice(0, 24)}`,
       })),
-    [segments],
+    [segments]
   );
 
   const renderedSegments = segmentsWithKeys.map((segment, idx) => {
@@ -163,7 +163,7 @@ function TypewriterBase({
           className={cn(
             "inline-block translate-y-[0.05em] animate-[typewriter-blink_1s_steps(1)_infinite]",
             done && !loop && "opacity-0",
-            cursorClassName,
+            cursorClassName
           )}
           style={{
             marginLeft: done ? 0 : "0.05em",
@@ -177,7 +177,7 @@ function TypewriterBase({
           50% { opacity: 0; }
         }
       `}</style>
-    </>,
+    </>
   );
 }
 

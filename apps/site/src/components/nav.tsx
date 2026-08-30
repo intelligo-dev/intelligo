@@ -7,10 +7,15 @@ function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   useEffect(() => {
     const read = () =>
-      setTheme((document.documentElement.dataset.theme as "light" | "dark") ?? "light");
+      setTheme(
+        (document.documentElement.dataset.theme as "light" | "dark") ?? "light"
+      );
     read();
     const mo = new MutationObserver(read);
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
     return () => mo.disconnect();
   }, []);
   const toggle = () => {
@@ -32,7 +37,9 @@ function sectionId(href: string): string | null {
 function useScrollSpy(ids: string[]) {
   const [active, setActive] = useState<string>("");
   useEffect(() => {
-    const els = ids.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
+    const els = ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => !!el);
     if (!els.length) return;
     const io = new IntersectionObserver(
       (entries) => {
@@ -51,7 +58,9 @@ function useScrollSpy(ids: string[]) {
 
 export function Nav({ current }: { current?: string }) {
   const { theme, toggle } = useTheme();
-  const active = useScrollSpy(NAV.map((n) => sectionId(n.href)).filter((id): id is string => !!id));
+  const active = useScrollSpy(
+    NAV.map((n) => sectionId(n.href)).filter((id): id is string => !!id)
+  );
   const [open, setOpen] = useState(false);
 
   const isActive = (href: string) => {
@@ -63,8 +72,14 @@ export function Nav({ current }: { current?: string }) {
   return (
     <nav className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-[1152px] items-center justify-between gap-4 px-6">
-        <a href="/" className="heading flex items-center gap-2 text-[1.05rem] font-semibold tracking-tight no-underline">
-          <span className="inline-block size-3 rounded-[3px] bg-foreground" aria-hidden="true" />
+        <a
+          href="/"
+          className="heading flex items-center gap-2 text-[1.05rem] font-semibold tracking-tight no-underline"
+        >
+          <span
+            className="inline-block size-3 rounded-[3px] bg-foreground"
+            aria-hidden="true"
+          />
           {SITE.name}
         </a>
 
@@ -87,19 +102,30 @@ export function Nav({ current }: { current?: string }) {
           <button
             type="button"
             onClick={toggle}
-            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            aria-label={
+              theme === "dark"
+                ? "Switch to light theme"
+                : "Switch to dark theme"
+            }
             className="btn btn-ghost w-7 px-0"
           >
             {theme === "dark" ? "☾" : "☼"}
           </button>
           {SITE.githubPublic ? (
-            <GitHubStarButton owner={SITE.githubOwner} repo={SITE.githubRepo} variant="outline" />
+            <GitHubStarButton
+              owner={SITE.githubOwner}
+              repo={SITE.githubRepo}
+              variant="outline"
+            />
           ) : (
             <a href={SITE.github} className="btn btn-outline">
               GitHub
             </a>
           )}
-          <a href="/#quickstart" className="btn btn-primary hidden sm:inline-flex">
+          <a
+            href="/#quickstart"
+            className="btn btn-primary hidden sm:inline-flex"
+          >
             Get started
           </a>
           <button
@@ -126,7 +152,11 @@ export function Nav({ current }: { current?: string }) {
                 {n.label}
               </a>
             ))}
-            <a href="/#quickstart" onClick={() => setOpen(false)} className="py-2.5 text-[0.95rem] text-foreground no-underline">
+            <a
+              href="/#quickstart"
+              onClick={() => setOpen(false)}
+              className="py-2.5 text-[0.95rem] text-foreground no-underline"
+            >
               Get started
             </a>
           </div>

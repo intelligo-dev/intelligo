@@ -10,7 +10,10 @@ import { AnthropicLogo } from "@/components/logos/anthropic";
 import { OpenAILogo } from "@/components/logos/openai";
 import { useEffect, useState } from "react";
 
-const ITEMS: { name: string; Logo: React.ComponentType<{ className?: string; mode?: "dark" | "light" }> }[] = [
+const ITEMS: {
+  name: string;
+  Logo: React.ComponentType<{ className?: string; mode?: "dark" | "light" }>;
+}[] = [
   { name: "Next.js 16", Logo: NextjsLogo },
   { name: "Drizzle", Logo: DrizzleLogo },
   { name: "Better-Auth", Logo: BetterAuthLogo },
@@ -25,10 +28,16 @@ const ITEMS: { name: string; Logo: React.ComponentType<{ className?: string; mod
 export function LogoStrip() {
   const [mode, setMode] = useState<"dark" | "light">("light");
   useEffect(() => {
-    const read = () => setMode(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+    const read = () =>
+      setMode(
+        document.documentElement.dataset.theme === "dark" ? "dark" : "light"
+      );
     read();
     const mo = new MutationObserver(read);
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
     return () => mo.disconnect();
   }, []);
 

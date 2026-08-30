@@ -53,8 +53,8 @@ export const USAGE_OVERVIEW: UsageOverview = {
   trial: { hasTrialCredits: false, status: "converted", creditsRemaining: 0, initialCredits: 1000, percentageRemaining: 0 },
   daily: DAILY,
   records: [
-    { id: "exe_01", capability: "chat.message", status: "succeeded", model: "anthropic/claude-sonnet-4.5", totalTokens: 2_412, chargedAmount: 0.04, startedAt: daysAgo(0, 1), durationMs: 3_860 },
-    { id: "exe_02", capability: "report.generate", status: "succeeded", model: "openai/gpt-5", totalTokens: 18_930, chargedAmount: 0.31, startedAt: daysAgo(0, 4), durationMs: 21_400 },
+    { id: "exe_01", capability: "chat.message", status: "succeeded", model: "anthropic/claude-sonnet-4-6", totalTokens: 2_412, chargedAmount: 0.04, startedAt: daysAgo(0, 1), durationMs: 3_860 },
+    { id: "exe_02", capability: "report.generate", status: "succeeded", model: "openai/gpt-5-mini", totalTokens: 18_930, chargedAmount: 0.31, startedAt: daysAgo(0, 4), durationMs: 21_400 },
     { id: "exe_03", capability: "chat.message", status: "refused", model: null, totalTokens: null, chargedAmount: null, startedAt: daysAgo(1, 2), durationMs: null },
     { id: "exe_04", capability: "chat.message", status: "failed", model: "google/gemini-2.5-flash", totalTokens: 610, chargedAmount: 0, startedAt: daysAgo(1, 6), durationMs: 900 },
   ],

@@ -45,7 +45,10 @@ const STEPS = [
     title: "Run",
     cmd: "pnpm dev",
     note: "Set DATABASE_URL and BETTER_AUTH_SECRET in .env.local first. Chat streams against a built-in stub model — no provider key needed yet.",
-    out: ["▲ ready on http://localhost:3000", "sign-up → workspace → billing → chat"],
+    out: [
+      "▲ ready on http://localhost:3000",
+      "sign-up → workspace → billing → chat",
+    ],
   },
 ];
 
@@ -58,13 +61,38 @@ export function Quickstart() {
       <div className="grid gap-5 lg:grid-cols-[1fr_1.15fr]">
         <ol className="border-t border-line">
           {STEPS.map((st, n) => (
-            <li key={st.title} className={cn("flex items-start gap-1 border-b border-line pr-2 transition-colors", n === i && "bg-paper-raised")}>
-              <button type="button" onMouseEnter={() => setI(n)} onFocus={() => setI(n)} onClick={() => setI(n)} className="flex min-w-0 flex-1 items-start gap-3 px-3 py-3 text-left">
-                <span className={cn("mono mt-0.5 text-[0.72rem] tabular-nums", n === i ? "text-amber" : "text-ink-faint")}>0{n + 1}</span>
+            <li
+              key={st.title}
+              className={cn(
+                "flex items-start gap-1 border-b border-line pr-2 transition-colors",
+                n === i && "bg-paper-raised"
+              )}
+            >
+              <button
+                type="button"
+                onMouseEnter={() => setI(n)}
+                onFocus={() => setI(n)}
+                onClick={() => setI(n)}
+                className="flex min-w-0 flex-1 items-start gap-3 px-3 py-3 text-left"
+              >
+                <span
+                  className={cn(
+                    "mono mt-0.5 text-[0.72rem] tabular-nums",
+                    n === i ? "text-amber" : "text-ink-faint"
+                  )}
+                >
+                  0{n + 1}
+                </span>
                 <span className="min-w-0 flex-1">
-                  <span className="mono block text-[0.66rem] uppercase tracking-[0.08em] text-ink-faint">{st.title}</span>
-                  <span className="mono mt-0.5 block truncate text-[0.8rem] text-ink">$ {st.cmd}</span>
-                  <span className="mt-1 block text-[0.82rem] text-ink-dim">{st.note}</span>
+                  <span className="mono block text-[0.66rem] uppercase tracking-[0.08em] text-ink-faint">
+                    {st.title}
+                  </span>
+                  <span className="mono mt-0.5 block truncate text-[0.8rem] text-ink">
+                    $ {st.cmd}
+                  </span>
+                  <span className="mt-1 block text-[0.82rem] text-ink-dim">
+                    {st.note}
+                  </span>
                 </span>
               </button>
               <CopyButton text={st.cmd} className="mt-2.5 shrink-0" />
@@ -74,8 +102,12 @@ export function Quickstart() {
 
         <div className="rounded-md border border-line bg-paper-sunken">
           <div className="flex h-8 items-center gap-1.5 border-b border-line px-3">
-            <span className="size-2 rounded-full bg-line-strong" /><span className="size-2 rounded-full bg-line-strong" /><span className="size-2 rounded-full bg-line-strong" />
-            <span className="mono ml-2 text-[0.66rem] text-ink-faint">my-app — zsh</span>
+            <span className="size-2 rounded-full bg-line-strong" />
+            <span className="size-2 rounded-full bg-line-strong" />
+            <span className="size-2 rounded-full bg-line-strong" />
+            <span className="mono ml-2 text-[0.66rem] text-ink-faint">
+              my-app — zsh
+            </span>
           </div>
           <div className="mono min-h-[240px] overflow-x-auto p-4 text-[0.78rem] leading-relaxed">
             <div className="text-ink">
@@ -84,12 +116,29 @@ export function Quickstart() {
             </div>
             <div className="mt-2 space-y-0.5">
               {s.out.map((o, n) => (
-                <div key={`${n}-${o}`} className={cn("animate-in fade-in min-h-[1em] whitespace-pre", o.startsWith("✓") ? "text-settle" : o.startsWith("▲") ? "text-amber" : "text-ink-dim")} style={{ animationDelay: `${400 + n * 140}ms`, animationFillMode: "backwards" }}>
+                <div
+                  key={`${n}-${o}`}
+                  className={cn(
+                    "animate-in fade-in min-h-[1em] whitespace-pre",
+                    o.startsWith("✓")
+                      ? "text-settle"
+                      : o.startsWith("▲")
+                        ? "text-amber"
+                        : "text-ink-dim"
+                  )}
+                  style={{
+                    animationDelay: `${400 + n * 140}ms`,
+                    animationFillMode: "backwards",
+                  }}
+                >
                   {o}
                 </div>
               ))}
             </div>
-            <span className="cursor-blink mt-1 inline-block h-[1.05em] w-[7px] bg-amber align-text-bottom" aria-hidden="true" />
+            <span
+              className="cursor-blink mt-1 inline-block h-[1.05em] w-[7px] bg-amber align-text-bottom"
+              aria-hidden="true"
+            />
           </div>
         </div>
       </div>

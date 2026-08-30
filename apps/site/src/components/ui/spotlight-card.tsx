@@ -1,13 +1,13 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface SpotlightCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode
-  spotlightColor?: string
-  borderColor?: string
-  borderWidth?: number
-  borderRadius?: number
-  glowIntensity?: number
+  children: React.ReactNode;
+  spotlightColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+  glowIntensity?: number;
 }
 
 function SpotlightCard({
@@ -20,33 +20,33 @@ function SpotlightCard({
   glowIntensity = 0.15,
   ...props
 }: SpotlightCardProps) {
-  const containerRef = React.useRef<HTMLDivElement>(null)
-  const [position, setPosition] = React.useState({ x: 0, y: 0 })
-  const [isHovered, setIsHovered] = React.useState(false)
-  const [opacity, setOpacity] = React.useState(0)
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [position, setPosition] = React.useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [opacity, setOpacity] = React.useState(0);
 
   const handleMouseMove = React.useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!containerRef.current) return
+      if (!containerRef.current) return;
 
-      const rect = containerRef.current.getBoundingClientRect()
+      const rect = containerRef.current.getBoundingClientRect();
       setPosition({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
-      })
+      });
     },
     []
-  )
+  );
 
   const handleMouseEnter = React.useCallback(() => {
-    setIsHovered(true)
-    setOpacity(1)
-  }, [])
+    setIsHovered(true);
+    setOpacity(1);
+  }, []);
 
   const handleMouseLeave = React.useCallback(() => {
-    setIsHovered(false)
-    setOpacity(0)
-  }, [])
+    setIsHovered(false);
+    setOpacity(0);
+  }, []);
 
   return (
     <div
@@ -118,12 +118,11 @@ function SpotlightCard({
       {/* Content */}
       <div className="relative z-10">{children}</div>
     </div>
-  )
+  );
 }
 
-interface SpotlightCardContentProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode
+interface SpotlightCardContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
 }
 
 function SpotlightCardContent({
@@ -135,12 +134,11 @@ function SpotlightCardContent({
     <div className={cn("p-6", className)} {...props}>
       {children}
     </div>
-  )
+  );
 }
 
-interface SpotlightCardHeaderProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode
+interface SpotlightCardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
 }
 
 function SpotlightCardHeader({
@@ -149,15 +147,17 @@ function SpotlightCardHeader({
   ...props
 }: SpotlightCardHeaderProps) {
   return (
-    <div className={cn("flex flex-col space-y-1.5 p-6 pb-0", className)} {...props}>
+    <div
+      className={cn("flex flex-col space-y-1.5 p-6 pb-0", className)}
+      {...props}
+    >
       {children}
     </div>
-  )
+  );
 }
 
-interface SpotlightCardTitleProps
-  extends React.HTMLAttributes<HTMLHeadingElement> {
-  children: React.ReactNode
+interface SpotlightCardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  children: React.ReactNode;
 }
 
 function SpotlightCardTitle({
@@ -176,12 +176,11 @@ function SpotlightCardTitle({
     >
       {children}
     </h3>
-  )
+  );
 }
 
-interface SpotlightCardDescriptionProps
-  extends React.HTMLAttributes<HTMLParagraphElement> {
-  children: React.ReactNode
+interface SpotlightCardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
+  children: React.ReactNode;
 }
 
 function SpotlightCardDescription({
@@ -191,19 +190,22 @@ function SpotlightCardDescription({
 }: SpotlightCardDescriptionProps) {
   return (
     <p
-      className={cn("text-sm text-neutral-600 dark:text-neutral-400", className)}
+      className={cn(
+        "text-sm text-neutral-600 dark:text-neutral-400",
+        className
+      )}
       {...props}
     >
       {children}
     </p>
-  )
+  );
 }
 
 // A more advanced variant with multiple spotlight sources
 interface MultiSpotlightCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode
-  colors?: string[]
-  borderRadius?: number
+  children: React.ReactNode;
+  colors?: string[];
+  borderRadius?: number;
 }
 
 function MultiSpotlightCard({
@@ -217,22 +219,22 @@ function MultiSpotlightCard({
   borderRadius = 16,
   ...props
 }: MultiSpotlightCardProps) {
-  const containerRef = React.useRef<HTMLDivElement>(null)
-  const [position, setPosition] = React.useState({ x: 0, y: 0 })
-  const [isHovered, setIsHovered] = React.useState(false)
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [position, setPosition] = React.useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = React.useState(false);
 
   const handleMouseMove = React.useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!containerRef.current) return
+      if (!containerRef.current) return;
 
-      const rect = containerRef.current.getBoundingClientRect()
+      const rect = containerRef.current.getBoundingClientRect();
       setPosition({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
-      })
+      });
     },
     []
-  )
+  );
 
   return (
     <div
@@ -271,15 +273,15 @@ function MultiSpotlightCard({
       {/* Content */}
       <div className="relative z-10">{children}</div>
     </div>
-  )
+  );
 }
 
 // Beam spotlight effect - creates a beam of light that follows cursor
 interface BeamSpotlightCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode
-  beamColor?: string
-  beamWidth?: number
-  borderRadius?: number
+  children: React.ReactNode;
+  beamColor?: string;
+  beamWidth?: number;
+  borderRadius?: number;
 }
 
 function BeamSpotlightCard({
@@ -290,22 +292,22 @@ function BeamSpotlightCard({
   borderRadius = 16,
   ...props
 }: BeamSpotlightCardProps) {
-  const containerRef = React.useRef<HTMLDivElement>(null)
-  const [position, setPosition] = React.useState({ x: 0, y: 0 })
-  const [isHovered, setIsHovered] = React.useState(false)
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [position, setPosition] = React.useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = React.useState(false);
 
   const handleMouseMove = React.useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!containerRef.current) return
+      if (!containerRef.current) return;
 
-      const rect = containerRef.current.getBoundingClientRect()
+      const rect = containerRef.current.getBoundingClientRect();
       setPosition({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
-      })
+      });
     },
     []
-  )
+  );
 
   return (
     <div
@@ -368,14 +370,14 @@ function BeamSpotlightCard({
       {/* Content */}
       <div className="relative z-10">{children}</div>
     </div>
-  )
+  );
 }
 
 // Gradient follow card - the background gradient follows the cursor
 interface GradientFollowCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode
-  gradientColors?: [string, string, string]
-  borderRadius?: number
+  children: React.ReactNode;
+  gradientColors?: [string, string, string];
+  borderRadius?: number;
 }
 
 function GradientFollowCard({
@@ -385,21 +387,21 @@ function GradientFollowCard({
   borderRadius = 16,
   ...props
 }: GradientFollowCardProps) {
-  const containerRef = React.useRef<HTMLDivElement>(null)
-  const [position, setPosition] = React.useState({ x: 50, y: 50 })
-  const [isHovered, setIsHovered] = React.useState(false)
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [position, setPosition] = React.useState({ x: 50, y: 50 });
+  const [isHovered, setIsHovered] = React.useState(false);
 
   const handleMouseMove = React.useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!containerRef.current) return
+      if (!containerRef.current) return;
 
-      const rect = containerRef.current.getBoundingClientRect()
-      const x = ((e.clientX - rect.left) / rect.width) * 100
-      const y = ((e.clientY - rect.top) / rect.height) * 100
-      setPosition({ x, y })
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      setPosition({ x, y });
     },
     []
-  )
+  );
 
   return (
     <div
@@ -461,18 +463,18 @@ function GradientFollowCard({
       {/* Content */}
       <div className="relative z-10">{children}</div>
     </div>
-  )
+  );
 }
 
 // Tilt card with 3D perspective
 interface TiltSpotlightCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode
-  maxTilt?: number
-  perspective?: number
-  scale?: number
-  borderRadius?: number
-  glareOpacity?: number
-  spotlightColor?: string
+  children: React.ReactNode;
+  maxTilt?: number;
+  perspective?: number;
+  scale?: number;
+  borderRadius?: number;
+  glareOpacity?: number;
+  spotlightColor?: string;
 }
 
 function TiltSpotlightCard({
@@ -486,46 +488,49 @@ function TiltSpotlightCard({
   spotlightColor = "rgba(120, 119, 198, 0.3)",
   ...props
 }: TiltSpotlightCardProps) {
-  const containerRef = React.useRef<HTMLDivElement>(null)
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [transform, setTransform] = React.useState({
     rotateX: 0,
     rotateY: 0,
     scale: 1,
-  })
-  const [glarePosition, setGlarePosition] = React.useState({ x: 50, y: 50 })
-  const [spotlightPosition, setSpotlightPosition] = React.useState({ x: 0, y: 0 })
-  const [isHovered, setIsHovered] = React.useState(false)
+  });
+  const [glarePosition, setGlarePosition] = React.useState({ x: 50, y: 50 });
+  const [spotlightPosition, setSpotlightPosition] = React.useState({
+    x: 0,
+    y: 0,
+  });
+  const [isHovered, setIsHovered] = React.useState(false);
 
   const handleMouseMove = React.useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!containerRef.current) return
+      if (!containerRef.current) return;
 
-      const rect = containerRef.current.getBoundingClientRect()
-      const centerX = rect.width / 2
-      const centerY = rect.height / 2
-      const mouseX = e.clientX - rect.left
-      const mouseY = e.clientY - rect.top
+      const rect = containerRef.current.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
 
-      const rotateY = ((mouseX - centerX) / centerX) * maxTilt
-      const rotateX = -((mouseY - centerY) / centerY) * maxTilt
+      const rotateY = ((mouseX - centerX) / centerX) * maxTilt;
+      const rotateX = -((mouseY - centerY) / centerY) * maxTilt;
 
-      setTransform({ rotateX, rotateY, scale })
+      setTransform({ rotateX, rotateY, scale });
       setGlarePosition({
         x: (mouseX / rect.width) * 100,
         y: (mouseY / rect.height) * 100,
-      })
+      });
       setSpotlightPosition({
         x: mouseX,
         y: mouseY,
-      })
+      });
     },
     [maxTilt, scale]
-  )
+  );
 
   const handleMouseLeave = React.useCallback(() => {
-    setTransform({ rotateX: 0, rotateY: 0, scale: 1 })
-    setIsHovered(false)
-  }, [])
+    setTransform({ rotateX: 0, rotateY: 0, scale: 1 });
+    setIsHovered(false);
+  }, []);
 
   return (
     <div
@@ -589,7 +594,7 @@ function TiltSpotlightCard({
       {/* Content */}
       <div className="relative z-10">{children}</div>
     </div>
-  )
+  );
 }
 
 export {
@@ -602,4 +607,4 @@ export {
   BeamSpotlightCard,
   GradientFollowCard,
   TiltSpotlightCard,
-}
+};

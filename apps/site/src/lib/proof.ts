@@ -23,8 +23,24 @@ export type ProofStat = { value: string; label: string; note: string };
 
 /** Only the numbers that tell a buyer how mature the product is. */
 export const PROOF_STATS: ProofStat[] = [
-  { value: String(PROOF.testCases), label: "tests", note: `unit, real-database and ${PROOF.architectureTests} architecture suites` },
-  { value: String(PROOF.registryItems), label: "page families", note: "installed as source through the registry" },
-  { value: String(PROOF.packages), label: "packages", note: "ESM, TypeScript strict, Apache-2.0" },
-  { value: "npm", label: "published", note: `@intelligo-dev/* ${PROOF.version}` },
+  {
+    value: String(PROOF.testCases),
+    label: "tests",
+    note: `unit, real-database and ${PROOF.architectureTests} architecture suites`,
+  },
+  {
+    value: String(PROOF.registryItems),
+    label: "page families",
+    note: "installed as source through the registry",
+  },
+  {
+    value: String(PROOF.packages),
+    label: "packages",
+    note: "ESM, TypeScript strict, Apache-2.0",
+  },
+  {
+    value: "npm",
+    label: "published",
+    note: `@intelligo-dev/* ${PROOF.version}`,
+  },
 ];

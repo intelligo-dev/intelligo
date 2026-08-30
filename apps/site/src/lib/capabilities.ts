@@ -20,9 +20,34 @@ export type CapabilityGroup = {
 };
 
 export const INTELLIGO_LAYER: CapabilityGroup[] = [
-  { id: "identity", label: "Identity", pkg: "auth", items: ["Auth", "Workspaces", "Roles", "Invitations"] },
-  { id: "commerce", label: "Commerce", pkg: "billing", items: ["Plans", "Entitlements", "Credits", "Billing", "Payments"] },
-  { id: "ai-ops", label: "AI operations", pkg: "executions", items: ["Executions", "Usage", "Costs", "Models"] },
-  { id: "product", label: "Product", pkg: "core", items: ["Chat", "Documents", "Notifications", "Privacy"] },
-  { id: "operations", label: "Operations", pkg: "jobs · audit · admin", items: ["Jobs", "Audit", "Admin"] },
+  {
+    id: "identity",
+    label: "Identity",
+    pkg: "auth",
+    items: ["Auth", "Workspaces", "Roles", "Invitations"],
+  },
+  {
+    id: "commerce",
+    label: "Commerce",
+    pkg: "billing",
+    items: ["Plans", "Entitlements", "Credits", "Billing", "Payments"],
+  },
+  {
+    id: "ai-ops",
+    label: "AI operations",
+    pkg: "executions",
+    items: ["Executions", "Usage", "Costs", "Models"],
+  },
+  {
+    id: "product",
+    label: "Product",
+    pkg: "core",
+    items: ["Chat", "Documents", "Notifications", "Privacy"],
+  },
+  {
+    id: "operations",
+    label: "Operations",
+    pkg: "jobs · audit · admin",
+    items: ["Jobs", "Audit", "Admin"],
+  },
 ];

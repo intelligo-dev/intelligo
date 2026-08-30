@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { CircuitBoard, type CircuitConnection, type CircuitNodeType } from "@/components/ui/circuit-board";
+import {
+  CircuitBoard,
+  type CircuitConnection,
+  type CircuitNodeType,
+} from "@/components/ui/circuit-board";
 import { EDGES, PACKAGES } from "@/lib/packages";
 
 /**
@@ -32,10 +36,16 @@ const POS: Record<string, { x: number; y: number }> = {
 function useThemeVariant(): "light" | "dark" {
   const [v, setV] = useState<"light" | "dark">("light");
   useEffect(() => {
-    const read = () => setV(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+    const read = () =>
+      setV(
+        document.documentElement.dataset.theme === "dark" ? "dark" : "light"
+      );
     read();
     const mo = new MutationObserver(read);
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
     return () => mo.disconnect();
   }, []);
   return v;
@@ -51,7 +61,9 @@ export function PackageMap() {
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setScale(Math.min(1, (e?.contentRect.width ?? W) / W)));
+    const ro = new ResizeObserver(([e]) =>
+      setScale(Math.min(1, (e?.contentRect.width ?? W) / W))
+    );
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -72,7 +84,8 @@ export function PackageMap() {
     y: POS[p.id]!.y,
     // labels are the clickable overlays below, not the board's own
     size: p.layer === "intelligo" ? "md" : "lg",
-    status: p.id === focus ? "active" : related.has(p.id) ? "processing" : "inactive",
+    status:
+      p.id === focus ? "active" : related.has(p.id) ? "processing" : "inactive",
   }));
 
   const connections: CircuitConnection[] = EDGES.map((e) => {
@@ -81,7 +94,9 @@ export function PackageMap() {
       from: e.from,
       to: e.to,
       animated: lit,
-      color: lit ? "var(--accent)" : "color-mix(in srgb, var(--line-strong) 70%, transparent)",
+      color: lit
+        ? "var(--accent)"
+        : "color-mix(in srgb, var(--line-strong) 70%, transparent)",
       pulseColor: "var(--accent)",
     };
   });
@@ -92,18 +107,33 @@ export function PackageMap() {
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
-      <div ref={wrapRef} className="relative overflow-hidden border border-line-strong bg-paper-raised" style={{ height: H * scale + 2 }}>
+      <div
+        ref={wrapRef}
+        className="relative overflow-hidden border border-line-strong bg-paper-raised"
+        style={{ height: H * scale + 2 }}
+      >
         {/* layer labels */}
         {[
           ["your application", 22],
           ["intelligo packages", 150],
           ["postgresql", 345],
         ].map(([l, y]) => (
-          <span key={l as string} className="tag absolute left-3" style={{ top: (y as number) * scale }}>
+          <span
+            key={l as string}
+            className="tag absolute left-3"
+            style={{ top: (y as number) * scale }}
+          >
             {l}
           </span>
         ))}
-        <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: W, height: H }}>
+        <div
+          style={{
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+            width: W,
+            height: H,
+          }}
+        >
           <CircuitBoard
             nodes={nodes}
             connections={connections}
@@ -151,10 +181,16 @@ export function PackageMap() {
 
       <aside className="rounded-md border border-line bg-paper-raised p-4">
         <div className="mono text-[0.72rem] text-ink-faint">
-          {detail.layer === "intelligo" ? "@intelligo-dev/" : detail.layer === "app" ? "your app · " : ""}
+          {detail.layer === "intelligo"
+            ? "@intelligo-dev/"
+            : detail.layer === "app"
+              ? "your app · "
+              : ""}
           <span className="text-ink">{detail.label}</span>
         </div>
-        <p className="mt-2 text-[0.95rem] font-medium text-ink">{detail.summary}</p>
+        <p className="mt-2 text-[0.95rem] font-medium text-ink">
+          {detail.summary}
+        </p>
         <ul className="mt-3 space-y-1.5 border-t border-line pt-3 text-[0.85rem] text-ink-dim">
           {detail.bullets.map((b) => (
             <li key={b} className="flex gap-2">
@@ -165,10 +201,16 @@ export function PackageMap() {
         </ul>
         <div className="mono mt-4 space-y-1 border-t border-line pt-3 text-[0.7rem] text-ink-faint">
           <div>
-            imports → <span className="text-ink-dim">{outgoing.length ? outgoing.join(", ") : "nothing"}</span>
+            imports →{" "}
+            <span className="text-ink-dim">
+              {outgoing.length ? outgoing.join(", ") : "nothing"}
+            </span>
           </div>
           <div>
-            imported by ← <span className="text-ink-dim">{incoming.length ? incoming.join(", ") : "nothing"}</span>
+            imported by ←{" "}
+            <span className="text-ink-dim">
+              {incoming.length ? incoming.join(", ") : "nothing"}
+            </span>
           </div>
         </div>
       </aside>

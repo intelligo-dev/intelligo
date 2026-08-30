@@ -75,7 +75,7 @@ function parseAnsi(text: string): React.ReactNode[] {
         parts.push(
           <span key={lastIndex} className={currentClasses.join(" ")}>
             {segment}
-          </span>,
+          </span>
         );
       }
     }
@@ -104,7 +104,7 @@ function parseAnsi(text: string): React.ReactNode[] {
       parts.push(
         <span key={lastIndex} className={currentClasses.join(" ")}>
           {remaining}
-        </span>,
+        </span>
       );
     }
   }
@@ -167,7 +167,7 @@ export function CliOutput({
       data-slot="cli-output"
       className={cn(
         "flex flex-col rounded-lg border border-border bg-gray-950 text-gray-100 overflow-hidden",
-        className,
+        className
       )}
     >
       {showControls && (

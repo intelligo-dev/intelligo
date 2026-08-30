@@ -17,21 +17,33 @@ export const PACKAGES: PackageInfo[] = [
     label: "installed pages",
     layer: "app",
     summary: "Your source. Rendered by your own shadcn primitives.",
-    bullets: ["25 registry items, used as-is", "variance through config files", "copy from per-item message files"],
+    bullets: [
+      "25 registry items, used as-is",
+      "variance through config files",
+      "copy from per-item message files",
+    ],
   },
   {
     id: "actions",
     label: "thin actions",
     layer: "app",
     summary: "Parse → service → map error → revalidate.",
-    bullets: ["no business rules in the page", "typed errors from services", "route handlers only for streaming and webhooks"],
+    bullets: [
+      "no business rules in the page",
+      "typed errors from services",
+      "route handlers only for streaming and webhooks",
+    ],
   },
   {
     id: "agent",
     label: "your AI framework",
     layer: "app",
     summary: "Mastra, Vercel AI SDK, anything. Native and unmodified.",
-    bullets: ["prompts · tools · RAG · memory", "no IntelligoAgent to adopt", "bracketed by the execution boundary"],
+    bullets: [
+      "prompts · tools · RAG · memory",
+      "no IntelligoAgent to adopt",
+      "bracketed by the execution boundary",
+    ],
   },
   {
     id: "auth",
@@ -66,7 +78,10 @@ export const PACKAGES: PackageInfo[] = [
     label: "billing-core",
     layer: "intelligo",
     summary: "Plan definitions and the payment-provider interface.",
-    bullets: ["plans are data", "provider contract Stripe and regional providers implement"],
+    bullets: [
+      "plans are data",
+      "provider contract Stripe and regional providers implement",
+    ],
   },
   {
     id: "executions",
@@ -113,28 +128,41 @@ export const PACKAGES: PackageInfo[] = [
     label: "admin",
     layer: "intelligo",
     summary: "The operational console.",
-    bullets: ["platform overview, operations, integration health", "audited impersonation"],
+    bullets: [
+      "platform overview, operations, integration health",
+      "audited impersonation",
+    ],
   },
   {
     id: "cli",
     label: "cli",
     layer: "intelligo",
     summary: "create · add · doctor · migrate --check · upgrade --check.",
-    bullets: ["scaffold is registry-ready", "knows which generated files you changed, by content hash"],
+    bullets: [
+      "scaffold is registry-ready",
+      "knows which generated files you changed, by content hash",
+    ],
   },
   {
     id: "mastra",
     label: "mastra",
     layer: "intelligo",
     summary: "Optional bridge. Installs without Mastra.",
-    bullets: ["depends only on executions", "@mastra/core is an optional peer it never imports"],
+    bullets: [
+      "depends only on executions",
+      "@mastra/core is an optional peer it never imports",
+    ],
   },
   {
     id: "db",
     label: "PostgreSQL",
     layer: "db",
-    summary: "One database, explicit per-table ownership. pgvector rides along.",
-    bullets: ["no Redis, no separate vector store", "migrations shipped with releases"],
+    summary:
+      "One database, explicit per-table ownership. pgvector rides along.",
+    bullets: [
+      "no Redis, no separate vector store",
+      "migrations shipped with releases",
+    ],
   },
 ];
 

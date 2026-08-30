@@ -1,41 +1,41 @@
-import * as React from "react"
-import { motion } from "motion/react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { motion } from "motion/react";
+import { cn } from "@/lib/utils";
 
 interface CircuitNode {
-  id: string
-  x: number
-  y: number
-  label?: string
-  icon?: React.ReactNode
-  status?: "active" | "inactive" | "processing" | "error"
-  size?: "sm" | "md" | "lg"
+  id: string;
+  x: number;
+  y: number;
+  label?: string;
+  icon?: React.ReactNode;
+  status?: "active" | "inactive" | "processing" | "error";
+  size?: "sm" | "md" | "lg";
 }
 
 interface CircuitConnection {
-  from: string
-  to: string
-  animated?: boolean
-  bidirectional?: boolean
-  color?: string
-  pulseColor?: string
+  from: string;
+  to: string;
+  animated?: boolean;
+  bidirectional?: boolean;
+  color?: string;
+  pulseColor?: string;
 }
 
 interface CircuitBoardProps extends React.HTMLAttributes<HTMLDivElement> {
-  nodes: CircuitNode[]
-  connections: CircuitConnection[]
-  width?: number
-  height?: number
-  gridSize?: number
-  showGrid?: boolean
-  gridColor?: string
-  traceColor?: string
-  pulseColor?: string
-  nodeColor?: string
-  pulseSpeed?: number
-  traceWidth?: number
+  nodes: CircuitNode[];
+  connections: CircuitConnection[];
+  width?: number;
+  height?: number;
+  gridSize?: number;
+  showGrid?: boolean;
+  gridColor?: string;
+  traceColor?: string;
+  pulseColor?: string;
+  nodeColor?: string;
+  pulseSpeed?: number;
+  traceWidth?: number;
   /** Force a specific theme variant. Defaults to auto-detect from system. */
-  variant?: "light" | "dark" | "auto"
+  variant?: "light" | "dark" | "auto";
 }
 
 function CircuitBoard({
@@ -56,121 +56,133 @@ function CircuitBoard({
   ...props
 }: CircuitBoardProps) {
   // Theme-aware color defaults
-  const [isDark, setIsDark] = React.useState(true)
+  const [isDark, setIsDark] = React.useState(true);
 
   React.useEffect(() => {
     if (variant !== "auto") {
-      setIsDark(variant === "dark")
-      return
+      setIsDark(variant === "dark");
+      return;
     }
 
     // Check for dark class on html/body
     const checkTheme = () => {
-      const isDarkMode = document.documentElement.classList.contains("dark") ||
-        document.body.classList.contains("dark")
-      setIsDark(isDarkMode)
-    }
+      const isDarkMode =
+        document.documentElement.classList.contains("dark") ||
+        document.body.classList.contains("dark");
+      setIsDark(isDarkMode);
+    };
 
-    checkTheme()
+    checkTheme();
 
     // Listen for changes
-    const observer = new MutationObserver(checkTheme)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
-    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] })
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-    mediaQuery.addEventListener("change", checkTheme)
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", checkTheme);
 
     return () => {
-      observer.disconnect()
-      mediaQuery.removeEventListener("change", checkTheme)
-    }
-  }, [variant])
+      observer.disconnect();
+      mediaQuery.removeEventListener("change", checkTheme);
+    };
+  }, [variant]);
 
   // Compute theme-aware colors
-  const computedGridColor = gridColor || (isDark ? "rgba(163, 163, 163, 0.08)" : "rgba(64, 64, 64, 0.12)")
-  const computedTraceColor = traceColor || (isDark ? "rgba(163, 163, 163, 0.25)" : "rgba(64, 64, 64, 0.35)")
-  const computedPulseColor = pulseColor || (isDark ? "rgba(163, 163, 163, 0.6)" : "rgba(64, 64, 64, 0.7)")
-  const computedNodeColor = nodeColor || (isDark ? "rgba(163, 163, 163, 0.5)" : "rgba(64, 64, 64, 0.6)")
+  const computedGridColor =
+    gridColor ||
+    (isDark ? "rgba(163, 163, 163, 0.08)" : "rgba(64, 64, 64, 0.12)");
+  const computedTraceColor =
+    traceColor ||
+    (isDark ? "rgba(163, 163, 163, 0.25)" : "rgba(64, 64, 64, 0.35)");
+  const computedPulseColor =
+    pulseColor ||
+    (isDark ? "rgba(163, 163, 163, 0.6)" : "rgba(64, 64, 64, 0.7)");
+  const computedNodeColor =
+    nodeColor ||
+    (isDark ? "rgba(163, 163, 163, 0.5)" : "rgba(64, 64, 64, 0.6)");
   const nodeMap = React.useMemo(() => {
-    return new Map(nodes.map((node) => [node.id, node]))
-  }, [nodes])
+    return new Map(nodes.map((node) => [node.id, node]));
+  }, [nodes]);
 
   const getNodeSize = React.useCallback((size?: CircuitNode["size"]) => {
     switch (size) {
       case "sm":
-        return 24
+        return 24;
       case "lg":
-        return 48
+        return 48;
       default:
-        return 36
+        return 36;
     }
-  }, [])
+  }, []);
 
   const calculatePath = React.useCallback(
     (from: CircuitNode, to: CircuitNode): string => {
-      const fromSize = getNodeSize(from.size) / 2 + 4
-      const toSize = getNodeSize(to.size) / 2 + 4
+      const fromSize = getNodeSize(from.size) / 2 + 4;
+      const toSize = getNodeSize(to.size) / 2 + 4;
 
-      const dx = to.x - from.x
-      const dy = to.y - from.y
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
 
       // Calculate start and end points offset from node centers
-      let startX = from.x
-      let startY = from.y
-      let endX = to.x
-      let endY = to.y
+      let startX = from.x;
+      let startY = from.y;
+      let endX = to.x;
+      let endY = to.y;
 
       // Create circuit-like paths with right angles
       if (Math.abs(dx) > Math.abs(dy)) {
         // Horizontal first, then vertical
-        startX = from.x + (dx > 0 ? fromSize : -fromSize)
-        endX = to.x + (dx > 0 ? -toSize : toSize)
-        const midX = from.x + dx / 2
-        return `M ${startX} ${startY} H ${midX} V ${endY} H ${endX}`
+        startX = from.x + (dx > 0 ? fromSize : -fromSize);
+        endX = to.x + (dx > 0 ? -toSize : toSize);
+        const midX = from.x + dx / 2;
+        return `M ${startX} ${startY} H ${midX} V ${endY} H ${endX}`;
       } else {
         // Vertical first, then horizontal
-        startY = from.y + (dy > 0 ? fromSize : -fromSize)
-        endY = to.y + (dy > 0 ? -toSize : toSize)
-        const midY = from.y + dy / 2
-        return `M ${startX} ${startY} V ${midY} H ${endX} V ${endY}`
+        startY = from.y + (dy > 0 ? fromSize : -fromSize);
+        endY = to.y + (dy > 0 ? -toSize : toSize);
+        const midY = from.y + dy / 2;
+        return `M ${startX} ${startY} V ${midY} H ${endX} V ${endY}`;
       }
     },
     [getNodeSize]
-  )
+  );
 
   const getStatusColor = (status?: CircuitNode["status"]) => {
     if (isDark) {
       switch (status) {
         case "active":
-          return "rgba(163, 163, 163, 0.7)"
+          return "rgba(163, 163, 163, 0.7)";
         case "processing":
-          return "rgba(163, 163, 163, 0.5)"
+          return "rgba(163, 163, 163, 0.5)";
         case "error":
-          return "rgba(120, 113, 108, 0.6)"
+          return "rgba(120, 113, 108, 0.6)";
         default:
-          return computedNodeColor
+          return computedNodeColor;
       }
     } else {
       switch (status) {
         case "active":
-          return "rgba(64, 64, 64, 0.8)"
+          return "rgba(64, 64, 64, 0.8)";
         case "processing":
-          return "rgba(64, 64, 64, 0.6)"
+          return "rgba(64, 64, 64, 0.6)";
         case "error":
-          return "rgba(180, 83, 83, 0.7)"
+          return "rgba(180, 83, 83, 0.7)";
         default:
-          return computedNodeColor
+          return computedNodeColor;
       }
     }
-  }
+  };
 
   return (
     <div
-      className={cn(
-        "relative overflow-hidden",
-        className
-      )}
+      className={cn("relative overflow-hidden", className)}
       style={{ width, height }}
       {...props}
     >
@@ -198,7 +210,12 @@ function CircuitBoard({
               height={gridSize}
               patternUnits="userSpaceOnUse"
             >
-              <circle cx={gridSize / 2} cy={gridSize / 2} r="0.5" fill={computedGridColor} />
+              <circle
+                cx={gridSize / 2}
+                cy={gridSize / 2}
+                r="0.5"
+                fill={computedGridColor}
+              />
             </pattern>
           )}
 
@@ -211,7 +228,10 @@ function CircuitBoard({
             >
               <stop offset="0%" stopColor="transparent" />
               <stop offset="40%" stopColor="transparent" />
-              <stop offset="50%" stopColor={conn.pulseColor || computedPulseColor} />
+              <stop
+                offset="50%"
+                stopColor={conn.pulseColor || computedPulseColor}
+              />
               <stop offset="60%" stopColor="transparent" />
               <stop offset="100%" stopColor="transparent" />
             </linearGradient>
@@ -225,12 +245,12 @@ function CircuitBoard({
 
         {/* Connection traces */}
         {connections.map((conn, i) => {
-          const fromNode = nodeMap.get(conn.from)
-          const toNode = nodeMap.get(conn.to)
-          if (!fromNode || !toNode) return null
+          const fromNode = nodeMap.get(conn.from);
+          const toNode = nodeMap.get(conn.to);
+          if (!fromNode || !toNode) return null;
 
-          const path = calculatePath(fromNode, toNode)
-          const pathLength = 500 // Approximate path length for animation
+          const path = calculatePath(fromNode, toNode);
+          const pathLength = 500; // Approximate path length for animation
 
           return (
             <g key={`connection-${i}`}>
@@ -290,17 +310,15 @@ function CircuitBoard({
                   }}
                 />
               )}
-
-
             </g>
-          )
+          );
         })}
       </svg>
 
       {/* Nodes */}
       {nodes.map((node, i) => {
-        const size = getNodeSize(node.size)
-        const statusColor = getStatusColor(node.status)
+        const size = getNodeSize(node.size);
+        const statusColor = getStatusColor(node.status);
 
         return (
           <motion.div
@@ -367,26 +385,59 @@ function CircuitBoard({
               </div>
             )}
           </motion.div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 // Pre-built circuit patterns
-interface CircuitPatternProps extends Omit<CircuitBoardProps, "nodes" | "connections"> {
-  pattern: "data-flow" | "network" | "processor" | "tree"
+interface CircuitPatternProps extends Omit<
+  CircuitBoardProps,
+  "nodes" | "connections"
+> {
+  pattern: "data-flow" | "network" | "processor" | "tree";
 }
 
 function CircuitPattern({ pattern, ...props }: CircuitPatternProps) {
   const patterns = {
     "data-flow": {
       nodes: [
-        { id: "input", x: 50, y: 200, label: "Input", status: "active" as const },
-        { id: "process1", x: 200, y: 100, label: "Process", status: "processing" as const },
-        { id: "process2", x: 200, y: 300, label: "Validate", status: "active" as const },
-        { id: "merge", x: 400, y: 200, label: "Merge", status: "active" as const },
-        { id: "output", x: 550, y: 200, label: "Output", status: "active" as const },
+        {
+          id: "input",
+          x: 50,
+          y: 200,
+          label: "Input",
+          status: "active" as const,
+        },
+        {
+          id: "process1",
+          x: 200,
+          y: 100,
+          label: "Process",
+          status: "processing" as const,
+        },
+        {
+          id: "process2",
+          x: 200,
+          y: 300,
+          label: "Validate",
+          status: "active" as const,
+        },
+        {
+          id: "merge",
+          x: 400,
+          y: 200,
+          label: "Merge",
+          status: "active" as const,
+        },
+        {
+          id: "output",
+          x: 550,
+          y: 200,
+          label: "Output",
+          status: "active" as const,
+        },
       ],
       connections: [
         { from: "input", to: "process1", animated: true },
@@ -398,11 +449,42 @@ function CircuitPattern({ pattern, ...props }: CircuitPatternProps) {
     },
     network: {
       nodes: [
-        { id: "server", x: 300, y: 80, label: "Server", status: "active" as const, size: "lg" as const },
-        { id: "client1", x: 100, y: 200, label: "Client 1", status: "active" as const },
-        { id: "client2", x: 300, y: 250, label: "Client 2", status: "processing" as const },
-        { id: "client3", x: 500, y: 200, label: "Client 3", status: "active" as const },
-        { id: "db", x: 300, y: 350, label: "Database", status: "active" as const },
+        {
+          id: "server",
+          x: 300,
+          y: 80,
+          label: "Server",
+          status: "active" as const,
+          size: "lg" as const,
+        },
+        {
+          id: "client1",
+          x: 100,
+          y: 200,
+          label: "Client 1",
+          status: "active" as const,
+        },
+        {
+          id: "client2",
+          x: 300,
+          y: 250,
+          label: "Client 2",
+          status: "processing" as const,
+        },
+        {
+          id: "client3",
+          x: 500,
+          y: 200,
+          label: "Client 3",
+          status: "active" as const,
+        },
+        {
+          id: "db",
+          x: 300,
+          y: 350,
+          label: "Database",
+          status: "active" as const,
+        },
       ],
       connections: [
         { from: "server", to: "client1", bidirectional: true },
@@ -413,12 +495,53 @@ function CircuitPattern({ pattern, ...props }: CircuitPatternProps) {
     },
     processor: {
       nodes: [
-        { id: "alu", x: 300, y: 200, label: "ALU", status: "processing" as const, size: "lg" as const },
-        { id: "reg1", x: 150, y: 100, label: "R1", status: "active" as const, size: "sm" as const },
-        { id: "reg2", x: 150, y: 200, label: "R2", status: "active" as const, size: "sm" as const },
-        { id: "reg3", x: 150, y: 300, label: "R3", status: "active" as const, size: "sm" as const },
-        { id: "cache", x: 450, y: 200, label: "Cache", status: "active" as const },
-        { id: "out", x: 550, y: 200, label: "Out", status: "active" as const, size: "sm" as const },
+        {
+          id: "alu",
+          x: 300,
+          y: 200,
+          label: "ALU",
+          status: "processing" as const,
+          size: "lg" as const,
+        },
+        {
+          id: "reg1",
+          x: 150,
+          y: 100,
+          label: "R1",
+          status: "active" as const,
+          size: "sm" as const,
+        },
+        {
+          id: "reg2",
+          x: 150,
+          y: 200,
+          label: "R2",
+          status: "active" as const,
+          size: "sm" as const,
+        },
+        {
+          id: "reg3",
+          x: 150,
+          y: 300,
+          label: "R3",
+          status: "active" as const,
+          size: "sm" as const,
+        },
+        {
+          id: "cache",
+          x: 450,
+          y: 200,
+          label: "Cache",
+          status: "active" as const,
+        },
+        {
+          id: "out",
+          x: 550,
+          y: 200,
+          label: "Out",
+          status: "active" as const,
+          size: "sm" as const,
+        },
       ],
       connections: [
         { from: "reg1", to: "alu", animated: true },
@@ -432,11 +555,45 @@ function CircuitPattern({ pattern, ...props }: CircuitPatternProps) {
       nodes: [
         { id: "root", x: 300, y: 50, label: "Root", status: "active" as const },
         { id: "l1", x: 150, y: 150, label: "L1", status: "active" as const },
-        { id: "r1", x: 450, y: 150, label: "R1", status: "processing" as const },
-        { id: "l1l", x: 80, y: 280, label: "L1L", status: "active" as const, size: "sm" as const },
-        { id: "l1r", x: 220, y: 280, label: "L1R", status: "active" as const, size: "sm" as const },
-        { id: "r1l", x: 380, y: 280, label: "R1L", status: "error" as const, size: "sm" as const },
-        { id: "r1r", x: 520, y: 280, label: "R1R", status: "active" as const, size: "sm" as const },
+        {
+          id: "r1",
+          x: 450,
+          y: 150,
+          label: "R1",
+          status: "processing" as const,
+        },
+        {
+          id: "l1l",
+          x: 80,
+          y: 280,
+          label: "L1L",
+          status: "active" as const,
+          size: "sm" as const,
+        },
+        {
+          id: "l1r",
+          x: 220,
+          y: 280,
+          label: "L1R",
+          status: "active" as const,
+          size: "sm" as const,
+        },
+        {
+          id: "r1l",
+          x: 380,
+          y: 280,
+          label: "R1L",
+          status: "error" as const,
+          size: "sm" as const,
+        },
+        {
+          id: "r1r",
+          x: 520,
+          y: 280,
+          label: "R1R",
+          status: "active" as const,
+          size: "sm" as const,
+        },
       ],
       connections: [
         { from: "root", to: "l1", animated: true },
@@ -447,20 +604,26 @@ function CircuitPattern({ pattern, ...props }: CircuitPatternProps) {
         { from: "r1", to: "r1r", animated: true },
       ],
     },
-  }
+  };
 
-  const selectedPattern = patterns[pattern]
-  return <CircuitBoard nodes={selectedPattern.nodes} connections={selectedPattern.connections} {...props} />
+  const selectedPattern = patterns[pattern];
+  return (
+    <CircuitBoard
+      nodes={selectedPattern.nodes}
+      connections={selectedPattern.connections}
+      {...props}
+    />
+  );
 }
 
 // Interactive circuit node for building custom circuits
 interface CircuitNodeComponentProps {
-  status?: "active" | "inactive" | "processing" | "error"
-  size?: "sm" | "md" | "lg"
-  glowColor?: string
-  children?: React.ReactNode
-  className?: string
-  onClick?: () => void
+  status?: "active" | "inactive" | "processing" | "error";
+  size?: "sm" | "md" | "lg";
+  glowColor?: string;
+  children?: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
 }
 
 function CircuitNode({
@@ -471,51 +634,58 @@ function CircuitNode({
   className,
   onClick,
 }: CircuitNodeComponentProps) {
-  const [isDark, setIsDark] = React.useState(true)
+  const [isDark, setIsDark] = React.useState(true);
 
   React.useEffect(() => {
     const checkTheme = () => {
-      const isDarkMode = document.documentElement.classList.contains("dark") ||
-        document.body.classList.contains("dark")
-      setIsDark(isDarkMode)
-    }
+      const isDarkMode =
+        document.documentElement.classList.contains("dark") ||
+        document.body.classList.contains("dark");
+      setIsDark(isDarkMode);
+    };
 
-    checkTheme()
+    checkTheme();
 
-    const observer = new MutationObserver(checkTheme)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
-    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] })
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-    mediaQuery.addEventListener("change", checkTheme)
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", checkTheme);
 
     return () => {
-      observer.disconnect()
-      mediaQuery.removeEventListener("change", checkTheme)
-    }
-  }, [])
+      observer.disconnect();
+      mediaQuery.removeEventListener("change", checkTheme);
+    };
+  }, []);
 
   const sizeClasses = {
     sm: "w-8 h-8",
     md: "w-12 h-12",
     lg: "w-16 h-16",
-  }
+  };
 
   const statusColors = isDark
     ? {
-      active: "rgba(163, 163, 163, 0.7)",
-      inactive: "rgba(115, 115, 115, 0.4)",
-      processing: "rgba(163, 163, 163, 0.5)",
-      error: "rgba(120, 113, 108, 0.6)",
-    }
+        active: "rgba(163, 163, 163, 0.7)",
+        inactive: "rgba(115, 115, 115, 0.4)",
+        processing: "rgba(163, 163, 163, 0.5)",
+        error: "rgba(120, 113, 108, 0.6)",
+      }
     : {
-      active: "rgba(64, 64, 64, 0.8)",
-      inactive: "rgba(100, 100, 100, 0.5)",
-      processing: "rgba(64, 64, 64, 0.6)",
-      error: "rgba(180, 83, 83, 0.7)",
-    }
+        active: "rgba(64, 64, 64, 0.8)",
+        inactive: "rgba(100, 100, 100, 0.5)",
+        processing: "rgba(64, 64, 64, 0.6)",
+        error: "rgba(180, 83, 83, 0.7)",
+      };
 
-  const color = glowColor || statusColors[status]
+  const color = glowColor || statusColors[status];
 
   return (
     <motion.div
@@ -564,17 +734,17 @@ function CircuitNode({
         {children}
       </div>
     </motion.div>
-  )
+  );
 }
 
 // Animated trace line component for custom layouts
 interface CircuitTraceProps {
-  path: string
-  animated?: boolean
-  color?: string
-  pulseColor?: string
-  width?: number
-  pulseSpeed?: number
+  path: string;
+  animated?: boolean;
+  color?: string;
+  pulseColor?: string;
+  width?: number;
+  pulseSpeed?: number;
 }
 
 function CircuitTrace({
@@ -585,33 +755,43 @@ function CircuitTrace({
   width = 2,
   pulseSpeed = 2,
 }: CircuitTraceProps) {
-  const [isDark, setIsDark] = React.useState(true)
+  const [isDark, setIsDark] = React.useState(true);
 
   React.useEffect(() => {
     const checkTheme = () => {
-      const isDarkMode = document.documentElement.classList.contains("dark") ||
-        document.body.classList.contains("dark")
-      setIsDark(isDarkMode)
-    }
+      const isDarkMode =
+        document.documentElement.classList.contains("dark") ||
+        document.body.classList.contains("dark");
+      setIsDark(isDarkMode);
+    };
 
-    checkTheme()
+    checkTheme();
 
-    const observer = new MutationObserver(checkTheme)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
-    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] })
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-    mediaQuery.addEventListener("change", checkTheme)
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", checkTheme);
 
     return () => {
-      observer.disconnect()
-      mediaQuery.removeEventListener("change", checkTheme)
-    }
-  }, [])
+      observer.disconnect();
+      mediaQuery.removeEventListener("change", checkTheme);
+    };
+  }, []);
 
-  const computedColor = color || (isDark ? "rgba(163, 163, 163, 0.25)" : "rgba(64, 64, 64, 0.35)")
-  const computedPulseColor = pulseColor || (isDark ? "rgba(163, 163, 163, 0.6)" : "rgba(64, 64, 64, 0.7)")
-  const pathLength = 500
+  const computedColor =
+    color || (isDark ? "rgba(163, 163, 163, 0.25)" : "rgba(64, 64, 64, 0.35)");
+  const computedPulseColor =
+    pulseColor ||
+    (isDark ? "rgba(163, 163, 163, 0.6)" : "rgba(64, 64, 64, 0.7)");
+  const pathLength = 500;
 
   return (
     <svg className="absolute inset-0 overflow-visible pointer-events-none">
@@ -659,7 +839,7 @@ function CircuitTrace({
         />
       )}
     </svg>
-  )
+  );
 }
 
 export {
@@ -670,4 +850,4 @@ export {
   type CircuitNode as CircuitNodeType,
   type CircuitConnection,
   type CircuitBoardProps,
-}
+};

@@ -38,7 +38,10 @@
         "tsconfig.json",
         "tsconfig.build.json",
         "package.json",
-        "next.config.*"
+        "next.config.*",
+        "public/**",
+        "astro.config.*",
+        "wrangler.jsonc"
       ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
@@ -65,7 +68,8 @@
         "lib/**",
         "tools/**",
         "actions/**",
-        "tsconfig.json"
+        "tsconfig.json",
+        "astro.config.*"
       ],
       "dependsOn": ["^type-check"]
     }

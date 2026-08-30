@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-interface GitHubStarButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface GitHubStarButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   owner: string;
   repo: string;
   staticCount?: number;

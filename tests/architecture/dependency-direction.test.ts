@@ -110,6 +110,8 @@ const IGNORED_DIRS = new Set([
   "dist",
   ".next",
   ".turbo",
+  ".astro",
+  ".wrangler",
   "coverage",
 ]);
 

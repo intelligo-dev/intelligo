@@ -117,7 +117,7 @@ function getDelay(
   index: number,
   total: number,
   stagger: number,
-  staggerFrom: StaggerOrigin,
+  staggerFrom: StaggerOrigin
 ) {
   if (typeof staggerFrom === "number") {
     return Math.abs(staggerFrom - index) * stagger;
@@ -173,7 +173,7 @@ export const KineticTextReveal = forwardRef<
       onRevealComplete,
       ...props
     },
-    ref,
+    ref
   ) => {
     const shouldReduceMotion = useReducedMotion();
     const [run, setRun] = useState(0);
@@ -236,7 +236,7 @@ export const KineticTextReveal = forwardRef<
         className={cn(
           "inline-flex flex-wrap whitespace-pre-wrap align-baseline",
           splitBy === "lines" && "flex-col items-start",
-          className,
+          className
         )}
         aria-label={text}
         {...props}
@@ -256,7 +256,7 @@ export const KineticTextReveal = forwardRef<
               key={`${run}-${index}`}
               className={cn(
                 "inline-block overflow-hidden align-baseline pb-1",
-                maskClassName,
+                maskClassName
               )}
               aria-hidden="true"
             >
@@ -267,7 +267,7 @@ export const KineticTextReveal = forwardRef<
                 animate={visible ? "visible" : "hidden"}
                 className={cn(
                   "inline-block will-change-transform",
-                  segmentClassName,
+                  segmentClassName
                 )}
                 onAnimationComplete={
                   segment.index === animatedTotal - 1
@@ -282,7 +282,7 @@ export const KineticTextReveal = forwardRef<
         })}
       </span>
     );
-  },
+  }
 );
 
 KineticTextReveal.displayName = "KineticTextReveal";

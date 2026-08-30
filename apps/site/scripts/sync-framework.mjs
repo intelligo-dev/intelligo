@@ -4,7 +4,7 @@
  * itself, so the site can never claim a page or a number that doesn't
  * exist — and commit the result, so a deploy needs no sibling checkout.
  *
- *   pnpm sync                      # siblings at ../intelligo-framework (+ ../intelligo)
+ *   pnpm sync                      # this repository (+ ../intelligo for history, if present)
  *   INTELLIGO_FRAMEWORK_DIR=… pnpm sync
  *
  * Writes:
@@ -32,8 +32,11 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SITE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const FRAMEWORK = resolve(process.env.INTELLIGO_FRAMEWORK_DIR ?? join(SITE, "../intelligo-framework"));
-const INCUBATION = resolve(process.env.INTELLIGO_INCUBATION_DIR ?? join(SITE, "../intelligo"));
+// apps/site lives inside the framework repository, so the framework is
+// two directories up. The incubation repository, when present as a
+// sibling of this repository, supplies the pre-public commit history.
+const FRAMEWORK = resolve(process.env.INTELLIGO_FRAMEWORK_DIR ?? join(SITE, "../.."));
+const INCUBATION = resolve(process.env.INTELLIGO_INCUBATION_DIR ?? join(FRAMEWORK, "../intelligo"));
 
 if (!existsSync(join(FRAMEWORK, "registry/registry.json"))) {
   console.error(`No framework checkout at ${FRAMEWORK} (set INTELLIGO_FRAMEWORK_DIR).`);
