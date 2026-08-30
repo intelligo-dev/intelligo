@@ -189,7 +189,6 @@ d("money path (integration)", () => {
       "credit_balances",
       "credit_purchases",
       "executions",
-      "audit_events",
     ]) {
       await client
         .query(`DELETE FROM ${table} WHERE workspace_id = $1`, [workspaceId])
@@ -246,10 +245,12 @@ d("money path (integration)", () => {
   });
 
   it("charges exactly once: allowance first, top-up for the remainder", async () => {
-    // 200₮ of allowance left and a funded top-up: a charge larger than
-    // 200₮ must take 200 from the allowance and the rest from the
-    // balance — not the full amount from both.
-    await setAllowanceUsed(FREE_ALLOWANCE - 200);
+    // 1₮ of allowance left and a funded top-up: any charge must take
+    // that 1₮ from the allowance and the rest from the balance — not
+    // the full amount from both. (1, not a larger number: the charge
+    // depends on the FX/margin row, and a guess about it is how this
+    // test failed the first time.)
+    await setAllowanceUsed(FREE_ALLOWANCE - 1);
     await setBalance(50_000);
 
     const run = await begin();
@@ -265,11 +266,11 @@ d("money path (integration)", () => {
     );
     expect(rows).toHaveLength(1);
     const charged = Number(rows[0]!.charged_mnt);
-    expect(charged).toBeGreaterThan(200);
+    expect(charged).toBeGreaterThan(1);
 
-    const planPortion = (await monthlyChargedMnt()) - (FREE_ALLOWANCE - 200);
+    const planPortion = (await monthlyChargedMnt()) - (FREE_ALLOWANCE - 1);
     const topupPortion = 50_000 - (await balanceMnt());
-    expect(planPortion).toBe(200);
+    expect(planPortion).toBe(1);
     expect(planPortion + topupPortion).toBe(charged);
     expect(await activeReservations()).toBe(0);
   });
