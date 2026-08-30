@@ -7,7 +7,7 @@
  */
 
 import path from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import { inspectMigrationChain, readMigrationChain } from "../migrations.js";
 import { readManifest } from "../manifest.js";
@@ -22,9 +22,42 @@ export type CheckResult = {
   detail: string;
 };
 
+type ItemRequires = {
+  marker: string;
+  items?: string[];
+  files?: string[];
+  exports?: Record<string, string[]>;
+  features?: string[];
+};
+
+export type RegistryRequires = {
+  scaffold: string[];
+  items: Record<string, ItemRequires>;
+};
+
+/**
+ * The registry's requirements file ships with the CLI (a verified copy
+ * of registry/requires.json) so doctor can check an installed app
+ * without a registry checkout. `../../templates` resolves from src/
+ * and from dist/commands/ alike.
+ */
+function bundledRequires(): RegistryRequires | null {
+  const file = path.resolve(
+    path.dirname(new URL(import.meta.url).pathname),
+    "..",
+    "..",
+    "templates",
+    "registry-requires.json"
+  );
+  if (!existsSync(file)) return null;
+  return JSON.parse(readFileSync(file, "utf8")) as RegistryRequires;
+}
+
 export type DoctorOptions = {
   /** Workspace root; defaults to the current working directory. */
   root?: string;
+  /** Registry requirements; defaults to the copy bundled with the CLI. */
+  requires?: RegistryRequires | null;
   /** Environment to validate; defaults to process.env. */
   env?: NodeJS.ProcessEnv;
 };
@@ -105,33 +138,72 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
         }
   );
 
-  // 4. Chat route's scaffold contract. The registry's chat item ships
-  //    app/api/chat/route.ts, which imports @/lib/intelligo (the
-  //    composition root) and expects @/lib/plans to have registered a
-  //    plan catalogue — both are scaffold-provided consumer files, not
-  //    registry files. Installing chat into a hand-rolled app without
-  //    them is a build error that only shows up at `next build`.
-  const chatRoute = path.join(root, "app/api/chat/route.ts");
-  if (existsSync(chatRoute)) {
-    const missingScaffold = ["lib/intelligo.ts", "lib/plans.ts"].filter(
-      (rel) => !existsSync(path.join(root, rel))
-    );
-    results.push(
-      missingScaffold.length === 0
-        ? {
-            name: "chat",
-            status: "ok",
-            detail: "app/api/chat/route.ts has lib/intelligo.ts + lib/plans.ts",
-          }
-        : {
-            name: "chat",
-            status: "error",
-            detail:
-              `app/api/chat/route.ts needs ${missingScaffold.join(" and ")} — ` +
-              "create them from the CLI's app-scaffold templates " +
-              "(packages/cli/templates/app-scaffold)",
-          }
-    );
+  // 4. Installed registry items against registry/requires.json: the
+  //    sibling items they import from, the scaffold files they import,
+  //    the exports the composition root must provide, and the feature
+  //    keys they gate on — each a `next build` or a 403 that only shows
+  //    up later. An item counts as installed when its marker file is.
+  const requires =
+    options.requires === undefined ? bundledRequires() : options.requires;
+  if (requires) {
+    const exists = (rel: string) =>
+      [".ts", ".tsx", ".js", ".jsx", ".json", ""].some((ext) =>
+        existsSync(path.join(root, rel + ext))
+      );
+    const plansSource = existsSync(path.join(root, "lib/plans.ts"))
+      ? readFileSync(path.join(root, "lib/plans.ts"), "utf8")
+      : null;
+
+    for (const [name, item] of Object.entries(requires.items)) {
+      if (!existsSync(path.join(root, item.marker))) continue;
+      const problems: string[] = [];
+
+      for (const dep of item.items ?? []) {
+        const marker = requires.items[dep]?.marker;
+        if (marker && !existsSync(path.join(root, marker))) {
+          problems.push(`install the ${dep} item first`);
+        }
+      }
+      for (const file of item.files ?? []) {
+        if (!exists(file)) problems.push(`create ${file} (scaffold-provided)`);
+      }
+      for (const [file, names] of Object.entries(item.exports ?? {})) {
+        const abs = [".ts", ".tsx"]
+          .map((ext) => path.join(root, file + ext))
+          .find((p) => existsSync(p));
+        if (!abs) continue; // reported above as a missing file
+        const source = readFileSync(abs, "utf8");
+        const missing = names.filter(
+          (n) =>
+            !new RegExp(`export\\s+(?:const|function|let|var)\\s+${n}\\b`).test(
+              source
+            ) && !new RegExp(`export\\s*\\{[^}]*\\b${n}\\b`).test(source)
+        );
+        if (missing.length) {
+          problems.push(`${file} must export ${missing.join(", ")}`);
+        }
+      }
+      for (const feature of item.features ?? []) {
+        if (
+          plansSource !== null &&
+          !new RegExp(`\\b${feature}\\b\\s*:`).test(plansSource)
+        ) {
+          problems.push(
+            `register the "${feature}" feature key in lib/plans.ts — an unregistered key is denied (403)`
+          );
+        }
+      }
+
+      results.push(
+        problems.length === 0
+          ? { name: `item:${name}`, status: "ok", detail: "requirements met" }
+          : {
+              name: `item:${name}`,
+              status: "error",
+              detail: problems.join("; "),
+            }
+      );
+    }
   }
 
   // 4b. Maintenance route. It refuses to serve without a strong

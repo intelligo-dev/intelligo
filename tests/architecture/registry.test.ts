@@ -64,6 +64,26 @@ function readRegistry(): RegistryJson {
   return JSON.parse(readFileSync(REGISTRY_JSON_PATH, "utf8")) as RegistryJson;
 }
 
+type Requires = {
+  scaffold: string[];
+  items: Record<
+    string,
+    {
+      marker: string;
+      items?: string[];
+      files?: string[];
+      exports?: Record<string, string[]>;
+      features?: string[];
+    }
+  >;
+};
+
+function readRequires(): Requires {
+  return JSON.parse(
+    readFileSync(path.join(REGISTRY_DIR, "requires.json"), "utf8")
+  ) as Requires;
+}
+
 const IGNORED_DIRS = new Set([
   "node_modules",
   "dist",
@@ -386,18 +406,8 @@ describe.skipIf(!hasRegistry)("registry", () => {
     const registry = readRegistry();
 
     // Consumer files the CLI app scaffold provides (not any registry
-    // item, on purpose): the composition root and its plan catalogue
-    // (packages/cli/templates/app-scaffold/{intelligo,plans}.ts.tpl),
-    // shadcn's own lib/utils + use-mobile, and next-intl's routing
-    // files created by `intelligo create`.
-    const SCAFFOLD_PROVIDED = new Set([
-      "lib/intelligo",
-      "lib/plans",
-      "lib/utils",
-      "i18n/routing",
-      "i18n/navigation",
-      "hooks/use-mobile",
-    ]);
+    // item, on purpose) — declared once in registry/requires.json.
+    const SCAFFOLD_PROVIDED = new Set(readRequires().scaffold);
 
     // Every target any item ships, extensionless, e.g. "actions/team",
     // "components/team/member-list", "lib/team".
@@ -446,6 +456,103 @@ describe.skipIf(!hasRegistry)("registry", () => {
 
         expect(violations).toEqual([]);
       });
+    });
+  });
+
+  /**
+   * registry/requires.json is the machine-readable form of what the
+   * descriptions used to say in prose: which sibling items an item
+   * needs installed first, which scaffold files it imports, and which
+   * feature keys it gates on. CI derives the install order from it and
+   * `intelligo doctor` checks an app against it, so it must be exactly
+   * what the code does — neither a stale extra nor a missing edge.
+   */
+  describe("requires.json matches the code", () => {
+    const registry = readRegistry();
+    const requires = readRequires();
+
+    const ownerOf = new Map<string, string>();
+    for (const item of registry.items) {
+      for (const file of item.files) {
+        if (typeof file.target === "string") {
+          ownerOf.set(file.target.replace(/\.(tsx?|json)$/, ""), item.name);
+        }
+      }
+    }
+
+    it("lists every item, and only items that exist", () => {
+      expect(Object.keys(requires.items).sort()).toEqual(
+        registry.items.map((i) => i.name).sort()
+      );
+    });
+
+    it("is what the CLI ships to doctor, byte for byte", () => {
+      expect(
+        readFileSync(
+          path.join(ROOT, "packages/cli/templates/registry-requires.json"),
+          "utf8"
+        )
+      ).toBe(readFileSync(path.join(REGISTRY_DIR, "requires.json"), "utf8"));
+    });
+
+    describe.each(registry.items)("item: $name", (item) => {
+      const entry = requires.items[item.name]!;
+
+      it("declares exactly the sibling items and scaffold files it imports", () => {
+        const items = new Set<string>();
+        const files = new Set<string>();
+        for (const file of item.files) {
+          const abs = path.join(REGISTRY_DIR, file.path);
+          const source = statSyncSafe(abs) ? readFileSync(abs, "utf8") : "";
+          for (const spec of importSpecifiers(source)) {
+            if (!spec.startsWith("@/")) continue;
+            const target = spec.slice(2);
+            if (target.startsWith("components/ui/")) continue;
+            const owner = ownerOf.get(target);
+            if (owner && owner !== item.name) items.add(owner);
+            else if (!owner) files.add(target);
+          }
+        }
+        expect(entry.items ?? []).toEqual([...items].sort());
+        expect(entry.files ?? []).toEqual([...files].sort());
+      });
+
+      it("declares exactly the feature keys it gates on", () => {
+        const features = new Set<string>();
+        for (const file of item.files) {
+          const abs = path.join(REGISTRY_DIR, file.path);
+          const source = statSyncSafe(abs) ? readFileSync(abs, "utf8") : "";
+          for (const m of source.matchAll(/featureKey:\s*["']([^"']+)["']/g)) {
+            features.add(m[1]!);
+          }
+        }
+        expect(entry.features ?? []).toEqual([...features].sort());
+      });
+
+      it("marks itself by a file it actually ships", () => {
+        expect(
+          item.files.some((f) => f.target === entry.marker),
+          `${item.name}: marker ${entry.marker} is not one of its targets`
+        ).toBe(true);
+      });
+    });
+
+    it("has no dependency cycles, so an install order exists", () => {
+      const visiting = new Set<string>();
+      const done = new Set<string>();
+      const visit = (name: string, trail: string[]) => {
+        if (done.has(name)) return;
+        if (visiting.has(name)) {
+          throw new Error(`cycle: ${[...trail, name].join(" → ")}`);
+        }
+        visiting.add(name);
+        for (const dep of requires.items[name]?.items ?? []) {
+          visit(dep, [...trail, name]);
+        }
+        visiting.delete(name);
+        done.add(name);
+      };
+      for (const name of Object.keys(requires.items)) visit(name, []);
     });
   });
 

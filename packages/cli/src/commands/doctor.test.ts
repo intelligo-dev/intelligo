@@ -49,43 +49,90 @@ describe("runChecks", () => {
     expect(migrations.detail).toContain("workspace root");
   });
 
-  describe("chat scaffold contract", () => {
+  describe("installed registry items against requires.json", () => {
     let root: string;
 
     afterEach(() => {
       rmSync(root, { recursive: true, force: true });
     });
 
-    function appWithChatRoute(): string {
+    const requires = {
+      scaffold: ["lib/intelligo", "lib/plans", "i18n/navigation"],
+      items: {
+        "route-error": { marker: "components/errors/route-error.tsx" },
+        chat: {
+          marker: "app/chat/page.tsx",
+          items: ["route-error"],
+          files: ["lib/intelligo", "i18n/navigation"],
+          exports: { "lib/intelligo": ["composeIntelligo", "executions"] },
+          features: ["chat"],
+        },
+      },
+    };
+
+    function app(files: Record<string, string>): string {
       root = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-"));
-      mkdirSync(path.join(root, "app/api/chat"), { recursive: true });
-      writeFileSync(path.join(root, "app/api/chat/route.ts"), "// route");
+      for (const [rel, body] of Object.entries(files)) {
+        mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+        writeFileSync(path.join(root, rel), body);
+      }
       return root;
     }
 
-    it("errors when the chat route exists without lib/intelligo.ts and lib/plans.ts", () => {
-      const results = runChecks({ root: appWithChatRoute(), env: fullEnv });
-      const chat = results.find((r) => r.name === "chat")!;
+    it("names every unmet requirement of an installed item", () => {
+      const results = runChecks({
+        root: app({
+          "app/chat/page.tsx": "// chat",
+          "lib/intelligo.ts": "export const composeIntelligo = () => {};",
+          "lib/plans.ts": "export const FEATURES = { assistant: ['free'] };",
+        }),
+        env: fullEnv,
+        requires,
+      });
+      const chat = results.find((r) => r.name === "item:chat")!;
 
       expect(chat.status).toBe("error");
-      expect(chat.detail).toContain("lib/intelligo.ts");
-      expect(chat.detail).toContain("lib/plans.ts");
+      expect(chat.detail).toContain("install the route-error item first");
+      expect(chat.detail).toContain("create i18n/navigation");
+      expect(chat.detail).toContain("lib/intelligo must export executions");
+      expect(chat.detail).toContain('"chat" feature key');
     });
 
-    it("passes once both scaffold files exist", () => {
-      const app = appWithChatRoute();
-      mkdirSync(path.join(app, "lib"), { recursive: true });
-      writeFileSync(path.join(app, "lib/intelligo.ts"), "// root");
-      writeFileSync(path.join(app, "lib/plans.ts"), "// plans");
-
-      const results = runChecks({ root: app, env: fullEnv });
-      expect(results.find((r) => r.name === "chat")!.status).toBe("ok");
+    it("passes once siblings, files, exports and feature keys are in place", () => {
+      const results = runChecks({
+        root: app({
+          "app/chat/page.tsx": "// chat",
+          "components/errors/route-error.tsx": "// route-error",
+          "i18n/navigation.ts": "// nav",
+          "lib/intelligo.ts":
+            "export function composeIntelligo() {}\nexport const executions = {};",
+          "lib/plans.ts": "export const FEATURES = { chat: ['free'] };",
+        }),
+        env: fullEnv,
+        requires,
+      });
+      expect(results.find((r) => r.name === "item:chat")!.status).toBe("ok");
+      expect(results.find((r) => r.name === "item:route-error")!.status).toBe(
+        "ok"
+      );
     });
 
-    it("is silent for apps without the chat route", () => {
-      root = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-"));
-      const results = runChecks({ root, env: fullEnv });
-      expect(results.some((r) => r.name === "chat")).toBe(false);
+    it("is silent for items whose marker file is absent", () => {
+      const results = runChecks({ root: app({}), env: fullEnv, requires });
+      expect(results.some((r) => r.name.startsWith("item:"))).toBe(false);
+    });
+
+    it("checks the reference app against the bundled requirements", () => {
+      // The canonical installed result must satisfy its own contract.
+      const results = runChecks({
+        root: path.resolve(__dirname, "../../../../apps/app"),
+        env: fullEnv,
+      });
+      const failing = results.filter(
+        (r) => r.name.startsWith("item:") && r.status !== "ok"
+      );
+      expect(failing.map((r) => `${r.name}: ${r.detail}`)).toEqual([]);
+      expect(results.some((r) => r.name === "item:chat")).toBe(true);
     });
   });
 

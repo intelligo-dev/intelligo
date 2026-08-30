@@ -136,6 +136,15 @@ it explains a framework decision.
 
 ### Added
 
+- **`registry/requires.json`** — the machine-readable form of what item
+  descriptions said in prose: for every item, the sibling items it
+  imports from (install them first), the scaffold files it imports, the
+  names the composition root must export, and the feature keys it
+  gates on. The architecture suite asserts it matches the code exactly,
+  CI derives the install order from it (replacing a hand-ordered
+  string), and `intelligo doctor` checks every installed item against a
+  bundled, byte-verified copy — including the `chat` item's feature key,
+  which used to be a 403 discovered after install.
 - **`createStripeWebhookHandler()` in `@intelligo-dev/billing`**, and a
   `POST /api/webhooks/stripe` route in the scaffold and the reference
   app. The framework shipped webhook _handlers_ but no receiver; the

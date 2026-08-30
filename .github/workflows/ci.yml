@@ -176,20 +176,19 @@ jobs:
 
           cd apps/generated-smoke
 
-          # The item list is derived from registry.json, never hand-kept.
-          # The named items go first because other items' descriptions
-          # say so (team-settings ships lib/team.ts, pricing ships
-          # lib/billing-config.ts, auth-login ships the shared AuthCard,
-          # route-error ships the component every error.tsx renders).
-          FIRST="route-error team-settings pricing auth-login"
-          REST=$(node -e '
-            const registry = require(process.env.GITHUB_WORKSPACE + "/registry/registry.json");
-            const first = process.argv[1].split(" ");
-            console.log(registry.items.map((i) => i.name).filter((n) => !first.includes(n)).join(" "));
-          ' "$FIRST")
+          # Install order is a topological sort of registry/requires.json
+          # (an item after the items whose files it imports) — the same
+          # file the architecture suite proves matches the code.
+          ORDER=$(node -e '
+            const { items } = require(process.env.GITHUB_WORKSPACE + "/registry/requires.json");
+            const out = [], done = new Set();
+            const visit = (n) => { if (done.has(n)) return; done.add(n); for (const d of items[n].items ?? []) visit(d); out.push(n); };
+            for (const n of Object.keys(items)) visit(n);
+            console.log(out.join(" "));
+          ')
 
-          echo "installing: $FIRST $REST"
-          for item in $FIRST $REST; do
+          echo "installing: $ORDER"
+          for item in $ORDER; do
             pnpm exec shadcn add "$GITHUB_WORKSPACE/registry/public/r/$item.json" --yes --overwrite
           done
           cd "$GITHUB_WORKSPACE"
