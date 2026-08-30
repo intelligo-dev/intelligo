@@ -323,6 +323,34 @@ jobs:
           echo "$out"
           echo "$out" | grep -q "baseline"
 
+      # A push-provisioned database must be refused, not half-migrated:
+      # `migrate` (apply) sees the tables, sees no records, and stops.
+      - name: Migrate refuses the push-provisioned database
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/migration_replay
+        run: |
+          set -euo pipefail
+          if pnpm exec tsx packages/cli/src/bin.ts migrate; then
+            echo "migrate should have refused a database with tables but no records"
+            exit 1
+          fi
+
+      # What a consumer runs: `intelligo migrate` on an empty database,
+      # through drizzle's migrator rather than psql, so the records it
+      # writes are what `migrate --check` reads back. A second run must
+      # be a no-op and the check must report up to date.
+      - name: Apply the chain with `intelligo migrate` on an empty database
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -c 'CREATE DATABASE migration_apply;'
+          APPLY_URL="${DATABASE_URL%/*}/migration_apply"
+          psql -v ON_ERROR_STOP=1 "$APPLY_URL" -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+          DATABASE_URL="$APPLY_URL" pnpm exec tsx packages/cli/src/bin.ts migrate
+          DATABASE_URL="$APPLY_URL" pnpm exec tsx packages/cli/src/bin.ts migrate --check
+          out=$(DATABASE_URL="$APPLY_URL" pnpm exec tsx packages/cli/src/bin.ts migrate)
+          echo "$out"
+          echo "$out" | grep -q "Nothing to apply"
+
       # And the schema pushes cleanly onto an empty database, which is
       # how every development environment is actually provisioned.
       - name: Push schema

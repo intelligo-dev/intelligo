@@ -13,6 +13,37 @@ That is how `0032` shipped documenting a unique constraint on a
 files. `0037` repairs it, and `intelligo doctor` now fails CI if the
 journal and the directory drift apart again.
 
+## In a consumer application
+
+This directory ships inside the published package (it is in `files`,
+next to `dist`), and `intelligo migrate` applies it: it resolves the
+chain from `node_modules/@intelligo-dev/core/src/db/migrations`, runs
+drizzle's migrator over it in journal order, and records what it applied
+in the default `drizzle.__drizzle_migrations` table — the same table
+`intelligo migrate --check` reads. On a database that already has the
+framework's tables but no records (one provisioned with `db:push`) it
+refuses and points here; baseline first, below.
+
+The tables an application owns are a second chain, kept apart on
+purpose: drizzle-kit applies by timestamp, so a framework migration
+published after the consumer generated one of theirs would be skipped
+silently if the two shared a journal. `intelligo create` scaffolds a
+`drizzle.config.ts` whose `schema` lists only the consumer's files,
+whose `out` is the app's own `./drizzle`, and whose `migrations.table`
+is `__app_migrations`. A consumer schema file may `references()` a
+framework table — drizzle-kit emits the foreign key by name and does
+not try to create the referenced table. The scaffold's scripts:
+
+```
+pnpm db:generate   # drizzle-kit generate           — your chain
+pnpm db:migrate    # intelligo migrate && drizzle-kit migrate
+pnpm db:check      # intelligo migrate --check      — deploy gate
+```
+
+`drizzle-kit push` has no place in this layout: it diffs the whole
+database against the schema it can see, and the consumer config sees
+only the consumer's tables.
+
 ## Adding a migration
 
 Prefer `pnpm --filter @intelligo-dev/core db:generate`, which writes both

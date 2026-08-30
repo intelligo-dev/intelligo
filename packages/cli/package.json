@@ -25,6 +25,7 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
+    "drizzle-orm": "^0.45.1",
     "pg": "^8.18.0"
   },
   "devDependencies": {

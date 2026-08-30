@@ -8,11 +8,11 @@
         "target": "app/usage/page.tsx"
       }
     ],
-    "deprecated": "Superseded by the `usage` registry item \u2014 install it with the shadcn CLI from the Intelligo registry instead; it ships a full page, components and thin actions as consumer-owned source."
+    "deprecated": "Superseded by the `usage` registry item — install it with the shadcn CLI from the Intelligo registry instead; it ships a full page, components and thin actions as consumer-owned source."
   },
   "app-scaffold": {
-    "templateVersion": "1.4.0",
-    "description": "A new application: composition root, plans, an assistant route, config, next-intl i18n plumbing, and a registry-consuming shadcn/Tailwind setup",
+    "templateVersion": "1.5.0",
+    "description": "A new application: composition root, plans, an assistant route, config, a drizzle config for the tables you own, next-intl i18n plumbing, and a registry-consuming shadcn/Tailwind setup",
     "files": [
       {
         "template": "app-scaffold/package.json.tpl",
@@ -89,6 +89,14 @@
       {
         "template": "app-scaffold/messages-en-app.json.tpl",
         "target": "messages/en/app.json"
+      },
+      {
+        "template": "app-scaffold/drizzle.config.ts.tpl",
+        "target": "drizzle.config.ts"
+      },
+      {
+        "template": "app-scaffold/db-schema.ts.tpl",
+        "target": "lib/db/schema.ts"
       }
     ]
   },
@@ -101,7 +109,7 @@
         "target": "app/billing/page.tsx"
       }
     ],
-    "deprecated": "Superseded by the `pricing` and `billing-settings` registry items \u2014 install them with the shadcn CLI from the Intelligo registry instead."
+    "deprecated": "Superseded by the `pricing` and `billing-settings` registry items — install them with the shadcn CLI from the Intelligo registry instead."
   },
   "admin-page": {
     "templateVersion": "1.0.0",

@@ -23,6 +23,11 @@ import {
   migrateCheckExitCode,
 } from "./commands/migrate-check.js";
 import {
+  applyExitCode,
+  applyMigrations,
+  formatApplyResult,
+} from "./commands/migrate.js";
+import {
   formatUpgradeReport,
   upgradeCheck,
   upgradeCheckExitCode,
@@ -53,25 +58,23 @@ function usage(): string {
     "",
     "  create <dir>      Scaffold a new application",
     "  doctor            Report configuration and migration-chain problems",
-    "  migrate --check   Compare this checkout's migrations to a database",
+    "  migrate           Apply the framework's migration chain to DATABASE_URL",
+    "  migrate --check   Compare the framework's migrations to a database",
     "  add <feature>     Generate consumer-owned source (--force to overwrite)",
     "  upgrade --check   Show what a template upgrade would change",
     "",
   ].join("\n");
 }
 
-async function runMigrateCheck(): Promise<number> {
+async function runMigrate(mode: "check" | "apply"): Promise<number> {
   const url = process.env.DATABASE_URL;
   if (!url) {
-    console.error("DATABASE_URL is required for `migrate --check`.");
+    console.error(
+      `DATABASE_URL is required for \`migrate${mode === "check" ? " --check" : ""}\`.`
+    );
     return 1;
   }
 
-  // Imported lazily so `doctor` — the command you reach for when the
-  // app will not start — never needs a database driver to load.
-  const { Client } = await import("pg");
-  const client = new Client({ connectionString: url });
-  await client.connect();
   const migrationsDir = resolveMigrationsDir(process.cwd());
   if (!migrationsDir) {
     console.error(
@@ -80,13 +83,37 @@ async function runMigrateCheck(): Promise<number> {
     return 1;
   }
 
+  // Imported lazily so `doctor` — the command you reach for when the
+  // app will not start — never needs a database driver to load.
+  const { Client } = await import("pg");
+  const client = new Client({ connectionString: url });
+  await client.connect();
+
   try {
-    const result = await migrateCheck(
+    if (mode === "check") {
+      const result = await migrateCheck(
+        migrationsDir,
+        async (sql) => (await client.query<{ hash: string }>(sql)).rows
+      );
+      console.log(formatMigrateCheck(result));
+      return migrateCheckExitCode(result);
+    }
+
+    // drizzle's own migrator, on the same connection, so the records it
+    // writes are exactly what `migrate --check` reads back (default
+    // table, sha256 of the file contents, journal order, one
+    // transaction).
+    const [{ drizzle }, { migrate }] = await Promise.all([
+      import("drizzle-orm/node-postgres"),
+      import("drizzle-orm/node-postgres/migrator"),
+    ]);
+    const result = await applyMigrations({
       migrationsDir,
-      async (sql) => (await client.query<{ hash: string }>(sql)).rows
-    );
-    console.log(formatMigrateCheck(result));
-    return migrateCheckExitCode(result);
+      query: async (sql) => (await client.query(sql)).rows,
+      run: () => migrate(drizzle(client), { migrationsFolder: migrationsDir }),
+    });
+    console.log(formatApplyResult(result));
+    return applyExitCode(result);
   } finally {
     await client.end();
   }
@@ -101,14 +128,8 @@ async function main(): Promise<number> {
       console.log(formatResults(results));
       return exitCodeFor(results);
     }
-    case "migrate": {
-      if (!rest.includes("--check")) {
-        console.error("Only `migrate --check` is implemented.");
-        console.error("Applying migrations stays with drizzle-kit for now.");
-        return 1;
-      }
-      return runMigrateCheck();
-    }
+    case "migrate":
+      return runMigrate(rest.includes("--check") ? "check" : "apply");
     case "create": {
       const target = rest.find((a) => !a.startsWith("--"));
       if (!target) {

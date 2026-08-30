@@ -115,7 +115,7 @@ await run.complete({ usage }); // or run.fail({ error })
 - Postgres-backed job queue (`FOR UPDATE SKIP LOCKED`, retries, backoff) — no Redis
 - Append-only audit events
 - Admin console: platform overview, operations, integration health, audited impersonation
-- CLI: `create` scaffolds a registry-ready application (shadcn, Tailwind 4, next-intl, a composition root wired to the execution boundary); `doctor`, `migrate --check`, and `upgrade --check` know which generated files you customized — by content hash — and refuse to clobber them
+- CLI: `create` scaffolds a registry-ready application (shadcn, Tailwind 4, next-intl, a composition root wired to the execution boundary, a drizzle config for the tables you own); `migrate` applies the framework's migration chain and `migrate --check` gates a deploy on it; `doctor`, and `upgrade --check` know which generated files you customized — by content hash — and refuse to clobber them
 
 ## Pages
 
