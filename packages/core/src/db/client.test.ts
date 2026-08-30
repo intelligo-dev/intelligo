@@ -27,9 +27,7 @@ describe("selectDriver", () => {
   });
 
   it("gives ordinary Postgres node-postgres", () => {
-    expect(selectDriver("postgresql://localhost:5432/ci_build")).toBe(
-      "pg"
-    );
+    expect(selectDriver("postgresql://localhost:5432/ci_build")).toBe("pg");
   });
 
   it("lets INTELLIGO_DB_DRIVER override the URL rule", () => {
