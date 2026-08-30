@@ -1,0 +1,27 @@
+{
+  "sidebar": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "chat": "Chat",
+      "artifacts": "Artifacts",
+      "usage": "Usage",
+      "notifications": "Notifications",
+      "pricing": "Pricing",
+      "settings": "Settings",
+      "teamSettings": "Team settings",
+      "workspaceSettings": "Workspace settings"
+    }
+  },
+  "userMenu": {
+    "profile": "Profile",
+    "workspaceSettings": "Workspace settings",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "signOut": "Sign out"
+  },
+  "workspaceSwitcher": {
+    "workspacesLabel": "Workspaces"
+  }
+}

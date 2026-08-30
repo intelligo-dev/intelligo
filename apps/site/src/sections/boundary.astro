@@ -1,0 +1,44 @@
+---
+import SectionHead from "@/components/section-head.astro";
+import { BoundaryCode } from "@/components/boundary-code";
+import { SITE } from "@/lib/site";
+---
+<section id="boundary" class="xline">
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag="the execution boundary"
+      title="Every AI run is bracketed,<br />never wrapped."
+      lede="Intelligo handles admission, accounting and settlement. Your application's AI framework stays native in the middle."
+    />
+
+    <!-- the mental model, in one strip -->
+    <div class="reveal mt-8 grid grid-cols-[1fr_auto_1fr_auto_1fr] items-stretch gap-0 overflow-x-auto border border-line-strong bg-paper-raised text-center">
+      <div class="p-4">
+        <div class="tag">intelligo</div>
+        <div class="mono mt-2 text-[0.95rem] text-ink">begin()</div>
+        <div class="mt-0.5 text-[0.78rem] text-ink-dim">admit &amp; reserve</div>
+      </div>
+      <div class="mono self-center px-2 text-ink-faint" aria-hidden="true">→</div>
+      <div class="border-x border-dashed border-amber bg-amber-soft/40 p-4">
+        <div class="tag text-amber">your app</div>
+        <div class="mono mt-2 text-[0.95rem] text-ink">yourAgent()</div>
+        <div class="mt-0.5 text-[0.78rem] text-ink-dim">native, unmodified</div>
+      </div>
+      <div class="mono self-center px-2 text-ink-faint" aria-hidden="true">→</div>
+      <div class="p-4">
+        <div class="tag">intelligo</div>
+        <div class="mono mt-2 text-[0.95rem] text-ink"><span class="text-settle">complete()</span> <span class="text-ink-faint">/</span> <span class="text-fail">fail()</span></div>
+        <div class="mt-0.5 text-[0.78rem] text-ink-dim">settle or release</div>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <BoundaryCode client:visible />
+    </div>
+    <p class="mono mt-6 text-[0.72rem] text-ink-faint">
+      <a href={`${SITE.adrs}/0003-ai-framework-boundary.md`} class="hover:text-ink">ADR-0003 · AI frameworks stay native</a>
+      <span aria-hidden="true"> · </span>
+      <a href={`${SITE.adrs}/0007-execution-boundary.md`} class="hover:text-ink">ADR-0007 · a lifecycle with ports, not a wrapper</a>
+    </p>
+  </div>
+</section>

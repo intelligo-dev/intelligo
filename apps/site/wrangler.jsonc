@@ -1,0 +1,16 @@
+{
+  // Static site on Cloudflare Workers: assets only, no Worker script.
+  // Astro's `output: "static"` prerenders everything in Node at build
+  // time, so the @astrojs/cloudflare adapter is deliberately absent —
+  // with it, the pages are bundled into dist/_worker.js and prerendered
+  // inside workerd, where browser globals (HTMLElement) do not exist.
+  // An explicit config also stops Workers Builds from auto-configuring
+  // an adapter it thinks is missing.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "intelligo-dev",
+  "compatibility_date": "2026-08-28",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}

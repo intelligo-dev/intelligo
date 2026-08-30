@@ -1,0 +1,30 @@
+---
+import SectionHead from "@/components/section-head.astro";
+import { PROOF, PROOF_STATS } from "@/lib/proof";
+import { SITE } from "@/lib/site";
+---
+<section id="proof" class="xline">
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag="engineering proof"
+      title="Not a pitch. A count."
+      lede="Counted from the framework repository, not typed into a landing page."
+    />
+    <div class="reveal mt-8 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+      {PROOF_STATS.map((s) => (
+        <div class="bg-paper-raised p-5">
+          <div class="mono text-[2.3rem] font-semibold leading-none tabular-nums text-ink">{s.value}</div>
+          <div class="mono mt-1.5 text-[0.66rem] uppercase tracking-[0.08em] text-ink-faint">{s.label}</div>
+          <p class="mt-3 text-[0.82rem] text-ink-dim">{s.note}</p>
+        </div>
+      ))}
+    </div>
+    <p class="mono mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[0.7rem] text-ink-faint">
+      <span>counted {PROOF.sampledAt} · v{PROOF.version}</span>
+      <span aria-hidden="true">·</span>
+      <a href={SITE.adrs} class="hover:text-ink">{PROOF.adrs} decisions, recorded as ADRs →</a>
+      <span aria-hidden="true">·</span>
+      <a href={`${SITE.github}/tree/main/tests/architecture`} class="hover:text-ink">the architecture, as tests →</a>
+    </p>
+  </div>
+</section>

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "smoke",
+  "title": "Registry Smoke Test",
+  "description": "Permanent canary item that proves the registry build and install pipeline end to end.",
+  "dependencies": [
+    "next-intl"
+  ],
+  "registryDependencies": [
+    "button",
+    "card"
+  ],
+  "files": [
+    {
+      "path": "base/smoke/page.tsx",
+      "content": "import { getTranslations } from \"next-intl/server\";\n\nimport { SmokeCard } from \"@/components/smoke/smoke-card\";\n\nexport default async function RegistrySmokePage() {\n  const t = await getTranslations(\"smoke\");\n\n  return (\n    <main className=\"flex min-h-screen flex-col items-center justify-center gap-6 p-8\">\n      <h1 className=\"text-3xl font-bold\">{t(\"heading\")}</h1>\n      <SmokeCard />\n    </main>\n  );\n}\n",
+      "type": "registry:page",
+      "target": "app/[locale]/registry-smoke/page.tsx"
+    },
+    {
+      "path": "base/smoke/components/smoke-card.tsx",
+      "content": "import { Button } from \"@/components/ui/button\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\n\nexport function SmokeCard() {\n  return (\n    <Card>\n      <CardHeader>\n        <CardTitle>Registry smoke test</CardTitle>\n      </CardHeader>\n      <CardContent className=\"flex flex-col gap-4\">\n        <p className=\"text-sm text-muted-foreground\">\n          If you can see this card, the Intelligo registry pipeline built,\n          installed, and rendered correctly.\n        </p>\n        <Button>It works</Button>\n      </CardContent>\n    </Card>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/smoke/smoke-card.tsx"
+    },
+    {
+      "path": "base/smoke/messages/en.json",
+      "content": "{\n  \"heading\": \"Intelligo Registry Smoke Test\"\n}\n",
+      "type": "registry:file",
+      "target": "messages/en/smoke.json"
+    }
+  ],
+  "type": "registry:block"
+}

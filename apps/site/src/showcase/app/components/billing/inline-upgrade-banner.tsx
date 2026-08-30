@@ -1,0 +1,49 @@
+"use client";
+
+/**
+ * The quietest of the three gating densities: one row, for a control
+ * that is present but unavailable — a disabled toggle, a menu item a
+ * plan doesn't include. Use `UpgradePrompt` when the gate replaces
+ * real content, and this when it only annotates it.
+ */
+
+import { ArrowUpRight, Lock } from "lucide-react";
+import { useTranslations } from "use-intl";
+
+import { Link } from "@showcase/i18n/navigation";
+import { Button } from "@showcase/components/ui/button";
+import { featureGatingConfig } from "@showcase/lib/feature-gating-config";
+
+interface InlineUpgradeBannerProps {
+  /** Display name of the gated feature, already localized. */
+  feature: string;
+  /** Display name of the plan that unlocks it, already localized. */
+  requiredPlan: string;
+  /** Overrides the default sentence entirely. */
+  message?: string;
+}
+
+export function InlineUpgradeBanner({
+  feature,
+  requiredPlan,
+  message,
+}: InlineUpgradeBannerProps) {
+  const t = useTranslations("feature-gating");
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+        <Lock className="h-4 w-4 text-muted-foreground" aria-hidden />
+      </span>
+      <p className="flex-1 text-sm text-muted-foreground">
+        {message ?? t("inline.message", { feature, plan: requiredPlan })}
+      </p>
+      <Button asChild size="sm" variant="outline">
+        <Link href={featureGatingConfig.upgradeHref}>
+          {t("inline.cta")}
+          <ArrowUpRight className="ml-2 h-3 w-3" />
+        </Link>
+      </Button>
+    </div>
+  );
+}

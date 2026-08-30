@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "title": "Billing"
+  },
+  "page": {
+    "title": "Billing",
+    "description": "Manage {workspaceName}'s plan and payment details."
+  },
+  "member": {
+    "currentPlan": "Current plan: {planName}",
+    "note": "Only workspace owners can manage billing. Ask an owner to change plans or update payment details."
+  },
+  "admin": {
+    "currentPlan": "Current plan: {planName}",
+    "note": "Ask a workspace owner to change plans or manage payment details."
+  },
+  "owner": {
+    "currentPlanLabel": "Current plan",
+    "renews": "Renews {date}",
+    "viewAllPlans": "View all plans",
+    "manageSubscription": "Manage subscription",
+    "creditBalanceLabel": "Credit balance",
+    "creditsUnit": "credits",
+    "creditBalanceNote": "Credits are used for pay-as-you-go access alongside your plan.",
+    "paymentMethodTitle": "Payment method & invoices",
+    "paymentMethodNote": "Manage your payment method and view invoices in the billing portal.",
+    "openPortal": "Open billing portal"
+  },
+  "creditBundles": {
+    "buyMore": "Buy more credits",
+    "currentBalance": "Current balance: {count} credits",
+    "creditsUnit": "credits",
+    "oneTime": "{price}, one-time",
+    "purchase": "Purchase",
+    "redirecting": "Redirecting…"
+  },
+  "portalButton": {
+    "manageBilling": "Manage billing",
+    "redirecting": "Redirecting…"
+  }
+}

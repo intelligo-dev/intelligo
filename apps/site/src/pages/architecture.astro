@@ -1,0 +1,99 @@
+---
+import Page from "@/layouts/Page.astro";
+import { PackageMap } from "@/components/package-map";
+import { RuleToggles } from "@/components/rule-toggles";
+import { PROOF } from "@/lib/proof";
+import { SITE } from "@/lib/site";
+
+const ADRS = [
+  ["0001", "Category and positioning", "0001-category-and-positioning.md"],
+  ["0002", "Product ownership — dependency upgrades never overwrite consumer source", "0002-product-ownership.md"],
+  ["0003", "AI frameworks stay native; Intelligo records only the execution boundary", "0003-ai-framework-boundary.md"],
+  ["0004", "One PostgreSQL database, explicit per-table ownership", "0004-database-ownership.md"],
+  ["0005", "One service layer behind two thin transports, one composition root", "0005-transport-and-composition.md"],
+  ["0006", "The package allowlist", "0006-package-allowlist.md"],
+  ["0007", "The execution boundary is a lifecycle with ports, not a wrapper", "0007-execution-boundary.md"],
+  ["0008", "Dissolving the undecided packages", "0008-dissolving-the-undecided-packages.md"],
+  ["0009", "Conversation and document persistence are framework capabilities", "0009-public-conversation-and-document-contracts.md"],
+  ["0010", "Registry items are i18n-native and installed unmodified", "0010-registry-i18n-standard.md"],
+];
+
+const OWNERSHIP = [
+  ["Packages", "Versioned on npm as @intelligo-dev/*. Services, schema, migrations. Upgraded with SemVer; never edited in place."],
+  ["Generated source", "What intelligo create writes: the composition root, plans, i18n routing. Hashed in intelligo.manifest.json so doctor and upgrade --check know what you changed."],
+  ["Installed pages", "What shadcn add writes from the registry. Yours from the first commit; re-install to take an update."],
+  ["Your agent", "Prompts, tools, knowledge, evals — in your AI framework. Intelligo has no import into it."],
+];
+---
+<Page
+  path="/architecture"
+  tag="architecture"
+  title={`${PROOF.packages} packages, one database,<br />and the rules that hold them apart.`}
+  lede="The full package graph, the dependency rules as the tests that enforce them, who owns which files, and the decisions behind it all."
+  description="The Intelligo architecture: package dependency graph, boundaries enforced as tests, ownership model and design decisions."
+>
+  <section id="packages" class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <div class="section-head">
+        <span class="tag">the package graph</span>
+        <h2>Real imports. Hover to see them, click to see what each owns.</h2>
+      </div>
+      <div class="mt-6">
+        <PackageMap client:load />
+      </div>
+      <p class="mono mt-4 text-[0.72rem] text-ink-faint">
+        No <span class="text-ink-dim">auth → billing</span>, no <span class="text-ink-dim">executions → anything</span> — the dependency-direction test fails the build otherwise.
+      </p>
+    </div>
+  </section>
+
+  <section id="rules" class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <div class="grid gap-8 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
+        <div class="section-head">
+          <span class="tag">architecture as failing tests</span>
+          <h2>Enforced by tests,<br />not by a style guide.</h2>
+          <p>Break a rule and read the assertion the real test emits. {PROOF.architectureTests} suites run on every commit alongside the unit and real-database tests.</p>
+        </div>
+        <RuleToggles client:visible />
+      </div>
+    </div>
+  </section>
+
+  <section id="ownership" class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <div class="section-head">
+        <span class="tag">ownership</span>
+        <h2>Four kinds of file. Four owners.</h2>
+      </div>
+      <div class="mt-6 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+        {OWNERSHIP.map(([h, b]) => (
+          <div class="bg-paper p-4">
+            <div class="text-[0.98rem] font-semibold text-ink">{h}</div>
+            <p class="mt-1 text-[0.86rem] text-ink-dim">{b}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section id="decisions" class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <div class="section-head">
+        <span class="tag">decisions</span>
+        <h2>{PROOF.adrs} decisions, recorded as ADRs.</h2>
+      </div>
+      <ol class="mt-6 border-t border-line">
+        {ADRS.map(([n, title, file]) => (
+          <li class="border-b border-line">
+            <a href={`${SITE.adrs}/${file}`} class="flex items-baseline gap-4 py-3 no-underline hover:bg-paper-raised">
+              <span class="mono w-12 shrink-0 text-[0.72rem] text-ink-faint">{n}</span>
+              <span class="text-[0.95rem] text-ink">{title}</span>
+              <span class="mono ml-auto text-[0.7rem] text-ink-faint">↗</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+</Page>
