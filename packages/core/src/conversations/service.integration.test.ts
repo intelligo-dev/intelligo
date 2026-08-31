@@ -68,7 +68,7 @@ d("conversations service — real DB integration", () => {
 
   it("createConversation then getConversation round-trips, scoped to the actor", async () => {
     const conv = await service.createConversation(actor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
     expect(conv.workspaceId).toBe(workspaceId);
@@ -80,7 +80,7 @@ d("conversations service — real DB integration", () => {
 
   it("getConversation throws not_found for another user's conversation", async () => {
     const conv = await service.createConversation(actor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
 
@@ -94,11 +94,11 @@ d("conversations service — real DB integration", () => {
 
   it("listConversations only returns the actor's own conversations", async () => {
     await service.createConversation(actor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
     await service.createConversation(otherActor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
 
@@ -114,7 +114,7 @@ d("conversations service — real DB integration", () => {
 
   it("renameConversation updates the title within scope", async () => {
     const conv = await service.createConversation(actor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
 
@@ -128,7 +128,7 @@ d("conversations service — real DB integration", () => {
 
   it("renameConversation throws not_found for a conversation outside the actor's scope", async () => {
     const conv = await service.createConversation(otherActor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
 
@@ -142,7 +142,7 @@ d("conversations service — real DB integration", () => {
 
   it("saveMessages, getMessages and upsertMessages round-trip in order", async () => {
     const conv = await service.createConversation(actor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
 
@@ -186,7 +186,7 @@ d("conversations service — real DB integration", () => {
 
   it("saveMessages throws forbidden when a message targets a conversation the actor does not own", async () => {
     const conv = await service.createConversation(otherActor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
 
@@ -207,7 +207,7 @@ d("conversations service — real DB integration", () => {
 
   it("voteMessage and getVotes round-trip, then deleteTrailingMessages prunes", async () => {
     const conv = await service.createConversation(actor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
     const inserted = await service.saveMessages(actor, [
@@ -246,7 +246,7 @@ d("conversations service — real DB integration", () => {
 
   it("deleteConversation removes the conversation for the owning actor", async () => {
     const conv = await service.createConversation(actor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
 
@@ -260,11 +260,11 @@ d("conversations service — real DB integration", () => {
 
   it("deleteAllConversations only removes the actor's own conversations", async () => {
     await service.createConversation(actor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
     const untouched = await service.createConversation(otherActor, {
-      agentId: "support-assistant",
+      agentId: "assistant",
       modelId: "google/gemini-2.5-flash",
     });
 
@@ -278,7 +278,7 @@ d("conversations service — real DB integration", () => {
   it("getConversationHistory paginates with a cursor scoped to the actor", async () => {
     for (let i = 0; i < 3; i++) {
       await service.createConversation(actor, {
-        agentId: "support-assistant",
+        agentId: "assistant",
         modelId: "google/gemini-2.5-flash",
       });
     }

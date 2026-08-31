@@ -4,7 +4,7 @@
  * POST — streams an assistant reply through the execution boundary:
  *   auth → rate limit → feature gate → load-or-create conversation →
  *   executions.begin() → streamText → persist. Ordering mirrors
- * Acme's production `/api/chat` route; ADR-0003 is why entitlement
+ * the first product's production `/api/chat` route; ADR-0003 is why entitlement
  * is decided here (`executions.begin`) rather than earlier — the hold
  * has to match the model that's actually about to run.
  *

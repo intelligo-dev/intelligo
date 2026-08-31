@@ -119,8 +119,8 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
         }
   );
 
-  // 3. Billing product. The engine has no built-in default since the
-  //    Support catalogue moved out; an unset product means every plan
+  // 3. Billing product. The engine has no built-in default catalogue;
+  //    an unset product means every plan
   //    lookup returns nothing and quotas silently read as zero.
   results.push(
     env.INTELLIGO_BILLING_PRODUCT

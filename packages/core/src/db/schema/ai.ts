@@ -2,7 +2,7 @@
  * AI Database Schema
  *
  * Tables for AI conversations, messages, and knowledge base with pgvector support.
- * Used by all AI products (Support Assistant, Study Planner, AI Tools) for chat persistence and RAG.
+ * Used by every product built on the framework for chat persistence and RAG.
  *
  * Pattern: snake_case columns in PostgreSQL, camelCase TypeScript API (via Drizzle mapping)
  */
@@ -25,9 +25,9 @@ import type { BilingualText } from "./agents";
 /**
  * Generic conversation metadata bag.
  *
- * The support-specific AssessmentState type and the
+ * The first product's AssessmentState type and the
  * `assessmentState` field that used to live here moved to
- * the vertical package's schemas in Wave 2 of the decoupling. Any
+ * that product's schemas in Wave 2 of the decoupling. Any
  * vertical product that needs to attach typed state to a
  * conversation should put it under `productContext` and own the
  * shape in its own package.
@@ -53,7 +53,7 @@ export const conversations = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    agentId: text("agent_id").notNull(), // "support-assistant" | "study-planner"
+    agentId: text("agent_id").notNull(), // the product's agent slug
     title: text("title"), // Nullable, auto-generated from first message in Phase 19
     modelId: text("model_id"), // e.g., "openai/gpt-4o"
     visibility: text("visibility").notNull().default("private"), // "private" | "public"
@@ -119,7 +119,7 @@ export const knowledgeDocuments = pgTable(
     sizeBytes: integer("size_bytes"),
     chunkCount: integer("chunk_count").default(0),
     status: text("status").notNull().default("processing"), // "processing" | "ready" | "failed"
-    product: text("product"), // "support" | "study" | null (shared)
+    product: text("product"), // product slug, or null (shared)
     metadata: text("metadata"), // JSON string for additional info
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -183,7 +183,7 @@ export const votes = pgTable(
  * Lookup table for document kinds — extensible without code changes.
  */
 export const documentTypes = pgTable("document_types", {
-  id: text("id").primaryKey(), // e.g. "support-report"
+  id: text("id").primaryKey(), // e.g. "summary-report"
   name: text("name").notNull(), // Display name
   nameMn: text("name_mn").notNull(), // Mongolian display name
   description: text("description"),
@@ -209,7 +209,7 @@ export const documents = pgTable(
     typeId: text("type_id").references(() => documentTypes.id, {
       onDelete: "set null",
     }),
-    metadata: jsonb("metadata"), // Structured data (e.g. CareerReport JSON)
+    metadata: jsonb("metadata"), // Structured data (e.g. a report's JSON)
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -260,7 +260,7 @@ export const suggestions = pgTable(
 // userProfiles table moved to the vertical package's schema in
 // Wave 2 of the architecture decoupling. The Phase B identity graph
 // (`user_facts`, `user_profile_snapshots`) supersedes it for new
-// writes; the legacy table is kept around in the support package
+// writes; the legacy table is kept around in the product package
 // until the backfill migration has run in production and the chat
 // handler stops reading from it.
 
@@ -330,8 +330,8 @@ export const imageGenerations = pgTable(
  * Knowledge Articles table — generic curated bilingual articles.
  *
  * The category column is opaque text. Each vertical product validates
- * its allowed categories at the application layer (support's set lives
- * in the vertical package's configuration; future verticals declare their own).
+ * its allowed categories at the application layer (each product's set
+ * lives in that product's configuration).
  * The decoupling moved the category enum out of this comment.
  */
 export const knowledgeArticles = pgTable(
@@ -358,18 +358,17 @@ export const knowledgeArticles = pgTable(
 
 // competitions and competition_entries tables moved to
 // the vertical package's schema in Wave 2 of the architecture
-// decoupling. They use support-specific scoring (assessment count) and
-// will graduate to a generic leaderboard primitive in
-// @intelligo-dev/agents/db when a second vertical needs them.
+// decoupling. They use product-specific scoring (assessment count) and
+// would graduate to a generic leaderboard primitive here when a
+// second vertical needs them.
 
 /**
  * Referral Codes table - Unique referral codes per user
  * Each user gets one 6-char alphanumeric code (e.g., "BOLD26").
  *
  * Generic growth primitive — kept in core because every vertical
- * product can benefit from a referral mechanic. Support Assistant
- * happens to be the first to use it; future verticals reuse the
- * same table without a copy.
+ * product can benefit from a referral mechanic; every product reuses
+ * the same table without a copy.
  */
 export const referralCodes = pgTable(
   "referral_codes",
@@ -419,7 +418,7 @@ export const referrals = pgTable(
 
 // shared_reports table moved to the vertical package's schema in
 // Wave 2 of the architecture decoupling. The reportType field is a
-// closed union of support-only report kinds; a future generic
+// closed union of that product's report kinds; a future generic
 // shared-documents primitive would replace it with an opaque slug.
 
 // Export inferred types for TypeScript usage

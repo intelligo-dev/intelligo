@@ -1,8 +1,8 @@
 /**
  * Workspace management service — the durable business rules behind
  * workspace listing, creation, switching, editing and deletion,
- * extracted from the product application's workspace actions (page/
- * registry migration, `workspace-settings` family, roadmap item 8).
+ * lifted out of the first product's workspace actions (page/registry
+ * migration, `workspace-settings` family, roadmap item 8).
  *
  * Mirrors `createTeamService(ports)` (./../team/service.ts) one
  * directory over: a factory over optional ports, so this package's
@@ -24,7 +24,7 @@
  * Why `checkWorkspaceLimit` takes a `userId`, not a `workspaceId`
  * ---------------------------------------------------------------------
  * `createWorkspace` has no workspace to check the plan of yet — it is
- * the thing being created. Acme's original action worked around this
+ * the thing being created. The product's original action worked around this
  * by reading the caller's *existing* workspaces and using the first
  * one's id to look up a plan via `@intelligo-dev/billing`'s
  * `checkPlanLimit(workspaceId, "workspaces", currentCount)`, i.e. it
@@ -34,7 +34,7 @@
  * `userId` and how many workspaces they already have. The composition
  * root's binding (`checkWorkspaceLimit`) is where a consumer decides
  * how to resolve "this user's plan" — by reading their first workspace
- * the same way acme did, or by a real per-user plan lookup if one
+ * the same way the first product did, or by a real per-user plan lookup if one
  * exists.
  *
  * ---------------------------------------------------------------------
@@ -51,7 +51,7 @@
  *    updateOrganization, deleteOrganization, getFullOrganization}`
  *    directly for the base organization CRUD surface, which is not
  *    part of `orgApi`'s typed table (the same approach
- *    `../team/service.ts` takes for `getFullOrganization`). Acme's
+ *    `../team/service.ts` takes for `getFullOrganization`). The product's
  *    original `actions/workspace.ts` already called these four by
  *    their correct `auth.api` names directly (it never went through a
  *    path-keyed cast), so there is no method-name bug to fix here.
@@ -343,7 +343,7 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
 
   /**
    * Get the caller's active workspace, fully resolved. Unlike
-   * acme's original (see the module doc comment), this resolves the
+   * the original action (see the module doc comment), this resolves the
    * workspace id explicitly via `requireWorkspace()` rather than
    * relying on a non-existent `sessions.activeOrganizationId` fallback.
    */

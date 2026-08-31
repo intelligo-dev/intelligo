@@ -4,7 +4,7 @@
  * `useNotifications` — client-side state for the notification bell:
  * unread count + recent list, refreshed by polling every 60s, paused
  * while the caller says a dropdown showing the data is open (mirrors
- * Acme's `NotificationBell`). Mutations are optimistic: the local
+ * the first product's `NotificationBell`). Mutations are optimistic: the local
  * state updates immediately, the server action runs alongside it.
  *
  * Pass `initialCount`/`initialNotifications` when a server component up

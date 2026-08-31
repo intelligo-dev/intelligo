@@ -14,8 +14,8 @@
  *    incident notice, or a plan-upgrade nudge that every authenticated
  *    page should see. It takes no props; a product binding one that
  *    needs data of its own (session, workspace, trial status) fetches
- *    it itself, the same way Acme's own `TrialBanner` did before
- *    this seam existed. Default: nothing extra.
+ *    it itself, the same way the first product's `TrialBanner` did
+ *    before this seam existed. Default: nothing extra.
  *
  * Edit this file directly to point at your product's own components —
  * this is consumer-owned source, not a package import. Example, once

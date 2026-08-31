@@ -50,7 +50,7 @@ function getTodayStartUTC(): Date {
  * Falls back to free plan limit (0) if plan slug is unknown.
  */
 function getPlanGenerationLimit(_planSlug: string | null | undefined): number {
-  // Image generation not used in Support Assistant — always 0
+  // No plan ships an image-generation allowance yet — always 0
   return 0;
 }
 

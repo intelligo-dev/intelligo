@@ -6,7 +6,7 @@
  * records. Limits come from the plan catalogue the product registered;
  * this module knows no action names of its own.
  *
- * Until migration 0038 the table also carried three support-specific
+ * Until migration 0038 the table also carried three product-specific
  * integer columns which this module read in preference to the generic
  * map, and a hardcoded slug→column table to reach them. Both are gone:
  * counters live only in the `usage` JSONB map, keyed by whatever action
@@ -44,8 +44,9 @@ export interface FeatureQuotaResult {
  * Resolve the limit for a (plan, action) pair through the registry.
  *
  * The limit field is normally the action slug itself; a product whose
- * plan limits were named before its actions were (Support caps `chat`
- * with `chatMessages`) declares the remap via registerActionLimitKeys.
+ * plan limits were named before its actions were (the first product
+ * capped `chat` with `chatMessages`) declares the remap via
+ * registerActionLimitKeys.
  * An action with no limit configured resolves to 0 — refused, not
  * silently unlimited.
  */
@@ -132,9 +133,8 @@ export async function checkFeatureQuota(
   const remaining = Math.max(0, limit - used);
   const percentage = limit > 0 ? Math.round((used / limit) * 100) : 0;
 
-  // Exceeded — pull the upgrade copy from the product registry. Support
-  // bootstrap supplies the Mongolian strings; future verticals supply
-  // their own through registerUpgradeMessages().
+  // Exceeded — pull the upgrade copy from the product registry, which
+  // the composition root filled through registerUpgradeMessages().
   if (used >= limit) {
     return {
       allowed: false,

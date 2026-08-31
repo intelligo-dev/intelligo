@@ -92,7 +92,7 @@ describe("checkRateLimit", () => {
 
   // The plan names and numbers are the registry's now, not this
   // package's — the ceilings below are registered per test rather
-  // than read off a constant that named Support's plans (ADR-0006).
+  // than read off a constant that named one product's plans (ADR-0006).
   it.each([
     ["free", 10],
     ["standard", 60],
@@ -201,7 +201,7 @@ describe("cleanupRateLimitEntries", () => {
 /**
  * Per-plan ceilings come from the registry now.
  *
- * They were a constant in this package naming Support's plans plus an
+ * They were a constant in this package naming one product's plans plus an
  * `enterprise` tier that is not in `PlanSlug`, so the 300/min row was
  * unreachable and `standard` quietly got the free ceiling (ADR-0006).
  */
@@ -222,8 +222,8 @@ describe("registered per-plan ceilings", () => {
   });
 
   it("honours what the product registered", async () => {
-    setDefaultProductSlug("support");
-    registerRateLimits("support", { free: 10, standard: 60, pro: 300 });
+    setDefaultProductSlug("acme");
+    registerRateLimits("acme", { free: 10, standard: 60, pro: 300 });
 
     mockBucketCount(60);
     expect((await checkRateLimit("ws-1", "pro")).allowed).toBe(true);
@@ -231,8 +231,8 @@ describe("registered per-plan ceilings", () => {
   });
 
   it("gives an unregistered plan the default, not another plan's", async () => {
-    setDefaultProductSlug("support");
-    registerRateLimits("support", { free: 10, pro: 300 });
+    setDefaultProductSlug("acme");
+    registerRateLimits("acme", { free: 10, pro: 300 });
 
     mockBucketCount(11);
     const result = await checkRateLimit("ws-1", "standard");

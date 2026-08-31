@@ -26,9 +26,9 @@ import {
  *
  * The matrix itself is product vocabulary and lives in the vertical
  * (ADR-0006); the composition root registers it. Until Phase 3 the
- * complete Support list — `detailed_assessment`, `ai_proof_forecast`,
- * `scholarship_international`, `parent_report_deep` — was a hardcoded
- * constant in this file, inside a package headed for publication. The
+ * first product's complete list — four feature keys in its own
+ * vocabulary — was a hardcoded constant in this file, inside a package
+ * headed for publication. The
  * plan catalogue had already been moved out for the same reason; this
  * is the sibling leak that survived it.
  *

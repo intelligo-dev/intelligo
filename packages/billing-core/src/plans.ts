@@ -6,12 +6,12 @@
  * owns them (ADR-0006); they reach the billing engine through
  * plan-registry.ts, which the composition root populates.
  *
- * Until Phase 3 this file also carried the Support catalogue — ₮29,900
- * price points, Mongolian feature copy, and a `LegacyCareerPlanLimits`
- * interface naming `assessments`, `reportType`, `careerComparison`.
- * That was a second, silently diverging source of truth (this copy had
- * `monthlyCreditMnt`, which drives the actual quota; the support copy
- * did not) sitting inside a package destined to be published.
+ * Until Phase 3 this file also carried the first product's catalogue —
+ * its price points, its feature copy, and a legacy limits interface
+ * naming its actions. That was a second, silently diverging source of
+ * truth (this copy had `monthlyCreditMnt`, which drives the actual
+ * quota; the product copy did not) sitting inside a package destined
+ * to be published.
  */
 
 /**

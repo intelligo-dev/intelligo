@@ -3,7 +3,7 @@
  *
  * Mocks `../helpers` (requireAuth/requireWorkspace/requireRole),
  * `../server` (auth.api.getFullOrganization/getSession), and
- * `../org-api` (orgApi) — the same seam acme's former
+ * `../org-api` (orgApi) — the same seam the product's former
  * actions/__tests__/team.test.ts mocked, just one layer down. Focused
  * on role gating, the limit port, the sole-owner-leave guard, the
  * accept pre/post-check, and TeamServiceError codes.

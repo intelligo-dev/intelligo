@@ -1,6 +1,6 @@
 /**
  * Onboarding service — the durable business rules behind a user's
- * first-run onboarding flow, extracted from the product application's
+ * first-run onboarding flow, lifted out of the first product's
  * onboarding actions (page/registry migration, `onboarding` family,
  * roadmap item 11).
  *
@@ -12,7 +12,7 @@
  * No ports: `complete()` and `skip()` only flip those two columns and
  * return the resulting state — they do NOT provision trial credits,
  * record referrals, or perform any other first-workspace bootstrapping.
- * Acme's original `completeOnboarding()` action did exactly that
+ * The product's original `completeOnboarding()` action did exactly that
  * (`provisionTrialCredits`/`recordReferralSignup`/`grantReferralUpgrade`
  * inline), but that work belongs to the consumer's own
  * `onWorkspaceCreated` binding instead — see `../workspace-init.ts`'s
@@ -38,7 +38,7 @@
  * Why `skip()` has the same durable effect as `complete()`
  * ---------------------------------------------------------------------
  * The `users` table has no separate "skipped" column, so there is
- * nothing else to persist. Acme's original `skipOnboarding()` action
+ * nothing else to persist. The product's original `skipOnboarding()` action
  * logged an analytics event and then delegated to `completeOnboarding()`
  * unchanged; this service mirrors that shape as two distinct methods
  * (rather than collapsing `skip` into an alias) so a transport can

@@ -4,7 +4,7 @@
  * Tests for checkGenerationQuota, recordGeneration, and getGenerationUsage.
  * All DB and query calls are mocked so no real database or API keys are needed.
  *
- * NOTE: Image generation is not used in Support Assistant.
+ * NOTE: No plan ships an image-generation allowance yet.
  * getPlanGenerationLimit() returns 0 for all plans, so all quota checks deny.
  */
 

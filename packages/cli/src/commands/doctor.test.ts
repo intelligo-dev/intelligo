@@ -14,7 +14,7 @@ const fullEnv = {
   DATABASE_URL: "postgresql://localhost/x",
   BETTER_AUTH_SECRET: "s",
   NEXT_PUBLIC_APP_URL: "http://localhost:4000",
-  INTELLIGO_BILLING_PRODUCT: "support",
+  INTELLIGO_BILLING_PRODUCT: "acme",
 } as NodeJS.ProcessEnv;
 
 describe("runChecks", () => {
@@ -34,8 +34,8 @@ describe("runChecks", () => {
   });
 
   it("warns when no billing product is configured", () => {
-    // The engine has no built-in default since the Support catalogue
-    // moved out, so an unset product means plan lookups find nothing.
+    // The engine has no built-in default catalogue, so an unset
+    // product means plan lookups find nothing.
     const results = runChecks({ root: "/nonexistent", env: {} });
 
     expect(results.find((r) => r.name === "billing")!.status).toBe("warn");

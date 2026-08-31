@@ -4,8 +4,8 @@
  * Zod schemas for workspace create/update inputs, shared by the
  * workspace service and its transports.
  *
- * (Ported from the product application's workspace validation module —
- * same semantics. Acme's copy is retired at cutover.)
+ * (Ported from the first product's workspace validation module —
+ * same semantics.)
  */
 
 import { z } from "zod";

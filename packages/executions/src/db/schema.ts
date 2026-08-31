@@ -43,7 +43,7 @@ export const executions = pgTable(
     }),
     /**
      * What the caller asked for, in the product's own vocabulary:
-     * "support.recommendation", "chat.message". Opaque to Intelligo —
+     * "support.reply", "chat.message". Opaque to Intelligo —
      * used for entitlement decisions, grouping, and admin filtering.
      */
     capability: text("capability").notNull(),

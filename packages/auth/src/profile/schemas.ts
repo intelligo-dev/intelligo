@@ -4,9 +4,8 @@
  * Zod schemas for user profile updates, shared by the profile service
  * and its transports.
  *
- * (Ported from the product application's `lib/validations/profile.ts` —
- * same semantics: optional name, optional-and-nullable image URL.
- * Acme's copy is retired at cutover.)
+ * (Ported from the first product's `lib/validations/profile.ts` —
+ * same semantics: optional name, optional-and-nullable image URL.)
  */
 
 import { z } from "zod";

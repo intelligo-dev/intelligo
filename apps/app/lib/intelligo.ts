@@ -3,10 +3,10 @@ import "server-only";
 /**
  * The reference application's composition root (ADR-0005).
  *
- * Deliberately the same shape as Acme's: register the product's
+ * Deliberately the same shape as a real product's: register the product's
  * plans and features, tell the billing engine which product it is
  * serving, and bind the execution boundary's ports. If this file has
- * to do anything Acme's does not — or reach into a package's
+ * to do anything a product's does not — or reach into a package's
  * internals to do it — that is a boundary defect worth fixing in the
  * package rather than working around here.
  */

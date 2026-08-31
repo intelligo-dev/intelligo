@@ -74,7 +74,7 @@ d("documents service — real DB integration", () => {
     const id = `doc-${suffix}-1`;
     const saved = await saveDocument(actor, {
       id,
-      title: "Support Report",
+      title: "Quarterly Report",
       content: "hello",
       kind: "text",
     });

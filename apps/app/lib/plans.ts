@@ -4,7 +4,7 @@
  * Lives in the application because plan data is the product's, not the
  * framework's (ADR-0006). The shape is all that @intelligo-dev/billing
  * knows; the names, prices, and limits are entirely ours — and
- * deliberately have nothing to do with Support, which is the point of
+ * deliberately shared with no real product, which is the point of
  * this app existing.
  *
  * Prices are in the currency `lib/billing-config.ts` declares (USD

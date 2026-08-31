@@ -41,7 +41,7 @@ function fakeExecutions(overrides: Record<string, unknown> = {}) {
 const base = {
   workspaceId: "ws-1",
   userId: "u-1",
-  capability: "support.recommendation",
+  capability: "support.reply",
 };
 
 beforeEach(() => vi.clearAllMocks());
@@ -202,7 +202,7 @@ describe("runWithExecution", () => {
     expect(begin).toHaveBeenCalledWith({
       workspaceId: "ws-1",
       userId: "u-1",
-      capability: "support.recommendation",
+      capability: "support.reply",
       requestId: "req-9",
       model: "gpt-5",
       metadata: { conversationId: "c-1" },

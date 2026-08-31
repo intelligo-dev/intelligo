@@ -21,75 +21,75 @@ describe("document classifier registry", () => {
 
   it("matches a registered pattern case-insensitively", () => {
     registerDocumentPatterns({
-      productSlug: "support",
-      agentLabel: "Support Assistant",
-      patterns: ["support report"],
+      productSlug: "finance",
+      agentLabel: "Finance Advisor",
+      patterns: ["finance report"],
     });
 
-    expect(classifyDocumentTitle("My SUPPORT REPORT 2026")).toEqual({
-      productSlug: "support",
-      agentLabel: "Support Assistant",
+    expect(classifyDocumentTitle("My FINANCE REPORT 2026")).toEqual({
+      productSlug: "finance",
+      agentLabel: "Finance Advisor",
     });
   });
 
   it("checks patterns in registration order and returns the first match", () => {
     registerDocumentPatterns({
-      productSlug: "support",
-      agentLabel: "Support Assistant",
+      productSlug: "finance",
+      agentLabel: "Finance Advisor",
       patterns: ["report"],
     });
     registerDocumentPatterns({
-      productSlug: "study",
-      agentLabel: "Study Planner",
+      productSlug: "travel",
+      agentLabel: "Travel Planner",
       patterns: ["report"],
     });
 
     expect(classifyDocumentTitle("Quarterly report").productSlug).toBe(
-      "support"
+      "finance"
     );
   });
 
   it("isProductDocument is true for any registered product when none is specified", () => {
     registerDocumentPatterns({
-      productSlug: "support",
-      agentLabel: "Support Assistant",
-      patterns: ["support"],
+      productSlug: "finance",
+      agentLabel: "Finance Advisor",
+      patterns: ["finance"],
     });
 
-    expect(isProductDocument("Support Report")).toBe(true);
+    expect(isProductDocument("Finance Report")).toBe(true);
     expect(isProductDocument("Random note")).toBe(false);
   });
 
   it("isProductDocument scopes to a specific productSlug when given", () => {
     registerDocumentPatterns({
-      productSlug: "support",
-      agentLabel: "Support Assistant",
-      patterns: ["support"],
+      productSlug: "finance",
+      agentLabel: "Finance Advisor",
+      patterns: ["finance"],
     });
 
-    expect(isProductDocument("Support Report", "support")).toBe(true);
-    expect(isProductDocument("Support Report", "study")).toBe(false);
+    expect(isProductDocument("Finance Report", "finance")).toBe(true);
+    expect(isProductDocument("Finance Report", "travel")).toBe(false);
   });
 
   it("listRegisteredDocumentPatterns reflects registrations", () => {
     expect(listRegisteredDocumentPatterns()).toHaveLength(0);
     registerDocumentPatterns({
-      productSlug: "support",
-      agentLabel: "Support Assistant",
-      patterns: ["support"],
+      productSlug: "finance",
+      agentLabel: "Finance Advisor",
+      patterns: ["finance"],
     });
     expect(listRegisteredDocumentPatterns()).toHaveLength(1);
   });
 
   it("clearDocumentPatternRegistry empties the registry", () => {
     registerDocumentPatterns({
-      productSlug: "support",
-      agentLabel: "Support Assistant",
-      patterns: ["support"],
+      productSlug: "finance",
+      agentLabel: "Finance Advisor",
+      patterns: ["finance"],
     });
     clearDocumentPatternRegistry();
     expect(listRegisteredDocumentPatterns()).toHaveLength(0);
-    expect(classifyDocumentTitle("support report").agentLabel).toBe(
+    expect(classifyDocumentTitle("finance report").agentLabel).toBe(
       "AI Assistant"
     );
   });

@@ -96,7 +96,7 @@ d("workspace service — real DB integration", () => {
       );
 
       // A user's very first workspace is created directly through
-      // Better-Auth (mirrors acme's actual signup-time bootstrap)
+      // Better-Auth (mirrors a product's signup-time bootstrap)
       // so the lifecycle below always has two workspaces to work with.
       asUser(owner.cookie);
       const firstOrg = await service().createWorkspace({

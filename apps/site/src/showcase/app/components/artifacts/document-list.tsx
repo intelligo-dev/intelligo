@@ -4,10 +4,10 @@
  * DocumentList — client component that renders the artifact grid with
  * type-based filtering and a full-content preview dialog.
  *
- * Generalizes the original Acme `document-list.tsx`: the "Reports"
+ * Generalizes the first product's `document-list.tsx`: the "Reports"
  * filter is `doc.isReport`, computed server-side in `@/actions/documents`
  * from `@intelligo-dev/core/documents`'s classifier registry — not a
- * hardcoded Support title-pattern match — and the kind tabs are derived
+ * hardcoded title-pattern match — and the kind tabs are derived
  * from whatever `kind` values are actually present in the data, so a
  * product that saves a custom kind beyond text/code/sheet/image still
  * gets a working filter tab for it, with no changes to this file.

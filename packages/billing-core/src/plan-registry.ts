@@ -1,20 +1,14 @@
 /**
  * Product plan registry.
  *
- * Wave 4 of the architecture decoupling extracts the actual plan data
+ * Wave 4 of the architecture decoupling moved the actual plan data
  * (Free / Standard / Pro) out of @intelligo-dev/billing and into the
- * vertical product packages that own them. The registry here is the
- * runtime hand-off point: a product calls `registerProductPlans()`
- * during server bootstrap, and the billing engine reads through the
- * registry instead of through a hardcoded constant.
- *
- * For backwards compatibility the registry has a fallback for the
- * "support" product slug — until every caller has wired bootstrap, the
- * legacy PLAN_CONFIGS export in plans.ts remains populated by the
- * fallback set so application pages that import it directly keep
- * working. Once Wave 5 lands the chat handler import chain (which
- * always goes through the vertical package) the fallback can be
- * removed.
+ * product that owns it. The registry here is the runtime hand-off
+ * point: a product calls `registerProductPlans()` from its composition
+ * root, and the billing engine reads through the registry instead of
+ * through a hardcoded constant. There is no fallback catalogue: a
+ * product that registers nothing gets no plans, and `intelligo doctor`
+ * says so.
  *
  * No DB read here on purpose: this is the in-process registry that
  * gates feature-quota.ts and the dashboard. The `plans` table in
@@ -54,12 +48,11 @@ export function clearProductPlans(): void {
 // ---------------------------------------------------------------------------
 
 /**
- * Per-product, per-plan, per-action upgrade copy. Support provides
- * Mongolian support strings; future products provide their own. The
- * doc's Phase B target is to move these into a translation layer
- * keyed by product+action — the registry here is the intermediate
- * step: copy still lives in product code, but the billing engine no
- * longer hardcodes support-specific strings.
+ * Per-product, per-plan, per-action upgrade copy. Each product provides
+ * its own strings in its own language. The eventual target is a
+ * translation layer keyed by product+action — the registry here is the
+ * intermediate step: copy still lives in product code, but the billing
+ * engine no longer hardcodes one product's strings.
  */
 export type UpgradeMessageMap = Record<string, Record<string, string>>;
 
@@ -116,8 +109,8 @@ const productFeatures = new Map<string, ProductFeatureMatrix>();
  * Feature names are product vocabulary — `detailed_assessment`,
  * `scholarship_international` — so the matrix belongs to the vertical,
  * exactly like the plan catalogue. It lived in @intelligo-dev/billing as a
- * hardcoded constant until Phase 3, which put the whole Support feature
- * list inside a package headed for publication (ADR-0006).
+ * hardcoded constant until Phase 3, which put one product's whole
+ * feature list inside a package headed for publication (ADR-0006).
  */
 export function registerProductFeatures(
   productSlug: string,
@@ -147,8 +140,8 @@ let defaultProductSlug: string | undefined =
  * Tell the billing engine which product's catalogue it bills against.
  * Called by the composition root (ADR-0005).
  *
- * There is deliberately no built-in default: `?? "support"` inside the
- * engine is how the vertical's vocabulary kept reappearing in a
+ * There is deliberately no built-in default: a `?? "<product>"` inside
+ * the engine is how the first product's slug kept reappearing in a
  * package that is supposed to know nothing about it.
  */
 export function setDefaultProductSlug(slug: string): void {
@@ -215,11 +208,11 @@ const productActionLimitKeys = new Map<string, ActionLimitKeyMap>();
  *
  * Most products should name the limit after the action and skip this
  * entirely — `getActionLimitKey` falls through to the action slug.
- * Support needs it because its limits predate the action slugs
- * (`chat` is capped by `chatMessages`), and that remap was hardcoded
- * in @intelligo-dev/billing: three support slugs sitting in the quota
- * engine of a package that is supposed to know nothing about the
- * vertical (ADR-0006).
+ * The first product needed it because its limits predate the action
+ * slugs (`chat` is capped by `chatMessages`), and that remap was
+ * hardcoded in @intelligo-dev/billing: three product slugs sitting in
+ * the quota engine of a package that is supposed to know nothing about
+ * the vertical (ADR-0006).
  */
 export function registerActionLimitKeys(
   productSlug: string,
@@ -364,8 +357,8 @@ const productRateLimits = new Map<string, RateLimitMap>();
  * Per-plan request ceilings.
  *
  * Was `RATE_LIMITS = { free: 10, pro: 60, enterprise: 300 }` in
- * @intelligo-dev/billing. Two of those three names are Support's plans and
- * the third, `enterprise`, was not a plan at all — `PlanSlug` is
+ * @intelligo-dev/billing. Two of those three names were one product's
+ * plans and the third, `enterprise`, was not a plan at all — `PlanSlug` is
  * `free | standard | pro`, so the 300/min tier was unreachable and
  * `standard` silently fell through to the free ceiling.
  */

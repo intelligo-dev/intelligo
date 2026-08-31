@@ -1,10 +1,9 @@
 /**
  * RAG documents schema (Phase H).
  *
- * Single shared table that backs every collection in
- * @intelligo-dev/agents/rag. Each collection (e.g., support.universities,
- * support.scholarships, support.majors) lives as a `collection` slug
- * filter on this table — so adding a new collection means writing a
+ * Single shared table that backs every RAG collection a product
+ * defines. Each collection (e.g., `catalogue.products`,
+ * `docs.articles`) lives as a `collection` slug filter on this table — so adding a new collection means writing a
  * Collection<TMeta> instance, not a migration.
  *
  * Schema choices:

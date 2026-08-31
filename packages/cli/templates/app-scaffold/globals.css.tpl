@@ -12,8 +12,7 @@
    edit them freely. Registry items you install with `shadcn add`
    assume the shadcn new-york theme below; the ones under "Design
    tokens" are optional extras used by some Intelligo-authored
-   registry items (status colors, agent identity colors) — delete
-   what you don't use.
+   registry items (status colors) — delete what you don't use.
    ============================================================ */
 
 /* ---- Light mode tokens ---- */
@@ -82,14 +81,6 @@
   --letter-spacing-tight: -0.025em;
   --letter-spacing-normal: 0em;
   --letter-spacing-wide: 0.025em;
-
-  /* Agent identity colors */
-  --agent-support: #7c3aed;
-  --agent-university: #2563eb;
-  --agent-scholarship: #d97706;
-  --agent-student-life: #059669;
-  --agent-ai-futures: #e11d48;
-  --agent-parent: #92400e;
 
   /* Weather (decorative/thematic) */
   --weather-day-start: hsl(200 95% 65%);     /* sky-400 equivalent */
@@ -280,12 +271,6 @@
   --color-brand-accent: var(--brand-accent);
 
   /* Agent color mappings */
-  --color-agent-support: var(--agent-support);
-  --color-agent-university: var(--agent-university);
-  --color-agent-scholarship: var(--agent-scholarship);
-  --color-agent-student-life: var(--agent-student-life);
-  --color-agent-ai-futures: var(--agent-ai-futures);
-  --color-agent-parent: var(--agent-parent);
 
   /* Typography token mappings */
   --font-size-xs: var(--font-size-xs);

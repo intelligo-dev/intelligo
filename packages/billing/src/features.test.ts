@@ -45,11 +45,11 @@ import {
 } from "./plan-registry";
 
 // The feature matrix is product-owned and registered by the
-// composition root (ADR-0006) — there is no built-in support matrix to
-// fall through to any more, so the test registers what it asserts on.
-setDefaultProductSlug("support");
-registerProductFeatures("support", {
-  career_advisor: ["free", "standard", "pro"],
+// composition root (ADR-0006) — there is no built-in matrix to fall
+// through to any more, so the test registers what it asserts on.
+setDefaultProductSlug("acme");
+registerProductFeatures("acme", {
+  advisor: ["free", "standard", "pro"],
   detailed_assessment: ["standard", "pro"],
   vision: ["standard", "pro"],
   web_search: ["pro"],
@@ -78,56 +78,56 @@ beforeEach(() => {
 
 describe("hasFeature in-process cache", () => {
   it("hits the DB once for repeated calls within the TTL window", async () => {
-    const a = await hasFeature("ws-1", "career_advisor");
-    const b = await hasFeature("ws-1", "career_advisor");
-    const c = await hasFeature("ws-1", "career_advisor");
+    const a = await hasFeature("ws-1", "advisor");
+    const b = await hasFeature("ws-1", "advisor");
+    const c = await hasFeature("ws-1", "advisor");
 
     expect([a, b, c]).toEqual([true, true, true]);
-    // free plan has career_advisor — but more importantly, only one
+    // free plan has advisor — but more importantly, only one
     // subscription lookup happened across all three calls.
     expect(mocks.getWorkspaceSubscription).toHaveBeenCalledTimes(1);
   });
 
   it("keys the cache by (workspaceId, feature) — different features miss separately", async () => {
-    await hasFeature("ws-1", "career_advisor");
+    await hasFeature("ws-1", "advisor");
     await hasFeature("ws-1", "detailed_assessment");
 
     expect(mocks.getWorkspaceSubscription).toHaveBeenCalledTimes(2);
   });
 
   it("workspace-scoped invalidate drops only that workspace's entries", async () => {
-    await hasFeature("ws-1", "career_advisor");
-    await hasFeature("ws-2", "career_advisor");
+    await hasFeature("ws-1", "advisor");
+    await hasFeature("ws-2", "advisor");
     expect(mocks.getWorkspaceSubscription).toHaveBeenCalledTimes(2);
 
     invalidateFeatureCache("ws-1");
 
-    await hasFeature("ws-1", "career_advisor"); // misses → DB read
-    await hasFeature("ws-2", "career_advisor"); // hits → no DB read
+    await hasFeature("ws-1", "advisor"); // misses → DB read
+    await hasFeature("ws-2", "advisor"); // hits → no DB read
 
     expect(mocks.getWorkspaceSubscription).toHaveBeenCalledTimes(3);
   });
 
   it("global invalidate (no arg) drops every entry", async () => {
-    await hasFeature("ws-1", "career_advisor");
-    await hasFeature("ws-2", "career_advisor");
+    await hasFeature("ws-1", "advisor");
+    await hasFeature("ws-2", "advisor");
     expect(mocks.getWorkspaceSubscription).toHaveBeenCalledTimes(2);
 
     invalidateFeatureCache();
 
-    await hasFeature("ws-1", "career_advisor");
-    await hasFeature("ws-2", "career_advisor");
+    await hasFeature("ws-1", "advisor");
+    await hasFeature("ws-2", "advisor");
 
     expect(mocks.getWorkspaceSubscription).toHaveBeenCalledTimes(4);
   });
 
   it("invalidate with a workspace that has no entries is a safe no-op", async () => {
-    await hasFeature("ws-1", "career_advisor");
+    await hasFeature("ws-1", "advisor");
     expect(mocks.getWorkspaceSubscription).toHaveBeenCalledTimes(1);
 
     invalidateFeatureCache("ws-unknown");
 
-    await hasFeature("ws-1", "career_advisor"); // still cached
+    await hasFeature("ws-1", "advisor"); // still cached
     expect(mocks.getWorkspaceSubscription).toHaveBeenCalledTimes(1);
   });
 

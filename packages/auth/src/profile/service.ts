@@ -1,7 +1,7 @@
 /**
  * Profile management service — the durable business rules behind
  * reading the caller's own profile, updating it, and deleting the
- * account, extracted from the product application's profile actions
+ * account, lifted out of the first product's profile actions
  * (page/registry migration, `profile-settings` family, roadmap item 9).
  *
  * Mirrors `createTeamService(ports)` / `createWorkspaceService(ports)`
@@ -38,7 +38,7 @@
  * direct calls: this service should not own *content* — copy, subject
  * lines, template shape — for a side effect a consumer may want to
  * localize, skip, or replace with a different provider. `onAccountDeleted`
- * is fire-and-forget by design (matching acme's `.catch(console.error)`
+ * is fire-and-forget by design (matching the original action's `.catch(console.error)`
  * pattern): a failed confirmation email must never block the deletion
  * that already succeeded.
  */
@@ -134,7 +134,7 @@ export function createProfileService(ports: ProfileServicePorts = {}) {
    * Only the fields present in `input` are sent — omitting a field
    * leaves it unchanged; `image: null` is dropped rather than forwarded
    * (Better-Auth's `updateUser` does not accept `null`), matching
-   * acme's original action.
+   * the original action.
    */
   async function updateProfile(input: UpdateProfileInput): Promise<void> {
     await callRequireAuth();

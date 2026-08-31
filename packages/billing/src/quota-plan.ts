@@ -4,7 +4,7 @@
  * Reads through the plan registry rather than a compiled-in catalogue:
  * plan data is domain IP owned by the vertical (ADR-0006). The product
  * comes from the composition root via setDefaultProductSlug() — an
- * `?? "support"` fallback here is how the vertical's vocabulary kept
+ * `?? "<product>"` fallback here is how the first product's slug kept
  * reappearing in a package that should not know the name.
  */
 

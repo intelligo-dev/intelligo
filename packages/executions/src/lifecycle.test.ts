@@ -76,7 +76,7 @@ function auditActions() {
 const beginInput = {
   workspaceId: "ws-1",
   userId: "u-1",
-  capability: "support.recommendation",
+  capability: "support.reply",
   model: "google/gemini-2.5-flash",
 };
 
@@ -103,7 +103,7 @@ describe("begin", () => {
     expect(insertedRow()).toMatchObject({
       workspaceId: "ws-1",
       userId: "u-1",
-      capability: "support.recommendation",
+      capability: "support.reply",
       status: "running",
     });
   });
@@ -126,7 +126,7 @@ describe("begin", () => {
     expect(checkEntitlement).toHaveBeenCalledWith({
       workspaceId: "ws-1",
       userId: "u-1",
-      capability: "support.recommendation",
+      capability: "support.reply",
       requestId: "req-1",
       model: "google/gemini-2.5-flash",
     });
@@ -202,7 +202,7 @@ describe("complete", () => {
       expect.objectContaining({
         workspaceId: "ws-1",
         requestId: "req-7",
-        capability: "support.recommendation",
+        capability: "support.reply",
         model: "anthropic/claude-sonnet-4-6",
         inputTokens: 100,
         outputTokens: 250,
@@ -379,7 +379,7 @@ describe("reconcile", () => {
     id: "e-1",
     workspaceId: "ws-1",
     userId: "u-1",
-    capability: "support.recommendation",
+    capability: "support.reply",
     requestId: "req-1",
     status: "settling",
     model: "google/gemini-2.5-flash",

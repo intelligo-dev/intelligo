@@ -12,7 +12,7 @@ import "server-only";
  * `createWorkspaceService`'s module doc comment for the full
  * rationale). This binding resolves a representative workspace for
  * the user (their oldest membership) and checks that workspace's plan,
- * the same stand-in acme's original action used.
+ * the same stand-in the first product's original action used.
  */
 
 import { eq } from "drizzle-orm";

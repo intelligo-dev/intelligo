@@ -115,7 +115,7 @@ describe("createSubscriptionCheckout", () => {
       userId: "user_1",
       planSlug: "standard",
       interval: "monthly",
-      productSlug: "support",
+      productSlug: "acme",
       successUrl: "https://app.example.com/checkout/success",
       cancelUrl: "https://app.example.com/pricing",
     });
@@ -142,7 +142,7 @@ describe("createSubscriptionCheckout", () => {
       userId: "user_1",
       planSlug: "standard",
       interval: "yearly",
-      productSlug: "support",
+      productSlug: "acme",
       successUrl: "https://app.example.com/checkout/success",
       cancelUrl: "https://app.example.com/pricing",
     });
@@ -162,7 +162,7 @@ describe("createSubscriptionCheckout", () => {
       userId: "user_1",
       planSlug: "ghost",
       interval: "monthly",
-      productSlug: "support",
+      productSlug: "acme",
       successUrl: "https://app.example.com/checkout/success",
       cancelUrl: "https://app.example.com/pricing",
     });
@@ -183,7 +183,7 @@ describe("createSubscriptionCheckout", () => {
       userId: "user_1",
       planSlug: "standard",
       interval: "monthly",
-      productSlug: "support",
+      productSlug: "acme",
       successUrl: "https://app.example.com/checkout/success",
       cancelUrl: "https://app.example.com/pricing",
     });

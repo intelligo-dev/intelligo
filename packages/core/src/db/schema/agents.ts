@@ -50,8 +50,8 @@ export type AgentModelConfig = {
  * Each agent represents a product with its own system prompt, tools, and model config
  */
 export const agents = pgTable("agents", {
-  id: text("id").primaryKey(), // Slug: "support-assistant", "study-planner"
-  name: jsonb("name").notNull().$type<BilingualText>(), // { en: "Support Assistant", mn: "Туслах" }
+  id: text("id").primaryKey(), // Slug, e.g. "support-assistant"
+  name: jsonb("name").notNull().$type<BilingualText>(), // { en: "Support Assistant", mn: "..." }
   description: jsonb("description").notNull().$type<BilingualText>(), // { en: "...", mn: "..." }
   systemPromptKey: text("system_prompt_key").notNull(), // Legacy translation namespace key — kept for backfill, no longer read at runtime (see systemPrompt below).
   systemPrompt: jsonb("system_prompt").$type<BilingualText | null>(), // Phase C: bilingual prompt text. Source of truth for agent instructions.
@@ -61,14 +61,14 @@ export const agents = pgTable("agents", {
   maxSteps: integer("max_steps").notNull(), // ToolLoopAgent max iterations
   contextWindowSize: integer("context_window_size").notNull(), // Conversation windowing message count
   tools: jsonb("tools").notNull().default([]).$type<string[]>(), // Array of tool names
-  basePath: text("base_path").notNull(), // URL base path (e.g., "/support", "/study")
+  basePath: text("base_path").notNull(), // URL base path (e.g., "/support")
   isActive: boolean("is_active").notNull().default(true), // Whether agent is available to users
   suggestions: jsonb("suggestions")
     .notNull()
     .default([])
     .$type<AgentSuggestion[]>(), // Quick-start suggestion prompts
   isSystem: boolean("is_system").notNull().default(true), // System agents can't be deleted by users
-  featureKey: text("feature_key"), // Nullable: billing feature key (e.g., "career_advisor", "study"). Used for feature gating lookups.
+  featureKey: text("feature_key"), // Nullable: billing feature key (e.g., "support_assistant"). Used for feature gating lookups.
   productType: text("product_type").notNull().default("chat"), // "chat" | "tools"
   color: text("color").notNull().default("bg-gray-500"), // Tailwind bg class for UI indicators (e.g., "bg-blue-500")
   createdAt: timestamp("created_at").notNull().defaultNow(),

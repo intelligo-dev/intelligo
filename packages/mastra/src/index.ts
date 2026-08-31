@@ -85,7 +85,7 @@ export type RunWithExecutionOptions = {
   executions: Executions;
   workspaceId: string;
   userId?: string | null;
-  /** Product-defined verb, e.g. "support.recommendation". */
+  /** Product-defined verb, e.g. "support.reply". */
   capability: string;
   /** Model the run intends to use — sizes the credit hold. */
   model?: string;
@@ -111,8 +111,8 @@ export class ExecutionRefusedError extends Error {
  *
  * ```ts
  * const result = await runWithExecution(
- *   { executions, workspaceId, userId, capability: "support.recommendation" },
- *   () => careerAgent.generate(messages) // native Mastra, untouched
+ *   { executions, workspaceId, userId, capability: "support.reply" },
+ *   () => supportAgent.generate(messages) // native Mastra, untouched
  * );
  * ```
  *

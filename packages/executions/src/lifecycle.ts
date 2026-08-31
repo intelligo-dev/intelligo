@@ -4,7 +4,7 @@
  *   const run = await executions.begin({ workspaceId, userId, capability });
  *   if (!run.allowed) return refuse(run.reason);
  *   try {
- *     const result = await careerAgent.generate(messages); // native
+ *     const result = await supportAgent.generate(messages); // native
  *     await run.complete({ usage: result.usage, model: result.model });
  *     return result;
  *   } catch (error) {
@@ -50,7 +50,7 @@ export type ExecutionStatus =
 export type BeginExecutionInput = {
   workspaceId: string;
   userId?: string | null;
-  /** Product-defined verb, e.g. "support.recommendation". */
+  /** Product-defined verb, e.g. "support.reply". */
   capability: string;
   /** Supply to reuse an existing correlation id; generated otherwise. */
   requestId?: string;

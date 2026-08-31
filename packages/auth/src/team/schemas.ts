@@ -4,8 +4,8 @@
  * Zod schemas for team invite and member management inputs, shared by
  * the team service and its transports.
  *
- * (Ported from the product application’s team validation module — same
- * semantics. Acme's copy is retired at cutover.)
+ * (Ported from the first product's team validation module — same
+ * semantics.)
  */
 
 import { z } from "zod";

@@ -2,24 +2,22 @@
  * Feature Quota Tests
  *
  * Covers checkFeatureQuota, recordFeatureUsage, and getUserQuotaStats for
- * the three Support Assistant quota dimensions (chat, assessment, report)
- * across the free / standard / pro plans.
+ * three quota dimensions (chat, assessment, report) across the
+ * free / standard / pro plans.
  *
  * All DB calls are mocked; the tests drive the quota state via a tiny
  * in-memory fake that tracks per-user rows and supports select/update/insert.
- * Plan limits are registered in beforeAll — billing-core no longer ships
- * a support catalogue to fall back on (ADR-0006).
+ * Plan limits are registered in beforeAll — billing-core ships no
+ * catalogue to fall back on (ADR-0006).
  */
 
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 
 // Wave 4 of the architecture decoupling moved the upgrade copy out
-// of feature-quota.ts and into a registry that the support package
-// fills at server bootstrap. Tests don't run the bootstrap, so we
-// register the same data here. The fixture is a duplicate of
-// CAREER_UPGRADE_MESSAGES / CAREER_ACTION_LABELS in
-// the vertical package's plan configuration; if those drift the test
-// breaks loudly.
+// of feature-quota.ts and into a registry that the product's
+// composition root fills at boot. Tests don't run the bootstrap, so
+// they register a catalogue of their own here, shaped like the first
+// product's.
 beforeAll(async () => {
   const {
     registerProductPlans,
@@ -31,9 +29,9 @@ beforeAll(async () => {
 
   // The engine has no built-in default product any more — the
   // composition root sets it, and so must a test.
-  setDefaultProductSlug("support");
+  setDefaultProductSlug("acme");
 
-  // Phase 3 removed the built-in support catalogue from billing-core, so
+  // Phase 3 removed the built-in catalogue from billing-core, so
   // there is no implicit fallback any more: a product that registers
   // nothing gets no limits. Registering here is the same thing the
   // composition root does at boot, and it keeps this fixture the only
@@ -43,7 +41,7 @@ beforeAll(async () => {
     standard: { chatMessages: 500, assessments: 3, reports: 5 },
     pro: { chatMessages: 1000, assessments: -1, reports: 5 },
   };
-  registerProductPlans("support", {
+  registerProductPlans("acme", {
     free: {
       name: "Free",
       slug: "free",
@@ -81,7 +79,7 @@ beforeAll(async () => {
       featuresMn: [],
     },
   });
-  registerUpgradeMessages("support", {
+  registerUpgradeMessages("acme", {
     free: {
       chat: "Standard авбал 500 мессеж нээгдэнэ",
       assessment: "Standard авбал 3 удаа дэлгэрэнгүй тест хийнэ",
@@ -98,16 +96,16 @@ beforeAll(async () => {
       report: "Тайлан гаргах боломж дууслаа",
     },
   });
-  registerActionLabels("support", {
+  registerActionLabels("acme", {
     chat: "мессеж",
     assessment: "тест",
     report: "тайлан",
   });
-  // Support's plan limits were named before its action slugs, so the
-  // remap has to be registered too — mirrors CAREER_ACTION_LIMIT_KEYS.
+  // This product's plan limits are named before its action slugs, so
+  // the remap has to be registered too.
   // `invoice_scan` below deliberately registers nothing, which is the
   // path a product that names its limits after its actions takes.
-  registerActionLimitKeys("support", {
+  registerActionLimitKeys("acme", {
     chat: "chatMessages",
     assessment: "assessments",
     report: "reports",

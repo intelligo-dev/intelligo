@@ -71,14 +71,6 @@
   --letter-spacing-normal: 0em;
   --letter-spacing-wide: 0.025em;
 
-  /* Agent identity colors */
-  --agent-support: #7c3aed;
-  --agent-university: #2563eb;
-  --agent-scholarship: #d97706;
-  --agent-student-life: #059669;
-  --agent-ai-futures: #e11d48;
-  --agent-parent: #92400e;
-
   /* Weather (decorative/thematic) */
   --weather-day-start: hsl(200 95% 65%);     /* sky-400 equivalent */
   --weather-day-mid: hsl(217 91% 60%);       /* blue-500 equivalent */

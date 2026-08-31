@@ -16,13 +16,13 @@
  *    fallback is why `name`/`icon` are plain strings here rather than
  *    routed through this item's messages file: once you bind your own
  *    product's agent identity, its copy is your product's copy to
- *    localize however you like, the same way Acme's own
- *    `agentName="Support Assistant"` binding is product copy today.
+ *    localize however you like — the agent's display name is product
+ *    copy, not framework copy.
  *  - `starters`: conversation-starter prompts shown on an empty
  *    conversation, as *message keys* — not literal strings — resolved
  *    against your app's full message tree via next-intl's
- *    namespace-less `useTranslations()`. E.g. `"support.starters.uni"`
- *    resolves `t("support.starters.uni")` from your own
+ *    namespace-less `useTranslations()`. E.g. `"support.starters.refund"`
+ *    resolves `t("support.starters.refund")` from your own
  *    `messages/<locale>/support.json`. Keeping this to keys (never
  *    literal display text) is what keeps starters translatable without
  *    editing `chat-panel.tsx`. Default: no starters — the empty-state
@@ -39,8 +39,8 @@
  *   import { ExportReportButton } from "@/components/support/export-report-button";
  *
  *   export const chatConfig: ChatConfig = {
- *     agent: { id: "support-assistant", name: "Support Assistant", icon: "🎓" },
- *     starters: ["support.starters.uni", "support.starters.scholarship"],
+ *     agent: { id: "support-assistant", name: "Support Assistant", icon: "🎧" },
+ *     starters: ["support.starters.refund", "support.starters.shipping"],
  *     headerRight: ExportReportButton,
  *   };
  */

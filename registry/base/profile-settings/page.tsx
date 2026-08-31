@@ -6,7 +6,7 @@
  * profile belongs to the user, not to any one workspace.
  *
  * Judgment note (page-migration-manifest.md, profile-settings row):
- * acme mounts this content at the `/settings` root (its "profile"
+ * the first product mounts this content at the `/settings` root (its "profile"
  * tab has no dedicated sub-route). This generic item ships its own
  * `/settings/profile` route instead, matching the sibling
  * `team-settings`/`workspace-settings` items' `/settings/<item>`

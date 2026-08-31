@@ -1,8 +1,8 @@
 /**
  * Team management service — the durable business rules behind
- * workspace membership and invitations, extracted from
- * the product application’s team actions (first slice of the page/registry
- * migration, section C1).
+ * workspace membership and invitations, lifted out of the first
+ * product's team actions (first slice of the page/registry migration,
+ * section C1).
  *
  * Mirrors `createExecutions(ports)` (packages/executions/src/lifecycle.ts):
  * a factory over optional ports, so this package's allowlisted
@@ -38,7 +38,7 @@
  * option, the hook fires on every `inviteMember()` call this service
  * makes — there is no code path where it does not.
  *
- * acme's current `actions/team.ts` ALSO calls
+ * The product's original `actions/team.ts` ALSO called
  * `@intelligo-dev/core/email`'s `sendInvitationEmail` directly after the
  * same `/organization/invite-member` call. That means **two** emails
  * go out per invitation today. This is a live duplication bug, not a
@@ -110,7 +110,7 @@ export type TeamServicePorts = {
   /**
    * Notify the workspace owner that a new member joined. `memberEmail`
    * is included alongside the ports.md-listed fields because
-   * `triggerTeamMemberJoinedNotification` (the acme binding) uses it
+   * `triggerTeamMemberJoinedNotification` (a consumer's binding) uses it
    * to compose the notification message — dropping it would silently
    * degrade the message text.
    */
@@ -269,7 +269,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
 
     // Better-Auth's own duplicate-pending-invite guard
     // (USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION) runs inside this
-    // call and surfaces as a provider_error if tripped — acme's
+    // call and surfaces as a provider_error if tripped — the original
     // action never added a second check on top of it, so neither does
     // this service.
     const result = await callOrgApi("invite-member", () =>
@@ -376,7 +376,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     //
     // Reuses `targetOrg` from the post-check above (scoped to
     // `matched.organizationId`, the org the caller just joined) rather
-    // than re-fetching "the active org" the way acme's original
+    // than re-fetching "the active org" the way the original
     // action did: Better-Auth's org plugin needs a
     // `sessions.activeOrganizationId` column to resolve an org from
     // headers alone, and this repo's Drizzle schema for `sessions`
@@ -576,7 +576,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
    * Get the caller's own pending invitations (for the invitation
    * accept page). No explicit requireAuth here — Better-Auth's
    * list-user-invitations endpoint reads the session off `headers`
-   * itself; ported as-is from acme's action.
+   * itself; ported as-is from the original action.
    */
   async function getUserInvitations(): Promise<OrgInvitation[]> {
     const hdrs = await headers();

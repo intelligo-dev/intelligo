@@ -8,8 +8,8 @@
   // cannot name them through a package specifier, so it falls back to
   // `../node_modules/...` and refuses to emit — TS2742. Nothing in this
   // repository can fix that: it is upstream packaging. It only surfaced
-  // when the extracted public tree was built from a fresh install,
-  // because pnpm's layout there differs from this workspace's.
+  // when the tree was built from a fresh install in a different
+  // checkout, because pnpm's layout there differed from this one's.
   //
   // Rather than publish weakened hand-written types, the package ships
   // compiled JS from `dist` and TYPES FROM SOURCE — `publishConfig`

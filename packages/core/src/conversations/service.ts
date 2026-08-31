@@ -16,10 +16,9 @@
  *   - Conversation windowing/summarization
  *     (applyConversationWindow, summarizeOldMessages) and the
  *     `conversationSummary` metadata write they produce.
- *   - Support's assessment-state read/write helpers
- *     (getAssessmentState/updateAssessmentState) — support-specific
- *     shape living under `conversations.metadata`.
- *   - Agent id validation ("support-assistant" | "study-planner") and
+ *   - The product's assessment-state read/write helpers — a
+ *     product-specific shape living under `conversations.metadata`.
+ *   - Agent id validation (the product's own agent slugs) and
  *     default model selection — product decides both; this module
  *     accepts an already-resolved agentId/modelId.
  *

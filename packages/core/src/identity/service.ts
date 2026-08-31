@@ -4,8 +4,8 @@
  * Privacy-facing reads and mutations over the user identity graph:
  * fact listing/deletion, a full-identity data export, and the
  * memory-audit trail that records every mutation to a user's facts,
- * memories, and synthesized profile snapshot. Ported from Acme's
- * `actions/identity.ts` (ADR-0008/ADR-0009 precedent — see
+ * memories, and synthesized profile snapshot. Ported from the first
+ * product's `actions/identity.ts` (ADR-0008/ADR-0009 precedent — see
  * `../documents/service.ts` and `../conversations/service.ts` for the
  * same move): the tables (`user_facts`, `user_memories`,
  * `user_profile_snapshots`, `user_memory_audit`) always lived in
@@ -16,11 +16,11 @@
  *
  * What did NOT come with it (stays product/agents-side):
  *   - `updateMyFactImportance` and the `synthesizeProfile()` re-trigger
- *     Acme's `deleteMyFact` ran after deleting — synthesis is
- *     `@intelligo-dev/agents`' concern (deprecated, dissolving under
- *     ADR-0008), and this package cannot depend on it. `deleteFact`
- *     below does not touch the cached snapshot; a caller that also
- *     owns a synthesis engine re-triggers it after calling this.
+ *     the product's `deleteMyFact` ran after deleting — synthesis is
+ *     the product's AI code (ADR-0003), and this package cannot depend
+ *     on it. `deleteFact` below does not touch the cached snapshot; a
+ *     caller that also owns a synthesis engine re-triggers it after
+ *     calling this.
  *
  * Callers pass a resolved actor (workspaceId, userId) rather than this
  * module resolving one itself — `@intelligo-dev/core` cannot depend on
@@ -181,7 +181,7 @@ export async function deleteFact(
  * Aggregate the actor's full identity graph — facts, memories, latest
  * profile snapshot, and full audit trail — for a data-export flow.
  * Records its own audit row (action "export"): the export operation
- * audits itself, same as the ported Acme implementation.
+ * audits itself, same as the implementation it was ported from.
  */
 export async function exportIdentity(
   actor: IdentityActor

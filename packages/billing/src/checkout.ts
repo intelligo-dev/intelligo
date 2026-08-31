@@ -1,7 +1,7 @@
 /**
  * Checkout & billing overview service.
  *
- * The durable Stripe/checkout rules extracted from acme's
+ * The durable Stripe/checkout rules lifted out of the first product's
  * `actions/billing.ts` (the app-level Server Actions file). This
  * module owns Stripe checkout/portal session creation, the pending
  * credit-purchase row, and the role-shaped billing overview read —
@@ -143,7 +143,7 @@ export async function createSubscriptionCheckout(
   // The `plans` table seeds one row per registered plan slug as
   // `plan_${slug}` (see seed-plans.ts) — deriving the id the same way
   // here keeps subscription checkout generic across products instead
-  // of hardcoding the three Support slugs acme's original action did.
+  // of hardcoding the three plan slugs the original action did.
   const planId = `plan_${planSlug}`;
 
   const stripe = getStripe();
@@ -204,8 +204,8 @@ export type CreateCreditCheckoutInput = z.infer<typeof creditCheckoutSchema>;
 /**
  * Create a Stripe one-time-payment checkout session for a credit
  * bundle, recording a `pending` `creditPurchases` row first so the
- * webhook has something to match against (mirrors acme's original
- * `createCreditPurchaseSession`).
+ * webhook has something to match against (mirrors the original
+ * `createCreditPurchaseSession` action).
  */
 export async function createCreditCheckout(
   input: CreateCreditCheckoutInput
@@ -342,7 +342,7 @@ export type GetCheckoutSessionInput = z.infer<typeof checkoutSessionReadSchema>;
  * to `/checkout/success` — querying Stripe directly here (rather than
  * trusting the local `subscriptions` row) is how the success page
  * shows the correct plan immediately regardless of webhook timing.
- * This is exactly the rationale acme's original page carried inline;
+ * This is exactly the rationale the original page carried inline;
  * it now lives here so no page component talks to Stripe directly.
  */
 export async function getCheckoutSession(
@@ -448,7 +448,7 @@ const billingOverviewSchema = z.object({
 export type GetBillingOverviewInput = z.infer<typeof billingOverviewSchema>;
 
 /**
- * Role-shaped billing read, moved server-side out of acme's
+ * Role-shaped billing read, moved server-side out of the original
  * `settings/billing/page.tsx` three-way branch: `member` gets a
  * status-only view, `admin` gets a read-only plan name, `owner` gets
  * the full subscription/credit-balance detail. The caller resolves

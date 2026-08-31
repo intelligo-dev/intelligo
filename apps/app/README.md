@@ -1,14 +1,14 @@
 # app
 
-The executable specification for Intelligo, and the only consumer of
-the packages that is not Acme. It exists to answer one question
-empirically: **can a product be built on these packages without Support
-in the room?** Anything it cannot do without reaching into a private
-package or editing a framework file is a boundary defect, not a
-missing feature here.
+The executable specification for Intelligo, and the one consumer of
+the packages that lives in this repository. It exists to answer one
+question empirically: **can a product be built on these packages
+without any real product's domain in the room?** Anything it cannot do
+without editing a framework file is a boundary defect, not a missing
+feature here.
 
 It is deliberately small and deliberately generic. It is not a second
-product, not a demo, and not a place to prototype Acme features.
+product, not a demo, and not a place to prototype product features.
 
 It has a second, equally load-bearing role: it is the **canonical
 installed result of the Intelligo registry** (ADR-0010).
@@ -45,8 +45,8 @@ registry consumer outside the monorepo can't either.
 
 ## What it must never do
 
-- import from `private/*`
-- use Support vocabulary in its plans, features, or copy
+- import an `@intelligo-dev/*` package this repository does not publish
+- use a real product's vocabulary in its plans, features, or copy
 - work around a package by reaching into its internals
 - maintain a page or component that a registry item should have
   installed instead

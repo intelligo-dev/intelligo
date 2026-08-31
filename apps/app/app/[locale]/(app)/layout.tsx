@@ -15,7 +15,7 @@ import { getLocale } from "next-intl/server";
  *    to keep inline here rather than invent a package API for one call
  *    site. Incomplete → `/onboarding`.
  *
- *    Acme's original version of this layout read an `x-pathname`
+ *    The first product's version of this layout read an `x-pathname`
  *    header (set by custom middleware) to skip this check while
  *    already on the onboarding route, to avoid a redirect loop. That
  *    dependency is dropped here on purpose: the `onboarding` registry

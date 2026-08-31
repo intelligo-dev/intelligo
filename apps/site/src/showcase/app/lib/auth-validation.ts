@@ -4,7 +4,7 @@
  * Ships with `auth-login`; `auth-signup` and `auth-password-reset` import
  * it from `@/lib/auth-validation` once installed (see those items'
  * descriptions for the cross-item dependency). Mirrors the semantics of
- * Acme's `lib/validations/auth.ts` (password strength rule included) —
+ * the first product's `lib/validations/auth.ts` (password strength rule included) —
  * plain zod, no `@intelligo-dev/*` imports, so it works identically before
  * and after the request reaches the Better-Auth client SDK.
  *

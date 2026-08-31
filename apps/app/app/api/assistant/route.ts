@@ -3,8 +3,8 @@
  *
  * A generic assistant turn run inside the execution boundary:
  * entitlement decided, worst-case cost held, the model called, usage
- * settled, audit emitted. No Support, no private package, no framework
- * file edited to make it work.
+ * settled, audit emitted. No product package, no framework file
+ * edited to make it work.
  *
  * It runs through `runWithExecution` from @intelligo-dev/mastra — and this
  * app has no Mastra installed. `@mastra/core` is an optional peer that

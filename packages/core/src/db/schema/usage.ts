@@ -39,7 +39,7 @@ export const usageRecords = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     type: text("type").notNull(), // "ai_tokens", "api_call"
     model: text("model"), // "gpt-4o", "gpt-4o-mini"
-    agent: text("agent"), // "support-assistant", "study"
+    agent: text("agent"), // the product's agent slug
     inputTokens: integer("input_tokens").notNull().default(0),
     outputTokens: integer("output_tokens").notNull().default(0),
     totalTokens: integer("total_tokens").notNull().default(0),
@@ -262,7 +262,7 @@ export const userQuotas = pgTable(
      * Per-action counter map, keyed by the product's own action slugs
      * (`usage["chat"] = 42`). This is the only counter storage.
      *
-     * Three support-specific integer columns — chat_messages_used,
+     * Three product-specific integer columns — chat_messages_used,
      * assessments_used, reports_used — used to sit beside it, written
      * by every product and read in preference to this map. Migration
      * 0038 backfilled them into the map and dropped them: a public

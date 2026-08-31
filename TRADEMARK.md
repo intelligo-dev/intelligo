@@ -1,8 +1,8 @@
 # Trademark policy
 
 The Apache-2.0 licence in [LICENSE](LICENSE) covers the **code**. It
-does not grant rights to the **name**. "Intelligo", "Acme Support
-Advisor", and the project logos are marks of the project's maintainers.
+does not grant rights to the **name**. "Intelligo" and the project
+logos are marks of the project's maintainers.
 
 ## What you may do without asking
 

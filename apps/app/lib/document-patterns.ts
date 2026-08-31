@@ -21,7 +21,7 @@ import "server-only";
  * below exactly once, from your composition root, after adding your own
  * product's title patterns (uncomment and adjust the example call). If
  * your app already has a composition root (e.g. the pattern
- * `@/lib/ensure-composed` guards against in Acme), call it from
+ * `@/lib/ensure-composed` guards against), call it from
  * there, guarded the same way every other registration is.
  */
 export function registerDefaultDocumentPatterns(): void {

@@ -13,12 +13,12 @@
  * which is the vocabulary the rest of this package's `team/` module
  * uses.
  *
- * (Ported from the product application’s Better-Auth type wrapper as part of the
- * team-settings backend extraction — packages/auth owns the org-api
- * contract now; acme's copy is retired at cutover.)
+ * (Ported from the first product's Better-Auth type wrapper when the
+ * team-settings backend moved into the framework — packages/auth owns
+ * the org-api contract now.)
  *
  * IMPORTANT — found while wiring the real-DB integration test for this
- * extraction: acme's original module built `orgApi` as
+ * move: the product's original module built `orgApi` as
  * `auth.api as unknown as OrgApi`, i.e. a bare type-cast that assumes
  * `auth.api` is keyed by these HTTP path strings. It is not. Better-Auth's
  * organization plugin (`better-auth@1.6.30`,
@@ -44,13 +44,13 @@
  * function` at runtime for every call whose row above differs in the
  * first two columns — i.e. invite-member, leave, list, and set-active
  * unconditionally, since their server ids aren't just a casing change
- * of the path. This was invisible in acme's test suite because
+ * of the path. This was invisible in the product's test suite because
  * `actions/__tests__/team.test.ts` mocks `@/types/better-auth` (the
  * whole `orgApi` object) rather than exercising the cast against a
- * real `auth.api`, and only surfaced once this extraction's
- * `service.integration.test.ts` called the real thing. It is a live
- * bug in acme's shipped team-management actions today, not a
- * hypothetical — worth a fix there independent of this migration.
+ * real `auth.api`, and only surfaced once this package's
+ * `service.integration.test.ts` called the real thing. It was a live
+ * bug in the product's shipped team-management actions, not a
+ * hypothetical.
  *
  * `orgApi` below is therefore a real object, not a cast: each path key
  * forwards to the correctly-named `auth.api` method. The `OrgApi`
