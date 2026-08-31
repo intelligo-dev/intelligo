@@ -4,6 +4,8 @@
 
 **Intelligo** — open-source **application framework and operational platform** for vertical AI SaaS products (NOT a starter kit, NOT another AI framework). Turborepo monorepo with pnpm workspaces: the framework packages, the shadcn-compatible page registry, and a reference application that is the registry's canonical installed result.
 
+This repository is the framework's home. It is edited here, and every workspace under `packages/` is released to npm as `@intelligo-dev/*` from a version tag: bump the versions, `git tag vX.Y.Z && git push origin vX.Y.Z`, and `.github/workflows/release.yml` publishes under the dist-tag the version implies (`1.0.0-beta.N` → `beta`, a plain `1.0.0` → `latest`). `apps/site` deploys intelligo.dev and serves the page registry at `/r`. Products built on the framework live in their own repositories and consume the npm packages; nothing product-specific belongs here (`tests/architecture/publishability.test.ts` enforces it).
+
 **Decisions:** [docs/adr/](docs/adr/README.md) — read ADR-0003 (AI frameworks stay native), ADR-0005 (composition root), ADR-0007 (execution boundary), ADR-0009 (persistence contracts), ADR-0010 (i18n-native registry) before changing anything they cover.
 
 ## The boundary (read before writing code)
@@ -86,7 +88,7 @@ Server Actions are thin transports over package services (installed `actions/*`)
 - TypeScript strict; ESLint flat config; `_`-prefix for allowed unused vars.
 - **i18n via next-intl**: per-item namespaces under `messages/<locale>/<item>.json` (merged by filename in `i18n/request.ts`).
 - Vitest: root projects config; mock `@ai-sdk/*` for CI; `vi.stubEnv` + `vi.resetModules` + dynamic import for module-load-time env; integration suites `describe.skipIf(!TEST_PG_URL)`.
-- `pnpm.overrides` pins `pg` 8.18.0; the ajv floor is scoped `ajv@6` (shadcn needs ajv 8).
+- `pnpm.overrides` pins `pg` 8.18.0; the ajv floor is scoped `ajv@6` (shadcn needs ajv 8). Dependabot alerts on transitive packages are resolved there too — a `>=` floor, scoped to the major already in the tree (`js-yaml@4`, `^0.28.x`) where a newer major exists, never a forced major.
 - Conventional commits, small and scoped; repo stays green after every slice.
 
 ## Tech Stack
