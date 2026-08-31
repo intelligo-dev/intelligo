@@ -20,6 +20,14 @@ it explains a framework decision.
 
 ### Fixed
 
+- **`@intelligo-dev/core`: `sessions.active_organization_id` has a
+  migration.** The schema has carried the column since workspace
+  switching landed, but no migration created it — every environment
+  was provisioned by `db:push`, so a database built from the chain
+  refused the first sign-in. Migration 0042 adds it (`IF NOT EXISTS`),
+  and a new architecture test (`tests/architecture/migration-drift`)
+  fails when a schema column has no migration.
+
 - **`@intelligo-dev/billing`: purchased credits are spendable.** The
   Stripe checkout handler credited the legacy `balance` column;
   admission reads and settlement debits `balance_mnt`, so a customer's

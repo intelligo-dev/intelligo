@@ -306,6 +306,7 @@ jobs:
           psql -v ON_ERROR_STOP=1 "$REPLAY_URL" \
             -c 'SELECT minute_bucket, count FROM rate_limit_entries LIMIT 0;' \
             -c 'SELECT id, request_id, status FROM executions LIMIT 0;' \
+            -c 'SELECT active_organization_id, impersonated_by FROM sessions LIMIT 0;' \
             -c 'SELECT id, request_id, expires_at FROM credit_reservations LIMIT 0;' \
             -c 'SELECT id, action, resource_kind FROM audit_events LIMIT 0;' \
             -c 'SELECT execution_id FROM usage_records LIMIT 0;'
