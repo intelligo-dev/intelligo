@@ -16,6 +16,8 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+## [1.0.0-beta.2] — 2026-08-31
+
 ### Fixed
 
 - **`@intelligo-dev/billing`: purchased credits are spendable.** The
@@ -96,6 +98,9 @@ it explains a framework decision.
 
 ### Changed
 
+- **The registry is hosted by `apps/site`** at `https://intelligo.dev/r/<item>.json`;
+  the GitHub Pages workflow is gone. CI now fails when the site's
+  committed copy of the registry drifts from `registry/`.
 - **One auth secret name.** `env.ts` required `AUTH_SECRET`, `doctor`
   and the scaffold required `BETTER_AUTH_SECRET`, and `betterAuth()`
   named neither. `BETTER_AUTH_SECRET` is canonical everywhere;
@@ -570,6 +575,7 @@ Includes the untagged "0.2 Core Platform" milestone.
   skeletons; shadcn/ui and Tailwind; GitHub Actions running build,
   type-check and lint.
 
+[1.0.0-beta.2]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.2
 [1.0.0-beta.1]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.1
 [0.15.0]: #0150--2026-08-29--v2-an-application-framework-and-operational-platform
 [0.14.0]: #0140--2026-06-30--concurrency-safety-and-deployment

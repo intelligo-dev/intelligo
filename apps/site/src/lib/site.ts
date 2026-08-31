@@ -1,3 +1,5 @@
+import proof from "@/data/proof.json";
+
 export const SITE = {
   name: "intelligo",
   title: "Intelligo — the application framework for vertical AI SaaS",
@@ -13,8 +15,9 @@ export const SITE = {
   npm: "https://www.npmjs.com/org/intelligo-dev",
   /** The hosted registry: `pnpm exec shadcn add https://intelligo.dev/r/<item>.json`. */
   registryBase: "https://intelligo.dev/r",
-  version: "1.0.0-beta.1",
-  status: "1.0.0-beta.1 · on npm",
+  /** From `pnpm --filter site sync`, so the site never names a version that is not on npm. */
+  version: proof.version as string,
+  status: `${proof.version} · on npm`,
   /** Flip once the repository is public: enables the live star count. */
   githubPublic: false,
 } as const;

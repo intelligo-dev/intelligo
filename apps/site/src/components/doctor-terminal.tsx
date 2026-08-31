@@ -29,7 +29,7 @@ const SCRIPT: { text: string; ms: number }[] = [
     ms: 200,
   },
   {
-    text: "\x1b[32m✓\x1b[0m migrations — up to date with @intelligo-dev/core 1.0.0-beta.1",
+    text: "\x1b[32m✓\x1b[0m migrations — up to date with @intelligo-dev/core 1.0.0-beta.2",
     ms: 260,
   },
   { text: "\x1b[32m✓\x1b[0m model ids — 3 used, 3 registered", ms: 200 },
