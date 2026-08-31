@@ -24,8 +24,7 @@ import path from "node:path";
 const ROOT = path.resolve(__dirname, "../..");
 
 // The registry lives with execution cost accounting (ADR-0008), not
-// with the provider clients — and unlike `@intelligo-dev/ai`, it is in
-// the public foundation, so this rule still has a subject there.
+// with the provider clients.
 const MODELS_FILE = "packages/executions/src/pricing.ts";
 
 /**
@@ -45,7 +44,7 @@ function registeredModelIds(): Set<string> {
     )
   );
 }
-const ROOTS = ["packages", "private", "apps"];
+const ROOTS = ["packages", "apps", "registry"];
 
 const IGNORED_DIRS = new Set([
   "node_modules",

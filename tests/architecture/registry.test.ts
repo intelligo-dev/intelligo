@@ -4,9 +4,10 @@
  *
  * The registry (`registry/`) ships shadcn-compatible page/component
  * source that becomes ordinary consumer-owned source once installed.
- * Nothing in it may leak a private import, a dissolved-package import,
- * or a duplicate `@intelligo-dev/ui` runtime dependency, and every file it
- * ships must actually be wired into an item.
+ * Nothing in it may import a package this repository does not publish,
+ * a dissolved package, or `@intelligo-dev/ui` (a duplicate runtime
+ * dependency), and every file it ships must actually be wired into an
+ * item.
  *
  * Schema check: the official schema lives at
  * https://ui.shadcn.com/schema/registry.json and
@@ -23,7 +24,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
-import { ROOT, hasRegistry } from "./scope";
+import { DISSOLVED_PACKAGES, PACKAGES_DIR, ROOT, listWorkspaces } from "./tree";
 
 const REGISTRY_DIR = path.join(ROOT, "registry");
 const BASE_DIR = path.join(REGISTRY_DIR, "base");
@@ -126,7 +127,7 @@ function importSpecifiers(source: string): string[] {
   return specs;
 }
 
-describe.skipIf(!hasRegistry)("registry", () => {
+describe("registry", () => {
   it("has a registry.json to rule on", () => {
     // A silent empty item list would make every assertion below vacuous.
     const registry = readRegistry();
@@ -237,21 +238,23 @@ describe.skipIf(!hasRegistry)("registry", () => {
     });
   });
 
-  describe("no private or duplicate-runtime imports", () => {
+  describe("no unpublished, dissolved or duplicate-runtime imports", () => {
     const registry = readRegistry();
-    const allowlist = JSON.parse(
-      readFileSync(path.join(ROOT, "config/public-packages.json"), "utf8")
-    ) as { deprecated: string[] };
-    const dissolved = allowlist.deprecated.map((p) => `@intelligo-dev/${p}`);
+    const dissolved: readonly string[] = DISSOLVED_PACKAGES;
+    /** The only `@intelligo-dev/*` names a consumer can resolve from npm. */
+    const published = new Set(
+      listWorkspaces(PACKAGES_DIR).map((pkg) => `@intelligo-dev/${pkg}`)
+    );
 
-    it("has a dissolved set to rule on", () => {
+    it("has a dissolved set and a published set to rule on", () => {
       expect(dissolved.length).toBeGreaterThan(0);
+      expect(published.size).toBeGreaterThan(5);
     });
 
     describe.each(registry.items)("item: $name", (item) => {
       const itemRoot = path.join(BASE_DIR, item.name);
 
-      it("imports no private, dissolved, or @intelligo-dev/ui path", () => {
+      it("imports no unpublished, dissolved, or @intelligo-dev/ui path", () => {
         const violations: string[] = [];
 
         for (const file of item.files) {
@@ -260,38 +263,18 @@ describe.skipIf(!hasRegistry)("registry", () => {
           const rel = path.relative(ROOT, abs);
 
           for (const spec of importSpecifiers(source)) {
-            if (spec.includes("private/")) {
-              violations.push(`${rel} → ${spec} (private path)`);
-              continue;
-            }
-            if (
-              spec === "@example/product" ||
-              spec.startsWith("@example/product/")
-            ) {
-              violations.push(`${rel} → ${spec} (private app)`);
-              continue;
-            }
-            if (
-              spec === "@example/product" ||
-              spec.startsWith("@example/product/")
-            ) {
-              violations.push(`${rel} → ${spec} (private vertical)`);
-              continue;
-            }
-            if (
-              spec === "@intelligo-dev/ui" ||
-              spec.startsWith("@intelligo-dev/ui/")
-            ) {
+            if (!spec.startsWith("@intelligo-dev/")) continue;
+            const dep = spec.split("/").slice(0, 2).join("/");
+            if (dissolved.includes(dep)) {
+              violations.push(`${rel} → ${spec} (dissolved package, ADR-0008)`);
+            } else if (dep === "@intelligo-dev/ui") {
               violations.push(
                 `${rel} → ${spec} (registry items use consumer @/components/ui/*, not @intelligo-dev/ui)`
               );
-              continue;
-            }
-            if (spec.startsWith("@intelligo-dev/")) {
-              const dep = spec.split("/").slice(0, 2).join("/");
-              if (dissolved.includes(dep)) {
-                violations.push(`${rel} → ${spec} (dissolved package)`);
-              }
+            } else if (!published.has(dep)) {
+              violations.push(
+                `${rel} → ${spec} (not a package this repository publishes)`
+              );
             }
           }
         }

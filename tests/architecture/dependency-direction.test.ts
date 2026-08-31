@@ -1,13 +1,13 @@
 /**
- * Dependency-direction rules (Phase 1, ADR-0006).
+ * Dependency-direction rules (ADR-0006, ADR-0008).
  *
  * Enforces the package boundary at two levels:
  *   1. package.json — each package may declare only its allowlisted
  *      @intelligo-dev/* dependencies;
- *   2. source imports — every `from "..."`/dynamic import in a package's
- *      src/ must resolve to an allowlisted @intelligo-dev/* package, and no
- *      package may import app code (`@example/product`, `@intelligo-dev/web`,
- *      `@/...`, or a relative path escaping packages/).
+ *   2. source imports — every `from "..."`/dynamic import in a package
+ *      must resolve to an allowlisted @intelligo-dev/* package, never to
+ *      an application (`@/...`) and never to a relative path escaping
+ *      the package.
  *
  * The allowlist is the CURRENT accepted graph. Tightening it is done
  * by removing the edge here — never by adding edges to sneak past CI.
@@ -16,21 +16,24 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { hasIgniteApp, hasPrivateWorkspace } from "./scope";
-
-const ROOT = path.resolve(__dirname, "../..");
-const PACKAGES_DIR = path.join(ROOT, "packages");
+import {
+  APPS_DIR,
+  DISSOLVED_PACKAGES,
+  PACKAGES_DIR,
+  ROOT,
+  importSpecifiers,
+  intelligoPackage,
+  listWorkspaces,
+  walk,
+} from "./tree";
 
 /** Accepted @intelligo-dev/* dependency edges, by package directory name. */
 const ALLOWED_DEPS: Record<string, readonly string[]> = {
   core: [],
   ui: [],
-  // The registry and the cost math moved to executions (ADR-0008);
-  // what is left re-exports them beside the provider clients.
-  ai: ["@intelligo-dev/core", "@intelligo-dev/executions"],
   auth: ["@intelligo-dev/core"],
   audit: ["@intelligo-dev/core"],
   jobs: ["@intelligo-dev/core"],
@@ -66,125 +69,63 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
     "@intelligo-dev/billing-core",
     "@intelligo-dev/executions",
   ],
-  agents: ["@intelligo-dev/core", "@intelligo-dev/ai", "@intelligo-dev/auth"],
-  chat: [
-    "@intelligo-dev/core",
-    "@intelligo-dev/ai",
-    "@intelligo-dev/agents",
-    "@intelligo-dev/ui",
-  ],
 };
 
-/**
- * private/* packages are the domain IP and the product app (ADR-0006).
- * They may consume any public package — that is the point — but the
- * vertical must not depend on the product application, or extracting
- * Support for a second product becomes impossible.
- */
-const PRIVATE_ALLOWED_DEPS: Record<string, readonly string[]> = {
-  support: [
-    "@intelligo-dev/core",
-    "@intelligo-dev/ai",
-    "@intelligo-dev/agents",
-    "@intelligo-dev/billing",
-    "@intelligo-dev/billing-core",
-    "@intelligo-dev/chat",
-    "@intelligo-dev/ui",
-  ],
-  // The product app composes everything, including the vertical.
-  acme: null as unknown as readonly string[],
-};
-
-/** Packages that must never appear as a dependency of a reusable package. */
-const APP_PACKAGES = ["@example/product", "@intelligo-dev/web"];
-
-/** The private vertical: nothing reusable may reference it. */
-const PRIVATE_PACKAGES = ["@example/product"];
-
-function listPackages(): string[] {
-  return listDir(PACKAGES_DIR);
-}
-
-const IGNORED_DIRS = new Set([
-  "node_modules",
-  "dist",
-  ".next",
-  ".turbo",
-  ".astro",
-  ".wrangler",
-  "coverage",
-]);
+const SOURCE_FILE = /\.(ts|tsx|mts|cts|js|jsx)$/;
 
 /**
  * Walk every source file in a package — not just `src/`.
  *
  * Scoping this to `src/` left scripts/ and root config files
  * unchecked, and that is exactly where the escapes were: a one-time
- * migration script in packages/core/scripts/ imported the support
- * schema by relative path, stayed broken after support moved, and was
- * invisible to both this test and `tsc` (whose include is src-only).
+ * migration script in packages/core/scripts/ imported another
+ * workspace's schema by relative path, stayed broken after that
+ * workspace moved, and was invisible to both this test and `tsc`
+ * (whose include is src-only).
  */
-function walkSources(dir: string, out: string[] = []): string[] {
-  let entries: string[];
-  try {
-    entries = readdirSync(dir);
-  } catch {
-    return out;
-  }
-  for (const entry of entries) {
-    if (IGNORED_DIRS.has(entry)) continue;
-    const full = path.join(dir, entry);
-    if (statSync(full).isDirectory()) {
-      walkSources(full, out);
-    } else if (/\.(ts|tsx|mts|cts|js|jsx)$/.test(entry)) {
-      out.push(full);
-    }
-  }
-  return out;
+const walkSources = (dir: string) =>
+  walk(dir, (name) => SOURCE_FILE.test(name));
+
+function declaredIntelligoDeps(manifestPath: string): string[] {
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<
+    string,
+    Record<string, string> | undefined
+  >;
+  return Object.keys({
+    ...manifest.dependencies,
+    ...manifest.devDependencies,
+    ...manifest.peerDependencies,
+  }).filter((name) => name.startsWith("@intelligo-dev/"));
 }
 
-/** Extract module specifiers from static + dynamic imports and requires. */
-function importSpecifiers(source: string): string[] {
-  const specs: string[] = [];
-  const patterns = [
-    /(?:^|\n)\s*(?:import|export)\s[^"'`]*?from\s*["']([^"']+)["']/g,
-    /(?:^|\n)\s*import\s*["']([^"']+)["']/g, // side-effect import
-    // Quoted AND backtick specifiers: `await import(\`@example/product\`)`
-    // slipped past a quote-only pattern.
-    /\bimport\s*\(\s*[`"']([^`"']+)[`"']\s*\)/g,
-    /\brequire\s*\(\s*[`"']([^`"']+)[`"']\s*\)/g,
-  ];
-  for (const re of patterns) {
-    for (const m of source.matchAll(re)) specs.push(m[1]!);
-  }
-  return specs;
-}
+const packages = listWorkspaces(PACKAGES_DIR);
+const apps = listWorkspaces(APPS_DIR);
 
-const PRIVATE_DIR = path.join(ROOT, "private");
-
-function listDir(dir: string): string[] {
-  try {
-    return readdirSync(dir).filter((name) => {
-      try {
-        return statSync(path.join(dir, name, "package.json")).isFile();
-      } catch {
-        return false;
-      }
-    });
-  } catch {
-    return [];
-  }
-}
-
-const packages = listPackages();
-const privatePackages = listDir(PRIVATE_DIR);
+/** What this repository publishes: the only `@intelligo-dev/*` names that resolve. */
+const PUBLISHED = new Set(packages.map((pkg) => `@intelligo-dev/${pkg}`));
 
 describe("package dependency direction", () => {
-  it("covers every package in the allowlist", () => {
+  it("finds the packages", () => {
+    // A silent empty list would make every rule below vacuous.
+    expect(packages.length).toBeGreaterThan(5);
+  });
+
+  it("covers every package in the allowlist, and nothing else", () => {
     const missing = packages.filter((p) => !(p in ALLOWED_DEPS));
     expect(
       missing,
       `packages without an ALLOWED_DEPS entry (add one deliberately): ${missing.join(", ")}`
+    ).toEqual([]);
+
+    // An entry for a package that no longer exists is a rule about
+    // nothing, and the next package to take that name inherits its
+    // edges unreviewed.
+    const stale = Object.keys(ALLOWED_DEPS).filter(
+      (p) => !packages.includes(p)
+    );
+    expect(
+      stale,
+      `ALLOWED_DEPS names packages that do not exist: ${stale.join(", ")}`
     ).toEqual([]);
   });
 
@@ -193,15 +134,7 @@ describe("package dependency direction", () => {
     const allowed = ALLOWED_DEPS[pkg] ?? [];
 
     it("declares only allowlisted @intelligo-dev/* dependencies", () => {
-      const manifest = JSON.parse(
-        readFileSync(path.join(pkgDir, "package.json"), "utf8")
-      ) as Record<string, Record<string, string> | undefined>;
-      const declared = Object.keys({
-        ...manifest.dependencies,
-        ...manifest.devDependencies,
-        ...manifest.peerDependencies,
-      }).filter((name) => name.startsWith("@intelligo-dev/"));
-
+      const declared = declaredIntelligoDeps(path.join(pkgDir, "package.json"));
       const violations = declared.filter((dep) => !allowed.includes(dep));
       expect(
         violations,
@@ -210,25 +143,16 @@ describe("package dependency direction", () => {
     });
 
     it("imports only allowlisted @intelligo-dev/* packages and no app code", () => {
-      // Whole package, not just src/: scripts and root config files are
-      // where the escapes actually were.
-      const files = walkSources(pkgDir);
       const violations: string[] = [];
 
-      for (const file of files) {
+      for (const file of walkSources(pkgDir)) {
         const rel = path.relative(ROOT, file);
         for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
-          if (spec.startsWith("@intelligo-dev/")) {
-            const dep = spec.split("/").slice(0, 2).join("/");
+          const dep = intelligoPackage(spec);
+          if (dep) {
             const isSelf = dep === `@intelligo-dev/${pkg}`;
             if (!isSelf && !allowed.includes(dep)) {
               violations.push(`${rel} → ${spec}`);
-            }
-            if (APP_PACKAGES.includes(dep)) {
-              violations.push(`${rel} → ${spec} (app package)`);
-            }
-            if (PRIVATE_PACKAGES.includes(dep)) {
-              violations.push(`${rel} → ${spec} (private vertical)`);
             }
           } else if (spec === "@" || spec.startsWith("@/")) {
             violations.push(`${rel} → ${spec} (app alias)`);
@@ -252,83 +176,15 @@ describe("package dependency direction", () => {
   });
 });
 
-describe.skipIf(!hasPrivateWorkspace)("private package direction", () => {
-  it("finds the private workspace", () => {
-    // A silent empty list would make every assertion below vacuous.
-    expect(privatePackages.length).toBeGreaterThan(0);
-  });
-
-  describe.each(privatePackages)("%s", (pkg) => {
-    const pkgDir = path.join(PRIVATE_DIR, pkg);
-
-    it("declares only allowlisted @intelligo-dev/* dependencies", () => {
-      const allowed = PRIVATE_ALLOWED_DEPS[pkg];
-      if (!allowed) return; // acme composes everything
-
-      const manifest = JSON.parse(
-        readFileSync(path.join(pkgDir, "package.json"), "utf8")
-      ) as Record<string, Record<string, string> | undefined>;
-      const declared = Object.keys({
-        ...manifest.dependencies,
-        ...manifest.devDependencies,
-        ...manifest.peerDependencies,
-      }).filter((name) => name.startsWith("@intelligo-dev/"));
-
-      const violations = declared.filter((dep) => !allowed.includes(dep));
-      expect(
-        violations,
-        `private/${pkg} declares forbidden deps: ${violations.join(", ")}`
-      ).toEqual([]);
-    });
-
-    it("imports only allowlisted @intelligo-dev/* packages", () => {
-      const allowed = PRIVATE_ALLOWED_DEPS[pkg];
-      if (!allowed) return; // acme composes everything
-
-      const violations: string[] = [];
-      for (const file of walkSources(pkgDir)) {
-        const rel = path.relative(ROOT, file);
-        for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
-          if (!spec.startsWith("@intelligo-dev/")) continue;
-          const dep = spec.split("/").slice(0, 2).join("/");
-          if (dep === `@intelligo-dev/${pkg}`) continue;
-          if (!allowed.includes(dep)) violations.push(`${rel} → ${spec}`);
-        }
-      }
-
-      expect(
-        violations,
-        `forbidden imports in private/${pkg}:\n  ${violations.join("\n  ")}`
-      ).toEqual([]);
-    });
-
-    it("does not depend on the product application", () => {
-      const manifest = JSON.parse(
-        readFileSync(path.join(pkgDir, "package.json"), "utf8")
-      ) as Record<string, Record<string, string> | undefined>;
-      const declared = Object.keys({
-        ...manifest.dependencies,
-        ...manifest.devDependencies,
-      });
-
-      if (pkg === "acme") return;
-      expect(declared).not.toContain("@example/product");
-    });
-  });
-});
-
 // ---------------------------------------------------------------------------
 // apps/*
 // ---------------------------------------------------------------------------
 
-const APPS_DIR = path.join(ROOT, "apps");
-const apps = listDir(APPS_DIR);
-
 /**
- * `apps/*` was never scanned, which mattered once the reference
- * application arrived: its entire purpose is to prove the public
- * packages compose without the private vertical, and nothing was
- * checking that it stayed that way.
+ * The reference application's entire purpose is to prove the published
+ * packages compose on their own. It may import any of them — and only
+ * them: an `@intelligo-dev/*` name this repository does not publish
+ * resolves nowhere for a consumer.
  */
 describe("apps", () => {
   it("finds the apps directory", () => {
@@ -338,26 +194,21 @@ describe("apps", () => {
   describe.each(apps)("%s", (app) => {
     const appDir = path.join(APPS_DIR, app);
 
-    it("does not import a private package", () => {
+    it("imports only packages this repository publishes", () => {
       const violations: string[] = [];
       for (const file of walkSources(appDir)) {
         const rel = path.relative(ROOT, file);
         for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
-          const dep = spec.startsWith("@intelligo-dev/")
-            ? spec.split("/").slice(0, 2).join("/")
-            : null;
-          if (dep && PRIVATE_PACKAGES.includes(dep)) {
-            violations.push(`${rel} → ${spec}`);
-          }
-          if (spec.includes("private/")) {
-            violations.push(`${rel} → ${spec} (private path)`);
+          const dep = intelligoPackage(spec);
+          if (dep && !PUBLISHED.has(dep)) {
+            violations.push(`${rel} → ${spec} (not a published package)`);
           }
         }
       }
 
       expect(
         violations,
-        `apps/${app} reaches into private/:\n  ${violations.join("\n  ")}`
+        `apps/${app} imports what is not published:\n  ${violations.join("\n  ")}`
       ).toEqual([]);
     });
 
@@ -372,9 +223,8 @@ describe("apps", () => {
       const undeclared = new Set<string>();
       for (const file of walkSources(appDir)) {
         for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
-          if (!spec.startsWith("@intelligo-dev/")) continue;
-          const dep = spec.split("/").slice(0, 2).join("/");
-          if (!declared.has(dep)) undeclared.add(dep);
+          const dep = intelligoPackage(spec);
+          if (dep && !declared.has(dep)) undeclared.add(dep);
         }
       }
 
@@ -387,132 +237,52 @@ describe("apps", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Composition reaches every registry read
+// The dissolved set
 // ---------------------------------------------------------------------------
 
 /**
- * Registries are module-scope state, and Next.js may give a page, a
- * route handler and the instrumentation hook separate instances of the
- * module holding them. When that happens the composition root fills one
- * copy and the reader sees an empty one — which surfaced in CI as a
- * page logging "No billing product configured" while instrumentation
- * had run, quota state coming back null and feature checks falling back
- * to defaults. Nothing failed loudly.
- *
- * The rule: a server module that reads a registry imports
- * `@/lib/ensure-composed`, so the composition and the read are
- * guaranteed to be in the same instance.
+ * ADR-0008 dissolved `agents`, `ai` and `chat` into `executions`,
+ * `core`, `audit`, `jobs` and product source. They were never
+ * published, and the directories are gone. The allowlist above already
+ * refuses them as edges; this rule exists so that the reason survives
+ * the allowlist — a package or app that reaches for one of these names
+ * gets told they are dissolved, not merely "not allowlisted".
  */
-/** Source with block and line comments removed, for identifier scans. */
-function stripComments(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/(^|[^:])\/\/.*$/gm, "$1");
-}
+describe("nothing depends on the dissolved set", () => {
+  const dissolved: readonly string[] = DISSOLVED_PACKAGES;
 
-describe.skipIf(!hasIgniteApp)(
-  "composition reaches every registry read",
-  () => {
-    const REGISTRY_READS = [
-      "getPlanConfigs",
-      "getPlanBySlug",
-      "getDefaultProductSlug",
-      "getProductFeatures",
-      "getUpgradeMessage",
-      "getActionLabel",
-      "getActionLimitKey",
-      "hasFeature",
-      "checkFeatureQuota",
-      "checkQuota",
-    ];
+  it("has a dissolved set to rule on", () => {
+    expect(dissolved.length).toBeGreaterThan(0);
+    for (const name of dissolved) {
+      expect(
+        PUBLISHED.has(name),
+        `${name} exists again — decide, then update ADR-0008`
+      ).toBe(false);
+    }
+  });
 
-    it("every acme module that reads a registry composes first", () => {
-      const roots = [
-        "product/app/lib",
-        "product/app/actions",
-        "product/app/app",
-      ];
+  describe.each([
+    ...packages.map((p) => ["packages", p] as const),
+    ...apps.map((a) => ["apps", a] as const),
+  ])("%s/%s", (kind, name) => {
+    const dir = path.join(ROOT, kind, name);
+
+    it("declares none of them", () => {
+      const declared = declaredIntelligoDeps(path.join(dir, "package.json"));
+      expect(declared.filter((d) => dissolved.includes(d))).toEqual([]);
+    });
+
+    it("imports none of them", () => {
       const offenders: string[] = [];
-
-      for (const root of roots) {
-        for (const file of walkSources(path.join(ROOT, root))) {
-          if (file.includes("__tests__") || file.endsWith(".test.ts")) continue;
-          const source = readFileSync(file, "utf8");
-          if (source.includes("ensure-composed")) continue;
-
-          // Comments name these APIs when they explain the boundary —
-          // a doc comment mentioning `hasFeature` is not a read.
-          const code = stripComments(source);
-
-          const hit = REGISTRY_READS.find((name) =>
-            new RegExp(`\\b${name}\\b`).test(code)
-          );
-          if (hit) {
-            offenders.push(`${path.relative(ROOT, file)} (reads ${hit})`);
+      for (const file of walkSources(dir)) {
+        for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
+          const dep = intelligoPackage(spec);
+          if (dep && dissolved.includes(dep)) {
+            offenders.push(`${path.relative(ROOT, file)} → ${spec}`);
           }
         }
       }
-
-      expect(
-        offenders,
-        `these read a registry without importing @/lib/ensure-composed:\n  ${offenders.join("\n  ")}`
-      ).toEqual([]);
+      expect(offenders, offenders.join("\n  ")).toEqual([]);
     });
-  }
-);
-
-/**
- * ADR-0008 dissolved `agents`, `ai` and `chat`. They still exist, and
- * Acme and Support still import them, but nothing headed for the
- * public foundation may — otherwise extraction copies a package whose
- * dependency stayed behind, and the break surfaces after the
- * repository is public rather than here.
- *
- * Keyed off the allowlist file rather than a second list, so a package
- * added to `public` is covered without anyone remembering this rule.
- */
-describe("public packages do not depend on the dissolved set", () => {
-  const allowlist = JSON.parse(
-    readFileSync(path.join(ROOT, "config/public-packages.json"), "utf8")
-  ) as { public: string[]; deprecated: string[] };
-
-  const dissolved = allowlist.deprecated.map((p) => `@intelligo-dev/${p}`);
-
-  it("has a dissolved set to rule on", () => {
-    // Once the moves land and these directories are gone, this rule
-    // becomes vacuous — delete it rather than let it pass on nothing.
-    expect(dissolved.length).toBeGreaterThan(0);
   });
-
-  describe.each(allowlist.public.filter((p) => packages.includes(p)))(
-    "%s",
-    (pkg) => {
-      it("declares none of them", () => {
-        const manifest = JSON.parse(
-          readFileSync(path.join(PACKAGES_DIR, pkg, "package.json"), "utf8")
-        ) as { dependencies?: Record<string, string> };
-
-        expect(
-          Object.keys(manifest.dependencies ?? {}).filter((d) =>
-            dissolved.includes(d)
-          )
-        ).toEqual([]);
-      });
-
-      it("imports none of them", () => {
-        const offenders: string[] = [];
-
-        for (const file of walkSources(path.join(PACKAGES_DIR, pkg))) {
-          for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
-            const dep = spec.split("/").slice(0, 2).join("/");
-            if (dissolved.includes(dep)) {
-              offenders.push(`${path.relative(ROOT, file)} → ${spec}`);
-            }
-          }
-        }
-
-        expect(offenders, offenders.join("\n  ")).toEqual([]);
-      });
-    }
-  );
 });

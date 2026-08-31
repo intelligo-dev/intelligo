@@ -41,7 +41,7 @@ Env: workspace apps load the **repository root `.env`** as fallback (app-local `
 
 ### Registry (`registry/`)
 
-`registry.json` (official shadcn schema) + `base/<item>/**` source; build output `registry/public/r/` is gitignored. Items: smoke, app-shell, dashboard, auth-login/signup/password-reset/email-verification, onboarding, invitation-accept, workspace/team/profile/privacy-settings, pricing, checkout, billing-settings, usage, notifications, chat, artifacts, route-error. `tests/architecture/registry.test.ts` enforces: schema shape, no orphans, no private/deprecated/`@intelligo-dev/ui` imports, declared `@intelligo-dev/*` dependencies.
+`registry.json` (official shadcn schema) + `base/<item>/**` source; build output `registry/public/r/` is gitignored. Items: smoke, app-shell, dashboard, auth-login/signup/password-reset/email-verification, onboarding, invitation-accept, workspace/team/profile/privacy-settings, pricing, checkout, billing-settings, usage, notifications, chat, artifacts, route-error. `tests/architecture/registry.test.ts` enforces: schema shape, no orphans, no unpublished/dissolved/`@intelligo-dev/ui` imports, declared `@intelligo-dev/*` dependencies.
 
 ### Packages
 
@@ -59,7 +59,7 @@ Env: workspace apps load the **repository root `.env`** as fallback (app-local `
 | `@intelligo-dev/cli`          | `create` / `add` / `doctor` / `migrate --check` / `upgrade --check`; scaffold is registry-ready (shadcn + Tailwind 4 + next-intl + composition root)  |
 | `@intelligo-dev/ui`           | Legacy design system — still used by admin; **not** part of the page contract                                                                         |
 
-`config/public-packages.json` is the allowlist of what is published; `tests/architecture/public-export.test.ts` audits it (licence metadata, no credentials, no deployment-specific identifiers).
+Every workspace under `packages/` is published; `tests/architecture/publishability.test.ts` audits the tree for it (licence metadata, no credentials, no product vocabulary).
 
 ### Apps
 
