@@ -22,7 +22,7 @@
     "@number-flow/react": "^0.5.11",
     "@tailwindcss/vite": "^4.3.3",
     "ai": "^6.0.77",
-    "astro": "^5.1.0",
+    "astro": "^7.2.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.563.0",
@@ -43,7 +43,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.4",
+    "@astrojs/check": "^0.9.10",
     "@intelligo-dev/auth": "workspace:*",
     "@intelligo-dev/billing": "workspace:*",
     "@intelligo-dev/core": "workspace:*",
