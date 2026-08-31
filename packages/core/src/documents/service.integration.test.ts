@@ -137,6 +137,12 @@ d("documents service — real DB integration", () => {
       kind: "text",
     });
     const cutoff = new Date().toISOString();
+    // saveDocument stamps createdAt from the JS clock at millisecond
+    // precision, and the deletion is a strict `>` against the cutoff:
+    // a v2 saved in the same millisecond as the cutoff survives it.
+    // Step past the boundary so the test asserts the rule, not the
+    // scheduler.
+    await new Promise((resolve) => setTimeout(resolve, 2));
     await saveDocument(actor, {
       id,
       title: "Versioned",
