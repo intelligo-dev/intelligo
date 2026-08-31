@@ -278,17 +278,15 @@ export const userMemoryAudit = pgTable(
 // ---------------------------------------------------------------------------
 
 /**
- * Background-job queue for fact extraction (Phase F). When a chat
- * session ends the chat handler enqueues the conversation id here;
- * the worker (packages/agents/src/extraction/worker.ts) polls and
- * processes pending rows. Status starts as 'pending', flips to
+ * Background-job queue for fact extraction. When a chat session ends
+ * the chat handler enqueues the conversation id here; a consumer-owned
+ * extraction worker polls and processes pending rows. Status starts as 'pending', flips to
  * 'processing' while the worker holds the row, then 'completed' or
  * 'failed' on exit. Failed rows track attempts so we can retry with
  * exponential backoff and a hard cap.
  *
  * Keeping the queue in Postgres rather than Inngest/QStash for now —
- * launch traffic is small enough that DB polling is sufficient and
- * the doc explicitly calls this out as the V1 design.
+ * launch traffic is small enough that DB polling is sufficient.
  */
 
 export const EXTRACTION_STATUSES = [

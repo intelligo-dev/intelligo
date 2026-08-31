@@ -146,6 +146,7 @@ Three rules make installed pages hold up over time:
 registry/          page registry: registry.json + item source (built with `pnpm registry:build`)
 packages/          auth · billing · billing-core · core · executions · audit · jobs · admin · mastra · cli · ui
 apps/app           the reference application — the registry's canonical installed result
+apps/site          intelligo.dev — the public site, which also serves the registry at /r
 docs/adr/          the decisions, as ADRs
 tests/architecture the rules, as tests
 ```

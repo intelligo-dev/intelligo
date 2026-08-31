@@ -213,6 +213,19 @@ jobs:
           echo "registry smoke page answered $code"
           test "$code" = "200"
 
+      # apps/site serves registry/public/r as intelligo.dev/r and renders
+      # the items' real components, both as committed copies made by
+      # `sync`. A registry change without a re-sync would deploy a stale
+      # registry. proof.json is excluded: its sampled date is refreshed
+      # by hand at release time.
+      - name: Site sync output is committed
+        run: |
+          set -euo pipefail
+          pnpm --filter site sync
+          git checkout -- apps/site/src/data/proof.json
+          git status --porcelain -- apps/site/public/r apps/site/src/data/registry.json apps/site/src/showcase/app
+          test -z "$(git status --porcelain -- apps/site/public/r apps/site/src/data/registry.json apps/site/src/showcase/app)"
+
       - name: Check formatting
         run: pnpm format:check
 

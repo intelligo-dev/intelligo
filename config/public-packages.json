@@ -1,5 +1,5 @@
 {
-  "$comment": "The single allowlist behind ADR-0006. The public-export audit and the extraction script both read this file so they cannot drift; a package missing from both lists fails the audit.",
+  "$comment": "The single allowlist behind ADR-0006: which workspaces are the published framework. tests/architecture/public-export.test.ts checks every package under packages/ against it.",
   "public": [
     "admin",
     "audit",
@@ -13,7 +13,7 @@
     "mastra",
     "ui"
   ],
-  "$comment_deprecated": "ADR-0008 resolved ADR-0006's undecided trio: agents and ai dissolve, chat shrinks to its renderer registry. Until their exports reach their named destinations they stay in this repository, are NOT extracted, and no public package may depend on them.",
+  "$comment_deprecated": "ADR-0008 resolved ADR-0006's undecided trio: agents and ai dissolve, chat shrinks to its renderer registry. None of them is published and no public package may depend on them.",
   "deprecated": ["agents", "ai", "chat"],
   "apps": ["app"],
   "rootFiles": [
@@ -39,9 +39,7 @@
     "tests/architecture",
     "tests/stubs"
   ],
-  "$comment_overlay": "Files written on top of the extracted tree, verbatim. They are the public repository's own versions of files whose incubation copies name private workspaces (CI, AGENTS.md, .env.example, CODEOWNERS, the ADR index). Nothing under this directory is itself extracted.",
-  "overlay": "scripts/public-overlay",
-  "$comment_env": "Environment variable names that belong to private providers; stripped from turbo.json's globalEnv in the extracted tree.",
+  "$comment_env": "Environment variable names that belong to product-private providers and must not appear in turbo.json's globalEnv.",
   "privateEnv": [
     "QPAY_USERNAME",
     "QPAY_PASSWORD",
