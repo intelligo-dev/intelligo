@@ -29,14 +29,14 @@ const SCRIPT: { text: string; ms: number }[] = [
     ms: 200,
   },
   {
-    text: "\x1b[32m✓\x1b[0m migrations — up to date with @intelligo-dev/core 1.0.0-beta.2",
+    text: "\x1b[32m✓\x1b[0m migrations — up to date with @intelligo-dev/core 1.0.0-beta.3",
     ms: 260,
   },
   { text: "\x1b[32m✓\x1b[0m model ids — 3 used, 3 registered", ms: 200 },
   { text: "\x1b[90mno problems found\x1b[0m", ms: 500 },
   { text: "intelligo upgrade --check", ms: 300 },
   {
-    text: "\x1b[90m@intelligo-dev/cli 1.0.0-beta.1 → 1.0.0-beta.2 · 12 generated files compared\x1b[0m",
+    text: "\x1b[90m@intelligo-dev/cli 1.0.0-beta.2 → 1.0.0-beta.3 · 12 generated files compared\x1b[0m",
     ms: 260,
   },
   {

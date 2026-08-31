@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/billing",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -23,7 +23,7 @@
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "db:seed-plans": "tsx src/seed-plans.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/fix-esm-extensions.mjs dist",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {

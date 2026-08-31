@@ -87,6 +87,17 @@ jobs:
           pnpm turbo build
           out=$(mktemp -d)
 
+          # Every relative import in dist carries an extension. tsc
+          # emits specifiers verbatim and the sources omit them; the
+          # post-build fixer adds them, because Node's ESM loader and
+          # vitest's resolver refuse "./foo" — a consumer's scripts and
+          # tests are the first to find out.
+          if grep -rhoE 'from "\.[^"]*"' packages/*/dist --include='*.js' --include='*.d.ts' | grep -qv '\.js"\|\.css"\|\.json"'; then
+            echo "dist contains extensionless relative imports:"
+            grep -rnE 'from "\.[^"]*"' packages/*/dist --include='*.js' --include='*.d.ts' | grep -v '\.js"\|\.css"\|\.json"' | head
+            exit 1
+          fi
+
           for dir in packages/*/; do
             name=$(node -p "require('./$dir/package.json').name")
             (cd "$dir" && pnpm pack --pack-destination "$out" >/dev/null)

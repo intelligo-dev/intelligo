@@ -16,6 +16,19 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+## [1.0.0-beta.3] — 2026-08-31
+
+### Fixed
+
+- **Published `dist` imports carry explicit extensions.** tsc emitted
+  the sources' extensionless relative specifiers (`./components/button`)
+  verbatim, which Next resolves but Node's ESM loader and vitest's
+  resolver do not: a consumer's `tsx` script or test importing
+  `@intelligo-dev/ui` failed with "Cannot find module …/dist/components/button".
+  Every package build now runs `scripts/fix-esm-extensions.mjs` over
+  `dist`, and CI fails on an extensionless relative import in any
+  built package.
+
 ## [1.0.0-beta.2] — 2026-08-31
 
 ### Fixed
@@ -583,6 +596,7 @@ Includes the untagged "0.2 Core Platform" milestone.
   skeletons; shadcn/ui and Tailwind; GitHub Actions running build,
   type-check and lint.
 
+[1.0.0-beta.3]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.3
 [1.0.0-beta.2]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.2
 [1.0.0-beta.1]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.1
 [0.15.0]: #0150--2026-08-29--v2-an-application-framework-and-operational-platform
