@@ -24,12 +24,6 @@
       "target": "app/[locale]/(app)/checkout/success/page.tsx"
     },
     {
-      "path": "base/checkout/loading.tsx",
-      "content": "import { Card, CardContent, CardHeader } from \"@/components/ui/card\";\nimport { Skeleton } from \"@/components/ui/skeleton\";\n\nexport default function CheckoutSuccessLoading() {\n  return (\n    <div className=\"container max-w-2xl py-16\">\n      <Card>\n        <CardHeader className=\"items-center text-center\">\n          <Skeleton className=\"mb-4 h-16 w-16 rounded-full\" />\n          <Skeleton className=\"h-8 w-48\" />\n          <Skeleton className=\"mt-2 h-4 w-64\" />\n        </CardHeader>\n        <CardContent className=\"space-y-4\">\n          <Skeleton className=\"h-16 w-full rounded-lg\" />\n          <Skeleton className=\"mx-auto h-4 w-56\" />\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n",
-      "type": "registry:page",
-      "target": "app/[locale]/(app)/checkout/success/loading.tsx"
-    },
-    {
       "path": "base/checkout/error.tsx",
       "content": "\"use client\";\n\n/**\n * Client error boundary for the checkout success route. Self-contained\n * per the repo-wide registry standard: no shared app-internal error\n * component, no error-reporting SDK.\n */\n\nimport { useEffect } from \"react\";\nimport { useTranslations } from \"next-intl\";\n\nimport { Link } from \"@/i18n/navigation\";\nimport { Alert, AlertDescription } from \"@/components/ui/alert\";\nimport { Button } from \"@/components/ui/button\";\n\nexport default function CheckoutSuccessError({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: () => void;\n}) {\n  const t = useTranslations(\"checkout\");\n\n  useEffect(() => {\n    console.error(\"[checkout/success] error boundary caught:\", error);\n  }, [error]);\n\n  return (\n    <div className=\"flex min-h-[60vh] items-center justify-center p-4\">\n      <div className=\"w-full max-w-md space-y-4\">\n        <Alert variant=\"destructive\">\n          <AlertDescription>{t(\"error.description\")}</AlertDescription>\n        </Alert>\n\n        <div className=\"flex justify-center gap-3\">\n          <Button onClick={reset}>{t(\"actions.tryAgain\")}</Button>\n          <Button asChild variant=\"outline\">\n            <Link href=\"/settings/billing\">\n              {t(\"actions.viewBillingSettings\")}\n            </Link>\n          </Button>\n        </div>\n      </div>\n    </div>\n  );\n}\n",
       "type": "registry:page",

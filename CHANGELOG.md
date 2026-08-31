@@ -16,6 +16,19 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Registry: no page redirects from inside a streamed segment.** The
+  `auth-login` item shipped a `loading.tsx` for the whole `(auth)` group
+  beside a login page that redirects a signed-in user; `onboarding` and
+  `checkout` shipped one beside their own redirecting pages. A server
+  `redirect()` thrown behind a Suspense boundary arrives mid-stream and
+  trips React #310 in `next/link`'s `useOptimistic`, so the page fell
+  into its error boundary instead of moving (vercel/next.js#78396). The
+  three loading files are gone from the items and the reference app, and
+  `tests/architecture/streamed-redirects.test.ts` fails on any page that
+  calls `redirect()` under a `loading.tsx`.
+
 ## [1.0.0-beta.3] — 2026-08-31
 
 ### Fixed

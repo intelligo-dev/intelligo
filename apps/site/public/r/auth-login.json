@@ -66,12 +66,6 @@
       "content": "\"use client\";\n\n/**\n * Error boundary for the auth route group (renders outside the app shell). Renders the shared `RouteError` from the\n * `route-error` item — install it alongside this one.\n */\n\nimport { RouteError } from \"@/components/shared/route-error\";\n\nexport default function SegmentError({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: () => void;\n}) {\n  return (\n    <RouteError\n      error={error}\n      reset={reset}\n      scope=\"auth\"\n      fullScreen\n      homeHref=\"/login\"\n      homeKey=\"goToLogin\"\n    />\n  );\n}\n",
       "type": "registry:page",
       "target": "app/[locale]/(auth)/error.tsx"
-    },
-    {
-      "path": "base/auth-login/auth-loading.tsx",
-      "content": "/**\n * Loading skeleton for the whole `(auth)` route group — one file\n * covering login, signup, both password-reset pages, and email\n * verification, since every one of them renders the same `AuthCard`\n * shape. It mirrors that card's geometry (centered, `max-w-md`,\n * rounded border, title block, then form rows) so first paint doesn't\n * jump when the real page arrives.\n */\n\nimport { Skeleton } from \"@/components/ui/skeleton\";\n\nexport default function AuthLoading() {\n  return (\n    <div className=\"flex min-h-screen flex-col items-center justify-center px-4 py-12\">\n      <div className=\"w-full max-w-md\">\n        <div className=\"rounded-2xl border border-border bg-card p-8 shadow-sm\">\n          <div className=\"mb-6 space-y-2 text-center\">\n            <Skeleton className=\"mx-auto h-7 w-40\" />\n            <Skeleton className=\"mx-auto h-4 w-56\" />\n          </div>\n\n          <div className=\"space-y-4\">\n            <div className=\"space-y-2\">\n              <Skeleton className=\"h-4 w-16\" />\n              <Skeleton className=\"h-9 w-full\" />\n            </div>\n            <div className=\"space-y-2\">\n              <Skeleton className=\"h-4 w-20\" />\n              <Skeleton className=\"h-9 w-full\" />\n            </div>\n            <Skeleton className=\"h-9 w-full\" />\n          </div>\n\n          <Skeleton className=\"mx-auto mt-6 h-4 w-48\" />\n        </div>\n      </div>\n    </div>\n  );\n}\n",
-      "type": "registry:page",
-      "target": "app/[locale]/(auth)/loading.tsx"
     }
   ],
   "type": "registry:block"
