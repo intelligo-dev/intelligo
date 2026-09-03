@@ -20,7 +20,7 @@
     "viewAllPlans": "View all plans",
     "manageSubscription": "Manage subscription",
     "creditBalanceLabel": "Credit balance",
-    "creditsUnit": "credits",
+    "creditsUnit": "{count, plural, one {credit} other {credits}}",
     "creditBalanceNote": "Credits are used for pay-as-you-go access alongside your plan.",
     "paymentMethodTitle": "Payment method & invoices",
     "paymentMethodNote": "Manage your payment method and view invoices in the billing portal.",
@@ -28,8 +28,8 @@
   },
   "creditBundles": {
     "buyMore": "Buy more credits",
-    "currentBalance": "Current balance: {count} credits",
-    "creditsUnit": "credits",
+    "currentBalance": "Current balance: {count, plural, one {# credit} other {# credits}}",
+    "creditsUnit": "{count, plural, one {credit} other {credits}}",
     "oneTime": "{price}, one-time",
     "purchase": "Purchase",
     "redirecting": "Redirecting…"

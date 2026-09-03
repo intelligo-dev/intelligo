@@ -117,7 +117,7 @@ export default async function BillingSettingsPage() {
             <p className="text-2xl font-semibold">
               {format.number(overview.creditBalance)}{" "}
               <span className="text-sm font-normal text-muted-foreground">
-                {t("owner.creditsUnit")}
+                {t("owner.creditsUnit", { count: overview.creditBalance })}
               </span>
             </p>
             <p className="text-xs text-muted-foreground">

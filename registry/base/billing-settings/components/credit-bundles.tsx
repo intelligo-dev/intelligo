@@ -56,7 +56,7 @@ export function CreditBundles({ currentCredits }: CreditBundlesProps) {
         {currentCredits !== undefined && (
           <p className="text-sm text-muted-foreground">
             {t("creditBundles.currentBalance", {
-              count: format.number(currentCredits),
+              count: currentCredits,
             })}
           </p>
         )}
@@ -74,7 +74,7 @@ export function CreditBundles({ currentCredits }: CreditBundlesProps) {
               <p className="text-2xl font-semibold text-foreground">
                 {format.number(bundle.credits)}{" "}
                 <span className="text-sm font-normal text-muted-foreground">
-                  {t("creditBundles.creditsUnit")}
+                  {t("creditBundles.creditsUnit", { count: bundle.credits })}
                 </span>
               </p>
               <p className="text-sm text-muted-foreground">

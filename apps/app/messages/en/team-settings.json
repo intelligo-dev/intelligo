@@ -35,7 +35,6 @@
     "memberRemoved": "{name} removed from the workspace",
     "removeDialog": {
       "trigger": "Remove",
-      "triggerPending": "Removing…",
       "title": "Remove member",
       "description": "Are you sure you want to remove {name} from the workspace? They will lose access to everything in it.",
       "confirm": "Remove",
