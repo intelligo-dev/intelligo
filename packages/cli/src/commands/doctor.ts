@@ -225,6 +225,25 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
     );
   }
 
+  // 4c. Better-Auth's HTTP mount. Every auth item's form posts to
+  //     `/api/auth/*` on this origin; without the catch-all route
+  //     those requests 404 and the pages look broken for no visible
+  //     reason.
+  if (existsSync(path.join(root, "app/[locale]/(auth)/layout.tsx"))) {
+    results.push(
+      existsSync(path.join(root, "app/api/auth/[...all]/route.ts"))
+        ? { name: "auth-mount", status: "ok", detail: "/api/auth mounted" }
+        : {
+            name: "auth-mount",
+            status: "error",
+            detail:
+              "auth pages are installed but app/api/auth/[...all]/route.ts " +
+              'is missing — add `export { GET, POST } from ' +
+              '"@intelligo-dev/auth/next";` there or every sign-in answers 404',
+          }
+    );
+  }
+
   // 5. Generated source. A conflict — template and consumer both
   //    moved — is the one state an upgrade cannot resolve on its own.
   const manifest = readManifest(root);

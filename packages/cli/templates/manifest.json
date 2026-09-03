@@ -39,6 +39,10 @@
         "target": "lib/plans.ts"
       },
       {
+        "template": "app-scaffold/auth-route.ts.tpl",
+        "target": "app/api/auth/[...all]/route.ts"
+      },
+      {
         "template": "app-scaffold/assistant-route.ts.tpl",
         "target": "app/api/assistant/route.ts"
       },
