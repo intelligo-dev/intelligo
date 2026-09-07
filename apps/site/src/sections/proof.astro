@@ -2,29 +2,72 @@
 import SectionHead from "@/components/section-head.astro";
 import { PROOF, PROOF_STATS } from "@/lib/proof";
 import { SITE } from "@/lib/site";
+import { Scale, FileText, ShieldCheck, GitPullRequest, type LucideIcon } from "lucide-react";
+
+/** How the project is run, every link a real file in the repository. */
+const OPEN: { icon: LucideIcon; title: string; body: string; href: string; cta: string }[] = [
+  {
+    icon: Scale,
+    title: "Apache-2.0",
+    body: "Use it commercially, fork it, ship it. No open-core split: every package on npm is the whole package.",
+    href: SITE.license,
+    cta: "LICENSE",
+  },
+  {
+    icon: FileText,
+    title: `${PROOF.adrs} decisions, in writing`,
+    body: "Every boundary that matters is an Architecture Decision Record with the alternatives that lost. Read them before you disagree.",
+    href: SITE.adrs,
+    cta: "docs/adr",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Architecture as tests",
+    body: `${PROOF.architectureTests} suites fail the build on a wrong import, an unregistered model id, product vocabulary in a package or a registry item that drifts.`,
+    href: `${SITE.github}/tree/main/tests/architecture`,
+    cta: "tests/architecture",
+  },
+  {
+    icon: GitPullRequest,
+    title: "Small, scoped, green",
+    body: "Conventional commits, SemVer releases from a version tag, a repository that stays green after every slice. The contributing guide says how.",
+    href: `${SITE.github}/blob/main/CONTRIBUTING.md`,
+    cta: "CONTRIBUTING",
+  },
+];
 ---
 <section id="proof" class="xline">
   <div class="px-6 py-14 md:px-10 md:py-20">
     <SectionHead
-      tag="engineering proof"
+      n="06"
+      tag="open source · engineering proof"
       title="Not a pitch. A count."
-      lede="Counted from the framework repository, not typed into a landing page."
+      lede="Counted from the framework repository, not typed into a landing page — and every decision behind the numbers is public."
     />
-    <div class="reveal mt-8 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+    <div class="reveal mt-8 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
       {PROOF_STATS.map((s) => (
-        <div class="bg-paper-raised p-5">
-          <div class="mono text-[2.3rem] font-semibold leading-none tabular-nums text-ink">{s.value}</div>
-          <div class="mono mt-1.5 text-[0.66rem] uppercase tracking-[0.08em] text-ink-faint">{s.label}</div>
+        <div class="bg-paper-raised p-5 top-shade">
+          <div class="heading text-[2.6rem] font-semibold leading-none tabular-nums text-ink">{s.value}</div>
+          <div class="mono mt-2 text-[0.66rem] uppercase tracking-[0.08em] text-ink-faint">{s.label}</div>
           <p class="mt-3 text-[0.82rem] text-ink-dim">{s.note}</p>
         </div>
       ))}
     </div>
-    <p class="mono mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[0.7rem] text-ink-faint">
-      <span>counted {PROOF.sampledAt} · v{PROOF.version}</span>
-      <span aria-hidden="true">·</span>
-      <a href={SITE.adrs} class="hover:text-ink">{PROOF.adrs} decisions, recorded as ADRs →</a>
-      <span aria-hidden="true">·</span>
-      <a href={`${SITE.github}/tree/main/tests/architecture`} class="hover:text-ink">the architecture, as tests →</a>
+    <p class="mono mt-3 text-[0.7rem] text-ink-faint">
+      counted {PROOF.sampledAt} · v{PROOF.version} · <a href={`${SITE.github}/blob/main/apps/site/scripts/sync-framework.mjs`} class="hover:text-ink">by a script, committed with the site →</a>
     </p>
+
+    <div class="reveal mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {OPEN.map(({ icon: Icon, title, body, href, cta }) => (
+        <a href={href} class="group card flex flex-col p-4 no-underline transition-colors hover:border-line-strong">
+          <span class="flex size-8 items-center justify-center rounded-md border border-line bg-paper text-ink-dim transition-colors group-hover:text-ink">
+            <Icon className="size-4" strokeWidth={1.75} aria-hidden="true" />
+          </span>
+          <span class="mt-3 text-[0.98rem] font-semibold text-ink">{title}</span>
+          <span class="mt-1 flex-1 text-[0.86rem] leading-relaxed text-ink-dim">{body}</span>
+          <span class="mono mt-4 text-[0.72rem] text-ink-faint transition-colors group-hover:text-ink">{cta} →</span>
+        </a>
+      ))}
+    </div>
   </div>
 </section>

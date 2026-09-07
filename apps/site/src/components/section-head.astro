@@ -3,12 +3,16 @@ interface Props {
   tag: string;
   title: string;
   lede?: string;
+  /** Section index, rendered as a numbered eyebrow ("02 — the 70%"). */
+  n?: string;
   class?: string;
 }
-const { tag, title, lede, class: cls } = Astro.props;
+const { tag, title, lede, n, class: cls } = Astro.props;
 ---
 <div class:list={["section-head reveal", cls]}>
-  <span class="tag">{tag}</span>
+  <span class:list={["tag", n && "eyebrow"]}>
+    {n && <span class="n">{n}</span>}{tag}
+  </span>
   <h2 set:html={title} />
   {lede && <p>{lede}</p>}
 </div>

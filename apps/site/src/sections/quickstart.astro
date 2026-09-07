@@ -3,9 +3,10 @@ import SectionHead from "@/components/section-head.astro";
 import { Quickstart } from "@/components/quickstart";
 import { SITE } from "@/lib/site";
 ---
-<section id="quickstart" class="xline">
+<section id="quickstart" class="xline band">
   <div class="px-6 py-14 md:px-10 md:py-20">
     <SectionHead
+      n="07"
       tag="quickstart"
       title="Three commands.<br />Running before you touch a model key."
       lede="Node 22, pnpm 9 and a PostgreSQL database. The chat page streams against a built-in stub model, so the whole app runs before you configure a provider."
@@ -13,7 +14,7 @@ import { SITE } from "@/lib/site";
     <div class="mt-8">
       <Quickstart client:visible />
     </div>
-    <p class="mono mt-4 text-[0.72rem] text-ink-faint">
+    <p class="mono mt-5 text-[0.72rem] text-ink-faint">
       Database, environment, migrations, AI providers and the other page families: <a href={SITE.docs} class="text-ink-dim hover:text-ink">read the docs →</a>
     </p>
   </div>

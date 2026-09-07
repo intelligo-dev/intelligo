@@ -27,12 +27,14 @@ Static assets on Cloudflare Workers (`wrangler.jsonc`: assets only, no Worker sc
 
 ## Pages
 
-- `/` — the homepage: hero, the reference app, the 30/70 model, the execution boundary, consumer-owned UI, architecture, not-a-boilerplate, engineering proof, quickstart, FAQ, CTA. One question per section (`src/pages/index.astro`).
+- `/` — the homepage: the hero (headline, `create` command, the reference application walkthrough at the fold), then numbered sections — the 30/70 model, the execution boundary, consumer-owned UI, architecture, not-a-boilerplate, engineering proof + open source, quickstart (the one dark band), FAQ, CTA. One question per section (`src/pages/index.astro`).
+- `/404` — the not-found page wrangler serves for unknown routes (`src/pages/404.astro`).
 - `/pages` — the registry explorer, every page family with its install command.
 - `/architecture` — the full package graph, the architecture rules as tests, ownership, ADRs.
 - `/why-intelligo` — the other half counted in full, and the agent objection.
 - `/compare` — the alternatives.
 - `/r/<item>.json` — the hosted registry.
+- `/og.png`, `/favicon.svg`, `/robots.txt`, `/sitemap-index.xml` — the social card, icon, crawler hints and the sitemap `@astrojs/sitemap` writes at build time. The card is rendered from `scripts/og.html`; regenerate it after a copy or version change with `npx playwright screenshot --viewport-size=1200,630 scripts/og.html public/og.png`.
 
 Every command the homepage shows is verified against the published packages: `pnpm dlx @intelligo-dev/cli@beta create`, `pnpm exec shadcn add https://intelligo.dev/r/<item>.json`, `pnpm dev`. The scaffold's `components.json` ships an empty `registries` map, so the URL form is the one that works — do not document `shadcn add @intelligo-dev/<item>` until a namespace is configured.
 

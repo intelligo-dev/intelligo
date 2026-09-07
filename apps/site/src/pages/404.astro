@@ -1,0 +1,27 @@
+---
+import Page from "@/layouts/Page.astro";
+import { SITE } from "@/lib/site";
+---
+<Page
+  path="/404"
+  tag="404"
+  title="Nothing at this route."
+  lede="The page moved, or never existed. The registry items live under /r, everything else is one of the links below."
+  description="Page not found — intelligo.dev"
+>
+  <section class="xline">
+    <div class="grid gap-px border-b border-line bg-line px-0 sm:grid-cols-2 lg:grid-cols-4">
+      {[
+        ["/", "Home", "the framework in one page"],
+        ["/pages", "Pages", "every registry item, rendered"],
+        ["/architecture", "Architecture", "packages, rules, decisions"],
+        [SITE.docs, "Docs", "quickstart and setup on GitHub"],
+      ].map(([href, h, b]) => (
+        <a href={href} class="bg-paper px-6 py-6 no-underline transition-colors hover:bg-paper-raised md:px-10">
+          <span class="block text-[1rem] font-semibold text-ink">{h} →</span>
+          <span class="mt-1 block text-[0.86rem] text-ink-dim">{b}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+</Page>

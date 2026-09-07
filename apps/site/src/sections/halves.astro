@@ -1,10 +1,20 @@
 ---
 import SectionHead from "@/components/section-head.astro";
 import { INTELLIGO_LAYER, YOUR_LAYER } from "@/lib/capabilities";
+import { Fingerprint, CreditCard, Activity, Boxes, Wrench, type LucideIcon } from "lucide-react";
+
+const ICONS: Record<string, LucideIcon> = {
+  identity: Fingerprint,
+  commerce: CreditCard,
+  "ai-ops": Activity,
+  product: Boxes,
+  operations: Wrench,
+};
 ---
 <section id="framework" class="xline">
   <div class="px-6 py-14 md:px-10 md:py-20">
     <SectionHead
+      n="01"
       tag="the 70%"
       title="An AI product is two halves.<br />Only one of them is yours."
       lede="The interesting half is your agent. The other half is the same in every AI SaaS ever built — and it is already here."
@@ -30,23 +40,31 @@ import { INTELLIGO_LAYER, YOUR_LAYER } from "@/lib/capabilities";
       <!-- the intelligo layer, grouped -->
       <div>
         <div class="tag">intelligo layer — the 70%</div>
-        <div class="mt-3 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
-          {INTELLIGO_LAYER.map((g) => (
-            <div class="bg-paper p-4">
-              <div class="flex items-baseline justify-between gap-2">
-                <span class="mono text-[0.68rem] uppercase tracking-[0.08em] text-ink-faint">{g.label}</span>
-                <span class="mono text-[0.64rem] text-ink-faint">{g.pkg}</span>
+        <div class="mt-3 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+          {INTELLIGO_LAYER.map((g) => {
+            const Icon = ICONS[g.id] ?? Boxes;
+            return (
+              <div class="group bg-paper p-4 transition-colors hover:bg-paper-raised">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="flex items-center gap-2">
+                    <span class="flex size-6 items-center justify-center rounded-sm border border-line bg-paper-raised text-ink-dim transition-colors group-hover:border-line-strong group-hover:text-ink">
+                      <Icon className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
+                    </span>
+                    <span class="mono whitespace-nowrap text-[0.68rem] uppercase tracking-[0.08em] text-ink-faint">{g.label}</span>
+                  </span>
+                  <span class="mono text-right text-[0.64rem] text-ink-faint">{g.pkg}</span>
+                </div>
+                <ul class="mt-3 space-y-1">
+                  {g.items.map((it) => (
+                    <li class="flex items-center gap-2 text-[0.95rem] text-ink">
+                      <span class="text-settle" aria-hidden="true">✓</span>{it}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul class="mt-2 space-y-1">
-                {g.items.map((it) => (
-                  <li class="flex items-center gap-2 text-[0.95rem] text-ink">
-                    <span class="text-settle" aria-hidden="true">✓</span>{it}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-          <div class="flex flex-col justify-between bg-paper-raised p-4">
+            );
+          })}
+          <div class="flex flex-col justify-between bg-paper-raised p-4 top-shade">
             <p class="text-[0.88rem] text-ink-dim">Typed services, tested against a real database. Installed as packages; surfaced as pages you own.</p>
             <a href="/why-intelligo#capabilities" class="mono mt-3 text-[0.78rem] text-ink no-underline hover:text-amber">Explore all capabilities →</a>
           </div>

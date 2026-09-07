@@ -303,7 +303,7 @@ export function ProductWalkthrough() {
             the same files <span className="text-ink-dim">shadcn add</span>{" "}
             writes
           </span>
-          <span className="hidden sm:inline">
+          <span className="hidden whitespace-nowrap sm:inline">
             {paused ? "paused" : playing ? "auto-playing" : ""}
           </span>
         </div>
