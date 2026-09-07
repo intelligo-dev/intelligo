@@ -81,8 +81,11 @@ export const Link = forwardRef<
 export function useRouter() {
   const navigate = useContext(NavigateContext);
   return {
-    push: (href: Href) => navigate(toString(href)),
-    replace: (href: Href) => navigate(toString(href)),
+    // next-intl's router takes `{ locale }` as a second argument (the
+    // language-switcher item passes it); the preview has one locale.
+    push: (href: Href, _opts?: { locale?: string }) => navigate(toString(href)),
+    replace: (href: Href, _opts?: { locale?: string }) =>
+      navigate(toString(href)),
     refresh: () => {},
     back: () => {},
     forward: () => {},
@@ -90,8 +93,9 @@ export function useRouter() {
   };
 }
 
+/** The context holds the full href so `useSearchParams` can read the query; the pathname is the part before it. */
 export function usePathname(): string {
-  return useContext(PathnameContext);
+  return useContext(PathnameContext).split("?")[0]!;
 }
 
 export function redirect(_href: Href): never {

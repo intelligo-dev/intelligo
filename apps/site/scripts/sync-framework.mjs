@@ -140,6 +140,16 @@ const SHOWCASE_ITEMS = [
   "artifacts",
   "trial-banner",
   "feature-gating",
+  "route-error",
+  "invitation-accept",
+  "settings-shell",
+  "workspace-settings",
+  "auth-password-reset",
+  "language-switcher",
+  "checkout",
+  "payment-poll",
+  "profile-settings",
+  "privacy-settings",
 ];
 const SERVER_MARKERS = [
   '"server-only"',

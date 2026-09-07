@@ -44,7 +44,7 @@ export function ShowcaseProvider({
     >
       <ShowcaseNavigation
         pathname={path}
-        onNavigate={(href) => setPath(href.split("?")[0]!)}
+        onNavigate={(href) => setPath(href)}
       >
         {children}
         <Toaster position="bottom-right" richColors closeButton />

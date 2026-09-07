@@ -4,6 +4,7 @@
  */
 import type { UIMessage } from "ai";
 import type { OrgInvitation } from "@intelligo-dev/auth";
+import type { CheckoutSessionSummary } from "@intelligo-dev/billing";
 import type { PlanConfig } from "@intelligo-dev/billing/plans";
 import type { TeamMember } from "@showcase/components/team/member-list";
 import type { Workspace } from "@showcase/components/shell/workspace-switcher";
@@ -13,6 +14,7 @@ export { NOTIFICATIONS } from "@showcase/actions/notifications";
 export { DOCUMENTS } from "@showcase/actions/documents";
 export { CONVERSATIONS } from "@showcase/actions/chat";
 export { USAGE_OVERVIEW } from "@showcase/actions/usage";
+export { FACTS, AUDIT_TRAIL } from "@showcase/actions/privacy";
 
 export const USER = {
   id: "user_you",
@@ -59,9 +61,20 @@ export const INVITATIONS: OrgInvitation[] = [
     status: "pending",
     expiresAt: daysAgo(-6),
     organizationId: "ws_acme",
+    organizationName: "Acme Research",
     inviterEmail: "you@company.com",
   },
 ];
+export const INVITATION = INVITATIONS[0]!;
+
+/** What Stripe reports for the checkout session the success page reads. */
+export const CHECKOUT_SESSION: CheckoutSessionSummary = {
+  status: "complete",
+  isSubscriptionActive: true,
+  planName: "Pro",
+  billingInterval: "month",
+  customerEmail: USER.email,
+};
 
 const limits = (monthlyCreditMnt: number, members: number) => ({
   monthlyCreditMnt,

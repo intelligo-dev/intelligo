@@ -1,0 +1,10 @@
+{
+  "title": "Settings",
+  "tabs": {
+    "profile": "Profile",
+    "billing": "Billing",
+    "privacy": "Privacy",
+    "team": "Team",
+    "workspace": "Workspace"
+  }
+}

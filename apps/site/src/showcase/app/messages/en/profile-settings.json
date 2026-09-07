@@ -1,0 +1,41 @@
+{
+  "page": {
+    "title": "Profile",
+    "description": "Manage your name, email, and account."
+  },
+  "form": {
+    "generalTitle": "General",
+    "generalDescription": "Update your name. Your email is managed by your login provider.",
+    "avatarCaption": "Generated automatically from your name.",
+    "nameLabel": "Name",
+    "emailLabel": "Email",
+    "emailNote": "Your email address can't be changed here.",
+    "save": "Save changes",
+    "savePending": "Saving…",
+    "updated": "Profile updated"
+  },
+  "dangerZone": {
+    "title": "Danger zone",
+    "description": "Deleting your account schedules it for permanent removal and signs you out everywhere. This cannot be undone.",
+    "trigger": "Delete account",
+    "dialogTitle": "Delete account",
+    "dialogDescription": "This will schedule your account for deletion and sign you out of every session. Type <token>{token}</token> to confirm.",
+    "confirmLabel": "Type {token} to confirm",
+    "cancel": "Cancel",
+    "confirm": "Delete account",
+    "confirmPending": "Deleting…",
+    "deleted": "Your account has been scheduled for deletion"
+  },
+  "errors": {
+    "forbidden": "You don't have permission to do that.",
+    "providerError": "Something went wrong. Please try again.",
+    "somethingWentWrong": "Something went wrong.",
+    "invalidInput": "Invalid input"
+  },
+  "email": {
+    "subject": "Your account has been scheduled for deletion",
+    "heading": "Account deletion confirmed",
+    "body": "Your account ({email}) has been scheduled for deletion.",
+    "warning": "If this wasn't you, contact support right away."
+  }
+}

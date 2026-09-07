@@ -1,0 +1,37 @@
+{
+  "page": {
+    "title": "Privacy",
+    "description": "See, export, and delete what the AI has learned about you.",
+    "export": {
+      "title": "Export your data",
+      "description": "Download everything stored about you — every fact, memory, profile snapshot, and audit record — as a single JSON file."
+    },
+    "yourData": {
+      "title": "Your data",
+      "description": "What the AI has learned about you, grouped by category. Deleting a fact removes it immediately."
+    },
+    "auditTrail": {
+      "title": "Audit trail",
+      "description": "{count, plural, one {The last # change to your data, most recent first.} other {The last # changes to your data, most recent first.}}",
+      "empty": "No changes recorded yet."
+    }
+  },
+  "exportButton": {
+    "download": "Download my data",
+    "preparing": "Preparing your download…",
+    "success": "Your data was downloaded",
+    "error": "Couldn't export your data. Please try again."
+  },
+  "factList": {
+    "empty": "Nothing has been recorded about you yet.",
+    "metaLine": "confidence {confidence} · importance {importance}",
+    "deleteAria": "Delete this fact",
+    "emptyHint": "As you chat, anything the assistant learns about you shows up here — and you can delete any of it."
+  },
+  "errors": {
+    "notFound": "That item no longer exists, or isn't yours.",
+    "invalidInput": "That request wasn't valid.",
+    "databaseError": "Something went wrong. Please try again.",
+    "somethingWentWrong": "Something went wrong."
+  }
+}
