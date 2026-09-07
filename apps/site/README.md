@@ -27,7 +27,7 @@ Static assets on Cloudflare Workers (`wrangler.jsonc`: assets only, no Worker sc
 
 ## Pages
 
-- `/` — the homepage: the hero (headline, `create` command, the reference application walkthrough at the fold), then numbered sections — the assembly (a pinned, scroll-driven stage in three acts — blocks compose every page family in the registry, a terminal creates the app and installs the packages, then the parts lock into one running application with the agent landing last; `src/components/assembly.tsx`), the 30/70 model, the execution boundary, consumer-owned UI, architecture, not-a-boilerplate, engineering proof + open source, quickstart (the one dark band), FAQ, CTA. One question per section (`src/pages/index.astro`).
+- `/` — the homepage: the hero (headline, `create` command, the reference application walkthrough at the fold), then numbered sections — the assembly (a pinned, scroll-driven stage, one step on screen at a time — Auth created, Dashboard created, Chat & artifacts created, Settings & billing created, each group parking in a tray; then a terminal installs the packages and the pages; then the parts lock into one running application with the agent landing last; `src/components/assembly.tsx`), the 30/70 model, the execution boundary, consumer-owned UI, architecture, not-a-boilerplate, engineering proof + open source, quickstart (the one dark band), FAQ, CTA. One question per section (`src/pages/index.astro`).
 - `/404` — the not-found page wrangler serves for unknown routes (`src/pages/404.astro`).
 - `/pages` — the registry explorer, every page family with its install command.
 - `/architecture` — the full package graph, the architecture rules as tests, ownership, ADRs.

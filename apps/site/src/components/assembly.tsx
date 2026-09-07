@@ -42,19 +42,54 @@ const H = 600;
 
 /** act boundaries on the 0 → 1 track */
 const ACT = {
-  pagesEnd: 0.4, // last page card has landed
-  shelve: [0.42, 0.5] as [number, number], // grid shrinks aside, terminal slides in
+  moments: [0.02, 0.44] as [number, number], // act 1: four moments, one thing on screen at a time
+  shelve: [0.44, 0.5] as [number, number], // terminal slides in over the tray
   termEnd: 0.66, // last terminal line printed
-  clear: [0.67, 0.72] as [number, number], // grid + terminal leave
+  clear: [0.67, 0.72] as [number, number], // tray + terminal leave
   app: [0.7, 1] as [number, number], // act 3, remapped to the stage's own 0 → 1
 };
+
+/** act 1, one moment per group of pages — in the order a user meets them */
+type Moment = {
+  id: string;
+  title: string;
+  sub: string;
+  /** registry items that land in this moment */
+  items: string[];
+  /** "page": one large page assembles; "grid": every item as a small card */
+  kind: "page" | "grid";
+  /** the page family whose wireframe the large card shows */
+  page: string;
+};
+
+const by = (group: RegistryGroup) => REGISTRY_ITEMS.filter((i) => i.group === group).map((i) => i.name);
+
+const MOMENTS: Moment[] = [
+  { id: "auth", title: "Auth", sub: "sign-up · verify · login · reset · onboarding · invitations", items: by("Auth"), kind: "page", page: "auth-login" },
+  { id: "dashboard", title: "Dashboard", sub: "app-shell · dashboard · notifications · banners · errors", items: by("Shell"), kind: "page", page: "dashboard" },
+  { id: "chat", title: "Chat & artifacts", sub: "conversations · documents — persisted by core", items: by("AI"), kind: "page", page: "chat" },
+  { id: "rest", title: "Settings & billing", sub: "workspace · team · profile · privacy · pricing · checkout · usage", items: [...by("Settings"), ...by("Commerce")], kind: "grid", page: "team-settings" },
+];
+
+function momentWindow(k: number): [number, number] {
+  const [a, b] = ACT.moments;
+  const len = (b - a) / MOMENTS.length;
+  return [a + k * len, a + (k + 1) * len];
+}
 
 type Phase = { id: string; label: string; src: string; short: string; note: string; at: number };
 
 export const PHASES: Phase[] = [
-  { id: "pages", label: "Blocks become pages", src: `${REGISTRY_ITEMS.length} page families`, short: "registry", note: "Forms, tables, shells, panels — composed from your own shadcn primitives into every page family in the registry.", at: 0 },
-  { id: "install", label: "One command each", src: "@intelligo-dev/* · intelligo.dev/r", short: "npm + registry", note: "create scaffolds the app; the packages install from npm; every page lands as source in your tree.", at: ACT.shelve[0] },
-  { id: "app", label: "A SaaS, assembled", src: "auth · billing · executions · core · jobs · audit", short: "one application", note: "Every screen wired to a typed service. Workspaces, credits, executions, audit — running before a model key exists.", at: ACT.clear[0] },
+  ...MOMENTS.map((m, k) => ({
+    id: m.id,
+    label: `${m.title} created`,
+    src: `${m.items.length} page ${m.items.length === 1 ? "family" : "families"} · registry`,
+    short: `${m.items.length} pages`,
+    note: `${m.sub}. Installed as source in your tree, rendered by your own shadcn primitives.`,
+    at: momentWindow(k)[0],
+  })),
+  { id: "install", label: "Packages installed", src: "@intelligo-dev/* · intelligo.dev/r", short: "npm", note: "create scaffolds the app, the packages install from npm, every page lands with one shadcn command.", at: ACT.shelve[0] },
+  { id: "app", label: "SaaS ready", src: "auth · billing · executions · core · jobs · audit", short: "running", note: "Every screen wired to a typed service. Workspaces, credits, executions, audit — running before a model key exists.", at: ACT.clear[0] },
   { id: "agent", label: "Your agent", src: "Mastra · AI SDK · anything", short: "yours", note: "The only slot you write. Native, unmodified, bracketed by the boundary.", at: ACT.app[0] + 0.8 * (ACT.app[1] - ACT.app[0]) },
 ];
 
@@ -434,82 +469,129 @@ function BlockEl({ kind }: { kind: Block["kind"] }) {
   }
 }
 
-function PageCard({ p, i, name, group, x, y, w, h }: { p: MotionValue<number>; i: number; name: string; group: RegistryGroup; x: number; y: number; w: number; h: number }) {
-  const n = REGISTRY_ITEMS.length;
-  const start = 0.01 + (i / n) * (ACT.pagesEnd - 0.12);
-  const win: [number, number] = [start, start + 0.11];
+/** blocks flying into a wireframe; `local` runs 0 → 1 while the card assembles */
+function Wireframe({ local, seed, name, group, w, h, label }: { local: MotionValue<number>; seed: number; name: string; group: RegistryGroup; w: number; h: number; label?: boolean }) {
   const blocks = useMemo(() => layoutFor(name, group), [name, group]);
-  const frameOp = useTransform(p, [win[0], win[0] + 0.03], [0, 1]);
-  const labelOp = useTransform(p, [win[1] - 0.02, win[1]], [0, 1]);
-  const bodyH = h - 16;
+  const bodyH = h - (label ? 18 : 0);
+  const frameOp = useTransform(local, [0, 0.15], [0, 1]);
+  const labelOp = useTransform(local, [0.8, 1], [0, 1]);
   return (
-    <motion.div style={{ left: x, top: y, width: w, height: h, opacity: frameOp }} className="absolute rounded-md border border-line bg-paper-raised">
-      <div className="relative h-full overflow-visible">
-        {blocks.map((b, k) => {
-          const a = rnd(i, k);
-          const ang = a * Math.PI * 2;
-          const dist = 220 + rnd(i, k + 7) * 260;
-          const sub: [number, number] = [win[0] + k * 0.012, win[0] + 0.07 + k * 0.012];
-          return (
-            <Part
-              key={k}
-              p={p}
-              from={{
-                // integers: Motion prints 4 decimals on the server and the full float on the client
-                x: Math.round(Math.cos(ang) * dist),
-                y: Math.round(Math.sin(ang) * dist),
-                r: Math.round((rnd(i, k + 3) - 0.5) * 60),
-                s: 1.3,
-              }}
-              win={sub}
-              style={{
-                left: Math.round((b.x / 100) * w),
-                top: Math.round(16 + (b.y / 100) * bodyH),
-                width: Math.round((b.w / 100) * w),
-                height: Math.round((b.h / 100) * bodyH),
-              }}
-            >
-              <BlockEl kind={b.kind} />
-            </Part>
-          );
-        })}
-      </div>
-      <motion.div style={{ opacity: labelOp }} className="mono absolute inset-x-0 top-0 flex h-4 items-center justify-between border-b border-line px-1.5 text-[7.5px] text-ink-dim">
-        <span className="truncate">{name}</span>
-        <span className="text-ink-faint">{group.toLowerCase()}</span>
-      </motion.div>
+    <motion.div style={{ width: w, height: h, opacity: frameOp }} className="relative rounded-md border border-line bg-paper-raised">
+      {blocks.map((b, k) => {
+        const ang = rnd(seed, k) * Math.PI * 2;
+        const dist = 260 + rnd(seed, k + 7) * 300;
+        const n = blocks.length;
+        const sub: [number, number] = [(k / n) * 0.45, (k / n) * 0.45 + 0.5];
+        return (
+          <Part
+            key={k}
+            p={local}
+            from={{ x: Math.round(Math.cos(ang) * dist), y: Math.round(Math.sin(ang) * dist), r: Math.round((rnd(seed, k + 3) - 0.5) * 50), s: 1.25 }}
+            win={sub}
+            style={{
+              left: Math.round((b.x / 100) * w),
+              top: Math.round((label ? 18 : 0) + (b.y / 100) * bodyH),
+              width: Math.round((b.w / 100) * w),
+              height: Math.round((b.h / 100) * bodyH),
+            }}
+          >
+            <BlockEl kind={b.kind} />
+          </Part>
+        );
+      })}
+      {label && (
+        <motion.div style={{ opacity: labelOp }} className="mono absolute inset-x-0 top-0 flex h-[18px] items-center justify-between border-b border-line px-2 text-[8.5px] text-ink-dim">
+          <span className="truncate">{name}</span>
+          <span className="text-ink-faint">{group.toLowerCase()}</span>
+        </motion.div>
+      )}
     </motion.div>
   );
 }
 
-function PagesGrid({ p }: { p: MotionValue<number> }) {
-  const cols = 5;
-  const gap = 12;
-  const pad = 20;
-  const w = Math.floor((W - pad * 2 - gap * (cols - 1)) / cols);
-  const rows = Math.ceil(REGISTRY_ITEMS.length / cols);
-  const h = Math.floor((H - pad * 2 - gap * (rows - 1)) / rows);
-  // act 2: the grid shrinks to the left; act 3: it leaves
-  const scale = useTransform(p, [ACT.shelve[0], ACT.shelve[1], ACT.clear[0], ACT.clear[1]], [1, 0.42, 0.42, 0.3]);
-  const x = useTransform(p, ACT.shelve, [0, -pad]);
-  const y = useTransform(p, ACT.shelve, [0, 60]);
-  const opacity = useTransform(p, [ACT.clear[0], ACT.clear[1]], [1, 0]);
+/* the large card's box and the tray it shrinks into */
+const HERO = { x: 220, y: 74, w: 520, h: 320 };
+const TRAY = { y: 462, w: 196, h: 121, gap: 30 };
+const trayX = (k: number) => (W - MOMENTS.length * TRAY.w - (MOMENTS.length - 1) * TRAY.gap) / 2 + k * (TRAY.w + TRAY.gap);
+
+function MomentView({ p, k, m }: { p: MotionValue<number>; k: number; m: Moment }) {
+  const [a, b] = momentWindow(k);
+  const len = b - a;
+  const build: [number, number] = [a, a + len * 0.62]; // blocks assemble
+  const park: [number, number] = [a + len * 0.78, b]; // card shrinks into the tray
+  const local = useTransform(p, build, [0, 1]);
+
+  const sc = TRAY.w / HERO.w;
+  const scale = useTransform(p, park, [1, sc]);
+  const x = useTransform(p, park, [HERO.x, trayX(k)]);
+  const y = useTransform(p, park, [HERO.y, TRAY.y]);
+  // in act 2 the tray dims; act 3 it leaves
+  const opacity = useTransform(p, [a, a + 0.005, ACT.shelve[0], ACT.shelve[1], ACT.clear[0], ACT.clear[1]], [0, 1, 1, 0.55, 0.55, 0]);
+
+  const headOp = useTransform(p, [a + len * 0.05, a + len * 0.18, park[0], park[0] + len * 0.1], [0, 1, 1, 0]);
+  const headY = useTransform(p, [a + len * 0.05, a + len * 0.18], [12, 0]);
+  const checkOp = useTransform(p, [build[1], build[1] + len * 0.08], [0, 1]);
+  const chipOp = useTransform(p, [park[1] - len * 0.05, park[1], ACT.clear[0], ACT.clear[1]], [0, 1, 1, 0]);
+
+  const cols = 4;
+  const gap = 10;
+  const cw = Math.floor((HERO.w - gap * (cols - 1)) / cols);
+  const rows = Math.ceil(m.items.length / cols);
+  const ch = Math.floor((HERO.h - gap * (rows - 1)) / rows);
+
   return (
-    <motion.div style={{ scale, x, y, opacity, transformOrigin: "left center" }} className="absolute inset-0 will-change-transform">
-      {REGISTRY_ITEMS.map((it, i) => (
-        <PageCard
-          key={it.name}
-          p={p}
-          i={i}
-          name={it.name}
-          group={it.group}
-          x={pad + (i % cols) * (w + gap)}
-          y={pad + Math.floor(i / cols) * (h + gap)}
-          w={w}
-          h={h}
-        />
+    <>
+      {/* headline: the one thing on screen */}
+      <motion.div style={{ opacity: headOp, y: headY }} className="absolute inset-x-0 top-5 flex flex-col items-center text-center">
+        <div className="heading flex items-center gap-2 text-[26px] font-semibold leading-none text-ink">
+          {m.title}
+          <motion.span style={{ opacity: checkOp }} className="mono rounded-full border border-settle/40 px-2 py-0.5 text-[11px] font-medium text-settle">
+            ✓ created · {m.items.length} {m.items.length === 1 ? "page" : "pages"}
+          </motion.span>
+        </div>
+        <div className="mono mt-1.5 text-[11px] text-ink-faint">{m.sub}</div>
+      </motion.div>
+
+      {/* the card */}
+      <motion.div style={{ x, y, scale, opacity, transformOrigin: "top left" }} className="absolute left-0 top-0 will-change-transform">
+        {m.kind === "page" ? (
+          <Wireframe local={local} seed={k * 10} name={m.page} group={REGISTRY_ITEMS.find((i) => i.name === m.page)?.group ?? "Auth"} w={HERO.w} h={HERO.h} label />
+        ) : (
+          <div className="relative" style={{ width: HERO.w, height: HERO.h }}>
+            {m.items.map((name, i) => {
+              const it = REGISTRY_ITEMS.find((r) => r.name === name)!;
+              return (
+                <div key={name} className="absolute" style={{ left: (i % cols) * (cw + gap), top: Math.floor(i / cols) * (ch + gap) }}>
+                  <GridCard local={local} i={i} n={m.items.length} name={name} group={it.group} w={cw} h={ch} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </motion.div>
+
+      {/* tray chip */}
+      <motion.div style={{ opacity: chipOp, left: trayX(k), top: TRAY.y + TRAY.h + 6, width: TRAY.w }} className="mono absolute flex items-center justify-between text-[10px]">
+        <span className="text-ink">{m.title}</span>
+        <span className="text-settle">✓ {m.items.length}</span>
+      </motion.div>
+    </>
+  );
+}
+
+/** one small card inside the grid moment, staggered by index */
+function GridCard({ local, i, n, name, group, w, h }: { local: MotionValue<number>; i: number; n: number; name: string; group: RegistryGroup; w: number; h: number }) {
+  const mine = useTransform(local, [(i / n) * 0.6, (i / n) * 0.6 + 0.4], [0, 1]);
+  return <Wireframe local={mine} seed={100 + i} name={name} group={group} w={w} h={h} label />;
+}
+
+function Moments({ p }: { p: MotionValue<number> }) {
+  return (
+    <div className="absolute inset-0">
+      {MOMENTS.map((m, k) => (
+        <MomentView key={m.id} p={p} k={k} m={m} />
       ))}
-    </motion.div>
+    </div>
   );
 }
 
@@ -552,11 +634,11 @@ function TermLine({ p, i, line }: { p: MotionValue<number>; i: number; line: Lin
 }
 
 function Terminal({ p }: { p: MotionValue<number> }) {
-  const x = useTransform(p, ACT.shelve, [360, 0]);
+  const y = useTransform(p, ACT.shelve, [-60, 0]);
   const opacity = useTransform(p, [ACT.shelve[0], ACT.shelve[1], ACT.clear[0], ACT.clear[1]], [0, 1, 1, 0]);
   const scale = useTransform(p, ACT.clear, [1, 0.9]);
   return (
-    <motion.div style={{ x, opacity, scale, left: 430, top: 40, width: 500, height: 520 }} className="absolute flex flex-col overflow-hidden rounded-lg border border-line bg-paper-sunken shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] will-change-transform">
+    <motion.div style={{ y, opacity, scale, left: 200, top: 22, width: 560, height: 420 }} className="absolute flex flex-col overflow-hidden rounded-lg border border-line bg-paper-sunken shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] will-change-transform">
       <div className="flex h-8 shrink-0 items-center gap-1.5 border-b border-line px-3">
         <span className="size-2 rounded-full bg-line-strong" />
         <span className="size-2 rounded-full bg-line-strong" />
@@ -668,14 +750,14 @@ export function Assembly() {
   }
 
   return (
-    <div ref={track} className="relative" style={{ height: "560vh" }}>
+    <div ref={track} className="relative" style={{ height: "640vh" }}>
       <div className="sticky top-14 flex min-h-[calc(100vh-3.5rem)] flex-col justify-center py-6">
         <div className="grid gap-6 lg:grid-cols-[240px_1fr] lg:gap-10">
           <div className="order-2 lg:order-1">
             <Rail active={phase} />
             <div className="mt-5 hidden lg:block">
               <div className="mono flex items-center justify-between text-[0.68rem] uppercase tracking-[0.08em] text-ink-faint">
-                <span>act {Math.min(phase + 1, 3)} of 3</span>
+                <span>step {Math.min(phase + 1, PHASES.length - 1)} of {PHASES.length - 1}</span>
                 <motion.span className="tabular-nums">{pct}</motion.span>
               </div>
               <div className="mt-1 text-[1.05rem] font-semibold text-ink">{PHASES[phase]!.label}</div>
@@ -690,7 +772,7 @@ export function Assembly() {
             <div style={{ height: H * scale }}>
               <div style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}>
                 <div className="relative overflow-hidden rounded-xl" style={{ width: W, height: H }}>
-                  <PagesGrid p={p} />
+                  <Moments p={p} />
                   <Terminal p={p} />
                   <App p={p} />
                 </div>
@@ -708,7 +790,7 @@ export function Assembly() {
 
 function Rail({ active, className }: { active: number; className?: string }) {
   return (
-    <ol className={cn("flex flex-wrap gap-1 lg:flex-col lg:gap-0 lg:border-t lg:border-line", className)} aria-label="The three acts">
+    <ol className={cn("flex flex-wrap gap-1 lg:flex-col lg:gap-0 lg:border-t lg:border-line", className)} aria-label="The steps">
       {PHASES.map((ph, i) => (
         <li
           key={ph.id}
