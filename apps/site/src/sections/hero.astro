@@ -1,69 +1,49 @@
 ---
 /**
- * The fold answers "what is it?" and "show me" at once: the headline,
- * the one command that starts a project, and the reference application
- * itself — every screen the real registry item — inside a frame.
+ * The title card. One headline, one command, a cue to scroll — the
+ * product appears in scene 01, not here.
  */
 import { HeroTitle } from "@/components/hero-title";
 import { InstallCommand } from "@/components/install-command";
-import { ProductWalkthrough } from "@/components/product-walkthrough";
-import { LogoStrip } from "@/components/logo-strip";
 import { SITE } from "@/lib/site";
 
 const create = "pnpm dlx @intelligo-dev/cli@beta create my-app";
 ---
-<header id="top">
-  <div class="relative overflow-hidden">
-    <div class="hero-bg" aria-hidden="true"></div>
-    <div class="hero-glow" aria-hidden="true"></div>
+<header id="top" class="relative overflow-hidden">
+  <div class="hero-bg" aria-hidden="true"></div>
+  <div class="hero-glow" aria-hidden="true"></div>
 
-    <div class="relative mx-auto flex max-w-[880px] flex-col items-center px-6 pt-20 text-center md:pt-28">
-      <a href={SITE.npm} class="mb-7 inline-flex h-7 items-center overflow-hidden rounded-full border border-border bg-background/80 text-[0.78rem] no-underline backdrop-blur">
-        <span class="flex items-center gap-2 whitespace-nowrap px-3 font-medium text-foreground">
-          <span class="pulse" aria-hidden="true"></span>v{SITE.version} on npm
-        </span>
-        <span class="h-full w-px bg-border" aria-hidden="true"></span>
-        <span class="whitespace-nowrap px-3 text-muted-foreground transition-colors hover:text-foreground">Apache-2.0 <span class="hidden sm:inline">· open source</span> ↗</span>
+  <div class="relative mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[880px] flex-col items-center justify-center px-6 py-16 text-center">
+    <a href={SITE.npm} class="mb-7 inline-flex h-7 items-center overflow-hidden rounded-full border border-border bg-background/80 text-[0.78rem] no-underline backdrop-blur">
+      <span class="flex items-center gap-2 whitespace-nowrap px-3 font-medium text-foreground">
+        <span class="pulse" aria-hidden="true"></span>v{SITE.version} on npm
+      </span>
+      <span class="h-full w-px bg-border" aria-hidden="true"></span>
+      <span class="whitespace-nowrap px-3 text-muted-foreground transition-colors hover:text-foreground">Apache-2.0 <span class="hidden sm:inline">· open source</span> ↗</span>
+    </a>
+
+    <HeroTitle client:load />
+
+    <p class="mx-auto mt-6 max-w-[54ch] text-[1.08rem] leading-relaxed text-ink-dim">
+      The application framework for vertical AI SaaS. Auth, workspaces, billing, credits, execution accounting, pages and operations — versioned packages and source you own.
+      <span class="text-foreground">Your AI framework stays native.</span>
+    </p>
+
+    <div class="mt-8 flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row sm:gap-2">
+      <a href="#quickstart" class="btn btn-primary btn-xl w-full sm:w-auto">Get started</a>
+      <a href={SITE.github} class="btn btn-outline btn-xl w-full sm:w-auto">
+        <svg viewBox="0 0 16 16" class="size-4" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        GitHub
       </a>
-
-      <HeroTitle client:load />
-
-      <p class="mx-auto mt-6 max-w-[58ch] text-[1.08rem] leading-relaxed text-ink-dim">
-        The application framework for vertical AI SaaS. Auth, workspaces, billing, credits, execution accounting, pages and operations — shipped as versioned packages and source you own.
-        <span class="text-foreground">Your AI framework stays native.</span>
-      </p>
-
-      <div class="mt-8 flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row sm:gap-2">
-        <a href="#quickstart" class="btn btn-primary btn-xl w-full sm:w-auto">Get started</a>
-        <a href={SITE.github} class="btn btn-outline btn-xl w-full sm:w-auto">
-          <svg viewBox="0 0 16 16" class="size-4" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-          GitHub
-        </a>
-      </div>
-
-      <div class="mt-4 w-full max-w-[460px]">
-        <InstallCommand client:visible cmd={create} className="justify-center bg-background/80 backdrop-blur" />
-      </div>
     </div>
 
-    <!-- the product, at the fold -->
-    <div class="relative mx-auto mt-12 max-w-[1040px] px-4 md:mt-16 md:px-8">
-      <div class="hero-frame reveal p-3 md:p-5">
-        <ProductWalkthrough client:load />
-      </div>
-      <p class="mono mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-[0.72rem] text-ink-faint">
-        <span><span class="text-ink-dim">apps/app</span> — the reference application, assembled only from the public packages and registry items</span>
-        <span aria-hidden="true">·</span>
-        <a href={`${SITE.github}/tree/main/apps/app`} class="text-ink-dim no-underline hover:text-ink">source →</a>
-      </p>
+    <div class="mt-4 w-full max-w-[460px]">
+      <InstallCommand client:visible cmd={create} className="justify-center bg-background/80 backdrop-blur" />
     </div>
-    <div class="h-10 md:h-14"></div>
-  </div>
 
-  <div class="xline">
-    <div class="px-6 py-5">
-      <div class="tag mb-3 text-center">stays native to</div>
-      <LogoStrip client:visible />
-    </div>
+    <a href="#film" class="scroll-cue mono absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-[0.68rem] uppercase tracking-[0.12em] text-ink-faint no-underline hover:text-ink" aria-label="Scroll to the film">
+      <span>watch it build</span>
+      <span aria-hidden="true">↓</span>
+    </a>
   </div>
 </header>

@@ -269,6 +269,11 @@
     0 24px 60px -30px color-mix(in oklab, var(--foreground) 25%, transparent);
 }
 
+/* the title card's scroll cue */
+.scroll-cue span:last-child { animation: cue 1.6s ease-in-out infinite; }
+@keyframes cue { 0%, 100% { transform: translateY(0); opacity: 0.6; } 50% { transform: translateY(4px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .scroll-cue span:last-child { animation: none; } }
+
 /* live dot: "on npm" */
 .pulse { position: relative; display: inline-block; width: 6px; height: 6px; border-radius: 999px; background: var(--settle); }
 .pulse::after {

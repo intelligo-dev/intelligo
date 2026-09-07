@@ -27,7 +27,7 @@ export const SITE = {
  * the secondary pages that hold the material the homepage only summarises.
  */
 export const NAV = [
-  { href: "/#framework", label: "Framework" },
+  { href: "/#film", label: "The film" },
   { href: "/pages", label: "Pages" },
   { href: "/architecture", label: "Architecture" },
   { href: SITE.docs, label: "Docs" },
