@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   motion,
   useMotionValue,
@@ -20,41 +20,49 @@ import {
   Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { REGISTRY_ITEMS, type RegistryGroup } from "@/lib/registry-items";
 
 /**
- * The assembly: a pinned stage where, as the reader scrolls, every part
- * of a workspace AI SaaS flies in and locks into one application — the
- * shell, identity, commerce, execution accounting, product surfaces,
- * operations — and the last slot to fill is the agent. Every part is
- * labelled with the registry item or package that ships it.
+ * The assembly, in three acts on one pinned stage. Scroll progress
+ * (0 → 1 over the track) drives everything:
  *
- * Scroll progress (0 → 1 over the track) drives every transform; with
- * reduced motion the finished application renders statically.
+ *   act 1  blocks fly in and compose every page family in the registry
+ *   act 2  the pages shrink aside; a terminal creates the app and installs
+ *          the packages and the pages
+ *   act 3  the parts lock into one running application — shell, identity,
+ *          commerce, execution accounting, product surfaces, operations —
+ *          and the last slot to land is the agent
+ *
+ * Every label is a real registry item or package. With reduced motion
+ * the finished application renders statically.
  */
 
 const W = 960;
 const H = 600;
 
-type Phase = {
-  id: string;
-  label: string;
-  src: string;
-  /** what the rail shows — short enough for one line */
-  short: string;
-  note: string;
-  /** progress at which this phase's part starts landing */
-  at: number;
+/** act boundaries on the 0 → 1 track */
+const ACT = {
+  pagesEnd: 0.4, // last page card has landed
+  shelve: [0.42, 0.5] as [number, number], // grid shrinks aside, terminal slides in
+  termEnd: 0.66, // last terminal line printed
+  clear: [0.67, 0.72] as [number, number], // grid + terminal leave
+  app: [0.7, 1] as [number, number], // act 3, remapped to the stage's own 0 → 1
 };
 
+type Phase = { id: string; label: string; src: string; short: string; note: string; at: number };
+
 export const PHASES: Phase[] = [
-  { id: "shell", label: "The shell", src: "app-shell · dashboard", short: "app-shell", note: "Sidebar, workspace switcher, navigation — installed as your source.", at: 0.06 },
-  { id: "identity", label: "Identity", src: "@intelligo-dev/auth", short: "auth", note: "Sign-in, workspaces, roles, invitations. Multi-tenant from the first commit.", at: 0.24 },
-  { id: "commerce", label: "Commerce", src: "@intelligo-dev/billing", short: "billing", note: "Plans, entitlements, credits with reservations, Stripe.", at: 0.32 },
-  { id: "executions", label: "AI operations", src: "@intelligo-dev/executions", short: "executions", note: "Every run admitted, settled and accounted — usage, cost, audit.", at: 0.4 },
-  { id: "product", label: "Product surfaces", src: "chat · artifacts · notifications", short: "chat · core", note: "Conversations, documents, notifications — persisted by core, rendered by pages you own.", at: 0.48 },
-  { id: "operations", label: "Operations", src: "jobs · audit · admin", short: "jobs · audit · admin", note: "A Postgres queue, append-only audit events, an operational console.", at: 0.56 },
-  { id: "agent", label: "Your agent", src: "Mastra · AI SDK · anything", short: "yours", note: "The only slot you write. Native, unmodified, bracketed by the boundary.", at: 0.8 },
+  { id: "pages", label: "Blocks become pages", src: `${REGISTRY_ITEMS.length} page families`, short: "registry", note: "Forms, tables, shells, panels — composed from your own shadcn primitives into every page family in the registry.", at: 0 },
+  { id: "install", label: "One command each", src: "@intelligo-dev/* · intelligo.dev/r", short: "npm + registry", note: "create scaffolds the app; the packages install from npm; every page lands as source in your tree.", at: ACT.shelve[0] },
+  { id: "app", label: "A SaaS, assembled", src: "auth · billing · executions · core · jobs · audit", short: "one application", note: "Every screen wired to a typed service. Workspaces, credits, executions, audit — running before a model key exists.", at: ACT.clear[0] },
+  { id: "agent", label: "Your agent", src: "Mastra · AI SDK · anything", short: "yours", note: "The only slot you write. Native, unmodified, bracketed by the boundary.", at: ACT.app[0] + 0.8 * (ACT.app[1] - ACT.app[0]) },
 ];
+
+/** deterministic scatter, so SSR and the client agree */
+function rnd(i: number, k: number) {
+  const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
 
 /* ---------- a part that lands ---------- */
 
@@ -302,6 +310,280 @@ function Stage({ p }: { p: MotionValue<number> }) {
   );
 }
 
+/* ---------- act 1: blocks become pages ---------- */
+
+type Block = { x: number; y: number; w: number; h: number; kind: "bar" | "box" | "input" | "btn" | "text" | "chart" | "bubble" | "side" };
+
+/** wireframe per page family, in % of the card body */
+function layoutFor(name: string, group: RegistryGroup): Block[] {
+  const form: Block[] = [
+    { x: 22, y: 8, w: 56, h: 9, kind: "text" },
+    { x: 22, y: 24, w: 56, h: 12, kind: "input" },
+    { x: 22, y: 42, w: 56, h: 12, kind: "input" },
+    { x: 22, y: 62, w: 56, h: 13, kind: "btn" },
+  ];
+  const shell: Block[] = [
+    { x: 0, y: 0, w: 22, h: 100, kind: "side" },
+    { x: 26, y: 8, w: 70, h: 10, kind: "bar" },
+    { x: 26, y: 26, w: 21, h: 28, kind: "box" },
+    { x: 50, y: 26, w: 21, h: 28, kind: "box" },
+    { x: 75, y: 26, w: 21, h: 28, kind: "box" },
+    { x: 26, y: 60, w: 70, h: 32, kind: "chart" },
+  ];
+  const settings: Block[] = [
+    { x: 0, y: 0, w: 22, h: 100, kind: "side" },
+    { x: 28, y: 8, w: 40, h: 9, kind: "text" },
+    { x: 28, y: 26, w: 66, h: 12, kind: "input" },
+    { x: 28, y: 44, w: 66, h: 12, kind: "input" },
+    { x: 28, y: 64, w: 26, h: 13, kind: "btn" },
+  ];
+  switch (name) {
+    case "pricing":
+      return [
+        { x: 20, y: 6, w: 60, h: 9, kind: "text" },
+        { x: 6, y: 24, w: 27, h: 68, kind: "box" },
+        { x: 36, y: 18, w: 28, h: 78, kind: "box" },
+        { x: 67, y: 24, w: 27, h: 68, kind: "box" },
+      ];
+    case "checkout":
+      return [
+        { x: 6, y: 10, w: 50, h: 12, kind: "input" },
+        { x: 6, y: 28, w: 50, h: 12, kind: "input" },
+        { x: 6, y: 46, w: 50, h: 12, kind: "input" },
+        { x: 6, y: 68, w: 50, h: 14, kind: "btn" },
+        { x: 62, y: 10, w: 32, h: 72, kind: "box" },
+      ];
+    case "usage":
+      return [
+        { x: 0, y: 0, w: 22, h: 100, kind: "side" },
+        { x: 26, y: 8, w: 70, h: 10, kind: "bar" },
+        { x: 26, y: 24, w: 70, h: 68, kind: "chart" },
+      ];
+    case "billing-settings":
+    case "team-settings":
+      return [
+        { x: 0, y: 0, w: 22, h: 100, kind: "side" },
+        { x: 28, y: 8, w: 40, h: 9, kind: "text" },
+        { x: 28, y: 24, w: 66, h: 12, kind: "bar" },
+        { x: 28, y: 40, w: 66, h: 12, kind: "bar" },
+        { x: 28, y: 56, w: 66, h: 12, kind: "bar" },
+        { x: 28, y: 76, w: 24, h: 13, kind: "btn" },
+      ];
+    case "chat":
+      return [
+        { x: 0, y: 0, w: 22, h: 100, kind: "side" },
+        { x: 50, y: 10, w: 44, h: 14, kind: "bubble" },
+        { x: 26, y: 32, w: 52, h: 22, kind: "box" },
+        { x: 26, y: 78, w: 68, h: 14, kind: "input" },
+      ];
+    case "artifacts":
+      return [
+        { x: 0, y: 0, w: 22, h: 100, kind: "side" },
+        { x: 26, y: 8, w: 30, h: 84, kind: "box" },
+        { x: 60, y: 8, w: 36, h: 84, kind: "chart" },
+      ];
+    case "notifications":
+      return [
+        { x: 0, y: 0, w: 22, h: 100, kind: "side" },
+        { x: 26, y: 8, w: 70, h: 14, kind: "bar" },
+        { x: 26, y: 28, w: 70, h: 14, kind: "bar" },
+        { x: 26, y: 48, w: 70, h: 14, kind: "bar" },
+        { x: 26, y: 68, w: 70, h: 14, kind: "bar" },
+      ];
+    case "trial-banner":
+    case "feature-gating":
+    case "language-switcher":
+    case "payment-poll":
+    case "route-error":
+      return [
+        { x: 12, y: 30, w: 76, h: 36, kind: "box" },
+        { x: 34, y: 74, w: 32, h: 12, kind: "btn" },
+      ];
+  }
+  if (group === "Auth") return form;
+  if (group === "Shell") return shell;
+  if (group === "Settings") return settings;
+  return form;
+}
+
+function BlockEl({ kind }: { kind: Block["kind"] }) {
+  const base = "absolute inset-0 rounded-[2px]";
+  switch (kind) {
+    case "side":
+      return <div className={cn(base, "rounded-none border-r border-line bg-paper-sunken")} />;
+    case "bar":
+      return <div className={cn(base, "border border-line bg-paper")} />;
+    case "box":
+      return <div className={cn(base, "border border-line bg-paper-raised")} />;
+    case "input":
+      return <div className={cn(base, "border border-line-strong bg-paper")} />;
+    case "btn":
+      return <div className={cn(base, "bg-ink")} />;
+    case "text":
+      return <div className={cn(base, "rounded-sm bg-line-strong")} />;
+    case "bubble":
+      return <div className={cn(base, "rounded-md bg-ink")} />;
+    case "chart":
+      return (
+        <div className={cn(base, "flex items-end gap-[2px] border border-line bg-paper px-1 pb-1")}>
+          {[40, 70, 55, 90, 65, 80].map((h, i) => (
+            <span key={i} className="flex-1 rounded-t-[1px] bg-ink/70" style={{ height: `${h}%` }} />
+          ))}
+        </div>
+      );
+  }
+}
+
+function PageCard({ p, i, name, group, x, y, w, h }: { p: MotionValue<number>; i: number; name: string; group: RegistryGroup; x: number; y: number; w: number; h: number }) {
+  const n = REGISTRY_ITEMS.length;
+  const start = 0.01 + (i / n) * (ACT.pagesEnd - 0.12);
+  const win: [number, number] = [start, start + 0.11];
+  const blocks = useMemo(() => layoutFor(name, group), [name, group]);
+  const frameOp = useTransform(p, [win[0], win[0] + 0.03], [0, 1]);
+  const labelOp = useTransform(p, [win[1] - 0.02, win[1]], [0, 1]);
+  const bodyH = h - 16;
+  return (
+    <motion.div style={{ left: x, top: y, width: w, height: h, opacity: frameOp }} className="absolute rounded-md border border-line bg-paper-raised">
+      <div className="relative h-full overflow-visible">
+        {blocks.map((b, k) => {
+          const a = rnd(i, k);
+          const ang = a * Math.PI * 2;
+          const dist = 220 + rnd(i, k + 7) * 260;
+          const sub: [number, number] = [win[0] + k * 0.012, win[0] + 0.07 + k * 0.012];
+          return (
+            <Part
+              key={k}
+              p={p}
+              from={{
+                // integers: Motion prints 4 decimals on the server and the full float on the client
+                x: Math.round(Math.cos(ang) * dist),
+                y: Math.round(Math.sin(ang) * dist),
+                r: Math.round((rnd(i, k + 3) - 0.5) * 60),
+                s: 1.3,
+              }}
+              win={sub}
+              style={{
+                left: Math.round((b.x / 100) * w),
+                top: Math.round(16 + (b.y / 100) * bodyH),
+                width: Math.round((b.w / 100) * w),
+                height: Math.round((b.h / 100) * bodyH),
+              }}
+            >
+              <BlockEl kind={b.kind} />
+            </Part>
+          );
+        })}
+      </div>
+      <motion.div style={{ opacity: labelOp }} className="mono absolute inset-x-0 top-0 flex h-4 items-center justify-between border-b border-line px-1.5 text-[7.5px] text-ink-dim">
+        <span className="truncate">{name}</span>
+        <span className="text-ink-faint">{group.toLowerCase()}</span>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function PagesGrid({ p }: { p: MotionValue<number> }) {
+  const cols = 5;
+  const gap = 12;
+  const pad = 20;
+  const w = Math.floor((W - pad * 2 - gap * (cols - 1)) / cols);
+  const rows = Math.ceil(REGISTRY_ITEMS.length / cols);
+  const h = Math.floor((H - pad * 2 - gap * (rows - 1)) / rows);
+  // act 2: the grid shrinks to the left; act 3: it leaves
+  const scale = useTransform(p, [ACT.shelve[0], ACT.shelve[1], ACT.clear[0], ACT.clear[1]], [1, 0.42, 0.42, 0.3]);
+  const x = useTransform(p, ACT.shelve, [0, -pad]);
+  const y = useTransform(p, ACT.shelve, [0, 60]);
+  const opacity = useTransform(p, [ACT.clear[0], ACT.clear[1]], [1, 0]);
+  return (
+    <motion.div style={{ scale, x, y, opacity, transformOrigin: "left center" }} className="absolute inset-0 will-change-transform">
+      {REGISTRY_ITEMS.map((it, i) => (
+        <PageCard
+          key={it.name}
+          p={p}
+          i={i}
+          name={it.name}
+          group={it.group}
+          x={pad + (i % cols) * (w + gap)}
+          y={pad + Math.floor(i / cols) * (h + gap)}
+          w={w}
+          h={h}
+        />
+      ))}
+    </motion.div>
+  );
+}
+
+/* ---------- act 2: the terminal ---------- */
+
+const PACKAGES = ["auth", "billing", "billing-core", "executions", "core", "jobs", "audit", "admin"];
+
+type Line = { text: string; tone?: "cmd" | "ok" | "dim" | "amber" };
+
+const LINES: Line[] = [
+  { text: "pnpm dlx @intelligo-dev/cli@beta create my-app", tone: "cmd" },
+  { text: "✓ my-app/lib/intelligo.ts — composition root", tone: "ok" },
+  { text: "✓ my-app/lib/plans.ts · intelligo.manifest.json", tone: "ok" },
+  { text: `pnpm add ${PACKAGES.map((x) => `@intelligo-dev/${x}`).join(" ")}`, tone: "cmd" },
+  ...PACKAGES.map((x) => ({ text: `+ @intelligo-dev/${x} 1.0.0-beta.3`, tone: "dim" as const })),
+  { text: "pnpm exec shadcn add https://intelligo.dev/r/app-shell.json … ×" + REGISTRY_ITEMS.length, tone: "cmd" },
+  { text: `✓ ${REGISTRY_ITEMS.length} page families installed as source — app/[locale]/**, components/**, actions/**, messages/en/**`, tone: "ok" },
+  { text: "pnpm db:push && pnpm dev", tone: "cmd" },
+  { text: "▲ ready on http://localhost:3000", tone: "amber" },
+];
+
+function TermLine({ p, i, line }: { p: MotionValue<number>; i: number; line: Line }) {
+  const start = ACT.shelve[1] + (i / LINES.length) * (ACT.termEnd - ACT.shelve[1]);
+  const opacity = useTransform(p, [start, start + 0.008], [0, 1]);
+  return (
+    <motion.div
+      style={{ opacity }}
+      className={cn(
+        "whitespace-pre-wrap break-words",
+        line.tone === "cmd" && "mt-2 text-ink first:mt-0",
+        line.tone === "ok" && "text-settle",
+        line.tone === "dim" && "text-ink-dim",
+        line.tone === "amber" && "text-amber"
+      )}
+    >
+      {line.tone === "cmd" && <span className="text-ink-faint">$ </span>}
+      {line.text}
+    </motion.div>
+  );
+}
+
+function Terminal({ p }: { p: MotionValue<number> }) {
+  const x = useTransform(p, ACT.shelve, [360, 0]);
+  const opacity = useTransform(p, [ACT.shelve[0], ACT.shelve[1], ACT.clear[0], ACT.clear[1]], [0, 1, 1, 0]);
+  const scale = useTransform(p, ACT.clear, [1, 0.9]);
+  return (
+    <motion.div style={{ x, opacity, scale, left: 430, top: 40, width: 500, height: 520 }} className="absolute flex flex-col overflow-hidden rounded-lg border border-line bg-paper-sunken shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] will-change-transform">
+      <div className="flex h-8 shrink-0 items-center gap-1.5 border-b border-line px-3">
+        <span className="size-2 rounded-full bg-line-strong" />
+        <span className="size-2 rounded-full bg-line-strong" />
+        <span className="size-2 rounded-full bg-line-strong" />
+        <span className="mono ml-2 text-[10px] text-ink-faint">my-app — zsh</span>
+      </div>
+      <div className="mono flex-1 space-y-0.5 overflow-hidden p-4 text-[11px] leading-[1.55]">
+        {LINES.map((l, i) => (
+          <TermLine key={i} p={p} i={i} line={l} />
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+/* ---------- act 3 wrapper: the application ---------- */
+
+function App({ p }: { p: MotionValue<number> }) {
+  const local = useTransform(p, ACT.app, [0, 1]);
+  const opacity = useTransform(p, [ACT.app[0], ACT.app[0] + 0.04], [0, 1]);
+  return (
+    <motion.div style={{ opacity }} className="absolute inset-0">
+      <Stage p={local} />
+    </motion.div>
+  );
+}
+
 /* ---------- pinned track + rail ---------- */
 
 /**
@@ -360,11 +642,14 @@ export function Assembly() {
   const [phase, setPhase] = useState(0);
   useMotionValueEvent(p, "change", (v) => {
     let i = 0;
-    PHASES.forEach((ph, n) => { if (v >= ph.at) i = n; });
+    PHASES.forEach((ph, n) => {
+      if (v >= ph.at) i = n;
+    });
     setPhase(i);
   });
   const { ref, scale } = useScale(W);
-  const done = useTransform(p, [0.94, 1], [0, 1]);
+  const done = useTransform(p, [0.96, 1], [0, 1]);
+  const pct = useTransform(p, (v) => `${Math.round(v * 100)}%`);
 
   // Reduced motion: the finished application, no pinning.
   if (reduce) {
@@ -383,25 +668,32 @@ export function Assembly() {
   }
 
   return (
-    <div ref={track} className="relative" style={{ height: "420vh" }}>
+    <div ref={track} className="relative" style={{ height: "560vh" }}>
       <div className="sticky top-14 flex min-h-[calc(100vh-3.5rem)] flex-col justify-center py-6">
         <div className="grid gap-6 lg:grid-cols-[240px_1fr] lg:gap-10">
           <div className="order-2 lg:order-1">
             <Rail active={phase} />
             <div className="mt-5 hidden lg:block">
-              <div className="mono text-[0.68rem] uppercase tracking-[0.08em] text-ink-faint">now landing</div>
+              <div className="mono flex items-center justify-between text-[0.68rem] uppercase tracking-[0.08em] text-ink-faint">
+                <span>act {Math.min(phase + 1, 3)} of 3</span>
+                <motion.span className="tabular-nums">{pct}</motion.span>
+              </div>
               <div className="mt-1 text-[1.05rem] font-semibold text-ink">{PHASES[phase]!.label}</div>
               <div className="mono mt-0.5 text-[0.72rem] text-amber">{PHASES[phase]!.src}</div>
               <p className="mt-2 text-[0.88rem] text-ink-dim">{PHASES[phase]!.note}</p>
               <motion.p style={{ opacity: done }} className="mono mt-4 text-[0.72rem] text-settle">
-                ✓ assembled — every part but one is on npm or in the registry
+                ✓ a running SaaS — every part but one is on npm or in the registry
               </motion.p>
             </div>
           </div>
           <div ref={ref} className="order-1 overflow-hidden lg:order-2">
             <div style={{ height: H * scale }}>
               <div style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}>
-                <Stage p={p} />
+                <div className="relative overflow-hidden rounded-xl" style={{ width: W, height: H }}>
+                  <PagesGrid p={p} />
+                  <Terminal p={p} />
+                  <App p={p} />
+                </div>
               </div>
             </div>
             <p className="mono mt-3 text-center text-[0.7rem] text-ink-faint lg:hidden">
@@ -416,17 +708,17 @@ export function Assembly() {
 
 function Rail({ active, className }: { active: number; className?: string }) {
   return (
-    <ol className={cn("flex flex-wrap gap-1 lg:flex-col lg:gap-0 lg:border-t lg:border-line", className)} aria-label="Parts of the application">
+    <ol className={cn("flex flex-wrap gap-1 lg:flex-col lg:gap-0 lg:border-t lg:border-line", className)} aria-label="The three acts">
       {PHASES.map((ph, i) => (
         <li
           key={ph.id}
           className={cn(
-            "mono flex items-center gap-2 overflow-hidden rounded-sm border border-line px-2 py-1 text-[0.72rem] transition-colors lg:rounded-none lg:border-x-0 lg:border-t-0 lg:border-b lg:px-0 lg:py-2",
+            "mono flex items-center gap-2 overflow-hidden rounded-sm border border-line px-2 py-1 text-[0.72rem] transition-colors lg:rounded-none lg:border-x-0 lg:border-t-0 lg:border-b lg:px-0 lg:py-2.5",
             i < active ? "text-ink-dim" : i === active ? "border-amber text-ink lg:border-line" : "text-ink-faint"
           )}
         >
           <span className={cn("inline-block size-1.5 rounded-full", i < active ? "bg-settle" : i === active ? "bg-amber" : "bg-line-strong")} />
-          <span className="lg:w-[8rem] lg:shrink-0">{ph.label}</span>
+          <span className="lg:w-[9.5rem] lg:shrink-0">{ph.label}</span>
           <span className="hidden min-w-0 truncate text-ink-faint lg:inline">{ph.short}</span>
         </li>
       ))}
