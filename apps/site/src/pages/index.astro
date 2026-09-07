@@ -1,7 +1,7 @@
 ---
 /**
  * The homepage, one question per section:
- *   what is it, show me (hero) → what do I get? → how does it work? →
+ *   what is it, show me (hero) → watch it assemble → what do I get? → how does it work? →
  *   do I own the UI? → how is it built? → how is this not a boilerplate? →
  *   can I trust it? → how do I start?
  * Deeper material lives on /pages, /architecture, /why-intelligo and /compare.
@@ -10,6 +10,7 @@ import Base from "@/layouts/Base.astro";
 import Footer from "@/components/footer.astro";
 import { Nav } from "@/components/nav";
 import Hero from "@/sections/hero.astro";
+import Assembly from "@/sections/assembly.astro";
 import Halves from "@/sections/halves.astro";
 import Boundary from "@/sections/boundary.astro";
 import Ownership from "@/sections/ownership.astro";
@@ -24,6 +25,7 @@ import Cta from "@/sections/cta.astro";
   <Nav client:load current="/" />
   <main class="rails">
     <Hero />
+    <Assembly />
     <Halves />
     <Boundary />
     <Ownership />
