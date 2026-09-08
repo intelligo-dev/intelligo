@@ -20,6 +20,7 @@ import {
   userAc,
 } from "better-auth/plugins/admin/access";
 import { PLATFORM_ADMIN_ROLE } from "./roles";
+import { resolveTrustedOrigins } from "./trusted-origins";
 
 /**
  * Access control for the platform role.
@@ -52,6 +53,24 @@ import {
 } from "@intelligo-dev/core/email";
 import { eq } from "drizzle-orm";
 
+/**
+ * The origin this app is served from.
+ *
+ * `NEXT_PUBLIC_APP_URL` is a REQUIRED variable (`assertEnv` in
+ * `@intelligo-dev/core/env`), but auth is configured at module load,
+ * long before any composition root asserts it. This value therefore
+ * still needs a fallback for the absolute links that go into email —
+ * a verification or invitation URL has to name a concrete host.
+ */
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:4000";
+
+/**
+ * Origins the CSRF check accepts — the one place the fallback above
+ * must NOT apply, because a guessed port there does not degrade
+ * gracefully. See `resolveTrustedOrigins` for the rule.
+ */
+const TRUSTED_ORIGINS = resolveTrustedOrigins(process.env);
+
 export const auth = betterAuth({
   // Explicit, so the name the framework documents (doctor, scaffold,
   // env validation) is the one that is honoured; AUTH_SECRET stays a
@@ -72,7 +91,7 @@ export const auth = betterAuth({
     },
   }),
 
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000",
+  baseURL: APP_URL,
 
   emailAndPassword: {
     enabled: true,
@@ -136,7 +155,7 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24,
   },
 
-  trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000"],
+  trustedOrigins: TRUSTED_ORIGINS,
 
   // Database hooks for automatic workspace setup (WORK-01)
   databaseHooks: {
@@ -186,7 +205,7 @@ export const auth = betterAuth({
           // Send welcome email (EMAIL-03, fire-and-forget).
           // NOTE(DB-12): No retry or outbox — downstream failures silently ignored.
           // Acceptable for v0.2; consider transactional outbox for Phase 14.
-          const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000"}/dashboard`;
+          const dashboardUrl = `${APP_URL}/dashboard`;
           sendWelcomeEmail({
             to: user.email,
             userName: user.name || user.email,
@@ -263,15 +282,13 @@ export const auth = betterAuth({
       creatorRole: "owner",
       // Invitation email sending via Resend (EMAIL-06, replaces Phase 10 placeholder)
       sendInvitationEmail: async (data) => {
-        const appUrl =
-          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000";
         sendInvitationEmail({
           to: data.email,
           inviterName: data.inviter?.user?.name || "A team member",
           workspaceName: data.organization?.name || "a workspace",
           role: data.role || "member",
-          acceptUrl: `${appUrl}/accept-invitation/${data.id}`,
-          declineUrl: `${appUrl}/invitation/decline?id=${data.id}`,
+          acceptUrl: `${APP_URL}/accept-invitation/${data.id}`,
+          declineUrl: `${APP_URL}/invitation/decline?id=${data.id}`,
         }).catch((err) =>
           console.error("[Auth] Failed to send invitation email:", err)
         );

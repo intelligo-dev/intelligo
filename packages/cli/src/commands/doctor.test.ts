@@ -136,6 +136,50 @@ describe("runChecks", () => {
     });
   });
 
+  describe("Better-Auth's HTTP mount", () => {
+    let root: string;
+
+    afterEach(() => {
+      rmSync(root, { recursive: true, force: true });
+    });
+
+    function app(files: string[]): string {
+      root = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-auth-"));
+      for (const rel of files) {
+        mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+        writeFileSync(path.join(root, rel), "// generated");
+      }
+      return root;
+    }
+
+    it("errors when auth pages are installed without the catch-all route", () => {
+      const results = runChecks({
+        root: app(["app/[locale]/(auth)/layout.tsx"]),
+        env: fullEnv,
+      });
+      const mount = results.find((r) => r.name === "auth-mount")!;
+
+      expect(mount.status).toBe("error");
+      expect(mount.detail).toContain("app/api/auth/[...all]/route.ts");
+    });
+
+    it("passes once the route exists", () => {
+      const results = runChecks({
+        root: app([
+          "app/[locale]/(auth)/layout.tsx",
+          "app/api/auth/[...all]/route.ts",
+        ]),
+        env: fullEnv,
+      });
+      expect(results.find((r) => r.name === "auth-mount")!.status).toBe("ok");
+    });
+
+    it("is silent in an app with no auth pages", () => {
+      const results = runChecks({ root: app([]), env: fullEnv });
+      expect(results.some((r) => r.name === "auth-mount")).toBe(false);
+    });
+  });
+
   it("reports the real repository's migration drift", () => {
     // Guards the check itself: if the journal is ever repaired this
     // flips to ok, and if the check silently stops working it flips

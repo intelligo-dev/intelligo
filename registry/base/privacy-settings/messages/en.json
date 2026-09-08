@@ -12,7 +12,7 @@
     },
     "auditTrail": {
       "title": "Audit trail",
-      "description": "The last {count} changes to your data, most recent first.",
+      "description": "{count, plural, one {The last # change to your data, most recent first.} other {The last # changes to your data, most recent first.}}",
       "empty": "No changes recorded yet."
     }
   },

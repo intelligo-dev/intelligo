@@ -1,0 +1,40 @@
+{
+  "unavailable": {
+    "title": "Invitation unavailable",
+    "description": "This invitation link is invalid, has already been used, or belongs to a different account. Ask the workspace owner to send a new one if you still need access."
+  },
+  "expired": {
+    "title": "Invitation expired",
+    "description": "This invitation has expired. Ask the workspace owner to send a new one."
+  },
+  "card": {
+    "title": "Workspace invitation",
+    "description": "You've been invited to join a workspace.",
+    "workspaceLabel": "Workspace",
+    "workspaceFallback": "This workspace",
+    "invitedByLabel": "Invited by",
+    "invitedByFallback": "A team member",
+    "roleLabel": "Role",
+    "expiresLabel": "Expires"
+  },
+  "actions": {
+    "accept": "Accept",
+    "acceptPending": "Accepting…",
+    "decline": "Decline",
+    "declinePending": "Declining…"
+  },
+  "errorBoundary": {
+    "message": "Something went wrong while loading this invitation. Please try again.",
+    "retry": "Try again",
+    "goHome": "Go home"
+  },
+  "errors": {
+    "invitationNotFound": "This invitation could not be found. It may have already been used, or the link may be invalid.",
+    "acceptVerificationFailed": "We couldn't confirm you joined the workspace. Please try again or contact the workspace owner.",
+    "forbidden": "You need to be signed in to respond to this invitation.",
+    "invalidInput": "This invitation link looks invalid.",
+    "providerError": "Something went wrong on our end. Please try again.",
+    "acceptFailed": "Failed to accept invitation.",
+    "declineFailed": "Failed to decline invitation."
+  }
+}

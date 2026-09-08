@@ -56,8 +56,11 @@ describe("template catalogue", () => {
     it("writes to relative paths inside the app", () => {
       for (const file of spec.files) {
         expect(path.isAbsolute(file.target)).toBe(false);
+        // Traversal is a `..` PATH SEGMENT, not the substring: a
+        // Next.js catch-all segment (`[...all]`) contains `..` and is
+        // a perfectly ordinary target.
         expect(
-          file.target.includes(".."),
+          file.target.split("/").includes(".."),
           `${feature}: ${file.target} escapes the app root`
         ).toBe(false);
       }

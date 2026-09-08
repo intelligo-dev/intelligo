@@ -27,12 +27,14 @@ Static assets on Cloudflare Workers (`wrangler.jsonc`: assets only, no Worker sc
 
 ## Pages
 
-- `/` — the homepage: hero, the reference app, the 30/70 model, the execution boundary, consumer-owned UI, architecture, not-a-boilerplate, engineering proof, quickstart, FAQ, CTA. One question per section (`src/pages/index.astro`).
+- `/` — the homepage as a film: a title card (headline, `create` command, a scroll cue), then four scenes on one pinned stage with one continuous state (`src/components/film.tsx`): **01 the build** (pages created group by group, packages installed, the parts lock into a running application), **02 the run** (a message is admitted, answered by the agent, settled — credits, usage and audit move in the same frame), **03 make it yours** (the chat page opens as source; one config line changes and the app follows), **04 time passes** (a release lands; migrations, doctor, customised files kept). Then the count + open source, the quickstart with the closing CTA, and the FAQ. Architecture, ownership and the boundary as prose live on /architecture and /why-intelligo.
+- `/404` — the not-found page wrangler serves for unknown routes (`src/pages/404.astro`).
 - `/pages` — the registry explorer, every page family with its install command.
 - `/architecture` — the full package graph, the architecture rules as tests, ownership, ADRs.
 - `/why-intelligo` — the other half counted in full, and the agent objection.
 - `/compare` — the alternatives.
 - `/r/<item>.json` — the hosted registry.
+- `/og.png`, `/favicon.svg`, `/robots.txt`, `/sitemap-index.xml` — the social card, icon, crawler hints and the sitemap `@astrojs/sitemap` writes at build time. The card is rendered from `scripts/og.html`; regenerate it after a copy or version change with `npx playwright screenshot --viewport-size=1200,630 scripts/og.html public/og.png`.
 
 Every command the homepage shows is verified against the published packages: `pnpm dlx @intelligo-dev/cli@beta create`, `pnpm exec shadcn add https://intelligo.dev/r/<item>.json`, `pnpm dev`. The scaffold's `components.json` ships an empty `registries` map, so the URL form is the one that works — do not document `shadcn add @intelligo-dev/<item>` until a namespace is configured.
 

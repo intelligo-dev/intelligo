@@ -15,7 +15,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
-    "./edge": "./src/edge.ts"
+    "./edge": "./src/edge.ts",
+    "./next": "./src/next.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
@@ -58,6 +59,10 @@
       "./edge": {
         "types": "./src/edge.ts",
         "default": "./dist/edge.js"
+      },
+      "./next": {
+        "types": "./src/next.ts",
+        "default": "./dist/next.js"
       }
     }
   }

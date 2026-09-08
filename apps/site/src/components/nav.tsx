@@ -34,6 +34,31 @@ function sectionId(href: string): string | null {
   return i === -1 ? null : href.slice(i + 1);
 }
 
+/** how far down the page we are, 0 → 1, for the hairline under the nav */
+function useReadingProgress() {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setV(max > 0 ? Math.min(1, window.scrollY / max) : 0);
+    };
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+  return v;
+}
+
 function useScrollSpy(ids: string[]) {
   const [active, setActive] = useState<string>("");
   useEffect(() => {
@@ -62,6 +87,7 @@ export function Nav({ current }: { current?: string }) {
     NAV.map((n) => sectionId(n.href)).filter((id): id is string => !!id)
   );
   const [open, setOpen] = useState(false);
+  const progress = useReadingProgress();
 
   const isActive = (href: string) => {
     const id = sectionId(href);
@@ -71,6 +97,11 @@ export function Nav({ current }: { current?: string }) {
 
   return (
     <nav className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
+      <div
+        className="pointer-events-none absolute bottom-[-1px] left-0 h-px bg-foreground transition-[width] duration-150 ease-linear"
+        style={{ width: `${progress * 100}%` }}
+        aria-hidden="true"
+      />
       <div className="mx-auto flex h-14 max-w-[1152px] items-center justify-between gap-4 px-6">
         <a
           href="/"

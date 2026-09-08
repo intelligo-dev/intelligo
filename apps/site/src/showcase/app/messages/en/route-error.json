@@ -1,0 +1,17 @@
+{
+  "generic": "Something went wrong. Try again, and if it keeps happening, contact support.",
+  "network": "We couldn't reach the server. Check your connection and try again.",
+  "timeout": "That took too long to respond. Try again in a moment.",
+  "server": "The server had a problem handling that. We've been notified — try again shortly.",
+  "conversation": "We couldn't load this conversation. Try again, or start a new one.",
+  "retry": "Try again",
+  "goToDashboard": "Go to dashboard",
+  "goHome": "Go home",
+  "goToChat": "Back to chat",
+  "goToPricing": "Back to plans",
+  "goToLogin": "Back to sign in",
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you're looking for doesn't exist or has moved."
+  }
+}
