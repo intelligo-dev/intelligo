@@ -76,9 +76,9 @@ Prefer to explore first? `pnpm dev` serves **`apps/app`**, the reference applica
 - Ports-based services (`createTeamService`, `createWorkspaceService`, `createProfileService`, `createOnboardingService`) with typed errors, unit **and** real-database test suites
 - Platform admin is a database row, not an env var — with audited impersonation
 
-### Commerce — [`packages/billing`](packages/billing) · [`packages/billing-core`](packages/billing-core)
+### Commerce — [`packages/billing`](packages/billing)
 
-- A plan registry your product registers into: plans are data, never hardcoded in the framework
+- A plan registry your product registers into: plans are data, never hardcoded in the framework — reachable from a client bundle through subpaths that import neither Stripe nor `server-only`
 - Feature gates, per-feature quotas, monthly token quotas with grace overage, per-workspace rate limiting
 - Credit balances with worst-case **reservations**: funds held for the duration of a run, released on failure, expired on a TTL if the run dies
 - Trials with provisioning, per-email abuse checks, expiry processing, and conversion to paid
@@ -101,6 +101,20 @@ await run.complete({ usage }); // or run.fail({ error })
 - **Fail**: reservation released, error recorded; refusals leave audit events
 - Model ids are registry keys with per-token pricing and output budgets; an unregistered id is an architecture-test failure, not a silent mis-bill
 - Cost converts through a live FX rate and configurable margin; per-request records and monthly rollups feed the dashboards through a query API
+
+### Chat — [`packages/chat`](packages/chat)
+
+The AI-SDK-native transport as a function, so the UI that installs from the registry never has to be edited to change how a turn runs:
+
+```ts
+// app/api/chat/route.ts
+export const { POST, DELETE } = createChatHandler(chatServerConfig);
+```
+
+- Every turn: auth → the plan's rate limit → feature gate → conversation persistence → `executions.begin()` → `streamText` → settled exactly once
+- Seams, not vocabulary: `resolveAgent` (an agent per conversation, from the body or a table), `prepareMessages` (windowing, summaries, injected context), attachments, reasoning, a sync or model-written title, `onTurn` telemetry, a localised translator
+- Web `Request`/`Response` in and out; nothing here imports `next/*` — that is [`packages/next`](packages/next), the framework's one Next.js adapter
+- A deterministic stub model, so a clean install streams with no API key
 
 ### Persistence & privacy — [`packages/core`](packages/core)
 
@@ -144,7 +158,7 @@ Three rules make installed pages hold up over time:
 
 ```text
 packages/registry/ page registry: registry.json + item source, a private workspace (built with `pnpm registry:build`)
-packages/          auth · billing · billing-core · core · executions · audit · jobs · admin · mastra · cli · ui
+packages/          core · auth · next · billing · chat · executions · audit · jobs · admin · mastra · cli · ui
 apps/app           the reference application — the registry's canonical installed result
 apps/site          intelligo.dev — the public site, which also serves the registry at /r
 docs/adr/          the decisions, as ADRs
@@ -169,6 +183,8 @@ Recorded as ADRs in [docs/adr](docs/adr/README.md):
 - The execution boundary is a lifecycle with ports, not a wrapper — [ADR-0007](docs/adr/0007-execution-boundary.md)
 - Conversation and document persistence are framework capabilities — [ADR-0009](docs/adr/0009-public-conversation-and-document-contracts.md)
 - Registry items are i18n-native and installed unmodified — [ADR-0010](docs/adr/0010-registry-i18n-standard.md)
+- One package per runtime target; shared types are subpaths; the registry is a private workspace — [ADR-0011](docs/adr/0011-package-topology.md)
+- The chat transport is a package; the chat UI is registry source — [ADR-0012](docs/adr/0012-headless-chat-transport.md)
 
 ## What it is not
 
