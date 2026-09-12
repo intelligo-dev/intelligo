@@ -18,6 +18,19 @@ export const DISSOLVED_PACKAGES = [
   "@intelligo-dev/chat",
 ] as const;
 
+/**
+ * Packages ADR-0011 folded into a subpath of a package that already
+ * existed. The code did not go away, it moved — so the rule that
+ * refuses the old name says where.
+ */
+export const FOLDED_PACKAGES: Readonly<Record<string, string>> = {
+  "@intelligo-dev/money": "@intelligo-dev/core/money",
+  "@intelligo-dev/http":
+    "@intelligo-dev/core/request-context (the contract) and @intelligo-dev/next (the Next.js binding)",
+  "@intelligo-dev/billing-core":
+    "@intelligo-dev/billing/{plans,plan-registry,payment,quota-types}",
+};
+
 /** Directory names to never descend into: build output and installs. */
 export const IGNORED_DIRS = new Set([
   "node_modules",

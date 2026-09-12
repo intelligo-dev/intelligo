@@ -32,6 +32,20 @@ const DISSOLVED_PATTERNS = ["ai", "agents", "chat"].map((name) => ({
   message: `@intelligo-dev/${name} was dissolved (ADR-0008) and is not published; nothing on npm resolves it.`,
 }));
 
+/**
+ * Packages ADR-0011 folded into a subpath of another. The same map as
+ * `tests/architecture/tree.ts`; the message says where the code went.
+ */
+const FOLDED_PATTERNS = Object.entries({
+  money: "@intelligo-dev/core/money",
+  http: "@intelligo-dev/core/request-context and @intelligo-dev/next",
+  "billing-core":
+    "@intelligo-dev/billing/{plans,plan-registry,payment,quota-types}",
+}).map(([name, target]) => ({
+  group: [`@intelligo-dev/${name}`, `@intelligo-dev/${name}/*`],
+  message: `@intelligo-dev/${name} was folded (ADR-0011); import ${target} instead.`,
+}));
+
 export default [
   {
     files: ["**/*.ts", "**/*.tsx"],
@@ -64,16 +78,26 @@ export default [
     rules: {
       "no-restricted-imports": [
         "error",
-        { patterns: [...APP_PATTERNS, ...DISSOLVED_PATTERNS] },
+        {
+          patterns: [
+            ...APP_PATTERNS,
+            ...DISSOLVED_PATTERNS,
+            ...FOLDED_PATTERNS,
+          ],
+        },
       ],
     },
   },
   {
     // Applications and registry items may not reach for a dissolved
-    // package either — it resolves to nothing on npm.
+    // package either — it resolves to nothing on npm — nor for a folded
+    // one, whose name is deprecated there.
     files: ["apps/*/**/*.{ts,tsx}", "registry/base/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": ["error", { patterns: DISSOLVED_PATTERNS }],
+      "no-restricted-imports": [
+        "error",
+        { patterns: [...DISSOLVED_PATTERNS, ...FOLDED_PATTERNS] },
+      ],
     },
   },
   {

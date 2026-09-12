@@ -141,7 +141,8 @@ describe("the framework's one door to Next.js", () => {
       )) {
         if (/\.test\.tsx?$/.test(file)) continue;
         const rel = path.relative(PACKAGES_DIR, file);
-        if (`packages/${rel}`.split(path.sep).join("/").startsWith(ALLOWED)) continue;
+        if (`packages/${rel}`.split(path.sep).join("/").startsWith(ALLOWED))
+          continue;
         if (/from\s+["']next(\/[^"']+)?["']/.test(readFileSync(file, "utf8"))) {
           offenders.push(`packages/${rel}`);
         }

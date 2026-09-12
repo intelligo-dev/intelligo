@@ -22,6 +22,7 @@ import path from "node:path";
 import {
   APPS_DIR,
   DISSOLVED_PACKAGES,
+  FOLDED_PACKAGES,
   PACKAGES_DIR,
   ROOT,
   importSpecifiers,
@@ -284,6 +285,135 @@ describe("nothing depends on the dissolved set", () => {
         }
       }
       expect(offenders, offenders.join("\n  ")).toEqual([]);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The folded set
+// ---------------------------------------------------------------------------
+
+/**
+ * ADR-0011 folded `money`, `http` and `billing-core` into subpaths of
+ * `core`, `next` and `billing`. Their npm names are deprecated. Unlike
+ * the dissolved set, the code still exists — so an import of the old
+ * name is told the new one, not merely that the package is gone.
+ */
+describe("nothing depends on the folded set", () => {
+  const folded = Object.keys(FOLDED_PACKAGES);
+
+  it("has a folded set to rule on", () => {
+    expect(folded.length).toBeGreaterThan(0);
+    for (const name of folded) {
+      expect(
+        PUBLISHED.has(name),
+        `${name} exists again — decide, then update ADR-0011`
+      ).toBe(false);
+    }
+  });
+
+  describe.each([
+    ...packages.map((p) => ["packages", p] as const),
+    ...apps.map((a) => ["apps", a] as const),
+  ])("%s/%s", (kind, name) => {
+    const dir = path.join(ROOT, kind, name);
+
+    it("declares none of them", () => {
+      const declared = declaredIntelligoDeps(path.join(dir, "package.json"));
+      const offenders = declared
+        .filter((d) => folded.includes(d))
+        .map((d) => `${d} → use ${FOLDED_PACKAGES[d]}`);
+      expect(offenders).toEqual([]);
+    });
+
+    it("imports none of them", () => {
+      const offenders: string[] = [];
+      for (const file of walkSources(dir)) {
+        for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
+          const dep = intelligoPackage(spec);
+          if (dep && folded.includes(dep)) {
+            offenders.push(
+              `${path.relative(ROOT, file)} → ${spec} (use ${FOLDED_PACKAGES[dep]})`
+            );
+          }
+        }
+      }
+      expect(offenders, offenders.join("\n  ")).toEqual([]);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Subpaths that must stay leaves
+// ---------------------------------------------------------------------------
+
+/**
+ * The folds above were safe because each moved module is a leaf: it can
+ * be reached from a client bundle, an edge runtime or another package's
+ * own leaf without dragging Drizzle, Stripe or `server-only` along.
+ * That is a property of the files, not of the package boundary that
+ * used to hold them — so it is asserted here, on the files.
+ */
+describe("leaf subpaths", () => {
+  const coreSrc = path.join(PACKAGES_DIR, "core/src");
+
+  it("core/money imports nothing", () => {
+    // `executions/pricing` is a zero-import leaf that reads these
+    // types; one import here and it stops being one.
+    expect(
+      importSpecifiers(readFileSync(path.join(coreSrc, "money.ts"), "utf8"))
+    ).toEqual([]);
+  });
+
+  it("core/request-context imports only core/registry", () => {
+    const specs = importSpecifiers(
+      readFileSync(path.join(coreSrc, "request-context.ts"), "utf8")
+    );
+    expect(specs).toEqual(["./registry"]);
+  });
+
+  describe("billing's pure subpaths", () => {
+    // What a consumer may reach from a client bundle: plan types, the
+    // registries, the payment contract. billing-core's reason to exist
+    // was that these import neither Stripe nor server-only; the fold
+    // keeps the property by walking every relative import from each.
+    const billingSrc = path.join(PACKAGES_DIR, "billing/src");
+    const PURE = ["plans", "plan-registry", "payment", "quota-types"];
+    const ALLOWED_BARE = new Set(["@intelligo-dev/core/registry"]);
+
+    function reachable(entry: string): { files: string[]; bare: string[] } {
+      const files = new Set<string>();
+      const bare = new Set<string>();
+      const queue = [path.join(billingSrc, `${entry}.ts`)];
+      while (queue.length) {
+        const file = queue.pop()!;
+        if (files.has(file)) continue;
+        files.add(file);
+        for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
+          if (spec.startsWith(".")) {
+            const resolved = path.resolve(path.dirname(file), spec);
+            queue.push(resolved.endsWith(".ts") ? resolved : `${resolved}.ts`);
+          } else {
+            bare.add(spec);
+          }
+        }
+      }
+      return { files: [...files], bare: [...bare] };
+    }
+
+    it.each(PURE)("%s reaches only core/registry", (entry) => {
+      const { files, bare } = reachable(entry);
+      const forbidden = bare.filter((spec) => !ALLOWED_BARE.has(spec));
+      expect(
+        forbidden,
+        `billing/${entry} reaches ${forbidden.join(", ")} — a client bundle importing it would pull that in`
+      ).toEqual([]);
+      const server = files
+        .map((f) => path.relative(billingSrc, f))
+        .filter((f) => /stripe|webhook|server-only/.test(f));
+      expect(server, `billing/${entry} reaches server-side modules`).toEqual(
+        []
+      );
     });
   });
 });
