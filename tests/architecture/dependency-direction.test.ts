@@ -34,12 +34,9 @@ import {
 const ALLOWED_DEPS: Record<string, readonly string[]> = {
   core: [],
   ui: [],
-  // The transport adapter. Its `/next` subpath is the only file in the
-  // framework allowed to import next/*.
-  http: ["@intelligo-dev/core"],
-  // http is where the request-scoped headers come from, so auth can
-  // resolve a session without importing a web framework.
-  auth: ["@intelligo-dev/core", "@intelligo-dev/http"],
+  // auth reads the request's headers through core/request-context, so
+  // it resolves a session without importing a web framework.
+  auth: ["@intelligo-dev/core"],
   audit: ["@intelligo-dev/core"],
   jobs: ["@intelligo-dev/core"],
   "billing-core": ["@intelligo-dev/core"],
@@ -52,6 +49,10 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
   // execution boundary and NOTHING else, and reaches @mastra/core only
   // through an optional peer dependency it never imports.
   mastra: ["@intelligo-dev/executions"],
+  // The Next.js adapter: the only package allowed to import next/*. It
+  // sits at the top of the graph — it binds the request context for
+  // core and mounts auth's route handlers — so nothing depends on it.
+  next: ["@intelligo-dev/core", "@intelligo-dev/auth"],
   // The CLI inspects a workspace from the outside — reading files,
   // talking to Postgres — so it deliberately imports no runtime
   // package. Adding one would make `doctor` need the app to boot

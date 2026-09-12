@@ -13,7 +13,7 @@
  * ```
  */
 
-import { getRequestHeaders } from "@intelligo-dev/http";
+import { getRequestHeaders } from "@intelligo-dev/core/request-context";
 import { auth } from "./server";
 import { createLogger } from "@intelligo-dev/core/logger";
 import { db } from "@intelligo-dev/core/db";

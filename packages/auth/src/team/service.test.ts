@@ -47,7 +47,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("@intelligo-dev/http", () => ({
+vi.mock("@intelligo-dev/core/request-context", () => ({
   getRequestHeaders: mocks.headersMock,
 }));
 

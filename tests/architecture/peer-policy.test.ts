@@ -122,17 +122,17 @@ describe("the framework's one door to Next.js", () => {
     // Without this the rule below is vacuous: an exclusion for a file
     // that has moved would pass while enforcing nothing.
     expect(
-      readFileSync(path.join(PACKAGES_DIR, "http/src/next.ts"), "utf8")
+      readFileSync(path.join(PACKAGES_DIR, "next/src/index.ts"), "utf8")
     ).toMatch(/from "next\/headers"/);
   });
 
-  it("is the only file that imports next/*", () => {
+  it("is the only package that imports next/*", () => {
     // Every other package has to be usable from a queue worker, a Hono
     // API, a test, or a product built on something that is not Next.
     // `auth` used to import `next/headers` in five files, which made a
     // package about authentication unusable outside a Next request —
-    // the reason `@intelligo-dev/http` exists.
-    const ALLOWED = "packages/http/src/next.ts";
+    // the reason `@intelligo-dev/next` exists.
+    const ALLOWED = "packages/next/src/";
     const offenders: string[] = [];
 
     for (const { dir } of packages) {
@@ -141,7 +141,7 @@ describe("the framework's one door to Next.js", () => {
       )) {
         if (/\.test\.tsx?$/.test(file)) continue;
         const rel = path.relative(PACKAGES_DIR, file);
-        if (`packages/${rel}`.split(path.sep).join("/") === ALLOWED) continue;
+        if (`packages/${rel}`.split(path.sep).join("/").startsWith(ALLOWED)) continue;
         if (/from\s+["']next(\/[^"']+)?["']/.test(readFileSync(file, "utf8"))) {
           offenders.push(`packages/${rel}`);
         }
@@ -150,7 +150,7 @@ describe("the framework's one door to Next.js", () => {
 
     expect(
       offenders,
-      `these import next/* directly; go through @intelligo-dev/http instead:\n  ${offenders.join("\n  ")}`
+      `these import next/* directly; go through @intelligo-dev/next instead:\n  ${offenders.join("\n  ")}`
     ).toEqual([]);
   });
 });

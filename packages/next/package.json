@@ -1,11 +1,11 @@
 {
-  "name": "@intelligo-dev/http",
+  "name": "@intelligo-dev/next",
   "version": "1.0.0-beta.4",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/intelligo-mn/framework.git",
-    "directory": "packages/http"
+    "directory": "packages/next"
   },
   "homepage": "https://github.com/intelligo-mn/framework#readme",
   "bugs": {
@@ -14,7 +14,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./next": "./src/next.ts"
+    "./auth": "./src/auth.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
@@ -23,18 +23,17 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@intelligo-dev/core": "workspace:*"
+    "@intelligo-dev/auth": "workspace:*",
+    "@intelligo-dev/core": "workspace:*",
+    "server-only": "^0.0.1"
   },
   "peerDependencies": {
+    "better-auth": "~1.6.30",
     "next": "^15.0.0 || ^16.0.0"
-  },
-  "peerDependenciesMeta": {
-    "next": {
-      "optional": true
-    }
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "better-auth": "~1.6.30",
     "next": "^15.0.0 || ^16.0.0",
     "typescript": "^5.7.2"
   },
@@ -51,14 +50,13 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       },
-      "./next": {
-        "types": "./dist/next.d.ts",
-        "default": "./dist/next.js"
+      "./auth": {
+        "types": "./dist/auth.d.ts",
+        "default": "./dist/auth.js"
       }
     }
   },
   "engines": {
     "node": ">=22"
-  },
-  "sideEffects": false
+  }
 }

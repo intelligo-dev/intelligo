@@ -26,6 +26,7 @@ pnpm add @intelligo-dev/core
 | `/logger`        | Structured logging with credential redaction           |
 | `/registry`      | Registries that survive a bundler duplicating a module |
 | `/money`         | Amount-plus-currency value object in micros; imports nothing |
+| `/request-context` | Where the framework reads the request's headers from; bound by the adapter |
 | `/env`           | Environment validation                                 |
 
 ## Migrations

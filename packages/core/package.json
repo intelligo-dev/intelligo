@@ -24,6 +24,7 @@
     "./env": "./src/env.ts",
     "./registry": "./src/registry.ts",
     "./money": "./src/money.ts",
+    "./request-context": "./src/request-context.ts",
     "./logger": {
       "types": "./src/logger.ts",
       "import": "./src/logger.ts",
@@ -121,6 +122,10 @@
       "./money": {
         "types": "./dist/money.d.ts",
         "default": "./dist/money.js"
+      },
+      "./request-context": {
+        "types": "./dist/request-context.d.ts",
+        "default": "./dist/request-context.js"
       },
       "./logger": {
         "types": "./dist/logger.d.ts",

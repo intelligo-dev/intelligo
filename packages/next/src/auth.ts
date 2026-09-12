@@ -11,7 +11,7 @@
  *
  * ```ts
  * // app/api/auth/[...all]/route.ts
- * export { GET, POST } from "@intelligo-dev/auth/next";
+ * export { GET, POST } from "@intelligo-dev/next/auth";
  * ```
  *
  * The path must stay `/api/auth` — it is Better-Auth's default
@@ -23,6 +23,6 @@ import "server-only";
 
 import { toNextJsHandler } from "better-auth/next-js";
 
-import { auth } from "./server";
+import { auth } from "@intelligo-dev/auth";
 
 export const { GET, POST } = toNextJsHandler(auth);

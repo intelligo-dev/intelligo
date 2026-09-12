@@ -7,19 +7,21 @@
  * not rendering — unusable outside Next: a queue worker that wants to
  * check a session, a Hono API, a product on another framework, a test
  * that is not running inside a request. ADR-0005 named the fix in its
- * consequences and it was never built; this is it.
+ * consequences; this is it.
  *
  * The framework asks for headers through `getRequestHeaders()`. The
  * application says where they come from, once, from its composition
  * root:
  *
- *     import { setRequestContextSource } from "@intelligo-dev/http";
- *     import { nextRequestContext } from "@intelligo-dev/http/next";
+ *     import { setRequestContextSource } from "@intelligo-dev/core/request-context";
+ *     import { nextRequestContext } from "@intelligo-dev/next";
  *
  *     setRequestContextSource(nextRequestContext);
  *
- * `@intelligo-dev/http/next` is the only file in the framework that
- * imports `next/*`, and an architecture test keeps it that way.
+ * `@intelligo-dev/next` is the only package in the framework that
+ * imports `next/*`, and an architecture test keeps it that way. This
+ * module imports nothing but `./registry`, so the contract is reachable
+ * from any runtime the adapter is not.
  *
  * Nothing self-registers. An unbound source throws where the headers
  * are needed, naming the two lines that fix it — the alternative is a
@@ -27,7 +29,7 @@
  * read from the wrong one.
  */
 
-import { createRegistryRef } from "@intelligo-dev/core/registry";
+import { createRegistryRef } from "./registry";
 
 /**
  * Produces the current request's headers.
@@ -43,7 +45,7 @@ export class RequestContextUnavailableError extends Error {
     super(
       "No request context source is bound. Call setRequestContextSource() " +
         "from your composition root — `nextRequestContext` from " +
-        "@intelligo-dev/http/next in a Next.js app — or wrap the call in " +
+        "@intelligo-dev/next in a Next.js app — or wrap the call in " +
         "withRequestHeaders() outside a request."
     );
     this.name = "RequestContextUnavailableError";
@@ -57,13 +59,13 @@ export class RequestContextUnavailableError extends Error {
  * root one copy and the request path another.
  */
 const source = createRegistryRef<RequestContextSource | undefined>(
-  "http/request-context-source",
+  "core/request-context-source",
   undefined
 );
 
 /** Explicitly bound headers, for a call that is not inside a request. */
 const override = createRegistryRef<Headers | undefined>(
-  "http/request-headers-override",
+  "core/request-headers-override",
   undefined
 );
 

@@ -13,6 +13,7 @@ const nextConfig = {
     "@intelligo-dev/billing",
     "@intelligo-dev/core",
     "@intelligo-dev/executions",
+    "@intelligo-dev/next",
   ],
 };
 

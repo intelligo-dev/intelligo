@@ -15,8 +15,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
-    "./edge": "./src/edge.ts",
-    "./next": "./src/next.ts"
+    "./edge": "./src/edge.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
@@ -26,7 +25,6 @@
   },
   "dependencies": {
     "@intelligo-dev/core": "workspace:*",
-    "@intelligo-dev/http": "workspace:*",
     "server-only": "^0.0.1"
   },
   "peerDependencies": {
@@ -64,10 +62,6 @@
       "./edge": {
         "types": "./src/edge.ts",
         "default": "./dist/edge.js"
-      },
-      "./next": {
-        "types": "./src/next.ts",
-        "default": "./dist/next.js"
       }
     }
   },

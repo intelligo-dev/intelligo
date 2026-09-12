@@ -24,6 +24,15 @@ it explains a framework decision.
   dependency-free subpath of core has the same property — `core/registry`
   already works that way — and one fewer package to install, version and
   explain. The npm name is deprecated; the API is unchanged.
+- **`@intelligo-dev/http` is `@intelligo-dev/core/request-context` plus
+  `@intelligo-dev/next`.** The contract — `getRequestHeaders()`,
+  `setRequestContextSource()`, `withRequestHeaders()` — is a
+  dependency-free subpath of core. The Next.js binding is its own
+  package, the framework's one door to `next/*`, and it also mounts
+  Better-Auth's route handlers: `@intelligo-dev/auth/next` is
+  `@intelligo-dev/next/auth`. One adapter package per host framework is
+  what `@sentry/nextjs`, `@clerk/nextjs` and `@payloadcms/next` do, and
+  it leaves `auth` importing nothing that is not authentication.
 
 ## [1.0.0-beta.4] — 2026-09-12
 

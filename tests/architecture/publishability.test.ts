@@ -292,7 +292,7 @@ describe("publishability", () => {
     // `import "server-only"`, which is the guard that stops server code
     // reaching a client bundle. Those packages declare nothing and keep
     // the conservative default.
-    const importsServerOnly = new Set(["admin", "auth"]);
+    const importsServerOnly = new Set(["admin", "auth", "next"]);
 
     for (const pkg of listWorkspaces(PACKAGES_DIR)) {
       const declared = manifest(pkg).sideEffects;

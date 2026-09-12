@@ -64,7 +64,7 @@
  *    fallback) and passes that id explicitly to `getFullOrganization`.
  */
 
-import { getRequestHeaders } from "@intelligo-dev/http";
+import { getRequestHeaders } from "@intelligo-dev/core/request-context";
 import type { ZodType } from "zod";
 import { createLogger } from "@intelligo-dev/core/logger";
 

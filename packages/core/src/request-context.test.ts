@@ -7,7 +7,7 @@ import {
   hasRequestContextSource,
   setRequestContextSource,
   withRequestHeaders,
-} from "./index";
+} from "./request-context";
 
 afterEach(() => {
   clearRequestContextSource();

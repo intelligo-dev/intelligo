@@ -26,7 +26,7 @@ const {
   updateSetMock: vi.fn(),
 }));
 
-vi.mock("@intelligo-dev/http", () => ({
+vi.mock("@intelligo-dev/core/request-context", () => ({
   getRequestHeaders: headersMock,
 }));
 

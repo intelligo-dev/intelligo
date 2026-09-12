@@ -25,13 +25,13 @@ import {
   setDefaultProductSlug,
 } from "@intelligo-dev/billing/plans";
 import { assertEnv } from "@intelligo-dev/core/env";
-import { setRequestContextSource } from "@intelligo-dev/http";
-import { nextRequestContext } from "@intelligo-dev/http/next";
+import { setRequestContextSource } from "@intelligo-dev/core/request-context";
 import {
   DEFAULT_MODELS,
   createExecutions,
   registerModels,
 } from "@intelligo-dev/executions";
+import { nextRequestContext } from "@intelligo-dev/next";
 
 import { PLANS, FEATURES } from "./plans";
 
@@ -59,7 +59,8 @@ export function composeIntelligo(): void {
 
   // Where the framework reads the incoming request's headers from.
   // Only this line knows the app is a Next.js one; `@intelligo-dev/auth`
-  // asks `@intelligo-dev/http` and stays usable from a worker or a test.
+  // asks `@intelligo-dev/core/request-context` and stays usable from a
+  // worker or a test.
   setRequestContextSource(nextRequestContext);
 
   setDefaultProductSlug(PRODUCT_SLUG);
