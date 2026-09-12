@@ -30,18 +30,20 @@
     "@intelligo-dev/billing-core": "workspace:*",
     "@intelligo-dev/core": "workspace:*",
     "@intelligo-dev/executions": "workspace:*",
+    "server-only": "^0.0.1"
+  },
+  "peerDependencies": {
     "drizzle-orm": "^0.45.1",
-    "server-only": "^0.0.1",
     "stripe": "^20.3.1",
     "zod": "^3.24.1"
   },
-  "peerDependencies": {
-    "next": "^15.0.0 || ^16.0.0"
-  },
   "devDependencies": {
-    "typescript": "^5.7.2",
+    "drizzle-orm": "^0.45.1",
+    "next": "^16.0.7",
+    "stripe": "^20.3.1",
     "tsx": "^4.21.0",
-    "next": "^16.0.7"
+    "typescript": "^5.7.2",
+    "zod": "^3.24.1"
   },
   "files": [
     "dist"

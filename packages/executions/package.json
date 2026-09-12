@@ -25,12 +25,12 @@
   },
   "dependencies": {
     "@intelligo-dev/audit": "workspace:*",
-    "@intelligo-dev/core": "workspace:*",
-    "drizzle-orm": "^0.45.1"
+    "@intelligo-dev/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/pg": "^8.16.0",
+    "drizzle-orm": "^0.45.1",
     "pg": "^8.18.0",
     "typescript": "^5.7.2"
   },
@@ -53,5 +53,8 @@
         "default": "./dist/db/schema.js"
       }
     }
+  },
+  "peerDependencies": {
+    "drizzle-orm": "^0.45.1"
   }
 }
