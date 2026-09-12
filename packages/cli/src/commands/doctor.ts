@@ -53,6 +53,11 @@ function stripComments(text: string): string {
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
 }
 
+/**
+ * templates/registry-requires.json is a build-time copy of
+ * packages/registry/requires.json (scripts/sync-registry-requires.mjs),
+ * committed so that running from source works too.
+ */
 function bundledRequires(): RegistryRequires | null {
   const file = path.resolve(
     // fileURLToPath, not `.pathname` — see the note in bin.ts.
@@ -252,7 +257,7 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
             detail:
               "auth pages are installed but app/api/auth/[...all]/route.ts " +
               "is missing — add `export { GET, POST } from " +
-              '"@intelligo-dev/auth/next";` there or every sign-in answers 404',
+              '"@intelligo-dev/next/auth";` there or every sign-in answers 404',
           }
     );
   }

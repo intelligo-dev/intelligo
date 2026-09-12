@@ -46,6 +46,7 @@ jobs:
           set -euo pipefail
           tag="${GITHUB_REF_NAME#v}"
           for dir in packages/*/; do
+            if [ "$(node -p "require('./$dir/package.json').private === true")" = "true" ]; then continue; fi
             version=$(node -p "require('./$dir/package.json').version")
             if [ "$version" != "$tag" ]; then
               echo "$dir is $version but the tag is $tag"

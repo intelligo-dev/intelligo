@@ -38,10 +38,10 @@ const nextConfig = {
     "@intelligo-dev/audit",
     "@intelligo-dev/auth",
     "@intelligo-dev/billing",
-    "@intelligo-dev/billing-core",
     "@intelligo-dev/core",
     "@intelligo-dev/executions",
     "@intelligo-dev/jobs",
+    "@intelligo-dev/next",
     "@intelligo-dev/ui",
   ],
 };

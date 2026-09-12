@@ -46,7 +46,7 @@ import type {
   UsageSummary,
 } from "./quota-types";
 import { getPlanMonthlyCreditMnt, getPlanMessageLimit } from "./quota-plan";
-import { BillingNotConfiguredError } from "@intelligo-dev/billing-core";
+import { BillingNotConfiguredError } from "./plan-registry";
 
 export type {
   SettlementOutcome,

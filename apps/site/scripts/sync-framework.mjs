@@ -2,13 +2,13 @@
 /**
  * Pull everything the site shows about the framework from the framework
  * itself, so the site can never claim a page or a number that doesn't
- * exist — and commit the result, so a deploy needs no sibling checkout.
+ * exist — and commit the result, so a deploy needs nothing but this
+ * directory (Cloudflare builds from apps/site and never runs this).
  *
- *   pnpm sync                      # this repository
- *   INTELLIGO_FRAMEWORK_DIR=… pnpm sync
+ *   pnpm sync        # repository root: builds the registry first (turbo)
  *
  * Writes:
- *   src/data/registry.json   the framework's registry.json, verbatim
+ *   src/data/registry.json   packages/registry/registry.json, verbatim
  *   src/data/proof.json      counts (tests, items, ADRs, packages) and the version
  *   public/r/*.json          the built registry items — intelligo.dev/r/<item>.json
  *                            is the hosted registry consumers install from
@@ -27,18 +27,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SITE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-// apps/site lives inside the framework repository, so the framework is
-// two directories up.
-const FRAMEWORK = resolve(
-  process.env.INTELLIGO_FRAMEWORK_DIR ?? join(SITE, "../..")
-);
-
-if (!existsSync(join(FRAMEWORK, "registry/registry.json"))) {
-  console.error(
-    `No framework checkout at ${FRAMEWORK} (set INTELLIGO_FRAMEWORK_DIR).`
-  );
-  process.exit(1);
-}
+// apps/site lives inside the framework repository: two directories up.
+const FRAMEWORK = resolve(SITE, "../..");
 
 function walk(dir, out = []) {
   if (!existsSync(dir)) return out;
@@ -54,23 +44,25 @@ function walk(dir, out = []) {
 
 // --- registry -------------------------------------------------------------
 const registryJson = readFileSync(
-  join(FRAMEWORK, "registry/registry.json"),
+  join(FRAMEWORK, "packages/registry/registry.json"),
   "utf8"
 );
 mkdirSync(join(SITE, "src/data"), { recursive: true });
 writeFileSync(join(SITE, "src/data/registry.json"), registryJson);
 const registry = JSON.parse(registryJson);
 
-const built = join(FRAMEWORK, "registry/public/r");
-if (existsSync(built)) {
-  rmSync(join(SITE, "public/r"), { recursive: true, force: true });
-  cpSync(built, join(SITE, "public/r"), { recursive: true });
-  console.log(`public/r: ${readdirSync(built).length} items`);
-} else {
-  console.warn(
-    `public/r left as-is: run \`pnpm registry:build\` in ${FRAMEWORK} first.`
+const built = join(FRAMEWORK, "packages/registry/public/r");
+if (!existsSync(built)) {
+  // A silent stale copy is the failure CI's "sync output is committed"
+  // step exists to catch; refuse rather than half-sync.
+  console.error(
+    "packages/registry/public/r is not built. Run `pnpm sync` from the repository root (it builds the registry first), or `pnpm registry:build` then this script."
   );
+  process.exit(1);
 }
+rmSync(join(SITE, "public/r"), { recursive: true, force: true });
+cpSync(built, join(SITE, "public/r"), { recursive: true });
+console.log(`public/r: ${readdirSync(built).length} items`);
 
 // --- counts ---------------------------------------------------------------
 const testFiles = [
@@ -89,9 +81,14 @@ const adrs = readdirSync(join(FRAMEWORK, "docs/adr")).filter((f) =>
   /^\d{4}-.*\.md$/.test(f)
 ).length;
 const registryItems = registry.items.filter((i) => i.name !== "smoke").length;
-const packages = readdirSync(join(FRAMEWORK, "packages")).filter((p) =>
-  existsSync(join(FRAMEWORK, "packages", p, "package.json"))
-).length;
+// Published packages only: packages/registry is a private workspace.
+const packages = readdirSync(join(FRAMEWORK, "packages")).filter((p) => {
+  const manifest = join(FRAMEWORK, "packages", p, "package.json");
+  return (
+    existsSync(manifest) &&
+    JSON.parse(readFileSync(manifest, "utf8")).private !== true
+  );
+}).length;
 const version = JSON.parse(
   readFileSync(join(FRAMEWORK, "packages/core/package.json"), "utf8")
 ).version;
@@ -196,7 +193,7 @@ for (const name of SHOWCASE_ITEMS) {
       !["registry:component", "registry:hook", "registry:file"].includes(type)
     )
       continue;
-    const source = join(FRAMEWORK, "registry", relPath);
+    const source = join(FRAMEWORK, "packages/registry", relPath);
     if (/\.(ts|tsx)$/.test(target)) {
       const text = readFileSync(source, "utf8");
       if (SERVER_MARKERS.some((m) => text.includes(m))) continue;

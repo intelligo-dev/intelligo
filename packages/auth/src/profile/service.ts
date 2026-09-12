@@ -43,7 +43,7 @@
  * that already succeeded.
  */
 
-import { getRequestHeaders } from "@intelligo-dev/http";
+import { getRequestHeaders } from "@intelligo-dev/core/request-context";
 import type { ZodType } from "zod";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@intelligo-dev/core/logger";

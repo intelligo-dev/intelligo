@@ -73,6 +73,40 @@
         "astro.config.*"
       ],
       "dependsOn": ["^type-check"]
+    },
+    "@intelligo-dev/registry#build": {
+      "dependsOn": [],
+      "inputs": ["registry.json", "base/**"],
+      "outputs": ["public/r/**"]
+    },
+    "@intelligo-dev/registry#lint": {
+      "inputs": ["registry.json", "base/**"]
+    },
+    "sync": {
+      "cache": false,
+      "dependsOn": ["@intelligo-dev/registry#build"]
+    },
+    "@intelligo-dev/registry#type-check": {
+      "dependsOn": ["^type-check"],
+      "inputs": [
+        "registry.json",
+        "requires.json",
+        "base/**",
+        "tsconfig.json",
+        "scripts/**",
+        "$TURBO_ROOT$/apps/app/components/ui/**",
+        "$TURBO_ROOT$/apps/app/lib/**",
+        "$TURBO_ROOT$/apps/app/hooks/**",
+        "$TURBO_ROOT$/apps/app/i18n/**"
+      ]
+    },
+    "@intelligo-dev/cli#build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/packages/registry/requires.json"
+      ],
+      "outputs": ["dist/**"]
     }
   }
 }

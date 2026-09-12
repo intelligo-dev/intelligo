@@ -138,7 +138,8 @@ const PRIVATE_VOCABULARY: { re: RegExp; sample: string }[] = [
  *   - `CHANGELOG.md` and `docs/adr`: the record of how the framework
  *     came to be, which names the product that motivated it.
  *   - `apps/site`: the marketing site, which may say who uses it.
- *   - `registry/public`: build output of `registry/base`, already scanned.
+ *   - `packages/registry/public`: build output of `packages/registry/base`,
+ *     already scanned.
  *   - this file, which names the vocabulary in order to forbid it.
  */
 const VOCABULARY_EXEMPT = [
@@ -146,7 +147,7 @@ const VOCABULARY_EXEMPT = [
   "CHANGELOG.md",
   "docs/adr/",
   "apps/site/",
-  "registry/public/",
+  "packages/registry/public/",
   "tests/architecture/publishability.test.ts",
   "pnpm-lock.yaml",
 ];
@@ -207,13 +208,22 @@ describe("publishability", () => {
     expect(PUBLISHED).toContain("core");
   });
 
-  it("publishes every workspace under packages/", () => {
-    // The release workflow publishes packages/* wholesale. Something
-    // that must not be on npm belongs under apps/, not here.
+  it("publishes every workspace under packages/ that is not deliberately private", () => {
+    // The release workflow publishes packages/* wholesale, skipping
+    // `private: true`. A private workspace here is a tooling workspace
+    // — the registry — and its README has to say so, so nobody reads a
+    // packages/ directory as an npm package that failed to ship.
     const unpublished = listWorkspaces(PACKAGES_DIR).filter(
       (pkg) => !PUBLISHED.includes(pkg)
     );
-    expect(unpublished, "private workspaces under packages/").toEqual([]);
+    for (const pkg of unpublished) {
+      const readme = path.join(PACKAGES_DIR, pkg, "README.md");
+      expect(
+        existsSync(readme) &&
+          /never published/i.test(readFileSync(readme, "utf8")),
+        `packages/${pkg} is private but its README does not say it is never published`
+      ).toBe(true);
+    }
   });
 
   it("declares Apache-2.0 on every published package", () => {
@@ -235,7 +245,7 @@ describe("publishability", () => {
     // passes either way.
     const rootLicense = readFileSync(path.join(ROOT, "LICENSE"), "utf8");
 
-    for (const pkg of listWorkspaces(PACKAGES_DIR)) {
+    for (const pkg of PUBLISHED) {
       const licensePath = path.join(PACKAGES_DIR, pkg, "LICENSE");
       expect(
         existsSync(licensePath),
@@ -255,7 +265,7 @@ describe("publishability", () => {
   });
 
   it("gives every package an npm page and a runtime floor", () => {
-    for (const pkg of listWorkspaces(PACKAGES_DIR)) {
+    for (const pkg of PUBLISHED) {
       expect(
         existsSync(path.join(PACKAGES_DIR, pkg, "README.md")),
         `packages/${pkg} has no README — its npm page would render empty`
@@ -279,7 +289,7 @@ describe("publishability", () => {
     // `tsBuildInfoFile` lands inside outDir, and `files: ["dist"]`
     // takes the whole directory — so every tarball carried a
     // tsbuildinfo nobody installing it can use.
-    for (const pkg of listWorkspaces(PACKAGES_DIR)) {
+    for (const pkg of PUBLISHED) {
       expect(
         manifest(pkg).files ?? [],
         `packages/${pkg} would publish its tsbuildinfo`
@@ -292,9 +302,9 @@ describe("publishability", () => {
     // `import "server-only"`, which is the guard that stops server code
     // reaching a client bundle. Those packages declare nothing and keep
     // the conservative default.
-    const importsServerOnly = new Set(["admin", "auth"]);
+    const importsServerOnly = new Set(["admin", "auth", "next"]);
 
-    for (const pkg of listWorkspaces(PACKAGES_DIR)) {
+    for (const pkg of PUBLISHED) {
       const declared = manifest(pkg).sideEffects;
       if (importsServerOnly.has(pkg)) {
         expect(

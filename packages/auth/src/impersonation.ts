@@ -15,7 +15,7 @@ import "server-only";
  * workspace role.
  */
 
-import { getRequestHeaders } from "@intelligo-dev/http";
+import { getRequestHeaders } from "@intelligo-dev/core/request-context";
 
 import { auth } from "./server";
 

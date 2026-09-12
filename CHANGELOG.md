@@ -16,6 +16,58 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+### Breaking
+
+- **`@intelligo-dev/money` is `@intelligo-dev/core/money`.** The
+  amount-plus-currency value object had its own package so that
+  `executions/pricing`, a zero-import leaf, could reach it. A
+  dependency-free subpath of core has the same property — `core/registry`
+  already works that way — and one fewer package to install, version and
+  explain. The npm name is deprecated; the API is unchanged.
+- **`@intelligo-dev/http` is `@intelligo-dev/core/request-context` plus
+  `@intelligo-dev/next`.** The contract — `getRequestHeaders()`,
+  `setRequestContextSource()`, `withRequestHeaders()` — is a
+  dependency-free subpath of core. The Next.js binding is its own
+  package, the framework's one door to `next/*`, and it also mounts
+  Better-Auth's route handlers: `@intelligo-dev/auth/next` is
+  `@intelligo-dev/next/auth`. One adapter package per host framework is
+  what `@sentry/nextjs`, `@clerk/nextjs` and `@payloadcms/next` do, and
+  it leaves `auth` importing nothing that is not authentication.
+- **`@intelligo-dev/billing-core` folds into `@intelligo-dev/billing`.**
+  It existed so plan types could be imported without Stripe or
+  `server-only`, and nothing ever imported it without also importing
+  `billing`. Subpaths do the same job: `@intelligo-dev/billing/plans`,
+  `/plan-registry`, `/payment` and `/quota-types` import neither, and
+  an architecture test walks their imports to keep it so. `/plans` and
+  `/payment` already existed as re-exports; the other two are new.
+
+### Added
+
+- **`@intelligo-dev/chat`** — the AI-SDK-native chat transport as a
+  package: `createChatHandler(config)` returns `{ POST, DELETE }` over
+  Web `Request`/`Response`. The registry's `chat` item shipped this as a
+  434-line Route Handler consumers install verbatim and may not edit —
+  which is a function, not template source. The seams a real product
+  had forked the route to get are now config: `resolveAgent`,
+  `prepareMessages`, `attachments`, `reasoning`, an async `deriveTitle`,
+  `persist`, `onTurn` telemetry and a localised `messages` translator.
+  It also persists the user's turn, which the route never did: without
+  `originalMessages`, `createUIMessageStream`'s `onFinish` sees only
+  the reply. The name was on ADR-0008's dissolved list; ADR-0012
+  reuses it for the part of the old package that was never UI.
+
+### Changed
+
+- **The page registry is the private workspace `packages/registry`.**
+  It was a top-level directory outside every workspace: not in turbo,
+  not linted by `pnpm lint`, never type-checked in place. It is now
+  `@intelligo-dev/registry` with `private: true` — where a Turborepo
+  keeps tooling workspaces — with `build` (shadcn) and `lint` tasks of
+  its own. The architecture rules that assumed everything under
+  `packages/` ships to npm now read `private`, as `pnpm publish -r`
+  already did. Item source, `registry.json` and `requires.json` are
+  unchanged; only the path moved.
+
 ## [1.0.0-beta.4] — 2026-09-12
 
 The first release aimed at the second product rather than the first.

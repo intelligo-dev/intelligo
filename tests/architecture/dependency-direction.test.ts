@@ -22,10 +22,12 @@ import path from "node:path";
 import {
   APPS_DIR,
   DISSOLVED_PACKAGES,
+  FOLDED_PACKAGES,
   PACKAGES_DIR,
   ROOT,
   importSpecifiers,
   intelligoPackage,
+  listPublishedWorkspaces,
   listWorkspaces,
   walk,
 } from "./tree";
@@ -34,21 +36,11 @@ import {
 const ALLOWED_DEPS: Record<string, readonly string[]> = {
   core: [],
   ui: [],
-  // Money types have to be reachable from `executions/pricing`, which
-  // is a zero-import leaf that client bundles pull in. That is why they
-  // are a package of their own rather than a module inside core, and
-  // why this entry must stay empty: one dependency here and the leaf
-  // stops being a leaf.
-  money: [],
-  // The transport adapter. Its `/next` subpath is the only file in the
-  // framework allowed to import next/*.
-  http: ["@intelligo-dev/core"],
-  // http is where the request-scoped headers come from, so auth can
-  // resolve a session without importing a web framework.
-  auth: ["@intelligo-dev/core", "@intelligo-dev/http"],
+  // auth reads the request's headers through core/request-context, so
+  // it resolves a session without importing a web framework.
+  auth: ["@intelligo-dev/core"],
   audit: ["@intelligo-dev/core"],
   jobs: ["@intelligo-dev/core"],
-  "billing-core": ["@intelligo-dev/core"],
   // executions owns the SaaS boundary and must NOT depend on billing —
   // entitlement and settlement arrive through ports bound by the
   // composition root (ADR-0005). Adding @intelligo-dev/billing here would
@@ -58,6 +50,10 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
   // execution boundary and NOTHING else, and reaches @mastra/core only
   // through an optional peer dependency it never imports.
   mastra: ["@intelligo-dev/executions"],
+  // The Next.js adapter: the only package allowed to import next/*. It
+  // sits at the top of the graph — it binds the request context for
+  // core and mounts auth's route handlers — so nothing depends on it.
+  next: ["@intelligo-dev/core", "@intelligo-dev/auth"],
   // The CLI inspects a workspace from the outside — reading files,
   // talking to Postgres — so it deliberately imports no runtime
   // package. Adding one would make `doctor` need the app to boot
@@ -75,9 +71,15 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
     "@intelligo-dev/jobs",
     "@intelligo-dev/ui",
   ],
-  billing: [
+  billing: ["@intelligo-dev/core", "@intelligo-dev/executions"],
+  // The chat transport composes auth, billing, persistence and the
+  // execution boundary into one Route Handler. It is an AI SDK adapter
+  // at the top of the graph, like admin — not a boundary package — so
+  // its edge to billing is the ordinary one a transport has.
+  chat: [
     "@intelligo-dev/core",
-    "@intelligo-dev/billing-core",
+    "@intelligo-dev/auth",
+    "@intelligo-dev/billing",
     "@intelligo-dev/executions",
   ],
 };
@@ -109,7 +111,10 @@ function declaredIntelligoDeps(manifestPath: string): string[] {
   }).filter((name) => name.startsWith("@intelligo-dev/"));
 }
 
-const packages = listWorkspaces(PACKAGES_DIR);
+// Published packages only. `packages/registry` is item source that
+// imports `@/…` and every package on purpose; its imports are ruled on
+// item by item in registry.test.ts, not as a package edge.
+const packages = listPublishedWorkspaces(PACKAGES_DIR);
 const apps = listWorkspaces(APPS_DIR);
 
 /** What this repository publishes: the only `@intelligo-dev/*` names that resolve. */
@@ -294,6 +299,135 @@ describe("nothing depends on the dissolved set", () => {
         }
       }
       expect(offenders, offenders.join("\n  ")).toEqual([]);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The folded set
+// ---------------------------------------------------------------------------
+
+/**
+ * ADR-0011 folded `money`, `http` and `billing-core` into subpaths of
+ * `core`, `next` and `billing`. Their npm names are deprecated. Unlike
+ * the dissolved set, the code still exists — so an import of the old
+ * name is told the new one, not merely that the package is gone.
+ */
+describe("nothing depends on the folded set", () => {
+  const folded = Object.keys(FOLDED_PACKAGES);
+
+  it("has a folded set to rule on", () => {
+    expect(folded.length).toBeGreaterThan(0);
+    for (const name of folded) {
+      expect(
+        PUBLISHED.has(name),
+        `${name} exists again — decide, then update ADR-0011`
+      ).toBe(false);
+    }
+  });
+
+  describe.each([
+    ...packages.map((p) => ["packages", p] as const),
+    ...apps.map((a) => ["apps", a] as const),
+  ])("%s/%s", (kind, name) => {
+    const dir = path.join(ROOT, kind, name);
+
+    it("declares none of them", () => {
+      const declared = declaredIntelligoDeps(path.join(dir, "package.json"));
+      const offenders = declared
+        .filter((d) => folded.includes(d))
+        .map((d) => `${d} → use ${FOLDED_PACKAGES[d]}`);
+      expect(offenders).toEqual([]);
+    });
+
+    it("imports none of them", () => {
+      const offenders: string[] = [];
+      for (const file of walkSources(dir)) {
+        for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
+          const dep = intelligoPackage(spec);
+          if (dep && folded.includes(dep)) {
+            offenders.push(
+              `${path.relative(ROOT, file)} → ${spec} (use ${FOLDED_PACKAGES[dep]})`
+            );
+          }
+        }
+      }
+      expect(offenders, offenders.join("\n  ")).toEqual([]);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Subpaths that must stay leaves
+// ---------------------------------------------------------------------------
+
+/**
+ * The folds above were safe because each moved module is a leaf: it can
+ * be reached from a client bundle, an edge runtime or another package's
+ * own leaf without dragging Drizzle, Stripe or `server-only` along.
+ * That is a property of the files, not of the package boundary that
+ * used to hold them — so it is asserted here, on the files.
+ */
+describe("leaf subpaths", () => {
+  const coreSrc = path.join(PACKAGES_DIR, "core/src");
+
+  it("core/money imports nothing", () => {
+    // `executions/pricing` is a zero-import leaf that reads these
+    // types; one import here and it stops being one.
+    expect(
+      importSpecifiers(readFileSync(path.join(coreSrc, "money.ts"), "utf8"))
+    ).toEqual([]);
+  });
+
+  it("core/request-context imports only core/registry", () => {
+    const specs = importSpecifiers(
+      readFileSync(path.join(coreSrc, "request-context.ts"), "utf8")
+    );
+    expect(specs).toEqual(["./registry"]);
+  });
+
+  describe("billing's pure subpaths", () => {
+    // What a consumer may reach from a client bundle: plan types, the
+    // registries, the payment contract. billing-core's reason to exist
+    // was that these import neither Stripe nor server-only; the fold
+    // keeps the property by walking every relative import from each.
+    const billingSrc = path.join(PACKAGES_DIR, "billing/src");
+    const PURE = ["plans", "plan-registry", "payment", "quota-types"];
+    const ALLOWED_BARE = new Set(["@intelligo-dev/core/registry"]);
+
+    function reachable(entry: string): { files: string[]; bare: string[] } {
+      const files = new Set<string>();
+      const bare = new Set<string>();
+      const queue = [path.join(billingSrc, `${entry}.ts`)];
+      while (queue.length) {
+        const file = queue.pop()!;
+        if (files.has(file)) continue;
+        files.add(file);
+        for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
+          if (spec.startsWith(".")) {
+            const resolved = path.resolve(path.dirname(file), spec);
+            queue.push(resolved.endsWith(".ts") ? resolved : `${resolved}.ts`);
+          } else {
+            bare.add(spec);
+          }
+        }
+      }
+      return { files: [...files], bare: [...bare] };
+    }
+
+    it.each(PURE)("%s reaches only core/registry", (entry) => {
+      const { files, bare } = reachable(entry);
+      const forbidden = bare.filter((spec) => !ALLOWED_BARE.has(spec));
+      expect(
+        forbidden,
+        `billing/${entry} reaches ${forbidden.join(", ")} — a client bundle importing it would pull that in`
+      ).toEqual([]);
+      const server = files
+        .map((f) => path.relative(billingSrc, f))
+        .filter((f) => /stripe|webhook|server-only/.test(f));
+      expect(server, `billing/${entry} reaches server-side modules`).toEqual(
+        []
+      );
     });
   });
 });

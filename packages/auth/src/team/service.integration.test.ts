@@ -4,7 +4,7 @@
  * Runs only when DATABASE_URL is set (`describe.skipIf`), same
  * convention as packages/core/src/db/__tests__/audit-trigger.int.test.ts.
  * Everything is real EXCEPT the request-context accessor:
- * `@intelligo-dev/http`'s `getRequestHeaders()` reads whatever source
+ * `@intelligo-dev/core/request-context`'s `getRequestHeaders()` reads whatever source
  * the composition root bound, and under vitest there is no request to
  * bind one to. It is shimmed here to return whichever `Headers` object
  * the current test step points it at — the ONLY thing mocked. `../server` (the real `auth` instance),
@@ -50,7 +50,7 @@ vi.setConfig({ testTimeout: 30_000, hookTimeout: 30_000 });
 // `headers()` would for a real incoming request.
 const currentHeaders = { value: new Headers() as Headers };
 
-vi.mock("@intelligo-dev/http", () => ({
+vi.mock("@intelligo-dev/core/request-context", () => ({
   getRequestHeaders: async () => currentHeaders.value,
 }));
 

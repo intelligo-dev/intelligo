@@ -53,7 +53,7 @@ export const RULES: Rule[] = [
     file: "tests/architecture/registry.test.ts",
     passing: "✓ references only public packages and declared dependencies",
     violation:
-      'import { privateTools } from "@acme/private-tools"  // inside registry/base/chat',
+      'import { privateTools } from "@acme/private-tools"  // inside packages/registry/base/chat',
     output: [
       "FAIL tests/architecture/registry.test.ts",
       "× registry items › import no private, deprecated, or @intelligo-dev/ui packages",

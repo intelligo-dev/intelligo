@@ -10,7 +10,7 @@
  *
  * These functions take resolved `workspaceId`/`userId`/`role` values.
  * They do not — and, per the dependency-direction allowlist
- * (`billing → core, billing-core, executions`), cannot — call
+ * (`billing → core, executions`), cannot — call
  * `requireWorkspace`/`requireRole` themselves. Every transport that
  * calls into this module MUST perform that check first and pass in
  * the ids/role it resolved; this module trusts its caller on identity
@@ -65,7 +65,7 @@ const subscriptionCheckoutSchema = z.object({
   userId: z.string().min(1),
   planSlug: z.string().min(1),
   interval: z.enum(["monthly", "yearly"]).default("monthly"),
-  /** The registry product slug to resolve the plan catalogue against — see `@intelligo-dev/billing-core`'s plan registry. */
+  /** The registry product slug to resolve the plan catalogue against — see `@intelligo-dev/billing/plan-registry`. */
   productSlug: z.string().min(1),
   successUrl: z.string().url(),
   cancelUrl: z.string().url(),

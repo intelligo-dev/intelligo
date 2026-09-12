@@ -1,4 +1,4 @@
-import { readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
 /** The repository root. */
@@ -11,12 +11,29 @@ export const APPS_DIR = path.join(ROOT, "apps");
  * Packages ADR-0008 dissolved. They no longer exist anywhere, and no
  * package, application or registry item may declare or import one —
  * a consumer would find nothing on npm to resolve it to.
+ *
+ * `@intelligo-dev/chat` was on this list until ADR-0012 reused the name
+ * for the headless chat transport: the UI ADR-0008 dissolved retired
+ * into the registry, and the package that exists now is the part that
+ * was never UI.
  */
 export const DISSOLVED_PACKAGES = [
   "@intelligo-dev/ai",
   "@intelligo-dev/agents",
-  "@intelligo-dev/chat",
 ] as const;
+
+/**
+ * Packages ADR-0011 folded into a subpath of a package that already
+ * existed. The code did not go away, it moved — so the rule that
+ * refuses the old name says where.
+ */
+export const FOLDED_PACKAGES: Readonly<Record<string, string>> = {
+  "@intelligo-dev/money": "@intelligo-dev/core/money",
+  "@intelligo-dev/http":
+    "@intelligo-dev/core/request-context (the contract) and @intelligo-dev/next (the Next.js binding)",
+  "@intelligo-dev/billing-core":
+    "@intelligo-dev/billing/{plans,plan-registry,payment,quota-types}",
+};
 
 /** Directory names to never descend into: build output and installs. */
 export const IGNORED_DIRS = new Set([
@@ -45,6 +62,21 @@ export function listWorkspaces(dir: string): string[] {
   } catch {
     return [];
   }
+}
+
+/**
+ * The workspaces under `dir` that ship to npm: every one not marked
+ * `private`. `packages/registry` is the private one — item source the
+ * toolchain owns, installed through shadcn rather than resolved from a
+ * registry — and no rule about a published package applies to it.
+ */
+export function listPublishedWorkspaces(dir: string): string[] {
+  return listWorkspaces(dir).filter((name) => {
+    const manifest = JSON.parse(
+      readFileSync(path.join(dir, name, "package.json"), "utf8")
+    ) as { private?: boolean };
+    return manifest.private !== true;
+  });
 }
 
 /** Every file under `dir` whose name matches `accept`, skipping build output. */
