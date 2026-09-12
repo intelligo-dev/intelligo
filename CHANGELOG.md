@@ -16,6 +16,15 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+## [1.0.0-beta.5] — 2026-09-12
+
+The release that makes the package layout something a developer who did
+not write it can predict. Three packages fold into subpaths under one
+rule (ADR-0011), the Next.js adapter becomes the framework's one door to
+`next/*`, the page registry becomes a workspace the toolchain owns, and
+the chat transport becomes a package (ADR-0012) — the UI item binds it
+in the next release, once this one is on npm.
+
 ### Breaking
 
 - **`@intelligo-dev/money` is `@intelligo-dev/core/money`.** The
@@ -742,6 +751,8 @@ Includes the untagged "0.2 Core Platform" milestone.
   skeletons; shadcn/ui and Tailwind; GitHub Actions running build,
   type-check and lint.
 
+[1.0.0-beta.5]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.5
+[1.0.0-beta.4]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.4
 [1.0.0-beta.3]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.3
 [1.0.0-beta.2]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.2
 [1.0.0-beta.1]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.1
