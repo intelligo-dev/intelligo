@@ -12,15 +12,30 @@ interface ChatInputProps {
   onSend: (text: string) => void;
   onStop: () => void;
   isStreaming: boolean;
+  /**
+   * Stops the composer accepting a turn that will be refused — out of
+   * credits, or behind a feature gate. The banner above says why; this
+   * is what keeps someone from writing a paragraph into a request the
+   * route has already told us it will reject.
+   */
+  disabled?: boolean;
+  /** Placeholder to show instead of the usual one while disabled. */
+  disabledPlaceholder?: string;
 }
 
-export function ChatInput({ onSend, onStop, isStreaming }: ChatInputProps) {
+export function ChatInput({
+  onSend,
+  onStop,
+  isStreaming,
+  disabled = false,
+  disabledPlaceholder,
+}: ChatInputProps) {
   const t = useTranslations("chat");
   const [value, setValue] = useState("");
 
   function submit() {
     const text = value.trim();
-    if (!text || isStreaming) return;
+    if (!text || isStreaming || disabled) return;
     onSend(text);
     setValue("");
   }
@@ -39,7 +54,12 @@ export function ChatInput({ onSend, onStop, isStreaming }: ChatInputProps) {
           value={value}
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={t("input.placeholder")}
+          disabled={disabled}
+          placeholder={
+            disabled && disabledPlaceholder
+              ? disabledPlaceholder
+              : t("input.placeholder")
+          }
           rows={1}
           className="max-h-40 min-h-10 flex-1 resize-none"
         />
@@ -58,7 +78,7 @@ export function ChatInput({ onSend, onStop, isStreaming }: ChatInputProps) {
             type="button"
             size="icon"
             onClick={submit}
-            disabled={!value.trim()}
+            disabled={disabled || !value.trim()}
             aria-label={t("input.send")}
           >
             <ArrowUp className="h-4 w-4" />

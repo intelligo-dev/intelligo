@@ -14,7 +14,7 @@
  * into an empty conversation, so a refresh doesn't replay it.
  */
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { DefaultChatTransport } from "ai";
 import { useChat } from "@ai-sdk/react";
@@ -23,15 +23,48 @@ import { useSearchParams } from "next/navigation";
 
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
+import { CreditStatusBanner, type ChatBlock } from "./credit-status-banner";
 import { chatConfig } from "@/lib/chat-config";
 import type { ToolRendererActions } from "@/lib/chat-renderers";
+import type { ChatQuotaState } from "@/lib/chat-quota";
+
+/**
+ * A refusal, or nothing. `executions.begin()` answers 402 with a typed
+ * code when admission declines; anything else is a failure, not a
+ * limit, and belongs in the error strip rather than the banner.
+ *
+ * At module scope so the effect that reads it has a stable reference
+ * and needs no dependency entry.
+ */
+function refusalFrom(chatError: Error): ChatBlock | null {
+  try {
+    const parsed = JSON.parse(chatError.message) as {
+      error?: string;
+      code?: string;
+    };
+    return parsed.code && parsed.error
+      ? { code: parsed.code, message: parsed.error }
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 interface ChatProps {
   conversationId: string;
   initialMessages: UIMessage[];
+  /**
+   * Server-rendered credit state. Optional so a deployment that has
+   * not wired billing renders the chat unchanged.
+   */
+  quotaState?: ChatQuotaState | null;
 }
 
-export function Chat({ conversationId, initialMessages }: ChatProps) {
+export function Chat({
+  conversationId,
+  initialMessages,
+  quotaState = null,
+}: ChatProps) {
   const t = useTranslations("chat");
   // Namespace-less: `chatConfig.starters` entries are fully-qualified
   // message keys into the app's whole message tree (see
@@ -66,10 +99,29 @@ export function Chat({ conversationId, initialMessages }: ChatProps) {
 
   const isStreaming = status === "streaming" || status === "submitted";
 
+  /**
+   * A refusal the route returned mid-conversation.
+   *
+   * The server-rendered state is what the page opened with; the
+   * balance can run out three turns later, and the reader should not
+   * have to reload to be told.
+   */
+  const [block, setBlock] = useState<ChatBlock | null>(null);
+  const blocked = block !== null || quotaState?.allowed === false;
+
   const starters = useMemo(
     () => (chatConfig.starters ?? []).map((key) => tAny(key)),
     [tAny]
   );
+
+  // In an effect, not in render: `useChat` surfaces the error as
+  // state, and setting state while rendering from it is how a render
+  // loop starts.
+  useEffect(() => {
+    if (!error) return;
+    const refusal = refusalFrom(error);
+    if (refusal) setBlock(refusal);
+  }, [error]);
 
   function friendlyChatError(chatError: Error): string {
     try {
@@ -83,7 +135,7 @@ export function Chat({ conversationId, initialMessages }: ChatProps) {
   }
 
   function handleSend(text: string) {
-    if (!text.trim() || isStreaming) return;
+    if (!text.trim() || isStreaming || blocked) return;
     void sendMessage({ text });
   }
 
@@ -115,7 +167,8 @@ export function Chat({ conversationId, initialMessages }: ChatProps) {
         onRetry={isStreaming ? undefined : () => void regenerate()}
         toolActions={toolActions}
       />
-      {error ? (
+      <CreditStatusBanner quotaState={quotaState} block={block} />
+      {error && !block ? (
         <div
           role="alert"
           className="mx-auto mb-2 w-full max-w-3xl rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive"
@@ -123,7 +176,13 @@ export function Chat({ conversationId, initialMessages }: ChatProps) {
           {friendlyChatError(error)}
         </div>
       ) : null}
-      <ChatInput onSend={handleSend} onStop={stop} isStreaming={isStreaming} />
+      <ChatInput
+        onSend={handleSend}
+        onStop={stop}
+        isStreaming={isStreaming}
+        disabled={blocked}
+        disabledPlaceholder={t("input.blockedPlaceholder")}
+      />
     </div>
   );
 }
