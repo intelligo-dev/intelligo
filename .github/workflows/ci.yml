@@ -77,6 +77,33 @@ jobs:
       - name: Doctor
         run: pnpm exec tsx packages/cli/src/bin.ts doctor
 
+      # The migration chain is frozen until the one production database
+      # still running unmanaged has been baselined.
+      #
+      # `intelligo migrate` refuses a db:push-provisioned database, so a
+      # new migration cannot reach that deployment by the supported
+      # path; the only way in would be another `db:push`, which would
+      # see a renamed or removed column as absent from the schema file
+      # and DROP it. Publishing a migration while that database is
+      # unmanaged is therefore not "a change that waits" — it is a
+      # change that invites the one operation guaranteed to lose data.
+      #
+      # Lifting the freeze: baseline the database (its repository owns
+      # the runbook), confirm `intelligo migrate --check` reports zero
+      # pending, then raise FROZEN_AT in the same commit as the first
+      # new migration.
+      - name: The migration chain is frozen
+        run: |
+          set -euo pipefail
+          FROZEN_AT=44
+          entries=$(node -p "require('./packages/core/src/db/migrations/meta/_journal.json').entries.length")
+          echo "journal has $entries entries, frozen at $FROZEN_AT"
+          if [ "$entries" -gt "$FROZEN_AT" ]; then
+            echo "The migration chain is frozen at $FROZEN_AT entries and this branch has $entries."
+            echo "See the comment above this step in .github/workflows/ci.yml."
+            exit 1
+          fi
+
       # Packed-package compatibility, not only workspace:*. The failures
       # it catches are silent under workspace links: a missing `files`
       # entry, an exports map pointing at something that did not ship,
