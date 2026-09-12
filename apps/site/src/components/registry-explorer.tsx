@@ -7,7 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { REGISTRY_ITEMS, type RegistryGroup } from "@/lib/registry-items";
 
 /**
- * 25 page families from registry.json. Every item renders the real
+ * Every page family from registry.json (the count comes from the sync). Every item renders the real
  * registry component — the files `shadcn add` installs — with fixture
  * data in place of the packages' reads and the item's own `messages/en`
  * (ADR-0010). Two items that ship a frame and a page share a scene.

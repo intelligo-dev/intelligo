@@ -24,23 +24,11 @@ import { estimateQuota } from "@intelligo-dev/billing";
 import { createLogger } from "@intelligo-dev/core/logger";
 
 import { CHAT_MODEL_ID } from "@/lib/chat-model";
+import type { ChatQuotaState } from "@/components/chat/credit-status-banner";
 
 const log = createLogger("ChatQuota");
 
-export type ChatQuotaState = {
-  /** False when the next turn would be refused. */
-  allowed: boolean;
-  /** Why, when the engine refused — already localized by the caller's transport. */
-  reason: string | null;
-  /** Typed refusal, for a UI that wants to distinguish them. */
-  code: string | null;
-  /** Credits left across every pool. */
-  remaining: number;
-  /** Worst-case credits one turn could cost. */
-  estimated: number;
-  /** Where "upgrade" and "top up" should go. */
-  upgradeHref: string;
-};
+export type { ChatQuotaState };
 
 /**
  * Never throws: the page renders with or without this. A quota read

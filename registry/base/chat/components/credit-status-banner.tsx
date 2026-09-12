@@ -29,7 +29,33 @@ import { AlertTriangle, Sparkles } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
-import type { ChatQuotaState } from "@/lib/chat-quota";
+
+/**
+ * What the page opened with, read by `getChatQuotaState()`.
+ *
+ * Declared here rather than beside that function because the reader of
+ * a contract is the better place for it: `lib/chat-quota.ts` is
+ * `server-only`, and a client component that imports a type from it
+ * pulls a server module into its graph for something the compiler
+ * erases anyway.
+ *
+ * Amounts are credits — the unit the balance and the estimate are both
+ * in — not money.
+ */
+export type ChatQuotaState = {
+  /** False when the next turn would be refused. */
+  allowed: boolean;
+  /** Why, when the engine refused. */
+  reason: string | null;
+  /** Typed refusal, for a UI that wants to distinguish them. */
+  code: string | null;
+  /** Credits left across every pool. */
+  remaining: number;
+  /** Worst-case credits one turn could cost. */
+  estimated: number;
+  /** Where "upgrade" and "top up" should go. */
+  upgradeHref: string;
+};
 
 /**
  * A refusal that arrived from the route mid-conversation, rather than

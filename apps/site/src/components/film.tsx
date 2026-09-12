@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { REGISTRY_ITEMS, type RegistryGroup } from "@/lib/registry-items";
+import { PACKAGES as PACKAGE_MAP } from "@/lib/packages";
+import { SITE } from "@/lib/site";
 
 /**
  * The film: one pinned stage, four scenes, one continuous state. Scroll
@@ -185,8 +187,17 @@ const STEPS: Step[] = [
   { scene: 3, label: "Still yours", at: g(SCENE.time, 0.85) },
 ];
 
-const PACKAGE_VERSION = "1.0.0-beta.3";
-const NEXT_VERSION = "1.0.0-beta.4";
+/** The published version, from proof.json — never typed here. */
+const PACKAGE_VERSION = SITE.version;
+/** The release that "lands" in scene 04: the next prerelease (or patch). */
+const NEXT_VERSION = bumpVersion(PACKAGE_VERSION);
+
+function bumpVersion(v: string): string {
+  const pre = v.match(/^(.*-[a-z]+\.)(\d+)$/i);
+  if (pre) return `${pre[1]}${Number(pre[2]) + 1}`;
+  const rel = v.match(/^(\d+\.\d+\.)(\d+)$/);
+  return rel ? `${rel[1]}${Number(rel[2]) + 1}` : v;
+}
 
 /** deterministic scatter, so SSR and the client agree */
 function rnd(i: number, k: number) {
@@ -715,16 +726,10 @@ function Moments({ p }: { p: MotionValue<number> }) {
 
 /* ---------- act 2: the terminal ---------- */
 
-const PACKAGES = [
-  "auth",
-  "billing",
-  "billing-core",
-  "executions",
-  "core",
-  "jobs",
-  "audit",
-  "admin",
-];
+/** What `pnpm add` installs: the framework layer of the package map. */
+const PACKAGES = PACKAGE_MAP.filter(
+  (p) => p.layer === "intelligo" && !["cli", "mastra"].includes(p.id)
+).map((p) => p.id);
 
 type Line = { text: string; tone?: "cmd" | "ok" | "dim" | "amber" };
 
@@ -737,7 +742,7 @@ const LINES: Line[] = [
     tone: "cmd",
   },
   ...PACKAGES.map((x) => ({
-    text: `+ @intelligo-dev/${x} 1.0.0-beta.3`,
+    text: `+ @intelligo-dev/${x} ${PACKAGE_VERSION}`,
     tone: "dim" as const,
   })),
   {

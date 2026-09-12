@@ -23,10 +23,13 @@ import { useSearchParams } from "@showcase/shims/next-navigation";
 
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
-import { CreditStatusBanner, type ChatBlock } from "./credit-status-banner";
+import {
+  CreditStatusBanner,
+  type ChatBlock,
+  type ChatQuotaState,
+} from "./credit-status-banner";
 import { chatConfig } from "@showcase/lib/chat-config";
 import type { ToolRendererActions } from "@showcase/lib/chat-renderers";
-import type { ChatQuotaState } from "@showcase/lib/chat-quota";
 
 /**
  * A refusal, or nothing. `executions.begin()` answers 402 with a typed
