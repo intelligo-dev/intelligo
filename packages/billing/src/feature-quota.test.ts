@@ -7,7 +7,7 @@
  *
  * All DB calls are mocked; the tests drive the quota state via a tiny
  * in-memory fake that tracks per-user rows and supports select/update/insert.
- * Plan limits are registered in beforeAll — billing-core ships no
+ * Plan limits are registered in beforeAll — the framework ships no
  * catalogue to fall back on (ADR-0006).
  */
 
@@ -31,7 +31,7 @@ beforeAll(async () => {
   // composition root sets it, and so must a test.
   setDefaultProductSlug("acme");
 
-  // Phase 3 removed the built-in catalogue from billing-core, so
+  // Phase 3 removed the built-in catalogue from the plan registry, so
   // there is no implicit fallback any more: a product that registers
   // nothing gets no limits. Registering here is the same thing the
   // composition root does at boot, and it keeps this fixture the only

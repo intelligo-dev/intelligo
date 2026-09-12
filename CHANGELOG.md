@@ -33,6 +33,13 @@ it explains a framework decision.
   `@intelligo-dev/next/auth`. One adapter package per host framework is
   what `@sentry/nextjs`, `@clerk/nextjs` and `@payloadcms/next` do, and
   it leaves `auth` importing nothing that is not authentication.
+- **`@intelligo-dev/billing-core` folds into `@intelligo-dev/billing`.**
+  It existed so plan types could be imported without Stripe or
+  `server-only`, and nothing ever imported it without also importing
+  `billing`. Subpaths do the same job: `@intelligo-dev/billing/plans`,
+  `/plan-registry`, `/payment` and `/quota-types` import neither, and
+  an architecture test walks their imports to keep it so. `/plans` and
+  `/payment` already existed as re-exports; the other two are new.
 
 ## [1.0.0-beta.4] — 2026-09-12
 

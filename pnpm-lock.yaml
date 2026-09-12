@@ -112,9 +112,6 @@ importers:
       '@intelligo-dev/billing':
         specifier: workspace:*
         version: link:../../packages/billing
-      '@intelligo-dev/billing-core':
-        specifier: workspace:*
-        version: link:../../packages/billing-core
       '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -417,9 +414,6 @@ importers:
 
   packages/billing:
     dependencies:
-      '@intelligo-dev/billing-core':
-        specifier: workspace:*
-        version: link:../billing-core
       '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
@@ -439,25 +433,6 @@ importers:
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.3
-      zod:
-        specifier: ^3.24.1
-        version: 3.25.76
-
-  packages/billing-core:
-    dependencies:
-      '@intelligo-dev/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.9
-      drizzle-orm:
-        specifier: '>=0.45.2'
-        version: 0.45.2(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(kysely@0.28.17)(pg@8.18.0)
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
@@ -3551,9 +3526,6 @@ packages:
 
   '@types/node@22.19.18':
     resolution: {integrity: sha512-9v00a+dn2yWVsYDEunWC4g/TcRKVq3r8N5FuZp7u0SGrPvdN9c2yXI9bBuf5Fl0hNCb+QTIePTn5pJs2pwBOQQ==}
-
-  '@types/node@22.19.9':
-    resolution: {integrity: sha512-PD03/U8g1F9T9MI+1OBisaIARhSzeidsUjQaf51fOxrfjeiKN9bLVO06lHuHYjxdnqLWJijJHfqXPSJri2EM2A==}
 
   '@types/node@24.13.3':
     resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
@@ -10839,10 +10811,6 @@ snapshots:
       '@types/unist': 3.0.3
 
   '@types/node@22.19.18':
-    dependencies:
-      undici-types: 6.21.0
-
-  '@types/node@22.19.9':
     dependencies:
       undici-types: 6.21.0
 

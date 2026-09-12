@@ -39,7 +39,6 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
   auth: ["@intelligo-dev/core"],
   audit: ["@intelligo-dev/core"],
   jobs: ["@intelligo-dev/core"],
-  "billing-core": ["@intelligo-dev/core"],
   // executions owns the SaaS boundary and must NOT depend on billing —
   // entitlement and settlement arrive through ports bound by the
   // composition root (ADR-0005). Adding @intelligo-dev/billing here would
@@ -70,11 +69,7 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
     "@intelligo-dev/jobs",
     "@intelligo-dev/ui",
   ],
-  billing: [
-    "@intelligo-dev/core",
-    "@intelligo-dev/billing-core",
-    "@intelligo-dev/executions",
-  ],
+  billing: ["@intelligo-dev/core", "@intelligo-dev/executions"],
 };
 
 const SOURCE_FILE = /\.(ts|tsx|mts|cts|js|jsx)$/;

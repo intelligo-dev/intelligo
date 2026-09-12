@@ -13,11 +13,16 @@ export type { StripeWebhookOptions } from "./webhook-route";
 export { getPlanBySlug, formatPrice, isUnlimited } from "./plans";
 export type { PlanSlug, PlanConfig, PlanLimits } from "./plans";
 
-// Plan registry (Wave 4 decoupling)
+// Plan registry. The full surface — every register*/clear* pair, the
+// trial and rate-limit maps — is `@intelligo-dev/billing/plan-registry`;
+// `/plans` and `/payment` are the other two subpaths that import
+// neither Stripe nor server-only.
 export {
   registerProductPlans,
   registerUpgradeMessages,
   registerActionLabels,
+  getRegisteredProductSlugs,
+  BillingNotConfiguredError,
 } from "./plan-registry";
 export {
   handleCheckoutCompleted,

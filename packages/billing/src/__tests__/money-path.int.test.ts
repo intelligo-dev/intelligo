@@ -128,7 +128,7 @@ d("money path (integration)", () => {
     // Compose in-test what a consumer's lib/intelligo.ts composes: a
     // product with a free plan, and the three ports bound to billing.
     const { setDefaultProductSlug, registerProductPlans } =
-      await import("@intelligo-dev/billing-core/plans");
+      await import("../plans");
     setDefaultProductSlug(product);
     registerProductPlans(product, {
       free: {

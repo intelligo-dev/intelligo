@@ -16,6 +16,8 @@
     ".": "./src/index.ts",
     "./plans": "./src/plans.ts",
     "./payment": "./src/payment.ts",
+    "./plan-registry": "./src/plan-registry.ts",
+    "./quota-types": "./src/quota-types.ts",
     "./rate-limit": "./src/rate-limit.ts",
     "./quota": "./src/quota.ts"
   },
@@ -27,7 +29,6 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@intelligo-dev/billing-core": "workspace:*",
     "@intelligo-dev/core": "workspace:*",
     "@intelligo-dev/executions": "workspace:*"
   },
@@ -64,6 +65,14 @@
       "./payment": {
         "types": "./dist/payment.d.ts",
         "default": "./dist/payment.js"
+      },
+      "./plan-registry": {
+        "types": "./dist/plan-registry.d.ts",
+        "default": "./dist/plan-registry.js"
+      },
+      "./quota-types": {
+        "types": "./dist/quota-types.d.ts",
+        "default": "./dist/quota-types.js"
       },
       "./rate-limit": {
         "types": "./dist/rate-limit.d.ts",

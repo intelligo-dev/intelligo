@@ -17,7 +17,6 @@
     "@intelligo-dev/audit": "workspace:*",
     "@intelligo-dev/auth": "workspace:*",
     "@intelligo-dev/billing": "workspace:*",
-    "@intelligo-dev/billing-core": "workspace:*",
     "@intelligo-dev/core": "workspace:*",
     "@intelligo-dev/executions": "workspace:*",
     "@intelligo-dev/jobs": "workspace:*",
