@@ -29,7 +29,6 @@ on:
 
 permissions:
   contents: write # the tag and the GitHub release
-  id-token: write # npm provenance
 
 # One release at a time, and never cancelled halfway through a publish.
 concurrency:
@@ -119,14 +118,18 @@ jobs:
       # `pnpm publish -r` orders by dependency, rewrites workspace:*
       # ranges to the published version, skips private workspaces and
       # skips versions already on the registry — so a re-run after a
-      # partial failure is safe. Provenance links each tarball to this
-      # run on npm's package page.
+      # partial failure is safe.
+      #
+      # No provenance yet: npm verifies the sigstore bundle against the
+      # source repository and refuses a private one (E422). When this
+      # repository goes public, add `id-token: write` to the permissions
+      # above and `NPM_CONFIG_PROVENANCE: "true"` here, and every
+      # tarball links to the run that built it on its npm page.
       - name: Publish
         if: steps.check.outputs.published != 'true'
         run: pnpm publish -r --access public --no-git-checks --tag "${{ steps.version.outputs.dist-tag }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"
 
       # Names the framework stopped publishing, pointed at where the
       # code went. Idempotent, so it runs on every release.
