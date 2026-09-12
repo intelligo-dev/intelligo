@@ -16,6 +16,8 @@
  * default and is refused in production.
  */
 
+import { createRegistry } from "@intelligo-dev/core/registry";
+
 export type PaymentStatus = "pending" | "paid" | "expired" | "failed";
 
 export interface CreatePaymentResult {
@@ -47,16 +49,13 @@ export interface PaymentProvider {
 
 // ─── Mock Provider (Development) ───
 
-const mockPayments = new Map<
-  string,
-  {
-    status: PaymentStatus;
-    amount: number;
-    userId: string;
-    planSlug: string;
-    createdAt: Date;
-  }
->();
+const mockPayments = createRegistry<{
+  status: PaymentStatus;
+  amount: number;
+  userId: string;
+  planSlug: string;
+  createdAt: Date;
+}>("billing/mock-payments");
 
 export const mockPaymentProvider: PaymentProvider = {
   async createPayment({ amount, description: _description, userId, planSlug }) {
@@ -130,7 +129,7 @@ export function getMockPayment(invoiceId: string) {
  * without that being visible. An empty registry makes the composition
  * root the only way a provider exists.
  */
-const providers = new Map<string, PaymentProvider>();
+const providers = createRegistry<PaymentProvider>("billing/payment-providers");
 
 /**
  * Register a payment provider under the name PAYMENT_MODE will select.

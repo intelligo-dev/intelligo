@@ -9,6 +9,7 @@
 
 import { db } from "@intelligo-dev/core/db";
 import { createLogger } from "@intelligo-dev/core/logger";
+import { createRegistry } from "@intelligo-dev/core/registry";
 import { and, desc, eq, lt } from "drizzle-orm";
 
 import { auditEvents } from "./db/schema";
@@ -58,7 +59,7 @@ export type RecordedAuditEvent = {
   createdAt: Date;
 };
 
-const sinks = new Map<string, AuditSink>();
+const sinks = createRegistry<AuditSink>("audit/sinks");
 
 /** Register (or replace) a sink under a stable name. */
 export function registerAuditSink(name: string, sink: AuditSink): void {
