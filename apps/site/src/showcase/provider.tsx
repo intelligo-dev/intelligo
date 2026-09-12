@@ -42,10 +42,7 @@ export function ShowcaseProvider({
       onError={() => {}}
       getMessageFallback={({ key }) => key.split(".").pop() ?? key}
     >
-      <ShowcaseNavigation
-        pathname={path}
-        onNavigate={(href) => setPath(href)}
-      >
+      <ShowcaseNavigation pathname={path} onNavigate={(href) => setPath(href)}>
         {children}
         <Toaster position="bottom-right" richColors closeButton />
       </ShowcaseNavigation>

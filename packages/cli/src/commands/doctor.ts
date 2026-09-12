@@ -238,7 +238,7 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
             status: "error",
             detail:
               "auth pages are installed but app/api/auth/[...all]/route.ts " +
-              'is missing — add `export { GET, POST } from ' +
+              "is missing — add `export { GET, POST } from " +
               '"@intelligo-dev/auth/next";` there or every sign-in answers 404',
           }
     );

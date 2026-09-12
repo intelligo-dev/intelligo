@@ -224,7 +224,9 @@ function PageHeading({
   const t = useTranslations(ns);
   return (
     <div className={compact ? undefined : "mb-6"}>
-      <h1 className={compact ? "text-lg font-semibold" : "text-2xl font-semibold"}>
+      <h1
+        className={compact ? "text-lg font-semibold" : "text-2xl font-semibold"}
+      >
         {t(title)}
       </h1>
       {description && (

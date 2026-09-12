@@ -37,11 +37,51 @@ const fact = (
 
 /** What the AI has learned about the preview's user, grouped by category in the list. */
 export const FACTS: UserFact[] = [
-  fact("fact_role", "background", "role", "Product engineer at Acme Research", 0.92, 8, 30),
-  fact("fact_stack", "skill", "stack", "TypeScript, React, Postgres", 0.88, 7, 21),
-  fact("fact_goal", "goal", "q3", "Ship the customer-facing analytics dashboard by October", 0.81, 9, 9),
-  fact("fact_tone", "preference", "tone", "Short answers, code before prose", 0.9, 6, 4),
-  fact("fact_interest", "interest", "reading", "Distributed systems papers", 0.64, 3, 2),
+  fact(
+    "fact_role",
+    "background",
+    "role",
+    "Product engineer at Acme Research",
+    0.92,
+    8,
+    30
+  ),
+  fact(
+    "fact_stack",
+    "skill",
+    "stack",
+    "TypeScript, React, Postgres",
+    0.88,
+    7,
+    21
+  ),
+  fact(
+    "fact_goal",
+    "goal",
+    "q3",
+    "Ship the customer-facing analytics dashboard by October",
+    0.81,
+    9,
+    9
+  ),
+  fact(
+    "fact_tone",
+    "preference",
+    "tone",
+    "Short answers, code before prose",
+    0.9,
+    6,
+    4
+  ),
+  fact(
+    "fact_interest",
+    "interest",
+    "reading",
+    "Distributed systems papers",
+    0.64,
+    3,
+    2
+  ),
 ];
 
 export const AUDIT_TRAIL: UserMemoryAuditRow[] = [
