@@ -69,7 +69,10 @@
     "internalError": "Something went wrong.",
     "quotaExceeded": "Usage quota exceeded. Upgrade your plan or purchase credits.",
     "messageTooLong": "Message is too long (max {max, plural, one {# character} other {# characters}}).",
-    "streamError": "Something went wrong while generating a response."
+    "streamError": "Something went wrong while generating a response.",
+    "attachmentRejected": "That attachment type isn't accepted.",
+    "notFound": "That conversation no longer exists.",
+    "billingNotConfigured": "Billing is not configured for this deployment."
   },
   "deleteDialog": {
     "title": "Delete this conversation?",

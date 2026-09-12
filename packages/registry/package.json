@@ -15,6 +15,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@intelligo-dev/auth": "workspace:*",
     "@intelligo-dev/billing": "workspace:*",
+    "@intelligo-dev/chat": "workspace:*",
     "@intelligo-dev/core": "workspace:*",
     "@intelligo-dev/executions": "workspace:*",
     "@types/node": "^22.0.0",

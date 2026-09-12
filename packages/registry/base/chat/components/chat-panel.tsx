@@ -28,29 +28,32 @@ import {
   type ChatBlock,
   type ChatQuotaState,
 } from "./credit-status-banner";
+import { parseChatError } from "@intelligo-dev/chat/client";
+
 import { chatConfig } from "@/lib/chat-config";
 import type { ToolRendererActions } from "@/lib/chat-renderers";
 
 /**
- * A refusal, or nothing. `executions.begin()` answers 402 with a typed
- * code when admission declines; anything else is a failure, not a
- * limit, and belongs in the error strip rather than the banner.
+ * A refusal that blocks the composer, or nothing. Admission answers 402
+ * with the entitlement port's own code (`insufficient_credits`,
+ * `allowance_depleted`…), which is what the banner keys its copy on; a
+ * feature gate is a block too. Anything else — a rate limit, a stream
+ * failure — is transient and belongs in the error strip.
  *
  * At module scope so the effect that reads it has a stable reference
  * and needs no dependency entry.
  */
 function refusalFrom(chatError: Error): ChatBlock | null {
-  try {
-    const parsed = JSON.parse(chatError.message) as {
-      error?: string;
-      code?: string;
-    };
-    return parsed.code && parsed.error
-      ? { code: parsed.code, message: parsed.error }
-      : null;
-  } catch {
+  const parsed = parseChatError(chatError);
+  if (!parsed) return null;
+  if (
+    parsed.code !== "QUOTA_EXCEEDED" &&
+    parsed.code !== "BILLING_NOT_CONFIGURED" &&
+    parsed.code !== "FEATURE_GATED"
+  ) {
     return null;
   }
+  return { code: parsed.reasonCode ?? parsed.code, message: parsed.error };
 }
 
 interface ChatProps {
@@ -80,7 +83,13 @@ export function Chat({
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        body: { id: conversationId },
+        // The agent identity travels with the turn so a deployment that
+        // resolves agents per conversation (`resolveAgent` in
+        // `lib/chat-server-config.ts`) knows which one this surface is.
+        body: {
+          id: conversationId,
+          ...(chatConfig.agent?.id ? { agentId: chatConfig.agent.id } : {}),
+        },
       }),
     [conversationId]
   );
@@ -127,14 +136,9 @@ export function Chat({
   }, [error]);
 
   function friendlyChatError(chatError: Error): string {
-    try {
-      const parsed = JSON.parse(chatError.message) as { error?: string };
-      if (parsed.error) return parsed.error;
-    } catch {
-      // Not JSON — the transport surfaces the raw response text on a
-      // non-JSON error response.
-    }
-    return chatError.message || t("error.generic");
+    // A non-JSON error response (a proxy's page, a network failure)
+    // surfaces as raw text; the generic copy beats showing it.
+    return parseChatError(chatError)?.error ?? t("error.generic");
   }
 
   function handleSend(text: string) {

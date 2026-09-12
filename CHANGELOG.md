@@ -16,6 +16,25 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+### Breaking
+
+- **The `chat` registry item binds `@intelligo-dev/chat`.** Its Route
+  Handler is two lines — `createChatHandler(chatServerConfig)` — and
+  `lib/chat-server-config.ts` is the transport's `ChatServerConfig`:
+  `executions`, `model`, `agent` (or `resolveAgent`), `prepareMessages`,
+  `attachments`, `reasoning`, `deriveTitle`, `onTurn`, and a `messages`
+  translator bound to this item's `route.*` keys. `lib/chat-model.ts`
+  builds its stub from `@intelligo-dev/chat/testing`; `lib/chat-quota.ts`,
+  `credit-status-banner.tsx` and `chat-panel.tsx` read the quota shape
+  and error codes from `@intelligo-dev/chat/client`. The panel sends
+  `agentId` from `chatConfig.agent` so a multi-agent deployment can
+  resolve per conversation, and the banner keys its copy on the
+  entitlement port's own refusal code rather than the HTTP one. Three
+  `route.*` message keys are new: `attachmentRejected`, `notFound`,
+  `billingNotConfigured`. Reinstall the item; keep your
+  `lib/chat-config.tsx`, `lib/chat-renderers.tsx` and
+  `lib/chat-server-config.ts` bindings.
+
 ### Changed
 
 - **Releases publish themselves.** A release is one commit — every

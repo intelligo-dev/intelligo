@@ -47,6 +47,7 @@
     "@astrojs/check": "^0.9.10",
     "@intelligo-dev/auth": "workspace:*",
     "@intelligo-dev/billing": "workspace:*",
+    "@intelligo-dev/chat": "workspace:*",
     "@intelligo-dev/core": "workspace:*",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
