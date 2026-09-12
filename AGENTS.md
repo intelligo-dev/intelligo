@@ -4,9 +4,9 @@
 
 **Intelligo** — open-source **application framework and operational platform** for vertical AI SaaS products (NOT a starter kit, NOT another AI framework). Turborepo monorepo with pnpm workspaces: the framework packages, the shadcn-compatible page registry, and a reference application that is the registry's canonical installed result.
 
-This repository is the framework's home. It is edited here, and every workspace under `packages/` is released to npm as `@intelligo-dev/*` from a version tag: bump the versions, `git tag vX.Y.Z && git push origin vX.Y.Z`, and `.github/workflows/release.yml` publishes under the dist-tag the version implies (`1.0.0-beta.N` → `beta`, a plain `1.0.0` → `latest`). `apps/site` deploys intelligo.dev and serves the page registry at `/r`. Products built on the framework live in their own repositories and consume the npm packages; nothing product-specific belongs here (`tests/architecture/publishability.test.ts` enforces it).
+This repository is the framework's home. It is edited here, and every workspace under `packages/` is released to npm as `@intelligo-dev/*` by **one release commit**: bump every published manifest to the new version and head `CHANGELOG.md` with a `## [X.Y.Z]` section. Merging it to main runs `.github/workflows/release.yml`, which builds, runs the full suite, publishes under the dist-tag the version implies (`1.0.0-beta.N` → `beta`, a plain `1.0.0` → `latest`), pushes the `vX.Y.Z` tag, creates the GitHub release from that changelog section and applies `scripts/npm-deprecations.json`. A version with no changelog section does not release. `apps/site` deploys intelligo.dev and serves the page registry at `/r`. Products built on the framework live in their own repositories and consume the npm packages; nothing product-specific belongs here (`tests/architecture/publishability.test.ts` enforces it).
 
-**Decisions:** [docs/adr/](docs/adr/README.md) — read ADR-0003 (AI frameworks stay native), ADR-0005 (composition root), ADR-0007 (execution boundary), ADR-0009 (persistence contracts), ADR-0010 (i18n-native registry) before changing anything they cover.
+**Decisions:** [docs/adr/](docs/adr/README.md) — read ADR-0003 (AI frameworks stay native), ADR-0005 (composition root), ADR-0007 (execution boundary), ADR-0009 (persistence contracts), ADR-0010 (i18n-native registry), ADR-0011 (package topology), ADR-0012 (headless chat transport) before changing anything they cover.
 
 ## The boundary (read before writing code)
 
@@ -47,21 +47,22 @@ A private workspace (`@intelligo-dev/registry`, never published): `registry.json
 
 ### Packages
 
-| Package                       | Responsibility                                                                                                                                        |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@intelligo-dev/core`         | DB schema (Drizzle + Neon + pgvector), email, logger, env, notifications, **conversations, documents, identity** (ADR-0009)                           |
-| `@intelligo-dev/auth`         | Better-Auth multi-tenant workspaces, RBAC, `requireAuth/Workspace/Role`, typed `orgApi`, **team / workspace / profile / onboarding services** (ports) |
-| `@intelligo-dev/billing-core` | Plan definitions, plan registry, payment provider interface                                                                                           |
-| `@intelligo-dev/billing`      | Quota engine, credits, Stripe, feature gates, trials, rate limiting, **checkout + billing-overview service**                                          |
-| `@intelligo-dev/executions`   | Execution lifecycle via ports (`createExecutions`), queries, `/pricing` model registry + cost math                                                    |
-| `@intelligo-dev/audit`        | Append-only audit events + memory-audit contract                                                                                                      |
-| `@intelligo-dev/jobs`         | Postgres-backed job queue                                                                                                                             |
-| `@intelligo-dev/mastra`       | Optional bridge from a native agent to the execution boundary                                                                                         |
-| `@intelligo-dev/admin`        | Operational console (Intelligo-owned, excluded from the registry)                                                                                     |
-| `@intelligo-dev/cli`          | `create` / `add` / `doctor` / `migrate --check` / `upgrade --check`; scaffold is registry-ready (shadcn + Tailwind 4 + next-intl + composition root)  |
-| `@intelligo-dev/ui`           | Legacy design system — still used by admin; **not** part of the page contract                                                                         |
+| Package                     | Responsibility                                                                                                                                                                                              |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@intelligo-dev/core`       | DB schema (Drizzle + Neon + pgvector), email, logger, env, notifications, **conversations, documents, identity** (ADR-0009); dependency-free leaves `/registry`, `/money`, `/request-context`               |
+| `@intelligo-dev/auth`       | Better-Auth multi-tenant workspaces, RBAC, `requireAuth/Workspace/Role`, typed `orgApi`, **team / workspace / profile / onboarding services** (ports)                                                       |
+| `@intelligo-dev/next`       | The one package that imports `next/*`: `nextRequestContext` (bound from the composition root) and `/auth` (Better-Auth's route handlers)                                                                    |
+| `@intelligo-dev/billing`    | Quota engine, credits, Stripe, feature gates, trials, rate limiting, **checkout + billing-overview service**; `/plans`, `/plan-registry`, `/payment`, `/quota-types` reach neither Stripe nor `server-only` |
+| `@intelligo-dev/chat`       | The AI-SDK-native chat transport: `createChatHandler(config)` → `{ POST, DELETE }` over Web `Request`/`Response`; `/client` for the UI, `/testing` for the stub model (ADR-0012)                            |
+| `@intelligo-dev/executions` | Execution lifecycle via ports (`createExecutions`), queries, `/pricing` model registry + cost math                                                                                                          |
+| `@intelligo-dev/audit`      | Append-only audit events + memory-audit contract                                                                                                                                                            |
+| `@intelligo-dev/jobs`       | Postgres-backed job queue                                                                                                                                                                                   |
+| `@intelligo-dev/mastra`     | Optional bridge from a native agent to the execution boundary                                                                                                                                               |
+| `@intelligo-dev/admin`      | Operational console (Intelligo-owned, excluded from the registry)                                                                                                                                           |
+| `@intelligo-dev/cli`        | `create` / `add` / `doctor` / `migrate --check` / `upgrade --check`; scaffold is registry-ready (shadcn + Tailwind 4 + next-intl + composition root)                                                        |
+| `@intelligo-dev/ui`         | Legacy design system — still used by admin; **not** part of the page contract                                                                                                                               |
 
-Every workspace under `packages/` is published; `tests/architecture/publishability.test.ts` audits the tree for it (licence metadata, no credentials, no product vocabulary).
+Every workspace under `packages/` is published except `packages/registry` (`private: true`); `tests/architecture/publishability.test.ts` audits the tree for it (licence metadata, no credentials, no product vocabulary). **One package per runtime target / peer dependency / adapter; shared pure-TypeScript modules are subpaths** (ADR-0011) — `money`, `http` and `billing-core` were folded under that rule.
 
 ### Apps
 
@@ -70,18 +71,18 @@ Every workspace under `packages/` is published; `tests/architecture/publishabili
 
 ## API Layer
 
-Server Actions are thin transports over package services (installed `actions/*`): parse → service → map typed error (`TeamServiceError` etc.) to the UI shape → revalidate. Route handlers: `/api/chat` (the registry chat item's generic transport — windowing, `executions.begin()`), `/api/assistant`, `/api/auth/[...all]`, `/api/webhooks/stripe`.
+Server Actions are thin transports over package services (installed `actions/*`): parse → service → map typed error (`TeamServiceError` etc.) to the UI shape → revalidate. Route handlers: `/api/chat` (two lines: `createChatHandler(chatServerConfig)` from `@intelligo-dev/chat` — auth, rate limit, feature gate, windowing, `executions.begin()`, persistence), `/api/assistant`, `/api/auth/[...all]` (`@intelligo-dev/next/auth`), `/api/webhooks/stripe`.
 
 ## Key Patterns
 
-- **Ports over dependencies** — services take ports (`checkMemberLimit`, `onAccountDeleted`, `checkEntitlement`…); consumers bind them in `lib/*.ts`. auth never imports billing; core imports nothing.
+- **Ports over dependencies** — services take ports (`checkMemberLimit`, `onAccountDeleted`, `checkEntitlement`…); consumers bind them in `lib/*.ts`. auth never imports billing; core imports nothing; only `next` imports `next/*` (the request's headers reach the framework through `core/request-context`, bound once from the composition root).
 - **Model ids are registry keys** — every provider-prefixed literal must exist in `MODEL_CONFIGS` (`@intelligo-dev/executions/pricing`). Unregistered ids silently run on the fallback model and bill wrongly; an architecture test enforces registration.
 - **Tenant scoping** — every query filters `workspaceId` (+ `userId` where user-private); core services take resolved actor ids, transports gate with `requireWorkspace`/`requireRole` first.
 - **Optimistic middleware, authoritative server** — middleware only redirects; real checks are server-side. Middleware never touches the DB.
 - **`sessions.activeOrganizationId` exists** — workspace switching persists; always pass explicit `organizationId` to Better-Auth reads anyway.
 - **RSC boundary discipline** — never pass component/function values from a server layout to client components (nav icons live in client-imported `lib/nav-config.ts`); `"use server"` files must not `export type`; next-intl's `redirect` takes `{ href, locale }`.
 - **Platform admin is a row, not an env var** — `users.role`, seeded from `PLATFORM_ADMIN_EMAILS` on first use.
-- **Input sanitization** — user strings pass `sanitizeForSystemPrompt()` before system-prompt concatenation.
+- **Input sanitization** — anything user-authored that reaches a system prompt (a stored summary, injected profile context) is sanitised at the concatenation point. The framework ships no sanitiser; a product binds its own in the chat transport's `prepareMessages` seam.
 
 ## Conventions
 

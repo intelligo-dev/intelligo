@@ -19,7 +19,7 @@ export const FAQ = [
   },
   {
     q: "What about payments outside Stripe?",
-    a: "billing-core defines the provider contract; Stripe is one implementation. The checkout and payment-poll items cover QR and invoice flows that wait for confirmation, and every amount carries its currency.",
+    a: "billing/payment defines the provider contract; Stripe is one implementation. The checkout and payment-poll items cover QR and invoice flows that wait for confirmation, and every amount carries its currency.",
   },
   {
     q: "Why trust a small open-source project with auth and billing?",

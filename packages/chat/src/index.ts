@@ -13,7 +13,8 @@
  * records executions through `@intelligo-dev/mastra` instead.
  */
 
-export { createChatHandler, truncateTitle } from "./handler";
+export { createChatHandler } from "./handler";
+export { truncateTitle } from "./title";
 export type { ChatHandler } from "./handler";
 
 export type {

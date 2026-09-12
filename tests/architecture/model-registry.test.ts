@@ -44,7 +44,7 @@ function catalogueModelIds(): Set<string> {
     )
   );
 }
-const ROOTS = ["packages", "apps", "registry"];
+const ROOTS = ["packages", "apps"];
 
 const IGNORED_DIRS = new Set([
   "node_modules",

@@ -15,6 +15,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
@@ -333,6 +334,24 @@ describe("publishability", () => {
       ) as { private?: boolean };
       expect(pkgJson.private, `apps/${app} is not marked private`).toBe(true);
     }
+  });
+
+  it("has release notes for the version the manifests carry", () => {
+    // The release workflow refuses a version with no CHANGELOG section
+    // (scripts/release-notes.mjs). Failing here, before the merge that
+    // would publish, is the cheaper place to find out.
+    const version = JSON.parse(
+      readFileSync(path.join(PACKAGES_DIR, "core/package.json"), "utf8")
+    ).version as string;
+    const notes = execFileSync(
+      process.execPath,
+      [path.join(ROOT, "scripts/release-notes.mjs"), version],
+      { encoding: "utf8" }
+    );
+    expect(
+      notes.trim().length,
+      `CHANGELOG.md has no section for ${version}`
+    ).toBeGreaterThan(0);
   });
 
   it("ships a LICENSE and the governance documents", () => {

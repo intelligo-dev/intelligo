@@ -1,6 +1,6 @@
 # ADR-0006: Public / private / undecided package allowlists
 
-**Status:** Accepted
+**Status:** Accepted; the public allowlist and the evolution map are superseded by [ADR-0011](0011-package-topology.md). The private list and the rules below stand.
 **Date:** 2026-08-25
 **Source:** [Architecture & Improvement Plan V2](../intelligo-architecture-improvement-plan-v2.md) §2.1, §4
 
