@@ -13,6 +13,7 @@
 
 import { createRequire } from "node:module";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { addFeature, formatAddResult, readCatalogue } from "./commands/add.js";
 import { createApp, formatCreateResult } from "./commands/create.js";
@@ -36,9 +37,17 @@ import {
 
 import { MIGRATION_LOCATIONS, resolveMigrationsDir } from "./migrations-dir.js";
 
-/** Templates ship with the CLI package. */
+/**
+ * Templates ship with the CLI package.
+ *
+ * `fileURLToPath`, not `new URL(...).pathname`: on Windows the latter
+ * yields `/C:/Users/...`, which every path operation after it treats as
+ * a root-relative path that does not exist. The CLI is the first thing
+ * a new user runs, so it is the worst place to be silently
+ * platform-specific.
+ */
 const TEMPLATES_DIR = path.resolve(
-  path.dirname(new URL(import.meta.url).pathname),
+  path.dirname(fileURLToPath(import.meta.url)),
   "..",
   "templates"
 );

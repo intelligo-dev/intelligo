@@ -7,6 +7,7 @@
  */
 
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { existsSync, readFileSync } from "node:fs";
 
 import { inspectMigrationChain, readMigrationChain } from "../migrations.js";
@@ -43,7 +44,8 @@ export type RegistryRequires = {
  */
 function bundledRequires(): RegistryRequires | null {
   const file = path.resolve(
-    path.dirname(new URL(import.meta.url).pathname),
+    // fileURLToPath, not `.pathname` — see the note in bin.ts.
+    path.dirname(fileURLToPath(import.meta.url)),
     "..",
     "..",
     "templates",

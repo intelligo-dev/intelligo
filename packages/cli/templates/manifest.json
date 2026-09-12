@@ -87,8 +87,8 @@
         "target": "i18n/request.ts"
       },
       {
-        "template": "app-scaffold/middleware.ts.tpl",
-        "target": "middleware.ts"
+        "template": "app-scaffold/proxy.ts.tpl",
+        "target": "proxy.ts"
       },
       {
         "template": "app-scaffold/messages-en-app.json.tpl",
