@@ -20,12 +20,12 @@ expiry, and per-plan rate limits.
 
 ## Subpaths that import neither Stripe nor `server-only`
 
-| Subpath          | What                                                                 |
-| ---------------- | -------------------------------------------------------------------- |
-| `/plans`         | Plan types and the per-product plan helpers                          |
+| Subpath          | What                                                                          |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `/plans`         | Plan types and the per-product plan helpers                                   |
 | `/plan-registry` | Every register/clear pair: plans, features, upgrade copy, trials, rate limits |
-| `/payment`       | The payment provider contract and the mock provider                  |
-| `/quota-types`   | Quota result and admission types, no enforcement                     |
+| `/payment`       | The payment provider contract and the mock provider                           |
+| `/quota-types`   | Quota result and admission types, no enforcement                              |
 
 The four are safe to reach from a client bundle or an edge runtime. An
 architecture test walks their imports so a Stripe or `server-only` import

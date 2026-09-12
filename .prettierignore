@@ -8,4 +8,4 @@ apps/site/.astro/
 **/dist/
 **/.next/
 **/.turbo/
-registry/public/
+packages/registry/public/

@@ -27,7 +27,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { PACKAGES_DIR, listWorkspaces, walk } from "./tree";
+import { PACKAGES_DIR, listPublishedWorkspaces, walk } from "./tree";
 
 /**
  * Packages whose identity must be shared, with why — the note is the
@@ -54,7 +54,7 @@ type Manifest = {
   devDependencies?: Record<string, string>;
 };
 
-const packages = listWorkspaces(PACKAGES_DIR).map((dir) => {
+const packages = listPublishedWorkspaces(PACKAGES_DIR).map((dir) => {
   const manifest = JSON.parse(
     readFileSync(path.join(PACKAGES_DIR, dir, "package.json"), "utf8")
   ) as Manifest;

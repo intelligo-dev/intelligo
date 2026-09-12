@@ -126,6 +126,7 @@ jobs:
           fi
 
           for dir in packages/*/; do
+            if [ "$(node -p "require('./$dir/package.json').private === true")" = "true" ]; then continue; fi
             name=$(node -p "require('./$dir/package.json').name")
             (cd "$dir" && pnpm pack --pack-destination "$out" >/dev/null)
             tgz=$(ls "$out"/*.tgz | head -1)
@@ -214,11 +215,11 @@ jobs:
 
           cd apps/generated-smoke
 
-          # Install order is a topological sort of registry/requires.json
+          # Install order is a topological sort of packages/registry/requires.json
           # (an item after the items whose files it imports) — the same
           # file the architecture suite proves matches the code.
           ORDER=$(node -e '
-            const { items } = require(process.env.GITHUB_WORKSPACE + "/registry/requires.json");
+            const { items } = require(process.env.GITHUB_WORKSPACE + "/packages/registry/requires.json");
             const out = [], done = new Set();
             const visit = (n) => { if (done.has(n)) return; done.add(n); for (const d of items[n].items ?? []) visit(d); out.push(n); };
             for (const n of Object.keys(items)) visit(n);
@@ -227,7 +228,7 @@ jobs:
 
           echo "installing: $ORDER"
           for item in $ORDER; do
-            pnpm exec shadcn add "$GITHUB_WORKSPACE/registry/public/r/$item.json" --yes --overwrite
+            pnpm exec shadcn add "$GITHUB_WORKSPACE/packages/registry/public/r/$item.json" --yes --overwrite
           done
           cd "$GITHUB_WORKSPACE"
           pnpm install --no-frozen-lockfile
@@ -251,7 +252,7 @@ jobs:
           echo "registry smoke page answered $code"
           test "$code" = "200"
 
-      # apps/site serves registry/public/r as intelligo.dev/r and renders
+      # apps/site serves packages/registry/public/r as intelligo.dev/r and renders
       # the items' real components, both as committed copies made by
       # `sync`. A registry change without a re-sync would deploy a stale
       # registry. proof.json is excluded: its sampled date is refreshed

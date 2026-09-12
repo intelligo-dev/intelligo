@@ -41,6 +41,18 @@ it explains a framework decision.
   an architecture test walks their imports to keep it so. `/plans` and
   `/payment` already existed as re-exports; the other two are new.
 
+### Changed
+
+- **The page registry is the private workspace `packages/registry`.**
+  It was a top-level directory outside every workspace: not in turbo,
+  not linted by `pnpm lint`, never type-checked in place. It is now
+  `@intelligo-dev/registry` with `private: true` — where a Turborepo
+  keeps tooling workspaces — with `build` (shadcn) and `lint` tasks of
+  its own. The architecture rules that assumed everything under
+  `packages/` ships to npm now read `private`, as `pnpm publish -r`
+  already did. Item source, `registry.json` and `requires.json` are
+  unchanged; only the path moved.
+
 ## [1.0.0-beta.4] — 2026-09-12
 
 The first release aimed at the second product rather than the first.

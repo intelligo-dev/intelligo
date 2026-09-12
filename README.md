@@ -58,7 +58,7 @@ pnpm exec tsx packages/cli/src/bin.ts create apps/my-app --link-workspace
 pnpm install && pnpm registry:build
 
 cd apps/my-app
-pnpm exec shadcn add "$PWD/../../registry/public/r/app-shell.json" --yes   # repeat per item
+pnpm exec shadcn add "$PWD/../../packages/registry/public/r/app-shell.json" --yes   # repeat per item
 ```
 
 Set `DATABASE_URL` and `BETTER_AUTH_SECRET` in `.env`, then `pnpm db:push` and `pnpm dev`. The chat page streams against a built-in stub model, so the entire surface — sign-up, verification, workspaces, team, billing, usage, chat, artifacts — runs before you configure an AI provider.
@@ -143,7 +143,7 @@ Three rules make installed pages hold up over time:
 - **Architecture as failing tests, not documents**: dependency direction, tenant scoping, registry hygiene (no private imports, every dependency declared), and model-id registration all break the build when violated.
 
 ```text
-registry/          page registry: registry.json + item source (built with `pnpm registry:build`)
+packages/registry/ page registry: registry.json + item source, a private workspace (built with `pnpm registry:build`)
 packages/          auth · billing · billing-core · core · executions · audit · jobs · admin · mastra · cli · ui
 apps/app           the reference application — the registry's canonical installed result
 apps/site          intelligo.dev — the public site, which also serves the registry at /r

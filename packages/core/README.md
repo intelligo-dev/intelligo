@@ -14,20 +14,20 @@ pnpm add @intelligo-dev/core
 
 ## Exports
 
-| Subpath          | What                                                   |
-| ---------------- | ------------------------------------------------------ |
-| `/db`            | Drizzle client and the workspace-scoped query helpers  |
-| `/db/schema`     | Every framework table                                  |
-| `/conversations` | Conversation and message persistence (ADR-0009)        |
-| `/documents`     | Document persistence and the title classifier          |
-| `/identity`      | The identity graph: facts, memories, profile snapshots |
-| `/email`         | Transactional email and its templates                  |
-| `/notifications` | In-app notification records and triggers               |
-| `/logger`        | Structured logging with credential redaction           |
-| `/registry`      | Registries that survive a bundler duplicating a module |
-| `/money`         | Amount-plus-currency value object in micros; imports nothing |
+| Subpath            | What                                                                       |
+| ------------------ | -------------------------------------------------------------------------- |
+| `/db`              | Drizzle client and the workspace-scoped query helpers                      |
+| `/db/schema`       | Every framework table                                                      |
+| `/conversations`   | Conversation and message persistence (ADR-0009)                            |
+| `/documents`       | Document persistence and the title classifier                              |
+| `/identity`        | The identity graph: facts, memories, profile snapshots                     |
+| `/email`           | Transactional email and its templates                                      |
+| `/notifications`   | In-app notification records and triggers                                   |
+| `/logger`          | Structured logging with credential redaction                               |
+| `/registry`        | Registries that survive a bundler duplicating a module                     |
+| `/money`           | Amount-plus-currency value object in micros; imports nothing               |
 | `/request-context` | Where the framework reads the request's headers from; bound by the adapter |
-| `/env`           | Environment validation                                 |
+| `/env`             | Environment validation                                                     |
 
 ## Migrations
 

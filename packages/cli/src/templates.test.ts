@@ -23,9 +23,21 @@ const TEMPLATES_DIR = path.resolve(__dirname, "..", "templates");
 /** The `@intelligo-dev/*` names a consumer can resolve: what this repository publishes. */
 const PUBLISHED = new Set(
   readdirSync(path.resolve(__dirname, "..", ".."))
-    .filter((name) =>
-      existsSync(path.resolve(__dirname, "..", "..", name, "package.json"))
-    )
+    .filter((name) => {
+      const manifest = path.resolve(
+        __dirname,
+        "..",
+        "..",
+        name,
+        "package.json"
+      );
+      if (!existsSync(manifest)) return false;
+      // `packages/registry` is a private workspace, not an npm name.
+      return (
+        (JSON.parse(readFileSync(manifest, "utf8")) as { private?: boolean })
+          .private !== true
+      );
+    })
     .map((name) => `@intelligo-dev/${name}`)
 );
 const catalogue = readCatalogue(TEMPLATES_DIR);

@@ -14,8 +14,8 @@ pnpm --filter site type-check # astro check
 Everything the site says about the framework — the registry items, the test/ADR/page counts, the published version — is pulled from the repository the site lives in by one script and **committed**, so a deploy needs nothing but this directory and the site cannot list a page that does not exist:
 
 ```bash
-pnpm registry:build           # repository root: build the items into registry/public/r
-pnpm --filter site sync       # reads ../../registry, ../../packages, ../../apps/app;
+pnpm registry:build           # repository root: build the items into packages/registry/public/r
+pnpm --filter site sync       # reads ../../packages/registry, ../../packages, ../../apps/app;
                               # override the root with INTELLIGO_FRAMEWORK_DIR
 ```
 

@@ -8,7 +8,7 @@
  *   INTELLIGO_FRAMEWORK_DIR=… pnpm sync
  *
  * Writes:
- *   src/data/registry.json   the framework's registry.json, verbatim
+ *   src/data/registry.json   packages/registry/registry.json, verbatim
  *   src/data/proof.json      counts (tests, items, ADRs, packages) and the version
  *   public/r/*.json          the built registry items — intelligo.dev/r/<item>.json
  *                            is the hosted registry consumers install from
@@ -33,7 +33,7 @@ const FRAMEWORK = resolve(
   process.env.INTELLIGO_FRAMEWORK_DIR ?? join(SITE, "../..")
 );
 
-if (!existsSync(join(FRAMEWORK, "registry/registry.json"))) {
+if (!existsSync(join(FRAMEWORK, "packages/registry/registry.json"))) {
   console.error(
     `No framework checkout at ${FRAMEWORK} (set INTELLIGO_FRAMEWORK_DIR).`
   );
@@ -54,14 +54,14 @@ function walk(dir, out = []) {
 
 // --- registry -------------------------------------------------------------
 const registryJson = readFileSync(
-  join(FRAMEWORK, "registry/registry.json"),
+  join(FRAMEWORK, "packages/registry/registry.json"),
   "utf8"
 );
 mkdirSync(join(SITE, "src/data"), { recursive: true });
 writeFileSync(join(SITE, "src/data/registry.json"), registryJson);
 const registry = JSON.parse(registryJson);
 
-const built = join(FRAMEWORK, "registry/public/r");
+const built = join(FRAMEWORK, "packages/registry/public/r");
 if (existsSync(built)) {
   rmSync(join(SITE, "public/r"), { recursive: true, force: true });
   cpSync(built, join(SITE, "public/r"), { recursive: true });
@@ -89,9 +89,14 @@ const adrs = readdirSync(join(FRAMEWORK, "docs/adr")).filter((f) =>
   /^\d{4}-.*\.md$/.test(f)
 ).length;
 const registryItems = registry.items.filter((i) => i.name !== "smoke").length;
-const packages = readdirSync(join(FRAMEWORK, "packages")).filter((p) =>
-  existsSync(join(FRAMEWORK, "packages", p, "package.json"))
-).length;
+// Published packages only: packages/registry is a private workspace.
+const packages = readdirSync(join(FRAMEWORK, "packages")).filter((p) => {
+  const manifest = join(FRAMEWORK, "packages", p, "package.json");
+  return (
+    existsSync(manifest) &&
+    JSON.parse(readFileSync(manifest, "utf8")).private !== true
+  );
+}).length;
 const version = JSON.parse(
   readFileSync(join(FRAMEWORK, "packages/core/package.json"), "utf8")
 ).version;
@@ -196,7 +201,7 @@ for (const name of SHOWCASE_ITEMS) {
       !["registry:component", "registry:hook", "registry:file"].includes(type)
     )
       continue;
-    const source = join(FRAMEWORK, "registry", relPath);
+    const source = join(FRAMEWORK, "packages/registry", relPath);
     if (/\.(ts|tsx)$/.test(target)) {
       const text = readFileSync(source, "utf8");
       if (SERVER_MARKERS.some((m) => text.includes(m))) continue;

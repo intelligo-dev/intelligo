@@ -2,7 +2,8 @@
  * Registry structural and boundary rules (Phase 1 of the page/registry
  * migration — docs/intelligo-page-registry-migration-plan.md §3-4).
  *
- * The registry (`registry/`) ships shadcn-compatible page/component
+ * The registry (`packages/registry/`, a private workspace) ships
+ * shadcn-compatible page/component
  * source that becomes ordinary consumer-owned source once installed.
  * Nothing in it may import a package this repository does not publish,
  * a dissolved package, or `@intelligo-dev/ui` (a duplicate runtime
@@ -24,9 +25,14 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
-import { DISSOLVED_PACKAGES, PACKAGES_DIR, ROOT, listWorkspaces } from "./tree";
+import {
+  DISSOLVED_PACKAGES,
+  PACKAGES_DIR,
+  ROOT,
+  listPublishedWorkspaces,
+} from "./tree";
 
-const REGISTRY_DIR = path.join(ROOT, "registry");
+const REGISTRY_DIR = path.join(PACKAGES_DIR, "registry");
 const BASE_DIR = path.join(REGISTRY_DIR, "base");
 const REGISTRY_JSON_PATH = path.join(REGISTRY_DIR, "registry.json");
 
@@ -243,7 +249,9 @@ describe("registry", () => {
     const dissolved: readonly string[] = DISSOLVED_PACKAGES;
     /** The only `@intelligo-dev/*` names a consumer can resolve from npm. */
     const published = new Set(
-      listWorkspaces(PACKAGES_DIR).map((pkg) => `@intelligo-dev/${pkg}`)
+      listPublishedWorkspaces(PACKAGES_DIR).map(
+        (pkg) => `@intelligo-dev/${pkg}`
+      )
     );
 
     it("has a dissolved set and a published set to rule on", () => {

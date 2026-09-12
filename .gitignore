@@ -49,5 +49,5 @@ apps/web/tsconfig.tsbuildinfo
 apps/generated-smoke/
 
 # Registry build output (shadcn `registry:build`); regenerated from
-# registry/base/** and never committed.
-registry/public/
+# packages/registry/base/** and never committed.
+packages/registry/public/

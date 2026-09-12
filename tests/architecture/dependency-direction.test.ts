@@ -27,6 +27,7 @@ import {
   ROOT,
   importSpecifiers,
   intelligoPackage,
+  listPublishedWorkspaces,
   listWorkspaces,
   walk,
 } from "./tree";
@@ -100,7 +101,10 @@ function declaredIntelligoDeps(manifestPath: string): string[] {
   }).filter((name) => name.startsWith("@intelligo-dev/"));
 }
 
-const packages = listWorkspaces(PACKAGES_DIR);
+// Published packages only. `packages/registry` is item source that
+// imports `@/…` and every package on purpose; its imports are ruled on
+// item by item in registry.test.ts, not as a package edge.
+const packages = listPublishedWorkspaces(PACKAGES_DIR);
 const apps = listWorkspaces(APPS_DIR);
 
 /** What this repository publishes: the only `@intelligo-dev/*` names that resolve. */

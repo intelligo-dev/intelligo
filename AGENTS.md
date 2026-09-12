@@ -12,8 +12,8 @@ This repository is the framework's home. It is edited here, and every workspace 
 
 - Intelligo owns SaaS infrastructure: auth, workspaces/RBAC, entitlements, credits, billing, execution/usage/cost/audit records, conversation/document/identity persistence (ADR-0009), jobs, admin console, CLI, and the page registry.
 - The developer owns the product: the AI framework used **natively** (no universal agent abstractions — ADR-0003), prompts, tools, workflows, product data, and every installed page as **consumer-owned source**.
-- **Pages ship through the registry, not through packages.** `registry/` holds the source of the shadcn-schema items; `pnpm registry:build` emits `registry/public/r/*.json`, which `apps/site` publishes at `intelligo.dev/r/<item>.json`; consumers install with the standard shadcn CLI. No runtime UI package is required to render them.
-- **Installed items are used verbatim (ADR-0010).** Product variance flows only through consumer-owned config: `lib/shell-config.tsx` (banner, header-right), `lib/nav-config.ts`, `lib/chat-config.tsx` (agent identity, starters, headerRight, auto-continue), `lib/chat-renderers.tsx`, `lib/onboarding-steps.ts`, `lib/billing-config.ts` (product slug, credit bundles), `lib/workspace-bootstrap.ts`, `lib/document-patterns.ts` — and message files. Never edit an installed component; grow a seam in `registry/base/` instead.
+- **Pages ship through the registry, not through packages.** `packages/registry/` (a private workspace, never published) holds the source of the shadcn-schema items; `pnpm registry:build` emits `packages/registry/public/r/*.json`, which `apps/site` publishes at `intelligo.dev/r/<item>.json`; consumers install with the standard shadcn CLI. No runtime UI package is required to render them.
+- **Installed items are used verbatim (ADR-0010).** Product variance flows only through consumer-owned config: `lib/shell-config.tsx` (banner, header-right), `lib/nav-config.ts`, `lib/chat-config.tsx` (agent identity, starters, headerRight, auto-continue), `lib/chat-renderers.tsx`, `lib/onboarding-steps.ts`, `lib/billing-config.ts` (product slug, credit bundles), `lib/workspace-bootstrap.ts`, `lib/document-patterns.ts` — and message files. Never edit an installed component; grow a seam in `packages/registry/base/` instead.
 - **Items are i18n-native (ADR-0010).** Copy lives in per-item next-intl namespaces (`messages/en/<item>.json`, namespace = item name); page targets are `app/[locale]/...`; navigation goes through the consumer's `@/i18n/navigation`. Adding a language = adding `messages/<locale>/*.json`.
 - No product vocabulary inside a framework package. A change that needs one is a missing registry or port, and that is the better pull request.
 - Import-side-effect registration is banned (ADR-0005); registries are populated from an explicit composition root. Business logic lives in package services behind ports; Server Actions and Route Handlers are thin callers.
@@ -28,10 +28,10 @@ pnpm test             # Vitest (root projects config — the real suite)
 pnpm vitest run path/to/file.test.ts
 
 # Registry
-pnpm registry:build   # shadcn build → registry/public/r/*.json
+pnpm registry:build   # shadcn build → packages/registry/public/r/*.json
 # Install an item (run INSIDE the consumer app, absolute artifact path —
 # relative paths trip shadcn 3.8's unsafe-path check on (group)/ targets):
-cd apps/app && pnpm exec shadcn add "$PWD/../../registry/public/r/<item>.json" --yes
+cd apps/app && pnpm exec shadcn add "$PWD/../../packages/registry/public/r/<item>.json" --yes
 
 # Database (drizzle-kit reads the repository-root .env)
 pnpm db:push | db:generate | db:migrate | db:studio | db:check
@@ -41,9 +41,9 @@ Env: workspace apps load the **repository root `.env`** as fallback (app-local `
 
 ## Monorepo Layout
 
-### Registry (`registry/`)
+### Registry (`packages/registry/`)
 
-`registry.json` (official shadcn schema) + `base/<item>/**` source; build output `registry/public/r/` is gitignored. Items: smoke, app-shell, dashboard, auth-login/signup/password-reset/email-verification, onboarding, invitation-accept, workspace/team/profile/privacy-settings, pricing, checkout, billing-settings, usage, notifications, chat, artifacts, route-error. `tests/architecture/registry.test.ts` enforces: schema shape, no orphans, no unpublished/dissolved/`@intelligo-dev/ui` imports, declared `@intelligo-dev/*` dependencies.
+A private workspace (`@intelligo-dev/registry`, never published): `registry.json` (official shadcn schema) + `base/<item>/**` source; build output `public/r/` is gitignored; `lint` runs with the rest of the tree. Items: smoke, app-shell, dashboard, auth-login/signup/password-reset/email-verification, onboarding, invitation-accept, workspace/team/profile/privacy-settings, pricing, checkout, billing-settings, usage, notifications, chat, artifacts, route-error. `tests/architecture/registry.test.ts` enforces: schema shape, no orphans, no unpublished/dissolved/`@intelligo-dev/ui` imports, declared `@intelligo-dev/*` dependencies.
 
 ### Packages
 

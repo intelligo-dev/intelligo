@@ -73,6 +73,18 @@
         "astro.config.*"
       ],
       "dependsOn": ["^type-check"]
+    },
+    "@intelligo-dev/registry#build": {
+      "dependsOn": [],
+      "inputs": ["registry.json", "base/**"],
+      "outputs": ["public/r/**"]
+    },
+    "@intelligo-dev/registry#lint": {
+      "inputs": ["registry.json", "base/**"]
+    },
+    "sync": {
+      "cache": false,
+      "dependsOn": ["@intelligo-dev/registry#build"]
     }
   }
 }

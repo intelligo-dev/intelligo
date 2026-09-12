@@ -1,4 +1,4 @@
-import { readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
 /** The repository root. */
@@ -58,6 +58,21 @@ export function listWorkspaces(dir: string): string[] {
   } catch {
     return [];
   }
+}
+
+/**
+ * The workspaces under `dir` that ship to npm: every one not marked
+ * `private`. `packages/registry` is the private one — item source the
+ * toolchain owns, installed through shadcn rather than resolved from a
+ * registry — and no rule about a published package applies to it.
+ */
+export function listPublishedWorkspaces(dir: string): string[] {
+  return listWorkspaces(dir).filter((name) => {
+    const manifest = JSON.parse(
+      readFileSync(path.join(dir, name, "package.json"), "utf8")
+    ) as { private?: boolean };
+    return manifest.private !== true;
+  });
 }
 
 /** Every file under `dir` whose name matches `accept`, skipping build output. */

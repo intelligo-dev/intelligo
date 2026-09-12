@@ -596,6 +596,15 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  packages/registry:
+    devDependencies:
+      eslint:
+        specifier: ^9.19.0
+        version: 9.39.2(jiti@2.7.0)
+      shadcn:
+        specifier: ^3.8.4
+        version: 3.8.4(@types/node@24.13.3)(typescript@5.9.3)
+
   packages/ui:
     dependencies:
       '@radix-ui/react-alert-dialog':

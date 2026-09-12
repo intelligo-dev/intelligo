@@ -1,0 +1,16 @@
+{
+  "name": "@intelligo-dev/registry",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Source of the Intelligo page registry. Never published: items install as consumer-owned source through the shadcn CLI (ADR-0002, ADR-0010).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "shadcn build ./registry.json --output ./public/r",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "^9.19.0",
+    "shadcn": "^3.8.4"
+  }
+}

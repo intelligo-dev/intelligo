@@ -71,8 +71,7 @@ vi.mock("./notifications", () => ({
   checkNotificationTriggers: mocks.checkNotificationTriggers,
 }));
 vi.mock("./quota-plan", async () => {
-  const { BillingNotConfiguredError } =
-    await import("./plan-registry");
+  const { BillingNotConfiguredError } = await import("./plan-registry");
   return {
     // free plan: 2000₮ monthly allowance; "unconfigured" simulates a
     // deployment whose composition root never registered a product.
