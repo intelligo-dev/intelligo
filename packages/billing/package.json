@@ -29,8 +29,7 @@
   "dependencies": {
     "@intelligo-dev/billing-core": "workspace:*",
     "@intelligo-dev/core": "workspace:*",
-    "@intelligo-dev/executions": "workspace:*",
-    "server-only": "^0.0.1"
+    "@intelligo-dev/executions": "workspace:*"
   },
   "peerDependencies": {
     "drizzle-orm": "^0.45.1",
@@ -46,7 +45,10 @@
     "zod": "^3.24.1"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md",
+    "!dist/**/*.tsbuildinfo"
   ],
   "publishConfig": {
     "access": "public",
@@ -72,5 +74,9 @@
         "default": "./dist/quota.js"
       }
     }
-  }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false
 }

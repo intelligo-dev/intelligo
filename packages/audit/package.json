@@ -31,7 +31,10 @@
     "typescript": "^5.7.2"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md",
+    "!dist/**/*.tsbuildinfo"
   ],
   "publishConfig": {
     "access": "public",
@@ -48,5 +51,9 @@
   },
   "peerDependencies": {
     "drizzle-orm": "^0.45.1"
-  }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false
 }

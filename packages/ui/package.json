@@ -60,7 +60,10 @@
   },
   "files": [
     "dist",
-    "src/tokens.css"
+    "src/tokens.css",
+    "LICENSE",
+    "README.md",
+    "!dist/**/*.tsbuildinfo"
   ],
   "publishConfig": {
     "access": "public",
@@ -75,5 +78,11 @@
       },
       "./src/tokens.css": "./src/tokens.css"
     }
-  }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ]
 }

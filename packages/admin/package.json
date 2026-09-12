@@ -45,7 +45,10 @@
     "react-dom": ">=19"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md",
+    "!dist/**/*.tsbuildinfo"
   ],
   "publishConfig": {
     "access": "public",
@@ -63,5 +66,8 @@
         "default": "./dist/health.js"
       }
     }
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

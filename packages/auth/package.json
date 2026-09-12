@@ -46,7 +46,10 @@
     "dist",
     "src",
     "!src/**/*.test.ts",
-    "!src/**/*.test.tsx"
+    "!src/**/*.test.tsx",
+    "LICENSE",
+    "README.md",
+    "!dist/**/*.tsbuildinfo"
   ],
   "publishConfig": {
     "access": "public",
@@ -68,5 +71,8 @@
         "default": "./dist/next.js"
       }
     }
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

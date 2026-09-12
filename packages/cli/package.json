@@ -34,7 +34,10 @@
   },
   "files": [
     "dist",
-    "templates"
+    "templates",
+    "LICENSE",
+    "README.md",
+    "!dist/**/*.tsbuildinfo"
   ],
   "publishConfig": {
     "access": "public",
@@ -44,5 +47,9 @@
         "default": "./dist/index.js"
       }
     }
-  }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false
 }

@@ -33,7 +33,10 @@
     "zod": "^3.24.1"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md",
+    "!dist/**/*.tsbuildinfo"
   ],
   "publishConfig": {
     "access": "public",
@@ -55,5 +58,9 @@
   "peerDependencies": {
     "drizzle-orm": "^0.45.1",
     "zod": "^3.24.1"
-  }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false
 }
