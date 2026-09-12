@@ -27,7 +27,7 @@ const APP_PATTERNS = [
  * Packages ADR-0008 dissolved. The same list as
  * `tests/architecture/tree.ts`; nothing in the tree may point at one.
  */
-const DISSOLVED_PATTERNS = ["ai", "agents", "chat"].map((name) => ({
+const DISSOLVED_PATTERNS = ["ai", "agents"].map((name) => ({
   group: [`@intelligo-dev/${name}`, `@intelligo-dev/${name}/*`],
   message: `@intelligo-dev/${name} was dissolved (ADR-0008) and is not published; nothing on npm resolves it.`,
 }));

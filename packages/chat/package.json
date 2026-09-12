@@ -1,0 +1,67 @@
+{
+  "name": "@intelligo-dev/chat",
+  "version": "1.0.0-beta.4",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/intelligo-mn/framework.git",
+    "directory": "packages/chat"
+  },
+  "homepage": "https://github.com/intelligo-mn/framework#readme",
+  "bugs": {
+    "url": "https://github.com/intelligo-mn/framework/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/fix-esm-extensions.mjs dist",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@intelligo-dev/auth": "workspace:*",
+    "@intelligo-dev/billing": "workspace:*",
+    "@intelligo-dev/core": "workspace:*",
+    "@intelligo-dev/executions": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ai": "^6.0.77",
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "!dist/**/*.tsbuildinfo"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./client": {
+        "types": "./dist/client.d.ts",
+        "default": "./dist/client.js"
+      },
+      "./testing": {
+        "types": "./dist/testing.d.ts",
+        "default": "./dist/testing.js"
+      }
+    }
+  },
+  "peerDependencies": {
+    "ai": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false
+}

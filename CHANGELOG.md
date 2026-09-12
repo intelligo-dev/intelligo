@@ -41,6 +41,21 @@ it explains a framework decision.
   an architecture test walks their imports to keep it so. `/plans` and
   `/payment` already existed as re-exports; the other two are new.
 
+### Added
+
+- **`@intelligo-dev/chat`** — the AI-SDK-native chat transport as a
+  package: `createChatHandler(config)` returns `{ POST, DELETE }` over
+  Web `Request`/`Response`. The registry's `chat` item shipped this as a
+  434-line Route Handler consumers install verbatim and may not edit —
+  which is a function, not template source. The seams a real product
+  had forked the route to get are now config: `resolveAgent`,
+  `prepareMessages`, `attachments`, `reasoning`, an async `deriveTitle`,
+  `persist`, `onTurn` telemetry and a localised `messages` translator.
+  It also persists the user's turn, which the route never did: without
+  `originalMessages`, `createUIMessageStream`'s `onFinish` sees only
+  the reply. The name was on ADR-0008's dissolved list; ADR-0012
+  reuses it for the part of the old package that was never UI.
+
 ### Changed
 
 - **The page registry is the private workspace `packages/registry`.**

@@ -440,6 +440,31 @@ importers:
         specifier: ^3.24.1
         version: 3.25.76
 
+  packages/chat:
+    dependencies:
+      '@intelligo-dev/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@intelligo-dev/billing':
+        specifier: workspace:*
+        version: link:../billing
+      '@intelligo-dev/core':
+        specifier: workspace:*
+        version: link:../core
+      '@intelligo-dev/executions':
+        specifier: workspace:*
+        version: link:../executions
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.18
+      ai:
+        specifier: ^6.0.77
+        version: 6.0.77(zod@4.3.6)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/cli:
     dependencies:
       pg:
@@ -7467,6 +7492,13 @@ snapshots:
       '@vercel/oidc': 3.1.0
       zod: 3.25.76
 
+  '@ai-sdk/gateway@3.0.39(zod@4.3.6)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.14(zod@4.3.6)
+      '@vercel/oidc': 3.1.0
+      zod: 4.3.6
+
   '@ai-sdk/provider-utils@3.0.30(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 2.0.3
@@ -7480,6 +7512,13 @@ snapshots:
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.1.1
       zod: 3.25.76
+
+  '@ai-sdk/provider-utils@4.0.14(zod@4.3.6)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@standard-schema/spec': 1.1.0
+      eventsource-parser: 3.1.1
+      zod: 4.3.6
 
   '@ai-sdk/provider-utils@4.0.40(zod@4.3.6)':
     dependencies:
@@ -11198,6 +11237,14 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.14(zod@3.25.76)
       '@opentelemetry/api': 1.9.0
       zod: 3.25.76
+
+  ai@6.0.77(zod@4.3.6):
+    dependencies:
+      '@ai-sdk/gateway': 3.0.39(zod@4.3.6)
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.14(zod@4.3.6)
+      '@opentelemetry/api': 1.9.0
+      zod: 4.3.6
 
   ajv-draft-04@1.0.0(ajv@8.20.0):
     optionalDependencies:

@@ -11,11 +11,15 @@ export const APPS_DIR = path.join(ROOT, "apps");
  * Packages ADR-0008 dissolved. They no longer exist anywhere, and no
  * package, application or registry item may declare or import one —
  * a consumer would find nothing on npm to resolve it to.
+ *
+ * `@intelligo-dev/chat` was on this list until ADR-0012 reused the name
+ * for the headless chat transport: the UI ADR-0008 dissolved retired
+ * into the registry, and the package that exists now is the part that
+ * was never UI.
  */
 export const DISSOLVED_PACKAGES = [
   "@intelligo-dev/ai",
   "@intelligo-dev/agents",
-  "@intelligo-dev/chat",
 ] as const;
 
 /**

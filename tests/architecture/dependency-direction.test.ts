@@ -72,6 +72,16 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
     "@intelligo-dev/ui",
   ],
   billing: ["@intelligo-dev/core", "@intelligo-dev/executions"],
+  // The chat transport composes auth, billing, persistence and the
+  // execution boundary into one Route Handler. It is an AI SDK adapter
+  // at the top of the graph, like admin — not a boundary package — so
+  // its edge to billing is the ordinary one a transport has.
+  chat: [
+    "@intelligo-dev/core",
+    "@intelligo-dev/auth",
+    "@intelligo-dev/billing",
+    "@intelligo-dev/executions",
+  ],
 };
 
 const SOURCE_FILE = /\.(ts|tsx|mts|cts|js|jsx)$/;

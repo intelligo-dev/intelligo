@@ -17,6 +17,7 @@
     "@intelligo-dev/audit": "__INTELLIGO_DEP__",
     "@intelligo-dev/auth": "__INTELLIGO_DEP__",
     "@intelligo-dev/billing": "__INTELLIGO_DEP__",
+    "@intelligo-dev/chat": "__INTELLIGO_DEP__",
     "@intelligo-dev/core": "__INTELLIGO_DEP__",
     "@intelligo-dev/executions": "__INTELLIGO_DEP__",
     "@intelligo-dev/jobs": "__INTELLIGO_DEP__",
