@@ -379,6 +379,14 @@ describe("leaf subpaths", () => {
     ).toEqual([]);
   });
 
+  it("core/prompt imports nothing", () => {
+    // Reached from tools and the chat transport's prepareMessages seam;
+    // a dependency here is a dependency of every prompt.
+    expect(
+      importSpecifiers(readFileSync(path.join(coreSrc, "prompt.ts"), "utf8"))
+    ).toEqual([]);
+  });
+
   it("core/request-context imports only core/registry", () => {
     const specs = importSpecifiers(
       readFileSync(path.join(coreSrc, "request-context.ts"), "utf8")

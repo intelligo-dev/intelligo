@@ -49,7 +49,7 @@ A private workspace (`@intelligo-dev/registry`, never published): `registry.json
 
 | Package                     | Responsibility                                                                                                                                                                                              |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@intelligo-dev/core`       | DB schema (Drizzle + Neon + pgvector), email, logger, env, notifications, **conversations, documents, identity** (ADR-0009); dependency-free leaves `/registry`, `/money`, `/request-context`               |
+| `@intelligo-dev/core`       | DB schema (Drizzle + Neon + pgvector), email, logger, env, notifications, **conversations, documents, identity** (ADR-0009); dependency-free leaves `/registry`, `/money`, `/request-context`, `/prompt`    |
 | `@intelligo-dev/auth`       | Better-Auth multi-tenant workspaces, RBAC, `requireAuth/Workspace/Role`, typed `orgApi`, **team / workspace / profile / onboarding services** (ports)                                                       |
 | `@intelligo-dev/next`       | The one package that imports `next/*`: `nextRequestContext` (bound from the composition root) and `/auth` (Better-Auth's route handlers)                                                                    |
 | `@intelligo-dev/billing`    | Quota engine, credits, Stripe, feature gates, trials, rate limiting, **checkout + billing-overview service**; `/plans`, `/plan-registry`, `/payment`, `/quota-types` reach neither Stripe nor `server-only` |
@@ -82,7 +82,7 @@ Server Actions are thin transports over package services (installed `actions/*`)
 - **`sessions.activeOrganizationId` exists** — workspace switching persists; always pass explicit `organizationId` to Better-Auth reads anyway.
 - **RSC boundary discipline** — never pass component/function values from a server layout to client components (nav icons live in client-imported `lib/nav-config.ts`); `"use server"` files must not `export type`; next-intl's `redirect` takes `{ href, locale }`.
 - **Platform admin is a row, not an env var** — `users.role`, seeded from `PLATFORM_ADMIN_EMAILS` on first use.
-- **Input sanitization** — anything user-authored that reaches a system prompt (a stored summary, injected profile context) is sanitised at the concatenation point. The framework ships no sanitiser; a product binds its own in the chat transport's `prepareMessages` seam.
+- **Input sanitization** — anything user-authored that reaches a system prompt (a stored summary, injected profile context) passes `sanitizeForSystemPrompt()` from `@intelligo-dev/core/prompt` at the concatenation point; `detectPromptInjection()` says what it saw, for the log. A product extends the pattern list rather than replacing the sweep.
 
 ## Conventions
 

@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/core",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
     "./registry": "./src/registry.ts",
     "./money": "./src/money.ts",
     "./request-context": "./src/request-context.ts",
+    "./prompt": "./src/prompt.ts",
     "./logger": {
       "types": "./src/logger.ts",
       "import": "./src/logger.ts",
@@ -126,6 +127,10 @@
       "./request-context": {
         "types": "./dist/request-context.d.ts",
         "default": "./dist/request-context.js"
+      },
+      "./prompt": {
+        "types": "./dist/prompt.d.ts",
+        "default": "./dist/prompt.js"
       },
       "./logger": {
         "types": "./dist/logger.d.ts",
