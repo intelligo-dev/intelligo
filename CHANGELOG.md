@@ -16,6 +16,16 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+### Changed
+
+- **Releases publish themselves.** A release is one commit — every
+  published manifest bumped, `CHANGELOG.md` headed with the version's
+  section — and merging it to main builds, runs the suite, publishes
+  with provenance, pushes the tag, creates the GitHub release from that
+  section and applies `scripts/npm-deprecations.json`. The hand-pushed
+  tag still works as a fallback. A version with no changelog section
+  does not release: the notes are the one thing a script cannot write.
+
 ## [1.0.0-beta.5] — 2026-09-12
 
 The release that makes the package layout something a developer who did

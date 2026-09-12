@@ -200,7 +200,7 @@ pnpm registry:build   # rebuild the page registry artifacts
 pnpm db:push          # push the Drizzle schema
 ```
 
-Releases: every workspace under `packages/` is published to npm from a version tag (`git tag vX.Y.Z && git push origin vX.Y.Z` runs `.github/workflows/release.yml`); the site and the hosted registry deploy from `apps/site`. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+Releases: one commit bumps every published package and heads `CHANGELOG.md` with its section; merging it to main publishes to npm with provenance, tags, and creates the GitHub release (`.github/workflows/release.yml`). The site and the hosted registry deploy from `apps/site`. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 ## License
 

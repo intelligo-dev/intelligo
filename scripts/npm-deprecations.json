@@ -1,0 +1,17 @@
+{
+  "$comment": "npm names the framework no longer publishes, each with where the code went. The release workflow applies these after every publish; npm deprecate is idempotent, so the list only ever grows.",
+  "deprecations": [
+    {
+      "name": "@intelligo-dev/money",
+      "message": "Folded into @intelligo-dev/core/money (ADR-0011)."
+    },
+    {
+      "name": "@intelligo-dev/http",
+      "message": "Folded into @intelligo-dev/core/request-context (the contract) and @intelligo-dev/next (the Next.js binding) (ADR-0011)."
+    },
+    {
+      "name": "@intelligo-dev/billing-core",
+      "message": "Folded into @intelligo-dev/billing/{plans,plan-registry,payment,quota-types} (ADR-0011)."
+    }
+  ]
+}

@@ -1,28 +1,51 @@
 name: Release
 
-# Publishes every public package to npm when a version tag is pushed.
+# Publishes every public package to npm when main carries a version
+# npm does not have yet.
 #
-#   git tag v1.0.0-beta.3 && git push origin v1.0.0-beta.3
+# A release is one commit: bump every packages/*/package.json to the
+# new version and head CHANGELOG.md with a section for it. Merging it
+# to main does the rest — build, the full test suite, `pnpm publish -r`
+# with provenance, the `vX.Y.Z` tag, a GitHub release whose notes are
+# that CHANGELOG section, and the npm deprecations listed in
+# scripts/npm-deprecations.json. Nothing here is a second source of
+# truth: the version is what the manifests say, the notes are what
+# the changelog says.
 #
-# The tag must equal the version in the package manifests; a mismatch
-# fails before anything is published. Needs an `NPM_TOKEN` repository
+# Pushing a `v*` tag by hand still works and is the fallback; the tag
+# must equal the manifests' version. Needs an `NPM_TOKEN` repository
 # secret (an npm automation token with publish rights on @intelligo-dev).
+#
+# The npm dist-tag follows the version: `1.0.0-beta.2` publishes under
+# `beta`, `1.0.0-rc.1` under `rc`, and a plain `1.0.0` under `latest`.
+# A prerelease therefore never becomes what a bare `npm install`
+# resolves to.
 
 on:
   push:
+    branches: [main]
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # the tag and the GitHub release
+  id-token: write # npm provenance
+
+# One release at a time, and never cancelled halfway through a publish.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   publish:
     name: Publish to npm
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v2
         with:
@@ -36,57 +59,118 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # The npm dist-tag follows the version: `1.0.0-beta.2` publishes
-      # under `beta`, `1.0.0-rc.1` under `rc`, and a plain `1.0.0` under
-      # `latest`. A prerelease therefore never becomes what a bare
-      # `npm install` resolves to.
-      - name: Tag matches the package version
+      # The version is the manifests'. Every published workspace must
+      # agree (a private one — packages/registry — is skipped), a hand
+      # pushed tag must match, and CHANGELOG.md must have the section
+      # the release notes come from.
+      - name: Resolve the version
         id: version
         run: |
           set -euo pipefail
-          tag="${GITHUB_REF_NAME#v}"
+          version=$(node -p "require('./packages/core/package.json').version")
           for dir in packages/*/; do
             if [ "$(node -p "require('./$dir/package.json').private === true")" = "true" ]; then continue; fi
-            version=$(node -p "require('./$dir/package.json').version")
-            if [ "$version" != "$tag" ]; then
-              echo "$dir is $version but the tag is $tag"
+            v=$(node -p "require('./$dir/package.json').version")
+            if [ "$v" != "$version" ]; then
+              echo "$dir is $v but packages/core is $version"
               exit 1
             fi
           done
-          case "$tag" in
-            *-*) dist_tag="${tag#*-}"; dist_tag="${dist_tag%%.*}" ;;
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            tag="${GITHUB_REF_NAME#v}"
+            if [ "$tag" != "$version" ]; then
+              echo "the tag is v$tag but the manifests are $version"
+              exit 1
+            fi
+          fi
+          case "$version" in
+            *-*) dist_tag="${version#*-}"; dist_tag="${dist_tag%%.*}" ;;
             *)   dist_tag="latest" ;;
           esac
+          node scripts/release-notes.mjs "$version" > "$RUNNER_TEMP/release-notes.md"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "dist-tag=$dist_tag" >> "$GITHUB_OUTPUT"
-          echo "publishing $tag under dist-tag $dist_tag"
+          echo "$version under dist-tag $dist_tag"
 
-      # A tag can be pushed after a maintainer already published from a
-      # workstation. Publishing is then a no-op, and this run stays green
-      # instead of failing on a duplicate version (or a missing token).
+      # Most pushes to main are not releases: the version is already on
+      # npm and there is nothing to do. A tag pushed after a maintainer
+      # published from a workstation lands here too.
       - name: Already on npm?
         id: check
         run: |
-          tag="${GITHUB_REF_NAME#v}"
-          if npm view "@intelligo-dev/core@$tag" version >/dev/null 2>&1; then
+          version="${{ steps.version.outputs.version }}"
+          if npm view "@intelligo-dev/core@$version" version >/dev/null 2>&1; then
             echo "published=true" >> "$GITHUB_OUTPUT"
-            echo "@intelligo-dev/core@$tag is already on npm — build and test only"
+            echo "@intelligo-dev/core@$version is already on npm — nothing to publish"
           else
             echo "published=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - run: pnpm turbo build
+      - if: steps.check.outputs.published != 'true'
+        run: pnpm turbo build
 
       # Every package's tests, not only the packed-package check: a
       # release is the one place a red suite must not be argued past.
-      - run: pnpm test
+      - if: steps.check.outputs.published != 'true'
+        run: pnpm test
         env:
           DATABASE_URL: ""
 
       # `pnpm publish -r` orders by dependency, rewrites workspace:*
-      # ranges to the published version, and skips versions already on
-      # the registry — so a re-run after a partial failure is safe.
+      # ranges to the published version, skips private workspaces and
+      # skips versions already on the registry — so a re-run after a
+      # partial failure is safe. Provenance links each tarball to this
+      # run on npm's package page.
       - name: Publish
         if: steps.check.outputs.published != 'true'
         run: pnpm publish -r --access public --no-git-checks --tag "${{ steps.version.outputs.dist-tag }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+
+      # Names the framework stopped publishing, pointed at where the
+      # code went. Idempotent, so it runs on every release.
+      - name: Deprecate folded packages
+        if: steps.check.outputs.published != 'true'
+        run: |
+          set -euo pipefail
+          node -e '
+            const { deprecations } = require("./scripts/npm-deprecations.json");
+            for (const d of deprecations) console.log(`${d.name}\t${d.message}`);
+          ' | while IFS=$'\t' read -r name message; do
+            if npm view "$name" version >/dev/null 2>&1; then
+              npm deprecate "$name@*" "$message" && echo "deprecated $name"
+            else
+              echo "$name was never on npm — nothing to deprecate"
+            fi
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # The tag records which commit shipped; a push by GITHUB_TOKEN
+      # does not trigger this workflow again. Skipped when the run was
+      # started by a hand-pushed tag, which already exists.
+      - name: Tag
+        if: steps.check.outputs.published != 'true' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "v$version"
+          git push origin "v$version"
+
+      - name: GitHub release
+        if: steps.check.outputs.published != 'true'
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          if gh release view "v$version" >/dev/null 2>&1; then
+            echo "release v$version exists"
+            exit 0
+          fi
+          prerelease=""
+          if [ "${{ steps.version.outputs.dist-tag }}" != "latest" ]; then prerelease="--prerelease"; fi
+          gh release create "v$version" --title "v$version" --notes-file "$RUNNER_TEMP/release-notes.md" $prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
