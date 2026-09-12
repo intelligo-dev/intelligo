@@ -16,6 +16,12 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+## [1.0.0-beta.6] — 2026-09-13
+
+The release after the layout settled: the chat item binds the transport
+package, releases publish themselves, and the last generic piece the
+first product still carried — the prompt sanitiser — has its home.
+
 ### Breaking
 
 - **The `chat` registry item binds `@intelligo-dev/chat`.** Its Route
@@ -34,6 +40,16 @@ it explains a framework decision.
   `billingNotConfigured`. Reinstall the item; keep your
   `lib/chat-config.tsx`, `lib/chat-renderers.tsx` and
   `lib/chat-server-config.ts` bindings.
+
+### Added
+
+- **`@intelligo-dev/core/prompt`** — `sanitizeForSystemPrompt()` and
+  `detectPromptInjection()`, the sweep ADR-0008 routed to core from the
+  first product's runtime package: role markers, override phrases and
+  obfuscated separators stripped from user-authored text before it is
+  concatenated into a system prompt, with the pattern list exported so a
+  product extends it rather than re-implements it. Dependency-free, so
+  a tool or the chat transport's `prepareMessages` seam can reach it.
 
 ### Changed
 
@@ -780,6 +796,7 @@ Includes the untagged "0.2 Core Platform" milestone.
   skeletons; shadcn/ui and Tailwind; GitHub Actions running build,
   type-check and lint.
 
+[1.0.0-beta.6]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.6
 [1.0.0-beta.5]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.5
 [1.0.0-beta.4]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.4
 [1.0.0-beta.3]: https://github.com/intelligo-mn/framework/releases/tag/v1.0.0-beta.3
