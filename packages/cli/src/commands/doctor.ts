@@ -42,6 +42,17 @@ export type RegistryRequires = {
  * without a registry checkout. `../../templates` resolves from src/
  * and from dist/commands/ alike.
  */
+/**
+ * Block and line comments removed, so a check cannot be satisfied — or
+ * defeated — by prose. The composition root's own doc comment names
+ * `registerModels` in several of the templates.
+ */
+function stripComments(text: string): string {
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
 function bundledRequires(): RegistryRequires | null {
   const file = path.resolve(
     // fileURLToPath, not `.pathname` — see the note in bin.ts.
@@ -242,6 +253,37 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
               "auth pages are installed but app/api/auth/[...all]/route.ts " +
               "is missing — add `export { GET, POST } from " +
               '"@intelligo-dev/auth/next";` there or every sign-in answers 404',
+          }
+    );
+  }
+
+  // 4d. Model prices. The registry is open and nothing self-registers,
+  //     so a composition root that never calls `registerModels` leaves
+  //     admission with no price to estimate against: every request is
+  //     refused with `unknown_model`, at runtime, on a deployment whose
+  //     only mistake was omitting one line.
+  const compositionRoot = ["lib/intelligo.ts", "lib/intelligo.tsx"]
+    .map((rel) => path.join(root, rel))
+    .find((file) => existsSync(file));
+
+  if (compositionRoot) {
+    const source = readFileSync(compositionRoot, "utf8");
+    const registers = /\bregisterModels?\s*\(/.test(stripComments(source));
+    results.push(
+      registers
+        ? {
+            name: "models",
+            status: "ok",
+            detail: "the composition root registers model prices",
+          }
+        : {
+            name: "models",
+            status: "error",
+            detail:
+              "no registerModels() in the composition root — admission cannot " +
+              "price any model and refuses every request with `unknown_model`. " +
+              "Add `registerModels(DEFAULT_MODELS)` from @intelligo-dev/executions, " +
+              "or your own catalogue",
           }
     );
   }

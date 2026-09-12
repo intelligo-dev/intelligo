@@ -136,6 +136,68 @@ describe("runChecks", () => {
     });
   });
 
+  describe("model prices", () => {
+    let root: string;
+
+    afterEach(() => {
+      rmSync(root, { recursive: true, force: true });
+    });
+
+    function withCompositionRoot(source: string): string {
+      root = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-models-"));
+      mkdirSync(path.join(root, "lib"), { recursive: true });
+      writeFileSync(path.join(root, "lib/intelligo.ts"), source);
+      return root;
+    }
+
+    it("errors when the composition root registers no prices", () => {
+      // Nothing self-registers, so admission has no price to estimate
+      // against and refuses every request with `unknown_model` — at
+      // runtime, for one missing line.
+      const results = runChecks({
+        root: withCompositionRoot(
+          `export function composeIntelligo() { setDefaultProductSlug("acme"); }`
+        ),
+        env: fullEnv,
+      });
+      const models = results.find((r) => r.name === "models")!;
+
+      expect(models.status).toBe("error");
+      expect(models.detail).toContain("registerModels");
+    });
+
+    it("passes when it does", () => {
+      const results = runChecks({
+        root: withCompositionRoot(
+          `import { DEFAULT_MODELS, registerModels } from "@intelligo-dev/executions";
+           export function composeIntelligo() { registerModels(DEFAULT_MODELS); }`
+        ),
+        env: fullEnv,
+      });
+
+      expect(results.find((r) => r.name === "models")!.status).toBe("ok");
+    });
+
+    it("is not satisfied by a comment that mentions it", () => {
+      // The scaffold's own doc comment names registerModels; a check
+      // that a comment can pass is not a check.
+      const results = runChecks({
+        root: withCompositionRoot(
+          `// call registerModels(DEFAULT_MODELS) here
+           export function composeIntelligo() {}`
+        ),
+        env: fullEnv,
+      });
+
+      expect(results.find((r) => r.name === "models")!.status).toBe("error");
+    });
+
+    it("is silent where there is no composition root to read", () => {
+      const results = runChecks({ root: "/nonexistent", env: fullEnv });
+      expect(results.find((r) => r.name === "models")).toBeUndefined();
+    });
+  });
+
   describe("Better-Auth's HTTP mount", () => {
     let root: string;
 
