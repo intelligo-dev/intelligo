@@ -1,20 +1,21 @@
 /**
- * Every model id in the repository must exist in MODEL_CONFIGS.
+ * Every model id written in this repository must be one the shipped
+ * catalogue prices.
  *
- * An unregistered id does not fail — it degrades, twice, in opposite
- * directions. `getModel()` warns and falls back to Gemini Flash;
- * `calculateCost()` warns and prices at the worst-case Claude rate
- * ($3/$15 per M). So the call runs on the cheapest model available and
- * bills the customer for the most expensive one, and the only symptom
- * is a console warning on a server nobody is reading.
+ * The registry is open now — a product registers its own models from
+ * its composition root, and `calculateCost` throws on an id it cannot
+ * price rather than guessing. That moves the general version of this
+ * rule to `intelligo doctor`, which can see a consumer's composition
+ * root; what stays here is the rule for *this* repository, whose
+ * composition roots register `DEFAULT_MODELS` and nothing else.
  *
- * `openai/gpt-4o` and `openai/gpt-4o-mini` did this in five places,
- * including the model stored on every conversation `createConversation`
- * made — which is the id the chat page then uses for its quota
- * estimate and for the turn itself.
- *
- * The cookie path was already guarded (`modelCookie in MODEL_CONFIGS`).
- * This is the same guard for every literal in the source.
+ * It is still worth having. `openai/gpt-4o` and `openai/gpt-4o-mini`
+ * were written in five places, including the model stored on every
+ * conversation `createConversation` made — the id the chat page then
+ * used for its quota estimate and for the turn itself. Under the old
+ * silent fallback those ran on Gemini Flash and billed at Claude
+ * rates; under the new one they throw at request time. A test is
+ * cheaper than either.
  */
 
 import { describe, expect, it } from "vitest";
@@ -28,18 +29,17 @@ const ROOT = path.resolve(__dirname, "../..");
 const MODELS_FILE = "packages/executions/src/pricing.ts";
 
 /**
- * The registry is read out of the source rather than imported: this
+ * The catalogue is read out of the source rather than imported: this
  * project is not a workspace package and cannot resolve @intelligo-dev/*.
  * Parsing also keeps the check honest about what is *written* in the
  * file, which is what every other literal in the repo has to match.
  */
-function registeredModelIds(): Set<string> {
+function catalogueModelIds(): Set<string> {
   const text = readFileSync(path.join(ROOT, MODELS_FILE), "utf8");
-  const start = text.indexOf("MODEL_CONFIGS");
-  const end = text.indexOf("export type ModelId");
-  const block = text.slice(start, end === -1 ? undefined : end);
+  const start = text.indexOf("export const DEFAULT_MODELS");
+  const block = start === -1 ? "" : text.slice(start);
   return new Set(
-    [...block.matchAll(/^\s{2}"([a-z0-9-]+\/[a-z0-9._-]+)":/gm)].map(
+    [...block.matchAll(/^\s{4}id: "([a-z0-9-]+\/[a-z0-9._-]+)",$/gm)].map(
       (m) => m[1]!
     )
   );
@@ -111,24 +111,27 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 describe("model registry", () => {
-  it("parses the registry out of the source", () => {
-    // A silent empty set would make the assertion below vacuous — and
-    // this file parses rather than imports, so a refactor of models.ts
-    // could quietly empty it.
-    const known = registeredModelIds();
+  it("parses the catalogue out of the source", () => {
+    // A silent empty set would make the assertion below vacuous, and
+    // this file parses rather than imports — which is exactly what
+    // happened when MODEL_CONFIGS became DEFAULT_MODELS: the old
+    // parser anchored on a name that no longer existed, matched
+    // nothing, and the rule would have kept passing while enforcing
+    // nothing at all.
+    const known = catalogueModelIds();
     expect(known.size).toBeGreaterThan(3);
     expect(known.has("google/gemini-2.5-flash")).toBe(true);
   });
 
-  it("every model id used in the source is registered", () => {
-    const known = registeredModelIds();
+  it("every model id used in the source is in the shipped catalogue", () => {
+    const known = catalogueModelIds();
     const offenders: string[] = [];
 
     for (const root of ROOTS) {
       for (const file of walk(path.join(ROOT, root))) {
         const rel = path.relative(ROOT, file).split(path.sep).join("/");
         if (IGNORED_TREES.some((t) => rel.startsWith(t + "/"))) continue;
-        // models.ts defines the registry; the audit that scans for
+        // pricing.ts defines the catalogue; the audit that scans for
         // unregistered ids necessarily names one.
         const relative = path.relative(ROOT, file);
         if (relative === MODELS_FILE) continue;
@@ -146,7 +149,7 @@ describe("model registry", () => {
 
     expect(
       [...new Set(offenders)],
-      `model ids that are not in MODEL_CONFIGS — these run on Gemini Flash and bill at Claude rates:\n  ${offenders.join("\n  ")}`
+      `model ids that are not in DEFAULT_MODELS — nothing in this repository registers them, so pricing them throws at request time:\n  ${offenders.join("\n  ")}`
     ).toEqual([]);
   });
 });

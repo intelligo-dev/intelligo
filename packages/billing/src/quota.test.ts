@@ -11,6 +11,26 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+/**
+ * The error class admission narrows on with `instanceof`, hoisted
+ * because `vi.mock` factories run before the module body. A stub
+ * declared below would be unreachable from the factory, and a
+ * different class than the one under test would make the branch
+ * untestable in exactly the way that matters.
+ */
+const pricing = vi.hoisted(() => {
+  class UnknownModelError extends Error {
+    readonly code = "unknown_model";
+    readonly modelId: string;
+    constructor(modelId: string) {
+      super(`No price registered for model "${modelId}".`);
+      this.name = "UnknownModelError";
+      this.modelId = modelId;
+    }
+  }
+  return { UnknownModelError };
+});
+
 const mocks = vi.hoisted(() => ({
   getWorkspaceBilling: vi.fn(),
   getCurrentMonthlyUsage: vi.fn(),
@@ -67,6 +87,7 @@ vi.mock("@intelligo-dev/executions/pricing", () => ({
   estimateWorstCaseChargedMnt: mocks.estimateWorstCaseChargedMnt,
   calculateChargedMnt: mocks.calculateChargedMnt,
   calculateCost: mocks.calculateCost,
+  UnknownModelError: pricing.UnknownModelError,
 }));
 
 vi.mock("@intelligo-dev/core/logger", () => ({
@@ -304,6 +325,38 @@ describe("checkQuota — reserving mode (with requestId)", () => {
     expect(first.usingTrialCredits).toBe(true);
     // 1600₮ trial fits one 1500₮ reservation, not two.
     expect(second.allowed).toBe(false);
+  });
+});
+
+describe("a model with no registered price", () => {
+  it("refuses with a code instead of throwing", async () => {
+    // The transport turns a refusal into a 402 that says why. An
+    // uncaught throw here would be a 500 on a deployment whose only
+    // mistake was not registering a model — and the request would look
+    // like an outage rather than a configuration error.
+    mocks.estimateWorstCaseChargedMnt.mockImplementationOnce(() => {
+      throw new pricing.UnknownModelError("bedrock/llama-4-70b");
+    });
+
+    const r = await estimateQuota("ws-1", { modelId: "bedrock/llama-4-70b" });
+
+    expect(r.allowed).toBe(false);
+    expect(r.code).toBe("unknown_model");
+    expect(r.reason).toContain("bedrock/llama-4-70b");
+  });
+
+  it("does not reserve credit for a request it cannot price", async () => {
+    mocks.estimateWorstCaseChargedMnt.mockImplementationOnce(() => {
+      throw new pricing.UnknownModelError("bedrock/llama-4-70b");
+    });
+
+    const r = await reserveQuota("ws-1", {
+      modelId: "bedrock/llama-4-70b",
+      requestId: "req-unpriceable",
+    });
+
+    expect(r.allowed).toBe(false);
+    expect(store.reservations).toHaveLength(0);
   });
 });
 

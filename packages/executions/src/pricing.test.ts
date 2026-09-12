@@ -8,16 +8,27 @@
  * happened.
  */
 
-import { describe, it, expect } from "vitest";
+import { beforeEach, describe, it, expect } from "vitest";
 
 import {
-  MODEL_CONFIGS,
+  DEFAULT_MODELS,
   DEFAULT_BILLING_MARGIN,
   DEFAULT_USD_TO_MNT_RATE,
+  UnknownModelError,
   calculateCost,
   calculateChargedMnt,
+  clearModels,
   estimateWorstCaseChargedMnt,
+  registerModels,
+  registeredModelIds,
 } from "./pricing";
+
+// Nothing self-registers: the registry is populated from a composition
+// root, and these tests are one.
+beforeEach(() => {
+  clearModels();
+  registerModels(DEFAULT_MODELS);
+});
 
 describe("calculateCost", () => {
   it("calculates Gemini 2.5 Flash cost correctly", () => {
@@ -35,12 +46,24 @@ describe("calculateCost", () => {
   it("returns 0 for zero tokens", () => {
     expect(calculateCost("google/gemini-2.5-flash", 0, 0)).toBe(0);
   });
-  it("falls back to max cost for unknown models", () => {
-    // Unknown = $3 input + $15 output
-    expect(calculateCost("unknown/model", 1_000_000, 1_000_000)).toBeCloseTo(
-      18.0,
-      2
+  it("throws for a model with no registered price", () => {
+    // The old behaviour warned and priced at the worst-case Claude
+    // rate, while the model resolver warned and fell back to Gemini
+    // Flash: the call ran on the cheapest model and billed for the
+    // most expensive, and the only symptom was a console warning.
+    expect(() => calculateCost("unknown/model", 1_000_000, 1_000_000)).toThrow(
+      UnknownModelError
     );
+  });
+
+  it("names the id and the way out", () => {
+    try {
+      calculateCost("unknown/model", 1, 1);
+    } catch (error) {
+      expect((error as UnknownModelError).code).toBe("unknown_model");
+      expect((error as UnknownModelError).modelId).toBe("unknown/model");
+      expect((error as Error).message).toContain("registerModels");
+    }
   });
   it("separates input and output costs", () => {
     // Only input: 1M × $0.30 = $0.30
@@ -56,21 +79,72 @@ describe("calculateCost", () => {
   });
 });
 
-describe("MODEL_CONFIGS", () => {
-  it("has 6 configured models", () => {
-    expect(Object.keys(MODEL_CONFIGS)).toHaveLength(6);
+describe("the registry is open", () => {
+  it("starts empty, so nothing bills against a catalogue it never chose", () => {
+    clearModels();
+    expect(registeredModelIds()).toEqual([]);
+    expect(() => calculateCost("google/gemini-2.5-flash", 1, 1)).toThrow(
+      UnknownModelError
+    );
   });
-  it("has cost fields for every model", () => {
-    for (const config of Object.values(MODEL_CONFIGS)) {
-      expect(config.costPerMInputTokens).toBeGreaterThan(0);
-      expect(config.costPerMOutputTokens).toBeGreaterThan(0);
+
+  it("takes a model the framework has never heard of", () => {
+    // The whole point: a product on Bedrock, Groq, a self-hosted model
+    // — or simply a newer Claude — used to need a pull request here.
+    registerModels([
+      {
+        id: "bedrock/llama-4-70b",
+        provider: "bedrock",
+        model: "meta.llama4-70b-v1",
+        displayName: "Llama 4 70B",
+        costPerMInputTokens: 0.5,
+        costPerMOutputTokens: 1.5,
+        maxOutputTokens: 4_000,
+        capabilities: {
+          thinking: false,
+          toolCall: true,
+          vision: false,
+          webSearch: false,
+          codeExec: false,
+        },
+      },
+    ]);
+
+    expect(calculateCost("bedrock/llama-4-70b", 1_000_000, 0)).toBeCloseTo(
+      0.5,
+      4
+    );
+  });
+
+  it("lets a deployment override a shipped price with its own contract", () => {
+    registerModels([{ ...DEFAULT_MODELS[0]!, costPerMInputTokens: 0.15 }]);
+    expect(calculateCost("google/gemini-2.5-flash", 1_000_000, 0)).toBeCloseTo(
+      0.15,
+      4
+    );
+  });
+});
+
+describe("DEFAULT_MODELS", () => {
+  it("ships six models", () => {
+    expect(DEFAULT_MODELS).toHaveLength(6);
+  });
+
+  it("prices and bounds every one of them", () => {
+    for (const model of DEFAULT_MODELS) {
+      expect(model.id, `${model.id} has no id`).toMatch(/^[a-z0-9-]+\//);
+      expect(model.costPerMInputTokens).toBeGreaterThan(0);
+      expect(model.costPerMOutputTokens).toBeGreaterThan(0);
+      // Admission needs a ceiling; a model without one cannot be
+      // refused before it spends.
+      expect(model.maxOutputTokens).toBeGreaterThan(0);
+      expect(model.capabilities.toolCall).toBe(true);
     }
   });
-  it("has capabilities for every model", () => {
-    for (const config of Object.values(MODEL_CONFIGS)) {
-      expect(config.capabilities).toBeDefined();
-      expect(config.capabilities.toolCall).toBe(true);
-    }
+
+  it("has no duplicate ids", () => {
+    const ids = DEFAULT_MODELS.map((m) => m.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 
@@ -129,10 +203,20 @@ describe("estimateWorstCaseChargedMnt", () => {
     expect(ceiling).toBeGreaterThan(typical);
   });
 
-  it("still returns a ceiling for an unregistered model", () => {
-    // Unknown ids price at the worst-case Claude rate rather than
-    // slipping through admission for free.
-    expect(estimateWorstCaseChargedMnt("unknown/model")).toBeGreaterThan(
+  it("refuses to estimate a model it cannot price", () => {
+    // Admission must not invent a ceiling. An id with no price is a
+    // configuration error, and guessing one is how the old code billed
+    // Gemini turns at Claude rates.
+    expect(() => estimateWorstCaseChargedMnt("unknown/model")).toThrow(
+      UnknownModelError
+    );
+  });
+
+  it("uses the model's own output ceiling", () => {
+    registerModels([
+      { ...DEFAULT_MODELS[0]!, id: "test/tiny", maxOutputTokens: 100 },
+    ]);
+    expect(estimateWorstCaseChargedMnt("test/tiny")).toBeLessThan(
       estimateWorstCaseChargedMnt("google/gemini-2.5-flash")
     );
   });

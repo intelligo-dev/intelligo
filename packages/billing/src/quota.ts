@@ -31,6 +31,7 @@ import { eq, sql, and, gte, lte, gt } from "drizzle-orm";
 import { hasActiveTrialMnt } from "./trial";
 import { checkNotificationTriggers } from "./notifications";
 import {
+  UnknownModelError,
   calculateChargedMnt,
   estimateWorstCaseChargedMnt,
 } from "@intelligo-dev/executions/pricing";
@@ -265,11 +266,33 @@ function decideQuota(
       trialRemainingMnt,
     } = pools;
     const remainingMnt = planRemainingMnt + topupBalanceMnt + trialRemainingMnt;
-    const estimatedMnt = estimateWorstCaseChargedMnt(
-      modelId,
-      pools.usdToMntRate,
-      pools.marginMultiplier
-    );
+
+    // A model with no registered price cannot be estimated, and
+    // admission must not invent a ceiling — guessing one is how a turn
+    // ran on the cheapest model and billed at the most expensive.
+    // Refuse with a code the transport can turn into a 402 that says
+    // why, rather than letting the throw become a 500.
+    let estimatedMnt: number;
+    try {
+      estimatedMnt = estimateWorstCaseChargedMnt(
+        modelId,
+        pools.usdToMntRate,
+        pools.marginMultiplier
+      );
+    } catch (error) {
+      if (error instanceof UnknownModelError) {
+        return {
+          allowed: false,
+          code: "unknown_model",
+          reason: error.message,
+          billingMode: "subscription",
+          usage: { used: usedMnt, limit: monthlyAllowanceMnt, percentage: 0 },
+          usingTrialCredits: false,
+          graceActive: false,
+        };
+      }
+      throw error;
+    }
     const percentage =
       monthlyAllowanceMnt > 0
         ? Math.min(100, Math.round((usedMnt / monthlyAllowanceMnt) * 100))

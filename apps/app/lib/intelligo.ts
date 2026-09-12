@@ -23,7 +23,11 @@ import {
   setDefaultProductSlug,
 } from "@intelligo-dev/billing/plans";
 import { assertEnv } from "@intelligo-dev/core/env";
-import { createExecutions } from "@intelligo-dev/executions";
+import {
+  DEFAULT_MODELS,
+  createExecutions,
+  registerModels,
+} from "@intelligo-dev/executions";
 
 import { REFERENCE_FEATURES, REFERENCE_PLANS } from "./plans";
 
@@ -48,6 +52,12 @@ export function composeIntelligo(): void {
   setDefaultProductSlug(PRODUCT_SLUG);
   registerProductPlans(PRODUCT_SLUG, REFERENCE_PLANS);
   registerProductFeatures(PRODUCT_SLUG, REFERENCE_FEATURES);
+
+  // What each model costs. The catalogue the framework ships is data,
+  // not a default: nothing self-registers, so a deployment always knows
+  // which prices it is billing against, and can register its own
+  // contracted rates — or a model the framework has never heard of.
+  registerModels(DEFAULT_MODELS);
 }
 
 export const executions = createExecutions({

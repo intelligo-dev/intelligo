@@ -50,12 +50,24 @@ export type { Execution, InsertExecution } from "./db/schema";
  * anything that reaches a browser — this barrel pulls in the database.
  */
 export {
-  MODEL_CONFIGS,
-  MODEL_OUTPUT_BUDGET,
+  DEFAULT_MODELS,
+  UnknownModelError,
+  registerModel,
+  registerModels,
+  getModelPricing,
+  isModelRegistered,
+  listModels,
+  registeredModelIds,
+  clearModels,
   DEFAULT_BILLING_MARGIN,
   DEFAULT_USD_TO_MNT_RATE,
   calculateCost,
   calculateChargedMnt,
   estimateWorstCaseChargedMnt,
 } from "./pricing";
-export type { ModelId, ChargedAmount } from "./pricing";
+export type {
+  ModelId,
+  ModelPricing,
+  ModelCapabilities,
+  ChargedAmount,
+} from "./pricing";

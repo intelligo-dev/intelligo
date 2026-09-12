@@ -149,6 +149,13 @@ d("money path (integration)", () => {
       },
     });
 
+    // What each model costs. A consumer's composition root registers
+    // this; without it admission has no price to estimate against and
+    // refuses every request with `unknown_model`.
+    const { DEFAULT_MODELS, registerModels } =
+      await import("@intelligo-dev/executions");
+    registerModels(DEFAULT_MODELS);
+
     const { checkQuota, recordTokenUsage, releaseReservation } =
       await import("../quota");
     const { createExecutions } = await import("@intelligo-dev/executions");
