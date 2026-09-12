@@ -9,3 +9,4 @@ apps/site/.astro/
 **/.next/
 **/.turbo/
 packages/registry/public/
+packages/registry/tsconfig.paths.json

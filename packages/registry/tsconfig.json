@@ -1,0 +1,10 @@
+{
+  "extends": ["../../tsconfig.base.json", "./tsconfig.paths.json"],
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "jsx": "preserve",
+    "noEmit": true
+  },
+  "include": ["base/**/*.ts", "base/**/*.tsx"],
+  "exclude": ["node_modules", "public"]
+}

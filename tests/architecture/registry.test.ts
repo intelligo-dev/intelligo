@@ -642,3 +642,44 @@ function statSyncSafe(p: string): boolean {
     return false;
   }
 }
+
+/**
+ * The registry is a workspace so the toolchain owns it, not so anything
+ * can depend on it. Its manifest is private, declares no runtime
+ * dependencies, and carries as devDependencies every package an item
+ * imports — that is what lets `tsc` check the items in place.
+ */
+describe("the registry workspace", () => {
+  const manifest = JSON.parse(
+    readFileSync(path.join(REGISTRY_DIR, "package.json"), "utf8")
+  ) as {
+    private?: boolean;
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  };
+
+  it("is private and has no runtime dependencies", () => {
+    expect(manifest.private).toBe(true);
+    expect(manifest.dependencies).toBeUndefined();
+  });
+
+  it("can resolve every package its items import", () => {
+    // `zod@^3.25.76` pins a version; compare on the name alone.
+    const name = (dep: string) => {
+      const at = dep.lastIndexOf("@");
+      return at > 0 ? dep.slice(0, at) : dep;
+    };
+    // Implicit for a Next app; declared here so tsc finds them.
+    const needed = new Set(["react", "react-dom", "next"]);
+    for (const item of readRegistry().items) {
+      for (const dep of item.dependencies ?? []) needed.add(name(dep));
+    }
+    const missing = [...needed].filter(
+      (name) => !(manifest.devDependencies ?? {})[name]
+    );
+    expect(
+      missing,
+      `packages/registry/package.json lacks devDependencies its items import: ${missing.join(", ")}`
+    ).toEqual([]);
+  });
+});

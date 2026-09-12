@@ -85,6 +85,20 @@
     "sync": {
       "cache": false,
       "dependsOn": ["@intelligo-dev/registry#build"]
+    },
+    "@intelligo-dev/registry#type-check": {
+      "dependsOn": ["^type-check"],
+      "inputs": [
+        "registry.json",
+        "requires.json",
+        "base/**",
+        "tsconfig.json",
+        "scripts/**",
+        "$TURBO_ROOT$/apps/app/components/ui/**",
+        "$TURBO_ROOT$/apps/app/lib/**",
+        "$TURBO_ROOT$/apps/app/hooks/**",
+        "$TURBO_ROOT$/apps/app/i18n/**"
+      ]
     }
   }
 }
