@@ -1,11 +1,11 @@
 {
-  "name": "@intelligo-dev/auth",
+  "name": "@intelligo-dev/http",
   "version": "1.0.0-beta.3",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/intelligo-mn/framework.git",
-    "directory": "packages/auth"
+    "directory": "packages/http"
   },
   "homepage": "https://github.com/intelligo-mn/framework#readme",
   "bugs": {
@@ -14,8 +14,6 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./client": "./src/client.ts",
-    "./edge": "./src/edge.ts",
     "./next": "./src/next.ts"
   },
   "scripts": {
@@ -25,27 +23,23 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@intelligo-dev/core": "workspace:*",
-    "@intelligo-dev/http": "workspace:*",
-    "server-only": "^0.0.1"
+    "@intelligo-dev/core": "workspace:*"
   },
   "peerDependencies": {
-    "better-auth": "~1.6.30",
-    "drizzle-orm": "^0.45.1",
-    "zod": "^3.24.1"
+    "next": "^15.0.0 || ^16.0.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
   },
   "devDependencies": {
-    "@types/react": "^19.0.10",
-    "better-auth": "~1.6.30",
-    "drizzle-orm": "^0.45.1",
-    "typescript": "^5.7.2",
-    "zod": "^3.24.1"
+    "@types/node": "^22.0.0",
+    "next": "^15.0.0 || ^16.0.0",
+    "typescript": "^5.7.2"
   },
   "files": [
     "dist",
-    "src",
-    "!src/**/*.test.ts",
-    "!src/**/*.test.tsx",
     "LICENSE",
     "README.md",
     "!dist/**/*.tsbuildinfo"
@@ -54,24 +48,17 @@
     "access": "public",
     "exports": {
       ".": {
-        "types": "./src/index.ts",
+        "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       },
-      "./client": {
-        "types": "./src/client.ts",
-        "default": "./dist/client.js"
-      },
-      "./edge": {
-        "types": "./src/edge.ts",
-        "default": "./dist/edge.js"
-      },
       "./next": {
-        "types": "./src/next.ts",
+        "types": "./dist/next.d.ts",
         "default": "./dist/next.js"
       }
     }
   },
   "engines": {
     "node": ">=22"
-  }
+  },
+  "sideEffects": false
 }

@@ -44,7 +44,9 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("next/headers", () => ({ headers: mocks.headersMock }));
+vi.mock("@intelligo-dev/http", () => ({
+  getRequestHeaders: mocks.headersMock,
+}));
 
 vi.mock("@intelligo-dev/core/logger", () => ({
   createLogger: () => ({

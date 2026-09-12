@@ -23,6 +23,8 @@ import {
   setDefaultProductSlug,
 } from "@intelligo-dev/billing/plans";
 import { assertEnv } from "@intelligo-dev/core/env";
+import { setRequestContextSource } from "@intelligo-dev/http";
+import { nextRequestContext } from "@intelligo-dev/http/next";
 import {
   DEFAULT_MODELS,
   createExecutions,
@@ -48,6 +50,11 @@ export function composeIntelligo(): void {
   // missing DATABASE_URL or auth secret is a configuration error, not
   // something to discover deep inside a handler.
   assertEnv();
+
+  // Where the framework reads the incoming request's headers from.
+  // Only this line knows the app is a Next.js one; `@intelligo-dev/auth`
+  // asks `@intelligo-dev/http` and stays usable from a worker or a test.
+  setRequestContextSource(nextRequestContext);
 
   setDefaultProductSlug(PRODUCT_SLUG);
   registerProductPlans(PRODUCT_SLUG, REFERENCE_PLANS);

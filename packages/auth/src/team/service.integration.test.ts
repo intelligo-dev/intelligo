@@ -3,12 +3,11 @@
  *
  * Runs only when DATABASE_URL is set (`describe.skipIf`), same
  * convention as packages/core/src/db/__tests__/audit-trigger.int.test.ts.
- * Everything is real EXCEPT the Next.js request-scoping accessor:
- * `next/headers`'s `headers()` only works inside an actual Next.js
- * request (it reads an AsyncLocalStorage-backed context Next sets up
- * per request), which does not exist under vitest. It is shimmed here
- * to return whichever `Headers` object the current test step points it
- * at — the ONLY thing mocked. `../server` (the real `auth` instance),
+ * Everything is real EXCEPT the request-context accessor:
+ * `@intelligo-dev/http`'s `getRequestHeaders()` reads whatever source
+ * the composition root bound, and under vitest there is no request to
+ * bind one to. It is shimmed here to return whichever `Headers` object
+ * the current test step points it at — the ONLY thing mocked. `../server` (the real `auth` instance),
  * `../helpers` (requireAuth/requireWorkspace/requireRole), `../org-api`
  * (the real orgApi adapter — see its module doc comment for a bug this
  * test surfaced), and the database are all real.
@@ -51,8 +50,8 @@ vi.setConfig({ testTimeout: 30_000, hookTimeout: 30_000 });
 // `headers()` would for a real incoming request.
 const currentHeaders = { value: new Headers() as Headers };
 
-vi.mock("next/headers", () => ({
-  headers: async () => currentHeaders.value,
+vi.mock("@intelligo-dev/http", () => ({
+  getRequestHeaders: async () => currentHeaders.value,
 }));
 
 function asUser(cookie: string) {

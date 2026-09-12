@@ -26,8 +26,8 @@ const {
   updateSetMock: vi.fn(),
 }));
 
-vi.mock("next/headers", () => ({
-  headers: headersMock,
+vi.mock("@intelligo-dev/http", () => ({
+  getRequestHeaders: headersMock,
 }));
 
 vi.mock("@intelligo-dev/core/db", () => ({

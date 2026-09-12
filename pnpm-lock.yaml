@@ -121,6 +121,9 @@ importers:
       '@intelligo-dev/executions':
         specifier: workspace:*
         version: link:../../packages/executions
+      '@intelligo-dev/http':
+        specifier: workspace:*
+        version: link:../../packages/http
       '@intelligo-dev/jobs':
         specifier: workspace:*
         version: link:../../packages/jobs
@@ -392,6 +395,9 @@ importers:
       '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core
+      '@intelligo-dev/http':
+        specifier: workspace:*
+        version: link:../http
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
@@ -405,9 +411,6 @@ importers:
       drizzle-orm:
         specifier: '>=0.45.2'
         version: 0.45.2(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(kysely@0.28.17)(pg@8.18.0)
-      next:
-        specifier: ~16.2.11
-        version: 16.2.12(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
@@ -426,9 +429,6 @@ importers:
       '@intelligo-dev/executions':
         specifier: workspace:*
         version: link:../executions
-      server-only:
-        specifier: ^0.0.1
-        version: 0.0.1
     devDependencies:
       drizzle-orm:
         specifier: '>=0.45.2'
@@ -504,9 +504,6 @@ importers:
       resend:
         specifier: ^6.9.1
         version: 6.9.1(@react-email/render@2.0.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
-      server-only:
-        specifier: ^0.0.1
-        version: 0.0.1
     devDependencies:
       '@types/bcryptjs':
         specifier: ^3.0.0
@@ -566,6 +563,22 @@ importers:
       pg:
         specifier: 8.18.0
         version: 8.18.0
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/http:
+    dependencies:
+      '@intelligo-dev/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.18
+      next:
+        specifier: ~16.2.11
+        version: 16.2.12(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       typescript:
         specifier: ^5.7.2
         version: 5.9.3

@@ -20,6 +20,7 @@
     "@intelligo-dev/billing-core": "workspace:*",
     "@intelligo-dev/core": "workspace:*",
     "@intelligo-dev/executions": "workspace:*",
+    "@intelligo-dev/http": "workspace:*",
     "@intelligo-dev/jobs": "workspace:*",
     "@intelligo-dev/mastra": "workspace:^",
     "@intelligo-dev/ui": "workspace:*",

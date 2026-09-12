@@ -4,7 +4,7 @@
  * Runs only when DATABASE_URL is set (`describe.skipIf`), mirroring
  * `../team/service.integration.test.ts`'s bootstrap exactly (see that
  * file's module doc comment for the full rationale — the only mocked
- * piece is `next/headers`'s request-scoping accessor; `../server`,
+ * piece is `@intelligo-dev/http`'s request-context accessor; `../server`,
  * `../helpers`, `../org-api`, and the database are all real).
  *
  * Run:
@@ -25,8 +25,8 @@ vi.setConfig({ testTimeout: 30_000, hookTimeout: 30_000 });
 
 const currentHeaders = { value: new Headers() as Headers };
 
-vi.mock("next/headers", () => ({
-  headers: async () => currentHeaders.value,
+vi.mock("@intelligo-dev/http", () => ({
+  getRequestHeaders: async () => currentHeaders.value,
 }));
 
 function asUser(cookie: string) {
