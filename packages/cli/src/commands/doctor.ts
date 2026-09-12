@@ -53,6 +53,11 @@ function stripComments(text: string): string {
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
 }
 
+/**
+ * templates/registry-requires.json is a build-time copy of
+ * packages/registry/requires.json (scripts/sync-registry-requires.mjs),
+ * committed so that running from source works too.
+ */
 function bundledRequires(): RegistryRequires | null {
   const file = path.resolve(
     // fileURLToPath, not `.pathname` — see the note in bin.ts.

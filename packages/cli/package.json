@@ -21,7 +21,7 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
-    "build": "tsc -p tsconfig.build.json && node ../../scripts/fix-esm-extensions.mjs dist",
+    "build": "node scripts/sync-registry-requires.mjs && tsc -p tsconfig.build.json && node ../../scripts/fix-esm-extensions.mjs dist",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {

@@ -99,6 +99,14 @@
         "$TURBO_ROOT$/apps/app/hooks/**",
         "$TURBO_ROOT$/apps/app/i18n/**"
       ]
+    },
+    "@intelligo-dev/cli#build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/packages/registry/requires.json"
+      ],
+      "outputs": ["dist/**"]
     }
   }
 }
