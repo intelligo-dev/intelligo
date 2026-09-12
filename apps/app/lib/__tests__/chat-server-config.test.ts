@@ -1,14 +1,9 @@
 /**
  * The reference app's chat seam bindings.
  *
- * `deriveTitle` is the only pure logic in this file, and it is what
- * stops every conversation in the history sidebar reading "Untitled
- * conversation" — worth pinning, because the failure is silent and
- * only visible days later once a workspace has a list.
- *
- * The tool binding is exercised end to end by the stub model instead
- * (a message starting with "save" makes it call `saveArtifact`), which
- * is a truer check than asserting on a `tool()` object's shape.
+ * The transport's own tests cover what a turn does; this pins what the
+ * reference app binds into it — the parts a fresh install would be
+ * missing if this file regressed to the registry's defaults.
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -16,39 +11,26 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@intelligo-dev/core/documents", () => ({
   saveDocument: vi.fn(),
 }));
+vi.mock("next-intl/server", () => ({
+  getTranslations: vi.fn(async () => (key: string) => key),
+}));
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(async () => ({ get: () => undefined })),
+}));
+
+import { DEFAULT_MODELS } from "@intelligo-dev/executions";
 
 import { chatServerConfig } from "@/lib/chat-server-config";
 
-const derive = (text: string) => chatServerConfig.deriveTitle(text);
-
-describe("deriveTitle", () => {
-  it("titles a conversation from its first line", () => {
-    expect(derive("Summarize this quarter's numbers")).toBe(
-      "Summarize this quarter's numbers"
+describe("chat server config", () => {
+  it("runs on a model the boundary can price", () => {
+    // An unregistered id is refused at admission; a clean install must
+    // stream, so the default has to be in the shipped catalogue.
+    expect(DEFAULT_MODELS.map((m) => m.id)).toContain(
+      chatServerConfig.model.defaultId
     );
   });
 
-  it("takes only the first line of a multi-line opener", () => {
-    expect(derive("Fix the build\n\nIt fails on CI only")).toBe(
-      "Fix the build"
-    );
-  });
-
-  it("truncates a long opener rather than letting it fill the sidebar", () => {
-    const title = derive("a".repeat(200));
-    expect(title).not.toBeNull();
-    expect(title!.length).toBeLessThanOrEqual(60);
-    expect(title!.endsWith("…")).toBe(true);
-  });
-
-  it("returns null for an empty message, leaving the row untitled", () => {
-    // Better an untitled row than a row titled with whitespace: the UI
-    // has copy for the first case and renders the second as blank.
-    expect(derive("   \n  ")).toBeNull();
-  });
-});
-
-describe("chat server config defaults", () => {
   it("gates on a feature key the plan catalogue registers", () => {
     expect(chatServerConfig.featureKey).toBe("chat");
   });
@@ -57,7 +39,28 @@ describe("chat server config defaults", () => {
     expect(chatServerConfig.maxSteps).toBeGreaterThan(1);
   });
 
-  it("binds tools, without which the tool-renderer seam is unreachable", () => {
-    expect(chatServerConfig.tools).toBeDefined();
+  it("binds tools, without which the tool-renderer seam is unreachable", async () => {
+    const tools = chatServerConfig.agent?.tools;
+    expect(tools).toBeDefined();
+    const bag =
+      typeof tools === "function"
+        ? await tools({
+            workspaceId: "ws",
+            userId: "u",
+            conversationId: "c",
+            request: new Request("http://app.test/api/chat"),
+            body: {},
+            conversation: null,
+            trigger: undefined,
+          })
+        : tools;
+    expect(Object.keys(bag ?? {})).toContain("saveArtifact");
+  });
+
+  it("answers refusals from this item's own message keys", async () => {
+    const t = await chatServerConfig.messages!(
+      new Request("http://app.test/api/chat")
+    );
+    expect(t("featureGated")).toBe("route.featureGated");
   });
 });

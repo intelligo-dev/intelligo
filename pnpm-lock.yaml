@@ -112,6 +112,9 @@ importers:
       '@intelligo-dev/billing':
         specifier: workspace:*
         version: link:../../packages/billing
+      '@intelligo-dev/chat':
+        specifier: workspace:*
+        version: link:../../packages/chat
       '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -315,6 +318,9 @@ importers:
       '@intelligo-dev/billing':
         specifier: workspace:*
         version: link:../../packages/billing
+      '@intelligo-dev/chat':
+        specifier: workspace:*
+        version: link:../../packages/chat
       '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -638,6 +644,9 @@ importers:
       '@intelligo-dev/billing':
         specifier: workspace:*
         version: link:../billing
+      '@intelligo-dev/chat':
+        specifier: workspace:*
+        version: link:../chat
       '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core

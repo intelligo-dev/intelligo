@@ -18,11 +18,11 @@
  * `not_found`/`forbidden` as a genuine failure.
  */
 
-import type { UIMessage } from "ai";
 import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 
 import { requireWorkspace } from "@intelligo-dev/auth";
+import { toUIMessages } from "@intelligo-dev/chat";
 import { saveDocument } from "@intelligo-dev/core/documents";
 import {
   deleteConversation as deleteConversationRow,
@@ -100,31 +100,9 @@ export async function listConversationHistory(): Promise<
   }
 }
 
-function isChatRole(role: string): role is UIMessage["role"] {
-  return role === "system" || role === "user" || role === "assistant";
-}
-
-/**
- * Stored `messages.parts` is a JSON string (ADR-0009's schema note);
- * a row that fails to parse is dropped rather than crashing the whole
- * conversation load.
- */
-function rowToUIMessage(row: {
-  id: string;
-  role: string;
-  parts: string;
-}): UIMessage | null {
-  if (!isChatRole(row.role)) return null;
-  try {
-    return { id: row.id, role: row.role, parts: JSON.parse(row.parts) };
-  } catch {
-    return null;
-  }
-}
-
 export type LoadedConversation = {
   conversation: { id: string; title: string | null } | null;
-  messages: UIMessage[];
+  messages: ReturnType<typeof toUIMessages>;
 };
 
 /**
@@ -145,9 +123,9 @@ export async function loadConversationForChat(
         success: true,
         data: {
           conversation: { id: conversation.id, title: conversation.title },
-          messages: rows
-            .map(rowToUIMessage)
-            .filter((m): m is UIMessage => m !== null),
+          // Stored parts are a JSON string; a corrupt row costs one
+          // message, not the conversation.
+          messages: toUIMessages(rows),
         },
       };
     } catch (error) {
