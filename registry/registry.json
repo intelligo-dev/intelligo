@@ -717,7 +717,7 @@
       "name": "pricing",
       "type": "registry:block",
       "title": "Pricing",
-      "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on — install this item first.",
+      "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on \u2014 install this item first.",
       "registryDependencies": ["alert", "badge", "button", "card", "skeleton"],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -919,7 +919,7 @@
       "name": "payment-poll",
       "type": "registry:block",
       "title": "QR Payment (poll)",
-      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
+      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic \u2014 QPay, SocialPay, PIX, UPI, PromptPay all fit \u2014 through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
       "registryDependencies": ["button", "dialog"],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1374,6 +1374,16 @@
           "path": "base/chat/lib/chat-server-config.ts",
           "type": "registry:file",
           "target": "lib/chat-server-config.ts"
+        },
+        {
+          "path": "base/chat/lib/chat-quota.ts",
+          "type": "registry:file",
+          "target": "lib/chat-quota.ts"
+        },
+        {
+          "path": "base/chat/components/credit-status-banner.tsx",
+          "type": "registry:file",
+          "target": "components/chat/credit-status-banner.tsx"
         }
       ]
     }

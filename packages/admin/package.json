@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/admin",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -29,19 +29,26 @@
     "@intelligo-dev/core": "workspace:*",
     "@intelligo-dev/executions": "workspace:*",
     "@intelligo-dev/jobs": "workspace:*",
-    "@intelligo-dev/ui": "workspace:*",
-    "drizzle-orm": "^0.45.1"
+    "@intelligo-dev/ui": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
+    "drizzle-orm": "^0.45.1",
+    "react": ">=19",
+    "react-dom": ">=19",
     "typescript": "^5.7.2"
   },
   "peerDependencies": {
-    "react": ">=19"
+    "drizzle-orm": "^0.45.1",
+    "react": ">=19",
+    "react-dom": ">=19"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md",
+    "!dist/**/*.tsbuildinfo"
   ],
   "publishConfig": {
     "access": "public",
@@ -59,5 +66,8 @@
         "default": "./dist/health.js"
       }
     }
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

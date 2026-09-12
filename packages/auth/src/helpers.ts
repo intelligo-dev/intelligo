@@ -13,7 +13,7 @@
  * ```
  */
 
-import { headers } from "next/headers";
+import { getRequestHeaders } from "@intelligo-dev/http";
 import { auth } from "./server";
 import { createLogger } from "@intelligo-dev/core/logger";
 import { db } from "@intelligo-dev/core/db";
@@ -38,7 +38,7 @@ export async function getAuthSession(): Promise<{
   user: User;
 } | null> {
   const session = await auth.api.getSession({
-    headers: await headers(),
+    headers: await getRequestHeaders(),
   });
 
   if (!session?.user) {
@@ -94,7 +94,7 @@ export async function getWorkspaceContextById(organizationId: string): Promise<{
 
   // Get organization by ID directly (not from session)
   const org = await auth.api.getFullOrganization({
-    headers: await headers(),
+    headers: await getRequestHeaders(),
     query: { organizationId },
   });
 
@@ -156,7 +156,7 @@ export async function getWorkspaceContext(): Promise<{
   // "no active workspace" so the fallback below runs instead of the
   // provider error escaping as an unexplained failure.
   let activeOrg = await auth.api
-    .getFullOrganization({ headers: await headers() })
+    .getFullOrganization({ headers: await getRequestHeaders() })
     .catch((error: unknown) => {
       log.debug("getWorkspaceContext: active org not readable", {
         error: error instanceof Error ? error.message : String(error),
@@ -170,7 +170,7 @@ export async function getWorkspaceContext(): Promise<{
   if (!activeOrg) {
     log.debug("getWorkspaceContext: no active org, checking workspaces");
     const orgs: any = await auth.api.listOrganizations({
-      headers: await headers(),
+      headers: await getRequestHeaders(),
     });
 
     if (orgs && orgs.length > 0) {
@@ -179,7 +179,7 @@ export async function getWorkspaceContext(): Promise<{
       });
       // Fetch full organization details for the first workspace
       activeOrg = await auth.api.getFullOrganization({
-        headers: await headers(),
+        headers: await getRequestHeaders(),
         query: { organizationId: orgs[0].id },
       });
     }

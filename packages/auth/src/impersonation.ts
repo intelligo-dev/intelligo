@@ -15,7 +15,7 @@ import "server-only";
  * workspace role.
  */
 
-import { headers } from "next/headers";
+import { getRequestHeaders } from "@intelligo-dev/http";
 
 import { auth } from "./server";
 
@@ -38,7 +38,7 @@ export async function impersonateUser(
 ): Promise<ImpersonatedSession> {
   const result = (await auth.api.impersonateUser({
     body: { userId: targetUserId },
-    headers: await headers(),
+    headers: await getRequestHeaders(),
   })) as { session?: { expiresAt?: string | Date } };
 
   const expiresAt = result.session?.expiresAt;
@@ -53,5 +53,5 @@ export async function impersonateUser(
 
 /** Restore the admin's own session. */
 export async function stopImpersonating(): Promise<void> {
-  await auth.api.stopImpersonating({ headers: await headers() });
+  await auth.api.stopImpersonating({ headers: await getRequestHeaders() });
 }

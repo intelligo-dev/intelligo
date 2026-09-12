@@ -64,7 +64,7 @@
  *    fallback) and passes that id explicitly to `getFullOrganization`.
  */
 
-import { headers } from "next/headers";
+import { getRequestHeaders } from "@intelligo-dev/http";
 import type { ZodType } from "zod";
 import { createLogger } from "@intelligo-dev/core/logger";
 
@@ -189,7 +189,7 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
    */
   async function listWorkspaces(): Promise<OrgListItem[]> {
     await callRequireAuth();
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     const orgs = await callOrgApi("list", () =>
       orgApi["/organization/list"]({ headers: hdrs })
@@ -210,7 +210,7 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
   ): Promise<WorkspaceRecord> {
     const { user } = await callRequireAuth();
     const validated = parseInput(createWorkspaceSchema, input);
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     const existing = await callOrgApi("list", () =>
       orgApi["/organization/list"]({ headers: hdrs })
@@ -271,7 +271,7 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
       throw new WorkspaceServiceError("invalid_input", "Invalid workspace id");
     }
 
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     await callOrgApi("set-active", () =>
       orgApi["/organization/set-active"]({
@@ -289,7 +289,7 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
   ): Promise<WorkspaceRecord> {
     const { workspace } = await callRequireRole(["owner", "admin"]);
     const validated = parseInput(updateWorkspaceSchema, input);
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     const updateData: { name?: string; slug?: string; logo?: string } = {};
     if (validated.name) updateData.name = validated.name;
@@ -319,7 +319,7 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
    */
   async function deleteWorkspace(): Promise<void> {
     const { workspace } = await callRequireRole(["owner"]);
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     await callOrgApi("delete", () =>
       auth.api.deleteOrganization({
@@ -349,7 +349,7 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
    */
   async function getActiveWorkspace(): Promise<WorkspaceRecord> {
     const { workspace } = await callRequireWorkspace();
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     const org = (await callOrgApi("getFullOrganization", () =>
       auth.api.getFullOrganization({

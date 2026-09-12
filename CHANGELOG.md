@@ -16,8 +16,89 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+## [1.0.0-beta.4] — 2026-09-12
+
+The first release aimed at the second product rather than the first.
+Every change here answers a defect an audit of the framework and its one
+consumer turned up, and most of them are things that are invisible in
+this repository and only break in somebody else's.
+
+### Breaking
+
+- **Shared-identity dependencies are peers.** `drizzle-orm`, `zod`,
+  `react`, `react-dom`, `better-auth` and `stripe` move from
+  `dependencies` to `peerDependencies` across eight packages. Two copies
+  of any of them silently breaks a consumer: `instanceof` fails across
+  zod copies so the schemas `auth` exports will not validate their data,
+  two drizzle copies mean the `organization` table object a package
+  references is not the one their query builder sees, two React copies
+  throw "invalid hook call", and `Stripe.Event` in
+  `createStripeWebhookHandler`'s options is typed against a Stripe the
+  consumer does not have. pnpm's hoisting and this repository's
+  `overrides` hid all of it.
+- **`next` is no longer a peer of `core`, `billing` or `ui`.** None of
+  them imports it. Every consumer — including a queue worker, a cron
+  runner, or an API that only wanted `core/db` — was made to install
+  Next 16, and a product on another framework was locked out for
+  nothing.
+- **`@intelligo-dev/auth` no longer imports `next/headers`.** Bind a
+  request-context source from the composition root:
+  `setRequestContextSource(nextRequestContext)`. Without it, anything
+  that resolves a session throws `RequestContextUnavailableError` naming
+  the two lines that fix it.
+- **The model registry is open.** `MODEL_CONFIGS` and
+  `MODEL_OUTPUT_BUDGET` are replaced by `registerModel`/`registerModels`
+  and `DEFAULT_MODELS`; `ModelId` is `string`. Call
+  `registerModels(DEFAULT_MODELS)` from the composition root. Pricing an
+  unregistered id now throws instead of guessing.
+- **`@intelligo-dev/agents/documents` is removed** (it was already dead;
+  use `@intelligo-dev/core/documents`).
+
+### Added
+
+- **`@intelligo-dev/money`** — an amount with its currency attached, in
+  micros. Nothing depends on it yet; it is the type the money layer
+  moves onto next. Micros rather than minor units because a chat turn on
+  a cheap model costs about $0.0019 of provider time, which whole cents
+  round with a 35% error.
+- **`@intelligo-dev/http`** — where request-scoped headers come from.
+  `@intelligo-dev/http/next` is now the only file in the framework that
+  imports `next/*`, and an architecture test keeps it that way.
+- **`@intelligo-dev/core/registry`** — registries that survive a
+  bundler duplicating the module they live in.
+- **The `chat` item tells you about credit before you spend it.** A
+  server-rendered quota read, a banner for blocked and running-low, and
+  a composer that disables while blocked. The one product on this item
+  had patched three shipped files to add exactly this.
+- **`intelligo doctor` checks that the composition root registers model
+  prices**, since a root that does not leaves admission refusing every
+  request with `unknown_model`.
+
 ### Fixed
 
+- **Every package ships its licence.** `"license": "Apache-2.0"` is
+  metadata; §4(a) requires the terms to travel with the distribution,
+  and all eleven published tarballs went out without them. They now
+  carry a LICENSE and a README, declare `engines`, and no longer ship a
+  tsbuildinfo.
+- **Registries survive a duplicated module.** Next's server build can
+  instantiate a package twice, so the composition root wrote to one copy
+  of a registry and the request path read another — silently. The one
+  product to hit it saw "No billing product configured" from a page that
+  rendered fine, and worked around it with an import side effect
+  ADR-0005 forbids.
+- **Admission refuses an unpriceable model instead of 500ing.** A new
+  `unknown_model` refusal code, so a deployment that forgot to register
+  a model gets a 402 that says why.
+- **`@intelligo-dev/billing-core` is under test at all.** It had no
+  vitest project, so it was invisible to `pnpm test` — the package
+  holding the plan, feature, trial, seat, rate-limit and payment
+  registries.
+- **The CLI works on Windows.** `new URL(...).pathname` yields
+  `/C:/Users/...`, so `create` and `doctor` could not find their own
+  templates.
+- **The scaffold writes `proxy.ts`.** Next 16 deprecated the
+  `middleware` file convention and says so on every build.
 - **Registry: no page redirects from inside a streamed segment.** The
   `auth-login` item shipped a `loading.tsx` for the whole `(auth)` group
   beside a login page that redirects a signed-in user; `onboarding` and

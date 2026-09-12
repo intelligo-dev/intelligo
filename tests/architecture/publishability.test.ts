@@ -20,13 +20,23 @@ import path from "node:path";
 
 import { APPS_DIR, PACKAGES_DIR, ROOT, listWorkspaces, walk } from "./tree";
 
-/** What is on npm: every package under packages/ not marked private. */
-const PUBLISHED = listWorkspaces(PACKAGES_DIR).filter((pkg) => {
-  const manifest = JSON.parse(
+type PackageManifest = {
+  private?: boolean;
+  files?: string[];
+  engines?: { node?: string };
+  sideEffects?: false | string[];
+};
+
+function manifest(pkg: string): PackageManifest {
+  return JSON.parse(
     readFileSync(path.join(PACKAGES_DIR, pkg, "package.json"), "utf8")
-  ) as { private?: boolean };
-  return manifest.private !== true;
-});
+  ) as PackageManifest;
+}
+
+/** What is on npm: every package under packages/ not marked private. */
+const PUBLISHED = listWorkspaces(PACKAGES_DIR).filter(
+  (pkg) => manifest(pkg).private !== true
+);
 
 /**
  * Credential shapes, written to match real values and not the
@@ -215,6 +225,89 @@ describe("publishability", () => {
     });
 
     expect(missing, "packages without an Apache-2.0 license field").toEqual([]);
+  });
+
+  it("puts the licence text in every package, not only the manifest", () => {
+    // `"license": "Apache-2.0"` is metadata. Apache-2.0 §4(a) requires
+    // the terms to travel with the distribution, and every tarball
+    // published so far went out without them — a legal defect in each
+    // one, and invisible because the root LICENSE assertion above
+    // passes either way.
+    const rootLicense = readFileSync(path.join(ROOT, "LICENSE"), "utf8");
+
+    for (const pkg of listWorkspaces(PACKAGES_DIR)) {
+      const licensePath = path.join(PACKAGES_DIR, pkg, "LICENSE");
+      expect(
+        existsSync(licensePath),
+        `packages/${pkg} has no LICENSE file to publish`
+      ).toBe(true);
+      expect(
+        readFileSync(licensePath, "utf8"),
+        `packages/${pkg}'s LICENSE differs from the repository's`
+      ).toBe(rootLicense);
+
+      const files = manifest(pkg).files ?? [];
+      expect(
+        files,
+        `packages/${pkg} does not list LICENSE in "files", so it will not ship`
+      ).toContain("LICENSE");
+    }
+  });
+
+  it("gives every package an npm page and a runtime floor", () => {
+    for (const pkg of listWorkspaces(PACKAGES_DIR)) {
+      expect(
+        existsSync(path.join(PACKAGES_DIR, pkg, "README.md")),
+        `packages/${pkg} has no README — its npm page would render empty`
+      ).toBe(true);
+      expect(
+        (manifest(pkg).files ?? []).includes("README.md"),
+        `packages/${pkg} does not list README.md in "files"`
+      ).toBe(true);
+
+      // Without a floor, a consumer on an older runtime installs
+      // cleanly and fails at the first query: the Neon driver needs a
+      // global WebSocket, which arrived in Node 22. CI proves 22.
+      expect(
+        manifest(pkg).engines?.node,
+        `packages/${pkg} declares no Node floor`
+      ).toBe(">=22");
+    }
+  });
+
+  it("does not ship build metadata", () => {
+    // `tsBuildInfoFile` lands inside outDir, and `files: ["dist"]`
+    // takes the whole directory — so every tarball carried a
+    // tsbuildinfo nobody installing it can use.
+    for (const pkg of listWorkspaces(PACKAGES_DIR)) {
+      expect(
+        manifest(pkg).files ?? [],
+        `packages/${pkg} would publish its tsbuildinfo`
+      ).toContain("!dist/**/*.tsbuildinfo");
+    }
+  });
+
+  it("only claims to be side-effect free where that is true", () => {
+    // A bundler told a package is side-effect free may drop a bare
+    // `import "server-only"`, which is the guard that stops server code
+    // reaching a client bundle. Those packages declare nothing and keep
+    // the conservative default.
+    const importsServerOnly = new Set(["admin", "auth"]);
+
+    for (const pkg of listWorkspaces(PACKAGES_DIR)) {
+      const declared = manifest(pkg).sideEffects;
+      if (importsServerOnly.has(pkg)) {
+        expect(
+          declared,
+          `packages/${pkg} imports "server-only"; declaring it side-effect free lets a bundler drop the guard`
+        ).toBeUndefined();
+      } else {
+        expect(
+          declared,
+          `packages/${pkg} should declare its side effects so consumers can tree-shake it`
+        ).toBeDefined();
+      }
+    }
   });
 
   it("keeps the applications off npm", () => {

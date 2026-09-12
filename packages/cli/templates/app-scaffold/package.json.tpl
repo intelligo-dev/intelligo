@@ -19,6 +19,7 @@
     "@intelligo-dev/billing": "__INTELLIGO_DEP__",
     "@intelligo-dev/core": "__INTELLIGO_DEP__",
     "@intelligo-dev/executions": "__INTELLIGO_DEP__",
+    "@intelligo-dev/http": "__INTELLIGO_DEP__",
     "@intelligo-dev/jobs": "__INTELLIGO_DEP__",
     "@intelligo-dev/ui": "__INTELLIGO_DEP__",
     "@radix-ui/react-slot": "^1.2.4",

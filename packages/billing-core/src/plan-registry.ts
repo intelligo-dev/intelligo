@@ -16,11 +16,16 @@
  * admin UI write to; that's a separate code path.
  */
 
+import {
+  createRegistry,
+  createRegistryRef,
+} from "@intelligo-dev/core/registry";
+
 import type { PlanConfig } from "./plans";
 
 export type ProductPlanMap = Record<string, PlanConfig>;
 
-const productPlans = new Map<string, ProductPlanMap>();
+const productPlans = createRegistry<ProductPlanMap>("billing/plans");
 
 export function registerProductPlans(
   productSlug: string,
@@ -56,7 +61,9 @@ export function clearProductPlans(): void {
  */
 export type UpgradeMessageMap = Record<string, Record<string, string>>;
 
-const productUpgradeMessages = new Map<string, UpgradeMessageMap>();
+const productUpgradeMessages = createRegistry<UpgradeMessageMap>(
+  "billing/upgrade-messages"
+);
 
 export function registerUpgradeMessages(
   productSlug: string,
@@ -78,7 +85,9 @@ export function getUpgradeMessage(
 // ---------------------------------------------------------------------------
 
 export type ActionLabelMap = Record<string, string>;
-const productActionLabels = new Map<string, ActionLabelMap>();
+const productActionLabels = createRegistry<ActionLabelMap>(
+  "billing/action-labels"
+);
 
 export function registerActionLabels(
   productSlug: string,
@@ -101,7 +110,8 @@ export function getActionLabel(
 /** Feature name → the plan slugs that grant it. */
 export type ProductFeatureMatrix = Record<string, readonly string[]>;
 
-const productFeatures = new Map<string, ProductFeatureMatrix>();
+const productFeatures =
+  createRegistry<ProductFeatureMatrix>("billing/features");
 
 /**
  * Register which plans grant which features.
@@ -133,8 +143,10 @@ export function clearProductFeatures(): void {
 // Default product
 // ---------------------------------------------------------------------------
 
-let defaultProductSlug: string | undefined =
-  process.env.INTELLIGO_BILLING_PRODUCT;
+const defaultProduct = createRegistryRef<string | undefined>(
+  "billing/default-product",
+  process.env.INTELLIGO_BILLING_PRODUCT
+);
 
 /**
  * Tell the billing engine which product's catalogue it bills against.
@@ -145,7 +157,7 @@ let defaultProductSlug: string | undefined =
  * package that is supposed to know nothing about it.
  */
 export function setDefaultProductSlug(slug: string): void {
-  defaultProductSlug = slug;
+  defaultProduct.set(slug);
 }
 
 /**
@@ -170,13 +182,14 @@ export class BillingNotConfiguredError extends Error {
  * against an empty catalogue.
  */
 export function getDefaultProductSlug(): string {
-  if (!defaultProductSlug) throw new BillingNotConfiguredError();
-  return defaultProductSlug;
+  const slug = defaultProduct.get();
+  if (!slug) throw new BillingNotConfiguredError();
+  return slug;
 }
 
 /** Test helper: forget the configured product. */
 export function clearDefaultProductSlug(): void {
-  defaultProductSlug = undefined;
+  defaultProduct.set(undefined);
 }
 
 /**
@@ -190,7 +203,7 @@ export function clearDefaultProductSlug(): void {
  * rate-limiting it conservatively.
  */
 function currentProductSlug(): string | undefined {
-  return defaultProductSlug;
+  return defaultProduct.get();
 }
 
 // ---------------------------------------------------------------------------
@@ -200,7 +213,9 @@ function currentProductSlug(): string | undefined {
 /** Action slug → the field in `PlanConfig.limits` that caps it. */
 export type ActionLimitKeyMap = Record<string, string>;
 
-const productActionLimitKeys = new Map<string, ActionLimitKeyMap>();
+const productActionLimitKeys = createRegistry<ActionLimitKeyMap>(
+  "billing/action-limit-keys"
+);
 
 /**
  * Declare which plan-limit field caps which action, for the cases
@@ -271,7 +286,7 @@ export const NO_TRIAL: TrialConfig = {
   reminderDaysBeforeExpiry: 0,
 };
 
-const productTrialConfig = new Map<string, TrialConfig>();
+const productTrialConfig = createRegistry<TrialConfig>("billing/trial");
 
 export function registerTrialConfig(
   productSlug: string,
@@ -298,7 +313,9 @@ export function clearTrialConfig(): void {
 /** Plan slug → seats. `-1` is unlimited. */
 export type TeamMemberLimitMap = Record<string, number>;
 
-const productTeamLimits = new Map<string, TeamMemberLimitMap>();
+const productTeamLimits = createRegistry<TeamMemberLimitMap>(
+  "billing/team-limits"
+);
 
 /**
  * How many people a plan may have in one workspace.
@@ -351,7 +368,7 @@ export type RateLimitMap = Record<string, number>;
  */
 export const DEFAULT_REQUESTS_PER_MINUTE = 10;
 
-const productRateLimits = new Map<string, RateLimitMap>();
+const productRateLimits = createRegistry<RateLimitMap>("billing/rate-limits");
 
 /**
  * Per-plan request ceilings.

@@ -1,0 +1,64 @@
+{
+  "name": "@intelligo-dev/http",
+  "version": "1.0.0-beta.4",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/intelligo-mn/framework.git",
+    "directory": "packages/http"
+  },
+  "homepage": "https://github.com/intelligo-mn/framework#readme",
+  "bugs": {
+    "url": "https://github.com/intelligo-mn/framework/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./next": "./src/next.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/fix-esm-extensions.mjs dist",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@intelligo-dev/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "next": "^15.0.0 || ^16.0.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "next": "^15.0.0 || ^16.0.0",
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "!dist/**/*.tsbuildinfo"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./next": {
+        "types": "./dist/next.d.ts",
+        "default": "./dist/next.js"
+      }
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false
+}

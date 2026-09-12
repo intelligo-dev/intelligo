@@ -22,6 +22,7 @@ import "server-only";
  */
 
 import { db } from "@intelligo-dev/core/db";
+import { createRegistry } from "@intelligo-dev/core/registry";
 import { executions as executionsTable } from "@intelligo-dev/executions";
 import { jobs } from "@intelligo-dev/jobs";
 import { and, gte, inArray, lt, sql } from "drizzle-orm";
@@ -44,7 +45,7 @@ export type IntegrationProbe = {
   check: () => Promise<Omit<IntegrationHealth, "key" | "label">>;
 };
 
-const probes = new Map<string, IntegrationProbe>();
+const probes = createRegistry<IntegrationProbe>("admin/health-probes");
 
 /**
  * Register a product-owned integration check.

@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/jobs",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -23,15 +23,18 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@intelligo-dev/core": "workspace:*",
-    "drizzle-orm": "^0.45.1"
+    "@intelligo-dev/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "drizzle-orm": "^0.45.1",
     "typescript": "^5.7.2"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md",
+    "!dist/**/*.tsbuildinfo"
   ],
   "publishConfig": {
     "access": "public",
@@ -45,5 +48,12 @@
         "default": "./dist/db/schema.js"
       }
     }
-  }
+  },
+  "peerDependencies": {
+    "drizzle-orm": "^0.45.1"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false
 }

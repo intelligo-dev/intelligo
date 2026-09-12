@@ -72,7 +72,7 @@
  * own `organizationId`).
  */
 
-import { headers } from "next/headers";
+import { getRequestHeaders } from "@intelligo-dev/http";
 import type { ZodType } from "zod";
 import { createLogger } from "@intelligo-dev/core/logger";
 
@@ -198,7 +198,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
    */
   async function listMembers(): Promise<OrgMember[]> {
     const { workspace } = await callRequireWorkspace();
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     const org = await callOrgApi("getFullOrganization", () =>
       auth.api.getFullOrganization({
@@ -215,7 +215,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
    */
   async function listInvitations(): Promise<OrgInvitation[]> {
     const { workspace } = await callRequireWorkspace();
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     const org = await callOrgApi("getFullOrganization", () =>
       auth.api.getFullOrganization({
@@ -240,7 +240,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
   }): Promise<OrgInvitation | null> {
     const { workspace, user } = await callRequireRole(["owner", "admin"]);
     const validated = parseInput(inviteMemberSchema, input);
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     // Check team member limit (FLAG-05), via port only.
     if (ports.checkMemberLimit) {
@@ -317,7 +317,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
    */
   async function acceptInvitation(invitationId: string): Promise<void> {
     const { user } = await callRequireAuth();
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     if (typeof invitationId !== "string" || invitationId.length === 0) {
       throw new TeamServiceError("invalid_input", "Invalid invitation id");
@@ -427,7 +427,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
    */
   async function rejectInvitation(invitationId: string): Promise<void> {
     await callRequireAuth();
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     if (typeof invitationId !== "string" || invitationId.length === 0) {
       throw new TeamServiceError("invalid_input", "Invalid invitation id");
@@ -456,7 +456,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
    */
   async function cancelInvitation(invitationId: string): Promise<void> {
     await callRequireRole(["owner", "admin"]);
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     await callOrgApi("cancel-invitation", () =>
       orgApi["/organization/cancel-invitation"]({
@@ -471,7 +471,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
    */
   async function removeMember(memberId: string): Promise<void> {
     const { workspace } = await callRequireRole(["owner", "admin"]);
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     await callOrgApi("remove-member", () =>
       orgApi["/organization/remove-member"]({
@@ -490,7 +490,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
   }): Promise<void> {
     const { workspace } = await callRequireRole(["owner", "admin"]);
     const validated = parseInput(updateRoleSchema, input);
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     await callOrgApi("update-member-role", () =>
       orgApi["/organization/update-member-role"]({
@@ -510,7 +510,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
    */
   async function leaveWorkspace(): Promise<void> {
     const { workspace, membership } = await callRequireWorkspace();
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     if (membership.role === "owner") {
       const org = await callOrgApi("getFullOrganization", () =>
@@ -555,7 +555,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
    */
   async function transferOwnership(targetMemberId: string): Promise<void> {
     const { workspace } = await callRequireRole(["owner"]);
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     // Promote target to owner. Note: Better-Auth may handle demotion of
     // the previous owner automatically. If not, the old owner remains
@@ -579,7 +579,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
    * itself; ported as-is from the original action.
    */
   async function getUserInvitations(): Promise<OrgInvitation[]> {
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     const invitations = await callOrgApi("list-user-invitations", () =>
       orgApi["/organization/list-user-invitations"]({ headers: hdrs })

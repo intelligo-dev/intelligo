@@ -8,6 +8,7 @@ import {
   listConversationHistory,
   loadConversationForChat,
 } from "@/actions/chat";
+import { getChatQuotaState } from "@/lib/chat-quota";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("chat");
@@ -32,9 +33,12 @@ export default async function ConversationPage({
   const { id } = await params;
   const t = await getTranslations("chat");
 
-  const [conversationResult, historyResult] = await Promise.all([
+  // In parallel: the quota read is an estimate that holds no credit,
+  // so it cannot slow down or interfere with loading the conversation.
+  const [conversationResult, historyResult, quotaState] = await Promise.all([
     loadConversationForChat(id),
     listConversationHistory(),
+    getChatQuotaState(),
   ]);
 
   if (!conversationResult.success) {
@@ -68,7 +72,11 @@ export default async function ConversationPage({
           title={conversation?.title ?? null}
           history={history}
         />
-        <Chat conversationId={id} initialMessages={messages} />
+        <Chat
+          conversationId={id}
+          initialMessages={messages}
+          quotaState={quotaState}
+        />
       </div>
     </div>
   );

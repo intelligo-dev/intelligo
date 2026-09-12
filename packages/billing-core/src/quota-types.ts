@@ -15,11 +15,17 @@ export const GRACE_OVERAGE_PERCENTAGE = 0.05;
  * - `allowance_depleted` — nothing remains in any pool.
  * - `billing_not_configured` — no product/plans registered; nothing can
  *   be admitted until the composition root configures billing.
+ * - `unknown_model` — the request named a model with no registered
+ *   price. Admission cannot estimate what it would cost, so it refuses
+ *   rather than admitting a request it has no way to bill. Like
+ *   `billing_not_configured`, this is a deployment error surfaced as a
+ *   refusal so the caller gets a 402 that says why, instead of a 500.
  */
 export type QuotaRefusalCode =
   | "insufficient_credits"
   | "allowance_depleted"
-  | "billing_not_configured";
+  | "billing_not_configured"
+  | "unknown_model";
 
 export type QuotaCheckResult = {
   allowed: boolean;

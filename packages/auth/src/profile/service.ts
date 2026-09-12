@@ -43,7 +43,7 @@
  * that already succeeded.
  */
 
-import { headers } from "next/headers";
+import { getRequestHeaders } from "@intelligo-dev/http";
 import type { ZodType } from "zod";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@intelligo-dev/core/logger";
@@ -139,7 +139,7 @@ export function createProfileService(ports: ProfileServicePorts = {}) {
   async function updateProfile(input: UpdateProfileInput): Promise<void> {
     await callRequireAuth();
     const validated = parseInput(updateProfileSchema, input);
-    const hdrs = await headers();
+    const hdrs = await getRequestHeaders();
 
     const updateData: { name?: string; image?: string } = {};
     if (validated.name !== undefined) updateData.name = validated.name;

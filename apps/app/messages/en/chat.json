@@ -20,7 +20,8 @@
   "input": {
     "placeholder": "Send a message…",
     "stop": "Stop generating",
-    "send": "Send message"
+    "send": "Send message",
+    "blockedPlaceholder": "Add credits to keep chatting"
   },
   "emptyState": {
     "title": "Start a conversation",
@@ -91,5 +92,12 @@
       "month": "This month",
       "older": "Older"
     }
+  },
+  "creditBanner": {
+    "outOfCredits": "You're out of credits",
+    "upgradeRequired": "This needs a plan upgrade",
+    "upgrade": "Upgrade",
+    "runningLow": "{count, plural, one {{amount} credit left} other {{amount} credits left}}",
+    "topUp": "Top up"
   }
 }

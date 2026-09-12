@@ -27,3 +27,13 @@ export {
   type MigrationChain,
   type ChainProblem,
 } from "./migrations.js";
+
+/**
+ * Where the framework's chain lives. Exported because a consumer's own
+ * operational scripts — baselining a push-provisioned database, a
+ * one-off audit — otherwise hardcode
+ * `node_modules/@intelligo-dev/core/src/db/migrations`, which is right
+ * in an application and wrong in the framework repository, and which
+ * silently stops being either if the package layout ever changes.
+ */
+export { resolveMigrationsDir, MIGRATION_LOCATIONS } from "./migrations-dir.js";

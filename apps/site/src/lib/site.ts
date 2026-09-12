@@ -3,7 +3,11 @@ import proof from "@/data/proof.json";
 export const SITE = {
   name: "intelligo",
   title: "Intelligo — the application framework for vertical AI SaaS",
+  /** ≤160 characters: what search engines and link previews show. */
   description:
+    "Open-source application framework for vertical AI SaaS — auth, workspaces, billing, credits and execution accounting. You build the agent; your AI framework stays native.",
+  /** The long form, for the footer and the social card. */
+  tagline:
     "You build the agent. Intelligo is everything around it — auth, workspaces, billing, credits, execution accounting, pages and operations — shipped as versioned packages and consumer-owned source. Your AI framework stays native. Open source, Apache-2.0.",
   github: "https://github.com/intelligo-mn/framework",
   githubOwner: "intelligo-mn",
@@ -18,8 +22,8 @@ export const SITE = {
   /** From `pnpm --filter site sync`, so the site never names a version that is not on npm. */
   version: proof.version as string,
   status: `${proof.version} · on npm`,
-  /** Flip once the repository is public: enables the live star count. */
-  githubPublic: false,
+  /** The repository is public: the nav shows the live star count. */
+  githubPublic: true,
 } as const;
 
 /**

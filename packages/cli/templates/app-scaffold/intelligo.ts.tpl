@@ -25,7 +25,13 @@ import {
   setDefaultProductSlug,
 } from "@intelligo-dev/billing/plans";
 import { assertEnv } from "@intelligo-dev/core/env";
-import { createExecutions } from "@intelligo-dev/executions";
+import { setRequestContextSource } from "@intelligo-dev/http";
+import { nextRequestContext } from "@intelligo-dev/http/next";
+import {
+  DEFAULT_MODELS,
+  createExecutions,
+  registerModels,
+} from "@intelligo-dev/executions";
 
 import { PLANS, FEATURES } from "./plans";
 
@@ -51,9 +57,21 @@ export function composeIntelligo(): void {
   // something to discover deep inside a handler.
   assertEnv();
 
+  // Where the framework reads the incoming request's headers from.
+  // Only this line knows the app is a Next.js one; `@intelligo-dev/auth`
+  // asks `@intelligo-dev/http` and stays usable from a worker or a test.
+  setRequestContextSource(nextRequestContext);
+
   setDefaultProductSlug(PRODUCT_SLUG);
   registerProductPlans(PRODUCT_SLUG, PLANS);
   registerProductFeatures(PRODUCT_SLUG, FEATURES);
+
+  // What each model costs. The framework ships a catalogue as data and
+  // registers none of it: an id with no registered price throws where
+  // the price is needed, rather than being guessed. Swap in your own
+  // contracted rates, or add a model the framework has never heard of,
+  // by passing your own array here.
+  registerModels(DEFAULT_MODELS);
 }
 
 export const executions = createExecutions({
