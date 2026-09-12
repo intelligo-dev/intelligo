@@ -65,22 +65,12 @@ import type {
 import { CHAT_ERROR_STATUS, DEFAULT_CHAT_MESSAGES, refuse } from "./errors";
 import type { ChatMessages } from "./errors";
 import { lastUserMessage, toUIMessages } from "./messages";
+import { truncateTitle } from "./title";
 import { pickUsage, sumStepUsage } from "./usage";
 import type { TokenUsage } from "./usage";
 import { applyConversationWindow, extractText } from "./windowing";
 
 const log = createLogger("Chat");
-
-const MAX_TITLE_LENGTH = 60;
-
-/** First line, trimmed, truncated — enough to tell history rows apart. */
-export function truncateTitle(firstUserText: string): string | null {
-  const line = firstUserText.trim().split("\n")[0]?.trim();
-  if (!line) return null;
-  return line.length <= MAX_TITLE_LENGTH
-    ? line
-    : `${line.slice(0, MAX_TITLE_LENGTH - 1).trimEnd()}…`;
-}
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
