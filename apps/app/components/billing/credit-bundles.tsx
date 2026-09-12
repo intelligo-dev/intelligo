@@ -10,6 +10,19 @@
  * rendered verbatim rather than routed through `messages/en.json`
  * (ADR-0010); localize it in that config file if this deployment
  * needs bundle names in more than one language.
+ *
+ * The bundle price is NOT formatted with `CURRENCY`. `CreditBundle`'s
+ * amount field is `priceUsd`, and `createCreditCheckout` charges it
+ * through Stripe with `currency: "usd"` — so the number on this card is
+ * a US dollar amount whatever the deployment's ledger currency is.
+ * Formatting it with `CURRENCY` printed a $1.01 pack as "₮1" in the
+ * first non-USD deployment: right glyph, wrong money, and rounded to
+ * nothing by `maximumFractionDigits: 0`. `CURRENCY` stays correct for
+ * balances and usage, which really are in the ledger unit.
+ *
+ * This is an interim honesty fix. The real repair is a `CreditBundle`
+ * that carries its own currency on both the price and the grant, so the
+ * two can never be read in each other's unit.
  */
 
 import { useState } from "react";
@@ -18,11 +31,18 @@ import { useFormatter, useTranslations } from "next-intl";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { CURRENCY } from "@/lib/billing-config";
 import { Card } from "@/components/ui/card";
 
 import { createCreditPurchaseSession } from "@/actions/billing";
 import { CREDIT_BUNDLES } from "@/lib/billing-config";
+
+/**
+ * The currency `CreditBundle.priceUsd` is denominated in, and the one
+ * `createCreditCheckout` passes to Stripe. Fixed by the framework
+ * today, not a deployment choice — hence a constant here rather than a
+ * value read from `@/lib/billing-config`.
+ */
+const BUNDLE_PRICE_CURRENCY = "USD";
 
 interface CreditBundlesProps {
   currentCredits?: number;
@@ -81,8 +101,7 @@ export function CreditBundles({ currentCredits }: CreditBundlesProps) {
                 {t("creditBundles.oneTime", {
                   price: format.number(bundle.priceUsd, {
                     style: "currency",
-                    currency: CURRENCY,
-                    maximumFractionDigits: 0,
+                    currency: BUNDLE_PRICE_CURRENCY,
                   }),
                 })}
               </p>
