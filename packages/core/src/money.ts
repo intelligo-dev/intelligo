@@ -5,11 +5,12 @@
  * currency: `balance_mnt`, `chargedMnt`, `estimatedMnt`, a
  * `DEFAULT_USD_TO_MNT_RATE` constant, and a `formatPrice` that returned
  * a tugrik glyph — in the public port types of a package meant to
- * underpin products that do not sell in tugrik. This package is the
- * replacement, and it is a package rather than a module inside `core`
- * for one specific reason: `@intelligo-dev/executions`'s pricing module
- * is a deliberate zero-import leaf that client bundles reach, and it
- * needs these types.
+ * underpin products that do not sell in tugrik. This module is the
+ * replacement. It imports nothing, and must keep importing nothing:
+ * `@intelligo-dev/executions/pricing` is a deliberate zero-import leaf
+ * that client bundles reach, and it needs these types without dragging
+ * the rest of core behind them. `core/registry` holds the same line for
+ * the same reason.
  *
  * Two decisions worth stating, because both look arbitrary and neither
  * is.

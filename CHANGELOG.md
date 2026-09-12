@@ -16,6 +16,15 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+### Breaking
+
+- **`@intelligo-dev/money` is `@intelligo-dev/core/money`.** The
+  amount-plus-currency value object had its own package so that
+  `executions/pricing`, a zero-import leaf, could reach it. A
+  dependency-free subpath of core has the same property — `core/registry`
+  already works that way — and one fewer package to install, version and
+  explain. The npm name is deprecated; the API is unchanged.
+
 ## [1.0.0-beta.4] — 2026-09-12
 
 The first release aimed at the second product rather than the first.

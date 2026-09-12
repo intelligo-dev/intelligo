@@ -34,12 +34,6 @@ import {
 const ALLOWED_DEPS: Record<string, readonly string[]> = {
   core: [],
   ui: [],
-  // Money types have to be reachable from `executions/pricing`, which
-  // is a zero-import leaf that client bundles pull in. That is why they
-  // are a package of their own rather than a module inside core, and
-  // why this entry must stay empty: one dependency here and the leaf
-  // stops being a leaf.
-  money: [],
   // The transport adapter. Its `/next` subpath is the only file in the
   // framework allowed to import next/*.
   http: ["@intelligo-dev/core"],

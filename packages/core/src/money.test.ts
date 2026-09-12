@@ -19,7 +19,7 @@ import {
   toMajor,
   toMinor,
   zero,
-} from "./index";
+} from "./money";
 
 describe("currency", () => {
   it("normalises case", () => {

@@ -25,6 +25,7 @@ pnpm add @intelligo-dev/core
 | `/notifications` | In-app notification records and triggers               |
 | `/logger`        | Structured logging with credential redaction           |
 | `/registry`      | Registries that survive a bundler duplicating a module |
+| `/money`         | Amount-plus-currency value object in micros; imports nothing |
 | `/env`           | Environment validation                                 |
 
 ## Migrations
