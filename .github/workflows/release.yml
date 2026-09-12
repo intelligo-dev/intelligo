@@ -132,7 +132,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # Names the framework stopped publishing, pointed at where the
-      # code went. Idempotent, so it runs on every release.
+      # code went. npm answers 422 to a deprecation that changes nothing,
+      # so each is applied only when its message differs from what the
+      # registry already carries.
       - name: Deprecate folded packages
         if: steps.check.outputs.published != 'true'
         run: |
@@ -141,30 +143,40 @@ jobs:
             const { deprecations } = require("./scripts/npm-deprecations.json");
             for (const d of deprecations) console.log(`${d.name}\t${d.message}`);
           ' | while IFS=$'\t' read -r name message; do
-            if npm view "$name" version >/dev/null 2>&1; then
-              npm deprecate "$name@*" "$message" && echo "deprecated $name"
-            else
+            if ! npm view "$name" version >/dev/null 2>&1; then
               echo "$name was never on npm — nothing to deprecate"
+              continue
+            fi
+            current=$(npm view "$name" deprecated 2>/dev/null || true)
+            if [ "$current" = "$message" ]; then
+              echo "$name is already deprecated with this message"
+            else
+              npm deprecate "$name@*" "$message" && echo "deprecated $name"
             fi
           done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # The tag records which commit shipped; a push by GITHUB_TOKEN
-      # does not trigger this workflow again. Skipped when the run was
-      # started by a hand-pushed tag, which already exists.
+      # does not trigger this workflow again. Runs whether or not this
+      # run published, so a release whose run failed after publishing
+      # still gets its tag on the next run — and does nothing when the
+      # tag exists (a hand-pushed one included).
       - name: Tag
-        if: steps.check.outputs.published != 'true' && !startsWith(github.ref, 'refs/tags/')
+        if: "!startsWith(github.ref, 'refs/tags/')"
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.version }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null 2>&1; then
+            echo "tag v$version exists"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag "v$version"
           git push origin "v$version"
 
       - name: GitHub release
-        if: steps.check.outputs.published != 'true'
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.version }}"
