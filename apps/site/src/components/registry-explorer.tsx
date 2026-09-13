@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Showcase, SCENE_FOR_ITEM } from "@/showcase/scenes";
-import { CopyButton } from "@/components/copy-button";
+import { BrowserFrame } from "@/components/browser-frame";
+import { CommandLine } from "@/components/command-line";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { REGISTRY_ITEMS, type RegistryGroup } from "@/lib/registry-items";
 
@@ -104,40 +105,27 @@ export function RegistryExplorer() {
             </div>
           </div>
 
-          <div className="mt-2 border border-line-strong bg-paper-raised">
-            <div className="flex h-7 items-center gap-1.5 border-b border-line px-3">
-              <span className="size-2 rounded-full bg-line-strong" />
-              <span className="size-2 rounded-full bg-line-strong" />
-              <span className="size-2 rounded-full bg-line-strong" />
-              <span className="mono ml-2 text-[0.66rem] text-ink-faint">
-                app/[en]/…
-              </span>
-              <span className="mono ml-auto text-[0.62rem] text-ink-faint">
-                messages/en/{item.name}.json
-              </span>
-            </div>
-            <div className="relative h-[300px] overflow-hidden">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={item.name}
-                  className="absolute inset-0"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  <Showcase scene={SCENE_FOR_ITEM[item.name] ?? "dashboard"} />
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
+          <BrowserFrame
+            className="mt-2"
+            messages={`messages/en/${item.name}.json`}
+            bodyClassName="h-[300px]"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={item.name}
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+              >
+                <Showcase scene={SCENE_FOR_ITEM[item.name] ?? "dashboard"} />
+              </motion.div>
+            </AnimatePresence>
+          </BrowserFrame>
 
           <p className="mt-3 text-[0.9rem] text-ink-dim">{item.description}</p>
-          <div className="mono mt-2 flex items-center gap-2 rounded-md border border-line bg-paper-sunken px-3 py-1.5 text-[0.74rem]">
-            <span className="text-ink-faint">$</span>
-            <span className="min-w-0 flex-1 truncate text-ink-dim">{cmd}</span>
-            <CopyButton text={cmd} />
-          </div>
+          <CommandLine cmd={cmd} className="mt-2" />
         </div>
       </div>
     </TooltipProvider>

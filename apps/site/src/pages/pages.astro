@@ -4,10 +4,9 @@ import { RegistryExplorer } from "@/components/registry-explorer";
 import { InstallCommand } from "@/components/install-command";
 import { REGISTRY_COUNT } from "@/lib/registry-items";
 import { SITE } from "@/lib/site";
+import { countWord } from "@/lib/count-words";
 
-const words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three", "twenty-four", "twenty-five", "twenty-six", "twenty-seven", "twenty-eight", "twenty-nine", "thirty"];
-const count = words[REGISTRY_COUNT] ?? String(REGISTRY_COUNT);
-const Count = count.charAt(0).toUpperCase() + count.slice(1);
+const Count = countWord(REGISTRY_COUNT);
 
 const RULES = [
   ["Installed components are used as-is.", "What a deployment varies arrives through config files the items ship for you to edit: navigation, banners, onboarding steps, credit bundles, chat identity, conversation starters, tool renderers."],
