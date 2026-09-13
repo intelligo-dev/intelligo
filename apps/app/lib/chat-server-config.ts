@@ -159,6 +159,11 @@ export const chatServerConfig: ChatServerConfig = {
   capability: "chat.message",
   maxMessageLength: 8000,
   maxSteps: 5,
+  // The composer's `chatConfig.attachments`, as the route enforces it.
+  attachments: {
+    accept: ["image/png", "image/jpeg", "image/webp"],
+    maxBytes: 5_000_000,
+  },
 
   agent: {
     id: "assistant",

@@ -171,6 +171,25 @@ function messageText(message: UIMessage): string {
     .trim();
 }
 
+/**
+ * The avatar reads from the top of the turn, the way a transcript is
+ * read — not from the bottom of the last bubble, which is where
+ * shadcn's Message parks it for short chat bubbles. The footer variant
+ * that lifts a bottom-aligned avatar over the actions row is undone
+ * for the same reason.
+ */
+/**
+ * The streaming caret sits at the end of the last line of markdown,
+ * not under it: markdown renders as blocks, so a sibling after the
+ * renderer would start a new line. A pseudo-element on the last block
+ * stays inline with its text.
+ */
+const STREAMING_CARET =
+  "[&>:last-child]:after:ml-0.5 [&>:last-child]:after:inline-block [&>:last-child]:after:h-4 [&>:last-child]:after:w-0.5 [&>:last-child]:after:animate-pulse [&>:last-child]:after:rounded-full [&>:last-child]:after:bg-foreground [&>:last-child]:after:align-text-bottom [&>:last-child]:after:content-['']";
+
+const AVATAR_CLASS =
+  "self-start group-has-data-[slot=message-footer]/message:translate-y-0";
+
 export function Message({
   conversationId,
   message,
@@ -224,7 +243,7 @@ export function Message({
   if (isUser && editing) {
     return (
       <MessageRoot align="end" className="group/chat-message">
-        <MessageAvatar>
+        <MessageAvatar className={AVATAR_CLASS}>
           <UserIcon />
         </MessageAvatar>
         <MessageContent>
@@ -246,7 +265,9 @@ export function Message({
       align={isUser ? "end" : "start"}
       className="group/chat-message"
     >
-      <MessageAvatar>{isUser ? <UserIcon /> : <BotIcon />}</MessageAvatar>
+      <MessageAvatar className={AVATAR_CLASS}>
+        {isUser ? <UserIcon /> : <BotIcon />}
+      </MessageAvatar>
 
       <MessageContent>
         {files.length > 0 ? (
@@ -276,6 +297,7 @@ export function Message({
               <Bubble key={key} variant="ghost">
                 <BubbleContent>
                   <Streamdown
+                    className={streamingText ? STREAMING_CARET : undefined}
                     mode={streamingText ? "streaming" : "static"}
                     isAnimating={streamingText}
                     plugins={MARKDOWN_PLUGINS}
@@ -287,12 +309,6 @@ export function Message({
                   >
                     {streamingText ? part.text : withCitations(part.text, sources.length)}
                   </Streamdown>
-                  {streamingText ? (
-                    <span
-                      aria-hidden
-                      className="ml-0.5 inline-block h-4 w-0.5 animate-pulse rounded-full bg-foreground align-text-bottom"
-                    />
-                  ) : null}
                 </BubbleContent>
               </Bubble>
             );

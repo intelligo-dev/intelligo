@@ -161,4 +161,11 @@ export const chatConfig: ChatConfig = {
     "chat.starters.brainstorm",
     "chat.starters.save",
   ],
+  // Inline images: the "+" control, paste and drop, mirrored in
+  // `lib/chat-server-config.ts`. The stub model only echoes text.
+  attachments: {
+    accept: ["image/png", "image/jpeg", "image/webp"],
+    maxFiles: 4,
+    maxBytes: 5_000_000,
+  },
 };

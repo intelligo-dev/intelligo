@@ -119,24 +119,22 @@ export function ChatWorkspace({
     />
   ) : null;
 
-  if (isMobile) {
-    return (
-      <>
-        {thread}
+  // One tree for every width: the thread is always the first child of
+  // the same row, so crossing the breakpoint (a rotation, a resized
+  // window) reconciles it in place and keeps the messages in flight.
+  // Only what holds the canvas changes — a sheet over the thread on a
+  // phone, a column beside it otherwise.
+  return (
+    <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">{thread}</div>
+      {isMobile ? (
         <Sheet open={canvas !== null} onOpenChange={(open) => !open && closeCanvas()}>
           <SheetContent side="right" className="w-full p-0 sm:max-w-xl">
             <SheetTitle className="sr-only">{t("canvas.title")}</SheetTitle>
             {panel}
           </SheetContent>
         </Sheet>
-      </>
-    );
-  }
-
-  return (
-    <div className="flex min-h-0 flex-1">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">{thread}</div>
-      {canvas ? (
+      ) : canvas ? (
         <aside className="flex w-2/5 min-w-80 shrink-0 flex-col border-l">
           {panel}
         </aside>
