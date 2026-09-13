@@ -33,6 +33,8 @@ export const SITE = {
 export const NAV = [
   { href: "/#film", label: "The film" },
   { href: "/pages", label: "Pages" },
+  { href: "/blocks", label: "Blocks" },
+  { href: "/components", label: "Components" },
   { href: "/architecture", label: "Architecture" },
   { href: SITE.docs, label: "Docs" },
 ] as const;
