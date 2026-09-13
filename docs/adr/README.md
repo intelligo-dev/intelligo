@@ -4,7 +4,7 @@ The decisions the framework is built on. New ADRs get the next number; supersede
 
 | #                                                          | Decision                                                                                       | Status                     |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------- |
-| [0001](0001-category-and-positioning.md)                   | Application framework/platform, not a starter kit; private incubation repo                     | Accepted                   |
+| [0001](0001-category-and-positioning.md)                   | Application framework/platform, not a starter kit; developed in public                         | Accepted                   |
 | [0002](0002-product-ownership.md)                          | Consumer app is owned source; admin console is Intelligo-owned                                 | Accepted                   |
 | [0003](0003-ai-framework-boundary.md)                      | AI frameworks stay native; Intelligo records only the execution boundary                       | Accepted                   |
 | [0004](0004-database-ownership.md)                         | One PostgreSQL database, explicit per-table ownership                                          | Accepted                   |
@@ -18,4 +18,4 @@ The decisions the framework is built on. New ADRs get the next number; supersede
 | [0012](0012-headless-chat-transport.md)                    | The chat transport is a package; the chat UI is registry source                                | Accepted                   |
 | [0013](0013-design-system.md)                              | One design system: shadcn base-nova, an additive token contract, a tiered catalog              | Accepted                   |
 
-The ADRs were written inside the private incubation repository these packages were extracted from (ADR-0001, ADR-0006), so some cite an internal planning document by relative path; those links do not resolve here. The decisions themselves are complete as written.
+The ADRs were written inside the private repository these packages were extracted from (ADR-0001, ADR-0006); references to internal planning documents have been removed. The decisions themselves are complete as written.

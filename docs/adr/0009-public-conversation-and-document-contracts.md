@@ -3,12 +3,11 @@
 **Status:** Accepted
 **Date:** 2026-08-26
 **Amends:** the "documents service private with the chat UI" destination in [ADR-0008](0008-dissolving-the-undecided-packages.md)
-**Driver:** [Page and Registry Migration Plan](../intelligo-page-registry-migration-plan.md) §3, Phase 5
 
 ## Context
 
 ADR-0008 routed `@intelligo-dev/agents`' documents service private, colocated with
-the chat UI, because at classification time its only consumer was Acme. The
+the chat UI, because at classification time its only consumer was the proof product. The
 page/registry migration plan then made a stronger claim about ownership: the
 `chat` and `artifacts` page families install as consumer-owned source, and the
 backend the installed source calls — "conversation, message, memory and
@@ -35,7 +34,7 @@ boundary's records (ADR-0003, ADR-0007).
 ADR-0008 stands for everything else it decided. What changes is one
 destination: the documents service (and the conversation queries that were
 headed to the same private corner) land in `core` instead of private chat
-territory. `@intelligo-dev/agents` still dissolves; Acme and the registry items
+territory. `@intelligo-dev/agents` still dissolves; the proof product and the registry items
 converge on the same core modules at their respective cutovers.
 
 ## Consequences
@@ -44,6 +43,6 @@ converge on the same core modules at their respective cutovers.
   can import, satisfying the migration plan's Phase 5 exit criterion.
 - `@intelligo-dev/core` grows two modules but no new dependencies; the schema it
   already owned gains its service layer.
-- Acme's `actions/document.ts` and conversation actions become thin
+- The proof product's `actions/document.ts` and conversation actions become thin
   transports over the core modules at cutover, retiring their
   `@intelligo-dev/agents` imports — one fewer edge into a dissolving package.

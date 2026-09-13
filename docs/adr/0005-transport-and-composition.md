@@ -2,11 +2,10 @@
 
 **Status:** Accepted
 **Date:** 2026-08-25
-**Source:** [Architecture & Improvement Plan V2](../intelligo-architecture-improvement-plan-v2.md) §2.2, §2.6
 
 ## Context
 
-Business logic currently lives inside Server Actions (`apps/app/actions/*`) and Route Handlers (`apps/app/app/api/*`) directly. The chat route alone runs two parallel auth paths (`validateAIRequest` for POST, `withAuth` for DELETE). Registration/bootstrap happens through **four competing paths**: `apps/app/lib/plugins.ts` (`initPlugins()` from a layout), `apps/app/lib/bootstrap.ts` (client renderer registry), `apps/app/lib/server-bootstrap.ts` (side-effect import), and `packages/support/src/config/billing-bootstrap.ts` (import-order-dependent side effect inside a package).
+Business logic currently lives inside Server Actions (`apps/app/actions/*`) and Route Handlers (`apps/app/app/api/*`) directly. The chat route alone runs two parallel auth paths (`validateAIRequest` for POST, `withAuth` for DELETE). Registration/bootstrap happens through **four competing paths**: `apps/app/lib/plugins.ts` (`initPlugins()` from a layout), `apps/app/lib/bootstrap.ts` (client renderer registry), `apps/app/lib/server-bootstrap.ts` (side-effect import), and `config/billing-bootstrap.ts` in the product's domain package (import-order-dependent side effect inside a package).
 
 ## Decision
 

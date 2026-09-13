@@ -2,7 +2,6 @@
 
 **Status:** Accepted
 **Date:** 2026-08-25
-**Source:** [Architecture & Improvement Plan V2](../intelligo-architecture-improvement-plan-v2.md) §2.3
 
 ## Context
 
@@ -12,7 +11,7 @@
 
 Intelligo will **not** build a universal `IntelligoAgent`, `IntelligoTool`, `IntelligoWorkflow`, or `IntelligoMemory` abstraction.
 
-- **Mastra is the initial first-class integration** (Acme is the proof product). Mastra agents, tools, workflows, memory, results, streaming, and types remain fully native.
+- **Mastra is the initial first-class integration** (the first product built on the framework is the proof product). Mastra agents, tools, workflows, memory, results, streaming, and types remain fully native.
 - Other frameworks (AI SDK, Eve) may get thin optional bridges later, only after real demand, and only against the execution boundary.
 - Intelligo records only the narrow SaaS execution boundary: **actor, workspace, capability, entitlement, status, usage, cost, credits, and audit metadata**:
 
@@ -20,10 +19,10 @@ Intelligo will **not** build a universal `IntelligoAgent`, `IntelligoTool`, `Int
 const run = await executions.begin({
   workspaceId,
   userId,
-  capability: "support.recommendation",
+  capability: "support.reply",
 });
 try {
-  const result = await careerAgent.generate(messages); // native Mastra
+  const result = await supportAgent.generate(messages); // native Mastra
   await run.complete({ usage: result.usage, model: result.model });
   return result;
 } catch (error) {

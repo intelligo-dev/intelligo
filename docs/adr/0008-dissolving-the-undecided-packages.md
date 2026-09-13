@@ -3,7 +3,6 @@
 **Status:** Accepted
 **Date:** 2026-08-26
 **Supersedes:** the "Undecided" section of [ADR-0006](0006-package-allowlist.md)
-**Evidence:** [Export Classification Ledger](../inventory/export-classification.md) §1–3, §10
 
 ## Context
 
@@ -27,7 +26,7 @@ The model registry (`MODEL_CONFIGS`, `ModelId`) and the cost math (`calculateCos
 
 They land in `@intelligo-dev/executions/pricing`, a leaf module with no imports, so a client bundle can read a display name without pulling in Drizzle. `@intelligo-dev/ai` re-exports it rather than keeping a copy: two registries is precisely how a model runs on Gemini Flash and bills at Claude rates.
 
-`ChatSDKError`/`ErrorCode` and `ChatMessage` move to `core` as framework contracts. Provider resolution, grounding, embeddings and images stay behind as replace-with-native. The `./agents` subpath reads a product-config table and is Acme-private.
+`ChatSDKError`/`ErrorCode` and `ChatMessage` move to `core` as framework contracts. Provider resolution, grounding, embeddings and images stay behind as replace-with-native. The `./agents` subpath reads a product-config table and is private to the proof product.
 
 ### `agents` → dissolves; nothing keeps the name
 
@@ -46,5 +45,5 @@ The three directories stay in this repository, classified `deprecated` in `confi
 - `billing` imports `@intelligo-dev/executions/pricing`; the `billing → ai` edge is gone and the public dependency graph no longer reaches an unclassified package.
 - The extracted foundation is three packages and ~500 symbols smaller, and `apps/reference` — which never imported any of the three — proves it still builds.
 - The model-registry architecture rule now reads `packages/executions/src/pricing.ts`, so it keeps a subject in the extracted tree instead of silently losing one.
-- `ai`, `agents` and `chat` remain fully functional for Acme and Support. Nothing was deleted; the deadline this ADR sets is on publication, not on the product.
+- `ai`, `agents` and `chat` remain fully functional for the proof product and its domain package. Nothing was deleted; the deadline this ADR sets is on publication, not on the product.
 - The remaining moves (contracts to `core`, queue to `jobs`, audit to `audit`, chat UI to templates) are ordinary Phase 3/4 work. When the last one lands, the `deprecated` list empties and the rule above becomes vacuous — delete it then rather than let it pass on nothing.

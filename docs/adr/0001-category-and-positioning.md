@@ -2,7 +2,6 @@
 
 **Status:** Accepted
 **Date:** 2026-08-25
-**Source:** [Architecture & Improvement Plan V2](../intelligo-architecture-improvement-plan-v2.md) §1, §1.1
 
 ## Context
 
@@ -15,7 +14,7 @@ Intelligo is an **open-source application framework and operational platform for
 - Applications keep Intelligo as a **long-lived, versioned runtime dependency**.
 - Intelligo continuously supplies contracts, database migrations, compatibility checks, an admin console, `doctor` diagnostics, and safe codemods across releases.
 - `create-intelligo-app` and generated pages are **onboarding mechanisms**, not the product boundary. The enduring product is the framework/runtime relationship.
-- The current repository is a **private incubation workspace**. Its Git history is never published; the future public repository starts from a clean initial commit (see ADR-0006).
+- The framework is developed in this **public repository**, which started from a clean initial commit; the history of the private repository it was built in is not published (see ADR-0006).
 
 ## Consequences
 

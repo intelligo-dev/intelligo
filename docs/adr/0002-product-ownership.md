@@ -2,11 +2,10 @@
 
 **Status:** Accepted
 **Date:** 2026-08-25
-**Source:** [Architecture & Improvement Plan V2](../intelligo-architecture-improvement-plan-v2.md) §1, §2.4, §2.5
 
 ## Context
 
-Today `apps/app` mixes product UX (support chat, onboarding, dashboard) with framework orchestration (chat handler registry, bootstraps, persistence wiring). A framework that owns the consumer's routes and pages cannot evolve without breaking every product built on it.
+Today `apps/app` mixes product UX (product chat, onboarding, dashboard) with framework orchestration (chat handler registry, bootstraps, persistence wiring). A framework that owns the consumer's routes and pages cannot evolve without breaking every product built on it.
 
 ## Decision
 
@@ -19,12 +18,12 @@ Intelligo supplies: headless services, stable contracts, optional UI primitives,
 ### Terminology (use consistently)
 
 - **module** — build-time capability composed via `defineIntelligo({ modules: [...] })`
-- **integration** — external/provider adapter (Stripe, QPay, Mastra, Resend, …)
+- **integration** — external/provider adapter (Stripe, Mastra, Resend, …)
 - **extension** — UI or behavioral extension point
 - **plugin** — reserved for a future runtime-installable capability; **no runtime plugin marketplace in v1**
 
 ## Consequences
 
 - Generated consumer files are tracked by a source manifest (template origin + version) without Intelligo taking ownership; customized files are never replaced wholesale.
-- The existing `apps/app` will become the private Acme product application; framework orchestration currently inside it moves behind package APIs (Phases 2–3).
+- The existing `apps/app` will become the application of the first product built on the framework, in its own repository; framework orchestration currently inside it moves behind package APIs (Phases 2–3).
 - Admin authorization must be distinct from product workspace roles (see the platform-admin work in Phase 1; enforced fully in Phase 5).
