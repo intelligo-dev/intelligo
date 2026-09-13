@@ -1993,7 +1993,22 @@
         "@streamdown/math",
         "@streamdown/mermaid",
         "@streamdown/cjk",
-        "katex"
+        "katex",
+        "next-themes",
+        "prosemirror-state",
+        "prosemirror-view",
+        "prosemirror-markdown",
+        "prosemirror-example-setup",
+        "prosemirror-inputrules",
+        "codemirror",
+        "@codemirror/state",
+        "@codemirror/view",
+        "@codemirror/lang-javascript",
+        "@codemirror/lang-python",
+        "@codemirror/theme-one-dark",
+        "react-data-grid@7.0.0-beta.61",
+        "papaparse",
+        "@types/papaparse"
       ],
       "files": [
         {
@@ -2095,6 +2110,21 @@
           "path": "base/chat/components/chat-canvas.tsx",
           "type": "registry:component",
           "target": "components/chat/chat-canvas.tsx"
+        },
+        {
+          "path": "base/chat/components/canvas/text-editor.tsx",
+          "type": "registry:component",
+          "target": "components/chat/canvas/text-editor.tsx"
+        },
+        {
+          "path": "base/chat/components/canvas/code-editor.tsx",
+          "type": "registry:component",
+          "target": "components/chat/canvas/code-editor.tsx"
+        },
+        {
+          "path": "base/chat/components/canvas/sheet-editor.tsx",
+          "type": "registry:component",
+          "target": "components/chat/canvas/sheet-editor.tsx"
         },
         {
           "path": "base/chat/components/chat-empty.tsx",

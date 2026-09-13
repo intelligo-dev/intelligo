@@ -7,9 +7,10 @@
  * A kind is the content component plus, optionally, actions in the
  * panel's header (copy, run, download) and toolbar items that send a
  * message about the document ("Polish the wording"). The framework
- * ships `text`, `code` and `image`; a product adds its own —
- * a `report` kind that renders its JSON as a designed page, a
- * `diagram` kind on a graph library — by adding an entry here:
+ * ships `text` (ProseMirror over markdown), `code` (CodeMirror),
+ * `sheet` (a CSV grid) and `image`; a product adds its own — a
+ * `report` kind that renders its JSON as a designed page, a `diagram`
+ * kind on a graph library — by adding an entry here:
  *
  *   import { ReportCanvas } from "@/components/reports/report-canvas";
  *
@@ -18,17 +19,26 @@
  *     report: { content: ReportCanvas },
  *   };
  *
- * The chat's `saveArtifact` tool and `createArtifactWriter` name a
- * kind; the canvas looks it up here and falls back to `text` for one
- * it does not know, so nothing renders blank.
+ * The editors load lazily: a document that is still streaming, or one
+ * the reader may not edit, renders on the light viewers below and
+ * never pulls the editor bundle. The chat's `saveArtifact` tool and
+ * `createArtifactWriter` name a kind; the canvas looks it up here and
+ * falls back to `text` for one it does not know, so nothing renders
+ * blank.
  */
 
-import { useEffect, useState, type ComponentProps, type ComponentType, type ReactNode } from "react";
+import {
+  Suspense,
+  lazy,
+  type ComponentProps,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import type { LucideIcon } from "lucide-react";
 import { Streamdown } from "streamdown";
 
 import { CodeBlock } from "@/components/ui/ai-code-block";
-import { Textarea } from "@/components/ui/textarea";
+import { Spinner } from "@/components/ui/spinner";
 
 export interface CanvasContentProps {
   content: string;
@@ -68,66 +78,65 @@ export interface CanvasKind {
   toolbar?: CanvasToolbarItem[];
 }
 
-/** Markdown: rendered while it streams, a textarea to edit once it is settled. */
-function TextCanvas({ content, status, isReadonly, onChange }: CanvasContentProps) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(content);
+const TextEditor = lazy(() => import("@/components/chat/canvas/text-editor"));
+const CodeEditor = lazy(() => import("@/components/chat/canvas/code-editor"));
+const SheetEditor = lazy(() => import("@/components/chat/canvas/sheet-editor"));
 
-  useEffect(() => {
-    if (!editing) setDraft(content);
-  }, [content, editing]);
+function Loading() {
+  return (
+    <div className="flex h-24 items-center justify-center text-muted-foreground">
+      <Spinner />
+    </div>
+  );
+}
 
-  if (isReadonly || status === "streaming" || !onChange) {
+/** Editable once settled; a rendered view while it streams or is read-only. */
+function TextCanvas(props: CanvasContentProps) {
+  if (props.isReadonly || props.status === "streaming" || !props.onChange) {
     return (
       <div className="prose prose-sm max-w-none dark:prose-invert">
-        <Streamdown mode={status === "streaming" ? "streaming" : "static"}>
-          {content}
+        <Streamdown mode={props.status === "streaming" ? "streaming" : "static"}>
+          {props.content}
         </Streamdown>
       </div>
     );
   }
-
   return (
-    <Textarea
-      value={draft}
-      onFocus={() => setEditing(true)}
-      onBlur={() => setEditing(false)}
-      onChange={(event) => {
-        setDraft(event.target.value);
-        onChange(event.target.value);
-      }}
-      className="min-h-full w-full resize-none border-0 bg-transparent font-mono text-sm shadow-none focus-visible:ring-0"
-      spellCheck={false}
-    />
+    <Suspense fallback={<Loading />}>
+      <TextEditor {...props} />
+    </Suspense>
   );
 }
 
-/** Code: highlighted while it streams, a monospace editor once it is settled. */
-function CodeCanvas({ content, status, title, isReadonly, onChange }: CanvasContentProps) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(content);
-  const language = languageOf(title);
-
-  useEffect(() => {
-    if (!editing) setDraft(content);
-  }, [content, editing]);
-
-  if (isReadonly || status === "streaming" || !onChange) {
-    return <CodeBlock code={content} language={language} showLineNumbers />;
+function CodeCanvas(props: CanvasContentProps) {
+  if (props.isReadonly || props.status === "streaming" || !props.onChange) {
+    return (
+      <CodeBlock
+        code={props.content}
+        language={languageOf(props.title)}
+        showLineNumbers
+      />
+    );
   }
-
   return (
-    <Textarea
-      value={draft}
-      onFocus={() => setEditing(true)}
-      onBlur={() => setEditing(false)}
-      onChange={(event) => {
-        setDraft(event.target.value);
-        onChange(event.target.value);
-      }}
-      className="min-h-full w-full resize-none border-0 bg-transparent font-mono text-sm shadow-none focus-visible:ring-0"
-      spellCheck={false}
-    />
+    <Suspense fallback={<Loading />}>
+      <CodeEditor {...props} />
+    </Suspense>
+  );
+}
+
+function SheetCanvas(props: CanvasContentProps) {
+  if (props.status === "streaming") {
+    return (
+      <pre className="overflow-auto font-mono text-xs whitespace-pre">
+        {props.content}
+      </pre>
+    );
+  }
+  return (
+    <Suspense fallback={<Loading />}>
+      <SheetEditor {...props} />
+    </Suspense>
   );
 }
 
@@ -176,6 +185,7 @@ function languageOf(title: string): CodeLanguage {
 export const DEFAULT_CANVAS_KINDS: Record<string, CanvasKind> = {
   text: { content: TextCanvas },
   code: { content: CodeCanvas },
+  sheet: { content: SheetCanvas },
   image: { content: ImageCanvas },
 };
 

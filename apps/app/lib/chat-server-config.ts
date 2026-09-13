@@ -60,10 +60,11 @@ import "server-only";
  */
 
 import { tool, type ToolSet } from "ai";
-import type {
-  ChatMessages,
-  ChatServerConfig,
-  ChatTurnContext,
+import {
+  createArtifactWriter,
+  type ChatMessages,
+  type ChatServerConfig,
+  type ChatTurnContext,
 } from "@intelligo-dev/chat";
 import { saveDocument } from "@intelligo-dev/core/documents";
 import { getTranslations } from "next-intl/server";
@@ -121,11 +122,25 @@ function artifactTools(turn: ChatTurnContext): ToolSet {
         content: z.string().min(1),
       }),
       execute: async ({ title, content }) => {
-        const saved = await saveDocument(
-          { workspaceId: turn.workspaceId, userId: turn.userId },
-          { id: crypto.randomUUID(), title, content, kind: "text" }
-        );
-        return { id: saved.id, title: saved.title };
+        // The document streams into the canvas beside the chat as it
+        // is written — a few hundred characters at a time here, since
+        // the whole text is already in hand — and the persisted `ready`
+        // part reopens it from the card after a reload.
+        const doc = createArtifactWriter(turn, { kind: "text", title });
+        try {
+          for (let at = 0; at < content.length; at += 200) {
+            doc.append(content.slice(at, at + 200));
+          }
+          const saved = await saveDocument(
+            { workspaceId: turn.workspaceId, userId: turn.userId },
+            { id: doc.id, title, content, kind: "text" }
+          );
+          doc.finish({ documentId: saved.id });
+          return { id: saved.id, documentId: saved.id, title: saved.title, kind: "text" };
+        } catch (error) {
+          doc.fail(error);
+          throw error;
+        }
       },
     }),
   };

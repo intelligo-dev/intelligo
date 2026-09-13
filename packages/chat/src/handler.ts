@@ -495,6 +495,10 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       return refusal(t, "INTERNAL", t("internalError"), where, {}, cors);
     }
 
+    // The writer exists only while the stream is open; a tool that
+    // writes outside that window is dropped rather than crashed.
+    let writerSlot: UIMessageStreamWriter<ChatUIMessage> | null = null;
+
     const context: ChatTurnContext = {
       ...actor,
       request,
@@ -502,6 +506,12 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       body: body.extra,
       conversation: loaded.row,
       trigger: body.trigger,
+      write: (chunk: ChatDataChunk) => {
+        writerSlot?.write(chunk);
+      },
+      updateMetadata: async (patch) => {
+        await updateConversationMetadata(actor, body.id, patch);
+      },
     };
 
     let agent: ResolvedAgent;
@@ -609,20 +619,10 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       }
     }
 
-    // The writer exists only while the stream is open; a tool that
-    // writes outside that window is dropped rather than crashed.
-    let writerSlot: UIMessageStreamWriter<ChatUIMessage> | null = null;
-
     const turn: ChatTurn = {
       ...context,
       agent,
       history: async () => toUIMessages(await getMessages(actor, body.id)),
-      write: (chunk: ChatDataChunk) => {
-        writerSlot?.write(chunk);
-      },
-      updateMetadata: async (patch) => {
-        await updateConversationMetadata(actor, body.id, patch);
-      },
     };
 
     // Approval answers ride on a continuation; the audit hook sees

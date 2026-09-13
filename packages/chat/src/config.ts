@@ -68,6 +68,19 @@ export interface ChatTurnContext extends ChatActor {
   /** The existing row, or null on a conversation's first turn. */
   conversation: Conversation | null;
   trigger: "submit-message" | "regenerate-message" | undefined;
+  /**
+   * Write a part to the client mid-turn — a status line, a task plan,
+   * a document streaming into the canvas (`createArtifactWriter`). A
+   * no-op before the stream opens and after it closes, so a tool bound
+   * through `agent.tools` may hold on to it.
+   */
+  write: (chunk: ChatDataChunk) => void;
+  /**
+   * Merge a patch into the conversation's `metadata` — a runtime's
+   * session id, a summary of pruned history. Shallow: top-level keys
+   * are replaced, other keys kept. Rejects before the row exists.
+   */
+  updateMetadata: (patch: Record<string, unknown>) => Promise<void>;
 }
 
 /** The agent this turn runs as. */
@@ -93,18 +106,6 @@ export interface ChatTurn extends ChatTurnContext {
   agent: ResolvedAgent;
   /** The persisted history, read lazily: not every `prepareMessages` needs it. */
   history: () => Promise<UIMessage[]>;
-  /**
-   * Write a part to the client mid-turn — a status line, a task plan,
-   * a document streaming into the canvas (`createArtifactWriter`). A
-   * no-op before the stream opens and after it closes.
-   */
-  write: (chunk: ChatDataChunk) => void;
-  /**
-   * Merge a patch into the conversation's `metadata` — a runtime's
-   * session id, a summary of pruned history. Shallow: top-level keys
-   * are replaced, other keys kept.
-   */
-  updateMetadata: (patch: Record<string, unknown>) => Promise<void>;
 }
 
 /** What the model is shown. */

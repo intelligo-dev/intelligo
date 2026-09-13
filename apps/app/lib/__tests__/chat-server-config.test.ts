@@ -52,6 +52,8 @@ describe("chat server config", () => {
             body: {},
             conversation: null,
             trigger: undefined,
+            write: () => {},
+            updateMetadata: async () => {},
           })
         : tools;
     expect(Object.keys(bag ?? {})).toContain("saveArtifact");

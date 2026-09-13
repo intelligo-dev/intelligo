@@ -165,6 +165,7 @@ function rewrite(source) {
     .filter((line) => !/^import "server-only";?$/.test(line.trim()))
     .join("\n")
     .replace(/from "@\//g, 'from "@showcase/')
+    .replace(/import\("@\//g, 'import("@showcase/')
     .replace(/from "next-intl"/g, 'from "use-intl"')
     .replace(
       /from "next\/navigation"/g,
