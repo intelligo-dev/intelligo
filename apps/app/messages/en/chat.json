@@ -102,5 +102,11 @@
     "upgrade": "Upgrade",
     "runningLow": "{count, plural, one {{amount} credit left} other {{amount} credits left}}",
     "topUp": "Top up"
+  },
+  "starters": {
+    "explain": "Explain how credits and plans work in this workspace",
+    "draft": "Draft a welcome message for a new team member",
+    "brainstorm": "Brainstorm three names for an internal project",
+    "save": "Save a note: the weekly sync moves to Thursdays at 10:00"
   }
 }
