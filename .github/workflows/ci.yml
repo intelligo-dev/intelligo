@@ -202,14 +202,6 @@ jobs:
           # the execution boundary.
           test "$code" = "401"
 
-          # A page that needs a session must redirect to login, not
-          # 500. Pages do not compose on their own — instrumentation.ts
-          # does, once per process — so a 500 here means the request
-          # context was never bound and every signed-in page is broken.
-          page=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/dashboard || true)
-          echo "unauthenticated /dashboard answered $page"
-          case "$page" in 302|303|307|308) ;; *) echo "expected a redirect to login"; exit 1 ;; esac
-
           # `kill %1` only reaches the pnpm wrapper, and killing the `next
           # start` CLI orphans its `next-server` child, which kept :3000
           # and answered the next step's probe with the wrong app.
@@ -262,10 +254,18 @@ jobs:
             [ "$code" != "000" ] && break
             sleep 2
           done
+          # A page that needs a session must redirect to login, not 404 or
+          # 500. The dashboard exists once the items are installed, and
+          # pages do not compose on their own — instrumentation.ts does,
+          # once per process — so a 500 means the request context was
+          # never bound and every signed-in page is broken.
+          page=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3100/dashboard || true)
+          echo "unauthenticated /dashboard answered $page"
           kill %1 2>/dev/null || true
           pkill -f "next-server|next start" 2>/dev/null || true
           echo "registry smoke page answered $code"
           test "$code" = "200"
+          case "$page" in 302|303|307|308) ;; *) echo "expected a redirect to login"; exit 1 ;; esac
 
       # apps/site serves packages/registry/public/r as intelligo.dev/r and renders
       # the items' real components, both as committed copies made by

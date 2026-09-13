@@ -13,7 +13,7 @@ const MESSAGES_ROOT = path.join(process.cwd(), "messages");
  * file. The file name (minus `.json`) becomes the namespace a
  * component reads with `useTranslations("<item>")`, so installing an
  * item is just dropping its message file in; nothing here needs to
- * change and no component is edited (ADR-0010).
+ * change and no component is edited.
  */
 function loadMessages(locale: string): Record<string, unknown> {
   const localeDir = path.join(MESSAGES_ROOT, locale);

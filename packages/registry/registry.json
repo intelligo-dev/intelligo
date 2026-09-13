@@ -193,7 +193,8 @@
       "files": [
         {
           "path": "base/ui/page-header/page-header.tsx",
-          "type": "registry:ui"
+          "type": "registry:ui",
+          "target": "components/ui/page-header.tsx"
         }
       ]
     },
@@ -206,7 +207,8 @@
       "files": [
         {
           "path": "base/ui/stat-card/stat-card.tsx",
-          "type": "registry:ui"
+          "type": "registry:ui",
+          "target": "components/ui/stat-card.tsx"
         }
       ]
     },
@@ -219,7 +221,8 @@
       "files": [
         {
           "path": "base/ui/status-badge/status-badge.tsx",
-          "type": "registry:ui"
+          "type": "registry:ui",
+          "target": "components/ui/status-badge.tsx"
         }
       ]
     },
@@ -233,7 +236,8 @@
       "files": [
         {
           "path": "base/ui/copy-button/copy-button.tsx",
-          "type": "registry:ui"
+          "type": "registry:ui",
+          "target": "components/ui/copy-button.tsx"
         }
       ]
     },
@@ -247,7 +251,8 @@
       "files": [
         {
           "path": "base/ui/ai-code-block/ai-code-block.tsx",
-          "type": "registry:ui"
+          "type": "registry:ui",
+          "target": "components/ui/ai-code-block.tsx"
         }
       ]
     },
@@ -265,7 +270,8 @@
       "files": [
         {
           "path": "base/ui/ai-tool/ai-tool.tsx",
-          "type": "registry:ui"
+          "type": "registry:ui",
+          "target": "components/ui/ai-tool.tsx"
         }
       ]
     },
@@ -279,7 +285,8 @@
       "files": [
         {
           "path": "base/ui/ai-reasoning/ai-reasoning.tsx",
-          "type": "registry:ui"
+          "type": "registry:ui",
+          "target": "components/ui/ai-reasoning.tsx"
         }
       ]
     },
@@ -293,7 +300,8 @@
       "files": [
         {
           "path": "base/ui/ai-sources/ai-sources.tsx",
-          "type": "registry:ui"
+          "type": "registry:ui",
+          "target": "components/ui/ai-sources.tsx"
         }
       ]
     },
@@ -306,7 +314,8 @@
       "files": [
         {
           "path": "base/ui/ai-suggestion/ai-suggestion.tsx",
-          "type": "registry:ui"
+          "type": "registry:ui",
+          "target": "components/ui/ai-suggestion.tsx"
         }
       ]
     },
@@ -320,7 +329,8 @@
       "files": [
         {
           "path": "base/ui/ai-artifact/ai-artifact.tsx",
-          "type": "registry:ui"
+          "type": "registry:ui",
+          "target": "components/ui/ai-artifact.tsx"
         }
       ]
     },
@@ -340,7 +350,8 @@
       "files": [
         {
           "path": "base/ui/ai-prompt-input/ai-prompt-input.tsx",
-          "type": "registry:ui"
+          "type": "registry:ui",
+          "target": "components/ui/ai-prompt-input.tsx"
         }
       ]
     },

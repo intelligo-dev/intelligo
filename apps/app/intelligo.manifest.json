@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "frameworkVersion": "1.0.0-beta.6",
+  "features": {
+    "app-scaffold": {
+      "templateVersion": "1.11.0",
+      "files": [
+        {
+          "path": "package.json",
+          "hash": "cf9964c43d5df906fa901a957b4960fb12c506390b1099aeb34e78892282aada"
+        },
+        {
+          "path": "next.config.mjs",
+          "hash": "5609c4ab20a41056b871c5c550edbc9cc73c42f7b658007d20eb222d6b05a8d0"
+        },
+        {
+          "path": "tsconfig.json",
+          "hash": "486b786a0acdb8dc8dc864422e62ec8b8b9a5ed5a1845b35c1c6da455af381f5"
+        },
+        {
+          "path": ".env.example",
+          "hash": "c7601b7da0a5b0c8c396ee471d2bf81f8c484a40ace7b7ec7cd6862175d13359"
+        },
+        {
+          "path": "lib/intelligo.ts",
+          "hash": "463fe376a8f11d393c2fbcbd6b867628ec4039128ddaac391f6c226de795902e"
+        },
+        {
+          "path": "instrumentation.ts",
+          "hash": "61a58976b8062fd28fb8b4ea560507e2f2a78812f50c1f4948b31cf917ae3004"
+        },
+        {
+          "path": "lib/plans.ts",
+          "hash": "7ae41845bd070d242bb0b331e4eaf2cdf6c31ec4fb35a45433e42b6e4326bc87"
+        },
+        {
+          "path": "app/api/auth/[...all]/route.ts",
+          "hash": "df5f57975af1fb608b19d551f34d63e78992d9d2548a4df5030fa46d2d2b5d34"
+        },
+        {
+          "path": "app/api/assistant/route.ts",
+          "hash": "06b7b1e5cc365b023cdae0c09e7305ff06b43ae0851c9c1f8b5447743b57f218"
+        },
+        {
+          "path": "components.json",
+          "hash": "7f35757274b2af98829cbddb2a636cbc3ed2b8e99935b1013a5b09086e06cdbb"
+        },
+        {
+          "path": "postcss.config.mjs",
+          "hash": "dfac7ac2d86d326a0e5adb024e7943c181393ed17a5fcb8f0315b24c7da6ddde"
+        },
+        {
+          "path": "app/globals.css",
+          "hash": "9a33bb12923090fae86a27e6c81d95085c755c57527e3e472a20ad36cc2b0225"
+        },
+        {
+          "path": "lib/utils.ts",
+          "hash": "55bbdc94cef3e0c8a8bba386e94f97228dd2c967fe61466fc565378890550c08"
+        },
+        {
+          "path": "app/[locale]/layout.tsx",
+          "hash": "b2c0823599bca97ce57d6364a81c33576700ec2b6e58739cb0fca4b60460a1e5"
+        },
+        {
+          "path": "components/shell/theme-provider.tsx",
+          "hash": "4ce6ccd4888c20727ecb3d31133f5b85cf6dc543bccb24fcce86a6252c853cb4"
+        },
+        {
+          "path": "components/ui/sonner.tsx",
+          "hash": "e5a4353ae37d33324fb0be0970fbefb7178c01d73fc7b010c3efcb6db80758e3"
+        },
+        {
+          "path": "i18n/routing.ts",
+          "hash": "01b83113f9850291764191c7e896e8141050cd229d91e6869610160a3021e5ac"
+        },
+        {
+          "path": "i18n/navigation.ts",
+          "hash": "dcbc346a4383d33fbee8b0d5c36be42cd2eb2518addbcf39ac36e199fdccfbec"
+        },
+        {
+          "path": "i18n/request.ts",
+          "hash": "c71be51083f89ce2754627069255ded356b9d17be151fb989abb3cec96f6ba53"
+        },
+        {
+          "path": "proxy.ts",
+          "hash": "2e1a9be45d7e469ff384a9a8f79fc1f18ce90e88e89d3efbcd48332de43d7ebd"
+        },
+        {
+          "path": "messages/en/app.json",
+          "hash": "44984ef6b4de01f900f43d7b7182a404c9bd3c1a380d0580d13699698c4f959d"
+        },
+        {
+          "path": "drizzle.config.ts",
+          "hash": "c6668755a0d7e128fa44663aabf8db02d4a1007e41b9653c658c5884de3b1468"
+        },
+        {
+          "path": "lib/db/schema.ts",
+          "hash": "7721146907efbbae0038a989c548173a46adf14f613773ac78dc12210e30ee63"
+        },
+        {
+          "path": "app/api/webhooks/stripe/route.ts",
+          "hash": "be23b7add5d26e1e37014645636ef7e92b1a57774eb5113c06069e47d5733817"
+        }
+      ],
+      "variables": {
+        "__APP_NAME__": "app",
+        "__APP_SLUG__": "app",
+        "__INTELLIGO_DEP__": "workspace:*"
+      }
+    }
+  }
+}
