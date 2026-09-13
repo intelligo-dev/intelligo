@@ -221,6 +221,34 @@
           "executions"
         ]
       }
+    },
+    "chat-panel": {
+      "marker": "components/chat/chat-panel.tsx",
+      "items": [
+        "chat"
+      ],
+      "files": [
+        "lib/utils"
+      ]
+    },
+    "chat-widget": {
+      "marker": "components/chat/chat-widget.tsx",
+      "items": [
+        "chat"
+      ],
+      "files": [
+        "i18n/navigation",
+        "lib/utils"
+      ]
+    },
+    "chat-share": {
+      "marker": "app/[locale]/share/[id]/page.tsx",
+      "items": [
+        "chat"
+      ],
+      "files": [
+        "i18n/navigation"
+      ]
     }
   }
 }

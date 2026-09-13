@@ -2195,6 +2195,99 @@
       "css": {
         "@source \"../node_modules/streamdown/dist/*.js\"": {}
       }
+    },
+    {
+      "name": "chat-panel",
+      "type": "registry:block",
+      "title": "Chat Panel",
+      "description": "The chat as a side panel on any page: a sheet that opens the same thread the chat page runs, with the page's context on every turn. Requires the chat item.",
+      "registryDependencies": [
+        "button",
+        "sheet"
+      ],
+      "dependencies": [
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/chat-panel/components/chat-panel.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-panel.tsx"
+        },
+        {
+          "path": "base/chat-panel/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/chat-panel.json"
+        }
+      ]
+    },
+    {
+      "name": "chat-widget",
+      "type": "registry:block",
+      "title": "Chat Widget",
+      "description": "The floating assistant: a launcher in a corner of every page and a compact chat over it, configured in lib/chat-widget-config.tsx. Requires the chat item.",
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/chat-widget/components/chat-widget.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-widget.tsx"
+        },
+        {
+          "path": "base/chat-widget/lib/chat-widget-config.tsx",
+          "type": "registry:file",
+          "target": "lib/chat-widget-config.tsx"
+        },
+        {
+          "path": "base/chat-widget/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/chat-widget.json"
+        }
+      ]
+    },
+    {
+      "name": "chat-share",
+      "type": "registry:block",
+      "title": "Chat Share",
+      "description": "A conversation its owner published, readable by anyone with the link at /share/[id]: the same transcript, read-only, minus reasoning, tool details and attachments. Requires the chat item.",
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": [
+        "ai@^6.0.77",
+        "next-intl",
+        "@intelligo-dev/chat",
+        "@intelligo-dev/core"
+      ],
+      "files": [
+        {
+          "path": "base/chat-share/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/share/[id]/page.tsx"
+        },
+        {
+          "path": "base/chat-share/actions.ts",
+          "type": "registry:file",
+          "target": "actions/chat-share.ts"
+        },
+        {
+          "path": "base/chat-share/components/shared-conversation.tsx",
+          "type": "registry:component",
+          "target": "components/chat/shared-conversation.tsx"
+        },
+        {
+          "path": "base/chat-share/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/chat-share.json"
+        }
+      ]
     }
   ]
 }

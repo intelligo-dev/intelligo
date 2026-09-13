@@ -55,10 +55,13 @@ const GROUPS: Record<RegistryGroup, string[]> = {
     "feature-gating",
     "payment-poll",
   ],
-  AI: ["chat", "artifacts"],
+  AI: ["chat", "chat-panel", "chat-widget", "chat-share", "artifacts"],
 };
 
 const DEPENDS: Record<string, string[]> = {
+  "chat-panel": ["chat"],
+  "chat-widget": ["chat"],
+  "chat-share": ["chat"],
   "auth-signup": ["auth-login"],
   "auth-password-reset": ["auth-login"],
   "auth-email-verification": ["auth-login"],

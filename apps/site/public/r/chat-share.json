@@ -1,0 +1,42 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "chat-share",
+  "title": "Chat Share",
+  "description": "A conversation its owner published, readable by anyone with the link at /share/[id]: the same transcript, read-only, minus reasoning, tool details and attachments. Requires the chat item.",
+  "dependencies": [
+    "ai@^6.0.77",
+    "next-intl",
+    "@intelligo-dev/chat",
+    "@intelligo-dev/core"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "files": [
+    {
+      "path": "base/chat-share/page.tsx",
+      "content": "import type { Metadata } from \"next\";\nimport { notFound } from \"next/navigation\";\nimport { getTranslations } from \"next-intl/server\";\n\nimport { SharedConversation } from \"@/components/chat/shared-conversation\";\nimport { loadSharedConversation } from \"@/actions/chat-share\";\n\n/**\n * `/share/[id]` — a conversation its owner published, readable by\n * anyone with the link. Outside the `(app)` group on purpose: no\n * session, no workspace. `noindex`, so a link that leaks does not also\n * get crawled. Per-request, since sharing can be switched off.\n */\nexport const dynamic = \"force-dynamic\";\n\ninterface SharePageProps {\n  params: Promise<{ id: string; locale: string }>;\n}\n\nexport async function generateMetadata({\n  params,\n}: SharePageProps): Promise<Metadata> {\n  const { id } = await params;\n  const t = await getTranslations(\"chat-share\");\n  const shared = await loadSharedConversation(id);\n  return {\n    title: shared?.title ?? t(\"title\"),\n    robots: { index: false, follow: false },\n  };\n}\n\nexport default async function SharePage({ params }: SharePageProps) {\n  const { id } = await params;\n  const shared = await loadSharedConversation(id);\n  if (!shared) notFound();\n\n  return (\n    <SharedConversation\n      conversationId={shared.id}\n      title={shared.title}\n      messages={shared.messages}\n    />\n  );\n}\n",
+      "type": "registry:page",
+      "target": "app/[locale]/share/[id]/page.tsx"
+    },
+    {
+      "path": "base/chat-share/actions.ts",
+      "content": "\"use server\";\n\n/**\n * The public read of a shared conversation. No actor: the reader is\n * anyone with the link. What they get is decided by `sanitizeForShare`\n * (`@intelligo-dev/chat`) — the transcript minus reasoning, tool\n * details, provider metadata, transient parts and file URLs. A product\n * that wants a named tool's output on the page passes a policy here.\n */\n\nimport { sanitizeForShare, toUIMessages } from \"@intelligo-dev/chat\";\nimport type { UIMessage } from \"ai\";\nimport {\n  getPublicConversation,\n  getPublicMessages,\n  isConversationServiceError,\n} from \"@intelligo-dev/core/conversations\";\n\nexport type SharedConversation = {\n  id: string;\n  title: string | null;\n  updatedAt: string;\n  messages: UIMessage[];\n};\n\nexport async function loadSharedConversation(\n  id: string\n): Promise<SharedConversation | null> {\n  try {\n    const conversation = await getPublicConversation(id);\n    const rows = await getPublicMessages(id);\n    return {\n      id: conversation.id,\n      title: conversation.title,\n      updatedAt: conversation.updatedAt.toISOString(),\n      messages: sanitizeForShare(toUIMessages(rows)),\n    };\n  } catch (error) {\n    if (isConversationServiceError(error) && error.code === \"not_found\") {\n      return null;\n    }\n    throw error;\n  }\n}\n",
+      "type": "registry:file",
+      "target": "actions/chat-share.ts"
+    },
+    {
+      "path": "base/chat-share/components/shared-conversation.tsx",
+      "content": "\"use client\";\n\n/**\n * A shared conversation, read-only: the same message component the\n * chat page renders, with no composer, no actions and no edit. The\n * banner says what this is and offers the product.\n */\n\nimport { useTranslations } from \"next-intl\";\nimport type { UIMessage } from \"ai\";\n\nimport { MessageList } from \"@/components/chat/message-list\";\nimport { Button } from \"@/components/ui/button\";\nimport { Link } from \"@/i18n/navigation\";\n\ninterface SharedConversationProps {\n  conversationId: string;\n  title: string | null;\n  messages: UIMessage[];\n}\n\nexport function SharedConversation({\n  conversationId,\n  title,\n  messages,\n}: SharedConversationProps) {\n  const t = useTranslations(\"chat-share\");\n\n  return (\n    <div className=\"flex h-dvh flex-col\">\n      <header className=\"flex items-center justify-between gap-3 border-b px-4 py-3\">\n        <div className=\"min-w-0\">\n          <p className=\"text-xs text-muted-foreground\">{t(\"readOnly\")}</p>\n          <h1 className=\"truncate text-sm font-medium\">\n            {title ?? t(\"untitled\")}\n          </h1>\n        </div>\n        <Button size=\"sm\" render={<Link href=\"/chat\" />} nativeButton={false}>\n          {t(\"openApp\")}\n        </Button>\n      </header>\n      <MessageList\n        conversationId={conversationId}\n        messages={messages}\n        isStreaming={false}\n        readOnly\n      />\n    </div>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/chat/shared-conversation.tsx"
+    },
+    {
+      "path": "base/chat-share/messages/en.json",
+      "content": "{\n  \"title\": \"Shared conversation\",\n  \"readOnly\": \"Shared conversation · read-only\",\n  \"untitled\": \"Untitled conversation\",\n  \"openApp\": \"Start your own\"\n}\n",
+      "type": "registry:file",
+      "target": "messages/en/chat-share.json"
+    }
+  ],
+  "type": "registry:block"
+}
