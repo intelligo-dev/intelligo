@@ -7,6 +7,8 @@
 You build the agent with the AI framework of your choice.<br/>
 Intelligo is everything around it — tested, typed, and yours.
 
+<a href="https://github.com/intelligo-mn/framework/actions/workflows/ci.yml"><img src="https://github.com/intelligo-mn/framework/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
+<a href="https://www.npmjs.com/package/@intelligo-dev/core"><img src="https://img.shields.io/npm/v/@intelligo-dev/core/beta?label=npm%40beta" alt="npm beta" /></a>
 <img src="https://img.shields.io/badge/licence-Apache--2.0-blue" alt="Apache-2.0" />
 <img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript" />
 <img src="https://img.shields.io/badge/Next.js-16-black" alt="Next.js 16" />
@@ -50,20 +52,18 @@ flowchart LR
 
 ## Quickstart
 
-Prerequisites: Node 22, pnpm 9, a PostgreSQL database (Neon works well). From a clone of this repository:
+Prerequisites: Node 22.14+, pnpm 9, a PostgreSQL database (Neon works well).
 
 ```bash
-pnpm install
-pnpm exec tsx packages/cli/src/bin.ts create apps/my-app --link-workspace
-pnpm install && pnpm registry:build
+npx @intelligo-dev/cli@beta create my-app
+cd my-app && pnpm install
 
-cd apps/my-app
-pnpm exec shadcn add "$PWD/../../packages/registry/public/r/app-shell.json" --yes   # repeat per item
+pnpm dlx shadcn@latest add https://intelligo.dev/r/app-shell.json --yes   # repeat per item
 ```
 
 Set `DATABASE_URL` and `BETTER_AUTH_SECRET` in `.env`, then `pnpm db:push` and `pnpm dev`. The chat page streams against a built-in stub model, so the entire surface — sign-up, verification, workspaces, team, billing, usage, chat, artifacts — runs before you configure an AI provider.
 
-Prefer to explore first? `pnpm dev` serves **`apps/app`**, the reference application: a complete generic workspace AI SaaS built from nothing but the public packages and installed registry items. CI recreates it from a clean scaffold on every run.
+Prefer to explore first? Clone this repository, run `pnpm install && pnpm dev`, and open **`apps/app`**, the reference application: a complete generic workspace AI SaaS built from nothing but the public packages and installed registry items. CI recreates it from a clean scaffold on every run.
 
 ## Features
 
@@ -158,7 +158,7 @@ Three rules make installed pages hold up over time:
 
 ```text
 packages/registry/ page registry: registry.json + item source, a private workspace (built with `pnpm registry:build`)
-packages/          core · auth · next · billing · chat · executions · audit · jobs · admin · mastra · cli · ui
+packages/          core · auth · next · billing · chat · executions · audit · jobs · admin · mastra · cli
 apps/app           the reference application — the registry's canonical installed result
 apps/site          intelligo.dev — the public site, which also serves the registry at /r
 docs/adr/          the decisions, as ADRs
@@ -200,8 +200,8 @@ pnpm registry:build   # rebuild the page registry artifacts
 pnpm db:push          # push the Drizzle schema
 ```
 
-Releases: one commit bumps every published package and heads `CHANGELOG.md` with its section; merging it to main publishes to npm, tags, and creates the GitHub release (`.github/workflows/release.yml`). The site and the hosted registry deploy from `apps/site`. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+Releases: one commit bumps every published package and heads `CHANGELOG.md` with its section; merging it to main publishes to npm, tags, and creates the GitHub release (`.github/workflows/release.yml`). The site and the hosted registry deploy from `apps/site`. See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [SUPPORT.md](SUPPORT.md). Working on the framework itself from a clone, `pnpm exec tsx packages/cli/src/bin.ts create apps/my-app --link-workspace` scaffolds an app against the workspace packages and `pnpm registry:build` installs items from `packages/registry/public/r`.
 
 ## License
 
-[Apache-2.0](LICENSE) · [TRADEMARK.md](TRADEMARK.md)
+[Apache-2.0](LICENSE) · [NOTICE](NOTICE) · [TRADEMARK.md](TRADEMARK.md) · [Code of conduct](CODE_OF_CONDUCT.md)

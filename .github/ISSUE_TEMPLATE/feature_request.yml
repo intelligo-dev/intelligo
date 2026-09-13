@@ -1,0 +1,24 @@
+name: Feature request
+description: A capability the framework, the CLI or the page registry should have.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Intelligo owns SaaS infrastructure; your product owns the AI framework, prompts, tools and product data (AGENTS.md, "the boundary"). A request that needs product vocabulary inside a package is usually a missing seam or port — describing the seam makes a better issue.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are building and what the framework does not let you do today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: The API, config seam or registry item you have in mind.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do instead today

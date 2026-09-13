@@ -19,7 +19,12 @@ already; if there is not, proposing one is the better pull request.
 
 ## Setup
 
+Prerequisites: Node 22.14 or newer, pnpm 9 (`corepack enable` picks the
+version from `package.json`), and Docker for a local Postgres.
+
 ```bash
+docker compose up -d   # Postgres with pgvector on localhost
+cp .env.example .env   # DATABASE_URL points at it
 pnpm install
 pnpm dev            # reference app
 pnpm test           # the real suite (root vitest projects)
@@ -35,13 +40,16 @@ pnpm lint
   that reproduces it. For a boundary change, a case in
   `tests/architecture/`.
 - **Green locally**: `pnpm type-check && pnpm lint && pnpm test`.
-  Integration tests that need Postgres skip without `TEST_PG_URL`; CI
-  runs them.
+  Suites that need Postgres skip unless the database is configured:
+  the service integration suites read `DATABASE_URL`, the database
+  suites `TEST_PG_URL`. CI runs both against a fresh database.
 - **Migrations** are additive within a release, live in
   `packages/core/src/db/migrations/`, and must be registered in
   `meta/_journal.json`. CI replays the whole chain against an empty
   database, so an unregistered or non-replayable migration fails the
   build.
+- **A changelog entry** under `[Unreleased]` in `CHANGELOG.md` for
+  anything a consumer of the packages or the registry notices.
 - **No new dependency** without saying in the pull request what it
   replaces or why nothing in the tree does the job.
 
@@ -53,6 +61,11 @@ framework (ADR-0003) — the framework is used natively and Intelligo
 records only the execution boundary. Anything that widens a public
 package's dependencies past the allowlist in ADR-0006; the
 dependency-direction test enforces this and it is not advisory.
+
+## Code of conduct
+
+Everyone taking part is expected to follow the
+[Contributor Covenant](CODE_OF_CONDUCT.md).
 
 ## Reporting security issues
 

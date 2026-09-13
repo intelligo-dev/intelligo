@@ -1,0 +1,23 @@
+version: 2
+updates:
+  # The actions CI and release run are pinned by commit SHA; this keeps
+  # the pins current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Minor and patch updates arrive as one weekly pull request. Majors
+  # come one at a time: each is a decision, and some are held back on
+  # purpose (the pnpm overrides in package.json say which).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]

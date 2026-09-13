@@ -10,14 +10,13 @@
 # in these paths; the dependency-direction test enforces the import
 # graph, review enforces the rest.
 /packages/                  @tortuvshin
-/registry/                  @tortuvshin
+/packages/registry/         @tortuvshin
 /docs/adr/                  @tortuvshin
 
 # --- Boundary-defining files -------------------------------------------
 # Touching these changes what the architecture permits, not just what
 # the code does.
 /tests/architecture/        @tortuvshin
-/config/                    @tortuvshin
 /turbo.json                 @tortuvshin
 /pnpm-workspace.yaml        @tortuvshin
 /.github/workflows/         @tortuvshin

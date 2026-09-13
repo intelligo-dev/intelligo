@@ -4,8 +4,8 @@ All notable changes to the Intelligo framework. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [SemVer](https://semver.org/).
 
-Intelligo was built for seven months (February–August 2026) inside a
-private incubation repository that also carried a production product.
+Intelligo was built for seven months (February–August 2026) inside the
+original private repository, which also carried a production product.
 That history is not published (ADR-0001), so this file is the record of
 it. Versions **0.1–0.11** are the milestone tags that repository
 carried; **0.12–0.15** are assigned here, after the fact, to the
@@ -43,6 +43,18 @@ One design system (ADR-0013).
 
 - The CLI scaffold writes base-nova, the intelligo tokens and the
   `@intelligo` registry (template 1.11.0).
+
+### Repository
+
+- The repository is public. Community files: `NOTICE`, `CODE_OF_CONDUCT.md`,
+  `SUPPORT.md`, issue and pull request templates, Dependabot.
+- Releases publish through npm trusted publishing (OIDC) with provenance,
+  only after CI passes on main; the npm token is gone.
+  `scripts/npm-maintain.mjs` applies deprecations and the prerelease
+  `latest` tag.
+- Every package carries a description, keywords, `NOTICE` and its `src`,
+  so the published source maps resolve.
+- `@intelligo-dev/mastra` bounds its `@mastra/core` peer below 2.
 
 ## [1.0.0-beta.6] — 2026-09-13
 
@@ -500,7 +512,7 @@ as `@intelligo-dev/*`.
 
 ---
 
-## Incubation history
+## Pre-release history
 
 ### [0.15.0] — 2026-08-29 · V2: an application framework and operational platform
 
@@ -550,7 +562,7 @@ Everything a consumer touches today dates from here.
   (`MODEL_CONFIGS`, `ModelId`), per-token cost math, output budgets and
   the FX/margin defaults. Exercised against a real database.
 - **`audit`** — append-only events with a Postgres trigger guard, the
-  memory-audit contract, and `registerAuditSink` as the open-core
+  memory-audit contract, and `registerAuditSink` as the audit
   extension point.
 - **`jobs`** — Postgres-backed queue (`FOR UPDATE SKIP LOCKED`, retries,
   backoff) and failed-job views. No Redis.
@@ -637,7 +649,7 @@ Everything a consumer touches today dates from here.
   packed-package compatibility, "a generated app builds and boots",
   every registry item installs into the generated app, formatting,
   migration-chain replay, `migrate --check` on an unmanaged database.
-- Public extraction tooling: one allowlist, `scripts/extract-public.ts`
+- Public extraction tooling: one allowlist, an extraction script
   with a whole-tree credential audit, and an overlay of public-only
   files. LICENSE (Apache-2.0), SECURITY, CONTRIBUTING, TRADEMARK,
   CODEOWNERS.

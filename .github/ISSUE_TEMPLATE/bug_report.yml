@@ -1,0 +1,42 @@
+name: Bug report
+description: Something in an @intelligo-dev package or a registry item does not work as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security issues go through a private advisory, not here — see SECURITY.md.
+  - type: input
+    id: area
+    attributes:
+      label: Package or registry item
+      description: e.g. `@intelligo-dev/billing`, the `chat` registry item, the CLI.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The `@intelligo-dev/*` version (`pnpm why @intelligo-dev/core`), or the commit if you run from a clone.
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Paste errors as text.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: The smallest steps or repository that shows it. A failing test is the best reproduction.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node, pnpm, Next.js and database (Neon, local Postgres) versions.
+      render: text

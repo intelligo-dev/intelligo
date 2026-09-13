@@ -4,7 +4,13 @@
 
 Report security issues privately — **do not open a public issue**.
 
-Email **security@intelligo.dev** with:
+Use either channel:
+
+- a [private security advisory](https://github.com/intelligo-mn/framework/security/advisories/new)
+  on GitHub, or
+- email to **security@intelligo.dev**.
+
+Include:
 
 - what the issue is and which package or route it affects,
 - the steps or request needed to reproduce it,
@@ -41,5 +47,6 @@ solely by an automated scanner with no working reproduction.
 
 ## Supported versions
 
-Only the latest minor release of each published package receives
-security fixes while the project is pre-1.0.
+During the 1.0 beta, only the newest `@intelligo-dev/*@beta` release
+receives security fixes. Once 1.0 is out, the latest minor release of
+each published package does.
