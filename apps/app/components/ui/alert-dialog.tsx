@@ -1,25 +1,25 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
-import { cn } from "cn";
+import * as React from "react"
+import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog"
+import { cn } from "cn"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 
 function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
-  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
+  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
 }
 
 function AlertDialogTrigger({ ...props }: AlertDialogPrimitive.Trigger.Props) {
   return (
     <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
-  );
+  )
 }
 
 function AlertDialogPortal({ ...props }: AlertDialogPrimitive.Portal.Props) {
   return (
     <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
-  );
+  )
 }
 
 function AlertDialogOverlay({
@@ -35,7 +35,7 @@ function AlertDialogOverlay({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function AlertDialogContent({
@@ -43,7 +43,7 @@ function AlertDialogContent({
   size = "default",
   ...props
 }: AlertDialogPrimitive.Popup.Props & {
-  size?: "default" | "sm";
+  size?: "default" | "sm"
 }) {
   return (
     <AlertDialogPortal>
@@ -58,7 +58,7 @@ function AlertDialogContent({
         {...props}
       />
     </AlertDialogPortal>
-  );
+  )
 }
 
 function AlertDialogHeader({
@@ -74,7 +74,7 @@ function AlertDialogHeader({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function AlertDialogFooter({
@@ -90,7 +90,7 @@ function AlertDialogFooter({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function AlertDialogMedia({
@@ -106,7 +106,7 @@ function AlertDialogMedia({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function AlertDialogTitle({
@@ -122,7 +122,7 @@ function AlertDialogTitle({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function AlertDialogDescription({
@@ -138,7 +138,7 @@ function AlertDialogDescription({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function AlertDialogAction({
@@ -151,7 +151,7 @@ function AlertDialogAction({
       className={cn(className)}
       {...props}
     />
-  );
+  )
 }
 
 function AlertDialogCancel({
@@ -168,7 +168,7 @@ function AlertDialogCancel({
       render={<Button variant={variant} size={size} />}
       {...props}
     />
-  );
+  )
 }
 
 export {
@@ -184,4 +184,4 @@ export {
   AlertDialogPortal,
   AlertDialogTitle,
   AlertDialogTrigger,
-};
+}

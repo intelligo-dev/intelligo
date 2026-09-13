@@ -208,6 +208,13 @@ jobs:
           kill %1 2>/dev/null || true
           pkill -f "next-server|next start" 2>/dev/null || true
 
+      # apps/app is generated, not written: `intelligo create` plus
+      # `shadcn add` for every item, with only the files in
+      # scripts/reference-app-owned.json kept. A diff here means a
+      # generated file was edited by hand.
+      - name: The reference app is the CLI's output
+        run: pnpm app:regenerate --check
+
       - name: Registry items install into the generated app
         run: |
           set -euo pipefail
