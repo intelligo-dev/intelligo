@@ -238,6 +238,113 @@
       ]
     },
     {
+      "name": "ai-code-block",
+      "type": "registry:ui",
+      "title": "AI Code Block",
+      "description": "Highlighted code with a copy action, light and dark (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": ["shiki"],
+      "registryDependencies": ["@intelligo/copy-button"],
+      "files": [
+        {
+          "path": "base/ui/ai-code-block/ai-code-block.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-tool",
+      "type": "registry:ui",
+      "title": "AI Tool",
+      "description": "A tool call: name, state as a status badge, input and output (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": ["ai@^6.0.77", "lucide-react"],
+      "registryDependencies": [
+        "collapsible",
+        "@intelligo/status-badge",
+        "@intelligo/ai-code-block"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-tool/ai-tool.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-reasoning",
+      "type": "registry:ui",
+      "title": "AI Reasoning",
+      "description": "Streamed reasoning, collapsible, with the time it took (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": ["lucide-react", "streamdown"],
+      "registryDependencies": ["collapsible"],
+      "files": [
+        {
+          "path": "base/ui/ai-reasoning/ai-reasoning.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-sources",
+      "type": "registry:ui",
+      "title": "AI Sources",
+      "description": "The sources a reply cites, collapsible (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["collapsible"],
+      "files": [
+        {
+          "path": "base/ui/ai-sources/ai-sources.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-suggestion",
+      "type": "registry:ui",
+      "title": "AI Suggestion",
+      "description": "Conversation starters and follow-ups in a scrollable row (ADR-0013, T3; ported from Vercel AI Elements).",
+      "registryDependencies": ["button", "scroll-area"],
+      "files": [
+        {
+          "path": "base/ui/ai-suggestion/ai-suggestion.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-artifact",
+      "type": "registry:ui",
+      "title": "AI Artifact",
+      "description": "A generated document's frame: header, actions and content (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button", "tooltip"],
+      "files": [
+        {
+          "path": "base/ui/ai-artifact/ai-artifact.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-prompt-input",
+      "type": "registry:ui",
+      "title": "AI Prompt Input",
+      "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": ["ai@^6.0.77", "lucide-react"],
+      "registryDependencies": [
+        "attachment",
+        "dropdown-menu",
+        "input-group",
+        "select",
+        "spinner"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-prompt-input/ai-prompt-input.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
       "name": "smoke",
       "type": "registry:block",
       "title": "Registry Smoke Test",
