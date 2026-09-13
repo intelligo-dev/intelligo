@@ -104,6 +104,41 @@ export const messages = pgTable(
 );
 
 /**
+ * Attachments table - Files a user put into a conversation
+ * The object lives behind the storage port under `storage_key`; the
+ * row is what makes a URL safe to hand out (tenancy, type, size).
+ * `conversation_id` is set once the turn that carried the file is
+ * persisted; a row that never gets one is an orphan to sweep.
+ */
+export const attachments = pgTable(
+  "attachments",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id").references(
+      () => conversations.id,
+      { onDelete: "set null" }
+    ),
+    storageKey: text("storage_key").notNull(),
+    filename: text("filename").notNull(),
+    mediaType: text("media_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    extractedText: text("extracted_text"), // document text for the model, when a policy extracts it
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("attachments_workspace_id_idx").on(table.workspaceId),
+    index("attachments_conversation_id_idx").on(table.conversationId),
+    uniqueIndex("attachments_storage_key_idx").on(table.storageKey),
+  ]
+);
+
+/**
  * Knowledge documents table - Uploaded files for RAG
  * Each document is chunked and embedded for similarity search
  */
@@ -430,6 +465,8 @@ export type KnowledgeDocument = typeof knowledgeDocuments.$inferSelect;
 export type InsertKnowledgeDocument = typeof knowledgeDocuments.$inferInsert;
 export type KnowledgeChunk = typeof knowledgeChunks.$inferSelect;
 export type InsertKnowledgeChunk = typeof knowledgeChunks.$inferInsert;
+export type Attachment = typeof attachments.$inferSelect;
+export type InsertAttachment = typeof attachments.$inferInsert;
 export type Vote = typeof votes.$inferSelect;
 export type InsertVote = typeof votes.$inferInsert;
 export type Document = typeof documents.$inferSelect;

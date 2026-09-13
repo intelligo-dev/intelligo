@@ -11,6 +11,7 @@
 export {
   getUserDocuments,
   getDocument,
+  getDocumentVersions,
   saveDocument,
   deleteDocumentVersions,
 } from "./service";

@@ -16,8 +16,29 @@ import { extractText } from "./windowing";
 export type ChatAttachmentPolicy = {
   /** Media types a file part may carry, e.g. `["image/jpeg", "image/png"]`. */
   accept: readonly string[];
-  /** Largest data-URL payload accepted, in bytes. Unbounded when omitted. */
+  /** Largest payload accepted, in bytes. Unbounded when omitted. */
   maxBytes?: number;
+  /**
+   * `inline` (default): the file travels in the message as a data URL
+   * and is persisted with it. `stored`: the file was uploaded first
+   * through the upload route and the part carries the app URL the
+   * attachment route serves; the transport signs it for the model.
+   */
+  mode?: "inline" | "stored";
+  /** The app URL of a stored attachment. Default `/api/chat/attachments/<id>`. */
+  urlFor?: (id: string) => string;
+  /**
+   * Turns a stored, non-image file into text for the model — a PDF, a
+   * spreadsheet. Runs once, at upload; the text is kept on the row and
+   * appended to the message the model sees. Unset: the file part is
+   * passed through as-is and the provider decides what to do with it.
+   */
+  extractText?: (file: {
+    id: string;
+    filename: string;
+    mediaType: string;
+    bytes: () => Promise<Uint8Array>;
+  }) => Promise<string | null>;
 };
 
 export type ChatBody = {
@@ -41,6 +62,7 @@ export type ParsedChatBody =
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ROLES = new Set(["system", "user", "assistant"]);
 const SDK_FIELDS = new Set(["id", "messages", "trigger", "messageId"]);
+const ID_PLACEHOLDER = "__ATTACHMENT_ID__";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -66,6 +88,43 @@ function dataUrlBytes(url: string): number | null {
     : payload.length;
 }
 
+/** The app URL of a stored attachment under this policy. */
+export function attachmentUrl(
+  policy: Pick<ChatAttachmentPolicy, "urlFor">,
+  id: string
+): string {
+  return policy.urlFor ? policy.urlFor(id) : `/api/chat/attachments/${id}`;
+}
+
+/**
+ * The attachment id a stored file part's URL names, or null when the
+ * URL is not one this policy hands out. Absolute and relative forms
+ * of the same path both match.
+ */
+export function attachmentIdFromUrl(
+  policy: Pick<ChatAttachmentPolicy, "urlFor">,
+  url: string
+): string | null {
+  const template = attachmentUrl(policy, ID_PLACEHOLDER);
+  const at = template.indexOf(ID_PLACEHOLDER);
+  if (at === -1) return null;
+  const prefix = template.slice(0, at);
+  const suffix = template.slice(at + ID_PLACEHOLDER.length);
+
+  let path = url;
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const parsed = new URL(url);
+      path = parsed.pathname + parsed.search;
+    } catch {
+      return null;
+    }
+  }
+  if (!path.startsWith(prefix) || !path.endsWith(suffix)) return null;
+  const id = path.slice(prefix.length, path.length - suffix.length);
+  return id && !id.includes("/") ? id : null;
+}
+
 function rejectedAttachment(
   message: UIMessage,
   policy: ChatAttachmentPolicy | false
@@ -80,7 +139,15 @@ function rejectedAttachment(
     ) {
       return true;
     }
-    if (policy.maxBytes !== undefined && typeof file.url === "string") {
+    if (typeof file.url !== "string") return true;
+    if (policy.mode === "stored") {
+      // A stored part names an upload; the row is checked by the
+      // handler, which knows the tenant. A data URL here bypassed the
+      // upload route and its limits, so it is refused.
+      if (attachmentIdFromUrl(policy, file.url) === null) return true;
+      continue;
+    }
+    if (policy.maxBytes !== undefined) {
       const bytes = dataUrlBytes(file.url);
       if (bytes !== null && bytes > policy.maxBytes) return true;
     }
@@ -131,6 +198,15 @@ export function parseChatBody(
     if (rejectedAttachment(last, options.attachments)) {
       return { ok: false, rejection: { key: "attachmentRejected" } };
     }
+  } else if (last.role === "assistant") {
+    // A turn that continues the assistant's own message — tool results
+    // or approval answers added client-side — names that message. The
+    // SDK sends exactly this; anything else is a hand-made body that
+    // would make the reply a fresh message with the tool loop lost.
+    if (json.trigger === "regenerate-message") return invalid;
+    if (json.messageId !== last.id) return invalid;
+  } else {
+    return invalid;
   }
 
   const extra: Record<string, unknown> = {};

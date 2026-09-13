@@ -2,8 +2,9 @@
  * The chat transport: one turn, from request to settled execution.
  *
  *   onRequest → parse → authenticate → rate limit → load the row →
- *   resolveAgent → feature gate → create the row → prepareMessages →
- *   executions.begin() → streamText → settle → persist.
+ *   resolveAgent → feature gate → model gate → create the row →
+ *   prepareMessages → executions.begin() → streamText | streamTurn →
+ *   settle → persist.
  *
  * Framework-agnostic on the request side: Web `Request` in, `Response`
  * out. A Next.js route file is two lines
@@ -30,7 +31,14 @@ import {
   stepCountIs,
   streamText,
 } from "ai";
-import type { StopCondition, ToolSet, UIMessage } from "ai";
+import type {
+  InferUIMessageChunk,
+  StopCondition,
+  ToolSet,
+  UIMessage,
+  UIMessageChunk,
+  UIMessageStreamWriter,
+} from "ai";
 
 import { requireWorkspace } from "@intelligo-dev/auth";
 import {
@@ -39,6 +47,10 @@ import {
   hasFeature,
 } from "@intelligo-dev/billing";
 import {
+  attachToConversation,
+  getAttachments,
+} from "@intelligo-dev/core/attachments";
+import {
   createConversation,
   deleteConversation,
   deleteTrailingMessages,
@@ -46,13 +58,16 @@ import {
   getMessages,
   isConversationServiceError,
   renameConversation,
+  updateConversationMetadata,
   upsertMessages,
 } from "@intelligo-dev/core/conversations";
 import type { Conversation } from "@intelligo-dev/core/conversations";
 import { createLogger } from "@intelligo-dev/core/logger";
+import { getStorageAdapter } from "@intelligo-dev/core/storage";
 
-import { parseChatBody } from "./body";
-import type { ChatErrorCode } from "./client";
+import { attachmentIdFromUrl, parseChatBody } from "./body";
+import type { ChatAttachmentPolicy } from "./body";
+import type { ChatErrorCode, ChatModelOption } from "./client";
 import type {
   ChatActor,
   ChatServerConfig,
@@ -65,6 +80,7 @@ import type {
 import { CHAT_ERROR_STATUS, DEFAULT_CHAT_MESSAGES, refuse } from "./errors";
 import type { ChatMessages } from "./errors";
 import { lastUserMessage, toUIMessages } from "./messages";
+import type { ChatDataChunk, ChatMessageMetadata, ChatUIMessage } from "./parts";
 import { truncateTitle } from "./title";
 import { pickUsage, sumStepUsage } from "./usage";
 import type { TokenUsage } from "./usage";
@@ -88,6 +104,7 @@ const DEFAULT_SYSTEM_PROMPT =
 const DEFAULT_MAX_MESSAGE_LENGTH = 8000;
 const DEFAULT_MAX_STEPS = 5;
 const DEFAULT_WINDOW = { maxMessages: 40 } as const;
+const MODEL_URL_SECONDS = 900;
 
 async function defaultAuthenticate(): Promise<ChatActor> {
   const { workspace, user } = await requireWorkspace();
@@ -118,6 +135,87 @@ function rateLimitHeaders(decision: RateLimitDecision): Record<string, string> {
   return headers;
 }
 
+/**
+ * The `start` and `finish` frames are the transport's: it writes them
+ * around whatever a `streamTurn` produces, so the response id and the
+ * message metadata are its own. A runtime whose adapter frames the
+ * message itself is not asked to strip anything.
+ */
+function withoutFrames<CHUNK extends { type: string }>(
+  stream: ReadableStream<CHUNK>
+): ReadableStream<CHUNK> {
+  return stream.pipeThrough(
+    new TransformStream<CHUNK, CHUNK>({
+      transform(chunk, controller) {
+        if (chunk.type !== "start" && chunk.type !== "finish") {
+          controller.enqueue(chunk);
+        }
+      },
+    })
+  );
+}
+
+type ApprovalAnswer = {
+  toolName: string;
+  toolCallId: string;
+  approvalId: string;
+  approved: boolean;
+  reason?: string;
+};
+
+/** The approval answers a continuation carries, from the last assistant message. */
+function approvalAnswers(messages: ReadonlyArray<UIMessage>): ApprovalAnswer[] {
+  const last = messages[messages.length - 1];
+  if (last?.role !== "assistant") return [];
+  const answers: ApprovalAnswer[] = [];
+  for (const raw of last.parts) {
+    const part = raw as unknown as Record<string, unknown>;
+    if (part.state !== "approval-responded") continue;
+    const approval = part.approval as
+      | { id?: unknown; approved?: unknown; reason?: unknown }
+      | undefined;
+    if (
+      !approval ||
+      typeof approval.id !== "string" ||
+      typeof approval.approved !== "boolean"
+    ) {
+      continue;
+    }
+    const toolName =
+      part.type === "dynamic-tool" && typeof part.toolName === "string"
+        ? part.toolName
+        : typeof part.type === "string" && part.type.startsWith("tool-")
+          ? part.type.slice("tool-".length)
+          : "";
+    answers.push({
+      toolName,
+      toolCallId: typeof part.toolCallId === "string" ? part.toolCallId : "",
+      approvalId: approval.id,
+      approved: approval.approved,
+      ...(typeof approval.reason === "string"
+        ? { reason: approval.reason }
+        : {}),
+    });
+  }
+  return answers;
+}
+
+/** The stored attachment ids a transcript's file parts name. */
+function storedAttachmentIds(
+  messages: ReadonlyArray<UIMessage>,
+  policy: ChatAttachmentPolicy
+): string[] {
+  const ids = new Set<string>();
+  for (const message of messages) {
+    for (const part of message.parts) {
+      if (part.type !== "file") continue;
+      const id = attachmentIdFromUrl(policy, part.url);
+      if (id) ids.add(id);
+    }
+  }
+  return [...ids];
+}
+
 // ---------------------------------------------------------------------------
 // createChatHandler
 // ---------------------------------------------------------------------------
@@ -125,9 +223,19 @@ function rateLimitHeaders(decision: RateLimitDecision): Record<string, string> {
 export type ChatHandler = {
   POST: (request: Request) => Promise<Response>;
   DELETE: (request: Request) => Promise<Response>;
+  /** Stream resumption. Answers 204: no turn is resumable on this transport. */
+  GET: (request: Request) => Promise<Response>;
+  /** The CORS preflight, when `cors` is configured; 204 otherwise. */
+  OPTIONS: (request: Request) => Promise<Response>;
 };
 
 export function createChatHandler(config: ChatServerConfig): ChatHandler {
+  if (!config.model.resolve && !config.streamTurn) {
+    throw new Error(
+      "createChatHandler: set model.resolve (a model for streamText) or streamTurn (a runtime binding); the transport cannot guess the model (ADR-0003)."
+    );
+  }
+
   const maxMessageLength =
     config.maxMessageLength ?? DEFAULT_MAX_MESSAGE_LENGTH;
   const attachments = config.attachments ?? false;
@@ -136,6 +244,8 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     config.rateLimit === undefined ? defaultRateLimit : config.rateLimit;
   const deriveTitle = config.deriveTitle ?? truncateTitle;
   const events = config.onTurn ?? {};
+  const withMetadata = config.messageMetadata ?? true;
+  const allowedOrigins = new Set(config.cors?.origins ?? []);
 
   /** Telemetry must never fail a turn. */
   async function emit(run: (() => void | Promise<void>) | undefined) {
@@ -149,6 +259,26 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
 
   async function messagesFor(request: Request): Promise<ChatMessages> {
     return config.messages ? config.messages(request) : DEFAULT_CHAT_MESSAGES;
+  }
+
+  /**
+   * Headers that let an embedded widget on another origin call this
+   * route with its cookies. Only for an origin the deployment listed;
+   * everyone else gets no header and the browser refuses the response.
+   */
+  function corsHeaders(request: Request): Record<string, string> {
+    if (allowedOrigins.size === 0) return {};
+    const origin = request.headers.get("origin");
+    if (!origin || !allowedOrigins.has(origin)) return {};
+    return {
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Expose-Headers":
+        "X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After",
+      Vary: "Origin",
+    };
   }
 
   function refusal(
@@ -186,6 +316,31 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     };
   }
 
+  /**
+   * The model the request asked for, if it may have it. Null when it
+   * asked for nothing (or `models` is unset, in which case a request
+   * cannot choose); `false` when it asked for one it may not have.
+   */
+  async function requestedModel(
+    actor: ChatActor,
+    body: Record<string, unknown>
+  ): Promise<ChatModelOption | null | false> {
+    if (!config.models) return null;
+    const wanted = body.modelId;
+    if (typeof wanted !== "string" || !wanted) return null;
+    const options =
+      typeof config.models.options === "function"
+        ? await config.models.options(actor)
+        : config.models.options;
+    const option = options.find((candidate) => candidate.id === wanted);
+    if (!option) return false;
+    if (option.featureKey) {
+      const allowed = await hasFeature(actor.workspaceId, option.featureKey);
+      if (!allowed) return false;
+    }
+    return option;
+  }
+
   async function prepare(
     turn: ChatTurn,
     incoming: UIMessage[]
@@ -195,6 +350,67 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       config.windowing === undefined ? DEFAULT_WINDOW : config.windowing;
     if (windowing === false) return { messages: incoming };
     return { messages: applyConversationWindow(incoming, windowing).windowed };
+  }
+
+  /**
+   * What the model sees of stored attachments: a signed URL in place
+   * of the app URL, and the extracted text of a document appended as
+   * text. The persisted transcript keeps the app URL — a signed URL
+   * expires, and would leak on a shared page.
+   */
+  async function resolveStoredFiles(
+    actor: ChatActor,
+    messages: UIMessage[]
+  ): Promise<UIMessage[]> {
+    if (attachments === false || attachments.mode !== "stored") {
+      return messages;
+    }
+    const ids = storedAttachmentIds(messages, attachments);
+    if (ids.length === 0) return messages;
+
+    const rows = await getAttachments(actor, ids);
+    const byId = new Map(rows.map((row) => [row.id, row] as const));
+    const storage = getStorageAdapter();
+    const signed = new Map<string, string>();
+    for (const row of rows) {
+      signed.set(
+        row.id,
+        await storage.getSignedUrl(row.storageKey, {
+          expiresInSeconds: MODEL_URL_SECONDS,
+        })
+      );
+    }
+
+    return messages.map((message) => {
+      const parts: UIMessage["parts"] = [];
+      const extracted: string[] = [];
+      for (const part of message.parts) {
+        if (part.type !== "file") {
+          parts.push(part);
+          continue;
+        }
+        const id = attachmentIdFromUrl(attachments, part.url);
+        const row = id ? byId.get(id) : undefined;
+        if (!id || !row) {
+          // Not this tenant's upload, or already gone: the model does
+          // not get a URL it could not have fetched anyway.
+          continue;
+        }
+        parts.push({
+          ...part,
+          mediaType: row.mediaType,
+          filename: row.filename,
+          url: signed.get(id)!,
+        });
+        if (row.extractedText && !row.mediaType.startsWith("image/")) {
+          extracted.push(`[Attachment: ${row.filename}]\n${row.extractedText}`);
+        }
+      }
+      if (extracted.length > 0) {
+        parts.push({ type: "text", text: extracted.join("\n\n") });
+      }
+      return { ...message, parts };
+    });
   }
 
   async function loadRow(
@@ -220,18 +436,19 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
   async function POST(request: Request): Promise<Response> {
     await config.onRequest?.();
     const t = await messagesFor(request);
+    const cors = corsHeaders(request);
     const nowhere = { actor: null, conversationId: null };
 
     let json: unknown;
     try {
       json = await request.json();
     } catch {
-      return refusal(t, "BAD_REQUEST", t("invalidBody"), nowhere);
+      return refusal(t, "BAD_REQUEST", t("invalidBody"), nowhere, {}, cors);
     }
     const parsed = parseChatBody(json, { maxMessageLength, attachments });
     if (!parsed.ok) {
       const { key, params } = parsed.rejection;
-      return refusal(t, "BAD_REQUEST", t(key, params), nowhere);
+      return refusal(t, "BAD_REQUEST", t(key, params), nowhere, {}, cors);
     }
     const body = parsed.body;
     const where = { actor: null as ChatActor | null, conversationId: body.id };
@@ -240,14 +457,14 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     try {
       actor = await authenticate(request);
     } catch {
-      return refusal(t, "UNAUTHORIZED", t("unauthorized"), where);
+      return refusal(t, "UNAUTHORIZED", t("unauthorized"), where, {}, cors);
     }
     where.actor = actor;
 
-    let limitHeaders: Record<string, string> = {};
+    let limitHeaders: Record<string, string> = { ...cors };
     if (rateLimit !== false) {
       const decision = await rateLimit(actor);
-      limitHeaders = rateLimitHeaders(decision);
+      limitHeaders = { ...cors, ...rateLimitHeaders(decision) };
       if (!decision.allowed) {
         const seconds = decision.retryAfterSeconds ?? 60;
         return refusal(
@@ -269,13 +486,13 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         isConversationServiceError(loaded.error) &&
         loaded.error.code === "forbidden"
       ) {
-        return refusal(t, "NOT_FOUND", t("notFound"), where);
+        return refusal(t, "NOT_FOUND", t("notFound"), where, {}, cors);
       }
       log.error("Failed to load conversation", {
         conversationId: body.id,
         error: errorMessage(loaded.error),
       });
-      return refusal(t, "INTERNAL", t("internalError"), where);
+      return refusal(t, "INTERNAL", t("internalError"), where, {}, cors);
     }
 
     const context: ChatTurnContext = {
@@ -298,7 +515,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       await emit(() =>
         events.fail?.({ turn: context, error, phase: "unhandled" })
       );
-      return refusal(t, "INTERNAL", t("internalError"), where);
+      return refusal(t, "INTERNAL", t("internalError"), where, {}, cors);
     }
 
     const featureKey =
@@ -310,11 +527,24 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     if (featureKey !== null) {
       const allowed = await hasFeature(actor.workspaceId, featureKey);
       if (!allowed) {
-        return refusal(t, "FEATURE_GATED", t("featureGated"), where);
+        return refusal(t, "FEATURE_GATED", t("featureGated"), where, {}, cors);
       }
     }
 
-    const modelId = agent.modelId ?? config.model.defaultId;
+    // The agent's model wins; then the request's, if it may have it;
+    // then the deployment's default.
+    const picked = await requestedModel(actor, body.extra);
+    if (picked === false) {
+      return refusal(
+        t,
+        "FEATURE_GATED",
+        t("featureGated"),
+        where,
+        { reasonCode: "model_not_allowed" },
+        cors
+      );
+    }
+    const modelId = agent.modelId ?? picked?.id ?? config.model.defaultId;
     const capability =
       agent.capability ?? config.capability ?? DEFAULT_CAPABILITY;
     const maxSteps = agent.maxSteps ?? config.maxSteps ?? DEFAULT_MAX_STEPS;
@@ -344,7 +574,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           conversationId: body.id,
           error: errorMessage(error),
         });
-        return refusal(t, "INTERNAL", t("internalError"), where);
+        return refusal(t, "INTERNAL", t("internalError"), where, {}, cors);
       }
     } else if (body.trigger === "regenerate-message") {
       // The client dropped the reply it is regenerating; drop what the
@@ -364,11 +594,27 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       }
     }
 
+    // The writer exists only while the stream is open; a tool that
+    // writes outside that window is dropped rather than crashed.
+    let writerSlot: UIMessageStreamWriter<ChatUIMessage> | null = null;
+
     const turn: ChatTurn = {
       ...context,
       agent,
       history: async () => toUIMessages(await getMessages(actor, body.id)),
+      write: (chunk: ChatDataChunk) => {
+        writerSlot?.write(chunk);
+      },
+      updateMetadata: async (patch) => {
+        await updateConversationMetadata(actor, body.id, patch);
+      },
     };
+
+    // Approval answers ride on a continuation; the audit hook sees
+    // each once, before the tool they gate runs.
+    for (const answer of approvalAnswers(body.messages)) {
+      await emit(() => events.approval?.({ turn: context, ...answer }));
+    }
 
     let prepared: PreparedTurn;
     try {
@@ -379,7 +625,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         error: errorMessage(error),
       });
       await emit(() => events.fail?.({ turn, error, phase: "unhandled" }));
-      return refusal(t, "INTERNAL", t("internalError"), where);
+      return refusal(t, "INTERNAL", t("internalError"), where, {}, cors);
     }
 
     const metadata = {
@@ -412,8 +658,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       );
     }
 
-    const model = await config.model.resolve(modelId, context);
-    const modelMessages = await convertToModelMessages(prepared.messages);
     const tools: ToolSet | undefined =
       agent.tools && Object.keys(agent.tools).length > 0
         ? agent.tools
@@ -436,14 +680,15 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       })
     );
 
-    // Whole-run usage, captured from streamText's own `onFinish` (which
-    // fires when the model run ends, before the UI stream drains) and
-    // read back in the outer `onFinish`. `totalUsage`, not `usage`:
-    // with tools bound, `usage` is the LAST step only and a five-step
-    // turn would be billed for one.
+    // Whole-run usage, captured from the run's own finish (which fires
+    // when the model run ends, before the UI stream drains) and read
+    // back in the outer `onFinish`. `totalUsage`, not `usage`: with
+    // tools bound, `usage` is the LAST step only and a five-step turn
+    // would be billed for one.
     let captured:
       | {
           usage: TokenUsage;
+          modelId?: string;
           finishReason?: string;
           rawFinishReason?: string;
           providerMetadata?: unknown;
@@ -464,7 +709,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       try {
         await run.complete({
           usage: normalized,
-          model: modelId,
+          model: captured?.modelId ?? modelId,
           metadata: { ...metadata, aborted: detail.aborted },
         });
       } catch (error) {
@@ -481,7 +726,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         events.complete?.({
           turn,
           executionId: run.id,
-          modelId,
+          modelId: captured?.modelId ?? modelId,
           usage: normalized,
           aborted: detail.aborted,
           finishReason: captured?.finishReason,
@@ -513,16 +758,68 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       }
     };
 
-    const stream = createUIMessageStream({
+    const finishMetadata = (usage: TokenUsage): ChatMessageMetadata => ({
+      modelId: captured?.modelId ?? modelId,
+      usage: pickUsage(usage),
+      finishedAt: new Date().toISOString(),
+    });
+
+    const stream = createUIMessageStream<ChatUIMessage>({
       // Without this, `onFinish` sees only the reply and a tool-approval
       // continuation loses its message id. With it, the finished
       // transcript is the prepared messages plus the reply.
-      originalMessages: prepared.messages,
+      originalMessages: prepared.messages as ChatUIMessage[],
       execute: async ({ writer }) => {
+        writerSlot = writer;
+        const modelMessages = await resolveStoredFiles(
+          actor,
+          prepared.messages
+        );
+
+        if (config.streamTurn) {
+          // A runtime the consumer bound. It gets the whole prepared
+          // turn and gives back UI chunks; the frames are ours.
+          writer.write({ type: "start" });
+          const produced = await config.streamTurn(turn, prepared, {
+            modelId,
+            abortSignal: request.signal,
+            writer,
+          });
+          writer.merge(
+            withoutFrames(
+              produced.stream as ReadableStream<UIMessageChunk>
+            ) as ReadableStream<InferUIMessageChunk<ChatUIMessage>>
+          );
+          const usage = await produced.usage;
+          captured = {
+            usage: pickUsage(usage),
+            ...(usage.modelId ? { modelId: usage.modelId } : {}),
+            ...(usage.finishReason ? { finishReason: usage.finishReason } : {}),
+          };
+          const title = await applyTitle();
+          if (title) {
+            writer.write({
+              type: "data-chat-title",
+              data: title,
+              transient: true,
+            });
+          }
+          writer.write({
+            type: "finish",
+            ...(withMetadata
+              ? { messageMetadata: finishMetadata(captured.usage) }
+              : {}),
+          });
+          return;
+        }
+
+        const model = await config.model.resolve!(modelId, context);
         const result = streamText({
           model,
           system: prepared.system ?? agent.systemPrompt,
-          messages: modelMessages,
+          messages: await convertToModelMessages(modelMessages, {
+            ...(tools ? { tools } : {}),
+          }),
           ...(tools
             ? {
                 tools,
@@ -561,7 +858,18 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         });
 
         writer.merge(
-          result.toUIMessageStream({ sendReasoning: config.reasoning ?? false })
+          result.toUIMessageStream({
+            sendReasoning: config.reasoning ?? false,
+            sendSources: config.sources ?? false,
+            ...(withMetadata
+              ? {
+                  messageMetadata: ({ part }) =>
+                    part.type === "finish"
+                      ? finishMetadata(part.totalUsage)
+                      : undefined,
+                }
+              : {}),
+          }) as ReadableStream<InferUIMessageChunk<ChatUIMessage>>
         );
 
         const title = await applyTitle();
@@ -575,8 +883,9 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       },
       generateId,
       onFinish: async ({ responseMessage, isContinuation }) => {
+        writerSlot = null;
         if (captured) {
-          await settle(captured.usage, { aborted: false });
+          await settle(captured.usage, { aborted: request.signal.aborted });
         } else {
           // The stream closed without the model run reporting usage and
           // without an abort or error having settled it. Failing
@@ -600,6 +909,19 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
               responseMessage,
             ]);
           }
+          if (
+            userMessage &&
+            attachments !== false &&
+            attachments.mode === "stored"
+          ) {
+            const ids = storedAttachmentIds([userMessage], attachments);
+            if (ids.length > 0) {
+              await attachToConversation(actor, {
+                ids,
+                conversationId: body.id,
+              });
+            }
+          }
         } catch (error) {
           log.error("Message persistence failed", {
             conversationId: body.id,
@@ -614,6 +936,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         // fail() is a no-op if complete() already won, so a late error
         // after a settled stream cannot corrupt the row. The AI SDK
         // does not await this callback, so nothing here is.
+        writerSlot = null;
         void run.fail({ error });
         void emit(() => events.fail?.({ turn, error, phase: "stream" }));
         return t("streamError");
@@ -630,6 +953,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
   async function DELETE(request: Request): Promise<Response> {
     await config.onRequest?.();
     const t = await messagesFor(request);
+    const cors = corsHeaders(request);
 
     let id = new URL(request.url).searchParams.get("id");
     if (!id) {
@@ -641,20 +965,28 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       }
     }
     if (!id) {
-      return refusal(t, "BAD_REQUEST", t("invalidBody"), {
-        actor: null,
-        conversationId: null,
-      });
+      return refusal(
+        t,
+        "BAD_REQUEST",
+        t("invalidBody"),
+        { actor: null, conversationId: null },
+        {},
+        cors
+      );
     }
 
     let actor: ChatActor;
     try {
       actor = await authenticate(request);
     } catch {
-      return refusal(t, "UNAUTHORIZED", t("unauthorized"), {
-        actor: null,
-        conversationId: id,
-      });
+      return refusal(
+        t,
+        "UNAUTHORIZED",
+        t("unauthorized"),
+        { actor: null, conversationId: id },
+        {},
+        cors
+      );
     }
 
     try {
@@ -664,22 +996,51 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         isConversationServiceError(error) &&
         (error.code === "not_found" || error.code === "forbidden")
       ) {
-        return refusal(t, "NOT_FOUND", t("notFound"), {
-          actor,
-          conversationId: id,
-        });
+        return refusal(
+          t,
+          "NOT_FOUND",
+          t("notFound"),
+          { actor, conversationId: id },
+          {},
+          cors
+        );
       }
       log.error("Failed to delete conversation", {
         conversationId: id,
         error: errorMessage(error),
       });
-      return refusal(t, "INTERNAL", t("internalError"), {
-        actor,
-        conversationId: id,
-      });
+      return refusal(
+        t,
+        "INTERNAL",
+        t("internalError"),
+        { actor, conversationId: id },
+        {},
+        cors
+      );
     }
-    return Response.json({ success: true });
+    return Response.json({ success: true }, { headers: cors });
   }
 
-  return { POST, DELETE };
+  // -------------------------------------------------------------------------
+  // GET — stream resumption; OPTIONS — CORS preflight
+  // -------------------------------------------------------------------------
+
+  /**
+   * `useChat().resumeStream()` asks here whether a turn is still in
+   * flight. `streamText` runs are not durable, so the honest answer is
+   * always "nothing to resume" — 204, which the SDK treats as such.
+   */
+  async function GET(request: Request): Promise<Response> {
+    return new Response(null, { status: 204, headers: corsHeaders(request) });
+  }
+
+  async function OPTIONS(request: Request): Promise<Response> {
+    const cors = corsHeaders(request);
+    return new Response(null, {
+      status: 204,
+      headers: { ...cors, "Access-Control-Max-Age": "600" },
+    });
+  }
+
+  return { POST, DELETE, GET, OPTIONS };
 }

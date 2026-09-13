@@ -253,6 +253,104 @@ export async function renameConversation(
   return updated;
 }
 
+/**
+ * Merge a patch into the conversation's `metadata` bag. Shallow: each
+ * top-level key in `patch` replaces the stored one, every other key
+ * stays. A runtime's session cursor, a summary of pruned history, a
+ * pin — anything the row should remember that is not a column.
+ */
+export async function updateConversationMetadata(
+  actor: ConversationActor,
+  id: string,
+  patch: Record<string, unknown>
+): Promise<Conversation> {
+  await verifyConversation(actor, id);
+
+  const [updated] = await db
+    .update(conversations)
+    .set({
+      metadata: sql`coalesce(${conversations.metadata}, '{}'::jsonb) || ${JSON.stringify(patch)}::jsonb`,
+      updatedAt: new Date(),
+    })
+    .where(eq(conversations.id, id))
+    .returning();
+
+  if (!updated) {
+    throw new ConversationServiceError(
+      "database_error",
+      "Failed to update conversation metadata"
+    );
+  }
+
+  return updated;
+}
+
+export type ConversationVisibility = "private" | "public";
+
+/** Publish or unpublish a conversation. Public means readable by its id, by anyone. */
+export async function setConversationVisibility(
+  actor: ConversationActor,
+  id: string,
+  visibility: ConversationVisibility
+): Promise<Conversation> {
+  await verifyConversation(actor, id);
+
+  const [updated] = await db
+    .update(conversations)
+    .set({ visibility, updatedAt: new Date() })
+    .where(eq(conversations.id, id))
+    .returning();
+
+  if (!updated) {
+    throw new ConversationServiceError(
+      "database_error",
+      "Failed to update conversation visibility"
+    );
+  }
+
+  return updated;
+}
+
+/**
+ * A conversation its owner published, by id alone — no actor, because
+ * the reader has none. Everything else about the row stays private:
+ * only what a shared page shows is projected.
+ */
+export async function getPublicConversation(id: string): Promise<{
+  id: string;
+  title: string | null;
+  agentId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}> {
+  const [row] = await db
+    .select({
+      id: conversations.id,
+      title: conversations.title,
+      agentId: conversations.agentId,
+      createdAt: conversations.createdAt,
+      updatedAt: conversations.updatedAt,
+    })
+    .from(conversations)
+    .where(and(eq(conversations.id, id), eq(conversations.visibility, "public")))
+    .limit(1);
+
+  if (!row) {
+    throw new ConversationServiceError("not_found", "Conversation not found");
+  }
+  return row;
+}
+
+/** The messages of a published conversation, oldest first. Empty when it is not public. */
+export async function getPublicMessages(id: string): Promise<Message[]> {
+  await getPublicConversation(id);
+  return db
+    .select()
+    .from(messages)
+    .where(eq(messages.conversationId, id))
+    .orderBy(asc(messages.createdAt));
+}
+
 /** Delete a conversation and all its messages (CASCADE). */
 export async function deleteConversation(
   actor: ConversationActor,
@@ -513,6 +611,19 @@ export async function voteMessage(
       target: [votes.chatId, votes.messageId],
       set: { isUpvoted: params.type === "up" },
     });
+}
+
+/** Withdraw a vote. A missing vote is not an error. */
+export async function clearVote(
+  actor: ConversationActor,
+  params: { chatId: string; messageId: string }
+): Promise<void> {
+  await verifyConversation(actor, params.chatId);
+  await db
+    .delete(votes)
+    .where(
+      and(eq(votes.chatId, params.chatId), eq(votes.messageId, params.messageId))
+    );
 }
 
 /** Get all votes for a conversation. */

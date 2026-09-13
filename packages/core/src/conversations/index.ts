@@ -23,7 +23,13 @@ export {
   deleteTrailingMessages,
   voteMessage,
   getVotes,
+  clearVote,
+  updateConversationMetadata,
+  setConversationVisibility,
+  getPublicConversation,
+  getPublicMessages,
 } from "./service";
+export type { ConversationVisibility } from "./service";
 
 export {
   ConversationServiceError,

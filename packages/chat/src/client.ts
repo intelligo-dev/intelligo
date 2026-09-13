@@ -2,10 +2,11 @@
  * What a chat client needs to know about the transport, and nothing a
  * client bundle must not carry.
  *
- * This file imports nothing. A UI item reads the error codes, the
- * quota-state shape and `parseChatError` from `@intelligo-dev/chat/client`
- * without pulling the server handler — or Drizzle, Stripe and the auth
- * server behind it — into the browser.
+ * This file imports nothing at runtime (`./parts` is types and one
+ * type guard). A UI item reads the error codes, the quota-state shape,
+ * the parts vocabulary and `parseChatError` from
+ * `@intelligo-dev/chat/client` without pulling the server handler — or
+ * Drizzle, Stripe and the auth server behind it — into the browser.
  */
 
 /** Stable codes the transport answers with. The status is fixed per code. */
@@ -57,6 +58,39 @@ export type ChatQuotaState = {
   /** Where "upgrade" and "top up" should go. */
   upgradeHref: string;
 };
+
+/**
+ * A model the composer may offer. `id` is a registered model id; the
+ * transport refuses any other. `featureKey` gates it by plan.
+ */
+export type ChatModelOption = {
+  id: string;
+  label: string;
+  description?: string;
+  /** Plan feature the workspace needs for this model; unset means every plan. */
+  featureKey?: string;
+};
+
+export type {
+  ChatAgentData,
+  ChatArtifactData,
+  ChatAuthorizationData,
+  ChatCompactionData,
+  ChatDataChunk,
+  ChatDataPart,
+  ChatDataPartName,
+  ChatDataParts,
+  ChatMessageMetadata,
+  ChatQuestionData,
+  ChatQuestionOption,
+  ChatStatusData,
+  ChatTaskData,
+  ChatTaskItem,
+  ChatTaskStatus,
+  ChatUIMessage,
+  ChatUIMessageChunk,
+} from "./parts";
+export { isChatDataPart } from "./parts";
 
 const CODES: ReadonlySet<string> = new Set(CHAT_ERROR_CODES);
 

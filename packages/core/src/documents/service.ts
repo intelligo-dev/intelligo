@@ -112,6 +112,32 @@ export async function getDocument(
   return toListItem(doc);
 }
 
+/**
+ * Every version of a document, newest first — what a canvas version
+ * picker walks. Throws ("not_found") when the actor has no such id.
+ */
+export async function getDocumentVersions(
+  actor: DocumentActor,
+  id: string
+): Promise<DocumentListItem[]> {
+  const rows = await db
+    .select()
+    .from(documents)
+    .where(
+      and(
+        eq(documents.id, id),
+        eq(documents.workspaceId, actor.workspaceId),
+        eq(documents.userId, actor.userId)
+      )
+    )
+    .orderBy(desc(documents.createdAt));
+
+  if (rows.length === 0) {
+    throw new DocumentServiceError("not_found", "Document not found");
+  }
+  return rows.map(toListItem);
+}
+
 // ---------------------------------------------------------------------------
 // Mutation Operations
 // ---------------------------------------------------------------------------

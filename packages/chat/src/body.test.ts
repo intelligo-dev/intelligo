@@ -91,3 +91,82 @@ describe("parseChatBody", () => {
     ).toBe(false);
   });
 });
+
+describe("parseChatBody — stored attachments and continuations", () => {
+  const stored = {
+    maxMessageLength: 100,
+    attachments: { accept: ["image/png"], mode: "stored" as const },
+  };
+  const filePart = (url: string) => ({
+    id: "m",
+    role: "user",
+    parts: [{ type: "file", mediaType: "image/png", url }],
+  });
+
+  it("accepts the app URL of an upload and refuses anything else", () => {
+    expect(
+      parseChatBody(body({ messages: [filePart("/api/chat/attachments/a-1")] }), stored).ok
+    ).toBe(true);
+    expect(
+      parseChatBody(
+        body({ messages: [filePart("https://app.test/api/chat/attachments/a-1")] }),
+        stored
+      ).ok
+    ).toBe(true);
+    for (const url of [
+      "data:image/png;base64,AAAA",
+      "https://elsewhere.test/file.png",
+      "/api/chat/attachments/",
+      "/api/chat/attachments/a/b",
+    ]) {
+      const parsed = parseChatBody(body({ messages: [filePart(url)] }), stored);
+      expect(parsed.ok, url).toBe(false);
+      if (!parsed.ok) expect(parsed.rejection.key).toBe("attachmentRejected");
+    }
+  });
+
+  it("honours a custom urlFor", () => {
+    const custom = {
+      ...stored,
+      attachments: { ...stored.attachments, urlFor: (id: string) => `/files/${id}/view` },
+    };
+    expect(parseChatBody(body({ messages: [filePart("/files/a-1/view")] }), custom).ok).toBe(true);
+    expect(
+      parseChatBody(body({ messages: [filePart("/api/chat/attachments/a-1")] }), custom).ok
+    ).toBe(false);
+  });
+
+  it("accepts a continuation only when it names the assistant message it continues", () => {
+    const assistant = { id: "a-1", role: "assistant", parts: [{ type: "text", text: "…" }] };
+    const user = { id: "m", role: "user", parts: [{ type: "text", text: "hi" }] };
+    expect(
+      parseChatBody(
+        body({ messages: [user, assistant], trigger: "submit-message", messageId: "a-1" }),
+        opts
+      ).ok
+    ).toBe(true);
+    expect(parseChatBody(body({ messages: [user, assistant] }), opts).ok).toBe(false);
+    expect(
+      parseChatBody(
+        body({ messages: [user, assistant], trigger: "regenerate-message", messageId: "a-1" }),
+        opts
+      ).ok
+    ).toBe(false);
+    expect(
+      parseChatBody(
+        body({ messages: [user, assistant], trigger: "submit-message", messageId: "other" }),
+        opts
+      ).ok
+    ).toBe(false);
+  });
+});
+
+describe("attachmentIdFromUrl", () => {
+  it("reads the id out of relative and absolute app URLs", async () => {
+    const { attachmentIdFromUrl, attachmentUrl } = await import("./body");
+    expect(attachmentUrl({}, "x")).toBe("/api/chat/attachments/x");
+    expect(attachmentIdFromUrl({}, "/api/chat/attachments/x")).toBe("x");
+    expect(attachmentIdFromUrl({}, "https://a.test/api/chat/attachments/x")).toBe("x");
+    expect(attachmentIdFromUrl({}, "https://a.test/other/x")).toBeNull();
+  });
+});

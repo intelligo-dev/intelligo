@@ -1,30 +1,47 @@
 /**
  * What an application tells the chat transport, and what it is told back.
  *
- * Two things are required — the execution boundary and a way to turn a
- * model id into a model — because those are the two things a framework
- * must never guess (ADR-0003, ADR-0007). Everything else has a default
- * that gives a clean install a working chat with no API keys: one
- * agent, one prompt, no tools, a window of forty messages, a truncated
- * first line as the title.
+ * Two things are required — the execution boundary and a way to run
+ * the model — because those are the two things a framework must never
+ * guess (ADR-0003, ADR-0007). Everything else has a default that gives
+ * a clean install a working chat with no API keys: one agent, one
+ * prompt, no tools, a window of forty messages, a truncated first line
+ * as the title.
  *
- * Each optional field is a seam a real product needed and used to
- * fork the route to get: an agent resolved per conversation from a
- * table, a history pruned and summarised before the model sees it,
- * image attachments, reasoning streamed to the client, a model-written
- * title, telemetry on every turn. None of them carry product
- * vocabulary; all of them close over the caller's tenancy so the model
- * never has to be told which workspace it is in.
+ * Each optional field is a seam a real product needed and used to fork
+ * the route to get: an agent resolved per conversation from a table, a
+ * history pruned and summarised before the model sees it, image
+ * attachments, reasoning streamed to the client, a model-written
+ * title, telemetry on every turn, a model picker, a runtime that is not
+ * `streamText`. None of them carry product vocabulary; all of them
+ * close over the caller's tenancy so the model never has to be told
+ * which workspace it is in.
+ *
+ * `streamTurn` is the one runtime seam. It replaces the model call and
+ * nothing else: auth, the rate limit, the feature gate, admission,
+ * persistence and settlement stay the transport's. What it returns is
+ * the AI SDK's own UI message chunks — a Mastra agent produces them
+ * through `@mastra/ai-sdk`, an eve session through a mapper the
+ * consumer installs from the registry — so the framework carries no
+ * helper for any AI framework (ADR-0003, ADR-0011).
  */
 
-import type { LanguageModel, StopCondition, ToolSet, UIMessage } from "ai";
+import type {
+  LanguageModel,
+  StopCondition,
+  ToolSet,
+  UIMessage,
+  UIMessageChunk,
+  UIMessageStreamWriter,
+} from "ai";
 
 import type { Conversation } from "@intelligo-dev/core/conversations";
 import type { Executions } from "@intelligo-dev/executions";
 
 import type { ChatAttachmentPolicy } from "./body";
-import type { ChatErrorCode } from "./client";
+import type { ChatErrorCode, ChatModelOption } from "./client";
 import type { ChatMessages } from "./errors";
+import type { ChatDataChunk, ChatUIMessage } from "./parts";
 import type { TokenUsage } from "./usage";
 import type { ConversationWindowOptions } from "./windowing";
 
@@ -43,8 +60,9 @@ export interface ChatTurnContext extends ChatActor {
   conversationId: string;
   /**
    * Fields the client transport sent beyond the AI SDK's own — an
-   * `agentId`, a model choice. Opaque to the transport; `resolveAgent`
-   * reads them.
+   * `agentId`, a `modelId`. Opaque to the transport; `resolveAgent`
+   * reads them. `modelId` is also read by the default resolution when
+   * `models` is configured.
    */
   body: Record<string, unknown>;
   /** The existing row, or null on a conversation's first turn. */
@@ -62,7 +80,7 @@ export interface ResolvedAgent {
   activeTools?: string[];
   /** Added after `stepCountIs(maxSteps)`, e.g. `hasToolCall("askUser")`. */
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
-  /** Overrides `model.defaultId`. Must be a registered model id. */
+  /** Overrides the request's and the config's model. Must be a registered model id. */
   modelId?: string;
   maxSteps?: number;
   /** Overrides the config's; `null` disables the gate for this agent. */
@@ -75,6 +93,18 @@ export interface ChatTurn extends ChatTurnContext {
   agent: ResolvedAgent;
   /** The persisted history, read lazily: not every `prepareMessages` needs it. */
   history: () => Promise<UIMessage[]>;
+  /**
+   * Write a part to the client mid-turn — a status line, a task plan,
+   * a document streaming into the canvas (`createArtifactWriter`). A
+   * no-op before the stream opens and after it closes.
+   */
+  write: (chunk: ChatDataChunk) => void;
+  /**
+   * Merge a patch into the conversation's `metadata` — a runtime's
+   * session id, a summary of pruned history. Shallow: top-level keys
+   * are replaced, other keys kept.
+   */
+  updateMetadata: (patch: Record<string, unknown>) => Promise<void>;
 }
 
 /** What the model is shown. */
@@ -83,6 +113,36 @@ export interface PreparedTurn {
   /** Replaces the agent's system prompt when set — a summary prefix, injected context. */
   system?: string;
 }
+
+/**
+ * A turn produced by something other than `streamText`.
+ *
+ * `stream` carries the AI SDK's UI message chunks. The transport writes
+ * `start` and `finish` itself and drops any the stream emits, so a
+ * runtime whose adapter already frames the message needs no stripping.
+ * `usage` settles the execution: it resolves once the run is over,
+ * with the whole run's tokens. On a client abort the transport settles
+ * with whatever `usage` resolves to; reject it and the turn is failed.
+ */
+export interface TurnStream {
+  stream: ReadableStream<UIMessageChunk>;
+  usage: Promise<
+    TokenUsage & {
+      modelId?: string;
+      finishReason?: string;
+    }
+  >;
+}
+
+export type StreamTurn = (
+  turn: ChatTurn,
+  prepared: PreparedTurn,
+  context: {
+    modelId: string;
+    abortSignal: AbortSignal;
+    writer: UIMessageStreamWriter<ChatUIMessage>;
+  }
+) => TurnStream | Promise<TurnStream>;
 
 export interface RateLimitDecision {
   allowed: boolean;
@@ -126,6 +186,38 @@ export interface ChatTurnEvents {
     status: number;
     reasonCode?: string;
   }) => void | Promise<void>;
+  /**
+   * The user answered a tool's approval request. Fired once per
+   * response, from the continuation turn that carries it — the audit
+   * trail a product needs for a gated action.
+   */
+  approval?: (event: {
+    turn: ChatTurnContext;
+    toolName: string;
+    toolCallId: string;
+    approvalId: string;
+    approved: boolean;
+    reason?: string;
+  }) => void | Promise<void>;
+  /** The reader voted on a reply, or cleared a vote. */
+  feedback?: (event: {
+    actor: ChatActor;
+    conversationId: string;
+    messageId: string;
+    vote: "up" | "down" | null;
+  }) => void | Promise<void>;
+}
+
+export interface ChatModelsConfig {
+  /**
+   * Models the request may ask for by `modelId`. A list, or a function
+   * of the caller for a list that depends on the plan. A request naming
+   * a model outside it, or one whose `featureKey` the workspace lacks,
+   * is refused as `FEATURE_GATED` with reason `model_not_allowed`.
+   */
+  options:
+    | ChatModelOption[]
+    | ((actor: ChatActor) => ChatModelOption[] | Promise<ChatModelOption[]>);
 }
 
 export interface ChatServerConfig {
@@ -134,11 +226,21 @@ export interface ChatServerConfig {
   model: {
     /** Must be registered in `@intelligo-dev/executions/pricing`. */
     defaultId: string;
-    resolve: (
+    /**
+     * Turns a model id into a model for `streamText`. Required unless
+     * `streamTurn` is set, and unused when it is.
+     */
+    resolve?: (
       modelId: string,
       turn: ChatTurnContext
     ) => LanguageModel | Promise<LanguageModel>;
   };
+  /**
+   * Runs the turn instead of `streamText` — a Mastra agent, an eve
+   * session, a workflow. Everything around the model call stays the
+   * transport's. See `TurnStream`.
+   */
+  streamTurn?: StreamTurn;
 
   /** Runs first on every request — the place to call `composeIntelligo()`. */
   onRequest?: () => void | Promise<void>;
@@ -169,6 +271,8 @@ export interface ChatServerConfig {
   resolveAgent?: (
     turn: ChatTurnContext
   ) => ResolvedAgent | Promise<ResolvedAgent>;
+  /** The models a request may pick from. Unset: every request runs the default. */
+  models?: ChatModelsConfig;
   /**
    * What the model is shown. The default windows the incoming
    * transcript by `windowing`. An application that prunes, summarises
@@ -185,6 +289,18 @@ export interface ChatServerConfig {
   attachments?: ChatAttachmentPolicy | false;
   /** Stream the model's reasoning parts to the client. Default false. */
   reasoning?: boolean;
+  /** Stream the model's source parts (citations) to the client. Default false. */
+  sources?: boolean;
+  /**
+   * Attach `{ modelId, usage, finishedAt }` to the assistant message as
+   * its metadata when the turn finishes. Default true.
+   */
+  messageMetadata?: boolean;
+  /**
+   * Answer cross-origin requests from these origins — an embedded
+   * widget on another site. Unset: no CORS headers, same-origin only.
+   */
+  cors?: { origins: readonly string[] };
 
   /**
    * Titles a conversation from its first user message when the row is

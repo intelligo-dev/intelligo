@@ -21,6 +21,8 @@
     "./conversations": "./src/conversations/index.ts",
     "./documents": "./src/documents/index.ts",
     "./identity": "./src/identity/index.ts",
+    "./attachments": "./src/attachments/index.ts",
+    "./storage": "./src/storage/index.ts",
     "./env": "./src/env.ts",
     "./registry": "./src/registry.ts",
     "./money": "./src/money.ts",

@@ -124,6 +124,36 @@ vi.mock("@intelligo-dev/core/conversations", () => ({
     row.title = title;
     return row;
   },
+  updateConversationMetadata: vi.fn(async () => undefined),
+}));
+
+const attachmentRows = vi.hoisted(() => ({
+  rows: [] as Array<{
+    id: string;
+    workspaceId: string;
+    storageKey: string;
+    filename: string;
+    mediaType: string;
+    extractedText: string | null;
+  }>,
+  attached: vi.fn(async () => undefined),
+}));
+
+vi.mock("@intelligo-dev/core/attachments", () => ({
+  getAttachments: async (actor: { workspaceId: string }, ids: string[]) =>
+    attachmentRows.rows.filter(
+      (row) => ids.includes(row.id) && row.workspaceId === actor.workspaceId
+    ),
+  attachToConversation: attachmentRows.attached,
+}));
+
+// Signed URLs come back as data URLs so the SDK does not try to fetch
+// them for a mock model that declares no URL support.
+vi.mock("@intelligo-dev/core/storage", () => ({
+  getStorageAdapter: () => ({
+    getSignedUrl: async (key: string) =>
+      `data:application/pdf;base64,${Buffer.from(`signed:${key}`).toString("base64")}`,
+  }),
 }));
 
 function fakeExecutions(overrides: Record<string, unknown> = {}) {
@@ -188,6 +218,7 @@ function turn(text = "hi", extra: Record<string, unknown> = {}) {
 beforeEach(() => {
   store.rows.clear();
   store.messages = [];
+  attachmentRows.rows = [];
   mocks.requireWorkspace.mockResolvedValue({
     workspace: { id: "ws-1" },
     user: { id: "u-1" },
@@ -691,5 +722,413 @@ describe("DELETE", () => {
       baseConfig(fakeExecutions().executions)
     );
     expect((await DELETE(del(CONVERSATION_ID))).status).toBe(401);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The runtime seam, the model gate, CORS, resumption, approvals, files
+// ---------------------------------------------------------------------------
+
+function uiChunks(chunks: unknown[]): ReadableStream<never> {
+  return new ReadableStream({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(chunk as never);
+      controller.close();
+    },
+  });
+}
+
+describe("streamTurn", () => {
+  it("refuses a config with neither a model nor a runtime", () => {
+    expect(() =>
+      createChatHandler({
+        executions: fakeExecutions().executions,
+        model: { defaultId: MODEL_ID },
+      })
+    ).toThrow(/model\.resolve.*streamTurn/);
+  });
+
+  it("frames the runtime's chunks, settles once from its usage and persists both turns", async () => {
+    const fake = fakeExecutions();
+    const streamTurn = vi.fn(async () => ({
+      stream: uiChunks([
+        { type: "start", messageId: "runtime-picked-this" },
+        { type: "text-start", id: "t1" },
+        { type: "text-delta", id: "t1", delta: "from the runtime" },
+        { type: "text-end", id: "t1" },
+        { type: "finish" },
+      ]),
+      usage: Promise.resolve({
+        inputTokens: 7,
+        outputTokens: 3,
+        totalTokens: 10,
+        modelId: "runtime/model",
+        finishReason: "stop",
+      }),
+    }));
+    const { POST } = createChatHandler({
+      executions: fake.executions,
+      model: { defaultId: MODEL_ID },
+      streamTurn,
+    });
+
+    const response = await POST(turn("hello runtime"));
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    expect(text).toContain("from the runtime");
+    // The runtime's own frames are dropped; the transport's carry the id.
+    expect(text).not.toContain("runtime-picked-this");
+    expect(streamTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ conversationId: CONVERSATION_ID }),
+      expect.objectContaining({ messages: expect.any(Array) }),
+      expect.objectContaining({ modelId: MODEL_ID })
+    );
+
+    await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+    expect(fake.complete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: "runtime/model",
+        usage: { inputTokens: 7, outputTokens: 3, totalTokens: 10 },
+      })
+    );
+    expect(fake.fail).not.toHaveBeenCalled();
+
+    await vi.waitFor(() => expect(store.messages.length).toBe(2));
+    const reply = JSON.parse(store.messages[1]!.parts) as unknown[];
+    expect(reply).toEqual([
+      expect.objectContaining({ type: "text", text: "from the runtime" }),
+    ]);
+    // Message metadata rode on the finish frame.
+    expect(text).toContain('"messageMetadata"');
+    expect(text).toContain('"modelId":"runtime/model"');
+  });
+
+  it("lets a tool write parts mid-turn and drops writes outside the stream", async () => {
+    const fake = fakeExecutions();
+    let captured: import("./config").ChatTurn | null = null;
+    const { POST } = createChatHandler({
+      executions: fake.executions,
+      model: { defaultId: MODEL_ID },
+      streamTurn: async (t) => {
+        captured = t;
+        t.write({ type: "data-chat-status", data: { label: "Working" } });
+        return {
+          stream: uiChunks([
+            { type: "text-start", id: "t1" },
+            { type: "text-delta", id: "t1", delta: "ok" },
+            { type: "text-end", id: "t1" },
+          ]),
+          usage: Promise.resolve({ inputTokens: 1, outputTokens: 1 }),
+        };
+      },
+    });
+    const text = await (await POST(turn())).text();
+    expect(text).toContain('"data-chat-status"');
+    expect(text).toContain("Working");
+    await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+    // After the stream: silently ignored, never thrown.
+    expect(() =>
+      captured!.write({ type: "data-chat-status", data: { label: "late" } })
+    ).not.toThrow();
+  });
+
+  it("fails the execution when the runtime's usage rejects", async () => {
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler({
+      executions: fake.executions,
+      model: { defaultId: MODEL_ID },
+      streamTurn: async () => ({
+        stream: uiChunks([]),
+        usage: Promise.reject(new Error("runtime exploded")),
+      }),
+    });
+    const response = await POST(turn());
+    await response.text();
+    await vi.waitFor(() => expect(fake.fail).toHaveBeenCalled());
+    expect(fake.complete).not.toHaveBeenCalled();
+  });
+});
+
+describe("model choice", () => {
+  const models = {
+    options: [
+      { id: MODEL_ID, label: "Fast" },
+      { id: "anthropic/claude-sonnet-4-6", label: "Smart", featureKey: "pro-models" },
+    ],
+  };
+
+  it("runs the requested model when it is on the list", async () => {
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(baseConfig(fake.executions, { models }));
+    mocks.hasFeature.mockResolvedValue(true);
+    const response = await POST(
+      turn("hi", { modelId: "anthropic/claude-sonnet-4-6" })
+    );
+    expect(response.status).toBe(200);
+    await response.text();
+    expect(mocks.hasFeature).toHaveBeenCalledWith("ws-1", "pro-models");
+    expect(fake.begin).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "anthropic/claude-sonnet-4-6" })
+    );
+  });
+
+  it("refuses a model off the list or behind a feature the plan lacks", async () => {
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(baseConfig(fake.executions, { models }));
+
+    const unknown = await POST(turn("hi", { modelId: "openai/o4-mini" }));
+    expect(unknown.status).toBe(403);
+    expect(await unknown.json()).toMatchObject({
+      code: "FEATURE_GATED",
+      reasonCode: "model_not_allowed",
+    });
+
+    mocks.hasFeature.mockImplementation(async (_ws: string, key: string) =>
+      key !== "pro-models"
+    );
+    const gated = await POST(turn("hi", { modelId: "anthropic/claude-sonnet-4-6" }));
+    expect(gated.status).toBe(403);
+    expect(fake.begin).not.toHaveBeenCalled();
+  });
+
+  it("ignores a requested model when no list is configured", async () => {
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(baseConfig(fake.executions));
+    await (await POST(turn("hi", { modelId: "openai/o4-mini" }))).text();
+    expect(fake.begin).toHaveBeenCalledWith(
+      expect.objectContaining({ model: MODEL_ID })
+    );
+  });
+});
+
+describe("cross-origin, resumption and continuation", () => {
+  it("answers CORS headers only for a listed origin", async () => {
+    const { POST, OPTIONS, GET } = createChatHandler(
+      baseConfig(fakeExecutions().executions, {
+        cors: { origins: ["https://widget.example"] },
+      })
+    );
+    const preflight = await OPTIONS(
+      new Request("http://app.test/api/chat", {
+        method: "OPTIONS",
+        headers: { origin: "https://widget.example" },
+      })
+    );
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get("Access-Control-Allow-Origin")).toBe(
+      "https://widget.example"
+    );
+    expect(preflight.headers.get("Access-Control-Allow-Credentials")).toBe(
+      "true"
+    );
+
+    const stranger = await OPTIONS(
+      new Request("http://app.test/api/chat", {
+        method: "OPTIONS",
+        headers: { origin: "https://evil.example" },
+      })
+    );
+    expect(stranger.headers.get("Access-Control-Allow-Origin")).toBeNull();
+
+    const streamed = await POST(
+      turn("hi", {}),
+    );
+    expect(streamed.headers.get("Access-Control-Allow-Origin")).toBeNull();
+    await streamed.text();
+
+    const resume = await GET(
+      new Request(`http://app.test/api/chat?chatId=${CONVERSATION_ID}`, {
+        headers: { origin: "https://widget.example" },
+      })
+    );
+    expect(resume.status).toBe(204);
+    expect(resume.headers.get("Access-Control-Allow-Origin")).toBe(
+      "https://widget.example"
+    );
+  });
+
+  it("reports approval answers from a continuation to the audit hook", async () => {
+    const approval = vi.fn();
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(
+      baseConfig(fake.executions, { onTurn: { approval } })
+    );
+    store.rows.set(CONVERSATION_ID, {
+      id: CONVERSATION_ID,
+      workspaceId: "ws-1",
+      userId: "u-1",
+      agentId: "assistant",
+      modelId: MODEL_ID,
+      title: "t",
+    });
+    const assistant: UIMessage = {
+      id: "m-assistant-1",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-deleteRows",
+          toolCallId: "call-1",
+          state: "approval-responded",
+          input: { table: "users" },
+          approval: { id: "appr-1", approved: false, reason: "not now" },
+        } as unknown as UIMessage["parts"][number],
+      ],
+    };
+    const response = await POST(
+      post({
+        id: CONVERSATION_ID,
+        messages: [userMessage("delete them"), assistant],
+        trigger: "submit-message",
+        messageId: "m-assistant-1",
+      })
+    );
+    expect(response.status).toBe(200);
+    await response.text();
+    expect(approval).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolName: "deleteRows",
+        toolCallId: "call-1",
+        approvalId: "appr-1",
+        approved: false,
+        reason: "not now",
+      })
+    );
+  });
+});
+
+describe("stored attachments", () => {
+  const policy = {
+    accept: ["image/png", "application/pdf"],
+    mode: "stored" as const,
+  };
+
+  it("signs the file for the model, persists the app URL and ties the row to the conversation", async () => {
+    attachmentRows.rows = [
+      {
+        id: "att-1",
+        workspaceId: "ws-1",
+        storageKey: "ws/ws-1/att/att-1",
+        filename: "q3.pdf",
+        mediaType: "application/pdf",
+        extractedText: "Revenue grew 12%",
+      },
+    ];
+    const seen: unknown[] = [];
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(
+      baseConfig(fake.executions, {
+        attachments: policy,
+        model: {
+          defaultId: MODEL_ID,
+          resolve: () =>
+            createStubLanguageModel({
+              modelId: MODEL_ID,
+              chunkDelayInMs: 0,
+              reply: (_text, prompt) => {
+                seen.push(...prompt);
+                return "read it";
+              },
+            }),
+        },
+      })
+    );
+    const message: UIMessage = {
+      id: "m-user-1",
+      role: "user",
+      parts: [
+        { type: "text", text: "Summarise" },
+        {
+          type: "file",
+          mediaType: "application/pdf",
+          filename: "q3.pdf",
+          url: "/api/chat/attachments/att-1",
+        },
+      ],
+    };
+    const response = await POST(post({ id: CONVERSATION_ID, messages: [message] }));
+    expect(response.status).toBe(200);
+    await response.text();
+
+    const prompt = JSON.stringify(seen);
+    expect(prompt).toContain(
+      Buffer.from("signed:ws/ws-1/att/att-1").toString("base64")
+    );
+    expect(prompt).toContain("Revenue grew 12%");
+
+    await vi.waitFor(() => expect(store.messages.length).toBe(2));
+    const persisted = store.messages[0]!.parts;
+    expect(persisted).toContain("/api/chat/attachments/att-1");
+    expect(persisted).not.toContain("base64");
+    await vi.waitFor(() =>
+      expect(attachmentRows.attached).toHaveBeenCalledWith(
+        expect.objectContaining({ workspaceId: "ws-1" }),
+        { ids: ["att-1"], conversationId: CONVERSATION_ID }
+      )
+    );
+  });
+
+  it("rejects a data URL in stored mode and a URL of another tenant's file", async () => {
+    attachmentRows.rows = [
+      {
+        id: "att-2",
+        workspaceId: "ws-2",
+        storageKey: "ws/ws-2/att/att-2",
+        filename: "secret.png",
+        mediaType: "image/png",
+        extractedText: null,
+      },
+    ];
+    const seen: unknown[] = [];
+    const { POST } = createChatHandler(
+      baseConfig(fakeExecutions().executions, {
+        attachments: policy,
+        model: {
+          defaultId: MODEL_ID,
+          resolve: () =>
+            createStubLanguageModel({
+              modelId: MODEL_ID,
+              chunkDelayInMs: 0,
+              reply: (_t, prompt) => {
+                seen.push(...prompt);
+                return "ok";
+              },
+            }),
+        },
+      })
+    );
+    const inline = await POST(
+      post({
+        id: CONVERSATION_ID,
+        messages: [
+          {
+            id: "m",
+            role: "user",
+            parts: [
+              { type: "file", mediaType: "image/png", url: "data:image/png;base64,AAAA" },
+            ],
+          },
+        ],
+      })
+    );
+    expect(inline.status).toBe(400);
+
+    const foreign = await POST(
+      post({
+        id: CONVERSATION_ID,
+        messages: [
+          {
+            id: "m",
+            role: "user",
+            parts: [
+              { type: "text", text: "look" },
+              { type: "file", mediaType: "image/png", url: "/api/chat/attachments/att-2" },
+            ],
+          },
+        ],
+      })
+    );
+    expect(foreign.status).toBe(200);
+    await foreign.text();
+    expect(JSON.stringify(seen)).not.toContain("att-2");
   });
 });
