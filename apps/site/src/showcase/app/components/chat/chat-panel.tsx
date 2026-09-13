@@ -21,6 +21,8 @@ import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { useSearchParams } from "@showcase/shims/next-navigation";
 
+import { Alert, AlertDescription } from "@showcase/components/ui/alert";
+
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
 import {
@@ -176,12 +178,9 @@ export function Chat({
       />
       <CreditStatusBanner quotaState={quotaState} block={block} />
       {error && !block ? (
-        <div
-          role="alert"
-          className="mx-auto mb-2 w-full max-w-3xl rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive"
-        >
-          {friendlyChatError(error)}
-        </div>
+        <Alert variant="destructive" className="mx-auto mb-2 w-full max-w-3xl">
+          <AlertDescription>{friendlyChatError(error)}</AlertDescription>
+        </Alert>
       ) : null}
       <ChatInput
         onSend={handleSend}

@@ -12,13 +12,12 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "use-intl";
 import {
-  Check,
-  ChevronDown,
-  Loader2,
-  Pencil,
-  Plus,
-  Trash2,
-  X,
+  CheckIcon,
+  ChevronDownIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+  XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@showcase/components/ui/dropdown-menu";
 import { Input } from "@showcase/components/ui/input";
+import { Spinner } from "@showcase/components/ui/spinner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -118,22 +118,22 @@ export function ConversationHeader({
               className="h-8 max-w-xs"
             />
             <Button
-              size="icon"
+              size="icon-sm"
               variant="ghost"
-              className="h-8 w-8 shrink-0"
+              className="shrink-0"
               onClick={commitRename}
               aria-label={t("header.renameSave")}
             >
-              <Check className="h-4 w-4" />
+              <CheckIcon />
             </Button>
             <Button
-              size="icon"
+              size="icon-sm"
               variant="ghost"
-              className="h-8 w-8 shrink-0"
+              className="shrink-0"
               onClick={() => setIsEditing(false)}
               aria-label={t("header.renameCancel")}
             >
-              <X className="h-4 w-4" />
+              <XIcon />
             </Button>
           </>
         ) : (
@@ -142,13 +142,13 @@ export function ConversationHeader({
               {title || t("header.newChatTitle")}
             </h1>
             <Button
-              size="icon"
+              size="icon-xs"
               variant="ghost"
-              className="h-7 w-7 shrink-0"
+              className="shrink-0"
               onClick={startEditing}
               aria-label={t("header.renameEdit")}
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <PencilIcon />
             </Button>
           </>
         )}
@@ -166,7 +166,7 @@ export function ConversationHeader({
             }
           >
             {t("header.historyTrigger")}
-            <ChevronDown className="h-3.5 w-3.5" />
+            <ChevronDownIcon data-icon="inline-end" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
             {history.length === 0 ? (
@@ -195,7 +195,7 @@ export function ConversationHeader({
           render={<Link href="/chat" />}
           nativeButton={false}
         >
-          <Plus className="mr-1 h-3.5 w-3.5" />
+          <PlusIcon data-icon="inline-start" />
           {t("header.newChat")}
         </Button>
 
@@ -206,18 +206,14 @@ export function ConversationHeader({
             render={
               <Button
                 variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                size="icon-sm"
+                className="text-muted-foreground hover:text-destructive"
                 disabled={isPending}
                 aria-label={t("header.delete")}
               />
             }
           >
-            {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="h-4 w-4" />
-            )}
+            {isPending ? <Spinner /> : <Trash2Icon />}
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>

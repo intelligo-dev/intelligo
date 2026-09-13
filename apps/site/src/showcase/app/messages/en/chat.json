@@ -27,8 +27,14 @@
     "title": "Start a conversation",
     "description": "Ask a question to get started. Your conversation is saved automatically."
   },
+  "list": {
+    "scrollToEnd": "Scroll to the latest message"
+  },
   "message": {
-    "reasoning": "Reasoning"
+    "reasoning": "Reasoning",
+    "thinking": "Thinking…",
+    "thoughtBriefly": "Thought for a few seconds",
+    "thoughtFor": "{seconds, plural, one {Thought for # second} other {Thought for # seconds}}"
   },
   "stub": {
     "preface": "This is the stub chat model from lib/chat-model.ts — it echoes your message instead of calling a real provider. Edit getChatModel() to wire up @ai-sdk/anthropic, @ai-sdk/openai, or @ai-sdk/google.",
@@ -45,7 +51,10 @@
     "approved": "approved…",
     "done": "done",
     "error": "error",
-    "denied": "denied"
+    "denied": "denied",
+    "input": "Input",
+    "output": "Result",
+    "errorHeading": "Error"
   },
   "actions": {
     "conversationNotFound": "That conversation no longer exists.",

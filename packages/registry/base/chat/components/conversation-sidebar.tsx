@@ -21,12 +21,18 @@
  */
 
 import { useMemo, useState } from "react";
-import { MessageSquare, Plus, Search } from "lucide-react";
+import { MessageSquareIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Empty, EmptyDescription } from "@/components/ui/empty";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { cn } from "@/lib/utils";
 import type { ConversationSummary } from "@/actions/chat";
 
 interface ConversationSidebarProps {
@@ -85,23 +91,21 @@ export function ConversationSidebar({
           render={<Link href="/chat" />}
           nativeButton={false}
         >
-          <Plus className="h-3.5 w-3.5" />
+          <PlusIcon data-icon="inline-start" />
           {t("header.newChat")}
         </Button>
 
-        <div className="relative">
-          <Search
-            className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
+        <InputGroup>
+          <InputGroupAddon>
+            <SearchIcon />
+          </InputGroupAddon>
+          <InputGroupInput
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t("sidebar.searchPlaceholder")}
             aria-label={t("sidebar.searchPlaceholder")}
-            className="h-8 pl-8 text-sm"
           />
-        </div>
+        </InputGroup>
       </div>
 
       <nav
@@ -109,16 +113,18 @@ export function ConversationSidebar({
         className="flex-1 overflow-y-auto px-2 py-3"
       >
         {empty ? (
-          <p className="px-2 text-sm text-muted-foreground">
-            {query ? t("sidebar.noMatches") : t("header.historyEmpty")}
-          </p>
+          <Empty className="p-4">
+            <EmptyDescription>
+              {query ? t("sidebar.noMatches") : t("header.historyEmpty")}
+            </EmptyDescription>
+          </Empty>
         ) : (
           BUCKET_ORDER.map((bucket) => {
             const items = grouped.get(bucket);
             if (!items?.length) return null;
             return (
               <div key={bucket} className="mb-4">
-                <p className="px-2 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <p className="px-2 pb-1 text-xs font-medium text-muted-foreground">
                   {t(`sidebar.groups.${bucket}`)}
                 </p>
                 <ul>
@@ -129,17 +135,18 @@ export function ConversationSidebar({
                         <Link
                           href={`/chat/${conversation.id}`}
                           aria-current={isActive ? "page" : undefined}
-                          className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
+                          className={cn(
+                            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                             isActive
                               ? "bg-accent font-medium"
                               : "hover:bg-accent/50"
-                          }`}
+                          )}
                           title={
                             conversation.title ?? t("header.historyUntitled")
                           }
                         >
-                          <MessageSquare
-                            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                          <MessageSquareIcon
+                            className="size-3.5 shrink-0 text-muted-foreground"
                             aria-hidden
                           />
                           <span className="truncate">
