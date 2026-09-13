@@ -15,7 +15,7 @@ describe("selectDriver", () => {
   it("gives Neon hosts the WebSocket driver", () => {
     expect(
       selectDriver(
-        "postgres://ep-example-123456-pooler.ap-southeast-1.aws.neon.tech/neondb"
+        "postgres://ep-example-123456.ap-southeast-1.aws.neon.tech/neondb"
       )
     ).toBe("neon-serverless");
   });
