@@ -8,7 +8,15 @@ import registry from "@/data/registry.json";
 
 export type RegistryItem = {
   name: string;
+  title: string;
+  /** First sentence, for compact lists. */
   description: string;
+  fullDescription: string;
+  /** The shadcn primitives the item installs with (`registryDependencies`). */
+  primitives: string[];
+  /** npm packages the item adds. */
+  dependencies: string[];
+  fileCount: number;
   group: RegistryGroup;
   dependsOn: string[];
 };
@@ -65,7 +73,14 @@ const DEPENDS: Record<string, string[]> = {
   "privacy-settings": ["settings-shell"],
 };
 
-type RawItem = { name: string; description?: string };
+type RawItem = {
+  name: string;
+  title?: string;
+  description?: string;
+  registryDependencies?: string[];
+  dependencies?: string[];
+  files?: unknown[];
+};
 const raw = (registry as { items: RawItem[] }).items.filter(
   (i) => i.name !== "smoke"
 );
@@ -78,13 +93,20 @@ export const REGISTRY_ITEMS: RegistryItem[] = (
     .filter((i): i is RawItem => !!i)
     .map((i) => ({
       name: i.name,
+      title: i.title ?? i.name,
       description: firstSentence(i.description ?? ""),
+      fullDescription: (i.description ?? "").replace(/\s+/g, " "),
+      primitives: i.registryDependencies ?? [],
+      dependencies: i.dependencies ?? [],
+      fileCount: i.files?.length ?? 0,
       group,
       dependsOn: DEPENDS[i.name] ?? [],
     }))
 );
 
 export const REGISTRY_COUNT = raw.length;
+
+export const REGISTRY_GROUPS = Object.keys(GROUPS) as RegistryGroup[];
 
 function firstSentence(s: string): string {
   const m = s.match(/^(.+?[.!?])(\s|$)/);

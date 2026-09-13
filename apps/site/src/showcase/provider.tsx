@@ -26,9 +26,12 @@ export const MESSAGES: Record<string, unknown> = Object.fromEntries(
 
 export function ShowcaseProvider({
   pathname,
+  toaster = true,
   children,
 }: {
   pathname: string;
+  /** Off where one page mounts many scenes and a single Toaster of its own. */
+  toaster?: boolean;
   children: ReactNode;
 }) {
   const [path, setPath] = useState(pathname);
@@ -44,7 +47,7 @@ export function ShowcaseProvider({
     >
       <ShowcaseNavigation pathname={path} onNavigate={(href) => setPath(href)}>
         {children}
-        <Toaster position="bottom-right" richColors closeButton />
+        {toaster && <Toaster position="bottom-right" richColors closeButton />}
       </ShowcaseNavigation>
     </IntlProvider>
   );

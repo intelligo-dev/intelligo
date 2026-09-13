@@ -861,7 +861,13 @@ const SCENES: Record<SceneId, () => ReactNode> = {
 };
 
 /** A real page, scaled to whatever box it is given (position: relative on the parent). */
-export function Showcase({ scene }: { scene: SceneId }) {
+export function Showcase({
+  scene,
+  toaster,
+}: {
+  scene: SceneId;
+  toaster?: boolean;
+}) {
   const Scene = SCENES[scene];
   const auth =
     scene === "login" ||
@@ -871,7 +877,7 @@ export function Showcase({ scene }: { scene: SceneId }) {
     scene === "onboarding";
   return (
     <ScaledCanvas width={auth ? 960 : 1180}>
-      <ShowcaseProvider pathname={ROUTE[scene]}>
+      <ShowcaseProvider pathname={ROUTE[scene]} toaster={toaster}>
         <Scene />
       </ShowcaseProvider>
     </ScaledCanvas>
