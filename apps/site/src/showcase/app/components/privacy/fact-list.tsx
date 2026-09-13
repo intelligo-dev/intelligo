@@ -107,9 +107,9 @@ export function FactList({
                 <span className="text-muted-foreground">({items.length})</span>
               </span>
               {isOpen ? (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="size-4" />
               ) : (
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="size-4" />
               )}
             </button>
             {isOpen && (
@@ -133,10 +133,10 @@ export function FactList({
                       variant="ghost"
                       disabled={pending}
                       onClick={() => handleDelete(fact.id)}
-                      className="h-7 w-7 shrink-0 p-0"
+                      className="size-7 shrink-0 p-0"
                       aria-label={t("factList.deleteAria")}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="size-3.5" />
                     </Button>
                   </li>
                 ))}

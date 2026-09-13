@@ -82,7 +82,7 @@ export function RouteError({
     >
       <div className="w-full max-w-md space-y-4">
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+          <AlertCircle className="size-4" />
           <AlertDescription className="mt-2">{t(errorType)}</AlertDescription>
         </Alert>
 

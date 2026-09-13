@@ -25,6 +25,7 @@ export function BlockCard({ item }: { item: RegistryItem }) {
     <TooltipProvider>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <BrowserFrame
+          className="lg:self-start"
           messages={`messages/en/${item.name}.json`}
           bodyClassName="aspect-[16/10] max-h-[560px] w-full"
         >

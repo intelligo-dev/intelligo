@@ -55,13 +55,13 @@ const REPORT_BADGE_CLASS =
 function kindIcon(kind: string) {
   switch (kind) {
     case "code":
-      return <Code className="h-4 w-4 shrink-0" />;
+      return <Code className="size-4 shrink-0" />;
     case "sheet":
-      return <Sheet className="h-4 w-4 shrink-0" />;
+      return <Sheet className="size-4 shrink-0" />;
     case "image":
-      return <ImageIcon className="h-4 w-4 shrink-0" />;
+      return <ImageIcon className="size-4 shrink-0" />;
     default:
-      return <FileText className="h-4 w-4 shrink-0" />;
+      return <FileText className="size-4 shrink-0" />;
   }
 }
 
@@ -198,7 +198,7 @@ export function DocumentList({ documents }: DocumentListProps) {
 
                   <div className="mt-2 flex items-center justify-between">
                     <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                      <Bot className="h-3 w-3 shrink-0" />
+                      <Bot className="size-3 shrink-0" />
                       <span className="truncate">{doc.agentLabel}</span>
                       <span className="shrink-0">·</span>
                       <span className="shrink-0">
@@ -211,7 +211,7 @@ export function DocumentList({ documents }: DocumentListProps) {
                       content={doc.content}
                       createdAt={doc.createdAt}
                       onDeleted={() => handleDeleted(doc.id)}
-                      buttonClassName="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                      buttonClassName="size-7 opacity-0 transition-opacity group-hover:opacity-100"
                     />
                   </div>
                 </CardContent>
@@ -272,7 +272,7 @@ function EmptyState() {
   const t = useTranslations("artifacts");
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <File className="mb-4 h-12 w-12 text-muted-foreground/40" />
+      <File className="mb-4 size-12 text-muted-foreground/40" />
       <h3 className="mb-1 text-lg font-semibold">{t("emptyState.title")}</h3>
       <p className="max-w-sm text-sm text-muted-foreground">
         {t("emptyState.description")}
@@ -296,7 +296,7 @@ function FilteredEmptyState({ filterLabel }: { filterLabel: string }) {
   const lowerFilterLabel = filterLabel.toLowerCase();
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <File className="mb-4 h-12 w-12 text-muted-foreground/40" />
+      <File className="mb-4 size-12 text-muted-foreground/40" />
       <h3 className="mb-1 text-lg font-semibold">
         {t("filteredEmptyState.title", { filterLabel: lowerFilterLabel })}
       </h3>

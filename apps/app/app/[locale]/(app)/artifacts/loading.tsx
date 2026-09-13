@@ -19,7 +19,7 @@ export default function ArtifactsLoading() {
         {Array.from({ length: 6 }).map((_, index) => (
           <Card key={index} className="p-5">
             <div className="mb-3 flex items-start gap-3">
-              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="size-4 rounded" />
               <div className="min-w-0 flex-1 space-y-2">
                 <Skeleton className="h-5 w-48" />
                 <Skeleton className="h-4 w-16 rounded-full" />

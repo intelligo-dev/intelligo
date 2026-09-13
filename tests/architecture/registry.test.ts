@@ -539,6 +539,37 @@ describe("registry", () => {
     });
   });
 
+  describe("registryDependencies are exactly the components an item imports", () => {
+    const registry = readSourceItems();
+    const UI_ITEMS = new Set(
+      readRegistry()
+        .items.filter((item) => item.type === "registry:ui")
+        .map((item) => item.name)
+    );
+
+    describe.each(registry.items)("item: $name", (item) => {
+      it("declares no component it never imports", () => {
+        const imported = new Set<string>();
+        for (const file of item.files) {
+          const abs = path.join(REGISTRY_DIR, file.path);
+          const source = statSyncSafe(abs) ? readFileSync(abs, "utf8") : "";
+          for (const spec of importSpecifiers(source)) {
+            const ui = spec.match(/^@\/components\/ui\/([\w-]+)$/);
+            if (!ui) continue;
+            imported.add(UI_ITEMS.has(ui[1]!) ? `@intelligo/${ui[1]}` : ui[1]!);
+          }
+        }
+        const unused = (item.registryDependencies ?? []).filter(
+          (dep) => !imported.has(dep)
+        );
+        expect(
+          unused,
+          `item "${item.name}" declares components it does not import — shadcn would install them for nothing`
+        ).toEqual([]);
+      });
+    });
+  });
+
   /**
    * registry/requires.json is the machine-readable form of what the
    * descriptions used to say in prose: which sibling items an item

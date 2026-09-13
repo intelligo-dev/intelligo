@@ -54,7 +54,7 @@ export function ExportDataButton() {
 
   return (
     <Button onClick={handleExport} disabled={loading}>
-      <Download className="mr-2 h-4 w-4" />
+      <Download className="mr-2 size-4" />
       {loading ? t("exportButton.preparing") : t("exportButton.download")}
     </Button>
   );

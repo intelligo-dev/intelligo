@@ -16,7 +16,7 @@ export default function ProfileSettingsLoading() {
       <Card className="p-6">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
-            <Skeleton className="h-14 w-14 rounded-full" />
+            <Skeleton className="size-14 rounded-full" />
             <Skeleton className="h-4 w-40" />
           </div>
 

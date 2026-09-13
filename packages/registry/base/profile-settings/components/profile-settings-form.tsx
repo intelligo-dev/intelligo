@@ -121,7 +121,7 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
             {error && <p className="text-sm text-destructive">{error}</p>}
 
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-lg font-semibold text-foreground">
+              <div className="flex size-14 items-center justify-center rounded-full bg-muted text-lg font-semibold text-foreground">
                 {initialFrom(user)}
               </div>
               <p className="text-sm text-muted-foreground">

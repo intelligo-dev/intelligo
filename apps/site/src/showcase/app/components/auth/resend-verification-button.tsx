@@ -16,7 +16,6 @@
 
 import { useState } from "react";
 import { useTranslations } from "use-intl";
-import { Loader2 } from "lucide-react";
 
 import { authClient } from "@showcase/shims/auth-client";
 
@@ -24,6 +23,7 @@ import { Alert, AlertDescription } from "@showcase/components/ui/alert";
 import { Button } from "@showcase/components/ui/button";
 import { Input } from "@showcase/components/ui/input";
 import { Label } from "@showcase/components/ui/label";
+import { Spinner } from "@showcase/components/ui/spinner";
 
 interface ResendVerificationButtonProps {
   email?: string;
@@ -107,7 +107,7 @@ export function ResendVerificationButton({
       >
         {isResending ? (
           <span className="flex items-center justify-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Spinner />
             {t("resend.sending")}
           </span>
         ) : resendSuccess ? (

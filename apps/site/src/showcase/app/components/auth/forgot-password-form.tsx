@@ -13,7 +13,6 @@ import { useState } from "react";
 import { useTranslations } from "use-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Loader2 } from "lucide-react";
 
 import { authClient } from "@showcase/shims/auth-client";
 
@@ -22,6 +21,7 @@ import { Alert, AlertDescription } from "@showcase/components/ui/alert";
 import { Button } from "@showcase/components/ui/button";
 import { Input } from "@showcase/components/ui/input";
 import { Label } from "@showcase/components/ui/label";
+import { Spinner } from "@showcase/components/ui/spinner";
 import {
   forgotPasswordSchema,
   type ForgotPasswordInput,
@@ -110,7 +110,7 @@ export function ForgotPasswordForm() {
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Spinner />
             {t("forgotForm.submitting")}
           </span>
         ) : (

@@ -92,7 +92,7 @@ export function TrialBanner({
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Sparkles className={`h-5 w-5 ${accent}`} aria-hidden />
+            <Sparkles className={`size-5 ${accent}`} aria-hidden />
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
               <div className="flex items-center gap-2">
                 <span
@@ -130,7 +130,7 @@ export function TrialBanner({
               className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted"
               aria-label={t("dismiss")}
             >
-              <X className="h-4 w-4" />
+              <X className="size-4" />
             </button>
           </div>
         </div>

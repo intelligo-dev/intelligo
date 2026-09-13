@@ -33,7 +33,7 @@ export default function TeamSettingsLoading() {
                 <Skeleton className="h-3 w-64" />
               </div>
               <Skeleton className="h-6 w-16" />
-              <Skeleton className="h-8 w-8" />
+              <Skeleton className="size-8" />
             </div>
           ))}
         </div>

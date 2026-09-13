@@ -18,7 +18,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { useFormatter, useTranslations } from "use-intl";
 
 import { Button } from "@showcase/components/ui/button";
@@ -29,6 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@showcase/components/ui/dialog";
+import { Spinner } from "@showcase/components/ui/spinner";
 import { CURRENCY } from "@showcase/lib/billing-config";
 import { paymentPollConfig } from "@showcase/lib/payment-poll-config";
 import { pollLocalPayment, startLocalPayment } from "@showcase/actions/payment";
@@ -152,7 +153,7 @@ export function LocalPaymentModal({
 
         <div className="flex flex-col items-center py-4">
           {step === "creating" ? (
-            <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+            <Spinner className="size-8 text-primary" aria-hidden />
           ) : null}
 
           {step === "waiting" && invoice ? (
@@ -191,7 +192,7 @@ export function LocalPaymentModal({
               ) : null}
 
               <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                <Spinner className="size-3.5" aria-hidden />
                 <span>{t("state.polling")}</span>
               </div>
             </>

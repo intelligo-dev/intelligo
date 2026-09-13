@@ -94,12 +94,12 @@ export function NotificationItem({
     <>
       <span className="mt-2 flex-shrink-0" aria-hidden>
         <span
-          className={`block h-2 w-2 rounded-full ${isRead ? "bg-transparent" : "bg-primary"}`}
+          className={`block size-2 rounded-full ${isRead ? "bg-transparent" : "bg-primary"}`}
         />
       </span>
 
       <span className={`mt-0.5 flex-shrink-0 ${color}`} aria-hidden>
-        <Icon className="h-4 w-4" />
+        <Icon className="size-4" />
       </span>
 
       <span className="min-w-0 flex-1">

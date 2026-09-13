@@ -136,7 +136,7 @@ export function NotificationList({
 
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-muted-foreground">
-          <Bell className="h-8 w-8" />
+          <Bell className="size-8" />
           <p className="text-sm">{t("list.emptyTitle")}</p>
           <p className="max-w-xs text-xs">{t("list.emptyDescription")}</p>
         </div>

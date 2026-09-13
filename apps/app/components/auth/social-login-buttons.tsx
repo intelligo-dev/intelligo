@@ -16,11 +16,11 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Loader2 } from "lucide-react";
 
 import { authClient } from "@intelligo-dev/auth/client";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 type Provider = "google" | "github";
 
@@ -61,7 +61,7 @@ export function SocialLoginButtons({ providers }: SocialLoginButtonsProps) {
             className="w-full"
           >
             {loadingProvider === "google" ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Spinner />
             ) : (
               <svg
                 width="16"
@@ -103,10 +103,10 @@ export function SocialLoginButtons({ providers }: SocialLoginButtonsProps) {
             className="w-full"
           >
             {loadingProvider === "github" ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Spinner />
             ) : (
               <svg
-                className="h-4 w-4"
+                className="size-4"
                 fill="currentColor"
                 viewBox="0 0 24 24"
                 aria-hidden="true"

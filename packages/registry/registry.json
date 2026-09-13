@@ -783,7 +783,7 @@
       "type": "registry:block",
       "title": "Auth: Login",
       "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first.",
-      "registryDependencies": ["alert", "button", "input", "label", "skeleton"],
+      "registryDependencies": ["alert", "button", "input", "label", "spinner"],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -840,7 +840,7 @@
       "type": "registry:block",
       "title": "Auth: Signup",
       "description": "Email/password and OAuth account creation. Requires the auth-login item (provides the shared AuthCard shell, SocialLoginButtons, and lib/auth-validation.ts schemas); install it first. Redirects to auth-email-verification's /verify-email route when the server requires email verification.",
-      "registryDependencies": ["alert", "button", "input", "label"],
+      "registryDependencies": ["alert", "button", "input", "label", "spinner"],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -871,7 +871,7 @@
       "type": "registry:block",
       "title": "Auth: Password Reset",
       "description": "Forgot-password and reset-password pages, backed by the Better-Auth client SDK's requestPasswordReset/resetPassword actions. Requires the auth-login item (provides the shared AuthCard shell and lib/auth-validation.ts schemas); install it first.",
-      "registryDependencies": ["alert", "button", "input", "label"],
+      "registryDependencies": ["alert", "button", "input", "label", "spinner"],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -912,7 +912,7 @@
       "type": "registry:block",
       "title": "Auth: Email Verification",
       "description": "Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action. Reads the ?error=/?email= search params Better-Auth's own /verify-email link handler redirects back with. Requires the auth-login item (provides the shared AuthCard shell); install it first.",
-      "registryDependencies": ["alert", "button", "input", "label"],
+      "registryDependencies": ["alert", "button", "input", "label", "spinner"],
       "dependencies": ["@intelligo-dev/auth", "lucide-react", "next-intl"],
       "files": [
         {
@@ -1131,7 +1131,7 @@
       "type": "registry:block",
       "title": "Checkout",
       "description": "Checkout-success page that verifies the Stripe session directly through the framework's checkout service, covering the webhook-race window between the browser redirect and Stripe's webhook delivery.",
-      "registryDependencies": ["alert", "badge", "button", "card", "skeleton"],
+      "registryDependencies": ["alert", "badge", "button", "card", "spinner"],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
@@ -1261,7 +1261,7 @@
       "type": "registry:block",
       "title": "QR Payment (poll)",
       "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
-      "registryDependencies": ["button", "dialog"],
+      "registryDependencies": ["button", "dialog", "spinner"],
       "dependencies": [
         "@intelligo-dev/auth",
         "lucide-react",
@@ -1359,7 +1359,7 @@
       "type": "registry:block",
       "title": "Onboarding",
       "description": "A generic multi-step onboarding wizard driven by a consumer-owned steps config: text and single-select-card fields, a completion screen, skip, and back/next - backed by the framework's onboarding service (durable step progress, no vertical-specific UI).",
-      "registryDependencies": ["button", "input", "label", "skeleton"],
+      "registryDependencies": ["button", "input", "label"],
       "dependencies": [
         "@intelligo-dev/auth",
         "lucide-react",
@@ -1499,7 +1499,8 @@
         "card",
         "dialog",
         "scroll-area",
-        "skeleton"
+        "skeleton",
+        "spinner"
       ],
       "dependencies": [
         "@intelligo-dev/auth",

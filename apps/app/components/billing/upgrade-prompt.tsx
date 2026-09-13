@@ -57,10 +57,10 @@ export function UpgradePrompt({
         <CardHeader>
           <div
             className={`mx-auto mb-4 flex items-center justify-center rounded-full bg-muted ${
-              compact ? "h-8 w-8" : "h-12 w-12"
+              compact ? "size-8" : "size-12"
             }`}
           >
-            <Lock className={compact ? "h-4 w-4" : "h-6 w-6"} aria-hidden />
+            <Lock className={compact ? "size-4" : "size-6"} aria-hidden />
           </div>
           <CardTitle className={compact ? "text-lg" : "text-xl"}>
             {t("prompt.title", { feature, plan: requiredPlan })}
@@ -88,7 +88,7 @@ export function UpgradePrompt({
             nativeButton={false}
           >
             {t("prompt.cta", { plan: requiredPlan })}
-            <ArrowUpRight className="ml-2 h-4 w-4" />
+            <ArrowUpRight className="ml-2 size-4" />
           </Button>
         </CardContent>
       </Card>
