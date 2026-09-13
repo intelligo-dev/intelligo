@@ -80,7 +80,9 @@ const architectureTests = readdirSync(
 const adrs = readdirSync(join(FRAMEWORK, "docs/adr")).filter((f) =>
   /^\d{4}-.*\.md$/.test(f)
 ).length;
-const registryItems = registry.items.filter((i) => i.name !== "smoke").length;
+const registryItems = registry.items.filter(
+  (i) => i.type === "registry:block" && i.name !== "smoke"
+).length;
 // Published packages only: packages/registry is a private workspace.
 const packages = readdirSync(join(FRAMEWORK, "packages")).filter((p) => {
   const manifest = join(FRAMEWORK, "packages", p, "package.json");

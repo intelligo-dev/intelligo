@@ -71,6 +71,25 @@ function readRegistry(): RegistryJson {
   return JSON.parse(readFileSync(REGISTRY_JSON_PATH, "utf8")) as RegistryJson;
 }
 
+/**
+ * Design-system items (ADR-0013) configure an app — config, tokens, CSS —
+ * and ship no files, pages or messages. Every per-item rule below is
+ * about blocks; the base item has its own describe.
+ */
+const DESIGN_SYSTEM_TYPES = new Set([
+  "registry:base",
+  "registry:style",
+  "registry:theme",
+]);
+
+function readBlocks(): RegistryJson {
+  const registry = readRegistry();
+  return {
+    ...registry,
+    items: registry.items.filter((item) => !DESIGN_SYSTEM_TYPES.has(item.type)),
+  };
+}
+
 type Requires = {
   scaffold: string[];
   items: Record<
@@ -157,6 +176,7 @@ describe("registry", () => {
       for (const item of registry.items) {
         if (!item.name) violations.push("item missing name");
         if (!item.type) violations.push(`${item.name}: missing type`);
+        if (DESIGN_SYSTEM_TYPES.has(item.type)) continue;
         if (!Array.isArray(item.files) || item.files.length === 0) {
           violations.push(`${item.name}: missing or empty files[]`);
         }
@@ -184,8 +204,50 @@ describe("registry", () => {
     });
   });
 
-  describe("registry files on disk", () => {
+  describe("the intelligo design-system base (ADR-0013)", () => {
     const registry = readRegistry();
+    const bases = registry.items.filter(
+      (item) => item.type === "registry:base"
+    );
+    const base = bases[0] as
+      | (RegistryItem & {
+          config?: { style?: string; iconLibrary?: string };
+          cssVars?: Record<"theme" | "light" | "dark", Record<string, string>>;
+        })
+      | undefined;
+
+    it("is the one registry:base item, named intelligo, on base-nova", () => {
+      expect(bases.map((item) => item.name)).toEqual(["intelligo"]);
+      expect(base?.config?.style).toBe("base-nova");
+      expect(base?.config?.iconLibrary).toBe("lucide");
+    });
+
+    it("defines every additive token in light and dark, and maps each colour into the theme", () => {
+      const additive = [
+        "destructive-foreground",
+        "success",
+        "success-foreground",
+        "warning",
+        "warning-foreground",
+        "info",
+        "info-foreground",
+      ];
+      const missing: string[] = [];
+      for (const token of additive) {
+        for (const mode of ["light", "dark"] as const) {
+          if (!base?.cssVars?.[mode]?.[token])
+            missing.push(`${mode}: --${token}`);
+        }
+        if (base?.cssVars?.theme?.[`color-${token}`] !== `var(--${token})`) {
+          missing.push(`theme: --color-${token}`);
+        }
+      }
+      expect(missing).toEqual([]);
+    });
+  });
+
+  describe("registry files on disk", () => {
+    const registry = readBlocks();
 
     it("has every listed file path present on disk", () => {
       const violations: string[] = [];
@@ -245,7 +307,7 @@ describe("registry", () => {
   });
 
   describe("no unpublished, dissolved or duplicate-runtime imports", () => {
-    const registry = readRegistry();
+    const registry = readBlocks();
     const dissolved: readonly string[] = DISSOLVED_PACKAGES;
     /** The only `@intelligo-dev/*` names a consumer can resolve from npm. */
     const published = new Set(
@@ -316,7 +378,7 @@ describe("registry", () => {
   });
 
   describe("@intelligo-dev/* imports are declared in the item's dependencies", () => {
-    const registry = readRegistry();
+    const registry = readBlocks();
 
     describe.each(registry.items)("item: $name", (item) => {
       it("declares every @intelligo-dev/* package it imports", () => {
@@ -343,7 +405,7 @@ describe("registry", () => {
   });
 
   describe("npm imports are declared in the item's dependencies", () => {
-    const registry = readRegistry();
+    const registry = readBlocks();
 
     // Provided by every Next.js consumer app; declaring them per item
     // would be noise, and shadcn would try to (re)install them.
@@ -394,7 +456,7 @@ describe("registry", () => {
   });
 
   describe("cross-item @/ imports resolve to a shipped target", () => {
-    const registry = readRegistry();
+    const registry = readBlocks();
 
     // Consumer files the CLI app scaffold provides (not any registry
     // item, on purpose) — declared once in registry/requires.json.
@@ -459,7 +521,7 @@ describe("registry", () => {
    * what the code does — neither a stale extra nor a missing edge.
    */
   describe("requires.json matches the code", () => {
-    const registry = readRegistry();
+    const registry = readBlocks();
     const requires = readRequires();
 
     const ownerOf = new Map<string, string>();
@@ -597,7 +659,7 @@ describe("registry", () => {
   });
 
   describe("money is formatted per deployment, not per package", () => {
-    const registry = readRegistry();
+    const registry = readBlocks();
 
     // `formatPrice` (@intelligo-dev/billing/plans) hardcodes the tugrik
     // symbol and the Mongolian word for "free". Installed pages format
@@ -623,7 +685,7 @@ describe("registry", () => {
   });
 
   describe("i18n-native items (ADR-0010)", () => {
-    const registry = readRegistry();
+    const registry = readBlocks();
 
     describe.each(registry.items)("item: $name", (item) => {
       it("ships messages/en/<item>.json", () => {
@@ -674,7 +736,7 @@ describe("the registry workspace", () => {
     };
     // Implicit for a Next app; declared here so tsc finds them.
     const needed = new Set(["react", "react-dom", "next"]);
-    for (const item of readRegistry().items) {
+    for (const item of readBlocks().items) {
       for (const dep of item.dependencies ?? []) needed.add(name(dep));
     }
     const missing = [...needed].filter(

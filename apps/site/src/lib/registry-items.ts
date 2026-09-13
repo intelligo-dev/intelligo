@@ -75,14 +75,17 @@ const DEPENDS: Record<string, string[]> = {
 
 type RawItem = {
   name: string;
+  type: string;
   title?: string;
   description?: string;
   registryDependencies?: string[];
   dependencies?: string[];
   files?: unknown[];
 };
+// Blocks only: the design-system base item (ADR-0013) configures an app
+// and is not a page family.
 const raw = (registry as { items: RawItem[] }).items.filter(
-  (i) => i.name !== "smoke"
+  (i) => i.type === "registry:block" && i.name !== "smoke"
 );
 
 export const REGISTRY_ITEMS: RegistryItem[] = (
