@@ -32,7 +32,7 @@
       },
       "cssVars": {
         "theme": {
-          "--font-heading": "var(--font-sans)",
+          "font-heading": "var(--font-sans)",
           "color-destructive-foreground": "var(--destructive-foreground)",
           "color-success": "var(--success)",
           "color-success-foreground": "var(--success-foreground)",
@@ -45,6 +45,7 @@
           "ease-exit": "cubic-bezier(0.3, 0, 1, 1)"
         },
         "light": {
+          "font-sans": "\"Geist\", \"Geist Fallback\", -apple-system, \"Segoe UI\", sans-serif",
           "background": "oklch(1 0 0)",
           "foreground": "oklch(0.145 0 0)",
           "card": "oklch(1 0 0)",
