@@ -3,8 +3,14 @@
 Registry items now compose with Base UI's `render` prop, depend on the
 `intelligo` token contract, and name Intelligo's own components as
 `@intelligo/<name>`. An app installed from an earlier registry moves in
-this order. Diff before every `--overwrite`: it replaces files you may
-have changed.
+this order.
+
+Registry files reach an app one way only: `shadcn add <item> --overwrite`.
+Never codemod or hand-edit an installed item — if the result needs to
+differ, that is a seam the item should ship (open an issue or a pull
+request on the registry). Hand edits belong only in your own product
+code. Diff before every `--overwrite`: it replaces files you may have
+changed, and anything you had changed outside a seam is drift to remove.
 
 1. **Tooling.** `shadcn` CLI 4.21 or later.
 2. **components.json.** Set `"style": "base-nova"` and add the namespace:
@@ -17,7 +23,7 @@ have changed.
 4. **Primitives.** Re-install every `components/ui/*` file with
    `shadcn add <name> --overwrite`. Remove `radix-ui`, `@radix-ui/*` and
    `@intelligo-dev/ui` from `package.json`.
-5. **Your own code.** Replace `asChild` with `render`
+5. **Your own code — not installed items.** Replace `asChild` with `render`
    (`<Button render={<Link href="/x" />} nativeButton={false}>`), Radix
    state variants with Base UI's (`data-[state=open]` → `data-popup-open`,
    `data-[state=active]` → `data-active`), and

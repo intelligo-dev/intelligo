@@ -22,7 +22,8 @@
     "db:generate": "pnpm --filter @intelligo-dev/core db:generate",
     "db:migrate": "pnpm --filter @intelligo-dev/core db:migrate",
     "db:studio": "pnpm --filter @intelligo-dev/core db:studio",
-    "db:check": "pnpm --filter @intelligo-dev/core db:check"
+    "db:check": "pnpm --filter @intelligo-dev/core db:check",
+    "app:regenerate": "bash scripts/regenerate-reference-app.sh"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
@@ -62,7 +63,7 @@
       "brace-expansion": ">=5.0.9",
       "minimatch": ">=10.2.3",
       "rollup": ">=4.59.0",
-      "undici": ">=6.24.0",
+      "undici@6": "^6.24.0",
       "flatted": ">=3.4.2",
       "express-rate-limit": ">=8.2.2",
       "esbuild": ">=0.28.1",

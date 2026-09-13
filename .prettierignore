@@ -10,3 +10,7 @@ apps/site/.astro/
 **/.turbo/
 packages/registry/public/
 packages/registry/tsconfig.paths.json
+# shadcn CLI output in the reference app, kept exactly as the CLI writes it
+apps/app/components/ui/
+apps/app/hooks/use-mobile.ts
+apps/app/lib/utils.ts
