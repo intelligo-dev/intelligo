@@ -3,56 +3,128 @@
 /**
  * Renders one `UIMessage`'s parts on the design system's conversation
  * components (ADR-0013): shadcn's Message and Bubble for the turn, the
- * T3 Reasoning part for reasoning, and `@/lib/chat-renderers`'s seam for
- * tool calls. Text renders with `streamdown`, the markdown-while-
- * streaming renderer, because replies are routinely lists, code and
- * headings arriving a token at a time.
+ * T3 parts for reasoning, sources and tools, and the seams in
+ * `@/lib/chat-renderers` for tool calls and data parts. Text renders
+ * with `streamdown`, the markdown-while-streaming renderer, because
+ * replies are routinely lists, code and headings arriving a token at a
+ * time.
  *
- * A finished assistant message carries an action row — copy the reply,
- * regenerate it (last message only), and save it as an artifact so the
- * `artifacts` item's page has something to show. The row is hidden
- * while that message is still streaming.
+ * Every part type the AI SDK has is handled here: `text`, `reasoning`,
+ * `tool-*` / `dynamic-tool` (with approval states), `source-url` and
+ * `source-document` (collected and shown once the reply is complete —
+ * never mid-stream), `file` (images inline, other files as
+ * attachments), `step-start` (a boundary, nothing to draw) and `data-*`
+ * (through `DATA_RENDERERS`). A Mastra or eve turn renders through the
+ * same switch.
+ *
+ * A finished assistant message carries the action row; a user message
+ * can be edited in place, which re-sends it as a new turn and keeps
+ * the earlier reply as a version.
  */
 
-import { useTransition } from "react";
-import { getToolName, isReasoningUIPart, isTextUIPart, isToolUIPart } from "ai";
-import type { UIMessage } from "ai";
+import { useEffect, useRef, useState } from "react";
+import {
+  getToolName,
+  isReasoningUIPart,
+  isTextUIPart,
+  isToolUIPart,
+} from "ai";
+import type { FileUIPart, UIMessage } from "ai";
 import { useTranslations } from "use-intl";
-import { BotIcon, FileDownIcon, RefreshCwIcon, UserIcon } from "lucide-react";
+import { BotIcon, PaperclipIcon, UserIcon } from "lucide-react";
 import { Streamdown } from "streamdown";
-import { toast } from "sonner";
 
+import {
+  Approval,
+  ApprovalActions,
+  ApprovalContent,
+  ApprovalHeader,
+  ApprovalOutcome,
+  ApprovalReason,
+} from "@showcase/components/ui/ai-approval";
+import {
+  Branch,
+  BranchNext,
+  BranchPage,
+  BranchPrevious,
+} from "@showcase/components/ui/ai-branch";
 import {
   Reasoning,
   ReasoningContent,
   ReasoningTrigger,
 } from "@showcase/components/ui/ai-reasoning";
+import {
+  Source,
+  Sources,
+  SourcesContent,
+  SourcesTrigger,
+} from "@showcase/components/ui/ai-sources";
+import {
+  Attachment,
+  AttachmentContent,
+  AttachmentGroup,
+  AttachmentMedia,
+  AttachmentTitle,
+} from "@showcase/components/ui/attachment";
 import { Bubble, BubbleContent } from "@showcase/components/ui/bubble";
 import { Button } from "@showcase/components/ui/button";
-import { CopyButton } from "@showcase/components/ui/copy-button";
 import {
   MessageAvatar,
   MessageContent,
   MessageFooter,
   Message as MessageRoot,
 } from "@showcase/components/ui/message";
-import { Spinner } from "@showcase/components/ui/spinner";
+import { Textarea } from "@showcase/components/ui/textarea";
 import {
-  getToolRenderer,
+  getDataRenderer,
+  hasToolRenderer,
+  resolveToolRenderer,
   type ToolRendererActions,
+  type ToolRendererProps,
 } from "@showcase/lib/chat-renderers";
-import { saveMessageAsArtifact } from "@showcase/actions/chat";
+import { MessageActions, type MessageVote } from "./message-actions";
+
+export type MessageVersion = {
+  index: number;
+  count: number;
+  onIndexChange: (index: number) => void;
+};
 
 interface MessageProps {
+  conversationId: string;
   message: UIMessage;
   isLastMessage: boolean;
   isStreaming: boolean;
-  /** Regenerate the last assistant reply; omit to hide the control. */
-  onRetry?: () => void;
+  /** A read-only surface: no actions, no edit, no branch pager. */
+  readOnly?: boolean;
+  vote?: MessageVote;
+  /** Versions of the tail that starts here, when there are several. */
+  version?: MessageVersion | null;
+  onRegenerate?: (messageId: string) => void;
+  /** Re-send this user message with new text; the thread branches. */
+  onEdit?: (messageId: string, text: string, files: FileUIPart[]) => void;
   toolActions?: ToolRendererActions;
 }
 
-/** The message's plain text, for copying and for artifact content. */
+type SourcePart = {
+  type: "source-url" | "source-document";
+  sourceId: string;
+  url?: string;
+  title?: string;
+  mediaType?: string;
+  filename?: string;
+};
+
+function isSourcePart(part: unknown): part is SourcePart {
+  const type = (part as { type?: unknown }).type;
+  return type === "source-url" || type === "source-document";
+}
+
+function isFilePart(part: unknown): part is FileUIPart {
+  return (part as { type?: unknown }).type === "file";
+}
+
+/** The message's plain text, for copying, editing and artifact content. */
 function messageText(message: UIMessage): string {
   return message.parts
     .filter(isTextUIPart)
@@ -62,19 +134,64 @@ function messageText(message: UIMessage): string {
 }
 
 export function Message({
+  conversationId,
   message,
   isLastMessage,
   isStreaming,
-  onRetry,
+  readOnly = false,
+  vote = null,
+  version = null,
+  onRegenerate,
+  onEdit,
   toolActions,
 }: MessageProps) {
   const t = useTranslations("chat");
   const isUser = message.role === "user";
-  const isEmptyAssistant =
-    !isUser && message.parts.every((part) => !isTextUIPart(part) || !part.text);
   const isStreamingThis = isLastMessage && isStreaming;
   const text = messageText(message);
-  const showActions = !isUser && !isStreamingThis && text.length > 0;
+  const [editing, setEditing] = useState(false);
+
+  const hasVisibleText = message.parts.some(
+    (part) => isTextUIPart(part) && part.text
+  );
+  const isEmptyAssistant =
+    !isUser &&
+    message.parts.every(
+      (part) => (isTextUIPart(part) && !part.text) || part.type === "step-start"
+    );
+
+  const files = message.parts.flatMap((part) =>
+    isFilePart(part) ? [part] : []
+  );
+  const sources = isStreamingThis
+    ? []
+    : message.parts.flatMap((part) =>
+        isSourcePart(part) && (part.url || part.title) ? [part] : []
+      );
+  const lastTextIndex = message.parts.reduce(
+    (last, part, index) => (isTextUIPart(part) ? index : last),
+    -1
+  );
+
+  if (isUser && editing) {
+    return (
+      <MessageRoot align="end" className="group/chat-message">
+        <MessageAvatar>
+          <UserIcon />
+        </MessageAvatar>
+        <MessageContent>
+          <EditForm
+            initial={text}
+            onCancel={() => setEditing(false)}
+            onSave={(next) => {
+              setEditing(false);
+              onEdit?.(message.id, next, files);
+            }}
+          />
+        </MessageContent>
+      </MessageRoot>
+    );
+  }
 
   return (
     <MessageRoot
@@ -84,21 +201,44 @@ export function Message({
       <MessageAvatar>{isUser ? <UserIcon /> : <BotIcon />}</MessageAvatar>
 
       <MessageContent>
+        {files.length > 0 ? (
+          <AttachmentGroup className="max-w-full">
+            {files.map((file, index) => (
+              <FileAttachment key={`${message.id}-file-${index}`} file={file} />
+            ))}
+          </AttachmentGroup>
+        ) : null}
+
         {message.parts.map((part, index) => {
           const key = `${message.id}-${index}`;
 
           if (isTextUIPart(part)) {
             if (!part.text) return null;
-            return isUser ? (
-              <Bubble key={key} align="end">
-                <BubbleContent className="whitespace-pre-wrap">
-                  {part.text}
-                </BubbleContent>
-              </Bubble>
-            ) : (
+            if (isUser) {
+              return (
+                <Bubble key={key} align="end">
+                  <BubbleContent className="whitespace-pre-wrap">
+                    {part.text}
+                  </BubbleContent>
+                </Bubble>
+              );
+            }
+            const streamingText = isStreamingThis && index === lastTextIndex;
+            return (
               <Bubble key={key} variant="ghost">
                 <BubbleContent>
-                  <Streamdown>{part.text}</Streamdown>
+                  <Streamdown
+                    mode={streamingText ? "streaming" : "static"}
+                    isAnimating={streamingText}
+                  >
+                    {part.text}
+                  </Streamdown>
+                  {streamingText ? (
+                    <span
+                      aria-hidden
+                      className="ml-0.5 inline-block h-4 w-0.5 animate-pulse rounded-full bg-foreground align-text-bottom"
+                    />
+                  ) : null}
                 </BubbleContent>
               </Bubble>
             );
@@ -126,19 +266,45 @@ export function Message({
 
           if (isToolUIPart(part)) {
             const toolName = getToolName(part);
-            const Renderer = getToolRenderer(toolName);
-            const state = part.state;
+            const { component: Renderer } = resolveToolRenderer(toolName);
+            const approval =
+              "approval" in part
+                ? (part.approval as { id?: string } | undefined)
+                : undefined;
+            const props: ToolRendererProps = {
+              toolName,
+              state: part.state,
+              input: "input" in part ? part.input : undefined,
+              output: part.state === "output-available" ? part.output : undefined,
+              errorText: part.state === "output-error" ? part.errorText : undefined,
+              toolCallId: "toolCallId" in part ? part.toolCallId : undefined,
+              approvalId: approval?.id,
+              messageId: message.id,
+              isStreaming: isStreamingThis,
+              isReadonly: readOnly,
+              actions: toolActions,
+            };
+            if (part.state === "approval-requested" && !hasToolRenderer(toolName)) {
+              return <ApprovalCard key={key} {...props} />;
+            }
+            return <Renderer key={key} {...props} />;
+          }
+
+          if (part.type.startsWith("data-")) {
+            const name = part.type.slice("data-".length);
+            if (name === "chat-title" || name === "chat-status") return null;
+            const Renderer = getDataRenderer(name);
+            if (!Renderer) return null;
+            const data = part as { id?: string; data: unknown };
             return (
               <Renderer
-                key={key}
-                toolName={toolName}
-                state={state}
-                input={"input" in part ? part.input : undefined}
-                output={state === "output-available" ? part.output : undefined}
-                errorText={
-                  state === "output-error" ? part.errorText : undefined
-                }
-                toolCallId={"toolCallId" in part ? part.toolCallId : undefined}
+                key={data.id ? `${message.id}-data-${data.id}` : key}
+                name={name}
+                id={data.id}
+                data={data.data}
+                messageId={message.id}
+                isStreaming={isStreamingThis}
+                isReadonly={readOnly}
                 actions={toolActions}
               />
             );
@@ -147,19 +313,59 @@ export function Message({
           return null;
         })}
 
+        {sources.length > 0 ? (
+          <Sources>
+            <SourcesTrigger>
+              {t("sources.title", { count: sources.length })}
+            </SourcesTrigger>
+            <SourcesContent>
+              {sources.map((source) => (
+                <Source
+                  key={source.sourceId}
+                  href={source.url}
+                  title={source.title ?? source.filename ?? source.url ?? ""}
+                />
+              ))}
+            </SourcesContent>
+          </Sources>
+        ) : null}
+
         {isStreamingThis && isEmptyAssistant ? (
           <span role="status" className="shimmer text-sm text-muted-foreground">
             {t("message.thinking")}
           </span>
         ) : null}
 
-        {showActions ? (
+        {!readOnly && !isStreamingThis && (hasVisibleText || version) ? (
           <MessageFooter>
-            <MessageActions
-              text={text}
-              messageId={message.id}
-              onRetry={isLastMessage ? onRetry : undefined}
-            />
+            {version ? (
+              <Branch
+                index={version.index}
+                count={version.count}
+                onIndexChange={version.onIndexChange}
+                className="mr-1"
+              >
+                <BranchPrevious label={t("branch.previous")} />
+                <BranchPage />
+                <BranchNext label={t("branch.next")} />
+              </Branch>
+            ) : null}
+            {hasVisibleText ? (
+              <MessageActions
+                conversationId={conversationId}
+                messageId={message.id}
+                role={isUser ? "user" : "assistant"}
+                text={text}
+                vote={vote}
+                alwaysVisible={isLastMessage}
+                onEdit={isUser && onEdit ? () => setEditing(true) : undefined}
+                onRegenerate={
+                  !isUser && onRegenerate
+                    ? () => onRegenerate(message.id)
+                    : undefined
+                }
+              />
+            ) : null}
           </MessageFooter>
         ) : null}
       </MessageContent>
@@ -167,71 +373,156 @@ export function Message({
   );
 }
 
-function MessageActions({
-  text,
-  messageId,
-  onRetry,
+function FileAttachment({ file }: { file: FileUIPart }) {
+  const t = useTranslations("chat");
+  const isImage = file.mediaType.startsWith("image/") && Boolean(file.url);
+  if (isImage) {
+    return (
+      <a
+        href={file.url}
+        target="_blank"
+        rel="noreferrer"
+        className="block max-w-xs overflow-hidden rounded-lg border"
+      >
+        <img src={file.url} alt={file.filename ?? t("message.imageAlt")} />
+      </a>
+    );
+  }
+  return (
+    <Attachment size="sm">
+      <AttachmentMedia variant="icon">
+        <PaperclipIcon />
+      </AttachmentMedia>
+      <AttachmentContent>
+        <AttachmentTitle>{file.filename ?? t("message.attachment")}</AttachmentTitle>
+      </AttachmentContent>
+    </Attachment>
+  );
+}
+
+/** Edit a user message in place. ⌘/Ctrl+Enter saves, Esc cancels. */
+function EditForm({
+  initial,
+  onSave,
+  onCancel,
 }: {
-  text: string;
-  messageId: string;
-  onRetry?: () => void;
+  initial: string;
+  onSave: (text: string) => void;
+  onCancel: () => void;
 }) {
   const t = useTranslations("chat");
-  const [isSaving, startSaving] = useTransition();
+  const [value, setValue] = useState(initial);
+  const ref = useRef<HTMLTextAreaElement>(null);
 
-  function handleSave() {
-    startSaving(async () => {
-      const result = await saveMessageAsArtifact({ messageId, content: text });
-      if (result.success) {
-        toast.success(t("actions.savedToArtifacts"));
-      } else {
-        toast.error(result.error);
-      }
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+  }, []);
+
+  function save() {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    onSave(trimmed);
+  }
+
+  return (
+    <form
+      className="flex w-full max-w-2xl flex-col gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        save();
+      }}
+    >
+      <Textarea
+        ref={ref}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            onCancel();
+          }
+          if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+            event.preventDefault();
+            save();
+          }
+        }}
+        className="min-h-20"
+        aria-label={t("actions.edit")}
+      />
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+          {t("actions.editCancel")}
+        </Button>
+        <Button type="submit" size="sm" disabled={!value.trim()}>
+          {t("actions.editSave")}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/**
+ * The default card for a gated tool awaiting the reader's decision.
+ * A tool with its own renderer draws its own; this one shows what is
+ * about to run and lets the reader allow or deny it, optionally with a
+ * reason the model sees.
+ */
+function ApprovalCard({
+  toolName,
+  input,
+  approvalId,
+  isReadonly,
+  actions,
+}: ToolRendererProps) {
+  const t = useTranslations("chat");
+  const [reason, setReason] = useState("");
+  const [decided, setDecided] = useState<"approved" | "denied" | null>(null);
+
+  function decide(approved: boolean) {
+    if (!approvalId || !actions) return;
+    setDecided(approved ? "approved" : "denied");
+    actions.addToolApprovalResponse({
+      id: approvalId,
+      approved,
+      ...(reason.trim() ? { reason: reason.trim() } : {}),
     });
   }
 
   return (
-    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover/chat-message:opacity-100 focus-within:opacity-100">
-      <CopyButton
-        value={text}
-        label={t("actions.copy")}
-        copiedLabel={t("actions.copied")}
-        onCopyError={() => toast.error(t("actions.copyFailed"))}
-        size="xs"
-        className="text-muted-foreground"
-      >
-        {t("actions.copy")}
-      </CopyButton>
-
-      {onRetry ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          className="text-muted-foreground"
-          onClick={onRetry}
-        >
-          <RefreshCwIcon data-icon="inline-start" />
-          {t("actions.retry")}
-        </Button>
+    <Approval state={decided ?? "requested"} className="max-w-xl">
+      <ApprovalHeader
+        title={t("approval.title", { tool: toolName })}
+        description={t("approval.description")}
+      />
+      {input !== undefined ? (
+        <ApprovalContent>
+          <pre className="overflow-x-auto rounded-md bg-muted p-2 text-xs">
+            {JSON.stringify(input, null, 2)}
+          </pre>
+        </ApprovalContent>
       ) : null}
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="xs"
-        className="text-muted-foreground"
-        onClick={handleSave}
-        disabled={isSaving}
-        aria-busy={isSaving || undefined}
-      >
-        {isSaving ? (
-          <Spinner data-icon="inline-start" />
-        ) : (
-          <FileDownIcon data-icon="inline-start" />
-        )}
-        {t("actions.save")}
-      </Button>
-    </div>
+      {decided ? (
+        <ApprovalOutcome state={decided}>
+          {t(decided === "approved" ? "approval.approved" : "approval.denied")}
+        </ApprovalOutcome>
+      ) : isReadonly || !actions || !approvalId ? null : (
+        <ApprovalContent>
+          <ApprovalReason
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder={t("approval.reasonPlaceholder")}
+          />
+          <ApprovalActions
+            allowLabel={t("approval.allow")}
+            denyLabel={t("approval.deny")}
+            onAllow={() => decide(true)}
+            onDeny={() => decide(false)}
+          />
+        </ApprovalContent>
+      )}
+    </Approval>
   );
 }

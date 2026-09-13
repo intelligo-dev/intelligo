@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "ai-approval",
+  "title": "AI Approval",
+  "description": "A human-in-the-loop decision: what a tool is about to do, allow or deny, an optional reason, the outcome (ADR-0013, T3).",
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "button",
+    "textarea",
+    "@intelligo/status-badge"
+  ],
+  "files": [
+    {
+      "path": "base/ui/ai-approval/ai-approval.tsx",
+      "content": "\"use client\";\n\n/*\n * A human-in-the-loop decision:\n * what a tool is about to do, and allow / deny with an optional reason.\n * Authored for Base UI; labels are props, the outcome renders in a\n * status token.\n */\n\nimport * as React from \"react\";\nimport { CheckIcon, ShieldAlertIcon, XIcon } from \"lucide-react\";\n\nimport { Button } from \"@/components/ui/button\";\nimport { StatusBadge } from \"@/components/ui/status-badge\";\nimport { Textarea } from \"@/components/ui/textarea\";\nimport { cn } from \"@/lib/utils\";\n\nexport type ApprovalState = \"requested\" | \"approved\" | \"denied\";\n\nfunction Approval({\n  className,\n  state = \"requested\",\n  ...props\n}: React.ComponentProps<\"div\"> & { state?: ApprovalState }) {\n  return (\n    <div\n      data-slot=\"approval\"\n      data-state={state}\n      className={cn(\n        \"flex w-full flex-col gap-3 rounded-lg border p-3 text-sm\",\n        state === \"requested\" && \"border-warning/40 bg-warning/5\",\n        className\n      )}\n      {...props}\n    />\n  );\n}\n\nfunction ApprovalHeader({\n  className,\n  title,\n  description,\n  ...props\n}: React.ComponentProps<\"div\"> & {\n  title: React.ReactNode;\n  description?: React.ReactNode;\n}) {\n  return (\n    <div\n      data-slot=\"approval-header\"\n      className={cn(\"flex items-start gap-2\", className)}\n      {...props}\n    >\n      <ShieldAlertIcon className=\"mt-0.5 size-4 shrink-0 text-warning\" />\n      <div className=\"flex min-w-0 flex-col gap-0.5\">\n        <p className=\"font-medium\">{title}</p>\n        {description ? (\n          <p className=\"text-xs text-muted-foreground\">{description}</p>\n        ) : null}\n      </div>\n    </div>\n  );\n}\n\nfunction ApprovalContent({\n  className,\n  ...props\n}: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"approval-content\"\n      className={cn(\"flex flex-col gap-2\", className)}\n      {...props}\n    />\n  );\n}\n\nfunction ApprovalReason({\n  className,\n  ...props\n}: React.ComponentProps<typeof Textarea>) {\n  return (\n    <Textarea\n      data-slot=\"approval-reason\"\n      className={cn(\"min-h-16 text-sm\", className)}\n      {...props}\n    />\n  );\n}\n\nfunction ApprovalActions({\n  className,\n  allowLabel,\n  denyLabel,\n  onAllow,\n  onDeny,\n  pending = false,\n  ...props\n}: React.ComponentProps<\"div\"> & {\n  allowLabel: string;\n  denyLabel: string;\n  onAllow: () => void;\n  onDeny: () => void;\n  pending?: boolean;\n}) {\n  return (\n    <div\n      data-slot=\"approval-actions\"\n      className={cn(\"flex items-center justify-end gap-2\", className)}\n      {...props}\n    >\n      <Button\n        type=\"button\"\n        variant=\"outline\"\n        size=\"sm\"\n        onClick={onDeny}\n        disabled={pending}\n        aria-busy={pending || undefined}\n      >\n        <XIcon data-icon=\"inline-start\" />\n        {denyLabel}\n      </Button>\n      <Button\n        type=\"button\"\n        size=\"sm\"\n        onClick={onAllow}\n        disabled={pending}\n        aria-busy={pending || undefined}\n      >\n        <CheckIcon data-icon=\"inline-start\" />\n        {allowLabel}\n      </Button>\n    </div>\n  );\n}\n\nfunction ApprovalOutcome({\n  state,\n  children,\n  className,\n  ...props\n}: React.ComponentProps<\"div\"> & { state: \"approved\" | \"denied\" }) {\n  return (\n    <div\n      data-slot=\"approval-outcome\"\n      className={cn(\"flex items-center gap-2\", className)}\n      {...props}\n    >\n      <StatusBadge status={state === \"approved\" ? \"success\" : \"warning\"} dot>\n        {children}\n      </StatusBadge>\n    </div>\n  );\n}\n\nexport {\n  Approval,\n  ApprovalHeader,\n  ApprovalContent,\n  ApprovalReason,\n  ApprovalActions,\n  ApprovalOutcome,\n};\n",
+      "type": "registry:ui",
+      "target": "components/ui/ai-approval.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

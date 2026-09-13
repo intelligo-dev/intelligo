@@ -22,16 +22,25 @@ import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 
 import { requireWorkspace } from "@intelligo-dev/auth";
-import { toUIMessages } from "@intelligo-dev/chat";
-import { saveDocument } from "@intelligo-dev/core/documents";
+import { recordChatFeedback, toUIMessages } from "@intelligo-dev/chat";
+import {
+  getDocumentVersions,
+  isDocumentServiceError,
+  saveDocument,
+} from "@intelligo-dev/core/documents";
 import {
   deleteConversation as deleteConversationRow,
   getConversation,
   getMessages,
+  getVotes,
   isConversationServiceError,
   listConversations,
   renameConversation as renameConversationRow,
+  setConversationVisibility,
+  updateConversationMetadata,
 } from "@intelligo-dev/core/conversations";
+
+import { chatServerConfig } from "@/lib/chat-server-config";
 
 export type ChatActionResult<T> =
   | { success: true; data: T }
@@ -57,7 +66,7 @@ function friendlyMessageKey(code: string): string | undefined {
 function friendlyError(t: Translator, error: unknown): string {
   // Unknown errors deliberately map to the generic key — a raw
   // `Error#message` can carry internals (SQL, hostnames) to the UI.
-  if (isConversationServiceError(error)) {
+  if (isConversationServiceError(error) || isDocumentServiceError(error)) {
     const key = friendlyMessageKey(error.code);
     return key ? t(key) : t("actions.genericError");
   }
@@ -73,9 +82,10 @@ export type ConversationSummary = {
   id: string;
   title: string | null;
   updatedAt: string;
+  pinned: boolean;
 };
 
-/** Recent conversations for the sidebar and history dropdown, most recently updated first. */
+/** Recent conversations for the sidebar, most recently updated first. */
 export async function listConversationHistory(): Promise<
   ChatActionResult<ConversationSummary[]>
 > {
@@ -90,6 +100,8 @@ export async function listConversationHistory(): Promise<
         id: row.id,
         title: row.title,
         updatedAt: row.updatedAt.toISOString(),
+        pinned:
+          (row.metadata as { pinned?: unknown } | null)?.pinned === true,
       })),
     };
   } catch (error) {
@@ -103,12 +115,14 @@ export async function listConversationHistory(): Promise<
 export type LoadedConversation = {
   conversation: { id: string; title: string | null } | null;
   messages: ReturnType<typeof toUIMessages>;
+  /** The reader's votes, by message id. */
+  votes: Record<string, "up" | "down">;
 };
 
 /**
- * Loads a conversation and its messages for `<Chat>`'s initial state.
- * A conversation id with no row yet resolves as a brand-new, empty
- * chat rather than an error — see the module doc comment above.
+ * Loads a conversation and its messages for the thread's initial
+ * state. A conversation id with no row yet resolves as a brand-new,
+ * empty chat rather than an error — see the module doc comment above.
  */
 export async function loadConversationForChat(
   id: string
@@ -118,7 +132,14 @@ export async function loadConversationForChat(
 
     try {
       const conversation = await getConversation(scoped, id);
-      const rows = await getMessages(scoped, id);
+      const [rows, voteRows] = await Promise.all([
+        getMessages(scoped, id),
+        getVotes(scoped, id),
+      ]);
+      const votes: Record<string, "up" | "down"> = {};
+      for (const vote of voteRows) {
+        votes[vote.messageId] = vote.isUpvoted ? "up" : "down";
+      }
       return {
         success: true,
         data: {
@@ -126,11 +147,15 @@ export async function loadConversationForChat(
           // Stored parts are a JSON string; a corrupt row costs one
           // message, not the conversation.
           messages: toUIMessages(rows),
+          votes,
         },
       };
     } catch (error) {
       if (isConversationServiceError(error) && error.code === "not_found") {
-        return { success: true, data: { conversation: null, messages: [] } };
+        return {
+          success: true,
+          data: { conversation: null, messages: [], votes: {} },
+        };
       }
       throw error;
     }
@@ -163,6 +188,86 @@ export async function deleteConversation(
   try {
     await deleteConversationRow(await actor(), id);
     return { success: true, data: undefined };
+  } catch (error) {
+    return {
+      success: false,
+      error: friendlyError(await getTranslations("chat"), error),
+    };
+  }
+}
+
+/** Pin a conversation to the top of the sidebar, or unpin it. */
+export async function setConversationPinned(
+  id: string,
+  pinned: boolean
+): Promise<ChatActionResult<undefined>> {
+  try {
+    await updateConversationMetadata(await actor(), id, { pinned });
+    return { success: true, data: undefined };
+  } catch (error) {
+    return {
+      success: false,
+      error: friendlyError(await getTranslations("chat"), error),
+    };
+  }
+}
+
+/** The reader's verdict on a reply; `null` withdraws it. */
+export async function voteMessage(
+  conversationId: string,
+  messageId: string,
+  vote: "up" | "down" | null
+): Promise<ChatActionResult<undefined>> {
+  const t = await getTranslations("chat");
+  try {
+    const result = await recordChatFeedback(chatServerConfig, await actor(), {
+      conversationId,
+      messageId,
+      vote,
+    });
+    if (!result.ok) {
+      return {
+        success: false,
+        error: t(
+          result.code === "not_found"
+            ? "actions.conversationNotFound"
+            : "actions.feedbackFailed"
+        ),
+      };
+    }
+    return { success: true, data: undefined };
+  } catch (error) {
+    return { success: false, error: friendlyError(t, error) };
+  }
+}
+
+/** Whether the conversation is published at `/share/<id>`. */
+export async function getShareState(
+  id: string
+): Promise<ChatActionResult<{ shared: boolean }>> {
+  try {
+    const row = await getConversation(await actor(), id);
+    return { success: true, data: { shared: row.visibility === "public" } };
+  } catch (error) {
+    return {
+      success: false,
+      error: friendlyError(await getTranslations("chat"), error),
+    };
+  }
+}
+
+export async function setConversationShared(
+  id: string,
+  shared: boolean
+): Promise<ChatActionResult<{ shared: boolean }>> {
+  try {
+    const row = await setConversationVisibility(
+      await actor(),
+      id,
+      shared ? "public" : "private"
+    );
+    revalidatePath(`/share/${id}`);
+    return { success: true, data: { shared: row.visibility === "public" } };
   } catch (error) {
     return {
       success: false,
@@ -204,6 +309,49 @@ export async function saveMessageAsArtifact(params: {
     });
     revalidatePath("/artifacts");
     return { success: true, data: { id: saved.id, title: saved.title } };
+  } catch (error) {
+    return { success: false, error: friendlyError(t, error) };
+  }
+}
+
+/** Every version of a document the canvas shows, newest first. */
+export async function listArtifactVersions(
+  documentId: string
+): Promise<ChatActionResult<Array<{ createdAt: string; content: string }>>> {
+  try {
+    const versions = await getDocumentVersions(await actor(), documentId);
+    return {
+      success: true,
+      data: versions.map((version) => ({
+        createdAt: version.createdAt,
+        content: version.content ?? "",
+      })),
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: friendlyError(await getTranslations("chat"), error),
+    };
+  }
+}
+
+/** An edit in the canvas becomes a new version of the document. */
+export async function saveArtifactVersion(params: {
+  documentId: string;
+  title: string;
+  kind: string;
+  content: string;
+}): Promise<ChatActionResult<{ id: string }>> {
+  const t = await getTranslations("chat");
+  try {
+    const saved = await saveDocument(await actor(), {
+      id: params.documentId,
+      title: params.title,
+      content: params.content,
+      kind: params.kind,
+    });
+    revalidatePath("/artifacts");
+    return { success: true, data: { id: saved.id } };
   } catch (error) {
     return { success: false, error: friendlyError(t, error) };
   }

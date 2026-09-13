@@ -144,6 +144,26 @@ export const PLANNED: {
     description: "A generated document, linked from the turn that made it.",
   },
   {
+    name: "ai-branch",
+    tier: "T3",
+    description: "A pager over the versions of a reply.",
+  },
+  {
+    name: "ai-chain-of-thought",
+    tier: "T3",
+    description: "An agent's steps as a timeline with a status each.",
+  },
+  {
+    name: "ai-task",
+    tier: "T3",
+    description: "A plan the agent is working through.",
+  },
+  {
+    name: "ai-approval",
+    tier: "T3",
+    description: "A human-in-the-loop decision: allow or deny a tool.",
+  },
+  {
     name: "page-header",
     tier: "T4",
     description: "The one page title: heading, description, actions.",

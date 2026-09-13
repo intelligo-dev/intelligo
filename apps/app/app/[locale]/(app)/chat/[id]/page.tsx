@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-import { Chat } from "@/components/chat/chat-panel";
+import { requireWorkspace } from "@intelligo-dev/auth";
+
+import { ChatWorkspace } from "@/components/chat/chat-workspace";
 import { ConversationHeader } from "@/components/chat/conversation-header";
 import { ConversationSidebar } from "@/components/chat/conversation-sidebar";
 import {
   listConversationHistory,
   loadConversationForChat,
 } from "@/actions/chat";
+import { getChatModelOptions } from "@/lib/chat-models";
 import { getChatQuotaState } from "@/lib/chat-quota";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -32,14 +35,17 @@ export default async function ConversationPage({
 }: ConversationPageProps) {
   const { id } = await params;
   const t = await getTranslations("chat");
+  const { workspace } = await requireWorkspace();
 
   // In parallel: the quota read is an estimate that holds no credit,
   // so it cannot slow down or interfere with loading the conversation.
-  const [conversationResult, historyResult, quotaState] = await Promise.all([
-    loadConversationForChat(id),
-    listConversationHistory(),
-    getChatQuotaState(),
-  ]);
+  const [conversationResult, historyResult, quotaState, models] =
+    await Promise.all([
+      loadConversationForChat(id),
+      listConversationHistory(),
+      getChatQuotaState(),
+      getChatModelOptions(workspace.id),
+    ]);
 
   if (!conversationResult.success) {
     return (
@@ -54,28 +60,29 @@ export default async function ConversationPage({
     );
   }
 
-  const { conversation, messages } = conversationResult.data;
+  const { conversation, messages, votes } = conversationResult.data;
   const conversations = historyResult.success ? historyResult.data : [];
-  // The header's dropdown is the small-screen fallback for the
-  // sidebar, and there it lists somewhere to go — so the conversation
-  // already on screen is filtered out of it, but not out of the
-  // sidebar, which highlights it instead.
-  const history = conversations.filter((item) => item.id !== id);
 
   return (
     <div className="flex h-full">
-      <ConversationSidebar conversations={conversations} activeId={id} />
+      <ConversationSidebar
+        conversations={conversations}
+        activeId={id}
+        className="hidden lg:flex"
+      />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <ConversationHeader
           conversationId={id}
           title={conversation?.title ?? null}
-          history={history}
+          conversations={conversations}
         />
-        <Chat
+        <ChatWorkspace
           conversationId={id}
           initialMessages={messages}
           quotaState={quotaState}
+          votes={votes}
+          models={models}
         />
       </div>
     </div>

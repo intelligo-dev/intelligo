@@ -592,6 +592,21 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           });
         }
       }
+    } else if (lastUserMessage(body.messages) && body.messages.length > 1) {
+      // An edit: the client cut the transcript and re-sent a message
+      // with a new id. Whatever the row holds after the message before
+      // it is the path being replaced. On an ordinary send the message
+      // before is the latest reply and nothing follows it, so this
+      // deletes nothing.
+      const before = body.messages[body.messages.length - 2]!;
+      try {
+        await deleteTrailingMessages(actor, { id: before.id });
+      } catch (error) {
+        log.warn("Could not trim messages before an edited turn", {
+          conversationId: body.id,
+          error: errorMessage(error),
+        });
+      }
     }
 
     // The writer exists only while the stream is open; a tool that

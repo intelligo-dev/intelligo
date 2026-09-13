@@ -12,7 +12,9 @@
     "historyEmpty": "No past conversations",
     "historyUntitled": "Untitled conversation",
     "newChat": "New",
-    "delete": "Delete conversation"
+    "delete": "Delete conversation",
+    "openHistory": "Open conversations",
+    "share": "Share"
   },
   "agent": {
     "defaultName": "Assistant"
@@ -21,11 +23,13 @@
     "placeholder": "Send a message…",
     "stop": "Stop generating",
     "send": "Send message",
-    "blockedPlaceholder": "Add credits to keep chatting"
+    "blockedPlaceholder": "Add credits to keep chatting",
+    "hint": "Enter to send, Shift+Enter for a new line"
   },
   "emptyState": {
     "title": "Start a conversation",
-    "description": "Ask a question to get started. Your conversation is saved automatically."
+    "description": "Ask a question to get started. Your conversation is saved automatically.",
+    "greeting": "What can I help with?"
   },
   "list": {
     "scrollToEnd": "Scroll to the latest message"
@@ -34,7 +38,10 @@
     "reasoning": "Reasoning",
     "thinking": "Thinking…",
     "thoughtBriefly": "Thought for a few seconds",
-    "thoughtFor": "{seconds, plural, one {Thought for # second} other {Thought for # seconds}}"
+    "thoughtFor": "{seconds, plural, one {Thought for # second} other {Thought for # seconds}}",
+    "you": "You",
+    "attachment": "Attachment",
+    "imageAlt": "Image attached to the message"
   },
   "stub": {
     "preface": "This is the stub chat model from lib/chat-model.ts — it echoes your message instead of calling a real provider. Edit getChatModel() to wire up @ai-sdk/anthropic, @ai-sdk/openai, or @ai-sdk/google.",
@@ -42,7 +49,9 @@
     "savingArtifact": "Saving that as an artifact — check the Artifacts page in a moment."
   },
   "error": {
-    "generic": "Something went wrong. Please try again."
+    "generic": "Something went wrong. Please try again.",
+    "retry": "Retry",
+    "dismiss": "Dismiss"
   },
   "toolCard": {
     "calling": "calling…",
@@ -56,6 +65,44 @@
     "output": "Result",
     "errorHeading": "Error"
   },
+  "approval": {
+    "title": "{tool} needs your approval",
+    "description": "Review what it is about to do before it runs.",
+    "allow": "Allow",
+    "deny": "Deny",
+    "reasonPlaceholder": "Why not? (optional)",
+    "approved": "Approved",
+    "denied": "Denied"
+  },
+  "question": {
+    "answer": "Answer",
+    "answered": "Answered",
+    "freeformPlaceholder": "Type your answer…"
+  },
+  "authorization": {
+    "required": "{name} needs you to sign in",
+    "signIn": "Sign in",
+    "completed": "Connected to {name}"
+  },
+  "activity": {
+    "title": "Activity",
+    "steps": "{count, plural, one {# step} other {# steps}}",
+    "workflow": "Workflow",
+    "network": "Agent network",
+    "agent": "Agent",
+    "running": "Running",
+    "done": "Done",
+    "failed": "Failed",
+    "pending": "Pending",
+    "suspended": "Waiting"
+  },
+  "task": {
+    "title": "Plan",
+    "progress": "{done} of {total} done"
+  },
+  "sources": {
+    "title": "{count, plural, one {# source} other {# sources}}"
+  },
   "actions": {
     "conversationNotFound": "That conversation no longer exists.",
     "conversationForbidden": "You don't have permission to view this conversation.",
@@ -66,9 +113,21 @@
     "copied": "Copied",
     "copyFailed": "Couldn't copy to the clipboard.",
     "retry": "Retry",
+    "regenerate": "Regenerate",
+    "edit": "Edit",
+    "editSave": "Save and send",
+    "editCancel": "Cancel",
+    "feedbackUp": "Good response",
+    "feedbackDown": "Bad response",
+    "feedbackSent": "Thanks for the feedback.",
+    "feedbackFailed": "Couldn't save your feedback.",
     "save": "Save",
     "savedToArtifacts": "Saved to artifacts.",
     "emptyArtifact": "There's nothing in this reply to save."
+  },
+  "branch": {
+    "previous": "Previous version",
+    "next": "Next version"
   },
   "route": {
     "invalidBody": "Invalid request body.",
@@ -91,7 +150,29 @@
   },
   "artifactCard": {
     "saved": "Saved to your artifacts",
-    "open": "Open"
+    "open": "Open",
+    "streaming": "Writing…",
+    "failed": "Couldn't create the document"
+  },
+  "attachments": {
+    "add": "Add photos or files",
+    "remove": "Remove attachment",
+    "dropHere": "Drop files to attach them",
+    "tooMany": "You can attach {max, plural, one {# file} other {# files}} at most.",
+    "tooLarge": "That file is too large.",
+    "unsupported": "That file type isn't accepted.",
+    "uploadFailed": "Couldn't upload that file."
+  },
+  "model": {
+    "label": "Model"
+  },
+  "composer": {
+    "commands": "Commands",
+    "mentions": "Mentions",
+    "noResults": "No matches",
+    "voiceStart": "Start voice input",
+    "voiceStop": "Stop voice input",
+    "voiceListening": "Listening…"
   },
   "sidebar": {
     "label": "Conversations",
@@ -99,11 +180,42 @@
     "noMatches": "No conversations match that.",
     "count": "{count, plural, =0 {No conversations} one {# conversation} other {# conversations}}",
     "groups": {
+      "pinned": "Pinned",
       "today": "Today",
-      "week": "This week",
-      "month": "This month",
+      "yesterday": "Yesterday",
+      "week": "Previous 7 days",
+      "month": "Previous 30 days",
       "older": "Older"
-    }
+    },
+    "menu": "Conversation options",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "rename": "Rename",
+    "delete": "Delete",
+    "deleted": "Conversation deleted",
+    "undo": "Undo"
+  },
+  "canvas": {
+    "title": "Canvas",
+    "close": "Close canvas",
+    "version": "Version",
+    "latest": "Latest",
+    "openInArtifacts": "Open in Artifacts",
+    "copy": "Copy content",
+    "save": "Save",
+    "saved": "Saved as a new version.",
+    "unsavedChanges": "Unsaved changes"
+  },
+  "share": {
+    "title": "Share this conversation",
+    "description": "Anyone with the link can read it. Reasoning, tool details and attachments stay private.",
+    "enable": "Create link",
+    "disable": "Stop sharing",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "readOnly": "You are viewing a shared, read-only conversation.",
+    "openApp": "Start your own",
+    "unavailable": "This conversation isn't shared."
   },
   "creditBanner": {
     "outOfCredits": "You're out of credits",

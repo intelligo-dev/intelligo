@@ -719,26 +719,31 @@ function Notifications() {
 
 function Chat() {
   const [messages] = useState(CHAT_MESSAGES);
+  const [draft, setDraft] = useState("");
   return (
     <AppFrame>
       <div className="-m-6 grid h-[calc(100%+3rem)] grid-cols-[260px_1fr]">
-        <div className="border-r">
-          <ConversationSidebar
-            conversations={CONVERSATIONS}
-            activeId="conv_1"
-          />
-        </div>
+        <ConversationSidebar
+          conversations={CONVERSATIONS}
+          activeId="conv_1"
+          className="flex"
+        />
         <div className="flex min-h-0 flex-col">
-          <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
-            <MessageList messages={messages} isStreaming={false} />
-          </div>
-          <div className="border-t px-6 py-3">
-            <ChatInput
-              onSend={() => {}}
-              onStop={() => {}}
+          <div className="flex min-h-0 flex-1 flex-col">
+            <MessageList
+              conversationId="conv_1"
+              messages={messages}
               isStreaming={false}
             />
           </div>
+          <ChatInput
+            conversationId="conv_1"
+            value={draft}
+            onChange={setDraft}
+            onSend={() => setDraft("")}
+            onStop={() => {}}
+            isStreaming={false}
+          />
         </div>
       </div>
     </AppFrame>

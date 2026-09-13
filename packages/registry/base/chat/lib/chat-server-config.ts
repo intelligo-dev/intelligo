@@ -64,6 +64,7 @@ import { getTranslations } from "next-intl/server";
 
 import { routing } from "@/i18n/routing";
 import { CHAT_MODEL_ID, getChatModel } from "@/lib/chat-model";
+import { CHAT_MODELS } from "@/lib/chat-models";
 import { composeIntelligo, executions } from "@/lib/intelligo";
 
 function localeFrom(request: Request): string {
@@ -91,6 +92,9 @@ export const chatServerConfig: ChatServerConfig = {
   executions,
   onRequest: composeIntelligo,
   model: { defaultId: CHAT_MODEL_ID, resolve: getChatModel },
+  // The composer offers `lib/chat-models.ts`'s list; the transport
+  // refuses anything else. Empty: no picker, the default model.
+  models: { options: CHAT_MODELS },
   messages: chatMessages,
 
   featureKey: "chat",

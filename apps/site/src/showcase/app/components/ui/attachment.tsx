@@ -1,10 +1,10 @@
-import * as React from "react";
-import { mergeProps } from "@base-ui/react/merge-props";
-import { useRender } from "@base-ui/react/use-render";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "cn";
+import * as React from "react"
+import { mergeProps } from "@base-ui/react/merge-props"
+import { useRender } from "@base-ui/react/use-render"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "cn"
 
-import { Button } from "@showcase/components/ui/button";
+import { Button } from "@showcase/components/ui/button"
 
 const attachmentVariants = cva(
   "group/attachment relative flex w-fit max-w-full min-w-0 shrink-0 flex-wrap rounded-xl border bg-card text-card-foreground transition-colors focus-within:ring-1 focus-within:ring-ring/50 has-[>a,>button]:hover:bg-muted/50 data-[state=error]:border-destructive/30 data-[state=idle]:border-dashed",
@@ -22,7 +22,7 @@ const attachmentVariants = cva(
       },
     },
   }
-);
+)
 
 function Attachment({
   className,
@@ -32,7 +32,7 @@ function Attachment({
   ...props
 }: React.ComponentProps<"div"> &
   VariantProps<typeof attachmentVariants> & {
-    state?: "idle" | "uploading" | "processing" | "error" | "done";
+    state?: "idle" | "uploading" | "processing" | "error" | "done"
   }) {
   return (
     <div
@@ -43,7 +43,7 @@ function Attachment({
       className={cn(attachmentVariants({ size, orientation }), className)}
       {...props}
     />
-  );
+  )
 }
 
 const attachmentMediaVariants = cva(
@@ -60,7 +60,7 @@ const attachmentMediaVariants = cva(
       variant: "icon",
     },
   }
-);
+)
 
 function AttachmentMedia({
   className,
@@ -74,7 +74,7 @@ function AttachmentMedia({
       className={cn(attachmentMediaVariants({ variant }), className)}
       {...props}
     />
-  );
+  )
 }
 
 function AttachmentContent({
@@ -90,7 +90,7 @@ function AttachmentContent({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function AttachmentTitle({
@@ -106,7 +106,7 @@ function AttachmentTitle({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function AttachmentDescription({
@@ -123,7 +123,7 @@ function AttachmentDescription({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function AttachmentActions({
@@ -139,7 +139,7 @@ function AttachmentActions({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function AttachmentAction({
@@ -156,7 +156,7 @@ function AttachmentAction({
       className={cn(className)}
       {...props}
     />
-  );
+  )
 }
 
 function AttachmentTrigger({
@@ -178,7 +178,7 @@ function AttachmentTrigger({
     state: {
       slot: "attachment-trigger",
     },
-  });
+  })
 }
 
 function AttachmentGroup({ className, ...props }: React.ComponentProps<"div">) {
@@ -191,7 +191,7 @@ function AttachmentGroup({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  );
+  )
 }
 
 export {
@@ -204,4 +204,4 @@ export {
   AttachmentActions,
   AttachmentAction,
   AttachmentTrigger,
-};
+}

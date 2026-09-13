@@ -2,23 +2,14 @@
 
 /**
  * The conversation viewport. shadcn's MessageScroller keeps the newest
- * turn in view while it streams and offers a way back down once the
- * reader scrolls up; an empty conversation shows its starters instead.
+ * turn in view while it streams — only when the reader is already at
+ * the bottom — and offers a way back down once they scroll up.
  */
 
 import { useTranslations } from "next-intl";
-import type { UIMessage } from "ai";
-import { ArrowDownIcon, MessageSquareIcon } from "lucide-react";
+import type { FileUIPart, UIMessage } from "ai";
+import { ArrowDownIcon } from "lucide-react";
 
-import { Suggestion } from "@/components/ui/ai-suggestion";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -28,47 +19,60 @@ import {
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
 import type { ToolRendererActions } from "@/lib/chat-renderers";
-import { Message } from "./message";
+import { Message, type MessageVersion } from "./message";
+import type { MessageVote } from "./message-actions";
 
 interface MessageListProps {
+  conversationId: string;
   messages: UIMessage[];
   isStreaming: boolean;
-  /** Resolved starter prompt text — see `@/lib/chat-config`. */
-  starters?: string[];
-  /** Called with a starter's text when the caller picks one. */
-  onStarterSelect?: (text: string) => void;
-  /** Regenerate the last assistant reply; omit to hide the control. */
-  onRetry?: () => void;
-  /** Passed to interactive tool renderers — see `@/lib/chat-renderers`. */
+  readOnly?: boolean;
+  votes?: Record<string, MessageVote>;
+  versionOf?: (messageId: string) => MessageVersion | null;
+  onRegenerate?: (messageId: string) => void;
+  onEdit?: (messageId: string, text: string, files: FileUIPart[]) => void;
   toolActions?: ToolRendererActions;
+  /** Narrower measure for a panel or widget. */
+  compact?: boolean;
 }
 
 export function MessageList({
+  conversationId,
   messages,
   isStreaming,
-  starters,
-  onStarterSelect,
-  onRetry,
+  readOnly = false,
+  votes = {},
+  versionOf,
+  onRegenerate,
+  onEdit,
   toolActions,
+  compact = false,
 }: MessageListProps) {
   const t = useTranslations("chat");
-
-  if (messages.length === 0) {
-    return <EmptyState starters={starters} onStarterSelect={onStarterSelect} />;
-  }
 
   return (
     <MessageScrollerProvider>
       <MessageScroller className="min-h-0 flex-1">
         <MessageScrollerViewport>
-          <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-6">
+          <MessageScrollerContent
+            className={
+              compact
+                ? "w-full px-3 py-4"
+                : "mx-auto w-full max-w-3xl px-4 py-6"
+            }
+          >
             {messages.map((message, index) => (
               <MessageScrollerItem key={message.id} messageId={message.id}>
                 <Message
+                  conversationId={conversationId}
                   message={message}
                   isLastMessage={index === messages.length - 1}
                   isStreaming={isStreaming}
-                  onRetry={onRetry}
+                  readOnly={readOnly}
+                  vote={votes[message.id] ?? null}
+                  version={versionOf?.(message.id) ?? null}
+                  onRegenerate={onRegenerate}
+                  onEdit={onEdit}
                   toolActions={toolActions}
                 />
               </MessageScrollerItem>
@@ -81,39 +85,5 @@ export function MessageList({
         </MessageScrollerButton>
       </MessageScroller>
     </MessageScrollerProvider>
-  );
-}
-
-function EmptyState({
-  starters,
-  onStarterSelect,
-}: {
-  starters?: string[];
-  onStarterSelect?: (text: string) => void;
-}) {
-  const t = useTranslations("chat");
-
-  return (
-    <Empty className="flex-1">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <MessageSquareIcon />
-        </EmptyMedia>
-        <EmptyTitle>{t("emptyState.title")}</EmptyTitle>
-        <EmptyDescription>{t("emptyState.description")}</EmptyDescription>
-      </EmptyHeader>
-      {starters && starters.length > 0 ? (
-        <EmptyContent className="max-w-2xl flex-row flex-wrap justify-center">
-          {starters.map((starter, index) => (
-            <Suggestion
-              key={index}
-              suggestion={starter}
-              onClick={onStarterSelect}
-              className="h-auto py-1.5 text-left whitespace-normal"
-            />
-          ))}
-        </EmptyContent>
-      ) : null}
-    </Empty>
   );
 }

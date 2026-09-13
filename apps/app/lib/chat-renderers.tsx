@@ -1,29 +1,45 @@
 "use client";
 
 /**
- * Tool-call renderer seam.
+ * How a tool, and any runtime's data part, shows up in the chat.
  *
- * `@intelligo-dev/chat`'s dissolving package (ADR-0008) kept a runtime
- * `Map` that a product registered into at client bootstrap — a
- * package-level registry a consumer could never see, let alone edit.
- * This item's replacement is the opposite of clever: `TOOL_RENDERERS`
- * below is a plain object literal in source you own. Add a tool name
- * → component entry to it directly; there is no `register()` call to
- * invoke from a composition root, and nothing here runs as an import
- * side effect, so ADR-0005 has nothing to enforce against this file.
+ * This is the extension point a product uses most. Adding a tool to
+ * the agent is one entry in `TOOL_RENDERERS` below — a plain object
+ * literal in source you own; there is no `register()` call, nothing
+ * runs as an import side effect (ADR-0005), and a product package's
+ * card compiles against the structural props here rather than against
+ * the AI SDK's types.
  *
- * A tool with no entry falls back to `DefaultToolCard`: the design
- * system's T3 Tool part — name, state, and the raw input and output. It exists so
- * a new tool call always renders *something* honest while you're
- * wiring up its real card — it is not meant to be your product's
- * shipped UI for that tool.
+ * An entry is either a component, or `{ component, label, canvas }`:
  *
- * `components/chat/message.tsx` calls `getToolRenderer(toolName)` for
- * every `tool-*`/`dynamic-tool` part it renders.
+ *   - `component` renders the call in the transcript, in every state
+ *     the SDK has (`input-streaming` → `output-available`, and the
+ *     approval states of a gated tool).
+ *   - `label` is a message key shown while the call streams, in place
+ *     of the tool's raw name ("Generating report…").
+ *   - `canvas` says the tool's output also lives in the side panel
+ *     (`lib/chat-canvas-config.tsx` decides how a `kind` renders). A
+ *     document the tool streams with `createArtifactWriter` opens the
+ *     canvas by itself; a card's Open reopens it.
+ *
+ * `actions` is what a card can do back to the conversation: send the
+ * next user turn (a quiz option, a suggested reply), answer a tool
+ * that runs client-side, approve or deny a gated call, open or close
+ * the canvas.
+ *
+ * `DATA_RENDERERS` is the same seam for `data-*` parts — what a
+ * Mastra workflow, an eve subagent or a product's own `turn.write`
+ * emits. The framework's `data-chat-*` parts have renderers in
+ * `components/chat/data-parts.tsx`; Mastra's arrive under their own
+ * names and render on the activity timeline.
+ *
+ * A tool with no entry falls back to `DefaultToolCard` — the T3 Tool
+ * part with the raw input and output, so a new tool always renders
+ * something honest while its card is being written.
  */
 
 import type { ComponentType } from "react";
-import type { ToolUIPart } from "ai";
+import type { FileUIPart, ToolUIPart } from "ai";
 import { useTranslations } from "next-intl";
 import { FileTextIcon } from "lucide-react";
 
@@ -45,13 +61,28 @@ import {
 } from "@/components/ui/item";
 import { Link } from "@/i18n/navigation";
 
+import {
+  ChatAgentCard,
+  ChatArtifactCard,
+  ChatAuthorizationCard,
+  ChatQuestionCard,
+  ChatTaskCard,
+} from "@/components/chat/data-parts";
+import {
+  MastraNetworkActivity,
+  MastraToolAgentActivity,
+  MastraToolAgentStepActivity,
+  MastraWorkflowActivity,
+  MastraWorkflowStepActivity,
+} from "@/components/chat/agent-activity";
+
 /**
  * Mirrors the AI SDK's `ToolUIPart`/`DynamicToolUIPart` state union
- * (`ai`'s `dist/index.d.ts`) structurally rather than importing it, so
- * this file doesn't pin a consumer to the SDK's exact tool-generics
- * shape. The three `approval-*`/`output-denied` states only appear for
- * tools using the SDK's human-in-the-loop approval flow — a plain tool
- * never produces them.
+ * structurally rather than importing it, so a product package does
+ * not pin itself to the SDK's exact tool generics. The three
+ * `approval-*`/`output-denied` states only appear for tools using the
+ * SDK's human-in-the-loop approval flow — a plain tool never produces
+ * them.
  */
 export type ToolPartState =
   | "input-streaming"
@@ -62,22 +93,38 @@ export type ToolPartState =
   | "output-error"
   | "output-denied";
 
-/**
- * What a renderer can do back to the conversation. Passed to every
- * renderer, so an *interactive* tool card — approve/deny, pick one of
- * several options, submit a form the tool asked for — is possible
- * without reaching around the component tree.
- *
- * `addToolResult` answers the tool call the card is rendering (pass
- * its `toolCallId`); `sendMessage` sends a new user turn instead.
- */
+/** What opens in the canvas. */
+export type CanvasRef = {
+  /** Stable across streamed updates — the artifact part's id or the document id. */
+  id: string;
+  kind: string;
+  title: string;
+  documentId?: string;
+  /** Content already in hand, so the panel can open without a fetch. */
+  content?: string;
+  status?: "streaming" | "ready" | "error";
+};
+
+/** What a renderer can do back to the conversation. */
 export interface ToolRendererActions {
-  sendMessage: (text: string) => void;
+  /** Send the next user turn — a picked option, a suggested reply. */
+  sendMessage: (
+    message: string | { text: string; files?: FileUIPart[] }
+  ) => void;
+  /** Answer a tool the client executes. */
   addToolResult: (args: {
     tool: string;
     toolCallId: string;
     output: unknown;
   }) => void;
+  /** Approve or deny a gated call; the SDK continues the turn. */
+  addToolApprovalResponse: (args: {
+    id: string;
+    approved: boolean;
+    reason?: string;
+  }) => void;
+  openCanvas: (ref: CanvasRef) => void;
+  closeCanvas: () => void;
 }
 
 export interface ToolRendererProps {
@@ -88,41 +135,104 @@ export interface ToolRendererProps {
   errorText?: string;
   /** The AI SDK's id for this call — required by `addToolResult`. */
   toolCallId?: string;
-  /** Present when the message list passes them; see above. */
+  /** Set while the call awaits or received an approval. */
+  approvalId?: string;
+  messageId: string;
+  /** The message this part belongs to is still streaming. */
+  isStreaming: boolean;
+  /** A read-only surface — the shared page. Cards hide their controls. */
+  isReadonly: boolean;
+  actions?: ToolRendererActions;
+}
+
+export interface ToolRenderer {
+  component: ComponentType<ToolRendererProps>;
+  /** A message key (namespace-less, like `chatConfig.starters`) shown while the call streams. */
+  label?: string;
+  /**
+   * The tool's output also lives in the canvas, as this kind, when its
+   * result does not say. A document the tool streams through
+   * `createArtifactWriter` opens the canvas by itself.
+   */
+  canvas?: { kind: string };
+}
+
+export interface DataRendererProps {
+  /** The part name without the `data-` prefix. */
+  name: string;
+  id?: string;
+  data: unknown;
+  messageId: string;
+  isStreaming: boolean;
+  isReadonly: boolean;
   actions?: ToolRendererActions;
 }
 
 /**
- * Map of AI SDK tool name → the component that renders its call and
- * result.
+ * Tool name → how its call renders.
  *
  * Ships with one entry: `saveArtifact`, the convention this catalogue
- * uses for "the assistant produced a document." Bind a tool of that
- * name in `@/lib/chat-server-config` and its result renders as a card
- * linking into the `artifacts` page. Rename the key if your tool is
- * called something else.
+ * uses for "the assistant produced a document." Its card links into
+ * the `artifacts` page and opens the document in the canvas.
  *
- * Add your own the same way — this is a plain object literal in source
- * you own, with no `register()` call anywhere:
+ * Add your own the same way:
  *
- *   import { WeatherCard } from "@/components/chat/weather-card";
+ *   import { WeatherCard } from "@/components/chat/tools/weather-card";
  *
- *   export const TOOL_RENDERERS: Record<string, ComponentType<ToolRendererProps>> = {
- *     saveArtifact: ArtifactLinkCard,
+ *   export const TOOL_RENDERERS: Record<string, ToolRenderer | ComponentType<ToolRendererProps>> = {
+ *     saveArtifact: { component: ArtifactLinkCard, canvas: { kind: "text" } },
  *     getWeather: WeatherCard,
+ *     generateReport: { component: ReportCard, label: "reports.generating", canvas: { kind: "text" } },
  *   };
  */
 export const TOOL_RENDERERS: Record<
   string,
-  ComponentType<ToolRendererProps>
+  ToolRenderer | ComponentType<ToolRendererProps>
 > = {
-  saveArtifact: ArtifactLinkCard,
+  saveArtifact: { component: ArtifactLinkCard, canvas: { kind: "text" } },
 };
 
+/**
+ * `data-*` part name (without the prefix) → its renderer. The
+ * framework's own parts and Mastra's are shipped; a product adds the
+ * parts its tools write with `turn.write`.
+ */
+export const DATA_RENDERERS: Record<string, ComponentType<DataRendererProps>> =
+  {
+    "chat-task": ChatTaskCard,
+    "chat-agent": ChatAgentCard,
+    "chat-artifact": ChatArtifactCard,
+    "chat-question": ChatQuestionCard,
+    "chat-authorization": ChatAuthorizationCard,
+    workflow: MastraWorkflowActivity,
+    "workflow-step": MastraWorkflowStepActivity,
+    network: MastraNetworkActivity,
+    "tool-agent": MastraToolAgentActivity,
+    "tool-agent-step": MastraToolAgentStepActivity,
+  };
+
+export function resolveToolRenderer(toolName: string): ToolRenderer {
+  const entry = TOOL_RENDERERS[toolName];
+  if (!entry) return { component: DefaultToolCard };
+  return typeof entry === "function" ? { component: entry } : entry;
+}
+
+/** Whether a tool has its own card, or falls back to the default one. */
+export function hasToolRenderer(toolName: string): boolean {
+  return toolName in TOOL_RENDERERS;
+}
+
+/** Kept for cards written against the earlier seam. */
 export function getToolRenderer(
   toolName: string
 ): ComponentType<ToolRendererProps> {
-  return TOOL_RENDERERS[toolName] ?? DefaultToolCard;
+  return resolveToolRenderer(toolName).component;
+}
+
+export function getDataRenderer(
+  name: string
+): ComponentType<DataRendererProps> | null {
+  return DATA_RENDERERS[name] ?? null;
 }
 
 /** Maps a tool part's state to its `chat.toolCard.*` message key. */
@@ -173,13 +283,13 @@ export function DefaultToolCard({
 }
 
 /**
- * Renderer for a tool that produced a document artifact. Expects the
- * tool's output to carry a `title` (and optionally a `documentId`);
- * anything else falls back to the generic card, so a tool whose shape
- * drifts renders honestly rather than blank.
+ * Renderer for a tool that produced a document. Expects the tool's
+ * output to carry a `title` (and optionally a `documentId`, `kind`
+ * and `content`); anything else falls back to the generic card, so a
+ * tool whose shape drifts renders honestly rather than blank.
  *
- * This is the chat↔artifacts affordance: a reply that generated a
- * document says so inline, and links to where the document lives.
+ * Opening lands in the canvas when the page has one, and on the
+ * `/artifacts` page otherwise.
  */
 export function ArtifactLinkCard({
   toolName,
@@ -187,13 +297,24 @@ export function ArtifactLinkCard({
   input,
   output,
   errorText,
+  messageId,
+  isStreaming,
+  isReadonly,
+  actions,
 }: ToolRendererProps) {
   const t = useTranslations("chat");
 
-  const title =
-    output && typeof output === "object" && "title" in output
-      ? String((output as { title: unknown }).title)
-      : undefined;
+  const result =
+    output && typeof output === "object"
+      ? (output as {
+          title?: unknown;
+          documentId?: unknown;
+          id?: unknown;
+          kind?: unknown;
+          content?: unknown;
+        })
+      : null;
+  const title = typeof result?.title === "string" ? result.title : undefined;
 
   if (state !== "output-available" || !title) {
     return (
@@ -203,9 +324,30 @@ export function ArtifactLinkCard({
         input={input}
         output={output}
         errorText={errorText}
+        messageId={messageId}
+        isStreaming={isStreaming}
+        isReadonly={isReadonly}
       />
     );
   }
+
+  const documentId =
+    typeof result?.documentId === "string"
+      ? result.documentId
+      : typeof result?.id === "string"
+        ? result.id
+        : undefined;
+  const ref: CanvasRef = {
+    id: documentId ?? messageId,
+    kind:
+      typeof result?.kind === "string"
+        ? result.kind
+        : (resolveToolRenderer(toolName).canvas?.kind ?? "text"),
+    title,
+    ...(documentId ? { documentId } : {}),
+    ...(typeof result?.content === "string" ? { content: result.content } : {}),
+    status: "ready",
+  };
 
   return (
     <Item variant="outline" size="sm" className="max-w-xl">
@@ -216,16 +358,29 @@ export function ArtifactLinkCard({
         <ItemTitle>{title}</ItemTitle>
         <ItemDescription>{t("artifactCard.saved")}</ItemDescription>
       </ItemContent>
-      <ItemActions>
-        <Button
-          size="sm"
-          variant="outline"
-          render={<Link href="/artifacts" />}
-          nativeButton={false}
-        >
-          {t("artifactCard.open")}
-        </Button>
-      </ItemActions>
+      {isReadonly ? null : (
+        <ItemActions>
+          {actions ? (
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              onClick={() => actions.openCanvas(ref)}
+            >
+              {t("artifactCard.open")}
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              render={<Link href="/artifacts" />}
+              nativeButton={false}
+            >
+              {t("artifactCard.open")}
+            </Button>
+          )}
+        </ItemActions>
+      )}
     </Item>
   );
 }

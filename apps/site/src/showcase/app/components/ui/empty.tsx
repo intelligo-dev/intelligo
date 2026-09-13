@@ -1,5 +1,5 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "cn";
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "cn"
 
 function Empty({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -11,7 +11,7 @@ function Empty({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  );
+  )
 }
 
 function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
@@ -21,7 +21,7 @@ function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("flex max-w-sm flex-col items-center gap-2", className)}
       {...props}
     />
-  );
+  )
 }
 
 const emptyMediaVariants = cva(
@@ -37,7 +37,7 @@ const emptyMediaVariants = cva(
       variant: "default",
     },
   }
-);
+)
 
 function EmptyMedia({
   className,
@@ -51,7 +51,7 @@ function EmptyMedia({
       className={cn(emptyMediaVariants({ variant, className }))}
       {...props}
     />
-  );
+  )
 }
 
 function EmptyTitle({ className, ...props }: React.ComponentProps<"div">) {
@@ -64,7 +64,7 @@ function EmptyTitle({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  );
+  )
 }
 
 function EmptyDescription({ className, ...props }: React.ComponentProps<"p">) {
@@ -77,7 +77,7 @@ function EmptyDescription({ className, ...props }: React.ComponentProps<"p">) {
       )}
       {...props}
     />
-  );
+  )
 }
 
 function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
@@ -90,7 +90,7 @@ function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  );
+  )
 }
 
 export {
@@ -100,4 +100,4 @@ export {
   EmptyDescription,
   EmptyContent,
   EmptyMedia,
-};
+}

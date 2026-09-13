@@ -7,13 +7,24 @@ export type ConversationSummary = {
   id: string;
   title: string | null;
   updatedAt: string;
+  pinned: boolean;
 };
 
 export const CONVERSATIONS: ConversationSummary[] = [
-  { id: "conv_1", title: "Q3 support tickets", updatedAt: daysAgo(0, 1) },
-  { id: "conv_2", title: "Pricing audit", updatedAt: daysAgo(1) },
-  { id: "conv_3", title: "Onboarding copy review", updatedAt: daysAgo(4) },
-  { id: "conv_4", title: null, updatedAt: daysAgo(9) },
+  {
+    id: "conv_1",
+    title: "Q3 support tickets",
+    updatedAt: daysAgo(0, 1),
+    pinned: true,
+  },
+  { id: "conv_2", title: "Pricing audit", updatedAt: daysAgo(1), pinned: false },
+  {
+    id: "conv_3",
+    title: "Onboarding copy review",
+    updatedAt: daysAgo(4),
+    pinned: false,
+  },
+  { id: "conv_4", title: null, updatedAt: daysAgo(9), pinned: false },
 ];
 
 export async function listConversationHistory(): Promise<
@@ -47,5 +58,47 @@ export async function saveMessageAsArtifact(
   return {
     success: false,
     error: `Saving as an artifact is disabled here. ${PREVIEW_NOTE}`,
+  };
+}
+export async function setConversationPinned(
+  ..._args: unknown[]
+): Promise<ChatActionResult<undefined>> {
+  await wait();
+  return { success: true, data: undefined };
+}
+export async function voteMessage(
+  ..._args: unknown[]
+): Promise<ChatActionResult<undefined>> {
+  await wait();
+  return { success: true, data: undefined };
+}
+export async function getShareState(
+  ..._args: unknown[]
+): Promise<ChatActionResult<{ shared: boolean }>> {
+  await wait();
+  return { success: true, data: { shared: false } };
+}
+export async function setConversationShared(
+  ..._args: unknown[]
+): Promise<ChatActionResult<{ shared: boolean }>> {
+  await wait();
+  return {
+    success: false,
+    error: `Sharing is disabled here. ${PREVIEW_NOTE}`,
+  };
+}
+export async function listArtifactVersions(
+  ..._args: unknown[]
+): Promise<ChatActionResult<Array<{ createdAt: string; content: string }>>> {
+  await wait();
+  return { success: true, data: [] };
+}
+export async function saveArtifactVersion(
+  ..._args: unknown[]
+): Promise<ChatActionResult<{ id: string }>> {
+  await wait();
+  return {
+    success: false,
+    error: `Saving is disabled here. ${PREVIEW_NOTE}`,
   };
 }

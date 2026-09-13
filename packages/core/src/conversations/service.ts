@@ -140,7 +140,9 @@ export async function listConversations(
   actor: ConversationActor,
   options?: { limit?: number; offset?: number }
 ): Promise<
-  Array<Pick<Conversation, "id" | "title" | "agentId" | "updatedAt">>
+  Array<
+    Pick<Conversation, "id" | "title" | "agentId" | "updatedAt" | "metadata">
+  >
 > {
   const limit = options?.limit ?? 50;
   const offset = options?.offset ?? 0;
@@ -151,6 +153,7 @@ export async function listConversations(
       title: conversations.title,
       agentId: conversations.agentId,
       updatedAt: conversations.updatedAt,
+      metadata: conversations.metadata,
     })
     .from(conversations)
     .where(

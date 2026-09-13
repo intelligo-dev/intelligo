@@ -25,6 +25,7 @@ const SEAMS: [RegExp, string][] = [
   [/^lib\/chat-config\.tsx$/, "agent identity, starters, header slot"],
   [/^lib\/chat-renderers\.tsx$/, "tool-call renderers"],
   [/^lib\/chat-model\.ts$/, "the deployment's model"],
+  [/^lib\/chat-models\.ts$/, "the models the composer offers"],
   [/^lib\/chat-server-config\.ts$/, "the chat transport's seams (ADR-0012)"],
   [/^lib\/onboarding-steps\.ts$/, "onboarding steps"],
   [/^lib\/billing-config\.ts$/, "product slug, currency, credit bundles"],

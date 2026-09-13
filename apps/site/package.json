@@ -2,7 +2,7 @@
   "name": "site",
   "version": "0.0.0",
   "private": true,
-  "description": "intelligo.dev — the public site of the Intelligo framework, and the hosted page registry at /r",
+  "description": "intelligo.dev \u2014 the public site of the Intelligo framework, and the hosted page registry at /r",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -56,6 +56,7 @@
     "@intelligo-dev/core": "workspace:*",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
+    "react-resizable-panels": "^4.12.4",
     "typescript": "^5.7.2",
     "wrangler": "^4"
   }

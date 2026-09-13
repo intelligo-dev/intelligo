@@ -1,35 +1,34 @@
 "use client";
 
 /**
- * Conversation header — title with inline rename, a history dropdown
- * for switching conversations, a "New chat" link, and delete.
+ * Conversation header — the agent's name, the title with inline
+ * rename, the consumer's `headerRight` slot, share, and delete.
  *
- * The history dropdown and "New chat" here are the small-screen
- * controls: from `lg` up, `ConversationSidebar` shows the same list
- * permanently and both are hidden rather than duplicated.
+ * Below `lg` the sidebar is not on screen, so the header carries a
+ * trigger that opens it in a sheet; from `lg` up the page renders the
+ * sidebar as a column and the trigger is hidden.
  */
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "use-intl";
 import {
   CheckIcon,
-  ChevronDownIcon,
+  PanelLeftIcon,
   PencilIcon,
-  PlusIcon,
   Trash2Icon,
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Link, useRouter } from "@showcase/i18n/navigation";
+import { useRouter } from "@showcase/i18n/navigation";
 import { Button } from "@showcase/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@showcase/components/ui/dropdown-menu";
 import { Input } from "@showcase/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@showcase/components/ui/sheet";
 import { Spinner } from "@showcase/components/ui/spinner";
 import {
   AlertDialog,
@@ -46,23 +45,26 @@ import {
 import { deleteConversation, renameConversation } from "@showcase/actions/chat";
 import type { ConversationSummary } from "@showcase/actions/chat";
 import { chatConfig } from "@showcase/lib/chat-config";
+import { ConversationSidebar } from "./conversation-sidebar";
+import { ShareDialog } from "./share-dialog";
 
 interface ConversationHeaderProps {
   conversationId: string;
   title: string | null;
-  history: ConversationSummary[];
+  conversations: ConversationSummary[];
 }
 
 export function ConversationHeader({
   conversationId,
   title,
-  history,
+  conversations,
 }: ConversationHeaderProps) {
   const t = useTranslations("chat");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(title ?? "");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const HeaderRight = chatConfig.headerRight;
   const agentName = chatConfig.agent?.name ?? t("agent.defaultName");
   const agentIcon = chatConfig.agent?.icon;
@@ -101,6 +103,32 @@ export function ConversationHeader({
   return (
     <header className="flex items-center justify-between gap-2 border-b px-4 py-3">
       <div className="flex min-w-0 flex-1 items-center gap-1">
+        {/* Below `lg` this is the only way to reach history; at `lg`
+            and up the page renders the sidebar as a column. */}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="mr-1 shrink-0 lg:hidden"
+                aria-label={t("header.openHistory")}
+              />
+            }
+          >
+            <PanelLeftIcon />
+          </SheetTrigger>
+          <SheetContent side="left" className="w-72 p-0">
+            <SheetTitle className="sr-only">{t("sidebar.label")}</SheetTitle>
+            <ConversationSidebar
+              conversations={conversations}
+              activeId={conversationId}
+              onNavigate={() => setSidebarOpen(false)}
+              className="flex h-full w-full border-r-0"
+            />
+          </SheetContent>
+        </Sheet>
+
         <span className="mr-1 flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
           {agentIcon ? <span aria-hidden>{agentIcon}</span> : null}
           <span className="max-w-24 truncate">{agentName}</span>
@@ -157,50 +185,9 @@ export function ConversationHeader({
       <div className="flex shrink-0 items-center gap-2">
         {HeaderRight ? <HeaderRight conversationId={conversationId} /> : null}
 
-        {/* Below `lg` this is the only way to reach history; at `lg`
-            and up `ConversationSidebar` shows the same list. */}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="outline" size="sm" className="gap-1 lg:hidden" />
-            }
-          >
-            {t("header.historyTrigger")}
-            <ChevronDownIcon data-icon="inline-end" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
-            {history.length === 0 ? (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                {t("header.historyEmpty")}
-              </div>
-            ) : (
-              history.map((item) => (
-                <DropdownMenuItem
-                  key={item.id}
-                  render={
-                    <Link href={`/chat/${item.id}`} className="truncate" />
-                  }
-                >
-                  {item.title || t("header.historyUntitled")}
-                </DropdownMenuItem>
-              ))
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ShareDialog conversationId={conversationId} />
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="lg:hidden"
-          render={<Link href="/chat" />}
-          nativeButton={false}
-        >
-          <PlusIcon data-icon="inline-start" />
-          {t("header.newChat")}
-        </Button>
-
-        {/* Confirmed: deleting a conversation is unrecoverable, and
-            this control sits one pixel from "New chat". */}
+        {/* Confirmed: deleting a conversation is unrecoverable. */}
         <AlertDialog>
           <AlertDialogTrigger
             render={
