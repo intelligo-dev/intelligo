@@ -50,7 +50,7 @@ export function UpgradePrompt({
   return (
     <div
       className={
-        compact ? "p-6" : "flex min-h-[400px] items-center justify-center p-6"
+        compact ? "p-6" : "flex min-h-100 items-center justify-center p-6"
       }
     >
       <Card className="w-full max-w-md text-center">

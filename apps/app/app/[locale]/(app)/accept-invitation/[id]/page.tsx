@@ -26,7 +26,7 @@ function StatusCard({
   description: string;
 }) {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-4">
+    <div className="flex min-h-96 items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>{title}</CardTitle>
@@ -71,7 +71,7 @@ export default async function AcceptInvitationPage({ params }: Props) {
   }
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-4">
+    <div className="flex min-h-96 items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>{t("card.title")}</CardTitle>

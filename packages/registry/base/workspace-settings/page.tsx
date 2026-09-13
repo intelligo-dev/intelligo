@@ -11,6 +11,12 @@ import { getTranslations } from "next-intl/server";
 import { requireWorkspace } from "@intelligo-dev/auth";
 
 import { WorkspaceSettingsForm } from "@/components/workspace/workspace-settings-form";
+import {
+  PageHeader,
+  PageHeaderContent,
+  PageHeaderDescription,
+  PageHeaderTitle,
+} from "@/components/ui/page-header";
 
 export default async function WorkspaceSettingsPage() {
   const t = await getTranslations("workspace-settings");
@@ -21,10 +27,12 @@ export default async function WorkspaceSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold">{t("page.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("page.description")}</p>
-      </div>
+      <PageHeader>
+        <PageHeaderContent>
+          <PageHeaderTitle level={2}>{t("page.title")}</PageHeaderTitle>
+          <PageHeaderDescription>{t("page.description")}</PageHeaderDescription>
+        </PageHeaderContent>
+      </PageHeader>
 
       <WorkspaceSettingsForm
         workspace={workspace}

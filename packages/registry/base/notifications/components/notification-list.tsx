@@ -141,7 +141,7 @@ export function NotificationList({
           <p className="max-w-xs text-xs">{t("list.emptyDescription")}</p>
         </div>
       ) : variant === "compact" ? (
-        <ScrollArea className="max-h-[400px]">
+        <ScrollArea className="max-h-100">
           <div className="flex flex-col">{rows}</div>
         </ScrollArea>
       ) : (

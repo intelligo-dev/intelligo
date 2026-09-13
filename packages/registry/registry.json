@@ -433,7 +433,8 @@
         "label",
         "select",
         "skeleton",
-        "table"
+        "table",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -508,7 +509,10 @@
         "skeleton",
         "table",
         "tabs",
-        "button"
+        "button",
+        "@intelligo/page-header",
+        "@intelligo/stat-card",
+        "@intelligo/status-badge"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -688,7 +692,7 @@
       "type": "registry:block",
       "title": "Settings Shell",
       "description": "The shared frame around every /settings page: layout with heading and width constraint, a configurable tab bar (lib/settings-nav.ts), and a /settings index that redirects to the first tab. Install alongside the settings items - without it they render unframed and plain /settings links 404.",
-      "registryDependencies": ["tabs"],
+      "registryDependencies": ["tabs", "@intelligo/page-header"],
       "dependencies": ["lucide-react", "next-intl"],
       "files": [
         {
@@ -729,7 +733,8 @@
         "dialog",
         "input",
         "label",
-        "skeleton"
+        "skeleton",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -783,7 +788,7 @@
       "type": "registry:block",
       "title": "Auth: Login",
       "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first.",
-      "registryDependencies": ["alert", "button", "input", "label", "spinner"],
+      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -840,7 +845,7 @@
       "type": "registry:block",
       "title": "Auth: Signup",
       "description": "Email/password and OAuth account creation. Requires the auth-login item (provides the shared AuthCard shell, SocialLoginButtons, and lib/auth-validation.ts schemas); install it first. Redirects to auth-email-verification's /verify-email route when the server requires email verification.",
-      "registryDependencies": ["alert", "button", "input", "label", "spinner"],
+      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -871,7 +876,7 @@
       "type": "registry:block",
       "title": "Auth: Password Reset",
       "description": "Forgot-password and reset-password pages, backed by the Better-Auth client SDK's requestPasswordReset/resetPassword actions. Requires the auth-login item (provides the shared AuthCard shell and lib/auth-validation.ts schemas); install it first.",
-      "registryDependencies": ["alert", "button", "input", "label", "spinner"],
+      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -912,7 +917,7 @@
       "type": "registry:block",
       "title": "Auth: Email Verification",
       "description": "Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action. Reads the ?error=/?email= search params Better-Auth's own /verify-email link handler redirects back with. Requires the auth-login item (provides the shared AuthCard shell); install it first.",
-      "registryDependencies": ["alert", "button", "input", "label", "spinner"],
+      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
       "dependencies": ["@intelligo-dev/auth", "lucide-react", "next-intl"],
       "files": [
         {
@@ -998,7 +1003,8 @@
         "popover",
         "scroll-area",
         "separator",
-        "skeleton"
+        "skeleton",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1131,7 +1137,13 @@
       "type": "registry:block",
       "title": "Checkout",
       "description": "Checkout-success page that verifies the Stripe session directly through the framework's checkout service, covering the webhook-race window between the browser redirect and Stripe's webhook delivery.",
-      "registryDependencies": ["alert", "badge", "button", "card", "spinner"],
+      "registryDependencies": [
+        "alert",
+        "button",
+        "card",
+        "spinner",
+        "@intelligo/status-badge"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
@@ -1161,7 +1173,14 @@
       "type": "registry:block",
       "title": "Billing Settings",
       "description": "Workspace billing management: current plan, credit balance, credit bundle purchase, and the Stripe billing portal, shaped server-side by role (member/admin/owner). Requires the pricing item (provides lib/billing.ts and actions/billing.ts); install it first.",
-      "registryDependencies": ["alert", "button", "card", "skeleton"],
+      "registryDependencies": [
+        "alert",
+        "button",
+        "card",
+        "skeleton",
+        "@intelligo/page-header",
+        "@intelligo/stat-card"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
@@ -1307,7 +1326,8 @@
         "dialog",
         "input",
         "label",
-        "skeleton"
+        "skeleton",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1500,7 +1520,8 @@
         "dialog",
         "scroll-area",
         "skeleton",
-        "spinner"
+        "spinner",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1558,7 +1579,12 @@
       "type": "registry:block",
       "title": "Privacy Settings",
       "description": "GDPR-style data export, a read-only memory-audit trail, and per-category fact listing with delete, backed by the framework's identity service.",
-      "registryDependencies": ["button", "card", "skeleton"],
+      "registryDependencies": [
+        "button",
+        "card",
+        "skeleton",
+        "@intelligo/page-header"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",

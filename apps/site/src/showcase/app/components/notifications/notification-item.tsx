@@ -58,19 +58,19 @@ function RelativeTime({ iso }: { iso: string }) {
 function notificationIcon(type: string): { Icon: LucideIcon; color: string } {
   switch (type) {
     case "quota_warning_80":
-      return { Icon: AlertTriangle, color: "text-amber-500" };
+      return { Icon: AlertTriangle, color: "text-warning" };
     case "quota_warning_100":
       return { Icon: AlertTriangle, color: "text-destructive" };
     case "trial_warning_20":
-      return { Icon: Clock, color: "text-amber-500" };
+      return { Icon: Clock, color: "text-warning" };
     case "trial_depleted":
       return { Icon: Clock, color: "text-destructive" };
     case "payment_failed":
       return { Icon: CreditCard, color: "text-destructive" };
     case "team_member_joined":
-      return { Icon: UserPlus, color: "text-emerald-500" };
+      return { Icon: UserPlus, color: "text-success" };
     case "subscription_confirmed":
-      return { Icon: CheckCircle, color: "text-emerald-500" };
+      return { Icon: CheckCircle, color: "text-success" };
     default:
       return { Icon: Bell, color: "text-muted-foreground" };
   }

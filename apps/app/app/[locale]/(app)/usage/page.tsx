@@ -7,6 +7,12 @@ import { UsageEmptyState } from "@/components/usage/usage-empty-state";
 import { UsageChart } from "@/components/usage/usage-chart";
 import { UsageRecordsTable } from "@/components/usage/usage-records-table";
 import { UsageSummaryCards } from "@/components/usage/usage-summary-cards";
+import {
+  PageHeader,
+  PageHeaderContent,
+  PageHeaderDescription,
+  PageHeaderTitle,
+} from "@/components/ui/page-header";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("usage");
@@ -18,12 +24,12 @@ export default async function UsagePage() {
 
   return (
     <div className="container mx-auto space-y-8 px-4 py-8">
-      <header>
-        <h1 className="text-2xl font-semibold">{t("page.title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("page.description")}
-        </p>
-      </header>
+      <PageHeader>
+        <PageHeaderContent>
+          <PageHeaderTitle>{t("page.title")}</PageHeaderTitle>
+          <PageHeaderDescription>{t("page.description")}</PageHeaderDescription>
+        </PageHeaderContent>
+      </PageHeader>
 
       <Suspense fallback={null}>
         <UsageOverviewSection />

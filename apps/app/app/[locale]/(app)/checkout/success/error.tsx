@@ -27,7 +27,7 @@ export default function CheckoutSuccessError({
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-4">
+    <div className="flex min-h-96 items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
         <Alert variant="destructive">
           <AlertDescription>{t("error.description")}</AlertDescription>

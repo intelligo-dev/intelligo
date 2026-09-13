@@ -97,7 +97,7 @@ export function DocumentActions({
           }
         >
           {copied ? (
-            <Check className="size-4 text-green-600 dark:text-green-400" />
+            <Check className="size-4 text-success" />
           ) : (
             <Copy className="size-4" />
           )}

@@ -77,7 +77,7 @@ export function RouteError({
       className={
         fullScreen
           ? "flex min-h-screen items-center justify-center p-4"
-          : "flex min-h-[60vh] items-center justify-center p-8"
+          : "flex min-h-96 items-center justify-center p-8"
       }
     >
       <div className="w-full max-w-md space-y-4">

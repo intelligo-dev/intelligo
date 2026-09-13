@@ -30,7 +30,7 @@ export default function AcceptInvitationError({
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-4">
+    <div className="flex min-h-96 items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
         <Alert variant="destructive">
           <AlertDescription>{t("errorBoundary.message")}</AlertDescription>

@@ -1,6 +1,11 @@
 import { getTranslations } from "next-intl/server";
 
 import { SettingsTabs } from "@/components/settings/settings-tabs";
+import {
+  PageHeader,
+  PageHeaderContent,
+  PageHeaderTitle,
+} from "@/components/ui/page-header";
 
 export default async function SettingsLayout({
   children,
@@ -13,7 +18,11 @@ export default async function SettingsLayout({
     <div className="flex flex-1 flex-col overflow-auto">
       <div className="p-4 md:p-8">
         <div className="mx-auto w-full max-w-4xl space-y-6">
-          <h1 className="text-xl font-semibold tracking-tight">{t("title")}</h1>
+          <PageHeader>
+            <PageHeaderContent>
+              <PageHeaderTitle>{t("title")}</PageHeaderTitle>
+            </PageHeaderContent>
+          </PageHeader>
 
           <SettingsTabs />
 

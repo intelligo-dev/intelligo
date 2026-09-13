@@ -172,7 +172,7 @@ export function MemberList({
                           }
                           disabled={isBusy}
                         >
-                          <SelectTrigger className="w-[120px]">
+                          <SelectTrigger className="w-32">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>

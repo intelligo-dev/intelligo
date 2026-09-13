@@ -22,7 +22,7 @@ import { useRouter } from "@/i18n/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import {
   resetPasswordSchema,
@@ -94,8 +94,10 @@ export function ResetPasswordForm() {
         </Alert>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="password">{t("resetForm.passwordLabel")}</Label>
+      <Field data-invalid={errors.password ? true : undefined}>
+        <FieldLabel htmlFor="password">
+          {t("resetForm.passwordLabel")}
+        </FieldLabel>
         <Input
           id="password"
           type="password"
@@ -106,16 +108,16 @@ export function ResetPasswordForm() {
           {...register("password")}
         />
         {errors.password && (
-          <p id="password-error" className="text-sm text-destructive">
+          <FieldError id="password-error">
             {t(`validation.${errors.password.message}`)}
-          </p>
+          </FieldError>
         )}
-      </div>
+      </Field>
 
-      <div className="space-y-2">
-        <Label htmlFor="confirmPassword">
+      <Field data-invalid={errors.confirmPassword ? true : undefined}>
+        <FieldLabel htmlFor="confirmPassword">
           {t("resetForm.confirmPasswordLabel")}
-        </Label>
+        </FieldLabel>
         <Input
           id="confirmPassword"
           type="password"
@@ -128,18 +130,23 @@ export function ResetPasswordForm() {
           {...register("confirmPassword")}
         />
         {errors.confirmPassword && (
-          <p id="confirm-password-error" className="text-sm text-destructive">
+          <FieldError id="confirm-password-error">
             {t(`validation.${errors.confirmPassword.message}`)}
-          </p>
+          </FieldError>
         )}
-      </div>
+      </Field>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isLoading}
+        aria-busy={isLoading || undefined}
+      >
         {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <Spinner />
+          <>
+            <Spinner data-icon="inline-start" />
             {t("resetForm.submitting")}
-          </span>
+          </>
         ) : (
           t("resetForm.submit")
         )}

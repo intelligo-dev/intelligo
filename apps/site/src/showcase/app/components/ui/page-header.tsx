@@ -33,12 +33,25 @@ function PageHeaderContent({
   );
 }
 
-function PageHeaderTitle({ className, ...props }: React.ComponentProps<"h1">) {
+function PageHeaderTitle({
+  className,
+  level = 1,
+  ...props
+}: React.ComponentProps<"h1"> & {
+  /**
+   * 1 for the page's title; 2 for a section rendered under a layout that
+   * already carries it (a settings tab under "Settings").
+   */
+  level?: 1 | 2;
+}) {
+  const Heading = level === 2 ? "h2" : "h1";
   return (
-    <h1
+    <Heading
       data-slot="page-header-title"
+      data-level={level}
       className={cn(
-        "text-2xl font-semibold tracking-tight text-balance",
+        "font-semibold tracking-tight text-balance",
+        level === 2 ? "text-lg" : "text-2xl",
         className
       )}
       {...props}

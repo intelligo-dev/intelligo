@@ -16,7 +16,7 @@ import { Link, useRouter } from "@showcase/i18n/navigation";
 import { Alert, AlertDescription } from "@showcase/components/ui/alert";
 import { Button } from "@showcase/components/ui/button";
 import { Input } from "@showcase/components/ui/input";
-import { Label } from "@showcase/components/ui/label";
+import { Field, FieldError, FieldLabel } from "@showcase/components/ui/field";
 import { Spinner } from "@showcase/components/ui/spinner";
 import { loginSchema, type LoginInput } from "@showcase/lib/auth-validation";
 
@@ -69,8 +69,8 @@ export function LoginForm() {
         </Alert>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="email">{t("loginForm.emailLabel")}</Label>
+      <Field data-invalid={errors.email ? true : undefined}>
+        <FieldLabel htmlFor="email">{t("loginForm.emailLabel")}</FieldLabel>
         <Input
           id="email"
           type="email"
@@ -81,15 +81,17 @@ export function LoginForm() {
           {...register("email")}
         />
         {errors.email && (
-          <p id="email-error" className="text-sm text-destructive">
+          <FieldError id="email-error">
             {t(`validation.${errors.email.message}`)}
-          </p>
+          </FieldError>
         )}
-      </div>
+      </Field>
 
-      <div className="space-y-2">
+      <Field data-invalid={errors.password ? true : undefined}>
         <div className="flex items-center justify-between">
-          <Label htmlFor="password">{t("loginForm.passwordLabel")}</Label>
+          <FieldLabel htmlFor="password">
+            {t("loginForm.passwordLabel")}
+          </FieldLabel>
           <Link
             href="/forgot-password"
             className="text-xs font-medium text-primary hover:text-primary/80"
@@ -107,18 +109,23 @@ export function LoginForm() {
           {...register("password")}
         />
         {errors.password && (
-          <p id="password-error" className="text-sm text-destructive">
+          <FieldError id="password-error">
             {t(`validation.${errors.password.message}`)}
-          </p>
+          </FieldError>
         )}
-      </div>
+      </Field>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isLoading}
+        aria-busy={isLoading || undefined}
+      >
         {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <Spinner />
+          <>
+            <Spinner data-icon="inline-start" />
             {t("loginForm.submitting")}
-          </span>
+          </>
         ) : (
           t("loginForm.submit")
         )}

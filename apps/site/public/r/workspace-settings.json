@@ -18,12 +18,13 @@
     "dialog",
     "input",
     "label",
-    "skeleton"
+    "skeleton",
+    "@intelligo/page-header"
   ],
   "files": [
     {
       "path": "base/workspace-settings/page.tsx",
-      "content": "/**\n * Workspace settings page — server component.\n *\n * Loads the caller's workspace, then renders the name/slug editor and\n * (owner-only) danger zone. A \"member\" role gets a read-only view of\n * the same form (editing is disabled inline in the component).\n */\n\nimport { getTranslations } from \"next-intl/server\";\n\nimport { requireWorkspace } from \"@intelligo-dev/auth\";\n\nimport { WorkspaceSettingsForm } from \"@/components/workspace/workspace-settings-form\";\n\nexport default async function WorkspaceSettingsPage() {\n  const t = await getTranslations(\"workspace-settings\");\n  const { workspace, membership } = await requireWorkspace();\n\n  const canEdit = membership.role === \"owner\" || membership.role === \"admin\";\n  const isOwner = membership.role === \"owner\";\n\n  return (\n    <div className=\"space-y-6\">\n      <div>\n        <h1 className=\"text-lg font-semibold\">{t(\"page.title\")}</h1>\n        <p className=\"text-sm text-muted-foreground\">{t(\"page.description\")}</p>\n      </div>\n\n      <WorkspaceSettingsForm\n        workspace={workspace}\n        canEdit={canEdit}\n        isOwner={isOwner}\n      />\n    </div>\n  );\n}\n",
+      "content": "/**\n * Workspace settings page — server component.\n *\n * Loads the caller's workspace, then renders the name/slug editor and\n * (owner-only) danger zone. A \"member\" role gets a read-only view of\n * the same form (editing is disabled inline in the component).\n */\n\nimport { getTranslations } from \"next-intl/server\";\n\nimport { requireWorkspace } from \"@intelligo-dev/auth\";\n\nimport { WorkspaceSettingsForm } from \"@/components/workspace/workspace-settings-form\";\nimport {\n  PageHeader,\n  PageHeaderContent,\n  PageHeaderDescription,\n  PageHeaderTitle,\n} from \"@/components/ui/page-header\";\n\nexport default async function WorkspaceSettingsPage() {\n  const t = await getTranslations(\"workspace-settings\");\n  const { workspace, membership } = await requireWorkspace();\n\n  const canEdit = membership.role === \"owner\" || membership.role === \"admin\";\n  const isOwner = membership.role === \"owner\";\n\n  return (\n    <div className=\"space-y-6\">\n      <PageHeader>\n        <PageHeaderContent>\n          <PageHeaderTitle level={2}>{t(\"page.title\")}</PageHeaderTitle>\n          <PageHeaderDescription>{t(\"page.description\")}</PageHeaderDescription>\n        </PageHeaderContent>\n      </PageHeader>\n\n      <WorkspaceSettingsForm\n        workspace={workspace}\n        canEdit={canEdit}\n        isOwner={isOwner}\n      />\n    </div>\n  );\n}\n",
       "type": "registry:page",
       "target": "app/[locale]/(app)/settings/workspace/page.tsx"
     },

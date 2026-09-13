@@ -68,8 +68,21 @@ const RULES: { id: string; why: string; pattern: RegExp }[] = [
   },
 ];
 
-/** Arbitrary values that are the right tool, each with its reason. */
-const ALLOWED_ARBITRARY = new Map<string, string>([]);
+/**
+ * The few rule matches that are the right tool, each with its reason —
+ * keyed by `<rule> <match>`. An entry is a reviewed decision, not a
+ * baseline: it never shrinks on its own.
+ */
+const ALLOWED = new Map<string, string>([
+  [
+    "palette-colour bg-white",
+    "a QR code needs a white quiet zone to scan, in dark mode too",
+  ],
+  [
+    "arbitrary-value max-h-[80vh]",
+    "a dialog of arbitrary content stays inside the viewport and scrolls",
+  ],
+]);
 
 function walk(dir: string, skip: string[], out: string[] = []): string[] {
   let entries: string[];
@@ -98,8 +111,7 @@ function collectViolations(): Counts {
       const source = readFileSync(file, "utf8");
       for (const rule of RULES) {
         for (const match of source.matchAll(rule.pattern)) {
-          if (rule.id === "arbitrary-value" && ALLOWED_ARBITRARY.has(match[0]))
-            continue;
+          if (ALLOWED.has(`${rule.id} ${match[0]}`)) continue;
           const key = `${rule.id} ${rel} ${match[0]}`;
           counts[key] = (counts[key] ?? 0) + 1;
         }

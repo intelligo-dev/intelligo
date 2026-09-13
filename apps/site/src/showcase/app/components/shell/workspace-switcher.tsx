@@ -111,7 +111,7 @@ export function WorkspaceSwitcher({
                 disabled={isSwitching}
                 className="gap-2"
               >
-                <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-[10px] font-semibold text-sidebar-primary-foreground">
+                <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground">
                   {ws.name[0]?.toUpperCase()}
                 </div>
                 <div className="grid flex-1 leading-tight">

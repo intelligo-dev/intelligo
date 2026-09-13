@@ -38,20 +38,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ArtifactListItem } from "@/actions/documents";
 import { DocumentActions } from "./document-actions";
 
-const KIND_BADGE_CLASS: Record<string, string> = {
-  text: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  code: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  sheet:
-    "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
-  image: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300",
-};
-
-const DEFAULT_BADGE_CLASS =
-  "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300";
-
-const REPORT_BADGE_CLASS =
-  "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300";
-
 function kindIcon(kind: string) {
   switch (kind) {
     case "code":
@@ -107,17 +93,16 @@ export function DocumentList({ documents }: DocumentListProps) {
     return t.has(key) ? t(key) : kind.charAt(0).toUpperCase() + kind.slice(1);
   }
 
+  // A kind is a category, not a status: every kind reads the same, and a
+  // report — the one kind that means something extra — stands out as secondary.
   function badgeFor(doc: ArtifactListItem): {
     label: string;
-    className: string;
+    variant: "secondary" | "outline";
   } {
     if (doc.isReport) {
-      return { label: t("badge.report"), className: REPORT_BADGE_CLASS };
+      return { label: t("badge.report"), variant: "secondary" };
     }
-    return {
-      label: kindLabel(doc.kind),
-      className: KIND_BADGE_CLASS[doc.kind] ?? DEFAULT_BADGE_CLASS,
-    };
+    return { label: kindLabel(doc.kind), variant: "outline" };
   }
 
   const kinds = useMemo(
@@ -174,7 +159,7 @@ export function DocumentList({ documents }: DocumentListProps) {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((doc) => {
-            const { label, className } = badgeFor(doc);
+            const { label, variant } = badgeFor(doc);
             return (
               <Card
                 key={doc.id}
@@ -190,9 +175,7 @@ export function DocumentList({ documents }: DocumentListProps) {
                       <p className="mb-1 line-clamp-2 text-sm font-medium leading-tight">
                         {doc.title}
                       </p>
-                      <Badge variant="outline" className={className}>
-                        {label}
-                      </Badge>
+                      <Badge variant={variant}>{label}</Badge>
                     </div>
                   </div>
 

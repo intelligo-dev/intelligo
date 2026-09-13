@@ -26,7 +26,7 @@ import { Link, useRouter } from "@showcase/i18n/navigation";
 import { Alert, AlertDescription } from "@showcase/components/ui/alert";
 import { Button } from "@showcase/components/ui/button";
 import { Input } from "@showcase/components/ui/input";
-import { Label } from "@showcase/components/ui/label";
+import { Field, FieldError, FieldLabel } from "@showcase/components/ui/field";
 import { Spinner } from "@showcase/components/ui/spinner";
 import { signupSchema, type SignupInput } from "@showcase/lib/auth-validation";
 
@@ -87,8 +87,8 @@ export function SignupForm() {
         </Alert>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="name">{t("signupForm.nameLabel")}</Label>
+      <Field data-invalid={errors.name ? true : undefined}>
+        <FieldLabel htmlFor="name">{t("signupForm.nameLabel")}</FieldLabel>
         <Input
           id="name"
           type="text"
@@ -99,14 +99,14 @@ export function SignupForm() {
           {...register("name")}
         />
         {errors.name && (
-          <p id="name-error" className="text-sm text-destructive">
+          <FieldError id="name-error">
             {t(`validation.${errors.name.message}`)}
-          </p>
+          </FieldError>
         )}
-      </div>
+      </Field>
 
-      <div className="space-y-2">
-        <Label htmlFor="email">{t("signupForm.emailLabel")}</Label>
+      <Field data-invalid={errors.email ? true : undefined}>
+        <FieldLabel htmlFor="email">{t("signupForm.emailLabel")}</FieldLabel>
         <Input
           id="email"
           type="email"
@@ -117,14 +117,16 @@ export function SignupForm() {
           {...register("email")}
         />
         {errors.email && (
-          <p id="email-error" className="text-sm text-destructive">
+          <FieldError id="email-error">
             {t(`validation.${errors.email.message}`)}
-          </p>
+          </FieldError>
         )}
-      </div>
+      </Field>
 
-      <div className="space-y-2">
-        <Label htmlFor="password">{t("signupForm.passwordLabel")}</Label>
+      <Field data-invalid={errors.password ? true : undefined}>
+        <FieldLabel htmlFor="password">
+          {t("signupForm.passwordLabel")}
+        </FieldLabel>
         <Input
           id="password"
           type="password"
@@ -135,16 +137,16 @@ export function SignupForm() {
           {...register("password")}
         />
         {errors.password && (
-          <p id="password-error" className="text-sm text-destructive">
+          <FieldError id="password-error">
             {t(`validation.${errors.password.message}`)}
-          </p>
+          </FieldError>
         )}
-      </div>
+      </Field>
 
-      <div className="space-y-2">
-        <Label htmlFor="confirmPassword">
+      <Field data-invalid={errors.confirmPassword ? true : undefined}>
+        <FieldLabel htmlFor="confirmPassword">
           {t("signupForm.confirmPasswordLabel")}
-        </Label>
+        </FieldLabel>
         <Input
           id="confirmPassword"
           type="password"
@@ -157,18 +159,23 @@ export function SignupForm() {
           {...register("confirmPassword")}
         />
         {errors.confirmPassword && (
-          <p id="confirm-password-error" className="text-sm text-destructive">
+          <FieldError id="confirm-password-error">
             {t(`validation.${errors.confirmPassword.message}`)}
-          </p>
+          </FieldError>
         )}
-      </div>
+      </Field>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isLoading}
+        aria-busy={isLoading || undefined}
+      >
         {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <Spinner />
+          <>
+            <Spinner data-icon="inline-start" />
             {t("signupForm.submitting")}
-          </span>
+          </>
         ) : (
           t("signupForm.submit")
         )}

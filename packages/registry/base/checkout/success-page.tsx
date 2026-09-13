@@ -5,7 +5,7 @@ import { requireWorkspace } from "@intelligo-dev/auth";
 import { getCheckoutSession } from "@intelligo-dev/billing";
 
 import { Link, redirect } from "@/i18n/navigation";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -52,10 +52,10 @@ export default async function CheckoutSuccessPage({
     if (session.status === "complete" && session.isSubscriptionActive) {
       return (
         <div className="container max-w-2xl py-16">
-          <Card className="border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/30">
+          <Card className="border-success/30">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-                <CheckCircle2 className="size-10 text-green-600 dark:text-green-400" />
+              <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-success/10">
+                <CheckCircle2 className="size-10 text-success" />
               </div>
               <CardTitle className="text-3xl">{t("success.title")}</CardTitle>
               <CardDescription className="text-base">
@@ -82,9 +82,9 @@ export default async function CheckoutSuccessPage({
                       </p>
                     )}
                   </div>
-                  <Badge variant="default" className="bg-green-600">
+                  <StatusBadge status="success" dot>
                     {t("success.status")}
-                  </Badge>
+                  </StatusBadge>
                 </div>
               </div>
 
@@ -173,8 +173,8 @@ export default async function CheckoutSuccessPage({
       <div className="container max-w-2xl py-16">
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-              <CheckCircle2 className="size-10 text-green-600 dark:text-green-400" />
+            <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-success/10">
+              <CheckCircle2 className="size-10 text-success" />
             </div>
             <CardTitle>{t("fallback.title")}</CardTitle>
             <CardDescription>{t("fallback.description")}</CardDescription>
