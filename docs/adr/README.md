@@ -16,5 +16,6 @@ The decisions the framework is built on. New ADRs get the next number; supersede
 | [0010](0010-registry-i18n-standard.md)                     | Registry items are i18n-native (next-intl); consumers install them unmodified                  | Accepted                   |
 | [0011](0011-package-topology.md)                           | One package per runtime target; shared types are subpaths; the registry is a private workspace | Accepted                   |
 | [0012](0012-headless-chat-transport.md)                    | The chat transport is a package; the chat UI is registry source                                | Accepted                   |
+| [0013](0013-design-system.md)                              | One design system: shadcn base-nova, an additive token contract, a tiered catalog              | Accepted                   |
 
 The ADRs were written inside the private incubation repository these packages were extracted from (ADR-0001, ADR-0006), so some cite an internal planning document by relative path; those links do not resolve here. The decisions themselves are complete as written.
