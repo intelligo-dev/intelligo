@@ -1,0 +1,123 @@
+---
+import Page from "@/layouts/Page.astro";
+import { PrimitiveDemo } from "@/showcase/primitives";
+import { PRIMITIVES } from "@/lib/primitives";
+import { countWord } from "@/lib/count-words";
+import { SITE } from "@/lib/site";
+
+const Count = countWord(PRIMITIVES.length);
+
+const COLORS: [string, string[]][] = [
+  ["Surface", ["background", "foreground", "card", "card-foreground", "popover", "popover-foreground"]],
+  ["Intent", ["primary", "primary-foreground", "secondary", "secondary-foreground", "muted", "muted-foreground", "accent", "accent-foreground", "destructive"]],
+  ["Edge", ["border", "input", "ring"]],
+  ["Chart", ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5"]],
+  ["Sidebar", ["sidebar", "sidebar-foreground", "sidebar-primary", "sidebar-primary-foreground", "sidebar-accent", "sidebar-accent-foreground", "sidebar-border", "sidebar-ring"]],
+];
+const RADII = ["sm", "md", "lg", "xl", "2xl"];
+const FONTS = [
+  ["--font-sans", "Geist", "font-sans", "Workspaces, credits and every page around your agent."],
+  ["--font-mono", "Geist Mono", "font-mono", "pnpm exec shadcn add intelligo.dev/r/chat.json"],
+  ["--font-heading", "Outfit", "heading", "The application framework for vertical AI SaaS."],
+];
+---
+<Page
+  path="/components"
+  tag="components · the primitives"
+  title={`${Count} primitives,<br />the app's own design system.`}
+  lede="Every registry block renders with these shadcn primitives — the reference app's own components/ui, installed as your source. Restyle them once and every installed page follows."
+  description={`The ${PRIMITIVES.length} shadcn primitives and design tokens every Intelligo registry block renders with.`}
+>
+  <section id="tokens" class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <div class="section-head">
+        <span class="tag">tokens</span>
+        <h2 class="heading text-[1.5rem] font-medium">Colour, radius, type.</h2>
+        <p class="mt-2 max-w-[60ch] text-[0.92rem] text-ink-dim">CSS variables the primitives read. Switch the theme in the nav — every swatch and demo below follows.</p>
+      </div>
+
+      <div class="mt-8 space-y-6">
+        {COLORS.map(([group, tokens]) => (
+          <div>
+            <div class="tag mb-2">{group}</div>
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              {tokens.map((t) => (
+                <div class="overflow-hidden rounded-md border border-line bg-paper">
+                  <div class="h-12 border-b border-line" style={`background: var(--${t})`} />
+                  <div class="mono truncate px-2 py-1.5 text-[0.68rem] text-ink-dim">--{t}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="mt-10 grid gap-8 lg:grid-cols-2">
+        <div class="min-w-0">
+          <div class="tag mb-2">Radius · --radius: 0.65rem</div>
+          <div class="flex flex-wrap gap-3">
+            {RADII.map((r) => (
+              <div class="text-center">
+                <div class="size-16 border border-line-strong bg-muted" style={`border-radius: var(--radius-${r})`} />
+                <div class="mono mt-1 text-[0.66rem] text-ink-faint">{r}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div class="min-w-0">
+          <div class="tag mb-2">Type</div>
+          <div class="space-y-3">
+            {FONTS.map(([v, family, cls, sample]) => (
+              <div class="border-b border-line pb-3">
+                <div class="mono text-[0.66rem] text-ink-faint">{v} · {family}</div>
+                <div class={`${cls} mt-1 truncate text-[1.1rem] text-ink`}>{sample}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="xline">
+    <div class="grid gap-8 px-6 py-10 md:px-10 md:py-14 lg:grid-cols-[180px_minmax(0,1fr)]">
+      <nav aria-label="Primitives" class="lg:sticky lg:top-24 lg:self-start">
+        <div class="tag mb-2">primitives</div>
+        <ul class="flex flex-wrap gap-1 lg:flex-col lg:gap-0.5">
+          {PRIMITIVES.map((p) => (
+            <li>
+              <a href={`#${p.name}`} class="mono block rounded-md border border-line px-2 py-0.5 text-[0.72rem] text-ink-dim hover:text-ink lg:border-transparent lg:px-0">{p.name}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div class="min-w-0 space-y-14">
+        {PRIMITIVES.map((p) => (
+          <article id={p.name} class="scroll-mt-24">
+            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h3 class="mono text-[1.05rem] text-ink">{p.name}</h3>
+              <span class="mono text-[0.68rem] text-ink-faint">
+                {p.usedBy.length ? `used by ${p.usedBy.length} block${p.usedBy.length === 1 ? "" : "s"}` : "shipped with the app"}
+              </span>
+            </div>
+            <p class="mt-1 text-[0.9rem] text-ink-dim">{p.description}</p>
+            <div class="mt-4">
+              <PrimitiveDemo client:visible name={p.name} />
+            </div>
+            <div class="mt-3 flex flex-wrap items-center gap-1">
+              <code class="mono mr-2 rounded-md border border-line bg-paper-sunken px-2 py-0.5 text-[0.7rem] text-ink-dim">components/ui/{p.name}.tsx</code>
+              {p.usedBy.map((b) => (
+                <a href={`/blocks#${b}`} class="mono rounded-md border border-line px-1.5 py-0.5 text-[0.66rem] text-ink-faint hover:border-line-strong hover:text-ink">{b}</a>
+              ))}
+            </div>
+          </article>
+        ))}
+        <p class="mono text-[0.72rem] text-ink-faint">
+          These are the files in the reference app's components/ui, synced into this site — not a copy styled to match. sonner is installed too and mounted by the app root, so it has no demo here.
+          <a href={`${SITE.github}/tree/main/apps/app/components/ui`} class="ml-1 hover:text-ink">apps/app/components/ui →</a>
+        </p>
+      </div>
+    </div>
+  </section>
+</Page>
