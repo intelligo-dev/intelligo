@@ -6,9 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+# Read-only token. Nothing in CI writes to the repository; the release
+# workflow is the one place that holds write access.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer push to a pull request supersedes the older run. A run on
+  # main always finishes: the release workflow waits for it.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Dummy values for modules that instantiate at import time (better-auth,
 # stripe client, resend) — without them `next build`'s page-data
@@ -35,13 +42,11 @@ jobs:
     timeout-minutes: 25
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0 — pnpm version from packageManager
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           # Node 22 — matches Vercel's default runtime for Next.js 16
           # and has util.markAsUncloneable (added in 21.0.0) which
@@ -65,9 +70,14 @@ jobs:
       # exists for `next build`, but the real-database suites gate on
       # the variable being set and would try to connect to it. They run
       # against a live Postgres in the `database` job below.
+      #
+      # INTELLIGO_PRIVATE_VOCABULARY is the product-name list the
+      # publishability test keeps out of the tree. It is a secret, so a
+      # fork's pull request runs without it and only the generic rules.
       - name: Unit tests and architecture rules
         env:
           DATABASE_URL: ""
+          INTELLIGO_PRIVATE_VOCABULARY: ${{ secrets.PRIVATE_VOCABULARY }}
         run: pnpm test
 
       # doctor reports the drift that otherwise only shows up when
@@ -236,7 +246,7 @@ jobs:
           # Items name Intelligo's own components as @intelligo/<name>. Serve
           # the registry this run just built and point the namespace at it,
           # so an item is tested against its siblings, not the deployed site.
-          npx --yes http-server "$GITHUB_WORKSPACE/packages/registry/public/r" -p 8399 -s &
+          npx --yes http-server@14.1.1 "$GITHUB_WORKSPACE/packages/registry/public/r" -p 8399 -s &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8399/intelligo.json >/dev/null && break; sleep 1; done
           node -e 'const fs=require("fs");const c=JSON.parse(fs.readFileSync("components.json","utf8"));c.registries={...c.registries,"@intelligo":"http://127.0.0.1:8399/{name}.json"};fs.writeFileSync("components.json",JSON.stringify(c,null,2))'
 
@@ -290,23 +300,6 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: "pnpm"
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm turbo build
-
   database:
     name: Migrations and database integration tests
     runs-on: ubuntu-latest
@@ -332,11 +325,9 @@ jobs:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/intelligo_ci
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0 — pnpm version from packageManager
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: "pnpm"

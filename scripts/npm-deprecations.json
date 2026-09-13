@@ -1,5 +1,5 @@
 {
-  "$comment": "npm names the framework no longer publishes, each with where the code went. The release workflow applies these after every publish; npm deprecate is idempotent, so the list only ever grows.",
+  "$comment": "npm names the framework no longer publishes, each with where the code went. A maintainer applies these with `node scripts/npm-maintain.mjs` (trusted publishing cannot deprecate); an entry already on the registry is skipped, so the list only ever grows.",
   "deprecations": [
     {
       "name": "@intelligo-dev/money",

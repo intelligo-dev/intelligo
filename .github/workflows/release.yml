@@ -4,17 +4,22 @@ name: Release
 # npm does not have yet.
 #
 # A release is one commit: bump every packages/*/package.json to the
-# new version and head CHANGELOG.md with a section for it. Merging it
-# to main does the rest — build, the full test suite, `pnpm publish -r`
-# with provenance, the `vX.Y.Z` tag, a GitHub release whose notes are
-# that CHANGELOG section, and the npm deprecations listed in
-# scripts/npm-deprecations.json. Nothing here is a second source of
-# truth: the version is what the manifests say, the notes are what
-# the changelog says.
+# new version and head CHANGELOG.md with a section for it. Once CI has
+# passed on that commit, this workflow builds, runs the full suite,
+# packs each package and publishes it, pushes the `vX.Y.Z` tag and
+# creates a GitHub release whose notes are that CHANGELOG section.
+# Nothing here is a second source of truth: the version is what the
+# manifests say, the notes are what the changelog says.
+#
+# There is no npm token. Every @intelligo-dev package names this file,
+# in the `npm` environment of intelligo-mn/framework, as its trusted
+# publisher; npm checks the run's OIDC identity at publish time and
+# attaches provenance. The registry work OIDC cannot do — deprecating
+# a folded package, moving a dist-tag — is scripts/npm-maintain.mjs,
+# which a maintainer runs.
 #
 # Pushing a `v*` tag by hand still works and is the fallback; the tag
-# must equal the manifests' version. Needs an `NPM_TOKEN` repository
-# secret (an npm automation token with publish rights on @intelligo-dev).
+# must equal the manifests' version.
 #
 # The npm dist-tag follows the version: `1.0.0-beta.2` publishes under
 # `beta`, `1.0.0-rc.1` under `rc`, and a plain `1.0.0` under `latest`.
@@ -22,13 +27,15 @@ name: Release
 # resolves to.
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
+  push:
     tags: ["v*"]
   workflow_dispatch:
 
-permissions:
-  contents: write # the tag and the GitHub release
+permissions: {}
 
 # One release at a time, and never cancelled halfway through a publish.
 concurrency:
@@ -38,23 +45,38 @@ concurrency:
 jobs:
   publish:
     name: Publish to npm
+    # A green CI run for a push to main, a version tag, or a manual run
+    # from main. A branch or a pull request cannot reach the publish.
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment: npm
+    permissions:
+      contents: write # the tag and the GitHub release
+      id-token: write # npm trusted publishing and provenance
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # workflow_run checks out main's newest commit; publish the
+          # commit CI actually passed.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0 — pnpm version from packageManager
 
-      - uses: actions/setup-node@v4
+      # No dependency cache: a release builds from a clean install.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
-          cache: "pnpm"
-          registry-url: "https://registry.npmjs.org"
+
+      # Trusted publishing needs npm 11.5.1 or newer; Node 22 ships 10.
+      - run: npm install -g npm@11.19.1
 
       - run: pnpm install --frozen-lockfile
 
@@ -86,24 +108,35 @@ jobs:
             *-*) dist_tag="${version#*-}"; dist_tag="${dist_tag%%.*}" ;;
             *)   dist_tag="latest" ;;
           esac
+          # npm refuses a dist-tag that parses as a version range.
+          if [[ "$dist_tag" =~ ^[0-9v] ]]; then
+            echo "$version would publish under dist-tag \"$dist_tag\"; use a named prerelease (1.0.0-beta.1)"
+            exit 1
+          fi
           node scripts/release-notes.mjs "$version" > "$RUNNER_TEMP/release-notes.md"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "dist-tag=$dist_tag" >> "$GITHUB_OUTPUT"
           echo "$version under dist-tag $dist_tag"
 
-      # Most pushes to main are not releases: the version is already on
-      # npm and there is nothing to do. A tag pushed after a maintainer
-      # published from a workstation lands here too.
+      # Most CI runs on main are not releases: every package is already
+      # on npm at this version and there is nothing to do. A tag pushed
+      # after a maintainer published from a workstation lands here too.
       - name: Already on npm?
         id: check
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          version="${{ steps.version.outputs.version }}"
-          if npm view "@intelligo-dev/core@$version" version >/dev/null 2>&1; then
-            echo "published=true" >> "$GITHUB_OUTPUT"
-            echo "@intelligo-dev/core@$version is already on npm — nothing to publish"
-          else
-            echo "published=false" >> "$GITHUB_OUTPUT"
-          fi
+          set -euo pipefail
+          published=true
+          for dir in packages/*/; do
+            if [ "$(node -p "require('./$dir/package.json').private === true")" = "true" ]; then continue; fi
+            name=$(node -p "require('./$dir/package.json').name")
+            if ! npm view "$name@$VERSION" version >/dev/null 2>&1; then
+              echo "$name@$VERSION is not on npm yet"
+              published=false
+            fi
+          done
+          echo "published=$published" >> "$GITHUB_OUTPUT"
 
       - if: steps.check.outputs.published != 'true'
         run: pnpm turbo build
@@ -115,47 +148,31 @@ jobs:
         env:
           DATABASE_URL: ""
 
-      # `pnpm publish -r` orders by dependency, rewrites workspace:*
-      # ranges to the published version, skips private workspaces and
-      # skips versions already on the registry — so a re-run after a
-      # partial failure is safe.
-      #
-      # No provenance yet: npm verifies the sigstore bundle against the
-      # source repository and refuses a private one (E422). When this
-      # repository goes public, add `id-token: write` to the permissions
-      # above and `NPM_CONFIG_PROVENANCE: "true"` here, and every
-      # tarball links to the run that built it on its npm page.
+      # `pnpm pack` rewrites workspace:* ranges to the version and swaps
+      # in publishConfig; `npm publish` of the tarball is what speaks
+      # trusted publishing. core goes first because every other package
+      # depends on it, and a version already on the registry is skipped,
+      # so a re-run after a partial failure is safe.
       - name: Publish
         if: steps.check.outputs.published != 'true'
-        run: pnpm publish -r --access public --no-git-checks --tag "${{ steps.version.outputs.dist-tag }}"
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      # Names the framework stopped publishing, pointed at where the
-      # code went. npm answers 422 to a deprecation that changes nothing,
-      # so each is applied only when its message differs from what the
-      # registry already carries.
-      - name: Deprecate folded packages
-        if: steps.check.outputs.published != 'true'
+          DIST_TAG: ${{ steps.version.outputs.dist-tag }}
         run: |
           set -euo pipefail
-          node -e '
-            const { deprecations } = require("./scripts/npm-deprecations.json");
-            for (const d of deprecations) console.log(`${d.name}\t${d.message}`);
-          ' | while IFS=$'\t' read -r name message; do
-            if ! npm view "$name" version >/dev/null 2>&1; then
-              echo "$name was never on npm — nothing to deprecate"
+          out="$RUNNER_TEMP/pack"
+          mkdir -p "$out"
+          for dir in packages/core/ $(ls -d packages/*/ | grep -vx 'packages/core/'); do
+            if [ "$(node -p "require('./$dir/package.json').private === true")" = "true" ]; then continue; fi
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version is already on npm"
               continue
             fi
-            current=$(npm view "$name" deprecated 2>/dev/null || true)
-            if [ "$current" = "$message" ]; then
-              echo "$name is already deprecated with this message"
-            else
-              npm deprecate "$name@*" "$message" && echo "deprecated $name"
-            fi
+            rm -f "$out"/*.tgz
+            (cd "$dir" && pnpm pack --pack-destination "$out" >/dev/null)
+            npm publish "$out"/*.tgz --access public --tag "$DIST_TAG"
           done
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # The tag records which commit shipped; a push by GITHUB_TOKEN
       # does not trigger this workflow again. Runs whether or not this
@@ -164,28 +181,30 @@ jobs:
       # tag exists (a hand-pushed one included).
       - name: Tag
         if: "!startsWith(github.ref, 'refs/tags/')"
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          version="${{ steps.version.outputs.version }}"
-          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null 2>&1; then
-            echo "tag v$version exists"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "tag v$VERSION exists"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "v$version"
-          git push origin "v$version"
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
 
       - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          DIST_TAG: ${{ steps.version.outputs.dist-tag }}
         run: |
           set -euo pipefail
-          version="${{ steps.version.outputs.version }}"
-          if gh release view "v$version" >/dev/null 2>&1; then
-            echo "release v$version exists"
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "release v$VERSION exists"
             exit 0
           fi
           prerelease=""
-          if [ "${{ steps.version.outputs.dist-tag }}" != "latest" ]; then prerelease="--prerelease"; fi
-          gh release create "v$version" --title "v$version" --notes-file "$RUNNER_TEMP/release-notes.md" $prerelease
-        env:
-          GH_TOKEN: ${{ github.token }}
+          if [ "$DIST_TAG" != "latest" ]; then prerelease="--prerelease"; fi
+          gh release create "v$VERSION" --title "v$VERSION" --notes-file "$RUNNER_TEMP/release-notes.md" $prerelease
