@@ -2288,6 +2288,23 @@
           "target": "messages/en/chat-share.json"
         }
       ]
+    },
+    {
+      "name": "chat-eve",
+      "type": "registry:lib",
+      "title": "Chat: eve binding",
+      "description": "eve through the chat transport: a streamTurn for lib/chat-server-config.ts that runs a turn as an eve session over HTTP and NDJSON and maps its events to the AI SDK's chunks \u2014 text, reasoning, tool calls, approvals, questions, subagents, authorization \u2014 so an eve agent renders through the same tool renderers as any other. Consumer-owned; imports nothing from eve. Requires the chat item.",
+      "dependencies": [
+        "ai@^6.0.77",
+        "@intelligo-dev/chat"
+      ],
+      "files": [
+        {
+          "path": "base/chat-eve/lib/chat-eve.ts",
+          "type": "registry:lib",
+          "target": "lib/chat-eve.ts"
+        }
+      ]
     }
   ]
 }

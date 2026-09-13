@@ -50,6 +50,42 @@ import "server-only";
  * or injects profile context does it there. See `ChatServerConfig` in
  * `@intelligo-dev/chat` for every seam.
  *
+ * Another runtime than `streamText` — a Mastra agent, an eve session —
+ * binds `streamTurn` and keeps everything else: auth, the rate limit,
+ * the gate, admission, persistence and settlement stay the transport's
+ * (ADR-0003: the framework carries no helper for any AI framework; the
+ * binding is yours, here). Mastra, natively, through `@mastra/ai-sdk`:
+ *
+ *   import { handleChatStream } from "@mastra/ai-sdk";
+ *   import { mastra } from "@/lib/mastra";
+ *
+ *   streamTurn: async (turn, prepared, { abortSignal }) => {
+ *     const stream = await handleChatStream({
+ *       mastra,
+ *       agentId: turn.agent.id,
+ *       version: "v6",
+ *       params: {
+ *         messages: prepared.messages,
+ *         memory: { thread: turn.conversationId, resource: turn.userId },
+ *         abortSignal,
+ *       },
+ *     });
+ *     // `usage`: settle from the agent's whole-run totals. Mastra reports
+ *     // them on its finish chunk; read them off the stream, or run
+ *     // `agent.stream()` yourself and resolve `result.totalUsage`.
+ *     return { stream, usage };
+ *   },
+ *
+ * eve: install the `chat-eve` item and bind `eveStreamTurn` from
+ * `@/lib/chat-eve` — the session id and cursor live in the
+ * conversation's metadata, approvals and questions round-trip as eve
+ * input responses, and its events render as this chat's parts.
+ *
+ * A tool that produces a document streams it into the canvas with
+ * `createArtifactWriter(turn, { kind, title })` from `@intelligo-dev/chat`
+ * — `append` deltas, `finish({ documentId })` — and any tool writes a
+ * status line or a plan with `turn.write({ type: "data-chat-status", … })`.
+ *
  * i18n: the route lives at `app/api/chat/route.ts`, outside the
  * `[locale]` segment (ADR-0010), so there is no URL segment to read a
  * locale from. `messages` below reads the `NEXT_LOCALE` cookie
