@@ -25,7 +25,7 @@ const REGISTRY = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export function derivePaths(registry) {
   const paths = {};
   for (const item of registry.items) {
-    for (const file of item.files) {
+    for (const file of item.files ?? []) {
       if (!file.target || !/\.tsx?$/.test(file.target)) continue;
       const key = "@/" + file.target.replace(/\.tsx?$/, "");
       paths[key] = ["./" + file.path.replace(/\.tsx?$/, "")];
