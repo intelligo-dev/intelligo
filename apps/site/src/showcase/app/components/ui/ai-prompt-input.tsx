@@ -311,12 +311,18 @@ function PromptInputBody({ className, ...props }: React.ComponentProps<"div">) {
 
 function PromptInputTextarea({
   className,
+  onKeyDown,
+  onPaste,
   ...props
 }: React.ComponentProps<typeof InputGroupTextarea>) {
   const attachments = usePromptInputAttachments();
   const [isComposing, setIsComposing] = React.useState(false);
 
+  // A caller's handlers run first; what they `preventDefault` on, the
+  // composer leaves alone (a menu taking Escape, an ArrowUp recall).
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    onKeyDown?.(event);
+    if (event.defaultPrevented) return;
     if (event.key === "Enter") {
       if (isComposing || event.nativeEvent.isComposing || event.shiftKey) {
         return;
@@ -343,6 +349,8 @@ function PromptInputTextarea({
   }
 
   function handlePaste(event: React.ClipboardEvent<HTMLTextAreaElement>) {
+    onPaste?.(event);
+    if (event.defaultPrevented) return;
     const pasted: File[] = [];
     for (const item of event.clipboardData?.items ?? []) {
       if (item.kind === "file") {

@@ -37,7 +37,7 @@ overrides:
   nanoid: '>=3.3.18'
   js-yaml@3: ^3.15.1
   ip-address: '>=10.3.1'
-  linkify-it: ^5.0.2
+  linkify-it@5: ^5.0.2
   js-yaml@4: ^4.3.1
   postcss: '>=8.5.23'
   sharp: '>=0.35.0'
@@ -6066,6 +6066,9 @@ packages:
 
   linkify-it@5.0.2:
     resolution: {integrity: sha512-ONTm2jCMAVZjgQa/Fy1kScXsuOoF5NPTsoFBdE1KVIZ2vAh/r9+Bqo+0jINCBYnavTPQZz38QzFTme79ENoN3Q==}
+
+  linkify-it@6.1.0:
+    resolution: {integrity: sha512-wJ/TwpSDTLepCrQoYWYIExIKg5Zchex2Nn5yk2mFnB+6PtdkHtyLx742md9csRjjOnGkKIS/RrbY7l8D6gT9Vw==}
 
   locate-path@6.0.0:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
@@ -13418,6 +13421,10 @@ snapshots:
     dependencies:
       uc.micro: 2.1.0
 
+  linkify-it@6.1.0:
+    dependencies:
+      uc.micro: 3.0.0
+
   locate-path@6.0.0:
     dependencies:
       p-locate: 5.0.0
@@ -13482,7 +13489,7 @@ snapshots:
     dependencies:
       argparse: 3.0.2
       entities: 8.1.0
-      linkify-it: 5.0.2
+      linkify-it: 6.1.0
       mdurl: 2.1.0
       punycode.js: 2.3.1
       uc.micro: 3.0.0

@@ -210,6 +210,16 @@ export function Message({
     (last, part, index) => (isTextUIPart(part) ? index : last),
     -1
   );
+  // A document a tool returned draws once: the tool's card. The
+  // streamed `data-chat-artifact` part for the same document is what
+  // opened the canvas, not a second card.
+  const documentsShownByTools = new Set<string>();
+  for (const part of message.parts) {
+    if (!isToolUIPart(part) || part.state !== "output-available") continue;
+    const output = part.output as { documentId?: unknown; id?: unknown } | undefined;
+    const id = output?.documentId ?? output?.id;
+    if (typeof id === "string") documentsShownByTools.add(id);
+  }
 
   if (isUser && editing) {
     return (
@@ -340,6 +350,15 @@ export function Message({
             const Renderer = getDataRenderer(name);
             if (!Renderer) return null;
             const data = part as { id?: string; data: unknown };
+            if (name === "chat-artifact") {
+              const artifact = data.data as { id?: string; documentId?: string };
+              if (
+                (artifact.documentId && documentsShownByTools.has(artifact.documentId)) ||
+                (artifact.id && documentsShownByTools.has(artifact.id))
+              ) {
+                return null;
+              }
+            }
             return (
               <Renderer
                 key={data.id ? `${message.id}-data-${data.id}` : key}

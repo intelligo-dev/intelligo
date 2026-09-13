@@ -24,7 +24,10 @@ import "server-only";
  */
 
 import type { LanguageModel } from "ai";
-import { createStubLanguageModel } from "@intelligo-dev/chat/testing";
+import {
+  createStubLanguageModel,
+  type StubPrompt,
+} from "@intelligo-dev/chat/testing";
 import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 
@@ -63,10 +66,13 @@ async function resolveLocale(): Promise<string> {
  * One call per turn: once the transcript carries a saveArtifact call,
  * the follow-up step reports instead of calling again.
  */
-function callsTool(userText: string, prompt: unknown): boolean {
+function callsTool(userText: string, prompt: StubPrompt): boolean {
+  // Only the conversation counts: the system prompt names the tool too,
+  // and a check over the whole prompt would never let the call happen.
+  const transcript = prompt.filter((message) => message.role !== "system");
   return (
     TOOL_TRIGGER.test(userText) &&
-    !JSON.stringify(prompt).includes("saveArtifact")
+    !JSON.stringify(transcript).includes("saveArtifact")
   );
 }
 

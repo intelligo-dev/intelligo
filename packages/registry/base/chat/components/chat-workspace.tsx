@@ -6,8 +6,11 @@
  * document, its streamed content so far — so the thread and every
  * card can open, feed and close the same panel.
  *
- * From `lg` up the two sit in a resizable split; below, the canvas is
- * a sheet over the thread.
+ * From `lg` up the two sit side by side; below, the canvas is a sheet
+ * over the thread. The thread keeps one place in the tree either way:
+ * a layout that moved or remounted it would drop the conversation in
+ * flight (a resizable panel group did exactly that when its panel
+ * count changed).
  */
 
 import { useCallback, useRef, useState } from "react";
@@ -19,11 +22,6 @@ import type {
   ChatModelOption,
 } from "@intelligo-dev/chat/client";
 
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { CanvasRef } from "@/lib/chat-renderers";
@@ -108,9 +106,7 @@ export function ChatWorkspace({
     />
   );
 
-  if (!canvas) return thread;
-
-  const panel = (
+  const panel = canvas ? (
     <ChatCanvas
       canvas={canvas}
       onClose={closeCanvas}
@@ -121,13 +117,13 @@ export function ChatWorkspace({
         )
       }
     />
-  );
+  ) : null;
 
   if (isMobile) {
     return (
       <>
         {thread}
-        <Sheet open onOpenChange={(open) => !open && closeCanvas()}>
+        <Sheet open={canvas !== null} onOpenChange={(open) => !open && closeCanvas()}>
           <SheetContent side="right" className="w-full p-0 sm:max-w-xl">
             <SheetTitle className="sr-only">{t("canvas.title")}</SheetTitle>
             {panel}
@@ -138,14 +134,13 @@ export function ChatWorkspace({
   }
 
   return (
-    <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
-      <ResizablePanel defaultSize={55} minSize={35}>
-        <div className="flex h-full min-h-0 flex-col">{thread}</div>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={45} minSize={25}>
-        {panel}
-      </ResizablePanel>
-    </ResizablePanelGroup>
+    <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">{thread}</div>
+      {canvas ? (
+        <aside className="flex w-2/5 min-w-80 shrink-0 flex-col border-l">
+          {panel}
+        </aside>
+      ) : null}
+    </div>
   );
 }
