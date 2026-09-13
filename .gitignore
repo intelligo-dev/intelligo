@@ -56,3 +56,7 @@ packages/registry/tsconfig.paths.json
 
 # Packed tarballs for testing a consumer against unpublished packages (`pnpm pack`).
 .packed/
+
+# The private product vocabulary the publishability test reads
+# (tests/architecture/publishability.test.ts). Never committed.
+.private-vocabulary

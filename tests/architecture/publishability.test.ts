@@ -23,6 +23,9 @@ import { APPS_DIR, PACKAGES_DIR, ROOT, listWorkspaces, walk } from "./tree";
 
 type PackageManifest = {
   private?: boolean;
+  description?: string;
+  keywords?: string[];
+  repository?: { type?: string; url?: string; directory?: string };
   files?: string[];
   engines?: { node?: string };
   sideEffects?: false | string[];
@@ -105,30 +108,49 @@ const SECRET_PATTERNS: {
 ];
 
 /**
- * The vocabulary of the products built on this framework. Each entry
- * carries a sample the pattern must match, so a regex that stops
- * matching cannot quietly stop ruling.
+ * The vocabulary of the products built on this framework: their names,
+ * brands and hostnames. None of them has a place in a framework
+ * package, a registry item, the reference app or the docs — a comment
+ * that needs one is a boundary being described instead of held
+ * (AGENTS.md).
  *
- * `private/` was the incubation repository's product workspace and
- * `@example/product|acme` its packages; the rest are the
- * product's names, brands and hostnames. None of them has a place in a
- * framework package, a registry item, the reference app or the docs —
- * a comment that needs one is a boundary being described instead of
- * held (AGENTS.md).
+ * Only the generic rules live in this file. Listing a product here
+ * would publish the very names the rule keeps out, so the specific
+ * list is read from `INTELLIGO_PRIVATE_VOCABULARY` (CI takes it from a
+ * repository secret) or from a gitignored `.private-vocabulary` file:
+ * one case-insensitive regular expression per line, optionally
+ * followed by ` || <sample>`, `#` for comments. Where neither exists —
+ * a fork's pull request — only the generic rules run; on a push to
+ * main a missing list fails the build instead of going quiet.
+ *
+ * An entry with a sample must match it, so a regex that stops matching
+ * cannot quietly stop ruling.
  */
-const PRIVATE_VOCABULARY: { re: RegExp; sample: string }[] = [
-  { re: /\bignite\b/i, sample: "Acme" },
-  { re: /\bcareer\b/i, sample: "Support" },
-  { re: /exam/, sample: "exam" },
-  { re: /\bsesh\b/i, sample: "study" },
-  { re: /\bzochin\b/i, sample: "PRODUCT_CREDITS" },
-  { re: /example/i, sample: "example" },
-  { re: /acme\.mn/i, sample: "app.example.com" },
-  { re: /@intelligo-dev\/(support|acme)\b/, sample: "@example/product" },
-  { re: /\bprivate\/[a-z]/, sample: "product/app" },
+const GENERIC_VOCABULARY: { re: RegExp; sample?: string }[] = [
+  { re: /\bprivate\/[a-z]/, sample: "private/app" },
   { re: /\bincubation\b/i, sample: "incubation" },
   { re: /extract-public/, sample: "scripts/extract-public.ts" },
 ];
+
+function privateVocabulary(): { re: RegExp; sample?: string }[] {
+  const file = path.join(ROOT, ".private-vocabulary");
+  const source =
+    process.env.INTELLIGO_PRIVATE_VOCABULARY ||
+    (existsSync(file) ? readFileSync(file, "utf8") : "");
+  return source
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"))
+    .map((line) => {
+      const at = line.lastIndexOf(" || ");
+      const pattern = at === -1 ? line : line.slice(0, at).trim();
+      const sample = at === -1 ? undefined : line.slice(at + 4).trim();
+      return { re: new RegExp(pattern, "i"), sample };
+    });
+}
+
+const PRIVATE_ENTRIES = privateVocabulary();
+const PRIVATE_VOCABULARY = [...GENERIC_VOCABULARY, ...PRIVATE_ENTRIES];
 
 /**
  * Where the vocabulary rule does not look.
@@ -136,18 +158,12 @@ const PRIVATE_VOCABULARY: { re: RegExp; sample: string }[] = [
  *   - `packages/core/src/db/migrations`: `intelligo migrate` hashes
  *     every .sql file, so their contents are frozen; the snapshots
  *     beside them describe those same files.
- *   - `CHANGELOG.md` and `docs/adr`: the record of how the framework
- *     came to be, which names the product that motivated it.
- *   - `apps/site`: the marketing site, which may say who uses it.
  *   - `packages/registry/public`: build output of `packages/registry/base`,
  *     already scanned.
- *   - this file, which names the vocabulary in order to forbid it.
+ *   - this file, which describes the rule.
  */
 const VOCABULARY_EXEMPT = [
   "packages/core/src/db/migrations/",
-  "CHANGELOG.md",
-  "docs/adr/",
-  "apps/site/",
   "packages/registry/public/",
   "tests/architecture/publishability.test.ts",
   "pnpm-lock.yaml",
@@ -265,6 +281,64 @@ describe("publishability", () => {
     }
   });
 
+  it("puts the NOTICE in every package", () => {
+    // Apache-2.0 §4(d): a NOTICE file that ships with the work ships
+    // with every redistribution of it.
+    const rootNotice = readFileSync(path.join(ROOT, "NOTICE"), "utf8");
+
+    for (const pkg of PUBLISHED) {
+      const noticePath = path.join(PACKAGES_DIR, pkg, "NOTICE");
+      expect(
+        existsSync(noticePath),
+        `packages/${pkg} has no NOTICE file to publish`
+      ).toBe(true);
+      expect(
+        readFileSync(noticePath, "utf8"),
+        `packages/${pkg}'s NOTICE differs from the repository's`
+      ).toBe(rootNotice);
+      expect(
+        manifest(pkg).files ?? [],
+        `packages/${pkg} does not list NOTICE in "files", so it will not ship`
+      ).toContain("NOTICE");
+    }
+  });
+
+  it("describes every package and links it to its source", () => {
+    // npm search and the package page render these; without them a
+    // package is a name with nothing under it.
+    for (const pkg of PUBLISHED) {
+      const m = manifest(pkg);
+      expect(
+        m.description?.trim(),
+        `packages/${pkg} has no description`
+      ).toBeTruthy();
+      expect(
+        m.keywords?.length ?? 0,
+        `packages/${pkg} has no keywords`
+      ).toBeGreaterThan(0);
+      expect(m.repository?.url, `packages/${pkg} repository.url`).toBe(
+        "git+https://github.com/intelligo-mn/framework.git"
+      );
+      expect(
+        m.repository?.directory,
+        `packages/${pkg} repository.directory`
+      ).toBe(`packages/${pkg}`);
+    }
+  });
+
+  it("ships the sources its maps point at", () => {
+    // tsc's .js.map and .d.ts.map files name ../src. Without src in
+    // the tarball, a consumer's debugger and go-to-definition land on
+    // a file that does not exist.
+    for (const pkg of PUBLISHED) {
+      const files = manifest(pkg).files ?? [];
+      expect(files, `packages/${pkg} does not ship src`).toContain("src");
+      expect(files, `packages/${pkg} would publish its tests`).toContain(
+        "!src/**/*.test.ts"
+      );
+    }
+  });
+
   it("gives every package an npm page and a runtime floor", () => {
     for (const pkg of PUBLISHED) {
       expect(
@@ -357,6 +431,8 @@ describe("publishability", () => {
   it("ships a LICENSE and the governance documents", () => {
     for (const file of [
       "LICENSE",
+      "NOTICE",
+      "CODE_OF_CONDUCT.md",
       "SECURITY.md",
       "CONTRIBUTING.md",
       "TRADEMARK.md",
@@ -431,8 +507,23 @@ describe("publishability", () => {
   });
 
   describe("private vocabulary", () => {
+    it("is configured wherever the build can see the secret", () => {
+      // A push to main runs with repository secrets. A list that is
+      // missing there is a rule that silently stopped running.
+      if (
+        process.env.GITHUB_ACTIONS === "true" &&
+        process.env.GITHUB_EVENT_NAME === "push"
+      ) {
+        expect(
+          PRIVATE_ENTRIES.length,
+          "INTELLIGO_PRIVATE_VOCABULARY is empty on a push build"
+        ).toBeGreaterThan(0);
+      }
+    });
+
     it("has patterns that still match their sample", () => {
       for (const { re, sample } of PRIVATE_VOCABULARY) {
+        if (sample === undefined) continue;
         expect(re.test(sample), `${re} no longer matches "${sample}"`).toBe(
           true
         );

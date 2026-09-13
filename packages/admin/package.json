@@ -1,7 +1,19 @@
 {
   "name": "@intelligo-dev/admin",
   "version": "1.0.0-beta.6",
+  "description": "The operational console: cross-tenant queries, health probes and impersonation.",
+  "keywords": [
+    "intelligo",
+    "ai-saas",
+    "saas",
+    "typescript",
+    "admin",
+    "operations",
+    "impersonation",
+    "multi-tenant"
+  ],
   "license": "Apache-2.0",
+  "author": "Turtuvshin Byambaa <toroo.byamba@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/intelligo-mn/framework.git",
@@ -45,7 +57,12 @@
   },
   "files": [
     "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/__tests__/**",
     "LICENSE",
+    "NOTICE",
     "README.md",
     "!dist/**/*.tsbuildinfo"
   ],

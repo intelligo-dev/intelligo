@@ -1,7 +1,18 @@
 {
   "name": "@intelligo-dev/audit",
   "version": "1.0.0-beta.6",
+  "description": "Append-only audit events, with a database trigger that means it.",
+  "keywords": [
+    "intelligo",
+    "ai-saas",
+    "saas",
+    "typescript",
+    "audit-log",
+    "append-only",
+    "postgres"
+  ],
   "license": "Apache-2.0",
+  "author": "Turtuvshin Byambaa <toroo.byamba@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/intelligo-mn/framework.git",
@@ -32,7 +43,12 @@
   },
   "files": [
     "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/__tests__/**",
     "LICENSE",
+    "NOTICE",
     "README.md",
     "!dist/**/*.tsbuildinfo"
   ],

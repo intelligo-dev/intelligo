@@ -1,7 +1,20 @@
 {
   "name": "@intelligo-dev/executions",
   "version": "1.0.0-beta.6",
+  "description": "The execution lifecycle (admission, running, settlement) and the model cost registry.",
+  "keywords": [
+    "intelligo",
+    "ai-saas",
+    "saas",
+    "typescript",
+    "llm",
+    "usage",
+    "cost",
+    "metering",
+    "execution-boundary"
+  ],
   "license": "Apache-2.0",
+  "author": "Turtuvshin Byambaa <toroo.byamba@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/intelligo-mn/framework.git",
@@ -36,7 +49,12 @@
   },
   "files": [
     "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/__tests__/**",
     "LICENSE",
+    "NOTICE",
     "README.md",
     "!dist/**/*.tsbuildinfo"
   ],
