@@ -44,28 +44,28 @@ const OPEN: { icon: LucideIcon; title: string; body: string; href: string; cta: 
       title="Not a pitch. A count."
       lede="Counted from the framework repository, not typed into a landing page — and every decision behind the numbers is public."
     />
-    <div class="reveal mt-8 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+    <div class="reveal mt-8 grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
       {PROOF_STATS.map((s) => (
-        <div class="bg-paper-raised p-5 top-shade">
-          <div class="heading text-[2.6rem] font-semibold leading-none tabular-nums text-ink">{s.value}</div>
-          <div class="mono mt-2 text-[0.66rem] uppercase tracking-[0.08em] text-ink-faint">{s.label}</div>
-          <p class="mt-3 text-[0.82rem] text-ink-dim">{s.note}</p>
+        <div class="bg-card p-5 top-shade">
+          <div class="heading text-[2.6rem] font-semibold leading-none tabular-nums text-foreground">{s.value}</div>
+          <div class="mono mt-2 text-[0.66rem] uppercase tracking-[0.08em] text-muted-foreground">{s.label}</div>
+          <p class="mt-3 text-[0.82rem] text-foreground/70">{s.note}</p>
         </div>
       ))}
     </div>
-    <p class="mono mt-3 text-[0.7rem] text-ink-faint">
-      counted {PROOF.sampledAt} · v{PROOF.version} · <a href={`${SITE.github}/blob/main/apps/site/scripts/sync-framework.mjs`} class="hover:text-ink">by a script, committed with the site →</a>
+    <p class="mono mt-3 text-[0.7rem] text-muted-foreground">
+      counted {PROOF.sampledAt} · v{PROOF.version} · <a href={`${SITE.github}/blob/main/apps/site/scripts/sync-framework.mjs`} class="hover:text-foreground">by a script, committed with the site →</a>
     </p>
 
-    <ul class="reveal mt-8 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+    <ul class="reveal mt-8 grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
       {OPEN.map(({ icon: Icon, title, body, href, cta }) => (
         <li>
-          <a href={href} class="group flex h-full items-start gap-3 bg-paper px-4 py-3.5 no-underline transition-colors hover:bg-paper-raised">
-            <Icon className="mt-0.5 size-4 shrink-0 text-ink-dim transition-colors group-hover:text-ink" strokeWidth={1.75} aria-hidden="true" />
+          <a href={href} class="group flex h-full items-start gap-3 bg-background px-4 py-3.5 no-underline transition-colors hover:bg-card">
+            <Icon className="mt-0.5 size-4 shrink-0 text-foreground/70 transition-colors group-hover:text-foreground" strokeWidth={1.75} aria-hidden="true" />
             <span class="min-w-0">
-              <span class="block text-[0.9rem] font-semibold text-ink">{title}</span>
-              <span class="mt-0.5 block text-[0.8rem] leading-snug text-ink-dim">{body}</span>
-              <span class="mono mt-2 block text-[0.68rem] text-ink-faint transition-colors group-hover:text-ink">{cta} →</span>
+              <span class="block text-[0.9rem] font-semibold text-foreground">{title}</span>
+              <span class="mt-0.5 block text-[0.8rem] leading-snug text-foreground/70">{body}</span>
+              <span class="mono mt-2 block text-[0.68rem] text-muted-foreground transition-colors group-hover:text-foreground">{cta} →</span>
             </span>
           </a>
         </li>

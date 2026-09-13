@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 import { NAV, SITE } from "@/lib/site";
 import { GitHubStarButton } from "@/components/elements/github-star-button";
 
@@ -8,19 +9,19 @@ function useTheme() {
   useEffect(() => {
     const read = () =>
       setTheme(
-        (document.documentElement.dataset.theme as "light" | "dark") ?? "light"
+        document.documentElement.classList.contains("dark") ? "dark" : "light"
       );
     read();
     const mo = new MutationObserver(read);
     mo.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-theme"],
+      attributeFilter: ["class"],
     });
     return () => mo.disconnect();
   }, []);
   const toggle = () => {
     const next = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
+    document.documentElement.classList.toggle("dark", next === "dark");
     try {
       localStorage.setItem("theme", next);
     } catch {}
@@ -138,7 +139,7 @@ export function Nav({ current }: { current?: string }) {
                 ? "Switch to light theme"
                 : "Switch to dark theme"
             }
-            className="btn btn-ghost w-7 px-0"
+            className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
           >
             {theme === "dark" ? "☾" : "☼"}
           </button>
@@ -149,19 +150,28 @@ export function Nav({ current }: { current?: string }) {
               variant="outline"
             />
           ) : (
-            <a href={SITE.github} className="btn btn-outline">
+            <a
+              href={SITE.github}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
               GitHub
             </a>
           )}
           <a
             href="/#quickstart"
-            className="btn btn-primary hidden sm:inline-flex"
+            className={cn(
+              buttonVariants({ size: "sm" }),
+              "hidden sm:inline-flex"
+            )}
           >
             Get started
           </a>
           <button
             type="button"
-            className="btn btn-outline w-7 px-0 md:hidden"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "icon-sm" }),
+              "md:hidden"
+            )}
             aria-label="Menu"
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}

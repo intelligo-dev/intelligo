@@ -31,21 +31,21 @@ export function BlockCard({ item }: { item: RegistryItem }) {
           {mounted ? (
             <Showcase scene={scene} toaster={false} />
           ) : (
-            <div className="absolute inset-0 animate-pulse bg-paper-sunken" />
+            <div className="absolute inset-0 animate-pulse bg-muted" />
           )}
         </BrowserFrame>
 
         <div className="flex min-w-0 flex-col gap-4">
           <div>
-            <div className="mono text-[0.72rem] text-ink-faint">
+            <div className="mono text-[0.72rem] text-muted-foreground">
               {item.name}
             </div>
-            <h3 className="mt-0.5 text-[1.15rem] font-semibold text-ink">
+            <h3 className="mt-0.5 text-[1.15rem] font-semibold text-foreground">
               <a href={`#${item.name}`} className="hover:underline">
                 {item.title}
               </a>
             </h3>
-            <p className="mt-2 text-[0.88rem] text-ink-dim">
+            <p className="mt-2 text-[0.88rem] text-foreground/70">
               {item.fullDescription}
             </p>
           </div>
@@ -71,12 +71,12 @@ export function BlockCard({ item }: { item: RegistryItem }) {
           )}
 
           <div className="mono grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[0.7rem]">
-            <span className="text-ink-faint">files</span>
-            <span className="text-ink-dim">{item.fileCount}</span>
+            <span className="text-muted-foreground">files</span>
+            <span className="text-foreground/70">{item.fileCount}</span>
             {item.dependencies.length > 0 && (
               <>
-                <span className="text-ink-faint">npm</span>
-                <span className="break-words text-ink-dim">
+                <span className="text-muted-foreground">npm</span>
+                <span className="break-words text-foreground/70">
                   {item.dependencies.join(", ")}
                 </span>
               </>
@@ -84,7 +84,7 @@ export function BlockCard({ item }: { item: RegistryItem }) {
           </div>
 
           {sharedWith.length > 0 && (
-            <p className="mono text-[0.68rem] text-ink-faint">
+            <p className="mono text-[0.68rem] text-muted-foreground">
               Rendered in the same scene as {sharedWith.join(", ")} — one is the
               frame the other renders in.
             </p>
@@ -116,7 +116,7 @@ function Chip({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <a
       href={href}
-      className="mono rounded-md border border-line px-2 py-0.5 text-[0.7rem] text-ink-dim transition-colors hover:border-line-strong hover:text-ink"
+      className="mono rounded-md border border-border px-2 py-0.5 text-[0.7rem] text-foreground/70 transition-colors hover:border-foreground/15 hover:text-foreground"
     >
       {children}
     </a>

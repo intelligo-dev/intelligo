@@ -25,42 +25,41 @@ export function CopyButton({
 }: CopyButtonProps) {
   const { copied, copy } = useCopyToClipboard();
 
-  const handleCopy = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleCopy: CopyButtonProps["onClick"] = (event) => {
     copy(text);
-    onClick?.(event); // ✅ pass event to onClick
+    onClick?.(event);
   };
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          aria-label={copied ? "Copied" : "Copy to clipboard"}
-          disabled={copied || props.disabled}
-          onClick={handleCopy}
-          size={size}
-          variant={variant}
-          {...props}
+      <TooltipTrigger
+        render={
+          <Button
+            aria-label={copied ? "Copied" : "Copy to clipboard"}
+            disabled={copied || props.disabled}
+            onClick={handleCopy}
+            size={size}
+            variant={variant}
+            {...props}
+          />
+        }
+      >
+        <div
+          className={cn(
+            "transition-all",
+            copied ? "scale-100 opacity-100" : "scale-0 opacity-0"
+          )}
         >
-          <div
-            className={cn(
-              "transition-all",
-              copied ? "scale-100 opacity-100" : "scale-0 opacity-0"
-            )}
-          >
-            <CheckIcon
-              aria-hidden="true"
-              className="size-3.5 stroke-emerald-500"
-            />
-          </div>
-          <div
-            className={cn(
-              "absolute transition-all",
-              copied ? "scale-0 opacity-0" : "scale-100 opacity-100"
-            )}
-          >
-            <CopyIcon aria-hidden="true" className="size-3.5" />
-          </div>
-        </Button>
+          <CheckIcon aria-hidden="true" className="size-3.5 stroke-success" />
+        </div>
+        <div
+          className={cn(
+            "absolute transition-all",
+            copied ? "scale-0 opacity-0" : "scale-100 opacity-100"
+          )}
+        >
+          <CopyIcon aria-hidden="true" className="size-3.5" />
+        </div>
       </TooltipTrigger>
       {!disableTooltip && (
         <TooltipContent className="px-2 py-1 text-xs">

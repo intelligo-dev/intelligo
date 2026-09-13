@@ -45,27 +45,27 @@ function Card({
     >
       <motion.article
         style={{ scale, top: `${index * 24}px` }}
-        className="relative grid min-h-[300px] w-full origin-top gap-6 border border-line-strong bg-paper-raised p-6 md:grid-cols-[1.1fr_1fr] md:p-8"
+        className="relative grid min-h-[300px] w-full origin-top gap-6 border border-foreground/15 bg-card p-6 md:grid-cols-[1.1fr_1fr] md:p-8"
       >
         <div>
           <span className="tag">[ {card.tag} ]</span>
-          <h3 className="mt-3 text-[1.35rem] font-semibold leading-tight text-ink md:text-[1.6rem]">
+          <h3 className="mt-3 text-[1.35rem] font-semibold leading-tight text-foreground md:text-[1.6rem]">
             {card.title}
           </h3>
-          <p className="mt-3 max-w-[46ch] text-[0.98rem] text-ink-dim">
+          <p className="mt-3 max-w-[46ch] text-[0.98rem] text-foreground/70">
             {card.body}
           </p>
         </div>
-        <div className="mono self-end border border-line bg-paper-sunken p-3.5 text-[0.76rem] leading-relaxed">
+        <div className="mono self-end border border-border bg-muted p-3.5 text-[0.76rem] leading-relaxed">
           {card.evidence.map((l, i) => (
             <div
               key={i}
               className={
                 l.startsWith("$")
-                  ? "text-ink"
+                  ? "text-foreground"
                   : l.startsWith("✓")
-                    ? "text-settle"
-                    : "text-ink-dim"
+                    ? "text-success"
+                    : "text-foreground/70"
               }
             >
               {l}

@@ -1,9 +1,11 @@
 ---
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import SectionHead from "@/components/section-head.astro";
 import { Quickstart } from "@/components/quickstart";
 import { SITE } from "@/lib/site";
 ---
-<section id="quickstart" class="xline band">
+<section id="quickstart" class="dark xline band">
   <div class="px-6 py-14 md:px-10 md:py-20">
     <SectionHead
       n="06"
@@ -14,16 +16,16 @@ import { SITE } from "@/lib/site";
     <div class="mt-8">
       <Quickstart client:visible />
     </div>
-    <div class="mt-10 flex flex-col items-center gap-4 border-t border-line pt-10 text-center">
+    <div class="mt-10 flex flex-col items-center gap-4 border-t border-border pt-10 text-center">
       <h3 class="heading text-[clamp(1.6rem,3vw,2.2rem)] font-bold leading-tight text-muted-foreground">
         Point your agent at the <span class="text-foreground">30%</span>.
       </h3>
       <p class="max-w-[46ch] text-[0.95rem] text-muted-foreground">Everything else is already here — versioned on npm, installed as source you own, Apache-2.0.</p>
       <div class="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row sm:gap-2">
-        <a href={SITE.github} class="btn btn-primary btn-xl w-full sm:w-auto">Star on GitHub</a>
-        <a href={SITE.docs} class="btn btn-outline btn-xl w-full sm:w-auto">Read the docs</a>
+        <a href={SITE.github} class={cn(buttonVariants({ size: "lg" }), "w-full sm:w-auto")}>Star on GitHub</a>
+        <a href={SITE.docs} class={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full sm:w-auto")}>Read the docs</a>
       </div>
-      <p class="mono text-[0.72rem] text-ink-faint">Database, environment, migrations, AI providers and the other page families are in the docs.</p>
+      <p class="mono text-[0.72rem] text-muted-foreground">Database, environment, migrations, AI providers and the other page families are in the docs.</p>
     </div>
   </div>
 </section>

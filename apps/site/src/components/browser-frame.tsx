@@ -17,16 +17,16 @@ export function BrowserFrame({
   children: ReactNode;
 }) {
   return (
-    <div className={cn("border border-line-strong bg-paper-raised", className)}>
-      <div className="flex h-7 items-center gap-1.5 border-b border-line px-3">
-        <span className="size-2 rounded-full bg-line-strong" />
-        <span className="size-2 rounded-full bg-line-strong" />
-        <span className="size-2 rounded-full bg-line-strong" />
-        <span className="mono ml-2 truncate text-[0.66rem] text-ink-faint">
+    <div className={cn("border border-foreground/15 bg-card", className)}>
+      <div className="flex h-7 items-center gap-1.5 border-b border-border px-3">
+        <span className="size-2 rounded-full bg-foreground/15" />
+        <span className="size-2 rounded-full bg-foreground/15" />
+        <span className="size-2 rounded-full bg-foreground/15" />
+        <span className="mono ml-2 truncate text-[0.66rem] text-muted-foreground">
           {path}
         </span>
         {messages && (
-          <span className="mono ml-auto hidden truncate text-[0.62rem] text-ink-faint sm:inline">
+          <span className="mono ml-auto hidden truncate text-[0.62rem] text-muted-foreground sm:inline">
             {messages}
           </span>
         )}

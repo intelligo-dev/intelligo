@@ -39,13 +39,13 @@ function useThemeVariant(): "light" | "dark" {
   useEffect(() => {
     const read = () =>
       setV(
-        document.documentElement.dataset.theme === "dark" ? "dark" : "light"
+        document.documentElement.classList.contains("dark") ? "dark" : "light"
       );
     read();
     const mo = new MutationObserver(read);
     mo.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-theme"],
+      attributeFilter: ["class"],
     });
     return () => mo.disconnect();
   }, []);
@@ -97,7 +97,7 @@ export function PackageMap() {
       animated: lit,
       color: lit
         ? "var(--accent)"
-        : "color-mix(in srgb, var(--line-strong) 70%, transparent)",
+        : "color-mix(in srgb, color-mix(in oklab, var(--foreground) 15%, transparent) 70%, transparent)",
       pulseColor: "var(--accent)",
     };
   });
@@ -110,7 +110,7 @@ export function PackageMap() {
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
       <div
         ref={wrapRef}
-        className="relative overflow-hidden border border-line-strong bg-paper-raised"
+        className="relative overflow-hidden border border-foreground/15 bg-card"
         style={{ height: H * scale + 2 }}
       >
         {/* layer labels */}
@@ -144,8 +144,8 @@ export function PackageMap() {
             gridSize={24}
             traceWidth={1.5}
             pulseSpeed={2.4}
-            gridColor="color-mix(in srgb, var(--line-strong) 60%, transparent)"
-            nodeColor="var(--line-strong)"
+            gridColor="color-mix(in srgb, color-mix(in oklab, var(--foreground) 15%, transparent) 60%, transparent)"
+            nodeColor="color-mix(in oklab, var(--foreground) 15%, transparent)"
           />
           {/* clickable overlays with labels (CircuitBoard nodes are decorative) */}
           {PACKAGES.map((p) => {
@@ -165,10 +165,10 @@ export function PackageMap() {
                 className={cn(
                   "mono absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap border px-2 py-1 text-[0.72rem] transition-all",
                   isFocus
-                    ? "border-amber bg-amber-soft text-amber"
+                    ? "border-foreground bg-muted text-foreground"
                     : isRelated
-                      ? "border-line-strong bg-paper text-ink"
-                      : "border-line bg-paper text-ink-faint opacity-60",
+                      ? "border-foreground/15 bg-background text-foreground"
+                      : "border-border bg-background text-muted-foreground opacity-60",
                   p.layer === "db" && "rounded-full px-3"
                 )}
                 style={{ left: x, top: y }}
@@ -180,36 +180,36 @@ export function PackageMap() {
         </div>
       </div>
 
-      <aside className="rounded-md border border-line bg-paper-raised p-4">
-        <div className="mono text-[0.72rem] text-ink-faint">
+      <aside className="rounded-md border border-border bg-card p-4">
+        <div className="mono text-[0.72rem] text-muted-foreground">
           {detail.layer === "intelligo"
             ? "@intelligo-dev/"
             : detail.layer === "app"
               ? "your app · "
               : ""}
-          <span className="text-ink">{detail.label}</span>
+          <span className="text-foreground">{detail.label}</span>
         </div>
-        <p className="mt-2 text-[0.95rem] font-medium text-ink">
+        <p className="mt-2 text-[0.95rem] font-medium text-foreground">
           {detail.summary}
         </p>
-        <ul className="mt-3 space-y-1.5 border-t border-line pt-3 text-[0.85rem] text-ink-dim">
+        <ul className="mt-3 space-y-1.5 border-t border-border pt-3 text-[0.85rem] text-foreground/70">
           {detail.bullets.map((b) => (
             <li key={b} className="flex gap-2">
-              <span className="text-settle">✓</span>
+              <span className="text-success">✓</span>
               <span>{b}</span>
             </li>
           ))}
         </ul>
-        <div className="mono mt-4 space-y-1 border-t border-line pt-3 text-[0.7rem] text-ink-faint">
+        <div className="mono mt-4 space-y-1 border-t border-border pt-3 text-[0.7rem] text-muted-foreground">
           <div>
             imports →{" "}
-            <span className="text-ink-dim">
+            <span className="text-foreground/70">
               {outgoing.length ? outgoing.join(", ") : "nothing"}
             </span>
           </div>
           <div>
             imported by ←{" "}
-            <span className="text-ink-dim">
+            <span className="text-foreground/70">
               {incoming.length ? incoming.join(", ") : "nothing"}
             </span>
           </div>

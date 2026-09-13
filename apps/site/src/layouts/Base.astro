@@ -30,8 +30,8 @@ const jsonLd = JSON.stringify({
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#030303" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
     <meta property="og:site_name" content="Intelligo" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -53,7 +53,7 @@ const jsonLd = JSON.stringify({
     />
     <script type="application/ld+json" set:html={jsonLd} />
     <script is:inline>
-      // Stamp data-theme before first paint so tokens and `dark:` agree,
+      // Put `dark` on <html> before first paint so tokens and `dark:` agree,
       // and mark the document as scripted so reveal-on-scroll can hide
       // content — without JS everything stays visible.
       (function () {
@@ -63,7 +63,7 @@ const jsonLd = JSON.stringify({
           var mq = window.matchMedia("(prefers-color-scheme: dark)");
           var apply = function () {
             var t = stored === "light" || stored === "dark" ? stored : mq.matches ? "dark" : "light";
-            document.documentElement.dataset.theme = t;
+            document.documentElement.classList.toggle("dark", t === "dark");
           };
           apply();
           mq.addEventListener("change", function () {
@@ -71,7 +71,7 @@ const jsonLd = JSON.stringify({
             apply();
           });
         } catch (e) {
-          document.documentElement.dataset.theme = "light";
+          document.documentElement.classList.remove("dark");
         }
       })();
     </script>

@@ -25,7 +25,7 @@ export function Alternatives() {
       <div>
         <div className="tag mb-2">if you would otherwise…</div>
         <div
-          className="flex flex-col border-t border-line"
+          className="flex flex-col border-t border-border"
           role="tablist"
           aria-label="Alternatives"
         >
@@ -37,15 +37,17 @@ export function Alternatives() {
               aria-selected={x.id === id}
               onClick={() => pick(x.id)}
               className={cn(
-                "flex items-center justify-between gap-3 border-b border-line py-2.5 text-left text-[0.92rem] transition-colors",
-                x.id === id ? "text-ink" : "text-ink-dim hover:text-ink"
+                "flex items-center justify-between gap-3 border-b border-border py-2.5 text-left text-[0.92rem] transition-colors",
+                x.id === id
+                  ? "text-foreground"
+                  : "text-foreground/70 hover:text-foreground"
               )}
             >
               {x.option}
               <span
                 className={cn(
                   "mono text-[0.7rem]",
-                  x.id === id ? "text-amber" : "text-ink-faint"
+                  x.id === id ? "text-foreground" : "text-muted-foreground"
                 )}
               >
                 →
@@ -55,7 +57,7 @@ export function Alternatives() {
         </div>
       </div>
 
-      <div className="rounded-md border border-line bg-paper-raised p-5 md:p-6">
+      <div className="rounded-md border border-border bg-card p-5 md:p-6">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={a.id}
@@ -65,31 +67,31 @@ export function Alternatives() {
             transition={{ duration: 0.2 }}
           >
             <div className="tag">what's different here</div>
-            <p className="mt-2 max-w-[60ch] text-[1.05rem] leading-relaxed text-ink">
+            <p className="mt-2 max-w-[60ch] text-[1.05rem] leading-relaxed text-foreground">
               {a.answer}
             </p>
-            <div className="mt-5 grid gap-4 border-t border-line pt-4 sm:grid-cols-2">
+            <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
               <div>
-                <div className="mono text-[0.68rem] tracking-wide text-settle">
+                <div className="mono text-[0.68rem] tracking-wide text-success">
                   what you keep
                 </div>
-                <ul className="mt-1.5 space-y-1 text-[0.88rem] text-ink-dim">
+                <ul className="mt-1.5 space-y-1 text-[0.88rem] text-foreground/70">
                   {a.keep.map((k) => (
                     <li key={k} className="flex gap-2">
-                      <span className="text-settle">✓</span>
+                      <span className="text-success">✓</span>
                       {k}
                     </li>
                   ))}
                 </ul>
               </div>
               <div>
-                <div className="mono text-[0.68rem] tracking-wide text-fail">
+                <div className="mono text-[0.68rem] tracking-wide text-destructive">
                   what you drop
                 </div>
-                <ul className="mt-1.5 space-y-1 text-[0.88rem] text-ink-dim">
+                <ul className="mt-1.5 space-y-1 text-[0.88rem] text-foreground/70">
                   {a.drop.map((k) => (
                     <li key={k} className="flex gap-2">
-                      <span className="text-fail">−</span>
+                      <span className="text-destructive">−</span>
                       {k}
                     </li>
                   ))}

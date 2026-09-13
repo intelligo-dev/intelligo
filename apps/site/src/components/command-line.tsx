@@ -12,12 +12,12 @@ export function CommandLine({
   return (
     <div
       className={cn(
-        "mono flex items-center gap-2 rounded-md border border-line bg-paper-sunken px-3 py-1.5 text-[0.74rem]",
+        "mono flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-1.5 text-[0.74rem]",
         className
       )}
     >
-      <span className="text-ink-faint">$</span>
-      <span className="min-w-0 flex-1 truncate text-ink-dim">{cmd}</span>
+      <span className="text-muted-foreground">$</span>
+      <span className="min-w-0 flex-1 truncate text-foreground/70">{cmd}</span>
       <CopyButton text={cmd} />
     </div>
   );

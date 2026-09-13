@@ -1,4 +1,6 @@
 ---
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 /**
  * A secondary page: the material the homepage only summarises
  * (/pages, /blocks, /components, /architecture, /why-intelligo,
@@ -36,9 +38,9 @@ const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
       <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-10 md:px-10">
         <p class="text-[0.95rem] text-muted-foreground">Ready to try it? The homepage quickstart is three commands.</p>
         <div class="flex items-center gap-2">
-          <a href={SITE.github} class="btn btn-outline">GitHub</a>
-          <a href={SITE.docs} class="btn btn-outline">Docs</a>
-          <a href="/#quickstart" class="btn btn-primary">Get started</a>
+          <a href={SITE.github} class={buttonVariants({ variant: "outline" })}>GitHub</a>
+          <a href={SITE.docs} class={buttonVariants({ variant: "outline" })}>Docs</a>
+          <a href="/#quickstart" class={buttonVariants()}>Get started</a>
         </div>
       </div>
     </section>

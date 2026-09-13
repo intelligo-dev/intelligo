@@ -67,8 +67,8 @@ export function RegistryExplorer() {
                     className={cn(
                       "mono rounded-md border px-2 py-1 text-[0.72rem] transition-colors",
                       i.name === name
-                        ? "border-amber bg-amber-soft text-amber"
-                        : "border-line text-ink-dim hover:border-line-strong hover:text-ink"
+                        ? "border-foreground bg-muted text-foreground"
+                        : "border-border text-foreground/70 hover:border-foreground/15 hover:text-foreground"
                     )}
                   >
                     {i.name}
@@ -81,16 +81,18 @@ export function RegistryExplorer() {
 
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="mono text-[0.78rem] text-ink">{item.name}</span>
+            <span className="mono text-[0.78rem] text-foreground">
+              {item.name}
+            </span>
             {item.dependsOn.length > 0 && (
-              <span className="mono text-[0.68rem] text-ink-faint">
+              <span className="mono text-[0.68rem] text-muted-foreground">
                 requires{" "}
                 {item.dependsOn.map((d) => (
                   <button
                     key={d}
                     type="button"
                     onClick={() => setName(d)}
-                    className="ml-1 border border-line px-1 text-ink-dim hover:text-ink"
+                    className="ml-1 border border-border px-1 text-foreground/70 hover:text-foreground"
                   >
                     {d}
                   </button>
@@ -98,9 +100,9 @@ export function RegistryExplorer() {
               </span>
             )}
             <div className="mono ml-auto flex items-center gap-1 text-[0.7rem]">
-              <span className="text-ink-faint">
+              <span className="text-muted-foreground">
                 the real component ·{" "}
-                <span className="text-ink">messages/en</span>
+                <span className="text-foreground">messages/en</span>
               </span>
             </div>
           </div>
@@ -124,7 +126,9 @@ export function RegistryExplorer() {
             </AnimatePresence>
           </BrowserFrame>
 
-          <p className="mt-3 text-[0.9rem] text-ink-dim">{item.description}</p>
+          <p className="mt-3 text-[0.9rem] text-foreground/70">
+            {item.description}
+          </p>
           <CommandLine cmd={cmd} className="mt-2" />
         </div>
       </div>

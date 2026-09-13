@@ -41,8 +41,8 @@ const OWNERSHIP = [
       <div class="mt-6">
         <PackageMap client:load />
       </div>
-      <p class="mono mt-4 text-[0.72rem] text-ink-faint">
-        No <span class="text-ink-dim">auth → billing</span>, no <span class="text-ink-dim">executions → anything</span> — the dependency-direction test fails the build otherwise.
+      <p class="mono mt-4 text-[0.72rem] text-muted-foreground">
+        No <span class="text-foreground/70">auth → billing</span>, no <span class="text-foreground/70">executions → anything</span> — the dependency-direction test fails the build otherwise.
       </p>
     </div>
   </section>
@@ -66,11 +66,11 @@ const OWNERSHIP = [
         <span class="tag">ownership</span>
         <h2>Four kinds of file. Four owners.</h2>
       </div>
-      <div class="mt-6 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+      <div class="mt-6 grid gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
         {OWNERSHIP.map(([h, b]) => (
-          <div class="bg-paper p-4">
-            <div class="text-[0.98rem] font-semibold text-ink">{h}</div>
-            <p class="mt-1 text-[0.86rem] text-ink-dim">{b}</p>
+          <div class="bg-background p-4">
+            <div class="text-[0.98rem] font-semibold text-foreground">{h}</div>
+            <p class="mt-1 text-[0.86rem] text-foreground/70">{b}</p>
           </div>
         ))}
       </div>
@@ -83,13 +83,13 @@ const OWNERSHIP = [
         <span class="tag">decisions</span>
         <h2>{PROOF.adrs} decisions, recorded as ADRs.</h2>
       </div>
-      <ol class="mt-6 border-t border-line">
+      <ol class="mt-6 border-t border-border">
         {ADRS.map(([n, title, file]) => (
-          <li class="border-b border-line">
-            <a href={`${SITE.adrs}/${file}`} class="flex items-baseline gap-4 py-3 no-underline hover:bg-paper-raised">
-              <span class="mono w-12 shrink-0 text-[0.72rem] text-ink-faint">{n}</span>
-              <span class="text-[0.95rem] text-ink">{title}</span>
-              <span class="mono ml-auto text-[0.7rem] text-ink-faint">↗</span>
+          <li class="border-b border-border">
+            <a href={`${SITE.adrs}/${file}`} class="flex items-baseline gap-4 py-3 no-underline hover:bg-card">
+              <span class="mono w-12 shrink-0 text-[0.72rem] text-muted-foreground">{n}</span>
+              <span class="text-[0.95rem] text-foreground">{title}</span>
+              <span class="mono ml-auto text-[0.7rem] text-muted-foreground">↗</span>
             </a>
           </li>
         ))}

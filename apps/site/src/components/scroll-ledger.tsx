@@ -41,25 +41,32 @@ function LedgerLine({
   const x = useTransform(progress, [start, end], reduce ? [0, 0] : [10, 0]);
   const shipped = useTransform(progress, [0.8, 0.9], [0, 1]);
   const checkOpacity = useTransform(shipped, [0, 1], [0, 1]);
-  const color = useTransform(shipped, [0, 1], ["var(--ink-dim)", "var(--ink)"]);
+  const color = useTransform(
+    shipped,
+    [0, 1],
+    [
+      "color-mix(in oklab, var(--foreground) 70%, transparent)",
+      "var(--foreground)",
+    ]
+  );
 
   return (
     <motion.li
       style={{ opacity, x }}
-      className="flex items-baseline gap-3 border-b border-line py-2 text-[0.92rem]"
+      className="flex items-baseline gap-3 border-b border-border py-2 text-[0.92rem]"
     >
-      <span className="mono w-5 shrink-0 text-[0.7rem] tabular-nums text-ink-faint">
+      <span className="mono w-5 shrink-0 text-[0.7rem] tabular-nums text-muted-foreground">
         {String(index + 1).padStart(2, "0")}
       </span>
       <motion.span style={{ color }} className="flex-1">
         {text}
       </motion.span>
-      <span className="mono hidden text-[0.68rem] text-ink-faint sm:inline">
+      <span className="mono hidden text-[0.68rem] text-muted-foreground sm:inline">
         {pkg}
       </span>
       <motion.span
         style={{ opacity: checkOpacity }}
-        className="mono text-[0.7rem] text-settle"
+        className="mono text-[0.7rem] text-success"
       >
         ✓ shipped
       </motion.span>
@@ -92,29 +99,31 @@ export function ScrollLedger() {
       {/* your half — sticky */}
       <div className="lg:sticky lg:top-24 lg:self-start">
         <div className="tag">your half — the 30%</div>
-        <ul className="mt-4 border-t border-line-strong">
+        <ul className="mt-4 border-t border-foreground/15">
           {YOUR_HALF.map((y) => (
-            <li key={y.title} className="border-b border-line py-4">
-              <div className="text-[1.35rem] font-semibold leading-tight text-ink">
+            <li key={y.title} className="border-b border-border py-4">
+              <div className="text-[1.35rem] font-semibold leading-tight text-foreground">
                 {y.title}
               </div>
-              <div className="mt-0.5 text-[0.9rem] text-ink-dim">{y.note}</div>
+              <div className="mt-0.5 text-[0.9rem] text-foreground/70">
+                {y.note}
+              </div>
             </li>
           ))}
         </ul>
-        <div className="mt-6 border border-line-strong bg-paper-raised p-4">
-          <div className="mono flex items-baseline gap-2 text-[0.72rem] text-ink-faint">
+        <div className="mt-6 border border-foreground/15 bg-card p-4">
+          <div className="mono flex items-baseline gap-2 text-[0.72rem] text-muted-foreground">
             <span>the other half, counted</span>
-            <motion.span className="ml-auto text-[1.6rem] leading-none tabular-nums text-ink">
+            <motion.span className="ml-auto text-[1.6rem] leading-none tabular-nums text-foreground">
               {counterText}
             </motion.span>
           </div>
           <motion.p
             style={{ opacity: finalOpacity, y: finalY }}
-            className="mt-3 text-[0.95rem] text-ink"
+            className="mt-3 text-[0.95rem] text-foreground"
           >
             {OTHER_HALF.length} things, none of them yours.{" "}
-            <strong className="text-settle">All shipped.</strong>
+            <strong className="text-success">All shipped.</strong>
           </motion.p>
         </div>
       </div>
@@ -122,7 +131,7 @@ export function ScrollLedger() {
       {/* the other half — the ledger */}
       <div>
         <div className="tag">the other half — rebuilt in every AI SaaS</div>
-        <ol className={cn("mt-4 border-t border-line-strong")}>
+        <ol className={cn("mt-4 border-t border-foreground/15")}>
           {OTHER_HALF.map((o, i) => (
             <LedgerLine
               key={o.text}

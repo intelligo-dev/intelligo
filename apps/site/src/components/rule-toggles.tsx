@@ -16,16 +16,18 @@ export function RuleToggles() {
             key={r.id}
             className={cn(
               "border transition-colors",
-              on ? "border-fail" : "border-line"
+              on ? "border-destructive" : "border-border"
             )}
           >
             <div className="flex flex-wrap items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
-                <div className="text-[0.95rem] font-medium text-ink">
+                <div className="text-[0.95rem] font-medium text-foreground">
                   {r.title}
                 </div>
-                <div className="text-[0.84rem] text-ink-dim">{r.body}</div>
-                <div className="mono mt-0.5 truncate text-[0.66rem] text-ink-faint">
+                <div className="text-[0.84rem] text-foreground/70">
+                  {r.body}
+                </div>
+                <div className="mono mt-0.5 truncate text-[0.66rem] text-muted-foreground">
                   {r.file}
                 </div>
               </div>
@@ -36,8 +38,8 @@ export function RuleToggles() {
                 className={cn(
                   "mono rounded-md border px-2.5 py-1 text-[0.72rem] transition-colors",
                   on
-                    ? "border-fail bg-fail-soft text-fail"
-                    : "border-line-strong text-ink-dim hover:text-ink"
+                    ? "border-destructive bg-destructive/10 text-destructive"
+                    : "border-foreground/15 text-foreground/70 hover:text-foreground"
                 )}
               >
                 {on ? "restore" : "break it"}
@@ -53,9 +55,9 @@ export function RuleToggles() {
                   transition={{ duration: 0.22 }}
                   className="overflow-hidden"
                 >
-                  <div className="mono border-t border-line bg-paper-sunken px-4 py-3 text-[0.74rem] leading-relaxed">
-                    <div className="text-ink-dim">
-                      <span className="text-fail">−</span> {r.violation}
+                  <div className="mono border-t border-border bg-muted px-4 py-3 text-[0.74rem] leading-relaxed">
+                    <div className="text-foreground/70">
+                      <span className="text-destructive">−</span> {r.violation}
                     </div>
                     <div className="mt-2 space-y-0.5">
                       {r.output.map((l, i) => (
@@ -63,10 +65,10 @@ export function RuleToggles() {
                           key={i}
                           className={cn(
                             i === 0
-                              ? "text-fail"
+                              ? "text-destructive"
                               : l.startsWith("×")
-                                ? "text-fail"
-                                : "text-ink-dim"
+                                ? "text-destructive"
+                                : "text-foreground/70"
                           )}
                         >
                           {l}
@@ -81,7 +83,7 @@ export function RuleToggles() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="mono border-t border-line px-4 py-1.5 text-[0.7rem] text-settle"
+                  className="mono border-t border-border px-4 py-1.5 text-[0.7rem] text-success"
                 >
                   {r.passing}
                 </motion.div>

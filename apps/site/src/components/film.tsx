@@ -256,9 +256,9 @@ function Tag({
     <span
       className={cn(
         "mono inline-block rounded-sm border px-1.5 py-px text-[9px] leading-tight",
-        tone === "amber" && "border-amber bg-amber-soft text-amber",
-        tone === "settle" && "border-settle/40 text-settle",
-        tone === "faint" && "border-line text-ink-faint"
+        tone === "amber" && "border-foreground bg-muted text-foreground",
+        tone === "settle" && "border-success/40 text-success",
+        tone === "faint" && "border-border text-muted-foreground"
       )}
     >
       {children}
@@ -282,14 +282,18 @@ function Tile({
   return (
     <div
       className={cn(
-        "flex h-full flex-col rounded-md border border-line bg-paper shadow-[0_12px_30px_-18px_rgba(0,0,0,0.35)]",
+        "flex h-full flex-col rounded-md border border-border bg-background shadow-[0_12px_30px_-18px_rgba(0,0,0,0.35)]",
         className
       )}
     >
-      <div className="flex items-center gap-1.5 border-b border-line px-2.5 py-1.5">
-        <Icon className="size-3 text-ink-dim" strokeWidth={1.75} />
-        <span className="text-[11px] font-semibold text-ink">{title}</span>
-        <span className="mono ml-auto text-[8.5px] text-ink-faint">{src}</span>
+      <div className="flex items-center gap-1.5 border-b border-border px-2.5 py-1.5">
+        <Icon className="size-3 text-foreground/70" strokeWidth={1.75} />
+        <span className="text-[11px] font-semibold text-foreground">
+          {title}
+        </span>
+        <span className="mono ml-auto text-[8.5px] text-muted-foreground">
+          {src}
+        </span>
       </div>
       <div className="min-h-0 flex-1 p-2.5">{children}</div>
     </div>
@@ -306,14 +310,14 @@ function Row({
   tone?: "settle" | "fail" | "amber";
 }) {
   return (
-    <div className="mono flex items-center justify-between border-t border-line py-[3px] text-[9.5px] first:border-t-0">
-      <span className="text-ink-dim">{l}</span>
+    <div className="mono flex items-center justify-between border-t border-border py-[3px] text-[9.5px] first:border-t-0">
+      <span className="text-foreground/70">{l}</span>
       <span
         className={cn(
-          "text-ink",
-          tone === "settle" && "text-settle",
-          tone === "fail" && "text-fail",
-          tone === "amber" && "text-amber"
+          "text-foreground",
+          tone === "settle" && "text-success",
+          tone === "fail" && "text-destructive",
+          tone === "amber" && "text-foreground"
         )}
       >
         {r}
@@ -438,36 +442,37 @@ function BlockEl({ kind }: { kind: Block["kind"] }) {
     case "side":
       return (
         <div
-          className={cn(
-            base,
-            "rounded-none border-r border-line bg-paper-sunken"
-          )}
+          className={cn(base, "rounded-none border-r border-border bg-muted")}
         />
       );
     case "bar":
-      return <div className={cn(base, "border border-line bg-paper")} />;
+      return <div className={cn(base, "border border-border bg-background")} />;
     case "box":
-      return <div className={cn(base, "border border-line bg-paper-raised")} />;
+      return <div className={cn(base, "border border-border bg-card")} />;
     case "input":
-      return <div className={cn(base, "border border-line-strong bg-paper")} />;
+      return (
+        <div
+          className={cn(base, "border border-foreground/15 bg-background")}
+        />
+      );
     case "btn":
-      return <div className={cn(base, "bg-ink")} />;
+      return <div className={cn(base, "bg-foreground")} />;
     case "text":
-      return <div className={cn(base, "rounded-sm bg-line-strong")} />;
+      return <div className={cn(base, "rounded-sm bg-foreground/15")} />;
     case "bubble":
-      return <div className={cn(base, "rounded-md bg-ink")} />;
+      return <div className={cn(base, "rounded-md bg-foreground")} />;
     case "chart":
       return (
         <div
           className={cn(
             base,
-            "flex items-end gap-[2px] border border-line bg-paper px-1 pb-1"
+            "flex items-end gap-[2px] border border-border bg-background px-1 pb-1"
           )}
         >
           {[40, 70, 55, 90, 65, 80].map((h, i) => (
             <span
               key={i}
-              className="flex-1 rounded-t-[1px] bg-ink/70"
+              className="flex-1 rounded-t-[1px] bg-foreground/70"
               style={{ height: `${h}%` }}
             />
           ))}
@@ -501,7 +506,7 @@ function Wireframe({
   return (
     <motion.div
       style={{ width: w, height: h, opacity: frameOp }}
-      className="relative rounded-md border border-line bg-paper-raised"
+      className="relative rounded-md border border-border bg-card"
     >
       {blocks.map((b, k) => {
         const ang = rnd(seed, k) * Math.PI * 2;
@@ -533,10 +538,10 @@ function Wireframe({
       {label && (
         <motion.div
           style={{ opacity: labelOp }}
-          className="mono absolute inset-x-0 top-0 flex h-[18px] items-center justify-between border-b border-line px-2 text-[8.5px] text-ink-dim"
+          className="mono absolute inset-x-0 top-0 flex h-[18px] items-center justify-between border-b border-border px-2 text-[8.5px] text-foreground/70"
         >
           <span className="truncate">{name}</span>
-          <span className="text-ink-faint">{group.toLowerCase()}</span>
+          <span className="text-muted-foreground">{group.toLowerCase()}</span>
         </motion.div>
       )}
     </motion.div>
@@ -602,17 +607,19 @@ function MomentView({
         style={{ opacity: headOp, y: headY }}
         className="absolute inset-x-0 top-5 flex flex-col items-center text-center"
       >
-        <div className="heading flex items-center gap-2 text-[26px] font-semibold leading-none text-ink">
+        <div className="heading flex items-center gap-2 text-[26px] font-semibold leading-none text-foreground">
           {m.title}
           <motion.span
             style={{ opacity: checkOp }}
-            className="mono rounded-full border border-settle/40 px-2 py-0.5 text-[11px] font-medium text-settle"
+            className="mono rounded-full border border-success/40 px-2 py-0.5 text-[11px] font-medium text-success"
           >
             ✓ created · {m.items.length}{" "}
             {m.items.length === 1 ? "page" : "pages"}
           </motion.span>
         </div>
-        <div className="mono mt-1.5 text-[11px] text-ink-faint">{m.sub}</div>
+        <div className="mono mt-1.5 text-[11px] text-muted-foreground">
+          {m.sub}
+        </div>
       </motion.div>
 
       {/* the card */}
@@ -671,8 +678,8 @@ function MomentView({
         }}
         className="mono absolute flex items-center justify-between text-[10px]"
       >
-        <span className="text-ink">{m.title}</span>
-        <span className="text-settle">✓ {m.items.length}</span>
+        <span className="text-foreground">{m.title}</span>
+        <span className="text-success">✓ {m.items.length}</span>
       </motion.div>
     </>
   );
@@ -776,13 +783,13 @@ function TermLine({
       style={{ opacity }}
       className={cn(
         "whitespace-pre-wrap break-words",
-        line.tone === "cmd" && "mt-2 text-ink first:mt-0",
-        line.tone === "ok" && "text-settle",
-        line.tone === "dim" && "text-ink-dim",
-        line.tone === "amber" && "text-amber"
+        line.tone === "cmd" && "mt-2 text-foreground first:mt-0",
+        line.tone === "ok" && "text-success",
+        line.tone === "dim" && "text-foreground/70",
+        line.tone === "amber" && "text-foreground"
       )}
     >
-      {line.tone === "cmd" && <span className="text-ink-faint">$ </span>}
+      {line.tone === "cmd" && <span className="text-muted-foreground">$ </span>}
       {line.text}
     </motion.div>
   );
@@ -799,13 +806,13 @@ function Terminal({ p }: { p: MotionValue<number> }) {
   return (
     <motion.div
       style={{ y, opacity, scale, left: 200, top: 22, width: 560, height: 420 }}
-      className="absolute flex flex-col overflow-hidden rounded-lg border border-line bg-paper-sunken shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] will-change-transform"
+      className="absolute flex flex-col overflow-hidden rounded-lg border border-border bg-muted shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] will-change-transform"
     >
-      <div className="flex h-8 shrink-0 items-center gap-1.5 border-b border-line px-3">
-        <span className="size-2 rounded-full bg-line-strong" />
-        <span className="size-2 rounded-full bg-line-strong" />
-        <span className="size-2 rounded-full bg-line-strong" />
-        <span className="mono ml-2 text-[10px] text-ink-faint">
+      <div className="flex h-8 shrink-0 items-center gap-1.5 border-b border-border px-3">
+        <span className="size-2 rounded-full bg-foreground/15" />
+        <span className="size-2 rounded-full bg-foreground/15" />
+        <span className="size-2 rounded-full bg-foreground/15" />
+        <span className="mono ml-2 text-[10px] text-muted-foreground">
           my-app — zsh
         </span>
       </div>
@@ -880,9 +887,9 @@ function MRow({
   return (
     <motion.div
       style={{ opacity }}
-      className="mono flex items-center justify-between border-t border-line py-[3px] text-[9.5px] first:border-t-0"
+      className="mono flex items-center justify-between border-t border-border py-[3px] text-[9.5px] first:border-t-0"
     >
-      <span className="text-ink-dim">{l}</span>
+      <span className="text-foreground/70">{l}</span>
       <motion.span style={{ color }}>{r}</motion.span>
     </motion.div>
   );
@@ -931,7 +938,7 @@ function Stage({ p, run, yours, time }: Live) {
     v < 0.7 ? "streaming · 14 reserved" : "settled · 14 credits"
   );
   const runTagColor = useTransform<number, string>(run, (v) =>
-    v < 0.7 ? "var(--amber)" : "var(--settle)"
+    v < 0.7 ? "var(--amber)" : "var(--success)"
   );
   const credits = useTransform<number, string>(run, (v) =>
     v < 0.72 ? "1,240" : "1,226"
@@ -943,13 +950,13 @@ function Stage({ p, run, yours, time }: Live) {
     v < 0.22 ? "38 (2 runs)" : v < 0.72 ? "52 (3 runs)" : "38 (2 runs)"
   );
   const reservedColor = useTransform<number, string>(run, (v) =>
-    v >= 0.22 && v < 0.72 ? "var(--amber)" : "var(--ink)"
+    v >= 0.22 && v < 0.72 ? "var(--amber)" : "var(--foreground)"
   );
   const newRun = useTransform<number, string>(run, (v) =>
     v < 0.7 ? "admitted · 14 cr held" : "settled · 14 cr"
   );
   const newRunColor = useTransform<number, string>(run, (v) =>
-    v < 0.7 ? "var(--amber)" : "var(--settle)"
+    v < 0.7 ? "var(--amber)" : "var(--success)"
   );
   const newRunOp = useTransform(run, [0.22, 0.26], [0, 1]);
   const auditNew = useTransform(run, [0.72, 0.76], [0, 1]);
@@ -969,7 +976,7 @@ function Stage({ p, run, yours, time }: Live) {
     v < 0.7 ? PACKAGE_VERSION : NEXT_VERSION
   );
   const versionColor = useTransform<number, string>(time, (v) =>
-    v >= 0.7 && v < 0.9 ? "var(--settle)" : "var(--ink-faint)"
+    v >= 0.7 && v < 0.9 ? "var(--success)" : "var(--muted-foreground)"
   );
 
   return (
@@ -980,7 +987,7 @@ function Stage({ p, run, yours, time }: Live) {
         from={{ s: 0.96 }}
         win={[0, 0.1]}
         style={{ inset: 0 }}
-        className="rounded-xl border border-line-strong bg-paper-raised"
+        className="rounded-xl border border-foreground/15 bg-card"
       >
         <span />
       </Part>
@@ -991,17 +998,17 @@ function Stage({ p, run, yours, time }: Live) {
         from={{ x: -260 }}
         win={[0.06, 0.2]}
         style={{ left: 0, top: 0, width: SB, height: H }}
-        className="rounded-l-xl border-r border-line bg-paper-sunken/60"
+        className="rounded-l-xl border-r border-border bg-muted/60"
       >
         <div className="flex h-full flex-col p-3">
           <div className="flex items-center gap-2 px-1">
-            <span className="inline-block size-3 rounded-[3px] bg-ink" />
-            <span className="heading text-[13px] font-semibold text-ink">
+            <span className="inline-block size-3 rounded-[3px] bg-foreground" />
+            <span className="heading text-[13px] font-semibold text-foreground">
               acme
             </span>
           </div>
-          <div className="mono mt-3 flex items-center justify-between rounded-sm border border-line bg-paper px-2 py-1.5 text-[10px] text-ink">
-            Acme Inc <span className="text-ink-faint">▾</span>
+          <div className="mono mt-3 flex items-center justify-between rounded-sm border border-border bg-background px-2 py-1.5 text-[10px] text-foreground">
+            Acme Inc <span className="text-muted-foreground">▾</span>
           </div>
           <ul className="mt-3 space-y-0.5">
             {NAV.map(([l, I], i) => (
@@ -1009,23 +1016,25 @@ function Stage({ p, run, yours, time }: Live) {
                 key={l}
                 className={cn(
                   "flex items-center gap-2 rounded-sm px-2 py-1.5 text-[11px]",
-                  i === 0 ? "bg-paper text-ink" : "text-ink-dim"
+                  i === 0
+                    ? "bg-background text-foreground"
+                    : "text-foreground/70"
                 )}
               >
                 <I className="size-3" strokeWidth={1.75} /> {l}
               </li>
             ))}
           </ul>
-          <div className="mt-auto rounded-sm border border-line bg-paper p-2">
-            <div className="mono flex justify-between text-[9px] text-ink-faint">
+          <div className="mt-auto rounded-sm border border-border bg-background p-2">
+            <div className="mono flex justify-between text-[9px] text-muted-foreground">
               <span>credits</span>
-              <motion.span className="text-ink">{credits}</motion.span>
+              <motion.span className="text-foreground">{credits}</motion.span>
             </div>
-            <div className="mt-1 h-1 rounded-full bg-line">
-              <div className="h-1 w-[62%] rounded-full bg-ink" />
+            <div className="mt-1 h-1 rounded-full bg-border">
+              <div className="h-1 w-[62%] rounded-full bg-foreground" />
             </div>
           </div>
-          <div className="mono mt-2 flex items-center justify-between px-1 text-[8.5px] text-ink-faint">
+          <div className="mono mt-2 flex items-center justify-between px-1 text-[8.5px] text-muted-foreground">
             <span>@intelligo-dev/*</span>
             <motion.span style={{ color: versionColor }}>{version}</motion.span>
           </div>
@@ -1038,18 +1047,25 @@ function Stage({ p, run, yours, time }: Live) {
         from={{ y: -140 }}
         win={[0.14, 0.28]}
         style={{ left: SB, top: 0, width: W - SB, height: TB }}
-        className="rounded-tr-xl border-b border-line bg-paper"
+        className="rounded-tr-xl border-b border-border bg-background"
       >
         <div className="flex h-full items-center gap-3 px-4">
-          <span className="text-[12px] font-semibold text-ink">Dashboard</span>
-          <span className="mono text-[9px] text-ink-faint">/dashboard</span>
+          <span className="text-[12px] font-semibold text-foreground">
+            Dashboard
+          </span>
+          <span className="mono text-[9px] text-muted-foreground">
+            /dashboard
+          </span>
           <span className="ml-auto flex items-center gap-2">
             <Tag tone="amber">Pro · trial 9d</Tag>
             <span className="relative">
-              <Bell className="size-3.5 text-ink-dim" strokeWidth={1.75} />
-              <span className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-fail" />
+              <Bell
+                className="size-3.5 text-foreground/70"
+                strokeWidth={1.75}
+              />
+              <span className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-destructive" />
             </span>
-            <span className="flex size-5 items-center justify-center rounded-full bg-ink text-[9px] font-semibold text-paper">
+            <span className="flex size-5 items-center justify-center rounded-full bg-foreground text-[9px] font-semibold text-background">
               M
             </span>
           </span>
@@ -1122,7 +1138,7 @@ function Stage({ p, run, yours, time }: Live) {
           className="relative"
         >
           <div className="flex h-full flex-col gap-1.5 overflow-hidden">
-            <div className="max-w-[78%] self-end rounded-md bg-ink px-2.5 py-1.5 text-[10px] text-paper">
+            <div className="max-w-[78%] self-end rounded-md bg-foreground px-2.5 py-1.5 text-[10px] text-background">
               Summarise the Q3 contract and flag renewal risks.
             </div>
             <motion.div
@@ -1131,26 +1147,26 @@ function Stage({ p, run, yours, time }: Live) {
                 opacity: oldAnswerH,
                 transformOrigin: "top",
               }}
-              className="max-w-[86%] rounded-md border border-line bg-paper-raised px-2.5 py-1.5 text-[10px] text-ink"
+              className="max-w-[86%] rounded-md border border-border bg-card px-2.5 py-1.5 text-[10px] text-foreground"
             >
               Three clauses auto-renew in October…
-              <div className="mono mt-1 flex gap-1 text-[8.5px] text-ink-faint">
+              <div className="mono mt-1 flex gap-1 text-[8.5px] text-muted-foreground">
                 <Tag tone="settle">settled · 26 credits</Tag>
                 <Tag>gpt-5-mini</Tag>
               </div>
             </motion.div>
             <motion.div
               style={{ opacity: askOp }}
-              className="max-w-[78%] self-end rounded-md bg-ink px-2.5 py-1.5 text-[10px] text-paper"
+              className="max-w-[78%] self-end rounded-md bg-foreground px-2.5 py-1.5 text-[10px] text-background"
             >
               {ASK}
             </motion.div>
             <motion.div
               style={{ opacity: answerOp }}
-              className="max-w-[92%] rounded-md border border-line bg-paper-raised px-2.5 py-1.5 text-[10px] text-ink"
+              className="max-w-[92%] rounded-md border border-border bg-card px-2.5 py-1.5 text-[10px] text-foreground"
             >
               <motion.span>{answer}</motion.span>
-              <div className="mono mt-1 flex gap-1 text-[8.5px] text-ink-faint">
+              <div className="mono mt-1 flex gap-1 text-[8.5px] text-muted-foreground">
                 <motion.span
                   style={{ color: runTagColor, borderColor: runTagColor }}
                   className="inline-block rounded-sm border px-1.5 py-px text-[9px] leading-tight"
@@ -1173,29 +1189,29 @@ function Stage({ p, run, yours, time }: Live) {
                 style={{ opacity: agentIn, scale: agentScale, y: agentY }}
                 className="relative will-change-transform"
               >
-                <div className="flex items-center gap-2.5 rounded-md border border-dashed border-amber bg-amber-soft/50 px-3 py-2">
-                  <span className="flex size-6 items-center justify-center rounded-md bg-ink text-paper">
+                <div className="flex items-center gap-2.5 rounded-md border border-dashed border-foreground bg-muted/50 px-3 py-2">
+                  <span className="flex size-6 items-center justify-center rounded-md bg-foreground text-background">
                     <Bot className="size-3.5" strokeWidth={1.75} />
                   </span>
                   <span>
-                    <span className="block text-[10.5px] font-semibold text-ink">
+                    <span className="block text-[10.5px] font-semibold text-foreground">
                       your agent
                     </span>
-                    <span className="mono block text-[8px] text-ink-dim">
+                    <span className="mono block text-[8px] text-foreground/70">
                       prompts · tools · knowledge — Mastra, AI SDK, anything
                     </span>
                   </span>
-                  <span className="mono ml-auto text-[8px] text-amber">
+                  <span className="mono ml-auto text-[8px] text-foreground">
                     begin() → yourAgent() → complete()
                   </span>
                 </div>
               </motion.div>
             </div>
-            <div className="mono relative flex items-center gap-2 rounded-md border border-line px-2.5 py-1.5 text-[9.5px] text-ink-faint">
-              <motion.span className="text-ink">{typed}</motion.span>
+            <div className="mono relative flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5 text-[9.5px] text-muted-foreground">
+              <motion.span className="text-foreground">{typed}</motion.span>
               <motion.span
                 style={{ opacity: caret }}
-                className="-ml-1 inline-block h-[1em] w-px bg-ink"
+                className="-ml-1 inline-block h-[1em] w-px bg-foreground"
               />
               <motion.span
                 style={{
@@ -1212,7 +1228,7 @@ function Stage({ p, run, yours, time }: Live) {
         {/* scene 3: hot-reload toast */}
         <motion.div
           style={{ opacity: toastOp }}
-          className="mono absolute bottom-10 left-1/2 -translate-x-1/2 rounded-full border border-settle/40 bg-paper px-2.5 py-1 text-[9px] text-settle shadow-sm"
+          className="mono absolute bottom-10 left-1/2 -translate-x-1/2 rounded-full border border-success/40 bg-background px-2.5 py-1 text-[9px] text-success shadow-sm"
         >
           ✓ lib/chat-config.tsx saved · hot reload · 0 components touched
         </motion.div>
@@ -1229,7 +1245,7 @@ function Stage({ p, run, yours, time }: Live) {
           <MRow
             l="audit"
             r={useTransform(() => "execution.settled · 14 cr")}
-            color={useTransform(() => "var(--settle)")}
+            color={useTransform(() => "var(--success)")}
             opacity={auditNew}
           />
           <Row l="jobs" r="3 queued · 0 failed" />
@@ -1289,9 +1305,9 @@ function BoundaryPanel({ run }: { run: MotionValue<number> }) {
   return (
     <motion.div
       style={{ x, opacity, left: rightX, top: r2y, width: rightW, height: r2h }}
-      className="absolute flex flex-col overflow-hidden rounded-md border border-line-strong bg-paper shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] will-change-transform"
+      className="absolute flex flex-col overflow-hidden rounded-md border border-foreground/15 bg-background shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] will-change-transform"
     >
-      <div className="mono flex items-center justify-between border-b border-line px-2.5 py-1.5 text-[9px] text-ink-faint">
+      <div className="mono flex items-center justify-between border-b border-border px-2.5 py-1.5 text-[9px] text-muted-foreground">
         <span>app/api/chat/route.ts</span>
         <span>the execution boundary</span>
       </div>
@@ -1300,7 +1316,7 @@ function BoundaryPanel({ run }: { run: MotionValue<number> }) {
           <CodeLine key={i} l={l} active={active} />
         ))}
       </div>
-      <div className="mono border-t border-line px-2.5 py-1.5 text-[8.5px] text-ink-faint">
+      <div className="mono border-t border-border px-2.5 py-1.5 text-[8.5px] text-muted-foreground">
         <motion.span>
           {useTransform<string, string>(active, (a) =>
             a === "admit"
@@ -1325,10 +1341,12 @@ function CodeLine({
   active: MotionValue<string>;
 }) {
   const bg = useTransform(active, (a) =>
-    a === l.step ? "var(--accent-soft)" : "transparent"
+    a === l.step ? "var(--muted)" : "transparent"
   );
   const color = useTransform(active, (a) =>
-    a === "none" || a === l.step ? "var(--ink)" : "var(--ink-faint)"
+    a === "none" || a === l.step
+      ? "var(--foreground)"
+      : "var(--muted-foreground)"
   );
   return (
     <motion.div
@@ -1375,10 +1393,10 @@ function Editor({
   return (
     <motion.div
       style={{ x, opacity, left: 0, top: 20, width: EW, height: H - 40 }}
-      className="absolute flex overflow-hidden rounded-lg border border-line-strong bg-paper shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] will-change-transform"
+      className="absolute flex overflow-hidden rounded-lg border border-foreground/15 bg-background shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] will-change-transform"
     >
-      <div className="mono w-[150px] shrink-0 border-r border-line bg-paper-sunken/60 p-2.5 text-[9px]">
-        <div className="mb-2 text-ink-faint">
+      <div className="mono w-[150px] shrink-0 border-r border-border bg-muted/60 p-2.5 text-[9px]">
+        <div className="mb-2 text-muted-foreground">
           my-app · installed by shadcn add
         </div>
         {TREE.map(([f, hot]) => (
@@ -1386,30 +1404,34 @@ function Editor({
             key={f}
             className={cn(
               "flex items-center justify-between truncate rounded-sm px-1 py-[3px]",
-              hot ? "bg-paper text-ink" : "text-ink-dim"
+              hot ? "bg-background text-foreground" : "text-foreground/70"
             )}
           >
             <span className="truncate">{f}</span>
             {hot && (
-              <motion.span style={{ opacity: modified }} className="text-amber">
+              <motion.span
+                style={{ opacity: modified }}
+                className="text-foreground"
+              >
                 M
               </motion.span>
             )}
           </div>
         ))}
-        <div className="mt-3 border-t border-line pt-2 text-ink-faint">
+        <div className="mt-3 border-t border-border pt-2 text-muted-foreground">
           consumer-owned · not a dependency
         </div>
       </div>
-      <div className="mono flex-1 p-3 text-[10px] leading-[1.65] text-ink">
-        <div className="mb-2 text-ink-faint">lib/chat-config.tsx</div>
+      <div className="mono flex-1 p-3 text-[10px] leading-[1.65] text-foreground">
+        <div className="mb-2 text-muted-foreground">lib/chat-config.tsx</div>
         <div>
-          <span className="text-amber">export const</span> chatConfig = {"{"}
+          <span className="text-foreground">export const</span> chatConfig ={" "}
+          {"{"}
         </div>
         <div className="pl-3">agent: {"{"}</div>
         <div className="pl-6">
           name:{" "}
-          <span className="text-settle">
+          <span className="text-success">
             "<motion.span>{oldName}</motion.span>
             <motion.span>{name}</motion.span>"
           </span>
@@ -1417,7 +1439,7 @@ function Editor({
         </div>
         <div className="pl-6">
           tagline:{" "}
-          <span className="text-settle">
+          <span className="text-success">
             "<motion.span>{oldTag}</motion.span>
             <motion.span>{tagline}</motion.span>"
           </span>
@@ -1426,17 +1448,17 @@ function Editor({
         <div className="pl-3">{"},"}</div>
         <div className="pl-3">
           starters: [
-          <span className="text-settle">"Summarise this contract"</span>,{" "}
-          <span className="text-settle">"Flag renewal risks"</span>],
+          <span className="text-success">"Summarise this contract"</span>,{" "}
+          <span className="text-success">"Flag renewal risks"</span>],
         </div>
         <div className="pl-3">
-          autoContinue: <span className="text-amber">true</span>,
+          autoContinue: <span className="text-foreground">true</span>,
         </div>
         <div>{"};"}</div>
-        <div className="mt-4 text-ink-faint">
+        <div className="mt-4 text-muted-foreground">
           // components/chat/* — unchanged
         </div>
-        <div className="text-ink-faint">
+        <div className="text-muted-foreground">
           // re-install the item later: your config survives
         </div>
       </div>
@@ -1475,12 +1497,12 @@ function UpgradeTerminal({ time }: { time: MotionValue<number> }) {
         width: rightW,
         height: r2h - opsH - gap,
       }}
-      className="absolute flex flex-col overflow-hidden rounded-md border border-line-strong bg-paper-sunken shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] will-change-transform"
+      className="absolute flex flex-col overflow-hidden rounded-md border border-foreground/15 bg-muted shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] will-change-transform"
     >
-      <div className="mono flex items-center gap-1.5 border-b border-line px-2.5 py-1 text-[9px] text-ink-faint">
-        <span className="size-1.5 rounded-full bg-line-strong" />
-        <span className="size-1.5 rounded-full bg-line-strong" />
-        <span className="size-1.5 rounded-full bg-line-strong" />
+      <div className="mono flex items-center gap-1.5 border-b border-border px-2.5 py-1 text-[9px] text-muted-foreground">
+        <span className="size-1.5 rounded-full bg-foreground/15" />
+        <span className="size-1.5 rounded-full bg-foreground/15" />
+        <span className="size-1.5 rounded-full bg-foreground/15" />
         <span className="ml-1">my-app — zsh</span>
       </div>
       <div className="mono flex-1 space-y-px p-2.5 text-[9px] leading-[1.5]">
@@ -1511,13 +1533,13 @@ function UpgradeLine({
       style={{ opacity }}
       className={cn(
         "whitespace-pre-wrap break-words",
-        line.tone === "cmd" && "text-ink",
-        line.tone === "ok" && "text-settle",
-        line.tone === "dim" && "text-ink-dim",
-        line.tone === "amber" && "text-amber"
+        line.tone === "cmd" && "text-foreground",
+        line.tone === "ok" && "text-success",
+        line.tone === "dim" && "text-foreground/70",
+        line.tone === "amber" && "text-foreground"
       )}
     >
-      {line.tone === "cmd" && <span className="text-ink-faint">$ </span>}
+      {line.tone === "cmd" && <span className="text-muted-foreground">$ </span>}
       {line.text}
     </motion.div>
   );
@@ -1661,21 +1683,21 @@ export function Film() {
           <div className="order-2 lg:order-1">
             <Rail scene={scene} step={STEPS[step]!.label} />
             <div className="mt-5 hidden lg:block">
-              <div className="mono flex items-center justify-between text-[0.68rem] uppercase tracking-[0.08em] text-ink-faint">
+              <div className="mono flex items-center justify-between text-[0.68rem] uppercase tracking-[0.08em] text-muted-foreground">
                 <span>
                   scene {SCENES[scene]!.n} / 0{SCENES.length}
                 </span>
                 <motion.span className="tabular-nums">{pct}</motion.span>
               </div>
-              <div className="mt-1 text-[1.05rem] font-semibold text-ink">
+              <div className="mt-1 text-[1.05rem] font-semibold text-foreground">
                 {SCENES[scene]!.title}
               </div>
-              <p className="mt-2 text-[0.88rem] text-ink-dim">
+              <p className="mt-2 text-[0.88rem] text-foreground/70">
                 {SCENES[scene]!.note}
               </p>
               <motion.p
                 style={{ opacity: done }}
-                className="mono mt-4 text-[0.72rem] text-settle"
+                className="mono mt-4 text-[0.72rem] text-success"
               >
                 ✓ every part but one is on npm or in the registry. The one is
                 yours.
@@ -1700,9 +1722,9 @@ export function Film() {
                 </div>
               </div>
             </div>
-            <p className="mono mt-3 text-center text-[0.7rem] text-ink-faint lg:hidden">
-              <span className="text-ink-dim">{SCENES[scene]!.title}</span> ·{" "}
-              {STEPS[step]!.label}
+            <p className="mono mt-3 text-center text-[0.7rem] text-muted-foreground lg:hidden">
+              <span className="text-foreground/70">{SCENES[scene]!.title}</span>{" "}
+              · {STEPS[step]!.label}
             </p>
           </div>
         </div>
@@ -1723,7 +1745,7 @@ function Rail({
   return (
     <ol
       className={cn(
-        "flex flex-wrap gap-1 lg:flex-col lg:gap-0 lg:border-t lg:border-line",
+        "flex flex-wrap gap-1 lg:flex-col lg:gap-0 lg:border-t lg:border-border",
         className
       )}
       aria-label="Scenes"
@@ -1732,12 +1754,12 @@ function Rail({
         <li
           key={s.id}
           className={cn(
-            "mono rounded-sm border border-line px-2 py-1 text-[0.72rem] transition-colors lg:rounded-none lg:border-x-0 lg:border-t-0 lg:border-b lg:px-0 lg:py-2.5",
+            "mono rounded-sm border border-border px-2 py-1 text-[0.72rem] transition-colors lg:rounded-none lg:border-x-0 lg:border-t-0 lg:border-b lg:px-0 lg:py-2.5",
             i < scene
-              ? "text-ink-dim"
+              ? "text-foreground/70"
               : i === scene
-                ? "border-amber text-ink lg:border-line"
-                : "text-ink-faint"
+                ? "border-foreground text-foreground lg:border-border"
+                : "text-muted-foreground"
           )}
         >
           <span className="flex items-center gap-2">
@@ -1745,17 +1767,17 @@ function Rail({
               className={cn(
                 "inline-block size-1.5 rounded-full",
                 i < scene
-                  ? "bg-settle"
+                  ? "bg-success"
                   : i === scene
-                    ? "bg-amber"
-                    : "bg-line-strong"
+                    ? "bg-foreground"
+                    : "bg-foreground/15"
               )}
             />
-            <span className="text-ink-faint">{s.n}</span>
+            <span className="text-muted-foreground">{s.n}</span>
             <span>{s.title}</span>
           </span>
           {i === scene && (
-            <span className="mt-1 hidden pl-[1.6rem] text-[0.7rem] text-amber lg:block">
+            <span className="mt-1 hidden pl-[1.6rem] text-[0.7rem] text-foreground lg:block">
               {step}
             </span>
           )}
