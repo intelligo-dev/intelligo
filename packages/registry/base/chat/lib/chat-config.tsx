@@ -137,9 +137,10 @@ export interface ChatConfig {
   mentions?: ChatMentionsConfig;
   /**
    * Auto-continuation predicate, passed straight to `useChat`'s
-   * `sendAutomaticallyWhen`. Default: the SDK's own — continue when
-   * the last assistant message finished with tool results, or with
-   * approval answers, to give.
+   * `sendAutomaticallyWhen`. Default: continue when the reader answered
+   * an approval, or when a card supplied a client-side tool's result.
+   * A turn that ends on a server-run tool (a card waiting for a click)
+   * is not re-sent.
    */
   sendAutomaticallyWhen?: (options: {
     messages: UIMessage[];

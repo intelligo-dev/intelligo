@@ -137,6 +137,7 @@ export function ConversationHeader({
           <>
             <Input
               autoFocus
+              aria-label={t("header.renameEdit")}
               value={draftTitle}
               onChange={(event) => setDraftTitle(event.target.value)}
               onKeyDown={(event) => {

@@ -244,7 +244,11 @@ export function ChatInput({
                   size="sm"
                   aria-label={t("model.label")}
                 >
-                  <PromptInputSelectValue />
+                  <PromptInputSelectValue>
+                    {(value: string) =>
+                      models.find((model) => model.id === value)?.label ?? value
+                    }
+                  </PromptInputSelectValue>
                 </PromptInputSelectTrigger>
                 <PromptInputSelectContent>
                   {models.map((model) => (

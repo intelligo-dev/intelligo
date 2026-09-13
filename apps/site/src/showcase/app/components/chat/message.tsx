@@ -110,6 +110,8 @@ interface MessageProps {
   message: UIMessage;
   isLastMessage: boolean;
   isStreaming: boolean;
+  /** The runtime's transient status while this reply streams. */
+  statusLabel?: string | null;
   /** A read-only surface: no actions, no edit, no branch pager. */
   readOnly?: boolean;
   vote?: MessageVote;
@@ -195,6 +197,7 @@ export function Message({
   message,
   isLastMessage,
   isStreaming,
+  statusLabel = null,
   readOnly = false,
   vote = null,
   version = null,
@@ -409,8 +412,8 @@ export function Message({
           </Sources>
         ) : null}
 
-        {isStreamingThis && isEmptyAssistant ? (
-          <ShimmerText>{t("message.thinking")}</ShimmerText>
+        {isStreamingThis && (isEmptyAssistant || statusLabel) ? (
+          <ShimmerText>{statusLabel ?? t("message.thinking")}</ShimmerText>
         ) : null}
 
         {!readOnly && !isStreamingThis && (hasVisibleText || version) ? (

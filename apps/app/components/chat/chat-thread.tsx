@@ -81,11 +81,23 @@ function refusalFrom(chatError: Error): ChatBlock | null {
 
 const MODEL_STORAGE_KEY = "chat:model";
 
-function defaultSendAutomatically(options: { messages: UIMessage[] }) {
-  return (
-    lastAssistantMessageIsCompleteWithToolCalls(options) ||
-    lastAssistantMessageIsCompleteWithApprovalResponses(options)
-  );
+/**
+ * When the thread sends the next turn by itself: after the reader
+ * answered an approval, or after a card supplied a client-side tool's
+ * result. The SDK's tool-calls predicate alone is not enough — a
+ * runtime that ends its turn on a server-run tool (a quiz card that
+ * waits for a click, a `hasToolCall` stop) also leaves every tool
+ * part complete, and re-sending would loop that turn forever. So the
+ * tool-calls case counts only when the client put a result in.
+ */
+function sendWhenClientAnswered(clientAnswered: React.RefObject<boolean>) {
+  return (options: { messages: UIMessage[] }) => {
+    if (lastAssistantMessageIsCompleteWithApprovalResponses(options)) return true;
+    if (!clientAnswered.current) return false;
+    if (!lastAssistantMessageIsCompleteWithToolCalls(options)) return false;
+    clientAnswered.current = false;
+    return true;
+  };
 }
 
 export type ChatThreadVariant = "page" | "panel" | "widget";
@@ -188,6 +200,13 @@ export function ChatThread({
     ...body,
   };
 
+  // Set by a card that answers a client-side tool; read by the
+  // auto-continue predicate.
+  const clientAnswered = useRef(false);
+  // A transient `data-chat-status` — "Searching…", "Writing…" — shown
+  // as the shimmer under the reply until the next one or the finish.
+  const [statusLabel, setStatusLabel] = useState<string | null>(null);
+
   const {
     messages,
     setMessages,
@@ -204,11 +223,15 @@ export function ChatThread({
     messages: initialMessages,
     transport,
     sendAutomaticallyWhen:
-      chatConfig.sendAutomaticallyWhen ?? defaultSendAutomatically,
+      chatConfig.sendAutomaticallyWhen ?? sendWhenClientAnswered(clientAnswered),
     onData: (part) => {
       if (isChatDataPart(part, "chat-title")) {
         onTitle?.(part.data);
         router.refresh();
+        return;
+      }
+      if (isChatDataPart(part, "chat-status")) {
+        setStatusLabel(part.data.done ? null : part.data.label);
         return;
       }
       if (isChatDataPart(part, "chat-artifact")) {
@@ -221,6 +244,10 @@ export function ChatThread({
   });
 
   const isStreaming = status === "streaming" || status === "submitted";
+
+  useEffect(() => {
+    if (!isStreaming) setStatusLabel(null);
+  }, [isStreaming]);
 
   const versions = useChatVersions({
     conversationId,
@@ -350,7 +377,10 @@ export function ChatThread({
       typeof message === "string"
         ? send(message)
         : send(message.text, message.files),
-    addToolResult: (args) => void addToolOutput(args),
+    addToolResult: (args) => {
+      clientAnswered.current = true;
+      void addToolOutput(args);
+    },
     addToolApprovalResponse: (args) => void addToolApprovalResponse(args),
     openCanvas: (ref) => onOpenCanvas?.(ref),
     closeCanvas: () => onCloseCanvas?.(),
@@ -391,6 +421,7 @@ export function ChatThread({
           conversationId={conversationId}
           messages={messages}
           isStreaming={status === "streaming"}
+          statusLabel={statusLabel}
           readOnly={readOnly}
           votes={votes}
           versionOf={(messageId) => {

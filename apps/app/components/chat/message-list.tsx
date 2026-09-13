@@ -26,6 +26,8 @@ interface MessageListProps {
   conversationId: string;
   messages: UIMessage[];
   isStreaming: boolean;
+  /** The runtime's transient status line, shown under the streaming reply. */
+  statusLabel?: string | null;
   readOnly?: boolean;
   votes?: Record<string, MessageVote>;
   versionOf?: (messageId: string) => MessageVersion | null;
@@ -40,6 +42,7 @@ export function MessageList({
   conversationId,
   messages,
   isStreaming,
+  statusLabel = null,
   readOnly = false,
   votes = {},
   versionOf,
@@ -68,6 +71,7 @@ export function MessageList({
                   message={message}
                   isLastMessage={index === messages.length - 1}
                   isStreaming={isStreaming}
+                  statusLabel={index === messages.length - 1 ? statusLabel : null}
                   readOnly={readOnly}
                   vote={votes[message.id] ?? null}
                   version={versionOf?.(message.id) ?? null}
