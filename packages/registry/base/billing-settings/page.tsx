@@ -8,6 +8,19 @@ import { Link } from "@/i18n/navigation";
 import { Card } from "@/components/ui/card";
 import { CreditBundles } from "@/components/billing/credit-bundles";
 import { PortalButton } from "@/components/billing/portal-button";
+import {
+  PageHeader,
+  PageHeaderContent,
+  PageHeaderDescription,
+  PageHeaderTitle,
+} from "@/components/ui/page-header";
+import {
+  StatCard,
+  StatCardFooter,
+  StatCardHeader,
+  StatCardLabel,
+  StatCardValue,
+} from "@/components/ui/stat-card";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("billing-settings");
@@ -42,12 +55,14 @@ export default async function BillingSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-lg font-semibold">{t("page.title")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("page.description", { workspaceName: workspace.name })}
-        </p>
-      </header>
+      <PageHeader>
+        <PageHeaderContent>
+          <PageHeaderTitle level={2}>{t("page.title")}</PageHeaderTitle>
+          <PageHeaderDescription>
+            {t("page.description", { workspaceName: workspace.name })}
+          </PageHeaderDescription>
+        </PageHeaderContent>
+      </PageHeader>
 
       {overview.role === "member" && (
         <Card className="space-y-2 p-6">
@@ -110,20 +125,18 @@ export default async function BillingSettingsPage() {
             </div>
           </Card>
 
-          <Card className="space-y-2 p-6">
-            <p className="text-sm font-medium text-muted-foreground">
-              {t("owner.creditBalanceLabel")}
-            </p>
-            <p className="text-2xl font-semibold">
-              {format.number(overview.creditBalance)}{" "}
-              <span className="text-sm font-normal text-muted-foreground">
-                {t("owner.creditsUnit", { count: overview.creditBalance })}
-              </span>
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {t("owner.creditBalanceNote")}
-            </p>
-          </Card>
+          <StatCard>
+            <StatCardHeader>
+              <StatCardLabel>{t("owner.creditBalanceLabel")}</StatCardLabel>
+              <StatCardValue>
+                {format.number(overview.creditBalance)}{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  {t("owner.creditsUnit", { count: overview.creditBalance })}
+                </span>
+              </StatCardValue>
+            </StatCardHeader>
+            <StatCardFooter>{t("owner.creditBalanceNote")}</StatCardFooter>
+          </StatCard>
 
           <CreditBundles currentCredits={overview.creditBalance} />
 

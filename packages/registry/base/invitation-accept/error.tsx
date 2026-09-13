@@ -30,7 +30,7 @@ export default function AcceptInvitationError({
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-4">
+    <div className="flex min-h-96 items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
         <Alert variant="destructive">
           <AlertDescription>{t("errorBoundary.message")}</AlertDescription>
@@ -38,8 +38,12 @@ export default function AcceptInvitationError({
 
         <div className="flex justify-center gap-3">
           <Button onClick={reset}>{t("errorBoundary.retry")}</Button>
-          <Button asChild variant="outline">
-            <Link href="/">{t("errorBoundary.goHome")}</Link>
+          <Button
+            variant="outline"
+            render={<Link href="/" />}
+            nativeButton={false}
+          >
+            {t("errorBoundary.goHome")}
           </Button>
         </div>
       </div>

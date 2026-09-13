@@ -13,8 +13,8 @@
  *
  * No notifications entry: that surface belongs to the separate
  * `notifications` registry item. Once it's installed, add:
- *   <DropdownMenuItem asChild>
- *     <Link href="/notifications"><Bell />Notifications</Link>
+ *   <DropdownMenuItem render={<Link href="/notifications" />}>
+ *     <Bell />Notifications
  *   </DropdownMenuItem>
  */
 
@@ -84,66 +84,66 @@ export function UserMenu({ user }: UserMenuProps) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <SidebarMenuButton
-          size="lg"
-          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-        >
-          <Avatar className="size-8 rounded-lg">
-            {user.image && (
-              <AvatarImage src={user.image} alt={user.name ?? ""} />
-            )}
-            <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-          </Avatar>
-          <div className="grid flex-1 text-left leading-tight">
-            <span className="truncate text-sm font-medium">
-              {user.name || user.email.split("@")[0]}
-            </span>
-            <span className="truncate text-xs text-muted-foreground">
-              {user.email}
-            </span>
-          </div>
-          <ChevronsUpDown className="ml-auto size-4 opacity-50" />
-        </SidebarMenuButton>
+      <DropdownMenuTrigger
+        render={
+          <SidebarMenuButton
+            size="lg"
+            className="data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
+          />
+        }
+      >
+        <Avatar className="size-8 rounded-lg">
+          {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
+          <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+        </Avatar>
+        <div className="grid flex-1 text-left leading-tight">
+          <span className="truncate text-sm font-medium">
+            {user.name || user.email.split("@")[0]}
+          </span>
+          <span className="truncate text-xs text-muted-foreground">
+            {user.email}
+          </span>
+        </div>
+        <ChevronsUpDown className="ml-auto size-4 opacity-50" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-56"
+        className="w-(--anchor-width) min-w-56"
         side={isMobile ? "bottom" : "top"}
         align="end"
         sideOffset={4}
       >
-        <DropdownMenuLabel className="p-0 font-normal">
-          <div className="flex items-center gap-2 px-2 py-1.5">
-            <Avatar className="size-8 rounded-lg">
-              {user.image && (
-                <AvatarImage src={user.image} alt={user.name ?? ""} />
-              )}
-              <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-            </Avatar>
-            <div className="grid flex-1 leading-tight">
-              <span className="truncate text-sm font-medium">
-                {user.name || user.email.split("@")[0]}
-              </span>
-              <span className="truncate text-xs text-muted-foreground">
-                {user.email}
-              </span>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="p-0 font-normal">
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              <Avatar className="size-8 rounded-lg">
+                {user.image && (
+                  <AvatarImage src={user.image} alt={user.name ?? ""} />
+                )}
+                <AvatarFallback className="rounded-lg">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 leading-tight">
+                <span className="truncate text-sm font-medium">
+                  {user.name || user.email.split("@")[0]}
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {user.email}
+                </span>
+              </div>
             </div>
-          </div>
-        </DropdownMenuLabel>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link href="/settings">
-              <User />
-              {t("userMenu.profile")}
-            </Link>
+          <DropdownMenuItem render={<Link href="/settings" />}>
+            <User />
+            {t("userMenu.profile")}
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/settings/workspace">
-              <Settings />
-              {t("userMenu.workspaceSettings")}
-            </Link>
+          <DropdownMenuItem render={<Link href="/settings/workspace" />}>
+            <Settings />
+            {t("userMenu.workspaceSettings")}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

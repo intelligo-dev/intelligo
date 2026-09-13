@@ -33,15 +33,10 @@ produces is itself a defect this app exists to catch.
 
 ## Consuming the registry
 
-`components.json` follows the product application's conventions (style
-`new-york`, `rsc: true`, base color `neutral`, CSS variables, aliases
-under `@/`). Tailwind v4, `lib/utils.ts` (`cn`), and the local shadcn
-primitives in `components/ui/` exist so a registry item's
-`registryDependencies` resolve the same way they would in a consumer
-project outside this monorepo. The design tokens in `app/globals.css`
-are a consumer-owned copy of `packages/ui/src/tokens.css` — this app
-does not import `@intelligo-dev/ui` at runtime for styling, because a
-registry consumer outside the monorepo can't either.
+The design tokens in `app/globals.css` are the `intelligo` registry base
+(ADR-0013): shadcn base-nova with status, layer and motion tokens, exactly
+what `shadcn add https://intelligo.dev/r/intelligo.json` writes. They are
+consumer-owned; re-value them to re-theme every installed page.
 
 ## What it must never do
 

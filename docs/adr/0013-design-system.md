@@ -69,10 +69,7 @@ Bubble, Attachment, Marker) are official components.
      `--ease-emphasized`, `--ease-exit` in Tailwind's `--ease-*`
      namespace; `prefers-reduced-motion: reduce` collapses them.
 
-   Three stock neutral values miss WCAG AA and are overridden in light
-   mode: `--ring` and `--sidebar-ring` (2.6:1 against the background,
-   below the 3:1 a focus indicator needs) and `--muted-foreground`
-   (4.3:1 on `--muted`). Everything else is shadcn's value. There are
+   Stock neutral values that miss WCAG AA are raised: `--ring` and `--sidebar-ring` in light mode (2.6:1 against the background, below the 3:1 a focus indicator needs), `--muted-foreground` in light mode (4.3:1 on `--muted`), and light `--destructive` (4.0:1 as text on its own 10% tint — the pattern base-nova's destructive badge, alert and button all use). Status tokens meet the same bar: text on the page, on a card and on its own tint, and their foreground on the fill. Everything else is shadcn's value. There are
    no spacing, font-size, shadow or brand tokens: Tailwind's scales and
    the style own those, and a product's palette is its own theme.
 

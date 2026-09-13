@@ -18,7 +18,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { CURRENCY } from "@/lib/billing-config";
 import { paymentPollConfig } from "@/lib/payment-poll-config";
 import { pollLocalPayment, startLocalPayment } from "@/actions/payment";
@@ -152,7 +153,7 @@ export function LocalPaymentModal({
 
         <div className="flex flex-col items-center py-4">
           {step === "creating" ? (
-            <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+            <Spinner className="size-8 text-primary" aria-hidden />
           ) : null}
 
           {step === "waiting" && invoice ? (
@@ -179,18 +180,19 @@ export function LocalPaymentModal({
                   {invoice.deeplinks.map((link) => (
                     <Button
                       key={link.url}
-                      asChild
                       variant="outline"
                       className="w-full"
+                      render={<a href={link.url} />}
+                      nativeButton={false}
                     >
-                      <a href={link.url}>{link.app}</a>
+                      {link.app}
                     </Button>
                   ))}
                 </div>
               ) : null}
 
               <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                <Spinner className="size-3.5" aria-hidden />
                 <span>{t("state.polling")}</span>
               </div>
             </>

@@ -16,6 +16,34 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+One design system (ADR-0013).
+
+### Breaking
+
+- Registry items require shadcn `base-nova` (Base UI): they compose with
+  `render`, not `asChild`, and depend on the `intelligo` token contract.
+  See `docs/migrations/design-system.md`.
+- `@intelligo-dev/ui` is no longer used by the framework; the admin
+  console dropped it.
+- The chat item is rebuilt on MessageScroller, Message, Bubble and the T3
+  AI parts; its seams keep their names and shapes.
+
+### Added
+
+- `intelligo.dev/r/intelligo.json`: the `registry:base` preset — base-nova,
+  a WCAG AA-checked neutral theme, status, layer and motion tokens.
+- T3 AI parts (prompt input, reasoning, tool, code block, sources,
+  suggestion, artifact) and T4 patterns (page header, stat card, status
+  badge, copy button) as `@intelligo/<name>` registry components.
+- `tests/architecture/design-system.test.ts`: authoring rules, the token
+  contract on every surface, AA contrast.
+- intelligo.dev `/components` and `/blocks`.
+
+### Changed
+
+- The CLI scaffold writes base-nova, the intelligo tokens and the
+  `@intelligo` registry (template 1.11.0).
+
 ## [1.0.0-beta.6] — 2026-09-13
 
 The release after the layout settled: the chat item binds the transport

@@ -37,6 +37,7 @@ const BASE_DIR = path.join(REGISTRY_DIR, "base");
 const REGISTRY_JSON_PATH = path.join(REGISTRY_DIR, "registry.json");
 
 const VALID_FILE_TYPES = [
+  "registry:ui",
   "registry:page",
   "registry:component",
   "registry:file",
@@ -73,8 +74,7 @@ function readRegistry(): RegistryJson {
 
 /**
  * Design-system items (ADR-0013) configure an app — config, tokens, CSS —
- * and ship no files, pages or messages. Every per-item rule below is
- * about blocks; the base item has its own describe.
+ * and ship no files, pages or messages; the base item has its own describe.
  */
 const DESIGN_SYSTEM_TYPES = new Set([
   "registry:base",
@@ -82,7 +82,21 @@ const DESIGN_SYSTEM_TYPES = new Set([
   "registry:theme",
 ]);
 
+/** Page families: pages, messages, requires.json entries. */
 function readBlocks(): RegistryJson {
+  const registry = readRegistry();
+  return {
+    ...registry,
+    items: registry.items.filter((item) => item.type === "registry:block"),
+  };
+}
+
+/**
+ * Everything that ships source: blocks, and the T3/T4 components
+ * (`registry:ui`, ADR-0013 §6) blocks compose. Import, dependency and
+ * orphan rules hold for both; messages and requires.json are block rules.
+ */
+function readSourceItems(): RegistryJson {
   const registry = readRegistry();
   return {
     ...registry,
@@ -247,7 +261,7 @@ describe("registry", () => {
   });
 
   describe("registry files on disk", () => {
-    const registry = readBlocks();
+    const registry = readSourceItems();
 
     it("has every listed file path present on disk", () => {
       const violations: string[] = [];
@@ -307,7 +321,7 @@ describe("registry", () => {
   });
 
   describe("no unpublished, dissolved or duplicate-runtime imports", () => {
-    const registry = readBlocks();
+    const registry = readSourceItems();
     const dissolved: readonly string[] = DISSOLVED_PACKAGES;
     /** The only `@intelligo-dev/*` names a consumer can resolve from npm. */
     const published = new Set(
@@ -322,7 +336,10 @@ describe("registry", () => {
     });
 
     describe.each(registry.items)("item: $name", (item) => {
-      const itemRoot = path.join(BASE_DIR, item.name);
+      const itemRoot =
+        item.type === "registry:ui"
+          ? path.join(BASE_DIR, "ui", item.name)
+          : path.join(BASE_DIR, item.name);
 
       it("imports no unpublished, dissolved, or @intelligo-dev/ui path", () => {
         const violations: string[] = [];
@@ -378,7 +395,7 @@ describe("registry", () => {
   });
 
   describe("@intelligo-dev/* imports are declared in the item's dependencies", () => {
-    const registry = readBlocks();
+    const registry = readSourceItems();
 
     describe.each(registry.items)("item: $name", (item) => {
       it("declares every @intelligo-dev/* package it imports", () => {
@@ -405,7 +422,7 @@ describe("registry", () => {
   });
 
   describe("npm imports are declared in the item's dependencies", () => {
-    const registry = readBlocks();
+    const registry = readSourceItems();
 
     // Provided by every Next.js consumer app; declaring them per item
     // would be noise, and shadcn would try to (re)install them.
@@ -456,11 +473,18 @@ describe("registry", () => {
   });
 
   describe("cross-item @/ imports resolve to a shipped target", () => {
-    const registry = readBlocks();
+    const registry = readSourceItems();
 
     // Consumer files the CLI app scaffold provides (not any registry
     // item, on purpose) — declared once in registry/requires.json.
     const SCAFFOLD_PROVIDED = new Set(readRequires().scaffold);
+
+    // Intelligo's own components (T3/T4), which blocks name as @intelligo/<name>.
+    const UI_ITEMS = new Set(
+      readRegistry()
+        .items.filter((item) => item.type === "registry:ui")
+        .map((item) => item.name)
+    );
 
     // Every target any item ships, extensionless, e.g. "actions/team",
     // "components/team/member-list", "lib/team".
@@ -491,7 +515,10 @@ describe("registry", () => {
 
             const uiMatch = target.match(/^components\/ui\/([\w-]+)$/);
             if (uiMatch) {
-              if (!regDeps.has(uiMatch[1]!)) {
+              const name = uiMatch[1]!;
+              const intelligoUi =
+                UI_ITEMS.has(name) && regDeps.has(`@intelligo/${name}`);
+              if (!regDeps.has(name) && !intelligoUi) {
                 violations.push(
                   `${rel} → ${spec} (ui primitive "${uiMatch[1]}" not in registryDependencies)`
                 );
@@ -508,6 +535,37 @@ describe("registry", () => {
         }
 
         expect(violations).toEqual([]);
+      });
+    });
+  });
+
+  describe("registryDependencies are exactly the components an item imports", () => {
+    const registry = readSourceItems();
+    const UI_ITEMS = new Set(
+      readRegistry()
+        .items.filter((item) => item.type === "registry:ui")
+        .map((item) => item.name)
+    );
+
+    describe.each(registry.items)("item: $name", (item) => {
+      it("declares no component it never imports", () => {
+        const imported = new Set<string>();
+        for (const file of item.files) {
+          const abs = path.join(REGISTRY_DIR, file.path);
+          const source = statSyncSafe(abs) ? readFileSync(abs, "utf8") : "";
+          for (const spec of importSpecifiers(source)) {
+            const ui = spec.match(/^@\/components\/ui\/([\w-]+)$/);
+            if (!ui) continue;
+            imported.add(UI_ITEMS.has(ui[1]!) ? `@intelligo/${ui[1]}` : ui[1]!);
+          }
+        }
+        const unused = (item.registryDependencies ?? []).filter(
+          (dep) => !imported.has(dep)
+        );
+        expect(
+          unused,
+          `item "${item.name}" declares components it does not import — shadcn would install them for nothing`
+        ).toEqual([]);
       });
     });
   });
@@ -736,7 +794,7 @@ describe("the registry workspace", () => {
     };
     // Implicit for a Next app; declared here so tsc finds them.
     const needed = new Set(["react", "react-dom", "next"]);
-    for (const item of readBlocks().items) {
+    for (const item of readSourceItems().items) {
       for (const dep of item.dependencies ?? []) needed.add(name(dep));
     }
     const missing = [...needed].filter(

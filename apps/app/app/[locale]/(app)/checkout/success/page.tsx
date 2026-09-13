@@ -1,11 +1,11 @@
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { requireWorkspace } from "@intelligo-dev/auth";
 import { getCheckoutSession } from "@intelligo-dev/billing";
 
 import { Link, redirect } from "@/i18n/navigation";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 
 interface CheckoutSuccessPageProps {
   searchParams: Promise<{ session_id?: string }>;
@@ -51,10 +52,10 @@ export default async function CheckoutSuccessPage({
     if (session.status === "complete" && session.isSubscriptionActive) {
       return (
         <div className="container max-w-2xl py-16">
-          <Card className="border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/30">
+          <Card className="border-success/30">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-                <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
+              <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-success/10">
+                <CheckCircle2 className="size-10 text-success" />
               </div>
               <CardTitle className="text-3xl">{t("success.title")}</CardTitle>
               <CardDescription className="text-base">
@@ -81,9 +82,9 @@ export default async function CheckoutSuccessPage({
                       </p>
                     )}
                   </div>
-                  <Badge variant="default" className="bg-green-600">
+                  <StatusBadge status="success" dot>
                     {t("success.status")}
-                  </Badge>
+                  </StatusBadge>
                 </div>
               </div>
 
@@ -95,13 +96,20 @@ export default async function CheckoutSuccessPage({
             </CardContent>
 
             <CardFooter className="flex flex-col gap-3 sm:flex-row">
-              <Button asChild className="w-full sm:flex-1">
-                <Link href="/dashboard">{t("actions.goToDashboard")}</Link>
+              <Button
+                className="w-full sm:flex-1"
+                render={<Link href="/dashboard" />}
+                nativeButton={false}
+              >
+                {t("actions.goToDashboard")}
               </Button>
-              <Button asChild variant="outline" className="w-full sm:flex-1">
-                <Link href="/settings/billing">
-                  {t("actions.viewBillingSettings")}
-                </Link>
+              <Button
+                variant="outline"
+                className="w-full sm:flex-1"
+                render={<Link href="/settings/billing" />}
+                nativeButton={false}
+              >
+                {t("actions.viewBillingSettings")}
               </Button>
             </CardFooter>
           </Card>
@@ -118,13 +126,15 @@ export default async function CheckoutSuccessPage({
               <CardDescription>{t("pending.description")}</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Spinner className="size-8 text-muted-foreground" />
             </CardContent>
             <CardFooter className="justify-center">
-              <Button asChild variant="outline">
-                <Link href="/settings/billing">
-                  {t("actions.checkBillingSettings")}
-                </Link>
+              <Button
+                variant="outline"
+                render={<Link href="/settings/billing" />}
+                nativeButton={false}
+              >
+                {t("actions.checkBillingSettings")}
               </Button>
             </CardFooter>
           </Card>
@@ -140,13 +150,15 @@ export default async function CheckoutSuccessPage({
             <CardDescription>{t("received.description")}</CardDescription>
           </CardHeader>
           <CardFooter className="justify-center gap-3">
-            <Button asChild>
-              <Link href="/dashboard">{t("actions.goToDashboard")}</Link>
+            <Button render={<Link href="/dashboard" />} nativeButton={false}>
+              {t("actions.goToDashboard")}
             </Button>
-            <Button asChild variant="outline">
-              <Link href="/settings/billing">
-                {t("actions.viewBillingSettings")}
-              </Link>
+            <Button
+              variant="outline"
+              render={<Link href="/settings/billing" />}
+              nativeButton={false}
+            >
+              {t("actions.viewBillingSettings")}
             </Button>
           </CardFooter>
         </Card>
@@ -161,8 +173,8 @@ export default async function CheckoutSuccessPage({
       <div className="container max-w-2xl py-16">
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-              <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
+            <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-success/10">
+              <CheckCircle2 className="size-10 text-success" />
             </div>
             <CardTitle>{t("fallback.title")}</CardTitle>
             <CardDescription>{t("fallback.description")}</CardDescription>
@@ -173,13 +185,15 @@ export default async function CheckoutSuccessPage({
             </p>
           </CardContent>
           <CardFooter className="justify-center gap-3">
-            <Button asChild>
-              <Link href="/dashboard">{t("actions.goToDashboard")}</Link>
+            <Button render={<Link href="/dashboard" />} nativeButton={false}>
+              {t("actions.goToDashboard")}
             </Button>
-            <Button asChild variant="outline">
-              <Link href="/settings/billing">
-                {t("actions.viewBillingSettings")}
-              </Link>
+            <Button
+              variant="outline"
+              render={<Link href="/settings/billing" />}
+              nativeButton={false}
+            >
+              {t("actions.viewBillingSettings")}
             </Button>
           </CardFooter>
         </Card>

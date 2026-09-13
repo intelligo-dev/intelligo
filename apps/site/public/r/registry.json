@@ -8,7 +8,7 @@
       "type": "registry:base",
       "extends": "none",
       "title": "Intelligo design system",
-      "description": "The base every Intelligo page is built on (ADR-0013): shadcn base-nova on Base UI, the neutral theme with three values raised to WCAG AA, and additive tokens for status (success, warning, info, destructive-foreground), layers and motion. Initialise an app from it before installing any other item.",
+      "description": "The base every Intelligo page is built on (ADR-0013): shadcn base-nova on Base UI, the neutral theme with its focus ring, muted text and destructive raised to WCAG AA, and additive tokens for status (success, warning, info, destructive-foreground), layers and motion. Initialise an app from it before installing any other item.",
       "dependencies": [
         "class-variance-authority",
         "cn",
@@ -59,7 +59,7 @@
           "muted-foreground": "oklch(0.52 0 0)",
           "accent": "oklch(0.97 0 0)",
           "accent-foreground": "oklch(0.205 0 0)",
-          "destructive": "oklch(0.577 0.245 27.325)",
+          "destructive": "oklch(0.547 0.22 27.325)",
           "border": "oklch(0.922 0 0)",
           "input": "oklch(0.922 0 0)",
           "ring": "oklch(0.556 0 0)",
@@ -78,11 +78,11 @@
           "sidebar-border": "oklch(0.922 0 0)",
           "sidebar-ring": "oklch(0.556 0 0)",
           "destructive-foreground": "oklch(0.985 0 0)",
-          "success": "oklch(0.535 0.14 150)",
+          "success": "oklch(0.515 0.14 150)",
           "success-foreground": "oklch(0.985 0 0)",
-          "warning": "oklch(0.555 0.12 70)",
+          "warning": "oklch(0.535 0.115 70)",
           "warning-foreground": "oklch(0.985 0 0)",
-          "info": "oklch(0.55 0.14 250)",
+          "info": "oklch(0.53 0.14 250)",
           "info-foreground": "oklch(0.985 0 0)"
         },
         "dark": {
@@ -118,11 +118,11 @@
           "sidebar-border": "oklch(1 0 0 / 10%)",
           "sidebar-ring": "oklch(0.556 0 0)",
           "destructive-foreground": "oklch(0.145 0 0)",
-          "success": "oklch(0.6 0.14 150)",
+          "success": "oklch(0.615 0.14 150)",
           "success-foreground": "oklch(0.145 0 0)",
           "warning": "oklch(0.695 0.15 70)",
           "warning-foreground": "oklch(0.145 0 0)",
-          "info": "oklch(0.605 0.14 250)",
+          "info": "oklch(0.63 0.14 250)",
           "info-foreground": "oklch(0.145 0 0)"
         }
       },
@@ -187,6 +187,200 @@
           }
         }
       }
+    },
+    {
+      "name": "page-header",
+      "type": "registry:ui",
+      "title": "Page Header",
+      "description": "The one page title every Intelligo page renders: heading, description and actions (ADR-0013, T4).",
+      "files": [
+        {
+          "path": "base/ui/page-header/page-header.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "stat-card",
+      "type": "registry:ui",
+      "title": "Stat Card",
+      "description": "A metric on a card — label, value, an action such as a status badge, and a footer (ADR-0013, T4).",
+      "registryDependencies": [
+        "card"
+      ],
+      "files": [
+        {
+          "path": "base/ui/stat-card/stat-card.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "status-badge",
+      "type": "registry:ui",
+      "title": "Status Badge",
+      "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour (ADR-0013, T4).",
+      "dependencies": [
+        "class-variance-authority"
+      ],
+      "files": [
+        {
+          "path": "base/ui/status-badge/status-badge.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "copy-button",
+      "type": "registry:ui",
+      "title": "Copy Button",
+      "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own (ADR-0013, T4).",
+      "dependencies": [
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "button"
+      ],
+      "files": [
+        {
+          "path": "base/ui/copy-button/copy-button.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-code-block",
+      "type": "registry:ui",
+      "title": "AI Code Block",
+      "description": "Highlighted code with a copy action, light and dark (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": [
+        "shiki"
+      ],
+      "registryDependencies": [
+        "@intelligo/copy-button"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-code-block/ai-code-block.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-tool",
+      "type": "registry:ui",
+      "title": "AI Tool",
+      "description": "A tool call: name, state as a status badge, input and output (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": [
+        "ai@^6.0.77",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "collapsible",
+        "@intelligo/status-badge",
+        "@intelligo/ai-code-block"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-tool/ai-tool.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-reasoning",
+      "type": "registry:ui",
+      "title": "AI Reasoning",
+      "description": "Streamed reasoning, collapsible, with the time it took (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": [
+        "lucide-react",
+        "streamdown"
+      ],
+      "registryDependencies": [
+        "collapsible"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-reasoning/ai-reasoning.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-sources",
+      "type": "registry:ui",
+      "title": "AI Sources",
+      "description": "The sources a reply cites, collapsible (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": [
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "collapsible"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-sources/ai-sources.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-suggestion",
+      "type": "registry:ui",
+      "title": "AI Suggestion",
+      "description": "Conversation starters and follow-ups in a scrollable row (ADR-0013, T3; ported from Vercel AI Elements).",
+      "registryDependencies": [
+        "button",
+        "scroll-area"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-suggestion/ai-suggestion.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-artifact",
+      "type": "registry:ui",
+      "title": "AI Artifact",
+      "description": "A generated document's frame: header, actions and content (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": [
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "button",
+        "tooltip"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-artifact/ai-artifact.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "ai-prompt-input",
+      "type": "registry:ui",
+      "title": "AI Prompt Input",
+      "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (ADR-0013, T3; ported from Vercel AI Elements).",
+      "dependencies": [
+        "ai@^6.0.77",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "attachment",
+        "dropdown-menu",
+        "input-group",
+        "select",
+        "spinner"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-prompt-input/ai-prompt-input.tsx",
+          "type": "registry:ui"
+        }
+      ]
     },
     {
       "name": "smoke",
@@ -288,7 +482,8 @@
         "label",
         "select",
         "skeleton",
-        "table"
+        "table",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -363,7 +558,10 @@
         "skeleton",
         "table",
         "tabs",
-        "button"
+        "button",
+        "@intelligo/page-header",
+        "@intelligo/stat-card",
+        "@intelligo/status-badge"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -549,7 +747,8 @@
       "title": "Settings Shell",
       "description": "The shared frame around every /settings page: layout with heading and width constraint, a configurable tab bar (lib/settings-nav.ts), and a /settings index that redirects to the first tab. Install alongside the settings items - without it they render unframed and plain /settings links 404.",
       "registryDependencies": [
-        "tabs"
+        "tabs",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "lucide-react",
@@ -594,7 +793,8 @@
         "dialog",
         "input",
         "label",
-        "skeleton"
+        "skeleton",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -652,8 +852,8 @@
         "alert",
         "button",
         "input",
-        "label",
-        "skeleton"
+        "spinner",
+        "field"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -715,7 +915,8 @@
         "alert",
         "button",
         "input",
-        "label"
+        "spinner",
+        "field"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -751,7 +952,8 @@
         "alert",
         "button",
         "input",
-        "label"
+        "spinner",
+        "field"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -797,7 +999,8 @@
         "alert",
         "button",
         "input",
-        "label"
+        "spinner",
+        "field"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -896,7 +1099,8 @@
         "popover",
         "scroll-area",
         "separator",
-        "skeleton"
+        "skeleton",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1037,10 +1241,10 @@
       "description": "Checkout-success page that verifies the Stripe session directly through the framework's checkout service, covering the webhook-race window between the browser redirect and Stripe's webhook delivery.",
       "registryDependencies": [
         "alert",
-        "badge",
         "button",
         "card",
-        "skeleton"
+        "spinner",
+        "@intelligo/status-badge"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1075,7 +1279,9 @@
         "alert",
         "button",
         "card",
-        "skeleton"
+        "skeleton",
+        "@intelligo/page-header",
+        "@intelligo/stat-card"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1186,7 +1392,8 @@
       "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
       "registryDependencies": [
         "button",
-        "dialog"
+        "dialog",
+        "spinner"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1233,7 +1440,8 @@
         "dialog",
         "input",
         "label",
-        "skeleton"
+        "skeleton",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1288,8 +1496,7 @@
       "registryDependencies": [
         "button",
         "input",
-        "label",
-        "skeleton"
+        "label"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1433,7 +1640,9 @@
         "card",
         "dialog",
         "scroll-area",
-        "skeleton"
+        "skeleton",
+        "spinner",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1494,7 +1703,8 @@
       "registryDependencies": [
         "button",
         "card",
-        "skeleton"
+        "skeleton",
+        "@intelligo/page-header"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1547,16 +1757,28 @@
       "title": "Chat",
       "description": "A self-contained AI chat surface: streaming conversation UI, a history switcher, a tool-call renderer seam you own, and a two-line Route Handler that binds @intelligo-dev/chat's transport — auth, rate limit, feature gate, persistence and the execution boundary — to consumer-owned config (lib/chat-server-config.ts). Ships with a deterministic stub model so a clean install streams with no API keys. The config imports lib/intelligo.ts (the composition root) and lib/plans.ts, which are provided by the `intelligo create` scaffold, not by any registry item - in a hand-rolled app, create both before installing (see the CLI's app-scaffold templates).",
       "registryDependencies": [
+        "alert",
+        "alert-dialog",
+        "bubble",
         "button",
         "dropdown-menu",
+        "empty",
         "input",
+        "input-group",
+        "item",
+        "message",
+        "message-scroller",
         "skeleton",
-        "textarea",
-        "alert-dialog"
+        "spinner",
+        "@intelligo/ai-prompt-input",
+        "@intelligo/ai-reasoning",
+        "@intelligo/ai-suggestion",
+        "@intelligo/ai-tool",
+        "@intelligo/copy-button"
       ],
       "dependencies": [
-        "ai",
-        "@ai-sdk/react",
+        "ai@^6.0.77",
+        "@ai-sdk/react@^3.0.79",
         "streamdown",
         "lucide-react",
         "sonner",
@@ -1662,7 +1884,10 @@
           "type": "registry:file",
           "target": "components/chat/credit-status-banner.tsx"
         }
-      ]
+      ],
+      "css": {
+        "@source \"../node_modules/streamdown/dist/*.js\"": {}
+      }
     }
   ]
 }

@@ -6,7 +6,7 @@
 
 This repository is the framework's home. It is edited here, and every workspace under `packages/` is released to npm as `@intelligo-dev/*` by **one release commit**: bump every published manifest to the new version and head `CHANGELOG.md` with a `## [X.Y.Z]` section. Merging it to main runs `.github/workflows/release.yml`, which builds, runs the full suite, publishes under the dist-tag the version implies (`1.0.0-beta.N` → `beta`, a plain `1.0.0` → `latest`), pushes the `vX.Y.Z` tag, creates the GitHub release from that changelog section and applies `scripts/npm-deprecations.json`. A version with no changelog section does not release. `apps/site` deploys intelligo.dev and serves the page registry at `/r`. Products built on the framework live in their own repositories and consume the npm packages; nothing product-specific belongs here (`tests/architecture/publishability.test.ts` enforces it).
 
-**Decisions:** [docs/adr/](docs/adr/README.md) — read ADR-0003 (AI frameworks stay native), ADR-0005 (composition root), ADR-0007 (execution boundary), ADR-0009 (persistence contracts), ADR-0010 (i18n-native registry), ADR-0011 (package topology), ADR-0012 (headless chat transport) before changing anything they cover.
+**Decisions:** [docs/adr/](docs/adr/README.md) — read ADR-0003 (AI frameworks stay native), ADR-0005 (composition root), ADR-0007 (execution boundary), ADR-0009 (persistence contracts), ADR-0010 (i18n-native registry), ADR-0011 (package topology), ADR-0012 (headless chat transport), ADR-0013 (design system) before changing anything they cover.
 
 ## The boundary (read before writing code)
 
@@ -43,7 +43,7 @@ Env: workspace apps load the **repository root `.env`** as fallback (app-local `
 
 ### Registry (`packages/registry/`)
 
-A private workspace (`@intelligo-dev/registry`, never published): `registry.json` (official shadcn schema) + `base/<item>/**` source; build output `public/r/` is gitignored; `lint` runs with the rest of the tree. Items: smoke, app-shell, dashboard, auth-login/signup/password-reset/email-verification, onboarding, invitation-accept, workspace/team/profile/privacy-settings, pricing, checkout, billing-settings, usage, notifications, chat, artifacts, route-error. `tests/architecture/registry.test.ts` enforces: schema shape, no orphans, no unpublished/dissolved/`@intelligo-dev/ui` imports, declared `@intelligo-dev/*` dependencies.
+A private workspace (`@intelligo-dev/registry`, never published): `registry.json` (official shadcn schema) + `base/<item>/**` source; build output `public/r/` is gitignored; `lint` runs with the rest of the tree. Items: smoke, app-shell, dashboard, auth-login/signup/password-reset/email-verification, onboarding, invitation-accept, workspace/team/profile/privacy-settings, pricing, checkout, billing-settings, usage, notifications, chat, artifacts, route-error. Design system (ADR-0013): the `intelligo` `registry:base` item carries base-nova config and the token contract; Intelligo's own components (T3 AI parts, T4 patterns) are `registry:ui` items under `base/ui/<name>/`, named `@intelligo/<name>` in `registryDependencies`; items compose with `render` (Base UI), never `asChild`, and use semantic tokens only. `tests/architecture/design-system.test.ts` enforces the authoring rules, the token contract on every surface and WCAG AA contrast. `tests/architecture/registry.test.ts` enforces: schema shape, no orphans, no unpublished/dissolved/`@intelligo-dev/ui` imports, declared `@intelligo-dev/*` dependencies.
 
 ### Packages
 
@@ -60,7 +60,6 @@ A private workspace (`@intelligo-dev/registry`, never published): `registry.json
 | `@intelligo-dev/mastra`     | Optional bridge from a native agent to the execution boundary                                                                                                                                               |
 | `@intelligo-dev/admin`      | Operational console (Intelligo-owned, excluded from the registry)                                                                                                                                           |
 | `@intelligo-dev/cli`        | `create` / `add` / `doctor` / `migrate --check` / `upgrade --check`; scaffold is registry-ready (shadcn + Tailwind 4 + next-intl + composition root)                                                        |
-| `@intelligo-dev/ui`         | Legacy design system — still used by admin; **not** part of the page contract                                                                                                                               |
 
 Every workspace under `packages/` is published except `packages/registry` (`private: true`); `tests/architecture/publishability.test.ts` audits the tree for it (licence metadata, no credentials, no product vocabulary). **One package per runtime target / peer dependency / adapter; shared pure-TypeScript modules are subpaths** (ADR-0011) — `money`, `http` and `billing-core` were folded under that rule.
 
@@ -94,4 +93,4 @@ Server Actions are thin transports over package services (installed `actions/*`)
 
 ## Tech Stack
 
-Next.js 16 (Turbopack), React 19, TypeScript 5.9, Tailwind CSS 4, shadcn/ui (registry + consumer-owned primitives), Radix, Drizzle ORM, Neon PostgreSQL + pgvector, Better-Auth, Stripe, Resend, Vercel AI SDK 6, next-intl, Turborepo, pnpm 9, Vitest. Drizzle over Prisma; Better-Auth over NextAuth; no Redis; no Pinecone; no tRPC.
+Next.js 16 (Turbopack), React 19, TypeScript 5.9, Tailwind CSS 4, shadcn/ui base-nova on Base UI (registry + consumer-owned primitives), Drizzle ORM, Neon PostgreSQL + pgvector, Better-Auth, Stripe, Resend, Vercel AI SDK 6, next-intl, Turborepo, pnpm 9, Vitest. Drizzle over Prisma; Better-Auth over NextAuth; no Redis; no Pinecone; no tRPC.

@@ -22,8 +22,8 @@ export default function NotificationsLoading() {
               key={row}
               className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0"
             >
-              <Skeleton className="h-2 w-2 rounded-full" />
-              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="size-2 rounded-full" />
+              <Skeleton className="size-4 rounded-full" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-4 w-48" />
                 <Skeleton className="h-3 w-64" />

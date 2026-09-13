@@ -13,7 +13,6 @@ import { useState } from "react";
 import { useTranslations } from "use-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Loader2 } from "lucide-react";
 
 import { authClient } from "@showcase/shims/auth-client";
 
@@ -21,7 +20,8 @@ import { Link } from "@showcase/i18n/navigation";
 import { Alert, AlertDescription } from "@showcase/components/ui/alert";
 import { Button } from "@showcase/components/ui/button";
 import { Input } from "@showcase/components/ui/input";
-import { Label } from "@showcase/components/ui/label";
+import { Field, FieldError, FieldLabel } from "@showcase/components/ui/field";
+import { Spinner } from "@showcase/components/ui/spinner";
 import {
   forgotPasswordSchema,
   type ForgotPasswordInput,
@@ -72,11 +72,14 @@ export function ForgotPasswordForm() {
         <Alert>
           <AlertDescription>{t("forgotForm.successMessage")}</AlertDescription>
         </Alert>
-        <Link href="/login" className="block">
-          <Button type="button" variant="outline" className="w-full">
-            {t("forgotForm.backToLogin")}
-          </Button>
-        </Link>
+        <Button
+          variant="outline"
+          className="w-full"
+          render={<Link href="/login" />}
+          nativeButton={false}
+        >
+          {t("forgotForm.backToLogin")}
+        </Button>
       </div>
     );
   }
@@ -89,8 +92,8 @@ export function ForgotPasswordForm() {
         </Alert>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="email">{t("forgotForm.emailLabel")}</Label>
+      <Field data-invalid={errors.email ? true : undefined}>
+        <FieldLabel htmlFor="email">{t("forgotForm.emailLabel")}</FieldLabel>
         <Input
           id="email"
           type="email"
@@ -101,18 +104,23 @@ export function ForgotPasswordForm() {
           {...register("email")}
         />
         {errors.email && (
-          <p id="email-error" className="text-sm text-destructive">
+          <FieldError id="email-error">
             {t(`validation.${errors.email.message}`)}
-          </p>
+          </FieldError>
         )}
-      </div>
+      </Field>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isLoading}
+        aria-busy={isLoading || undefined}
+      >
         {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
+          <>
+            <Spinner data-icon="inline-start" />
             {t("forgotForm.submitting")}
-          </span>
+          </>
         ) : (
           t("forgotForm.submit")
         )}

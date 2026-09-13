@@ -62,11 +62,14 @@ export function PaywallBlur({
           <p className="mt-2 text-sm text-muted-foreground">
             {description ?? t("paywall.description")}
           </p>
-          <Button asChild size="lg" className="mt-4">
-            <Link href={featureGatingConfig.upgradeHref}>
-              {ctaLabel ?? t("paywall.cta")}
-              <ArrowRight className="ml-2 size-4" />
-            </Link>
+          <Button
+            size="lg"
+            className="mt-4"
+            render={<Link href={featureGatingConfig.upgradeHref} />}
+            nativeButton={false}
+          >
+            {ctaLabel ?? t("paywall.cta")}
+            <ArrowRight className="ml-2 size-4" />
           </Button>
         </div>
       </div>

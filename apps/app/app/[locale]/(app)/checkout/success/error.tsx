@@ -27,7 +27,7 @@ export default function CheckoutSuccessError({
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-4">
+    <div className="flex min-h-96 items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
         <Alert variant="destructive">
           <AlertDescription>{t("error.description")}</AlertDescription>
@@ -35,10 +35,12 @@ export default function CheckoutSuccessError({
 
         <div className="flex justify-center gap-3">
           <Button onClick={reset}>{t("actions.tryAgain")}</Button>
-          <Button asChild variant="outline">
-            <Link href="/settings/billing">
-              {t("actions.viewBillingSettings")}
-            </Link>
+          <Button
+            variant="outline"
+            render={<Link href="/settings/billing" />}
+            nativeButton={false}
+          >
+            {t("actions.viewBillingSettings")}
           </Button>
         </div>
       </div>

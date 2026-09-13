@@ -1,10 +1,32 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+/**
+ * The conversation viewport. shadcn's MessageScroller keeps the newest
+ * turn in view while it streams and offers a way back down once the
+ * reader scrolls up; an empty conversation shows its starters instead.
+ */
+
 import { useTranslations } from "use-intl";
 import type { UIMessage } from "ai";
+import { ArrowDownIcon, MessageSquareIcon } from "lucide-react";
 
-import { Button } from "@showcase/components/ui/button";
+import { Suggestion } from "@showcase/components/ui/ai-suggestion";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@showcase/components/ui/empty";
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "@showcase/components/ui/message-scroller";
 import type { ToolRendererActions } from "@showcase/lib/chat-renderers";
 import { Message } from "./message";
 
@@ -29,32 +51,36 @@ export function MessageList({
   onRetry,
   toolActions,
 }: MessageListProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length, isStreaming]);
+  const t = useTranslations("chat");
 
   if (messages.length === 0) {
     return <EmptyState starters={starters} onStarterSelect={onStarterSelect} />;
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-6">
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        {messages.map((message, index) => (
-          <Message
-            key={message.id}
-            message={message}
-            isLastMessage={index === messages.length - 1}
-            isStreaming={isStreaming}
-            onRetry={onRetry}
-            toolActions={toolActions}
-          />
-        ))}
-        <div ref={bottomRef} />
-      </div>
-    </div>
+    <MessageScrollerProvider>
+      <MessageScroller className="min-h-0 flex-1">
+        <MessageScrollerViewport>
+          <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-6">
+            {messages.map((message, index) => (
+              <MessageScrollerItem key={message.id} messageId={message.id}>
+                <Message
+                  message={message}
+                  isLastMessage={index === messages.length - 1}
+                  isStreaming={isStreaming}
+                  onRetry={onRetry}
+                  toolActions={toolActions}
+                />
+              </MessageScrollerItem>
+            ))}
+          </MessageScrollerContent>
+        </MessageScrollerViewport>
+        <MessageScrollerButton>
+          <ArrowDownIcon />
+          <span className="sr-only">{t("list.scrollToEnd")}</span>
+        </MessageScrollerButton>
+      </MessageScroller>
+    </MessageScrollerProvider>
   );
 }
 
@@ -68,29 +94,26 @@ function EmptyState({
   const t = useTranslations("chat");
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold">{t("emptyState.title")}</h2>
-        <p className="max-w-sm text-sm text-muted-foreground">
-          {t("emptyState.description")}
-        </p>
-      </div>
+    <Empty className="flex-1">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <MessageSquareIcon />
+        </EmptyMedia>
+        <EmptyTitle>{t("emptyState.title")}</EmptyTitle>
+        <EmptyDescription>{t("emptyState.description")}</EmptyDescription>
+      </EmptyHeader>
       {starters && starters.length > 0 ? (
-        <div className="flex max-w-2xl flex-wrap justify-center gap-2">
+        <EmptyContent className="max-w-2xl flex-row flex-wrap justify-center">
           {starters.map((starter, index) => (
-            <Button
+            <Suggestion
               key={index}
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-auto whitespace-normal rounded-full px-4 py-2 text-left text-sm"
-              onClick={() => onStarterSelect?.(starter)}
-            >
-              {starter}
-            </Button>
+              suggestion={starter}
+              onClick={onStarterSelect}
+              className="h-auto py-1.5 text-left whitespace-normal"
+            />
           ))}
-        </div>
+        </EmptyContent>
       ) : null}
-    </div>
+    </Empty>
   );
 }

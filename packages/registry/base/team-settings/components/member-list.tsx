@@ -65,6 +65,11 @@ export function MemberList({
   canManage,
 }: MemberListProps) {
   const t = useTranslations("team-settings");
+  // The labels SelectValue shows; Base UI renders the raw value without them.
+  const roleItems = [
+    { value: "member", label: t("roles.member") },
+    { value: "admin", label: t("roles.admin") },
+  ];
   const format = useFormatter();
   const [isPending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -161,12 +166,13 @@ export function MemberList({
                       {canManage && !isOwner && !isCurrentUser ? (
                         <Select
                           value={member.role}
+                          items={roleItems}
                           onValueChange={(value) =>
-                            handleRoleChange(memberId, value)
+                            value && handleRoleChange(memberId, value)
                           }
                           disabled={isBusy}
                         >
-                          <SelectTrigger className="w-[120px]">
+                          <SelectTrigger className="w-32">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -193,14 +199,16 @@ export function MemberList({
                       <TableCell className="text-right">
                         {!isCurrentUser && !isOwner && (
                           <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                disabled={isBusy}
-                              >
-                                {t("memberList.removeDialog.trigger")}
-                              </Button>
+                            <DialogTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={isBusy}
+                                />
+                              }
+                            >
+                              {t("memberList.removeDialog.trigger")}
                             </DialogTrigger>
                             <DialogContent>
                               <DialogHeader>

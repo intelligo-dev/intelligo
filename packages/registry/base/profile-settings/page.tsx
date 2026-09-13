@@ -17,6 +17,12 @@ import { getTranslations } from "next-intl/server";
 
 import { profile } from "@/lib/profile";
 import { ProfileSettingsForm } from "@/components/profile/profile-settings-form";
+import {
+  PageHeader,
+  PageHeaderContent,
+  PageHeaderDescription,
+  PageHeaderTitle,
+} from "@/components/ui/page-header";
 
 export default async function ProfileSettingsPage() {
   const t = await getTranslations("profile-settings");
@@ -24,10 +30,12 @@ export default async function ProfileSettingsPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-lg font-semibold">{t("page.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("page.description")}</p>
-      </div>
+      <PageHeader>
+        <PageHeaderContent>
+          <PageHeaderTitle level={2}>{t("page.title")}</PageHeaderTitle>
+          <PageHeaderDescription>{t("page.description")}</PageHeaderDescription>
+        </PageHeaderContent>
+      </PageHeader>
 
       <ProfileSettingsForm user={user} />
     </div>

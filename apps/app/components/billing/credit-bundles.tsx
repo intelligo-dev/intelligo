@@ -88,7 +88,7 @@ export function CreditBundles({ currentCredits }: CreditBundlesProps) {
           return (
             <Card key={bundle.id} className="space-y-4 p-6">
               <div className="flex items-center gap-2">
-                <Coins className="h-5 w-5 text-muted-foreground" />
+                <Coins className="size-5 text-muted-foreground" />
                 <p className="font-medium">{bundle.name}</p>
               </div>
               <p className="text-2xl font-semibold text-foreground">

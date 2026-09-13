@@ -27,7 +27,7 @@ export default function ArtifactsError({
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-4">
+    <div className="flex min-h-96 items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
         <Alert variant="destructive">
           <AlertDescription>{t("error.description")}</AlertDescription>
@@ -35,8 +35,12 @@ export default function ArtifactsError({
 
         <div className="flex justify-center gap-3">
           <Button onClick={reset}>{t("error.retry")}</Button>
-          <Button asChild variant="outline">
-            <Link href="/">{t("error.goHome")}</Link>
+          <Button
+            variant="outline"
+            render={<Link href="/" />}
+            nativeButton={false}
+          >
+            {t("error.goHome")}
           </Button>
         </div>
       </div>

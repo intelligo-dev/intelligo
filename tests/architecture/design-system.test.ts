@@ -68,8 +68,21 @@ const RULES: { id: string; why: string; pattern: RegExp }[] = [
   },
 ];
 
-/** Arbitrary values that are the right tool, each with its reason. */
-const ALLOWED_ARBITRARY = new Map<string, string>([]);
+/**
+ * The few rule matches that are the right tool, each with its reason —
+ * keyed by `<rule> <match>`. An entry is a reviewed decision, not a
+ * baseline: it never shrinks on its own.
+ */
+const ALLOWED = new Map<string, string>([
+  [
+    "palette-colour bg-white",
+    "a QR code needs a white quiet zone to scan, in dark mode too",
+  ],
+  [
+    "arbitrary-value max-h-[80vh]",
+    "a dialog of arbitrary content stays inside the viewport and scrolls",
+  ],
+]);
 
 function walk(dir: string, skip: string[], out: string[] = []): string[] {
   let entries: string[];
@@ -98,8 +111,7 @@ function collectViolations(): Counts {
       const source = readFileSync(file, "utf8");
       for (const rule of RULES) {
         for (const match of source.matchAll(rule.pattern)) {
-          if (rule.id === "arbitrary-value" && ALLOWED_ARBITRARY.has(match[0]))
-            continue;
+          if (ALLOWED.has(`${rule.id} ${match[0]}`)) continue;
           const key = `${rule.id} ${rel} ${match[0]}`;
           counts[key] = (counts[key] ?? 0) + 1;
         }
@@ -201,6 +213,50 @@ function luminance(value: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
 }
 
+/** OKLCH → gamma-encoded sRGB channels, clamped to gamut. */
+function srgb(value: string): [number, number, number] {
+  const m = value.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
+  if (!m) throw new Error(`not an opaque oklch() colour: ${value}`);
+  const [L, C, h] = [
+    Number(m[1]),
+    Number(m[2]),
+    (Number(m[3]) * Math.PI) / 180,
+  ];
+  const a = C * Math.cos(h);
+  const b = C * Math.sin(h);
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const mm = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const encode = (x: number) => {
+    const c = Math.min(1, Math.max(0, x));
+    return c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
+  };
+  return [
+    encode(4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * s),
+    encode(-1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * s),
+    encode(-0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * s),
+  ];
+}
+
+function rgbLuminance([r, g, b]: [number, number, number]): number {
+  const lin = (c: number) =>
+    c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+/** Contrast of a token's text on a `bg-token/10` tint laid over a surface. */
+function tintContrast(token: string, surface: string, alpha = 0.1): number {
+  const fg = srgb(token);
+  const under = srgb(surface);
+  const tint = fg.map((c, i) => alpha * c + (1 - alpha) * under[i]!) as [
+    number,
+    number,
+    number,
+  ];
+  const [hi, lo] = [rgbLuminance(fg), rgbLuminance(tint)].sort((x, y) => y - x);
+  return (hi! + 0.05) / (lo! + 0.05);
+}
+
 function contrast(a: string, b: string): number {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi! + 0.05) / (lo! + 0.05);
@@ -257,6 +313,20 @@ describe("the intelligo token contract (ADR-0013)", () => {
         expect(failing).toEqual([]);
       });
 
+      it("status text reads on its own tint — the badge, alert and destructive-button pattern (4.5:1)", () => {
+        const failing: string[] = [];
+        for (const status of ["destructive", "success", "warning", "info"]) {
+          for (const surface of ["background", "card"]) {
+            const ratio = tintContrast(tokens[status]!, tokens[surface]!);
+            if (ratio < 4.5)
+              failing.push(
+                `${status} on ${status}/10 over ${surface}: ${ratio.toFixed(2)}`
+              );
+          }
+        }
+        expect(failing).toEqual([]);
+      });
+
       it("the focus ring is visible against the page (3:1)", () => {
         expect(
           contrast(tokens.ring!, tokens.background!)
@@ -279,6 +349,16 @@ const SURFACES = [
     name: "intelligo.dev",
     components: "apps/site/components.json",
     css: "apps/site/src/styles/global.css",
+  },
+  {
+    name: "the reference app",
+    components: "apps/app/components.json",
+    css: "apps/app/app/globals.css",
+  },
+  {
+    name: "the CLI scaffold",
+    components: "packages/cli/templates/app-scaffold/components.json.tpl",
+    css: "packages/cli/templates/app-scaffold/globals.css.tpl",
   },
 ];
 

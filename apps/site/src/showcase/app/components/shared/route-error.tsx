@@ -77,19 +77,23 @@ export function RouteError({
       className={
         fullScreen
           ? "flex min-h-screen items-center justify-center p-4"
-          : "flex min-h-[60vh] items-center justify-center p-8"
+          : "flex min-h-96 items-center justify-center p-8"
       }
     >
       <div className="w-full max-w-md space-y-4">
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+          <AlertCircle className="size-4" />
           <AlertDescription className="mt-2">{t(errorType)}</AlertDescription>
         </Alert>
 
         <div className="flex justify-center gap-3">
           <Button onClick={reset}>{t("retry")}</Button>
-          <Button asChild variant="outline">
-            <Link href={homeHref}>{t(homeKey)}</Link>
+          <Button
+            variant="outline"
+            render={<Link href={homeHref} />}
+            nativeButton={false}
+          >
+            {t(homeKey)}
           </Button>
         </div>
       </div>

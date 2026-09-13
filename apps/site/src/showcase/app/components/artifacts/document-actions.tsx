@@ -11,7 +11,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "use-intl";
-import { Check, Copy, Loader2, Trash2 } from "lucide-react";
+import { Check, Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRouter } from "@showcase/i18n/navigation";
@@ -24,6 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@showcase/components/ui/dialog";
+import { Spinner } from "@showcase/components/ui/spinner";
 
 import { deleteLatestVersion } from "@showcase/actions/documents";
 
@@ -96,9 +97,9 @@ export function DocumentActions({
           }
         >
           {copied ? (
-            <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <Check className="size-4 text-success" />
           ) : (
-            <Copy className="h-4 w-4" />
+            <Copy className="size-4" />
           )}
         </Button>
       )}
@@ -114,7 +115,7 @@ export function DocumentActions({
         className={buttonClassName}
         title={t("documentActions.deleteTooltip")}
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash2 className="size-4" />
       </Button>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -140,11 +141,7 @@ export function DocumentActions({
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                t("documentActions.delete")
-              )}
+              {isDeleting ? <Spinner /> : t("documentActions.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

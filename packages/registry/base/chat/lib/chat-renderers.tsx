@@ -12,8 +12,8 @@
  * invoke from a composition root, and nothing here runs as an import
  * side effect, so ADR-0005 has nothing to enforce against this file.
  *
- * A tool with no entry falls back to `DefaultToolCard`: a generic
- * collapsible view of the tool's raw input/output JSON. It exists so
+ * A tool with no entry falls back to `DefaultToolCard`: the design
+ * system's T3 Tool part — name, state, and the raw input and output. It exists so
  * a new tool call always renders *something* honest while you're
  * wiring up its real card — it is not meant to be your product's
  * shipped UI for that tool.
@@ -22,10 +22,27 @@
  * every `tool-*`/`dynamic-tool` part it renders.
  */
 
-import { type ComponentType, useState } from "react";
+import type { ComponentType } from "react";
+import type { ToolUIPart } from "ai";
 import { useTranslations } from "next-intl";
-import { ChevronDown, ChevronRight, FileText, Wrench } from "lucide-react";
+import { FileTextIcon } from "lucide-react";
 
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+  ToolOutput,
+} from "@/components/ui/ai-tool";
+import { Button } from "@/components/ui/button";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import { Link } from "@/i18n/navigation";
 
 /**
@@ -132,44 +149,26 @@ export function DefaultToolCard({
   errorText,
 }: ToolRendererProps) {
   const t = useTranslations("chat");
-  const [open, setOpen] = useState(false);
 
   return (
-    <div className="max-w-[85%] rounded-lg border bg-muted/30 text-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left"
-      >
-        {open ? (
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        )}
-        <Wrench className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <span className="font-medium">{toolLabel(toolName)}</span>
-        <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-          {t(STATE_MESSAGE_KEY[state])}
-        </span>
-      </button>
-      {open ? (
-        <div className="space-y-2 border-t px-3 py-2">
-          {input !== undefined ? (
-            <pre className="overflow-x-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">
-              {JSON.stringify(input, null, 2)}
-            </pre>
-          ) : null}
-          {output !== undefined ? (
-            <pre className="overflow-x-auto whitespace-pre-wrap break-words text-xs">
-              {JSON.stringify(output, null, 2)}
-            </pre>
-          ) : null}
-          {errorText ? (
-            <p className="text-xs text-destructive">{errorText}</p>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+    <Tool className="max-w-xl">
+      <ToolHeader
+        title={toolLabel(toolName)}
+        type={`tool-${toolName}`}
+        state={state as ToolUIPart["state"]}
+        stateLabel={t(STATE_MESSAGE_KEY[state])}
+      />
+      <ToolContent>
+        {input !== undefined ? (
+          <ToolInput input={input} label={t("toolCard.input")} />
+        ) : null}
+        <ToolOutput
+          output={output}
+          errorText={errorText}
+          label={errorText ? t("toolCard.errorHeading") : t("toolCard.output")}
+        />
+      </ToolContent>
+    </Tool>
   );
 }
 
@@ -209,20 +208,24 @@ export function ArtifactLinkCard({
   }
 
   return (
-    <div className="flex max-w-[85%] items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2 text-sm">
-      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground">
-          {t("artifactCard.saved")}
-        </p>
-      </div>
-      <Link
-        href="/artifacts"
-        className="shrink-0 text-xs font-medium text-primary hover:underline"
-      >
-        {t("artifactCard.open")}
-      </Link>
-    </div>
+    <Item variant="outline" size="sm" className="max-w-xl">
+      <ItemMedia variant="icon">
+        <FileTextIcon />
+      </ItemMedia>
+      <ItemContent>
+        <ItemTitle>{title}</ItemTitle>
+        <ItemDescription>{t("artifactCard.saved")}</ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <Button
+          size="sm"
+          variant="outline"
+          render={<Link href="/artifacts" />}
+          nativeButton={false}
+        >
+          {t("artifactCard.open")}
+        </Button>
+      </ItemActions>
+    </Item>
   );
 }

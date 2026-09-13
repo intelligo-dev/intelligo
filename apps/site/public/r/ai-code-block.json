@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "ai-code-block",
+  "title": "AI Code Block",
+  "description": "Highlighted code with a copy action, light and dark (ADR-0013, T3; ported from Vercel AI Elements).",
+  "dependencies": [
+    "shiki"
+  ],
+  "registryDependencies": [
+    "@intelligo/copy-button"
+  ],
+  "files": [
+    {
+      "path": "base/ui/ai-code-block/ai-code-block.tsx",
+      "content": "\"use client\";\n\n/*\n * \n */\n\nimport * as React from \"react\";\nimport { type BundledLanguage, codeToHtml, type ShikiTransformer } from \"shiki\";\n\nimport { CopyButton } from \"@/components/ui/copy-button\";\nimport { cn } from \"@/lib/utils\";\n\n// Changes: copy goes through the T4 copy-button with the caller's labels;\n// highlighting re-runs when the code changes (upstream highlighted once);\n// the plain code shows until the highlighted HTML is ready.\n\ntype CodeBlockContextValue = { code: string };\n\nconst CodeBlockContext = React.createContext<CodeBlockContextValue>({\n  code: \"\",\n});\n\nconst lineNumbers: ShikiTransformer = {\n  name: \"line-numbers\",\n  line(node, line) {\n    node.children.unshift({\n      type: \"element\",\n      tagName: \"span\",\n      properties: {\n        className: [\n          \"inline-block\",\n          \"min-w-10\",\n          \"mr-4\",\n          \"text-right\",\n          \"select-none\",\n          \"text-muted-foreground\",\n        ],\n      },\n      children: [{ type: \"text\", value: String(line) }],\n    });\n  },\n};\n\nasync function highlightCode(\n  code: string,\n  language: BundledLanguage,\n  showLineNumbers = false\n): Promise<[light: string, dark: string]> {\n  const transformers = showLineNumbers ? [lineNumbers] : [];\n  return Promise.all([\n    codeToHtml(code, { lang: language, theme: \"one-light\", transformers }),\n    codeToHtml(code, { lang: language, theme: \"one-dark-pro\", transformers }),\n  ]);\n}\n\nconst HIGHLIGHTED =\n  \"overflow-auto [&_code]:font-mono [&_code]:text-sm [&>pre]:m-0 [&>pre]:bg-transparent! [&>pre]:p-4 [&>pre]:text-sm\";\n\nfunction CodeBlock({\n  code,\n  language,\n  showLineNumbers = false,\n  className,\n  children,\n  ...props\n}: React.ComponentProps<\"div\"> & {\n  code: string;\n  language: BundledLanguage;\n  showLineNumbers?: boolean;\n}) {\n  const [html, setHtml] = React.useState<[string, string] | null>(null);\n\n  React.useEffect(() => {\n    let cancelled = false;\n    highlightCode(code, language, showLineNumbers).then((result) => {\n      if (!cancelled) setHtml(result);\n    });\n    return () => {\n      cancelled = true;\n    };\n  }, [code, language, showLineNumbers]);\n\n  return (\n    <CodeBlockContext.Provider value={{ code }}>\n      <div\n        data-slot=\"code-block\"\n        className={cn(\n          \"group/code-block relative w-full overflow-hidden rounded-lg border bg-background text-foreground\",\n          className\n        )}\n        {...props}\n      >\n        {html ? (\n          <>\n            <div\n              className={cn(HIGHLIGHTED, \"dark:hidden\")}\n              dangerouslySetInnerHTML={{ __html: html[0] }}\n            />\n            <div\n              className={cn(HIGHLIGHTED, \"hidden dark:block\")}\n              dangerouslySetInnerHTML={{ __html: html[1] }}\n            />\n          </>\n        ) : (\n          <pre className=\"m-0 overflow-auto p-4 font-mono text-sm\">\n            <code>{code}</code>\n          </pre>\n        )}\n        {children && (\n          <div\n            data-slot=\"code-block-actions\"\n            className=\"absolute top-2 right-2 flex items-center gap-1\"\n          >\n            {children}\n          </div>\n        )}\n      </div>\n    </CodeBlockContext.Provider>\n  );\n}\n\nfunction CodeBlockCopyButton(\n  props: Omit<React.ComponentProps<typeof CopyButton>, \"value\">\n) {\n  const { code } = React.useContext(CodeBlockContext);\n  return <CopyButton data-slot=\"code-block-copy\" value={code} {...props} />;\n}\n\nexport { CodeBlock, CodeBlockCopyButton, highlightCode };\n",
+      "type": "registry:ui"
+    }
+  ],
+  "type": "registry:ui"
+}

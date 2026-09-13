@@ -105,7 +105,12 @@ const INSTALLED = {
 export type ComponentName = keyof typeof INSTALLED;
 
 /** Planned tiers: shipped by the registry migration (ADR-0013 §6). */
-export const PLANNED: { name: string; tier: Tier; description: string }[] = [
+export const PLANNED: {
+  name: string;
+  tier: Tier;
+  description: string;
+  usedBy?: string[];
+}[] = [
   {
     name: "ai-prompt-input",
     tier: "T3",
@@ -169,9 +174,22 @@ export type CatalogEntry = {
 };
 
 type RawItem = { name: string; type: string; registryDependencies?: string[] };
-const blocks = (registry as { items: RawItem[] }).items.filter(
+const rawItems = (registry as { items: RawItem[] }).items;
+const blocks = rawItems.filter(
   (i) => i.type === "registry:block" && i.name !== "smoke"
 );
+
+/** Intelligo's own components (T3/T4); blocks name them `@intelligo/<name>`. */
+const INTELLIGO_UI = new Set(
+  rawItems.filter((i) => i.type === "registry:ui").map((i) => i.name)
+);
+
+/** Which blocks already depend on each planned component. */
+for (const entry of PLANNED) {
+  entry.usedBy = blocks
+    .filter((b) => b.registryDependencies?.includes(`@intelligo/${entry.name}`))
+    .map((b) => b.name);
+}
 
 export const CATALOG: CatalogEntry[] = (
   Object.keys(INSTALLED) as ComponentName[]
@@ -207,7 +225,11 @@ const undocumented = installed.filter((n) => !(n in INSTALLED));
 const missing = Object.keys(INSTALLED).filter((n) => !installed.includes(n));
 const unknownDeps = [
   ...new Set(blocks.flatMap((b) => b.registryDependencies ?? [])),
-].filter((n) => !(n in INSTALLED));
+].filter(
+  (n) =>
+    !(n in INSTALLED) &&
+    !(n.startsWith("@intelligo/") && INTELLIGO_UI.has(n.slice(11)))
+);
 if (undocumented.length || missing.length || unknownDeps.length) {
   throw new Error(
     `primitives.ts is out of sync — undocumented: [${undocumented}] not installed: [${missing}] unknown registryDependencies: [${unknownDeps}]`

@@ -38,30 +38,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ArtifactListItem } from "@/actions/documents";
 import { DocumentActions } from "./document-actions";
 
-const KIND_BADGE_CLASS: Record<string, string> = {
-  text: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  code: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  sheet:
-    "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
-  image: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300",
-};
-
-const DEFAULT_BADGE_CLASS =
-  "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300";
-
-const REPORT_BADGE_CLASS =
-  "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300";
-
 function kindIcon(kind: string) {
   switch (kind) {
     case "code":
-      return <Code className="h-4 w-4 shrink-0" />;
+      return <Code className="size-4 shrink-0" />;
     case "sheet":
-      return <Sheet className="h-4 w-4 shrink-0" />;
+      return <Sheet className="size-4 shrink-0" />;
     case "image":
-      return <ImageIcon className="h-4 w-4 shrink-0" />;
+      return <ImageIcon className="size-4 shrink-0" />;
     default:
-      return <FileText className="h-4 w-4 shrink-0" />;
+      return <FileText className="size-4 shrink-0" />;
   }
 }
 
@@ -107,17 +93,16 @@ export function DocumentList({ documents }: DocumentListProps) {
     return t.has(key) ? t(key) : kind.charAt(0).toUpperCase() + kind.slice(1);
   }
 
+  // A kind is a category, not a status: every kind reads the same, and a
+  // report — the one kind that means something extra — stands out as secondary.
   function badgeFor(doc: ArtifactListItem): {
     label: string;
-    className: string;
+    variant: "secondary" | "outline";
   } {
     if (doc.isReport) {
-      return { label: t("badge.report"), className: REPORT_BADGE_CLASS };
+      return { label: t("badge.report"), variant: "secondary" };
     }
-    return {
-      label: kindLabel(doc.kind),
-      className: KIND_BADGE_CLASS[doc.kind] ?? DEFAULT_BADGE_CLASS,
-    };
+    return { label: kindLabel(doc.kind), variant: "outline" };
   }
 
   const kinds = useMemo(
@@ -174,7 +159,7 @@ export function DocumentList({ documents }: DocumentListProps) {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((doc) => {
-            const { label, className } = badgeFor(doc);
+            const { label, variant } = badgeFor(doc);
             return (
               <Card
                 key={doc.id}
@@ -190,15 +175,13 @@ export function DocumentList({ documents }: DocumentListProps) {
                       <p className="mb-1 line-clamp-2 text-sm font-medium leading-tight">
                         {doc.title}
                       </p>
-                      <Badge variant="outline" className={className}>
-                        {label}
-                      </Badge>
+                      <Badge variant={variant}>{label}</Badge>
                     </div>
                   </div>
 
                   <div className="mt-2 flex items-center justify-between">
                     <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                      <Bot className="h-3 w-3 shrink-0" />
+                      <Bot className="size-3 shrink-0" />
                       <span className="truncate">{doc.agentLabel}</span>
                       <span className="shrink-0">·</span>
                       <span className="shrink-0">
@@ -211,7 +194,7 @@ export function DocumentList({ documents }: DocumentListProps) {
                       content={doc.content}
                       createdAt={doc.createdAt}
                       onDeleted={() => handleDeleted(doc.id)}
-                      buttonClassName="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                      buttonClassName="size-7 opacity-0 transition-opacity group-hover:opacity-100"
                     />
                   </div>
                 </CardContent>
@@ -272,15 +255,20 @@ function EmptyState() {
   const t = useTranslations("artifacts");
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <File className="mb-4 h-12 w-12 text-muted-foreground/40" />
+      <File className="mb-4 size-12 text-muted-foreground/40" />
       <h3 className="mb-1 text-lg font-semibold">{t("emptyState.title")}</h3>
       <p className="max-w-sm text-sm text-muted-foreground">
         {t("emptyState.description")}
       </p>
       {/* An empty artifacts page is a dead end without this: nothing
           on it produces an artifact — the chat surface does. */}
-      <Button asChild size="sm" className="mt-4">
-        <Link href="/chat">{t("emptyState.cta")}</Link>
+      <Button
+        size="sm"
+        className="mt-4"
+        render={<Link href="/chat" />}
+        nativeButton={false}
+      >
+        {t("emptyState.cta")}
       </Button>
     </div>
   );
@@ -291,7 +279,7 @@ function FilteredEmptyState({ filterLabel }: { filterLabel: string }) {
   const lowerFilterLabel = filterLabel.toLowerCase();
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <File className="mb-4 h-12 w-12 text-muted-foreground/40" />
+      <File className="mb-4 size-12 text-muted-foreground/40" />
       <h3 className="mb-1 text-lg font-semibold">
         {t("filteredEmptyState.title", { filterLabel: lowerFilterLabel })}
       </h3>

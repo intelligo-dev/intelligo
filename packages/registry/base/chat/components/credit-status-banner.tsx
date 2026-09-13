@@ -25,11 +25,18 @@
  * exchange rate this component has no business choosing.
  */
 
-import { AlertTriangle, Sparkles } from "lucide-react";
+import { AlertTriangleIcon, SparklesIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 
 import type { ChatQuotaState } from "@intelligo-dev/chat/client";
 
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 
 /**
@@ -73,34 +80,32 @@ export function CreditStatusBanner({
 
   if (refusal) {
     return (
-      <div
-        role="alert"
+      <Alert
+        variant="destructive"
         data-testid="credit-status-banner"
-        className="mx-auto mb-2 flex w-full max-w-3xl items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm"
+        className="mx-auto mb-2 w-full max-w-3xl"
       >
-        <div className="flex min-w-0 items-center gap-2 text-destructive">
-          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="min-w-0">
-            <span className="font-medium">
-              {refusal.code === "insufficient_credits" ||
-              refusal.code === "allowance_depleted"
-                ? t("creditBanner.outOfCredits")
-                : t("creditBanner.upgradeRequired")}
-            </span>
-            {refusal.message ? (
-              <span className="ml-1.5 text-destructive/80">
-                {refusal.message}
-              </span>
-            ) : null}
-          </span>
-        </div>
-        <Link
-          href={quotaState?.upgradeHref ?? "/pricing"}
-          className="shrink-0 rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground transition-colors hover:bg-destructive/90"
-        >
-          {t("creditBanner.upgrade")}
-        </Link>
-      </div>
+        <AlertTriangleIcon />
+        <AlertTitle>
+          {refusal.code === "insufficient_credits" ||
+          refusal.code === "allowance_depleted"
+            ? t("creditBanner.outOfCredits")
+            : t("creditBanner.upgradeRequired")}
+        </AlertTitle>
+        {refusal.message ? (
+          <AlertDescription>{refusal.message}</AlertDescription>
+        ) : null}
+        <AlertAction>
+          <Button
+            size="sm"
+            variant="destructive"
+            render={<Link href={quotaState?.upgradeHref ?? "/pricing"} />}
+            nativeButton={false}
+          >
+            {t("creditBanner.upgrade")}
+          </Button>
+        </AlertAction>
+      </Alert>
     );
   }
 
@@ -117,25 +122,29 @@ export function CreditStatusBanner({
   if (!runningLow || !quotaState) return null;
 
   return (
-    <div
+    <Alert
+      role="status"
       data-testid="credit-status-warning"
-      className="mx-auto mb-2 flex w-full max-w-3xl items-center justify-between gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs text-amber-700 dark:text-amber-300"
+      className="mx-auto mb-2 w-full max-w-3xl border-warning/30 bg-warning/10 text-warning"
     >
-      <div className="flex items-center gap-2">
-        <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden />
-        <span>
-          {t("creditBanner.runningLow", {
-            count: quotaState.remaining,
-            amount: format.number(quotaState.remaining),
-          })}
-        </span>
-      </div>
-      <Link
-        href={quotaState.upgradeHref}
-        className="font-medium underline underline-offset-2 hover:opacity-80"
-      >
-        {t("creditBanner.topUp")}
-      </Link>
-    </div>
+      <SparklesIcon />
+      <AlertTitle>
+        {t("creditBanner.runningLow", {
+          count: quotaState.remaining,
+          amount: format.number(quotaState.remaining),
+        })}
+      </AlertTitle>
+      <AlertAction>
+        <Button
+          size="xs"
+          variant="ghost"
+          className="text-warning hover:text-warning"
+          render={<Link href={quotaState.upgradeHref} />}
+          nativeButton={false}
+        >
+          {t("creditBanner.topUp")}
+        </Button>
+      </AlertAction>
+    </Alert>
   );
 }

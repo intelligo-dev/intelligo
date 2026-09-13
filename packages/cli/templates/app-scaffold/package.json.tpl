@@ -13,6 +13,7 @@
     "db:check": "intelligo migrate --check"
   },
   "dependencies": {
+    "@base-ui/react": "^1.8.0",
     "@intelligo-dev/admin": "__INTELLIGO_DEP__",
     "@intelligo-dev/audit": "__INTELLIGO_DEP__",
     "@intelligo-dev/auth": "__INTELLIGO_DEP__",
@@ -22,20 +23,17 @@
     "@intelligo-dev/executions": "__INTELLIGO_DEP__",
     "@intelligo-dev/jobs": "__INTELLIGO_DEP__",
     "@intelligo-dev/next": "__INTELLIGO_DEP__",
-    "@intelligo-dev/ui": "__INTELLIGO_DEP__",
-    "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
+    "cn": "^0.3.0",
     "drizzle-orm": "^0.45.1",
-    "lucide-react": "^0.563.0",
+    "lucide-react": "^1.45.0",
     "next": "^16.2.3",
     "next-intl": "^4.9.2",
     "next-themes": "^0.4.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",
-    "sonner": "^2.0.7",
-    "tailwind-merge": "^3.4.0"
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@intelligo-dev/cli": "__INTELLIGO_DEP__",
@@ -45,6 +43,7 @@
     "@types/react-dom": "^19.0.0",
     "dotenv": "^16.4.7",
     "drizzle-kit": "^0.31.8",
+    "shadcn": "^4.21.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5.7.2"

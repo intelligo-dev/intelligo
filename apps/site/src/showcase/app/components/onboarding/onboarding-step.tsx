@@ -116,7 +116,7 @@ export function OnboardingStep({
                       </div>
                       {selected && (
                         <CheckCircle2
-                          className="h-5 w-5 shrink-0 text-primary"
+                          className="size-5 shrink-0 text-primary"
                           aria-hidden="true"
                         />
                       )}

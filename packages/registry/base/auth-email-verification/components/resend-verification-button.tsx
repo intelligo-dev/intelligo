@@ -16,14 +16,14 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Loader2 } from "lucide-react";
 
 import { authClient } from "@intelligo-dev/auth/client";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ResendVerificationButtonProps {
   email?: string;
@@ -71,8 +71,10 @@ export function ResendVerificationButton({
   return (
     <div className="space-y-4">
       {!knownEmail && (
-        <div className="space-y-2">
-          <Label htmlFor="resend-email">{t("resend.emailLabel")}</Label>
+        <Field>
+          <FieldLabel htmlFor="resend-email">
+            {t("resend.emailLabel")}
+          </FieldLabel>
           <Input
             id="resend-email"
             type="email"
@@ -83,7 +85,7 @@ export function ResendVerificationButton({
             aria-invalid={resendError ? true : undefined}
             aria-describedby={resendError ? "resend-email-error" : undefined}
           />
-        </div>
+        </Field>
       )}
 
       {resendSuccess && (
@@ -104,12 +106,13 @@ export function ResendVerificationButton({
         className="w-full"
         onClick={handleResend}
         disabled={isResending || resendSuccess}
+        aria-busy={isResending || undefined}
       >
         {isResending ? (
-          <span className="flex items-center justify-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
+          <>
+            <Spinner data-icon="inline-start" />
             {t("resend.sending")}
-          </span>
+          </>
         ) : resendSuccess ? (
           t("resend.sent")
         ) : (

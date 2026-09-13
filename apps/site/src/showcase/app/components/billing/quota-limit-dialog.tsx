@@ -93,20 +93,19 @@ export function QuotaLimitDialog({
             return (
               <Button
                 key={plan.slug}
-                asChild
                 size="lg"
                 variant={index === 0 ? "default" : "outline"}
                 className="w-full"
+                render={<Link href={featureGatingConfig.upgradeHref} />}
+                nativeButton={false}
               >
-                <Link href={featureGatingConfig.upgradeHref}>
-                  {amount
-                    ? t("limitDialog.planCta", {
-                        plan: plan.name,
-                        price: amount,
-                      })
-                    : t("limitDialog.planCtaNoPrice", { plan: plan.name })}
-                  <ArrowRight className="ml-2 size-4" />
-                </Link>
+                {amount
+                  ? t("limitDialog.planCta", {
+                      plan: plan.name,
+                      price: amount,
+                    })
+                  : t("limitDialog.planCtaNoPrice", { plan: plan.name })}
+                <ArrowRight className="ml-2 size-4" />
               </Button>
             );
           })}

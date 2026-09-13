@@ -21,6 +21,12 @@ import {
 import { ExportDataButton } from "@/components/privacy/export-data-button";
 import { FactList } from "@/components/privacy/fact-list";
 import { getAuditTrail, listFacts } from "@/actions/privacy";
+import {
+  PageHeader,
+  PageHeaderContent,
+  PageHeaderDescription,
+  PageHeaderTitle,
+} from "@/components/ui/page-header";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("privacy-settings");
@@ -34,12 +40,12 @@ export default async function PrivacySettingsPage() {
 
   return (
     <div className="container mx-auto max-w-2xl space-y-6 px-4 py-8">
-      <header>
-        <h1 className="text-2xl font-semibold">{t("page.title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("page.description")}
-        </p>
-      </header>
+      <PageHeader>
+        <PageHeaderContent>
+          <PageHeaderTitle>{t("page.title")}</PageHeaderTitle>
+          <PageHeaderDescription>{t("page.description")}</PageHeaderDescription>
+        </PageHeaderContent>
+      </PageHeader>
 
       <Card>
         <CardHeader>

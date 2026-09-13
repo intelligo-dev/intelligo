@@ -32,17 +32,20 @@ export function InlineUpgradeBanner({
 
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-        <Lock className="h-4 w-4 text-muted-foreground" aria-hidden />
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted">
+        <Lock className="size-4 text-muted-foreground" aria-hidden />
       </span>
       <p className="flex-1 text-sm text-muted-foreground">
         {message ?? t("inline.message", { feature, plan: requiredPlan })}
       </p>
-      <Button asChild size="sm" variant="outline">
-        <Link href={featureGatingConfig.upgradeHref}>
-          {t("inline.cta")}
-          <ArrowUpRight className="ml-2 h-3 w-3" />
-        </Link>
+      <Button
+        size="sm"
+        variant="outline"
+        render={<Link href={featureGatingConfig.upgradeHref} />}
+        nativeButton={false}
+      >
+        {t("inline.cta")}
+        <ArrowUpRight className="ml-2 size-3" />
       </Button>
     </div>
   );

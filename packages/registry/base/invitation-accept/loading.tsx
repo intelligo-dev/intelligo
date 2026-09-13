@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AcceptInvitationLoading() {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-4">
+    <div className="flex min-h-96 items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <Skeleton className="mb-2 h-7 w-48" />

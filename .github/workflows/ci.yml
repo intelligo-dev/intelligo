@@ -234,6 +234,13 @@ jobs:
             console.log(out.join(" "));
           ')
 
+          # Items name Intelligo's own components as @intelligo/<name>. Serve
+          # the registry this run just built and point the namespace at it,
+          # so an item is tested against its siblings, not the deployed site.
+          npx --yes http-server "$GITHUB_WORKSPACE/packages/registry/public/r" -p 8399 -s &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8399/intelligo.json >/dev/null && break; sleep 1; done
+          node -e 'const fs=require("fs");const c=JSON.parse(fs.readFileSync("components.json","utf8"));c.registries={...c.registries,"@intelligo":"http://127.0.0.1:8399/{name}.json"};fs.writeFileSync("components.json",JSON.stringify(c,null,2))'
+
           echo "installing: $ORDER"
           for item in $ORDER; do
             pnpm exec shadcn add "$GITHUB_WORKSPACE/packages/registry/public/r/$item.json" --yes --overwrite
