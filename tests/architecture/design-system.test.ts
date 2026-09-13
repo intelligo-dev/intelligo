@@ -265,3 +265,69 @@ describe("the intelligo token contract (ADR-0013)", () => {
     }
   );
 });
+
+// ── surfaces ──────────────────────────────────────────────────────────
+
+/**
+ * Every surface that has moved to the design system uses base-nova and
+ * carries the token contract verbatim — the values `shadcn add` writes
+ * from the intelligo item, light in `:root` and dark in `.dark`. A
+ * surface joins this list in the phase that migrates it (ADR-0013).
+ */
+const SURFACES = [
+  {
+    name: "intelligo.dev",
+    components: "apps/site/components.json",
+    css: "apps/site/src/styles/global.css",
+  },
+];
+
+function cssBlock(css: string, selector: string): Record<string, string> {
+  const start = css.search(
+    new RegExp(`(^|\\n)${selector.replace(".", "\\.")}\\s*\\{`)
+  );
+  if (start < 0) return {};
+  const open = css.indexOf("{", start);
+  const close = css.indexOf("}", open);
+  const vars: Record<string, string> = {};
+  for (const m of css
+    .slice(open + 1, close)
+    .matchAll(/--([\w-]+):\s*([^;]+);/g)) {
+    vars[m[1]!] = m[2]!.trim();
+  }
+  return vars;
+}
+
+describe.each(SURFACES)(
+  "surface: $name follows the design system",
+  (surface) => {
+    const base = readBase();
+    const css = readFileSync(path.join(ROOT, surface.css), "utf8");
+
+    it("is configured for base-nova", () => {
+      const config = JSON.parse(
+        readFileSync(path.join(ROOT, surface.components), "utf8")
+      ) as { style: string };
+      expect(config.style).toBe("base-nova");
+    });
+
+    it.each(["light", "dark"] as const)(
+      "defines the %s tokens exactly as the intelligo item",
+      (mode) => {
+        const block = cssBlock(css, mode === "light" ? ":root" : ".dark");
+        const drift = Object.entries(base.cssVars[mode])
+          .filter(([name, value]) => block[name] !== value)
+          .map(
+            ([name, value]) =>
+              `--${name}: expected ${value}, found ${block[name] ?? "nothing"}`
+          );
+        expect(drift).toEqual([]);
+      }
+    );
+
+    it("switches dark mode with the .dark class, not data-theme", () => {
+      expect(css).toContain("@custom-variant dark (&:is(.dark *));");
+      expect(css).not.toMatch(/data-theme/);
+    });
+  }
+);
