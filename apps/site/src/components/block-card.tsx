@@ -37,13 +37,17 @@ export function BlockCard({ item }: { item: RegistryItem }) {
 
         <div className="flex min-w-0 flex-col gap-4">
           <div>
-            <div className="mono text-[0.72rem] text-ink-faint">{item.name}</div>
+            <div className="mono text-[0.72rem] text-ink-faint">
+              {item.name}
+            </div>
             <h3 className="mt-0.5 text-[1.15rem] font-semibold text-ink">
               <a href={`#${item.name}`} className="hover:underline">
                 {item.title}
               </a>
             </h3>
-            <p className="mt-2 text-[0.88rem] text-ink-dim">{item.fullDescription}</p>
+            <p className="mt-2 text-[0.88rem] text-ink-dim">
+              {item.fullDescription}
+            </p>
           </div>
 
           {item.dependsOn.length > 0 && (
@@ -93,7 +97,13 @@ export function BlockCard({ item }: { item: RegistryItem }) {
   );
 }
 
-function Chips({ label, children }: { label: string; children: React.ReactNode }) {
+function Chips({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <div className="tag mb-1.5">{label}</div>

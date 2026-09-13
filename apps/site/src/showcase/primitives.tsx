@@ -31,7 +31,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@showcase/components/ui/alert-dialog";
-import { Alert, AlertDescription, AlertTitle } from "@showcase/components/ui/alert";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@showcase/components/ui/alert";
 import {
   Avatar,
   AvatarBadge,
@@ -132,7 +136,12 @@ import {
   TableHeader,
   TableRow,
 } from "@showcase/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@showcase/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@showcase/components/ui/tabs";
 import { Textarea } from "@showcase/components/ui/textarea";
 import {
   Tooltip,
@@ -147,7 +156,9 @@ import { MEMBERS } from "./fixtures";
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid gap-2 sm:grid-cols-[88px_1fr] sm:items-center">
-      <div className="font-mono text-[0.7rem] text-muted-foreground">{label}</div>
+      <div className="font-mono text-[0.7rem] text-muted-foreground">
+        {label}
+      </div>
       <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
   );
@@ -296,7 +307,11 @@ function CardDemo() {
   );
 }
 
-function FieldsDemo({ focus }: { focus: "input" | "label" | "textarea" | "select" }) {
+function FieldsDemo({
+  focus,
+}: {
+  focus: "input" | "label" | "textarea" | "select";
+}) {
   return (
     <div className="grid max-w-xl gap-4 sm:grid-cols-2">
       <div className="grid gap-2">
@@ -305,7 +320,11 @@ function FieldsDemo({ focus }: { focus: "input" | "label" | "textarea" | "select
       </div>
       <div className="grid gap-2">
         <Label htmlFor={`${focus}-email`}>Invite by email</Label>
-        <Input id={`${focus}-email`} type="email" placeholder="name@company.com" />
+        <Input
+          id={`${focus}-email`}
+          type="email"
+          placeholder="name@company.com"
+        />
       </div>
       <div className="grid gap-2">
         <Label htmlFor={`${focus}-role`}>Role</Label>
@@ -443,7 +462,9 @@ function DropdownMenuDemo() {
             <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
               <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system">
+                System
+              </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
@@ -467,9 +488,7 @@ function PopoverDemo() {
       <PopoverContent align="start" className="w-72">
         <PopoverHeader>
           <PopoverTitle>Notifications</PopoverTitle>
-          <PopoverDescription>
-            Maria Chen joined Acme Legal.
-          </PopoverDescription>
+          <PopoverDescription>Maria Chen joined Acme Legal.</PopoverDescription>
         </PopoverHeader>
       </PopoverContent>
     </Popover>
@@ -608,7 +627,9 @@ function SidebarDemo() {
                   </div>
                   <div className="grid text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                     <span className="truncate font-medium">Acme Legal</span>
-                    <span className="truncate text-xs text-muted-foreground">Pro</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      Pro
+                    </span>
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -624,7 +645,9 @@ function SidebarDemo() {
                       <it.icon />
                       <span>{it.label}</span>
                     </SidebarMenuButton>
-                    {it.badge && <SidebarMenuBadge>{it.badge}</SidebarMenuBadge>}
+                    {it.badge && (
+                      <SidebarMenuBadge>{it.badge}</SidebarMenuBadge>
+                    )}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
@@ -686,7 +709,9 @@ function TableDemo() {
         {MEMBERS.map((m) => (
           <TableRow key={m.id}>
             <TableCell className="font-medium">{m.user?.name}</TableCell>
-            <TableCell className="text-muted-foreground">{m.user?.email}</TableCell>
+            <TableCell className="text-muted-foreground">
+              {m.user?.email}
+            </TableCell>
             <TableCell className="text-right">
               <Badge variant={m.role === "owner" ? "default" : "secondary"}>
                 {m.role}
@@ -710,9 +735,15 @@ function TabsDemo() {
             <TabsTrigger value="billing">Billing</TabsTrigger>
           </TabsList>
           {["profile", "team", "billing"].map((v) => (
-            <TabsContent key={v} value={v} className="pt-2 text-sm text-muted-foreground">
-              <span className="font-mono text-[0.7rem]">variant="{variant}"</span> ·{" "}
-              {v} settings
+            <TabsContent
+              key={v}
+              value={v}
+              className="pt-2 text-sm text-muted-foreground"
+            >
+              <span className="font-mono text-[0.7rem]">
+                variant="{variant}"
+              </span>{" "}
+              · {v} settings
             </TabsContent>
           ))}
         </Tabs>
@@ -733,7 +764,11 @@ function TooltipDemo() {
         return (
           <Tooltip key={label as string}>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="icon" aria-label={label as string}>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={label as string}
+              >
                 <I />
               </Button>
             </TooltipTrigger>
