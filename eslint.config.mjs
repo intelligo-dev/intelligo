@@ -104,24 +104,6 @@ export default [
     },
   },
   {
-    // React packages carry `eslint-disable react-hooks/exhaustive-deps`
-    // comments. Without the plugin registered those comments are themselves
-    // errors ("rule definition not found"), so the plugin has to be loaded
-    // wherever React components live — and having it loaded means the rule
-    // actually runs, which is the point.
-    files: ["packages/ui/**/*.{ts,tsx}"],
-    plugins: {
-      "react-hooks": reactHooks,
-    },
-    rules: {
-      "react-hooks/rules-of-hooks": "error",
-      // Warn, not error: the existing components carry deliberate
-      // dependency omissions behind disable comments. Tightening to error
-      // is a separate, reviewed sweep.
-      "react-hooks/exhaustive-deps": "warn",
-    },
-  },
-  {
     // Globs are resolved from this config's directory, so a bare
     // ".next/**" only ignored the repo root's build output — a package's
     // own .next/ was still linted, and minified chunks then reported

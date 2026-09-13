@@ -12,6 +12,10 @@
     {
       "name": "@intelligo-dev/billing-core",
       "message": "Folded into @intelligo-dev/billing/{plans,plan-registry,payment,quota-types} (ADR-0011)."
+    },
+    {
+      "name": "@intelligo-dev/ui",
+      "message": "Replaced by the registry design system (ADR-0013): shadcn base-nova plus https://intelligo.dev/r/intelligo.json."
     }
   ]
 }

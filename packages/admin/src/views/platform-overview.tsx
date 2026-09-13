@@ -11,7 +11,7 @@ import type { PlatformOverview, WorkspaceRow } from "../queries";
  * unsettled executions.
  *
  * Presentation is intentionally minimal and unstyled — the consumer
- * wraps it in their own chrome, and `@intelligo-dev/ui` tokens apply if
+ * wraps it in their own chrome, and the host app's design tokens apply if
  * they are in scope.
  */
 

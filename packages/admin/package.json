@@ -28,8 +28,7 @@
     "@intelligo-dev/auth": "workspace:*",
     "@intelligo-dev/core": "workspace:*",
     "@intelligo-dev/executions": "workspace:*",
-    "@intelligo-dev/jobs": "workspace:*",
-    "@intelligo-dev/ui": "workspace:*"
+    "@intelligo-dev/jobs": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

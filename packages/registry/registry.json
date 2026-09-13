@@ -1763,7 +1763,10 @@
           "type": "registry:file",
           "target": "components/chat/credit-status-banner.tsx"
         }
-      ]
+      ],
+      "css": {
+        "@source \"../node_modules/streamdown/dist/*.js\"": {}
+      }
     }
   ]
 }

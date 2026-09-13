@@ -43,7 +43,6 @@ const nextConfig = {
     "@intelligo-dev/executions",
     "@intelligo-dev/jobs",
     "@intelligo-dev/next",
-    "@intelligo-dev/ui",
   ],
 };
 

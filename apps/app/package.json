@@ -24,7 +24,6 @@
     "@intelligo-dev/jobs": "workspace:*",
     "@intelligo-dev/mastra": "workspace:^",
     "@intelligo-dev/next": "workspace:*",
-    "@intelligo-dev/ui": "workspace:*",
     "@shadcn/react": "^0.3.1",
     "ai": "^6.0.77",
     "class-variance-authority": "^0.7.1",

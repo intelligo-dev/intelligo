@@ -16,7 +16,10 @@
         "@base-ui/react",
         "lucide-react"
       ],
-      "registryDependencies": ["utils", "font-geist"],
+      "registryDependencies": [
+        "utils",
+        "font-geist"
+      ],
       "config": {
         "style": "base-nova",
         "tailwind": {
@@ -202,7 +205,9 @@
       "type": "registry:ui",
       "title": "Stat Card",
       "description": "A metric on a card — label, value, an action such as a status badge, and a footer (ADR-0013, T4).",
-      "registryDependencies": ["card"],
+      "registryDependencies": [
+        "card"
+      ],
       "files": [
         {
           "path": "base/ui/stat-card/stat-card.tsx",
@@ -215,7 +220,9 @@
       "type": "registry:ui",
       "title": "Status Badge",
       "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour (ADR-0013, T4).",
-      "dependencies": ["class-variance-authority"],
+      "dependencies": [
+        "class-variance-authority"
+      ],
       "files": [
         {
           "path": "base/ui/status-badge/status-badge.tsx",
@@ -228,8 +235,12 @@
       "type": "registry:ui",
       "title": "Copy Button",
       "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own (ADR-0013, T4).",
-      "dependencies": ["lucide-react"],
-      "registryDependencies": ["button"],
+      "dependencies": [
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "button"
+      ],
       "files": [
         {
           "path": "base/ui/copy-button/copy-button.tsx",
@@ -242,8 +253,12 @@
       "type": "registry:ui",
       "title": "AI Code Block",
       "description": "Highlighted code with a copy action, light and dark (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": ["shiki"],
-      "registryDependencies": ["@intelligo/copy-button"],
+      "dependencies": [
+        "shiki"
+      ],
+      "registryDependencies": [
+        "@intelligo/copy-button"
+      ],
       "files": [
         {
           "path": "base/ui/ai-code-block/ai-code-block.tsx",
@@ -256,7 +271,10 @@
       "type": "registry:ui",
       "title": "AI Tool",
       "description": "A tool call: name, state as a status badge, input and output (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": ["ai@^6.0.77", "lucide-react"],
+      "dependencies": [
+        "ai@^6.0.77",
+        "lucide-react"
+      ],
       "registryDependencies": [
         "collapsible",
         "@intelligo/status-badge",
@@ -274,8 +292,13 @@
       "type": "registry:ui",
       "title": "AI Reasoning",
       "description": "Streamed reasoning, collapsible, with the time it took (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": ["lucide-react", "streamdown"],
-      "registryDependencies": ["collapsible"],
+      "dependencies": [
+        "lucide-react",
+        "streamdown"
+      ],
+      "registryDependencies": [
+        "collapsible"
+      ],
       "files": [
         {
           "path": "base/ui/ai-reasoning/ai-reasoning.tsx",
@@ -288,8 +311,12 @@
       "type": "registry:ui",
       "title": "AI Sources",
       "description": "The sources a reply cites, collapsible (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": ["lucide-react"],
-      "registryDependencies": ["collapsible"],
+      "dependencies": [
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "collapsible"
+      ],
       "files": [
         {
           "path": "base/ui/ai-sources/ai-sources.tsx",
@@ -302,7 +329,10 @@
       "type": "registry:ui",
       "title": "AI Suggestion",
       "description": "Conversation starters and follow-ups in a scrollable row (ADR-0013, T3; ported from Vercel AI Elements).",
-      "registryDependencies": ["button", "scroll-area"],
+      "registryDependencies": [
+        "button",
+        "scroll-area"
+      ],
       "files": [
         {
           "path": "base/ui/ai-suggestion/ai-suggestion.tsx",
@@ -315,8 +345,13 @@
       "type": "registry:ui",
       "title": "AI Artifact",
       "description": "A generated document's frame: header, actions and content (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": ["lucide-react"],
-      "registryDependencies": ["button", "tooltip"],
+      "dependencies": [
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "button",
+        "tooltip"
+      ],
       "files": [
         {
           "path": "base/ui/ai-artifact/ai-artifact.tsx",
@@ -329,7 +364,10 @@
       "type": "registry:ui",
       "title": "AI Prompt Input",
       "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": ["ai@^6.0.77", "lucide-react"],
+      "dependencies": [
+        "ai@^6.0.77",
+        "lucide-react"
+      ],
       "registryDependencies": [
         "attachment",
         "dropdown-menu",
@@ -349,7 +387,10 @@
       "type": "registry:block",
       "title": "Registry Smoke Test",
       "description": "Permanent canary item that proves the registry build and install pipeline end to end.",
-      "registryDependencies": ["button", "card"],
+      "registryDependencies": [
+        "button",
+        "card"
+      ],
       "files": [
         {
           "path": "base/smoke/page.tsx",
@@ -367,15 +408,23 @@
           "target": "messages/en/smoke.json"
         }
       ],
-      "dependencies": ["next-intl"]
+      "dependencies": [
+        "next-intl"
+      ]
     },
     {
       "name": "route-error",
       "type": "registry:block",
       "title": "Route Error States",
       "description": "The app's error surfaces: a shared RouteError component every error.tsx renders, message-based error classification, an (app) group boundary, a translated 404, and a dependency-free global-error. Error reporting goes through the lib/error-reporting.ts seam (a no-op until you bind a reporter), so no SDK enters the registry. Items that ship an error.tsx depend on this one - install it first.",
-      "registryDependencies": ["alert", "button"],
-      "dependencies": ["lucide-react", "next-intl"],
+      "registryDependencies": [
+        "alert",
+        "button"
+      ],
+      "dependencies": [
+        "lucide-react",
+        "next-intl"
+      ],
       "files": [
         {
           "path": "base/route-error/components/route-error.tsx",
@@ -574,7 +623,12 @@
       "type": "registry:block",
       "title": "Invitation Accept",
       "description": "Accept or decline a workspace invitation via the team service. Requires the team-settings item (provides lib/team.ts and the role badge); install it first.",
-      "registryDependencies": ["alert", "card", "skeleton", "button"],
+      "registryDependencies": [
+        "alert",
+        "card",
+        "skeleton",
+        "button"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
@@ -692,8 +746,14 @@
       "type": "registry:block",
       "title": "Settings Shell",
       "description": "The shared frame around every /settings page: layout with heading and width constraint, a configurable tab bar (lib/settings-nav.ts), and a /settings index that redirects to the first tab. Install alongside the settings items - without it they render unframed and plain /settings links 404.",
-      "registryDependencies": ["tabs", "@intelligo/page-header"],
-      "dependencies": ["lucide-react", "next-intl"],
+      "registryDependencies": [
+        "tabs",
+        "@intelligo/page-header"
+      ],
+      "dependencies": [
+        "lucide-react",
+        "next-intl"
+      ],
       "files": [
         {
           "path": "base/settings-shell/layout.tsx",
@@ -788,7 +848,13 @@
       "type": "registry:block",
       "title": "Auth: Login",
       "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first.",
-      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
+      "registryDependencies": [
+        "alert",
+        "button",
+        "input",
+        "spinner",
+        "field"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -845,7 +911,13 @@
       "type": "registry:block",
       "title": "Auth: Signup",
       "description": "Email/password and OAuth account creation. Requires the auth-login item (provides the shared AuthCard shell, SocialLoginButtons, and lib/auth-validation.ts schemas); install it first. Redirects to auth-email-verification's /verify-email route when the server requires email verification.",
-      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
+      "registryDependencies": [
+        "alert",
+        "button",
+        "input",
+        "spinner",
+        "field"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -876,7 +948,13 @@
       "type": "registry:block",
       "title": "Auth: Password Reset",
       "description": "Forgot-password and reset-password pages, backed by the Better-Auth client SDK's requestPasswordReset/resetPassword actions. Requires the auth-login item (provides the shared AuthCard shell and lib/auth-validation.ts schemas); install it first.",
-      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
+      "registryDependencies": [
+        "alert",
+        "button",
+        "input",
+        "spinner",
+        "field"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -917,8 +995,18 @@
       "type": "registry:block",
       "title": "Auth: Email Verification",
       "description": "Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action. Reads the ?error=/?email= search params Better-Auth's own /verify-email link handler redirects back with. Requires the auth-login item (provides the shared AuthCard shell); install it first.",
-      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
-      "dependencies": ["@intelligo-dev/auth", "lucide-react", "next-intl"],
+      "registryDependencies": [
+        "alert",
+        "button",
+        "input",
+        "spinner",
+        "field"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "lucide-react",
+        "next-intl"
+      ],
       "files": [
         {
           "path": "base/auth-email-verification/page.tsx",
@@ -942,8 +1030,14 @@
       "type": "registry:block",
       "title": "Language Switcher",
       "description": "Locale dropdown over the locales i18n/routing.ts declares, labeled with each language's own name. Renders nothing in a single-locale deployment, so it is safe to mount unconditionally (e.g. in shellConfig.headerRight). Adding a locale to routing.ts plus a messages directory is the whole job.",
-      "registryDependencies": ["button", "dropdown-menu"],
-      "dependencies": ["lucide-react", "next-intl"],
+      "registryDependencies": [
+        "button",
+        "dropdown-menu"
+      ],
+      "dependencies": [
+        "lucide-react",
+        "next-intl"
+      ],
       "files": [
         {
           "path": "base/language-switcher/components/language-switcher.tsx",
@@ -962,7 +1056,9 @@
       "type": "registry:block",
       "title": "Trial Banner",
       "description": "Dismissable trial-status strip for the app shell's bannerTop seam: days and credits remaining with an upgrade CTA, urgency-ramped visuals, dismiss-for-today, and a consumer config (lib/trial-banner-config.ts) for the CTA target and route suppression (hidden on /chat by default). Bind TrialBannerContainer as shellConfig.bannerTop.",
-      "registryDependencies": ["button"],
+      "registryDependencies": [
+        "button"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
@@ -1065,7 +1161,13 @@
       "type": "registry:block",
       "title": "Pricing",
       "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on — install this item first.",
-      "registryDependencies": ["alert", "badge", "button", "card", "skeleton"],
+      "registryDependencies": [
+        "alert",
+        "badge",
+        "button",
+        "card",
+        "skeleton"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
@@ -1225,8 +1327,16 @@
       "type": "registry:block",
       "title": "Feature Gating",
       "description": "The vocabulary for selling a plan: a server-side FeatureGate that renders gated content only to entitled workspaces, three densities of upgrade prompt (full, compact, inline), a quota warning that escalates as a limit approaches, and a preview paywall that blurs content instead of hiding it. Which features exist and which plan unlocks them is consumer config (lib/feature-catalog.ts). Install pricing or billing-settings for somewhere to send the user.",
-      "registryDependencies": ["button", "card", "dialog"],
-      "dependencies": ["@intelligo-dev/billing", "lucide-react", "next-intl"],
+      "registryDependencies": [
+        "button",
+        "card",
+        "dialog"
+      ],
+      "dependencies": [
+        "@intelligo-dev/billing",
+        "lucide-react",
+        "next-intl"
+      ],
       "files": [
         {
           "path": "base/feature-gating/components/feature-gate.tsx",
@@ -1280,7 +1390,11 @@
       "type": "registry:block",
       "title": "QR Payment (poll)",
       "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
-      "registryDependencies": ["button", "dialog", "spinner"],
+      "registryDependencies": [
+        "button",
+        "dialog",
+        "spinner"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "lucide-react",
@@ -1379,7 +1493,11 @@
       "type": "registry:block",
       "title": "Onboarding",
       "description": "A generic multi-step onboarding wizard driven by a consumer-owned steps config: text and single-select-card fields, a completion screen, skip, and back/next - backed by the framework's onboarding service (durable step progress, no vertical-specific UI).",
-      "registryDependencies": ["button", "input", "label"],
+      "registryDependencies": [
+        "button",
+        "input",
+        "label"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "lucide-react",
@@ -1444,7 +1562,10 @@
       "type": "registry:block",
       "title": "Dashboard",
       "description": "An AI-first workspace home: a hero with starter prompts, a sticky prompt bar that opens a new conversation, a resume affordance for unfinished work, recent conversations, and a compact plan/usage strip. Configurable through lib/dashboard-config.tsx (copy, starters, chat base path, shortcuts) and lib/dashboard-data.ts (what \"resume\" means). Pairs with the chat item for its /chat routes and the pricing item for lib/billing-config.ts's CURRENCY; install those first.",
-      "registryDependencies": ["progress", "skeleton"],
+      "registryDependencies": [
+        "progress",
+        "skeleton"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
@@ -1763,7 +1884,10 @@
           "type": "registry:file",
           "target": "components/chat/credit-status-banner.tsx"
         }
-      ]
+      ],
+      "css": {
+        "@source \"../node_modules/streamdown/dist/*.js\"": {}
+      }
     }
   ]
 }

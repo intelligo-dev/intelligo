@@ -35,7 +35,6 @@ import {
 /** Accepted @intelligo-dev/* dependency edges, by package directory name. */
 const ALLOWED_DEPS: Record<string, readonly string[]> = {
   core: [],
-  ui: [],
   // auth reads the request's headers through core/request-context, so
   // it resolves a session without importing a web framework.
   auth: ["@intelligo-dev/core"],
@@ -69,7 +68,6 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
     "@intelligo-dev/audit",
     "@intelligo-dev/executions",
     "@intelligo-dev/jobs",
-    "@intelligo-dev/ui",
   ],
   billing: ["@intelligo-dev/core", "@intelligo-dev/executions"],
   // The chat transport composes auth, billing, persistence and the

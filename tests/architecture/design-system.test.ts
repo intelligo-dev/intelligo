@@ -350,6 +350,16 @@ const SURFACES = [
     components: "apps/site/components.json",
     css: "apps/site/src/styles/global.css",
   },
+  {
+    name: "the reference app",
+    components: "apps/app/components.json",
+    css: "apps/app/app/globals.css",
+  },
+  {
+    name: "the CLI scaffold",
+    components: "packages/cli/templates/app-scaffold/components.json.tpl",
+    css: "packages/cli/templates/app-scaffold/globals.css.tpl",
+  },
 ];
 
 function cssBlock(css: string, selector: string): Record<string, string> {

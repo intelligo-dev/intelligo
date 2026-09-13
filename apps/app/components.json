@@ -19,7 +19,9 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "registries": {},
+  "registries": {
+    "@intelligo": "https://intelligo.dev/r/{name}.json"
+  },
   "menuColor": "default",
   "menuAccent": "subtle"
 }
