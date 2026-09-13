@@ -95,13 +95,20 @@ export default async function CheckoutSuccessPage({
             </CardContent>
 
             <CardFooter className="flex flex-col gap-3 sm:flex-row">
-              <Button asChild className="w-full sm:flex-1">
-                <Link href="/dashboard">{t("actions.goToDashboard")}</Link>
+              <Button
+                className="w-full sm:flex-1"
+                render={<Link href="/dashboard" />}
+                nativeButton={false}
+              >
+                {t("actions.goToDashboard")}
               </Button>
-              <Button asChild variant="outline" className="w-full sm:flex-1">
-                <Link href="/settings/billing">
-                  {t("actions.viewBillingSettings")}
-                </Link>
+              <Button
+                variant="outline"
+                className="w-full sm:flex-1"
+                render={<Link href="/settings/billing" />}
+                nativeButton={false}
+              >
+                {t("actions.viewBillingSettings")}
               </Button>
             </CardFooter>
           </Card>
@@ -121,10 +128,12 @@ export default async function CheckoutSuccessPage({
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </CardContent>
             <CardFooter className="justify-center">
-              <Button asChild variant="outline">
-                <Link href="/settings/billing">
-                  {t("actions.checkBillingSettings")}
-                </Link>
+              <Button
+                variant="outline"
+                render={<Link href="/settings/billing" />}
+                nativeButton={false}
+              >
+                {t("actions.checkBillingSettings")}
               </Button>
             </CardFooter>
           </Card>
@@ -140,13 +149,15 @@ export default async function CheckoutSuccessPage({
             <CardDescription>{t("received.description")}</CardDescription>
           </CardHeader>
           <CardFooter className="justify-center gap-3">
-            <Button asChild>
-              <Link href="/dashboard">{t("actions.goToDashboard")}</Link>
+            <Button render={<Link href="/dashboard" />} nativeButton={false}>
+              {t("actions.goToDashboard")}
             </Button>
-            <Button asChild variant="outline">
-              <Link href="/settings/billing">
-                {t("actions.viewBillingSettings")}
-              </Link>
+            <Button
+              variant="outline"
+              render={<Link href="/settings/billing" />}
+              nativeButton={false}
+            >
+              {t("actions.viewBillingSettings")}
             </Button>
           </CardFooter>
         </Card>
@@ -173,13 +184,15 @@ export default async function CheckoutSuccessPage({
             </p>
           </CardContent>
           <CardFooter className="justify-center gap-3">
-            <Button asChild>
-              <Link href="/dashboard">{t("actions.goToDashboard")}</Link>
+            <Button render={<Link href="/dashboard" />} nativeButton={false}>
+              {t("actions.goToDashboard")}
             </Button>
-            <Button asChild variant="outline">
-              <Link href="/settings/billing">
-                {t("actions.viewBillingSettings")}
-              </Link>
+            <Button
+              variant="outline"
+              render={<Link href="/settings/billing" />}
+              nativeButton={false}
+            >
+              {t("actions.viewBillingSettings")}
             </Button>
           </CardFooter>
         </Card>

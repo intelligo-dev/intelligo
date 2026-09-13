@@ -35,10 +35,12 @@ export default function CheckoutSuccessError({
 
         <div className="flex justify-center gap-3">
           <Button onClick={reset}>{t("actions.tryAgain")}</Button>
-          <Button asChild variant="outline">
-            <Link href="/settings/billing">
-              {t("actions.viewBillingSettings")}
-            </Link>
+          <Button
+            variant="outline"
+            render={<Link href="/settings/billing" />}
+            nativeButton={false}
+          >
+            {t("actions.viewBillingSettings")}
           </Button>
         </div>
       </div>

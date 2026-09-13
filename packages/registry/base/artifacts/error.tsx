@@ -35,8 +35,12 @@ export default function ArtifactsError({
 
         <div className="flex justify-center gap-3">
           <Button onClick={reset}>{t("error.retry")}</Button>
-          <Button asChild variant="outline">
-            <Link href="/">{t("error.goHome")}</Link>
+          <Button
+            variant="outline"
+            render={<Link href="/" />}
+            nativeButton={false}
+          >
+            {t("error.goHome")}
           </Button>
         </div>
       </div>

@@ -79,11 +79,14 @@ export function ConversationSidebar({
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r lg:flex">
       <div className="space-y-2 border-b p-3">
-        <Button asChild size="sm" className="w-full justify-start gap-2">
-          <Link href="/chat">
-            <Plus className="h-3.5 w-3.5" />
-            {t("header.newChat")}
-          </Link>
+        <Button
+          size="sm"
+          className="w-full justify-start gap-2"
+          render={<Link href="/chat" />}
+          nativeButton={false}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t("header.newChat")}
         </Button>
 
         <div className="relative">

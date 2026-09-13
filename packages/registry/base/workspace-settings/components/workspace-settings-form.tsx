@@ -153,8 +153,8 @@ export function WorkspaceSettingsForm({
           </CardHeader>
           <CardContent>
             <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-              <DialogTrigger asChild>
-                <Button variant="destructive">{t("dangerZone.trigger")}</Button>
+              <DialogTrigger render={<Button variant="destructive" />}>
+                {t("dangerZone.trigger")}
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>

@@ -87,14 +87,12 @@ export function AppSidebar({
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
-                      asChild
                       isActive={isActive}
                       tooltip={t(item.titleKey)}
+                      render={<Link href={item.href} />}
                     >
-                      <Link href={item.href}>
-                        {item.icon && <item.icon />}
-                        <span>{t(item.titleKey)}</span>
-                      </Link>
+                      {item.icon && <item.icon />}
+                      <span>{t(item.titleKey)}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

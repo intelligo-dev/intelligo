@@ -2,7 +2,7 @@
   "name": "site",
   "version": "0.0.0",
   "private": true,
-  "description": "intelligo.dev — the public site of the Intelligo framework, and the hosted page registry at /r",
+  "description": "intelligo.dev \u2014 the public site of the Intelligo framework, and the hosted page registry at /r",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -28,6 +28,7 @@
     "astro": "^7.2.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "cn": "^0.3.0",
     "lucide-react": "^1.45.0",
     "motion": "^12.33.0",

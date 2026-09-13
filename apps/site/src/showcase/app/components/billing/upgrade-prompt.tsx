@@ -81,11 +81,14 @@ export function UpgradePrompt({
               })}
             </p>
           ) : null}
-          <Button asChild size={compact ? "sm" : "default"} className="w-full">
-            <Link href={featureGatingConfig.upgradeHref}>
-              {t("prompt.cta", { plan: requiredPlan })}
-              <ArrowUpRight className="ml-2 h-4 w-4" />
-            </Link>
+          <Button
+            size={compact ? "sm" : "default"}
+            className="w-full"
+            render={<Link href={featureGatingConfig.upgradeHref} />}
+            nativeButton={false}
+          >
+            {t("prompt.cta", { plan: requiredPlan })}
+            <ArrowUpRight className="ml-2 h-4 w-4" />
           </Button>
         </CardContent>
       </Card>

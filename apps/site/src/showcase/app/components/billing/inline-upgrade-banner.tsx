@@ -38,11 +38,14 @@ export function InlineUpgradeBanner({
       <p className="flex-1 text-sm text-muted-foreground">
         {message ?? t("inline.message", { feature, plan: requiredPlan })}
       </p>
-      <Button asChild size="sm" variant="outline">
-        <Link href={featureGatingConfig.upgradeHref}>
-          {t("inline.cta")}
-          <ArrowUpRight className="ml-2 h-3 w-3" />
-        </Link>
+      <Button
+        size="sm"
+        variant="outline"
+        render={<Link href={featureGatingConfig.upgradeHref} />}
+        nativeButton={false}
+      >
+        {t("inline.cta")}
+        <ArrowUpRight className="ml-2 h-3 w-3" />
       </Button>
     </div>
   );

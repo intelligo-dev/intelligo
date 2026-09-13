@@ -51,7 +51,7 @@ export function SettingsTabs() {
             <Link key={tab.value} href={tab.href}>
               <TabsTrigger
                 value={tab.value}
-                className="gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm"
+                className="gap-2 data-active:bg-card data-active:shadow-sm"
               >
                 <Icon className="h-4 w-4" />
                 {t(tab.titleKey)}

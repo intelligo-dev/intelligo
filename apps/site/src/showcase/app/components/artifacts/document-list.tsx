@@ -279,8 +279,13 @@ function EmptyState() {
       </p>
       {/* An empty artifacts page is a dead end without this: nothing
           on it produces an artifact — the chat surface does. */}
-      <Button asChild size="sm" className="mt-4">
-        <Link href="/chat">{t("emptyState.cta")}</Link>
+      <Button
+        size="sm"
+        className="mt-4"
+        render={<Link href="/chat" />}
+        nativeButton={false}
+      >
+        {t("emptyState.cta")}
       </Button>
     </div>
   );

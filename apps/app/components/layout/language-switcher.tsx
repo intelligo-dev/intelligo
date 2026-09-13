@@ -52,16 +52,18 @@ export function LanguageSwitcher() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9"
-          aria-label={t("label")}
-        >
-          <Languages className="h-4 w-4" />
-          <span className="sr-only">{t("label")}</span>
-        </Button>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9"
+            aria-label={t("label")}
+          />
+        }
+      >
+        <Languages className="h-4 w-4" />
+        <span className="sr-only">{t("label")}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {locales.map((code) => (

@@ -160,11 +160,13 @@ export function ConversationHeader({
         {/* Below `lg` this is the only way to reach history; at `lg`
             and up `ConversationSidebar` shows the same list. */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1 lg:hidden">
-              {t("header.historyTrigger")}
-              <ChevronDown className="h-3.5 w-3.5" />
-            </Button>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="outline" size="sm" className="gap-1 lg:hidden" />
+            }
+          >
+            {t("header.historyTrigger")}
+            <ChevronDown className="h-3.5 w-3.5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
             {history.length === 0 ? (
@@ -173,40 +175,49 @@ export function ConversationHeader({
               </div>
             ) : (
               history.map((item) => (
-                <DropdownMenuItem key={item.id} asChild>
-                  <Link href={`/chat/${item.id}`} className="truncate">
-                    {item.title || t("header.historyUntitled")}
-                  </Link>
+                <DropdownMenuItem
+                  key={item.id}
+                  render={
+                    <Link href={`/chat/${item.id}`} className="truncate" />
+                  }
+                >
+                  {item.title || t("header.historyUntitled")}
                 </DropdownMenuItem>
               ))
             )}
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="outline" size="sm" asChild className="lg:hidden">
-          <Link href="/chat">
-            <Plus className="mr-1 h-3.5 w-3.5" />
-            {t("header.newChat")}
-          </Link>
+        <Button
+          variant="outline"
+          size="sm"
+          className="lg:hidden"
+          render={<Link href="/chat" />}
+          nativeButton={false}
+        >
+          <Plus className="mr-1 h-3.5 w-3.5" />
+          {t("header.newChat")}
         </Button>
 
         {/* Confirmed: deleting a conversation is unrecoverable, and
             this control sits one pixel from "New chat". */}
         <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-              disabled={isPending}
-              aria-label={t("header.delete")}
-            >
-              {isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
-            </Button>
+          <AlertDialogTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                disabled={isPending}
+                aria-label={t("header.delete")}
+              />
+            }
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>

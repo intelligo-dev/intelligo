@@ -117,11 +117,12 @@ export function TrialBanner({
 
           <div className="flex items-center gap-2">
             <Button
-              asChild
               size="sm"
               variant={isUrgent ? "destructive" : "default"}
+              render={<Link href={trialBannerConfig.upgradeHref} />}
+              nativeButton={false}
             >
-              <Link href={trialBannerConfig.upgradeHref}>{t("upgrade")}</Link>
+              {t("upgrade")}
             </Button>
             <button
               type="button"

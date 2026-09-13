@@ -38,8 +38,12 @@ export default function AcceptInvitationError({
 
         <div className="flex justify-center gap-3">
           <Button onClick={reset}>{t("errorBoundary.retry")}</Button>
-          <Button asChild variant="outline">
-            <Link href="/">{t("errorBoundary.goHome")}</Link>
+          <Button
+            variant="outline"
+            render={<Link href="/" />}
+            nativeButton={false}
+          >
+            {t("errorBoundary.goHome")}
           </Button>
         </div>
       </div>

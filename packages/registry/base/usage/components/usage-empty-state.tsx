@@ -35,8 +35,13 @@ export async function UsageEmptyState({
             {description ?? t("emptyState.defaultDescription")}
           </p>
         </div>
-        <Button asChild size="sm" className="mt-1">
-          <Link href={ctaHref}>{t("emptyState.cta")}</Link>
+        <Button
+          size="sm"
+          className="mt-1"
+          render={<Link href={ctaHref} />}
+          nativeButton={false}
+        >
+          {t("emptyState.cta")}
         </Button>
       </CardContent>
     </Card>

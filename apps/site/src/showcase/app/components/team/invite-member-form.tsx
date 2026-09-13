@@ -31,6 +31,11 @@ import {
 
 export function InviteMemberForm() {
   const t = useTranslations("team-settings");
+  // The labels SelectValue shows; Base UI renders the raw value without them.
+  const roleItems = [
+    { value: "member", label: t("roles.member") },
+    { value: "admin", label: t("roles.admin") },
+  ];
   const [isPending, startTransition] = useTransition();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "member">("member");
@@ -78,7 +83,10 @@ export function InviteMemberForm() {
             <Label htmlFor="role">{t("inviteForm.roleLabel")}</Label>
             <Select
               value={role}
-              onValueChange={(value) => setRole(value as "admin" | "member")}
+              items={roleItems}
+              onValueChange={(value) =>
+                value && setRole(value as "admin" | "member")
+              }
               disabled={isPending}
             >
               <SelectTrigger id="role">

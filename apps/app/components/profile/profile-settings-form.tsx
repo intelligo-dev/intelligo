@@ -168,8 +168,8 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
         </CardHeader>
         <CardContent>
           <Dialog open={deleteOpen} onOpenChange={resetDeleteDialog}>
-            <DialogTrigger asChild>
-              <Button variant="destructive">{t("dangerZone.trigger")}</Button>
+            <DialogTrigger render={<Button variant="destructive" />}>
+              {t("dangerZone.trigger")}
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>

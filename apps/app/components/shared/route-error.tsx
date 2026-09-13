@@ -88,8 +88,12 @@ export function RouteError({
 
         <div className="flex justify-center gap-3">
           <Button onClick={reset}>{t("retry")}</Button>
-          <Button asChild variant="outline">
-            <Link href={homeHref}>{t(homeKey)}</Link>
+          <Button
+            variant="outline"
+            render={<Link href={homeHref} />}
+            nativeButton={false}
+          >
+            {t(homeKey)}
           </Button>
         </div>
       </div>

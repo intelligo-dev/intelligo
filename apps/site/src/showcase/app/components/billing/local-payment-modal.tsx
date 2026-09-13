@@ -179,11 +179,12 @@ export function LocalPaymentModal({
                   {invoice.deeplinks.map((link) => (
                     <Button
                       key={link.url}
-                      asChild
                       variant="outline"
                       className="w-full"
+                      render={<a href={link.url} />}
+                      nativeButton={false}
                     >
-                      <a href={link.url}>{link.app}</a>
+                      {link.app}
                     </Button>
                   ))}
                 </div>
