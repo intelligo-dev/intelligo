@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "ai-shimmer-text",
+  "title": "AI Shimmer Text",
+  "description": "A status line that reads as alive while the agent works; swaps with motion, honours reduced motion (ADR-0013, T3).",
+  "dependencies": [
+    "motion"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "base/ui/ai-shimmer-text/ai-shimmer-text.tsx",
+      "content": "\"use client\";\n\n/*\n * A status line that reads as\n * alive while the agent works — the words swap with a small motion,\n * and the text shimmers. Respects `prefers-reduced-motion`: the swap\n * becomes a plain replace and the shimmer stays (it is a colour sweep,\n * not movement).\n */\n\nimport * as React from \"react\";\nimport { AnimatePresence, motion, useReducedMotion } from \"motion/react\";\n\nimport { cn } from \"@/lib/utils\";\n\nfunction ShimmerText({\n  children,\n  className,\n  ...props\n}: Omit<React.ComponentProps<\"span\">, \"children\"> & {\n  /** The current status text; a change animates the swap. */\n  children: string;\n}) {\n  const reduced = useReducedMotion();\n\n  return (\n    <span\n      data-slot=\"shimmer-text\"\n      role=\"status\"\n      className={cn(\n        \"relative inline-grid overflow-hidden text-sm text-muted-foreground\",\n        className\n      )}\n      {...props}\n    >\n      <AnimatePresence mode=\"popLayout\" initial={false}>\n        <motion.span\n          key={children}\n          className=\"shimmer col-start-1 row-start-1\"\n          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 6 }}\n          animate={{ opacity: 1, y: 0 }}\n          exit={reduced ? { opacity: 0 } : { opacity: 0, y: -6 }}\n          transition={{ duration: reduced ? 0 : 0.18, ease: \"easeOut\" }}\n        >\n          {children}\n        </motion.span>\n      </AnimatePresence>\n    </span>\n  );\n}\n\nexport { ShimmerText };\n",
+      "type": "registry:ui",
+      "target": "components/ui/ai-shimmer-text.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

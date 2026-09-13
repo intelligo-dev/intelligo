@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "ai-speech-input",
+  "title": "AI Speech Input",
+  "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent (ADR-0013, T3).",
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "files": [
+    {
+      "path": "base/ui/ai-speech-input/ai-speech-input.tsx",
+      "content": "\"use client\";\n\n/*\n * Voice into the composer on the\n * browser's own speech recognition. Renders nothing where the API is\n * absent (Firefox, some WebViews): a button that cannot work is worse\n * than no button.\n */\n\nimport * as React from \"react\";\nimport { MicIcon, SquareIcon } from \"lucide-react\";\n\nimport { Button } from \"@/components/ui/button\";\nimport { cn } from \"@/lib/utils\";\n\ntype RecognitionResultEvent = {\n  resultIndex: number;\n  results: ArrayLike<{\n    isFinal: boolean;\n    0: { transcript: string };\n  }>;\n};\n\ntype Recognition = {\n  lang: string;\n  continuous: boolean;\n  interimResults: boolean;\n  onresult: ((event: RecognitionResultEvent) => void) | null;\n  onend: (() => void) | null;\n  onerror: (() => void) | null;\n  start: () => void;\n  stop: () => void;\n};\n\nfunction recognitionConstructor(): (new () => Recognition) | null {\n  if (typeof window === \"undefined\") return null;\n  const w = window as unknown as {\n    SpeechRecognition?: new () => Recognition;\n    webkitSpeechRecognition?: new () => Recognition;\n  };\n  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;\n}\n\nfunction SpeechInput({\n  onTranscript,\n  lang,\n  startLabel,\n  stopLabel,\n  className,\n  size = \"icon-sm\",\n  variant = \"ghost\",\n  ...props\n}: Omit<React.ComponentProps<typeof Button>, \"onClick\" | \"children\"> & {\n  /** Called with recognised text; `isFinal` once a phrase settles. */\n  onTranscript: (text: string, isFinal: boolean) => void;\n  /** BCP 47, e.g. \"en-US\". The document's language when omitted. */\n  lang?: string;\n  /** Accessible names. */\n  startLabel: string;\n  stopLabel: string;\n}) {\n  const [supported, setSupported] = React.useState(false);\n  const [listening, setListening] = React.useState(false);\n  const recognition = React.useRef<Recognition | null>(null);\n\n  React.useEffect(() => {\n    setSupported(recognitionConstructor() !== null);\n  }, []);\n\n  React.useEffect(\n    () => () => {\n      recognition.current?.stop();\n    },\n    []\n  );\n\n  function start() {\n    const Ctor = recognitionConstructor();\n    if (!Ctor) return;\n    const instance = new Ctor();\n    const documentLang =\n      typeof document !== \"undefined\" ? document.documentElement.lang : \"\";\n    instance.lang = lang ?? (documentLang || \"en-US\");\n    instance.continuous = true;\n    instance.interimResults = true;\n    instance.onresult = (event) => {\n      for (let i = event.resultIndex; i < event.results.length; i++) {\n        const result = event.results[i]!;\n        onTranscript(result[0].transcript, result.isFinal);\n      }\n    };\n    instance.onend = () => setListening(false);\n    instance.onerror = () => setListening(false);\n    recognition.current = instance;\n    instance.start();\n    setListening(true);\n  }\n\n  function stop() {\n    recognition.current?.stop();\n    recognition.current = null;\n    setListening(false);\n  }\n\n  if (!supported) return null;\n\n  return (\n    <Button\n      data-slot=\"speech-input\"\n      data-state={listening ? \"listening\" : \"idle\"}\n      type=\"button\"\n      size={size}\n      variant={variant}\n      aria-label={listening ? stopLabel : startLabel}\n      aria-pressed={listening}\n      onClick={listening ? stop : start}\n      className={cn(listening && \"text-destructive\", className)}\n      {...props}\n    >\n      {listening ? <SquareIcon className=\"animate-pulse\" /> : <MicIcon />}\n    </Button>\n  );\n}\n\nexport { SpeechInput };\n",
+      "type": "registry:ui",
+      "target": "components/ui/ai-speech-input.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

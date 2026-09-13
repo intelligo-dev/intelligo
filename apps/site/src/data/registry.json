@@ -474,6 +474,95 @@
       ]
     },
     {
+      "name": "ai-inline-citation",
+      "type": "registry:ui",
+      "title": "AI Inline Citation",
+      "description": "A numbered marker in a reply that reveals its source on hover or focus (ADR-0013, T3).",
+      "dependencies": [
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "hover-card"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-inline-citation/ai-inline-citation.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-inline-citation.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-image",
+      "type": "registry:ui",
+      "title": "AI Image",
+      "description": "A generated or attached image that reserves its space before the bytes arrive (ADR-0013, T3).",
+      "dependencies": [
+        "lucide-react"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/ai-image/ai-image.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-image.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-speech-input",
+      "type": "registry:ui",
+      "title": "AI Speech Input",
+      "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent (ADR-0013, T3).",
+      "dependencies": [
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "button"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-speech-input/ai-speech-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-speech-input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-composer-menu",
+      "type": "registry:ui",
+      "title": "AI Composer Menu",
+      "description": "The picker a composer opens for slash commands and @ mentions, anchored above the textarea (ADR-0013, T3).",
+      "dependencies": [],
+      "registryDependencies": [
+        "command"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-composer-menu/ai-composer-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-composer-menu.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-shimmer-text",
+      "type": "registry:ui",
+      "title": "AI Shimmer Text",
+      "description": "A status line that reads as alive while the agent works; swaps with motion, honours reduced motion (ADR-0013, T3).",
+      "dependencies": [
+        "motion"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/ai-shimmer-text/ai-shimmer-text.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-shimmer-text.tsx"
+        }
+      ]
+    },
+    {
       "name": "smoke",
       "type": "registry:block",
       "title": "Registry Smoke Test",
@@ -1874,9 +1963,14 @@
         "@intelligo/ai-branch",
         "@intelligo/ai-chain-of-thought",
         "@intelligo/ai-code-block",
+        "@intelligo/ai-composer-menu",
+        "@intelligo/ai-image",
+        "@intelligo/ai-inline-citation",
         "@intelligo/ai-prompt-input",
         "@intelligo/ai-reasoning",
+        "@intelligo/ai-shimmer-text",
         "@intelligo/ai-sources",
+        "@intelligo/ai-speech-input",
         "@intelligo/ai-suggestion",
         "@intelligo/ai-task",
         "@intelligo/ai-tool",
@@ -1894,7 +1988,12 @@
         "@intelligo-dev/billing",
         "@intelligo-dev/chat",
         "@intelligo-dev/core",
-        "next-intl"
+        "next-intl",
+        "@streamdown/code",
+        "@streamdown/math",
+        "@streamdown/mermaid",
+        "@streamdown/cjk",
+        "katex"
       ],
       "files": [
         {
@@ -1976,6 +2075,11 @@
           "path": "base/chat/hooks/use-chat-shortcuts.ts",
           "type": "registry:hook",
           "target": "hooks/use-chat-shortcuts.ts"
+        },
+        {
+          "path": "base/chat/hooks/use-composer-menu.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-composer-menu.ts"
         },
         {
           "path": "base/chat/components/chat-workspace.tsx",

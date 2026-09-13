@@ -131,6 +131,25 @@ function readBaseline(): Counts {
   }
 }
 
+describe("motion honours prefers-reduced-motion (ADR-0013)", () => {
+  it("every file that animates with motion reads useReducedMotion", () => {
+    const offenders: string[] = [];
+    for (const scope of SCOPES) {
+      for (const file of walk(path.join(ROOT, scope.dir), scope.skip)) {
+        const source = readFileSync(file, "utf8");
+        if (!/from ["']motion\/react["']/.test(source)) continue;
+        if (!/useReducedMotion/.test(source)) {
+          offenders.push(path.relative(ROOT, file));
+        }
+      }
+    }
+    expect(
+      offenders,
+      "a motion animation must be gated on useReducedMotion so a reader who asked for less motion gets it"
+    ).toEqual([]);
+  });
+});
+
 describe("design-system source rules (ADR-0013)", () => {
   const current = collectViolations();
 

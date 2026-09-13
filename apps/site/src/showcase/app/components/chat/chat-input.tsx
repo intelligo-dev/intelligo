@@ -19,6 +19,10 @@ import type { FileUIPart } from "ai";
 
 import type { ChatModelOption } from "@intelligo-dev/chat/client";
 
+import { ComposerMenu } from "@showcase/components/ui/ai-composer-menu";
+import { SpeechInput } from "@showcase/components/ui/ai-speech-input";
+import { useComposerMenu } from "@showcase/hooks/use-composer-menu";
+
 import {
   PromptInput,
   PromptInputActionAddAttachments,
@@ -38,13 +42,13 @@ import {
   PromptInputTools,
   type PromptInputError,
 } from "@showcase/components/ui/ai-prompt-input";
-import { chatConfig } from "@showcase/lib/chat-config";
+import { chatConfig, type ChatMention } from "@showcase/lib/chat-config";
 
 interface ChatInputProps {
   conversationId: string;
   value: string;
   onChange: (value: string) => void;
-  onSend: (text: string, files: FileUIPart[]) => void;
+  onSend: (text: string, files: FileUIPart[], mentions: ChatMention[]) => void;
   onStop: () => void;
   onEditLast?: () => void;
   isStreaming: boolean;
@@ -90,6 +94,7 @@ async function upload(
 }
 
 export function ChatInput({
+  conversationId,
   value,
   onChange,
   onSend,
@@ -116,6 +121,14 @@ export function ChatInput({
   useEffect(() => {
     if (autoFocus) textareaRef.current?.focus();
   }, [autoFocus]);
+
+  const menu = useComposerMenu({
+    value,
+    setValue: onChange,
+    conversationId,
+    send: (text) => onSend(text, [], []),
+    textareaRef,
+  });
 
   function reportError(error: PromptInputError) {
     if (error.code === "max_files") {
@@ -158,7 +171,8 @@ export function ChatInput({
               setUploading(false);
             }
           }
-          onSend(trimmed, parts);
+          onSend(trimmed, parts, menu.mentions);
+          menu.clearPicked();
         }}
       >
         {attachments ? (
@@ -177,6 +191,11 @@ export function ChatInput({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
+            if (menu.open && (event.key === "Escape" || event.key === "Tab")) {
+              event.preventDefault();
+              menu.close();
+              return;
+            }
             if (
               event.key === "ArrowUp" &&
               event.currentTarget.value === "" &&
@@ -186,6 +205,8 @@ export function ChatInput({
               onEditLast();
             }
           }}
+          onKeyUp={menu.refresh}
+          onClick={menu.refresh}
           disabled={disabled}
           placeholder={placeholder}
           aria-label={placeholder}
@@ -202,6 +223,16 @@ export function ChatInput({
                 </PromptInputActionMenuContent>
               </PromptInputActionMenu>
             ) : null}
+            <SpeechInput
+              startLabel={t("composer.voiceStart")}
+              stopLabel={t("composer.voiceStop")}
+              onTranscript={(text, isFinal) => {
+                if (!isFinal) return;
+                const spoken = text.trim();
+                if (!spoken) return;
+                onChange(value ? `${value.replace(/\s+$/, "")} ${spoken}` : spoken);
+              }}
+            />
             {models.length > 1 && modelId && onModelChange ? (
               <PromptInputSelect
                 value={modelId}
@@ -235,6 +266,15 @@ export function ChatInput({
           />
         </PromptInputFooter>
       </PromptInput>
+      <div className={compact ? "relative" : "relative mx-auto max-w-3xl"}>
+        <ComposerMenu
+          open={menu.open}
+          options={menu.options}
+          query={menu.query}
+          onSelect={menu.select}
+          emptyLabel={t("composer.noResults")}
+        />
+      </div>
       {compact ? null : (
         <p className="mx-auto mt-1 max-w-3xl px-1 text-xs text-muted-foreground">
           {t("input.hint")}

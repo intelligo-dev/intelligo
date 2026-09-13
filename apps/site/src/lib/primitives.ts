@@ -164,6 +164,27 @@ export const PLANNED: {
     description: "A human-in-the-loop decision: allow or deny a tool.",
   },
   {
+    name: "ai-inline-citation",
+    tier: "T3",
+    description: "A numbered marker that reveals its source.",
+  },
+  { name: "ai-image", tier: "T3", description: "An image that reserves its space." },
+  {
+    name: "ai-speech-input",
+    tier: "T3",
+    description: "Voice into the composer.",
+  },
+  {
+    name: "ai-composer-menu",
+    tier: "T3",
+    description: "Slash commands and @ mentions in the composer.",
+  },
+  {
+    name: "ai-shimmer-text",
+    tier: "T3",
+    description: "A live status line while the agent works.",
+  },
+  {
     name: "page-header",
     tier: "T4",
     description: "The one page title: heading, description, actions.",

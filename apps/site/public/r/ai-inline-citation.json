@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "ai-inline-citation",
+  "title": "AI Inline Citation",
+  "description": "A numbered marker in a reply that reveals its source on hover or focus (ADR-0013, T3).",
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "hover-card"
+  ],
+  "files": [
+    {
+      "path": "base/ui/ai-inline-citation/ai-inline-citation.tsx",
+      "content": "\"use client\";\n\n/*\n * A numbered marker in a reply\n * that reveals its source on hover or focus — the anatomy of Vercel AI\n * Elements' InlineCitation, authored on Base UI's HoverCard.\n */\n\nimport * as React from \"react\";\nimport { ExternalLinkIcon } from \"lucide-react\";\n\nimport {\n  HoverCard,\n  HoverCardContent,\n  HoverCardTrigger,\n} from \"@/components/ui/hover-card\";\nimport { cn } from \"@/lib/utils\";\n\nexport type InlineCitationSource = {\n  url?: string;\n  title?: string;\n  description?: string;\n};\n\nfunction InlineCitation({\n  className,\n  ...props\n}: React.ComponentProps<\"span\">) {\n  return (\n    <span\n      data-slot=\"inline-citation\"\n      className={cn(\"inline-flex items-baseline\", className)}\n      {...props}\n    />\n  );\n}\n\nfunction InlineCitationCard({ children }: { children: React.ReactNode }) {\n  return <HoverCard>{children}</HoverCard>;\n}\n\n/** The `[n]` marker. Focusable, so keyboard readers can open the card. */\nfunction InlineCitationCardTrigger({\n  index,\n  label,\n  className,\n  ...props\n}: Omit<React.ComponentProps<\"button\">, \"children\"> & {\n  index: number;\n  /** Accessible name, e.g. \"Source 2\". */\n  label: string;\n}) {\n  return (\n    <HoverCardTrigger\n      delay={100}\n      closeDelay={100}\n      render={\n        <button\n          type=\"button\"\n          data-slot=\"inline-citation-trigger\"\n          aria-label={label}\n          className={cn(\n            \"mx-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-sm bg-muted px-1 align-super text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none\",\n            className\n          )}\n          {...props}\n        />\n      }\n    >\n      {index}\n    </HoverCardTrigger>\n  );\n}\n\nfunction InlineCitationCardBody({\n  className,\n  ...props\n}: React.ComponentProps<typeof HoverCardContent>) {\n  return (\n    <HoverCardContent\n      data-slot=\"inline-citation-body\"\n      className={cn(\"w-72 p-3 text-sm\", className)}\n      {...props}\n    />\n  );\n}\n\nfunction InlineCitationSource({\n  title,\n  url,\n  description,\n  className,\n  ...props\n}: React.ComponentProps<\"div\"> & InlineCitationSource) {\n  let host: string | null = null;\n  if (url) {\n    try {\n      host = new URL(url).hostname;\n    } catch {\n      host = null;\n    }\n  }\n  return (\n    <div\n      data-slot=\"inline-citation-source\"\n      className={cn(\"flex flex-col gap-1\", className)}\n      {...props}\n    >\n      {url ? (\n        <a\n          href={url}\n          target=\"_blank\"\n          rel=\"noreferrer\"\n          className=\"flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline\"\n        >\n          <span className=\"truncate\">{title ?? host ?? url}</span>\n          <ExternalLinkIcon className=\"size-3 shrink-0\" />\n        </a>\n      ) : (\n        <span className=\"font-medium\">{title}</span>\n      )}\n      {host && title ? (\n        <span className=\"truncate text-xs text-muted-foreground\">{host}</span>\n      ) : null}\n      {description ? (\n        <p className=\"line-clamp-3 text-xs text-muted-foreground\">\n          {description}\n        </p>\n      ) : null}\n    </div>\n  );\n}\n\nexport {\n  InlineCitation,\n  InlineCitationCard,\n  InlineCitationCardTrigger,\n  InlineCitationCardBody,\n  InlineCitationSource,\n};\n",
+      "type": "registry:ui",
+      "target": "components/ui/ai-inline-citation.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

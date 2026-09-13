@@ -101,7 +101,8 @@
     "progress": "{done} of {total} done"
   },
   "sources": {
-    "title": "{count, plural, one {# source} other {# sources}}"
+    "title": "{count, plural, one {# source} other {# sources}}",
+    "citation": "Source {index}"
   },
   "actions": {
     "conversationNotFound": "That conversation no longer exists.",

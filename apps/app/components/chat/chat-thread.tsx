@@ -42,7 +42,7 @@ import {
 } from "@intelligo-dev/chat/client";
 
 import { useRouter } from "@/i18n/navigation";
-import { chatConfig } from "@/lib/chat-config";
+import { chatConfig, type ChatMention } from "@/lib/chat-config";
 import type { CanvasRef, ToolRendererActions } from "@/lib/chat-renderers";
 import { useChatDraft } from "@/hooks/use-chat-draft";
 import { useChatShortcuts } from "@/hooks/use-chat-shortcuts";
@@ -262,12 +262,19 @@ export function ChatThread({
   }
 
   const send = useCallback(
-    (text: string, files: FileUIPart[] = []) => {
+    (text: string, files: FileUIPart[] = [], mentions: ChatMention[] = []) => {
       const trimmed = text.trim();
       if ((!trimmed && files.length === 0) || isStreaming || blocked) return;
       void sendMessage(
         { text: trimmed, ...(files.length > 0 ? { files } : {}) },
-        { body: bodyRef.current }
+        {
+          body: {
+            ...bodyRef.current,
+            ...(mentions.length > 0
+              ? { mentions: mentions.map(({ id, label }) => ({ id, label })) }
+              : {}),
+          },
+        }
       );
       draft.clear();
     },

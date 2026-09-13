@@ -23,6 +23,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import type React from "react";
 import {
   getToolName,
   isReasoningUIPart,
@@ -33,6 +34,11 @@ import type { FileUIPart, UIMessage } from "ai";
 import { useTranslations } from "use-intl";
 import { BotIcon, PaperclipIcon, UserIcon } from "lucide-react";
 import { Streamdown } from "streamdown";
+import { cjk } from "@streamdown/cjk";
+import { code } from "@streamdown/code";
+import { math } from "@streamdown/math";
+import { mermaid } from "@streamdown/mermaid";
+import "katex/dist/katex.min.css";
 
 import {
   Approval,
@@ -48,6 +54,15 @@ import {
   BranchPage,
   BranchPrevious,
 } from "@showcase/components/ui/ai-branch";
+import { AIImage } from "@showcase/components/ui/ai-image";
+import {
+  InlineCitation,
+  InlineCitationCard,
+  InlineCitationCardBody,
+  InlineCitationCardTrigger,
+  InlineCitationSource,
+} from "@showcase/components/ui/ai-inline-citation";
+import { ShimmerText } from "@showcase/components/ui/ai-shimmer-text";
 import {
   Reasoning,
   ReasoningContent,
@@ -122,6 +137,29 @@ function isSourcePart(part: unknown): part is SourcePart {
 
 function isFilePart(part: unknown): part is FileUIPart {
   return (part as { type?: unknown }).type === "file";
+}
+
+// The plugin packages type `Pluggable` against their own `unified`
+// copy; the shapes are the ones Streamdown expects.
+const MARKDOWN_PLUGINS = { code, math, mermaid, cjk } as unknown as NonNullable<
+  React.ComponentProps<typeof Streamdown>["plugins"]
+>;
+
+const CITE_PREFIX = "#cite-";
+
+/**
+ * `[3]` in a finished reply becomes a link to `#cite-3`, which the
+ * anchor override below renders as a citation marker. Only once the
+ * text is complete (scrimui's rule: a citation appears when the claim
+ * is grounded, never while it streams) and only when the reply has
+ * sources to point at.
+ */
+function withCitations(text: string, count: number): string {
+  if (count === 0) return text;
+  return text.replace(/\[(\d{1,2})\](?!\()/g, (match, n: string) => {
+    const index = Number(n);
+    return index >= 1 && index <= count ? `[${n}](${CITE_PREFIX}${n})` : match;
+  });
 }
 
 /** The message's plain text, for copying, editing and artifact content. */
@@ -230,8 +268,14 @@ export function Message({
                   <Streamdown
                     mode={streamingText ? "streaming" : "static"}
                     isAnimating={streamingText}
+                    plugins={MARKDOWN_PLUGINS}
+                    components={
+                      sources.length > 0
+                        ? { a: (props) => <CitationAnchor {...props} sources={sources} /> }
+                        : undefined
+                    }
                   >
-                    {part.text}
+                    {streamingText ? part.text : withCitations(part.text, sources.length)}
                   </Streamdown>
                   {streamingText ? (
                     <span
@@ -331,9 +375,7 @@ export function Message({
         ) : null}
 
         {isStreamingThis && isEmptyAssistant ? (
-          <span role="status" className="shimmer text-sm text-muted-foreground">
-            {t("message.thinking")}
-          </span>
+          <ShimmerText>{t("message.thinking")}</ShimmerText>
         ) : null}
 
         {!readOnly && !isStreamingThis && (hasVisibleText || version) ? (
@@ -373,6 +415,43 @@ export function Message({
   );
 }
 
+/** `[n]` markers render as citations; every other link stays a link. */
+function CitationAnchor({
+  href,
+  children,
+  sources,
+  ...props
+}: React.ComponentProps<"a"> & { sources: SourcePart[] }) {
+  const t = useTranslations("chat");
+  if (href?.startsWith(CITE_PREFIX)) {
+    const index = Number(href.slice(CITE_PREFIX.length));
+    const source = sources[index - 1];
+    if (source) {
+      return (
+        <InlineCitation>
+          <InlineCitationCard>
+            <InlineCitationCardTrigger
+              index={index}
+              label={t("sources.citation", { index })}
+            />
+            <InlineCitationCardBody>
+              <InlineCitationSource
+                title={source.title ?? source.filename}
+                url={source.url}
+              />
+            </InlineCitationCardBody>
+          </InlineCitationCard>
+        </InlineCitation>
+      );
+    }
+  }
+  return (
+    <a href={href} target="_blank" rel="noreferrer" {...props}>
+      {children}
+    </a>
+  );
+}
+
 function FileAttachment({ file }: { file: FileUIPart }) {
   const t = useTranslations("chat");
   const isImage = file.mediaType.startsWith("image/") && Boolean(file.url);
@@ -382,9 +461,9 @@ function FileAttachment({ file }: { file: FileUIPart }) {
         href={file.url}
         target="_blank"
         rel="noreferrer"
-        className="block max-w-xs overflow-hidden rounded-lg border"
+        className="block max-w-xs"
       >
-        <img src={file.url} alt={file.filename ?? t("message.imageAlt")} />
+        <AIImage src={file.url} alt={file.filename ?? t("message.imageAlt")} />
       </a>
     );
   }
