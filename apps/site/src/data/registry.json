@@ -8,7 +8,7 @@
       "type": "registry:base",
       "extends": "none",
       "title": "Intelligo design system",
-      "description": "The base every Intelligo page is built on (ADR-0013): shadcn base-nova on Base UI, the neutral theme with three values raised to WCAG AA, and additive tokens for status (success, warning, info, destructive-foreground), layers and motion. Initialise an app from it before installing any other item.",
+      "description": "The base every Intelligo page is built on (ADR-0013): shadcn base-nova on Base UI, the neutral theme with its focus ring, muted text and destructive raised to WCAG AA, and additive tokens for status (success, warning, info, destructive-foreground), layers and motion. Initialise an app from it before installing any other item.",
       "dependencies": [
         "class-variance-authority",
         "cn",
@@ -56,7 +56,7 @@
           "muted-foreground": "oklch(0.52 0 0)",
           "accent": "oklch(0.97 0 0)",
           "accent-foreground": "oklch(0.205 0 0)",
-          "destructive": "oklch(0.577 0.245 27.325)",
+          "destructive": "oklch(0.547 0.22 27.325)",
           "border": "oklch(0.922 0 0)",
           "input": "oklch(0.922 0 0)",
           "ring": "oklch(0.556 0 0)",
@@ -75,11 +75,11 @@
           "sidebar-border": "oklch(0.922 0 0)",
           "sidebar-ring": "oklch(0.556 0 0)",
           "destructive-foreground": "oklch(0.985 0 0)",
-          "success": "oklch(0.535 0.14 150)",
+          "success": "oklch(0.515 0.14 150)",
           "success-foreground": "oklch(0.985 0 0)",
-          "warning": "oklch(0.555 0.12 70)",
+          "warning": "oklch(0.535 0.115 70)",
           "warning-foreground": "oklch(0.985 0 0)",
-          "info": "oklch(0.55 0.14 250)",
+          "info": "oklch(0.53 0.14 250)",
           "info-foreground": "oklch(0.985 0 0)"
         },
         "dark": {
@@ -115,11 +115,11 @@
           "sidebar-border": "oklch(1 0 0 / 10%)",
           "sidebar-ring": "oklch(0.556 0 0)",
           "destructive-foreground": "oklch(0.145 0 0)",
-          "success": "oklch(0.6 0.14 150)",
+          "success": "oklch(0.615 0.14 150)",
           "success-foreground": "oklch(0.145 0 0)",
           "warning": "oklch(0.695 0.15 70)",
           "warning-foreground": "oklch(0.145 0 0)",
-          "info": "oklch(0.605 0.14 250)",
+          "info": "oklch(0.63 0.14 250)",
           "info-foreground": "oklch(0.145 0 0)"
         }
       },
@@ -184,6 +184,58 @@
           }
         }
       }
+    },
+    {
+      "name": "page-header",
+      "type": "registry:ui",
+      "title": "Page Header",
+      "description": "The one page title every Intelligo page renders: heading, description and actions (ADR-0013, T4).",
+      "files": [
+        {
+          "path": "base/ui/page-header/page-header.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "stat-card",
+      "type": "registry:ui",
+      "title": "Stat Card",
+      "description": "A metric on a card — label, value, an action such as a status badge, and a footer (ADR-0013, T4).",
+      "registryDependencies": ["card"],
+      "files": [
+        {
+          "path": "base/ui/stat-card/stat-card.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "status-badge",
+      "type": "registry:ui",
+      "title": "Status Badge",
+      "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour (ADR-0013, T4).",
+      "dependencies": ["class-variance-authority"],
+      "files": [
+        {
+          "path": "base/ui/status-badge/status-badge.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "copy-button",
+      "type": "registry:ui",
+      "title": "Copy Button",
+      "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own (ADR-0013, T4).",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button"],
+      "files": [
+        {
+          "path": "base/ui/copy-button/copy-button.tsx",
+          "type": "registry:ui"
+        }
+      ]
     },
     {
       "name": "smoke",

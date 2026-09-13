@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "stat-card",
+  "title": "Stat Card",
+  "description": "A metric on a card — label, value, an action such as a status badge, and a footer (ADR-0013, T4).",
+  "registryDependencies": [
+    "card"
+  ],
+  "files": [
+    {
+      "path": "base/ui/stat-card/stat-card.tsx",
+      "content": "import * as React from \"react\";\n\nimport {\n  Card,\n  CardAction,\n  CardDescription,\n  CardFooter,\n  CardHeader,\n  CardTitle,\n} from \"@/components/ui/card\";\nimport { cn } from \"@/lib/utils\";\n\n/**\n * A metric on a card (ADR-0013 §6, T4): a label, the value, an optional\n * action such as a status badge, and a footer for context. Composed from\n * Card so it follows whatever the consumer's card looks like.\n */\nfunction StatCard({ className, ...props }: React.ComponentProps<typeof Card>) {\n  return (\n    <Card\n      data-slot=\"stat-card\"\n      className={cn(\"@container/stat-card\", className)}\n      {...props}\n    />\n  );\n}\n\nfunction StatCardHeader(props: React.ComponentProps<typeof CardHeader>) {\n  return <CardHeader data-slot=\"stat-card-header\" {...props} />;\n}\n\nfunction StatCardLabel(props: React.ComponentProps<typeof CardDescription>) {\n  return <CardDescription data-slot=\"stat-card-label\" {...props} />;\n}\n\nfunction StatCardValue({\n  className,\n  ...props\n}: React.ComponentProps<typeof CardTitle>) {\n  return (\n    <CardTitle\n      data-slot=\"stat-card-value\"\n      className={cn(\n        \"text-2xl font-semibold tracking-tight tabular-nums @[16rem]/stat-card:text-3xl\",\n        className\n      )}\n      {...props}\n    />\n  );\n}\n\nfunction StatCardAction(props: React.ComponentProps<typeof CardAction>) {\n  return <CardAction data-slot=\"stat-card-action\" {...props} />;\n}\n\nfunction StatCardFooter({\n  className,\n  ...props\n}: React.ComponentProps<typeof CardFooter>) {\n  return (\n    <CardFooter\n      data-slot=\"stat-card-footer\"\n      className={cn(\n        \"flex-col items-start gap-1 text-sm text-muted-foreground\",\n        className\n      )}\n      {...props}\n    />\n  );\n}\n\nexport {\n  StatCard,\n  StatCardHeader,\n  StatCardLabel,\n  StatCardValue,\n  StatCardAction,\n  StatCardFooter,\n};\n",
+      "type": "registry:ui"
+    }
+  ],
+  "type": "registry:ui"
+}

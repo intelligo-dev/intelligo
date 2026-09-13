@@ -2,7 +2,7 @@
   "name": "site",
   "version": "0.0.0",
   "private": true,
-  "description": "intelligo.dev \u2014 the public site of the Intelligo framework, and the hosted page registry at /r",
+  "description": "intelligo.dev — the public site of the Intelligo framework, and the hosted page registry at /r",
   "type": "module",
   "engines": {
     "node": ">=22"
