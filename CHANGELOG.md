@@ -16,6 +16,59 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+The chat at ChatGPT level, on one runtime seam (ADR-0014).
+
+### Breaking
+
+- The `chat` item is rewritten: `components/chat/chat-panel.tsx` becomes
+  `chat-thread.tsx` (`ChatThread`, with page / panel / widget variants),
+  `lib/chat-renderers.tsx` entries are `{ component, label, canvas }`
+  with the full action set (`sendMessage`, `addToolResult`,
+  `addToolApprovalResponse`, `openCanvas`, `closeCanvas`), and the item
+  depends on shadcn's `questionnaire`, `resizable`, `sheet`,
+  `hover-card` and `command`, on `motion`, Streamdown's math and
+  mermaid plugins and the canvas editors. Reinstall it.
+- `@intelligo-dev/chat`: `ChatTurnContext` gains `write` and
+  `updateMetadata` (a custom `agent.tools` function receives them);
+  `model.resolve` is optional when `streamTurn` is set; a continuation
+  body must name the assistant message it continues; an edited turn
+  trims the persisted path it replaces.
+- `@intelligo-dev/core`: migration `0043_attachments` (stored
+  attachments); `listConversations` projects `metadata`.
+
+### Added
+
+- `@intelligo-dev/chat`: `streamTurn` (a Mastra agent, an eve session
+  — the transport keeps auth, gate, admission, persistence and
+  settlement), the `data-chat-*` parts vocabulary and `ChatUIMessage`
+  on `/client`, `createArtifactWriter`, `models` (allow-list, plan
+  gate), `sources`, `messageMetadata`, `cors`, `GET` (204) and
+  `OPTIONS`, stored attachments (`createChatUploadHandler`,
+  `createChatAttachmentHandler`, signed URLs for the model only),
+  `sanitizeForShare`, `recordChatFeedback`, `onTurn.approval` and
+  `onTurn.feedback`.
+- `@intelligo-dev/core`: the storage port (`setStorageAdapter`,
+  `createMemoryStorage`), the `attachments` service,
+  `updateConversationMetadata`, `setConversationVisibility`,
+  `getPublicConversation`, `getPublicMessages`, `clearVote`,
+  `getDocumentVersions`.
+- Registry: the `chat` item with edit, regenerate and response versions,
+  message actions and feedback, attachments, a model picker, voice,
+  slash commands and @ mentions, citations, approvals, tasks, agent
+  activity for Mastra parts, a canvas beside the chat (text, code,
+  sheet, image; versions; consumer-owned kinds), a sidebar with pinned
+  and dated groups, rename, pin, delete with undo and keyboard
+  navigation, a share dialog; `chat-panel`, `chat-widget`, `chat-share`
+  and `chat-eve` items; T3 parts `ai-branch`, `ai-chain-of-thought`,
+  `ai-task`, `ai-approval`, `ai-inline-citation`, `ai-image`,
+  `ai-speech-input`, `ai-composer-menu`, `ai-shimmer-text`.
+- `tests/architecture/design-system.test.ts`: a file that animates with
+  `motion` must read `useReducedMotion`.
+- `packages/registry` has a vitest project (the eve mapper, the
+  composer's trigger detection).
+
+## [Unreleased — design system]
+
 One design system (ADR-0013).
 
 ### Breaking

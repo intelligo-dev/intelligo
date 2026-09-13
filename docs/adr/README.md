@@ -17,5 +17,6 @@ The decisions the framework is built on. New ADRs get the next number; supersede
 | [0011](0011-package-topology.md)                           | One package per runtime target; shared types are subpaths; the registry is a private workspace | Accepted                   |
 | [0012](0012-headless-chat-transport.md)                    | The chat transport is a package; the chat UI is registry source                                | Accepted                   |
 | [0013](0013-design-system.md)                              | One design system: shadcn base-nova, an additive token contract, a tiered catalog              | Accepted                   |
+| [0014](0014-chat-extension-contract.md)                    | One runtime seam (`streamTurn`), consumer-owned runtime bindings, the tool renderer and canvas contract | Accepted                   |
 
 The ADRs were written inside the private repository these packages were extracted from (ADR-0001, ADR-0006); references to internal planning documents have been removed. The decisions themselves are complete as written.
