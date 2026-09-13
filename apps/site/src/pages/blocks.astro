@@ -12,17 +12,17 @@ const Count = countWord(REGISTRY_COUNT);
   path="/blocks"
   tag="blocks · the registry"
   title={`${Count} blocks,<br />every one rendered.`}
-  lede="The whole registry on one page. Each block below is the real component shadcn add installs, running with its own messages/en and fixture data."
+  lede="The whole registry on one page. Each block below is the real component shadcn add installs, running with its own messages/en and fixture data. Until the registry moves to base-nova (ADR-0013), these previews still render the blocks' Radix-era primitives under the new tokens."
   description={`All ${REGISTRY_COUNT} Intelligo registry blocks, rendered live with their primitives, dependencies and install command.`}
 >
   <section class="xline">
     <div class="flex flex-wrap gap-x-6 gap-y-2 px-6 py-6 md:px-10">
       {REGISTRY_GROUPS.map((g) => (
-        <a href={`#group-${g.toLowerCase()}`} class="mono text-[0.78rem] text-ink-dim hover:text-ink">
-          {g} <span class="text-ink-faint">{REGISTRY_ITEMS.filter((i) => i.group === g).length}</span>
+        <a href={`#group-${g.toLowerCase()}`} class="mono text-[0.78rem] text-foreground/70 hover:text-foreground">
+          {g} <span class="text-muted-foreground">{REGISTRY_ITEMS.filter((i) => i.group === g).length}</span>
         </a>
       ))}
-      <a href="/components" class="mono ml-auto text-[0.78rem] text-ink-faint hover:text-ink">primitives →</a>
+      <a href="/components" class="mono ml-auto text-[0.78rem] text-muted-foreground hover:text-foreground">primitives →</a>
     </div>
   </section>
 
@@ -46,9 +46,9 @@ const Count = countWord(REGISTRY_COUNT);
 
   <section class="xline">
     <div class="px-6 py-8 md:px-10">
-      <p class="mono text-[0.72rem] text-ink-faint">
+      <p class="mono text-[0.72rem] text-muted-foreground">
         Installed blocks are used as-is; what varies arrives through the config files they ship.
-        <a href={`${SITE.adrs}/0010-registry-i18n-standard.md`} class="ml-1 hover:text-ink">ADR-0010 →</a>
+        <a href={`${SITE.adrs}/0010-registry-i18n-standard.md`} class="ml-1 hover:text-foreground">ADR-0010 →</a>
       </p>
     </div>
   </section>
