@@ -10,6 +10,7 @@ import { useTranslations } from "use-intl";
 import type { FileUIPart, UIMessage } from "ai";
 
 import { MessageScroller } from "@showcase/components/ui/ai-message-scroller";
+import { useIsMobile } from "@showcase/hooks/use-mobile";
 import type { ToolRendererActions } from "@showcase/lib/chat-renderers";
 import { Message, type MessageVersion } from "./message";
 import type { MessageVote } from "./message-actions";
@@ -44,6 +45,8 @@ export function MessageList({
   compact = false,
 }: MessageListProps) {
   const t = useTranslations("chat");
+  // The rail is for a pointer: on a phone it only sits on the text.
+  const isMobile = useIsMobile();
   // Sending brings the reader back to the end, even from far up.
   const lastUserId = messages.findLast((message) => message.role === "user")?.id;
 
@@ -54,7 +57,7 @@ export function MessageList({
       anchor={lastUserId}
       scrollToEndLabel={t("list.scrollToEnd")}
       label={t("list.label")}
-      navigation={compact ? undefined : "rail"}
+      navigation={compact || isMobile ? undefined : "rail"}
       navigationLabel={t("list.navigation")}
       navigationItemLabel={(sender, index, total) =>
         t("list.navigationItem", { sender, index, total })

@@ -92,6 +92,13 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   `anchor`, which brings the reader back to the end when they send;
   following is decided by scroll direction, so a long smooth scroll or
   content growing under the reader no longer drops it.
+- `app-shell`: the header carries an empty `shell-header-slot` a page
+  can fill, and its separator is centred. The `chat` item's conversation
+  bar (agent, title, rename, share, delete) renders into it, so a
+  conversation has one header, not two; the loading skeleton follows.
+  The canvas text editor spells out its typography (the theme ships no
+  typography plugin, so lists had lost their numbers), and the preview
+  rail stays off on a phone.
 - Registry T3, ported from the MIT-licensed agents set onto Base UI and the token contract: `ai-motion` (easings,
   springs, `Disclosure`, `SwapText`), `ai-message`, `ai-message-bubble`,
   `ai-message-scroller` (reader-aware, preview rail), `ai-todo-list`,

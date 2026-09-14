@@ -39,6 +39,28 @@ function parse(content: string) {
   return defaultMarkdownParser.parse(content) ?? schema.node("doc", null, []);
 }
 
+/**
+ * The document's typography, spelled out: the theme ships no typography
+ * plugin, so `prose` classes would style nothing — lists lose their
+ * numbers, headings their size.
+ */
+const EDITOR_CLASS = [
+  "text-sm leading-relaxed text-foreground",
+  "[&_.ProseMirror]:min-h-64 [&_.ProseMirror]:outline-none",
+  "[&_.ProseMirror>*+*]:mt-3",
+  "[&_.ProseMirror_h1]:text-2xl [&_.ProseMirror_h1]:font-semibold [&_.ProseMirror_h1]:tracking-tight",
+  "[&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-semibold",
+  "[&_.ProseMirror_h3]:text-base [&_.ProseMirror_h3]:font-semibold",
+  "[&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6",
+  "[&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6",
+  "[&_.ProseMirror_li]:my-1 [&_.ProseMirror_li>p]:m-0",
+  "[&_.ProseMirror_blockquote]:border-l-2 [&_.ProseMirror_blockquote]:pl-4 [&_.ProseMirror_blockquote]:text-muted-foreground",
+  "[&_.ProseMirror_code]:rounded [&_.ProseMirror_code]:bg-muted [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:font-mono [&_.ProseMirror_code]:text-xs",
+  "[&_.ProseMirror_pre]:overflow-x-auto [&_.ProseMirror_pre]:rounded-md [&_.ProseMirror_pre]:bg-muted [&_.ProseMirror_pre]:p-3",
+  "[&_.ProseMirror_a]:underline [&_.ProseMirror_a]:underline-offset-4",
+  "[&_.ProseMirror_hr]:border-border",
+].join(" ");
+
 export default function TextEditor({
   content,
   status,
@@ -102,7 +124,7 @@ export default function TextEditor({
   return (
     <div
       ref={container}
-      className="prose prose-sm max-w-none dark:prose-invert [&_.ProseMirror]:min-h-64 [&_.ProseMirror]:outline-none"
+      className={EDITOR_CLASS}
     />
   );
 }

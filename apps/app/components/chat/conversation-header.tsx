@@ -5,9 +5,14 @@
  * rename, the consumer's `headerRight` slot, share, and delete.
  * History lives in the shell's sidebar (`ChatHistory`), which already
  * opens as a sheet on a phone.
+ *
+ * Under the app shell it renders into the shell header's
+ * `shell-header-slot`, so the page has one bar, not two; anywhere
+ * without that slot it is a header of its own.
  */
 
-import { useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { CheckIcon, PencilIcon, Trash2Icon, XIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -46,6 +51,7 @@ export function ConversationHeader({
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(title ?? "");
+  const slot = useSyncExternalStore(subscribeToNothing, findSlot, noSlotOnServer);
   const HeaderRight = chatConfig.headerRight;
   const agentName = chatConfig.agent?.name ?? t("agent.defaultName");
   const agentIcon = chatConfig.agent?.icon;
@@ -84,8 +90,11 @@ export function ConversationHeader({
     });
   }
 
-  return (
-    <header className="flex items-center justify-between gap-2 border-b px-4 py-3">
+  const bar = (
+    <div
+      data-slot="conversation-header"
+      className="flex min-w-0 flex-1 items-center justify-between gap-2"
+    >
       <div className="flex min-w-0 flex-1 items-center gap-1">
 
         <span className="mr-1 flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
@@ -178,6 +187,26 @@ export function ConversationHeader({
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </header>
+    </div>
   );
+
+  // Undefined while rendering on the server and hydrating: the slot is
+  // only known in the browser, and the bar appears once it is.
+  if (slot === undefined) return null;
+  if (slot) return createPortal(bar, slot);
+  return <header className="flex items-center border-b px-4 py-3">{bar}</header>;
+}
+
+const SLOT_SELECTOR = '[data-slot="shell-header-slot"]';
+
+function subscribeToNothing() {
+  return () => {};
+}
+
+function findSlot(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(SLOT_SELECTOR);
+}
+
+function noSlotOnServer(): undefined {
+  return undefined;
 }
