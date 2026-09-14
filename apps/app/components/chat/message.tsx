@@ -47,26 +47,13 @@ import {
   BranchPage,
   BranchPrevious,
 } from "@/components/ui/ai-branch";
-import { AIImage } from "@/components/ui/ai-image";
-import {
-  InlineCitation,
-  InlineCitationCard,
-  InlineCitationCardBody,
-  InlineCitationCardTrigger,
-  InlineCitationSource,
-} from "@/components/ui/ai-inline-citation";
+import { Citation, Citations } from "@/components/ui/ai-citations";
 import { ShimmerText } from "@/components/ui/ai-shimmer-text";
 import {
   Reasoning,
   ReasoningContent,
   ReasoningTrigger,
 } from "@/components/ui/ai-reasoning";
-import {
-  Source,
-  Sources,
-  SourcesContent,
-  SourcesTrigger,
-} from "@/components/ui/ai-sources";
 import {
   Attachment,
   AttachmentContent,
@@ -285,7 +272,15 @@ export function Message({
                     plugins={MARKDOWN_PLUGINS}
                     components={
                       sources.length > 0
-                        ? { a: (props) => <CitationAnchor {...props} sources={sources} /> }
+                        ? {
+                            a: (props) => (
+                              <CitationAnchor
+                                {...props}
+                                sources={sources}
+                                idPrefix={`cite-${message.id}`}
+                              />
+                            ),
+                          }
                         : undefined
                     }
                   >
@@ -375,20 +370,17 @@ export function Message({
         })}
 
         {sources.length > 0 ? (
-          <Sources>
-            <SourcesTrigger>
-              {t("sources.title", { count: sources.length })}
-            </SourcesTrigger>
-            <SourcesContent>
-              {sources.map((source) => (
-                <Source
-                  key={source.sourceId}
-                  href={source.url}
-                  title={source.title ?? source.filename ?? source.url ?? ""}
-                />
-              ))}
-            </SourcesContent>
-          </Sources>
+          <Citations
+            className="mt-1"
+            idPrefix={`cite-${message.id}`}
+            title={t("sources.title", { count: sources.length })}
+            citations={sources.map((source, index) => ({
+              id: String(index + 1),
+              title: source.title ?? source.filename ?? source.url ?? "",
+              url: source.url,
+              domain: hostnameOf(source.url),
+            }))}
+          />
         ) : null}
 
         {isStreamingThis && (isEmptyAssistant || statusLabel) ? (
@@ -437,28 +429,20 @@ function CitationAnchor({
   href,
   children,
   sources,
+  idPrefix,
   ...props
-}: React.ComponentProps<"a"> & { sources: SourcePart[] }) {
+}: React.ComponentProps<"a"> & { sources: SourcePart[]; idPrefix: string }) {
   const t = useTranslations("chat");
   if (href?.startsWith(CITE_PREFIX)) {
     const index = Number(href.slice(CITE_PREFIX.length));
-    const source = sources[index - 1];
-    if (source) {
+    if (sources[index - 1]) {
       return (
-        <InlineCitation>
-          <InlineCitationCard>
-            <InlineCitationCardTrigger
-              index={index}
-              label={t("sources.citation", { index })}
-            />
-            <InlineCitationCardBody>
-              <InlineCitationSource
-                title={source.title ?? source.filename}
-                url={source.url}
-              />
-            </InlineCitationCardBody>
-          </InlineCitationCard>
-        </InlineCitation>
+        <Citation
+          citationId={String(index)}
+          index={index}
+          idPrefix={idPrefix}
+          label={t("sources.citation", { index })}
+        />
       );
     }
   }
@@ -467,6 +451,16 @@ function CitationAnchor({
       {children}
     </a>
   );
+}
+
+/** The host a source lives on, for the citation list's domain line. */
+function hostnameOf(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
 }
 
 function FileAttachment({ file }: { file: FileUIPart }) {
@@ -478,9 +472,13 @@ function FileAttachment({ file }: { file: FileUIPart }) {
         href={file.url}
         target="_blank"
         rel="noreferrer"
-        className="block max-w-xs"
+        className="block max-w-xs overflow-hidden rounded-xl border"
       >
-        <AIImage src={file.url} alt={file.filename ?? t("message.imageAlt")} />
+        <img
+          src={file.url}
+          alt={file.filename ?? t("message.imageAlt")}
+          className="block h-auto w-full"
+        />
       </a>
     );
   }

@@ -39,17 +39,15 @@
  */
 
 import type { ComponentType } from "react";
-import type { FileUIPart, ToolUIPart } from "ai";
+import type { FileUIPart } from "ai";
 import { useTranslations } from "next-intl";
 import { FileTextIcon } from "lucide-react";
 
 import {
-  Tool,
-  ToolContent,
-  ToolHeader,
-  ToolInput,
-  ToolOutput,
-} from "@/components/ui/ai-tool";
+  ToolResult,
+  ToolResultOutput,
+  type ToolResultStatus,
+} from "@/components/ui/ai-tool-result";
 import { Button } from "@/components/ui/button";
 import {
   Item,
@@ -246,6 +244,16 @@ const STATE_MESSAGE_KEY: Record<ToolPartState, string> = {
   "output-denied": "toolCard.denied",
 };
 
+const TOOL_RESULT_STATUS: Record<ToolPartState, ToolResultStatus> = {
+  "input-streaming": "running",
+  "input-available": "running",
+  "approval-requested": "running",
+  "approval-responded": "running",
+  "output-available": "success",
+  "output-error": "error",
+  "output-denied": "cancelled",
+};
+
 function toolLabel(toolName: string): string {
   const spaced = toolName.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
   return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
@@ -259,26 +267,54 @@ export function DefaultToolCard({
   errorText,
 }: ToolRendererProps) {
   const t = useTranslations("chat");
+  const status = TOOL_RESULT_STATUS[state];
+  const outputText =
+    errorText ??
+    (output === undefined
+      ? undefined
+      : typeof output === "string"
+        ? output
+        : JSON.stringify(output, null, 2));
 
   return (
-    <Tool className="max-w-xl">
-      <ToolHeader
-        title={toolLabel(toolName)}
-        type={`tool-${toolName}`}
-        state={state as ToolUIPart["state"]}
-        stateLabel={t(STATE_MESSAGE_KEY[state])}
-      />
-      <ToolContent>
-        {input !== undefined ? (
-          <ToolInput input={input} label={t("toolCard.input")} />
-        ) : null}
-        <ToolOutput
-          output={output}
-          errorText={errorText}
-          label={errorText ? t("toolCard.errorHeading") : t("toolCard.output")}
-        />
-      </ToolContent>
-    </Tool>
+    <ToolResult
+      className="max-w-xl"
+      tool={toolName}
+      title={toolLabel(toolName)}
+      status={status}
+      kind="custom"
+      collapseOnComplete={false}
+      statusLabels={{
+        running: t(STATE_MESSAGE_KEY[state]),
+        success: t("toolCard.done"),
+        error: t("toolCard.error"),
+        cancelled: t("toolCard.denied"),
+      }}
+      copyLabel={t("actions.copy")}
+      copiedLabel={t("actions.copied")}
+      copyText={outputText}
+    >
+      {input !== undefined ? (
+        <div className="grid gap-1 px-3 pt-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            {t("toolCard.input")}
+          </span>
+          <ToolResultOutput language="json">
+            {typeof input === "string" ? input : JSON.stringify(input, null, 2)}
+          </ToolResultOutput>
+        </div>
+      ) : null}
+      {outputText !== undefined ? (
+        <div className="grid gap-1 px-3 py-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            {errorText ? t("toolCard.errorHeading") : t("toolCard.output")}
+          </span>
+          <ToolResultOutput language={errorText ? "text" : "json"}>
+            {outputText}
+          </ToolResultOutput>
+        </div>
+      ) : null}
+    </ToolResult>
   );
 }
 

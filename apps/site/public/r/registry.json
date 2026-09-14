@@ -275,28 +275,6 @@
       ]
     },
     {
-      "name": "ai-tool",
-      "type": "registry:ui",
-      "title": "AI Tool",
-      "description": "A tool call: name, state as a status badge, input and output (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": [
-        "ai@^6.0.77",
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "collapsible",
-        "@intelligo/status-badge",
-        "@intelligo/ai-code-block"
-      ],
-      "files": [
-        {
-          "path": "base/ui/ai-tool/ai-tool.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/ai-tool.tsx"
-        }
-      ]
-    },
-    {
       "name": "ai-reasoning",
       "type": "registry:ui",
       "title": "AI Reasoning",
@@ -313,25 +291,6 @@
           "path": "base/ui/ai-reasoning/ai-reasoning.tsx",
           "type": "registry:ui",
           "target": "components/ui/ai-reasoning.tsx"
-        }
-      ]
-    },
-    {
-      "name": "ai-sources",
-      "type": "registry:ui",
-      "title": "AI Sources",
-      "description": "The sources a reply cites, collapsible (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": [
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "collapsible"
-      ],
-      "files": [
-        {
-          "path": "base/ui/ai-sources/ai-sources.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/ai-sources.tsx"
         }
       ]
     },
@@ -414,42 +373,6 @@
           "path": "base/ui/ai-branch/ai-branch.tsx",
           "type": "registry:ui",
           "target": "components/ui/ai-branch.tsx"
-        }
-      ]
-    },
-    {
-      "name": "ai-inline-citation",
-      "type": "registry:ui",
-      "title": "AI Inline Citation",
-      "description": "A numbered marker in a reply that reveals its source on hover or focus (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "hover-card"
-      ],
-      "files": [
-        {
-          "path": "base/ui/ai-inline-citation/ai-inline-citation.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/ai-inline-citation.tsx"
-        }
-      ]
-    },
-    {
-      "name": "ai-image",
-      "type": "registry:ui",
-      "title": "AI Image",
-      "description": "A generated or attached image that reserves its space before the bytes arrive (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react"
-      ],
-      "registryDependencies": [],
-      "files": [
-        {
-          "path": "base/ui/ai-image/ai-image.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/ai-image.tsx"
         }
       ]
     },
@@ -2248,15 +2171,11 @@
         "@intelligo/ai-branch",
         "@intelligo/ai-code-block",
         "@intelligo/ai-composer-menu",
-        "@intelligo/ai-image",
-        "@intelligo/ai-inline-citation",
         "@intelligo/ai-prompt-input",
         "@intelligo/ai-reasoning",
         "@intelligo/ai-shimmer-text",
-        "@intelligo/ai-sources",
         "@intelligo/ai-speech-input",
         "@intelligo/ai-suggestion",
-        "@intelligo/ai-tool",
         "@intelligo/copy-button",
         "@intelligo/status-badge",
         "@intelligo/ai-message",
@@ -2265,7 +2184,9 @@
         "@intelligo/ai-todo-list",
         "@intelligo/ai-approval-card",
         "@intelligo/ai-tool-approval",
-        "@intelligo/ai-agent-activity"
+        "@intelligo/ai-agent-activity",
+        "@intelligo/ai-citations",
+        "@intelligo/ai-tool-result"
       ],
       "dependencies": [
         "ai@^6.0.77",
