@@ -18,11 +18,12 @@ import "server-only";
  * moment you swap in a real provider below, and keep it one that is
  * registered.
  *
- * To use a real provider: install its AI SDK package (e.g.
- * `pnpm add @ai-sdk/anthropic` in this app) and replace the body of
- * `getChatModel` — the commented example below is the whole change.
+ * Gemini is wired through `@ai-sdk/google`: when
+ * `GOOGLE_GENERATIVE_AI_API_KEY` is set, every turn runs on the real
+ * provider; without it the stub keeps a fresh install (and CI) working.
  */
 
+import { google } from "@ai-sdk/google";
 import type { LanguageModel } from "ai";
 import {
   createStubLanguageModel,
@@ -76,23 +77,19 @@ function callsTool(userText: string, prompt: StubPrompt): boolean {
   );
 }
 
+const GOOGLE_PREFIX = "google/";
+
 /**
- * Resolves the language model for a chat turn. `modelId` is unused by
- * the stub (it only ever returns one model) — a real implementation
- * switches on it, e.g.:
- *
- *   import { anthropic } from "@ai-sdk/anthropic";
- *
- *   export function getChatModel(modelId: string): LanguageModel {
- *     if (modelId === CHAT_MODEL_ID) return anthropic("claude-sonnet-4-6-20260214");
- *     return anthropic("claude-sonnet-4-6-20260214");
- *   }
- *
- * and `CHAT_MODEL_ID` above becomes whatever registered id matches the
- * provider model string you pass.
+ * Resolves the language model for a chat turn. With a Gemini key the
+ * registered id (`google/gemini-2.5-flash`) maps to the provider's model
+ * string by dropping the prefix; an id from another provider falls back
+ * to the default. Without a key, the stub.
  */
 export function getChatModel(modelId: string): LanguageModel {
-  void modelId;
+  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    const id = modelId.startsWith(GOOGLE_PREFIX) ? modelId : CHAT_MODEL_ID;
+    return google(id.slice(GOOGLE_PREFIX.length));
+  }
   return createStubLanguageModel({
     modelId: CHAT_MODEL_ID,
     reply: async (userText, prompt) => {

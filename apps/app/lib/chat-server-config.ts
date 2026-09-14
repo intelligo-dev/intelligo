@@ -59,7 +59,8 @@ import "server-only";
  * else.
  */
 
-import { tool, type ToolSet } from "ai";
+import { google } from "@ai-sdk/google";
+import { generateText, tool, type ToolSet } from "ai";
 import {
   createArtifactWriter,
   type ChatMessages,
@@ -148,6 +149,43 @@ function artifactTools(turn: ChatTurnContext): ToolSet {
   };
 }
 
+/**
+ * `webSearch`: Google Search grounding behind a function tool. Gemini
+ * 2.5 does not accept function tools and `google.tools.googleSearch` in
+ * one request, so binding the provider tool directly would drop
+ * `saveArtifact`. The search runs as its own grounded call instead and
+ * returns the answer with its sources — that inner call's tokens are
+ * not part of the turn's settled usage.
+ *
+ * Bound only when a Gemini key is configured; the stub never calls it.
+ */
+function webSearchTools(): ToolSet {
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) return {};
+  return {
+    webSearch: tool({
+      description:
+        "Search the web for current events or facts you are unsure of. Returns a grounded answer with source URLs.",
+      inputSchema: z.object({ query: z.string().min(1).max(500) }),
+      execute: async ({ query }, { abortSignal }) => {
+        const result = await generateText({
+          model: getChatModel(CHAT_MODEL_ID),
+          tools: { google_search: google.tools.googleSearch({}) },
+          prompt: query,
+          abortSignal,
+        });
+        return {
+          answer: result.text,
+          sources: result.sources.flatMap((source) =>
+            source.sourceType === "url"
+              ? [{ title: source.title, url: source.url }]
+              : []
+          ),
+        };
+      },
+    }),
+  };
+}
+
 export const chatServerConfig: ChatServerConfig = {
   executions,
   onRequest: composeIntelligo,
@@ -161,6 +199,7 @@ export const chatServerConfig: ChatServerConfig = {
   capability: "chat.message",
   maxMessageLength: 8000,
   maxSteps: 5,
+  reasoning: true,
   // The composer's `chatConfig.attachments`, as the route enforces it.
   attachments: {
     accept: ["image/png", "image/jpeg", "image/webp"],
@@ -174,7 +213,13 @@ export const chatServerConfig: ChatServerConfig = {
       "Answer questions, explain, draft text and write code in full, as any capable assistant does; " +
       "format with markdown, fenced code blocks, tables, $$ math and mermaid diagrams where they help. " +
       "Tools are extras on top of that, never the limit of what you can do: " +
-      "when the user asks you to save, note, or keep something, call the saveArtifact tool.",
-    tools: artifactTools,
+      "when the user asks you to save, note, or keep something, call the saveArtifact tool; " +
+      "for current events or facts you are unsure of, call the webSearch tool and cite the sources it returns.",
+    tools: (turn) => ({ ...artifactTools(turn), ...webSearchTools() }),
+    // Gemini only streams its thoughts when asked; with `reasoning` on,
+    // the transcript shows them.
+    providerOptions: {
+      google: { thinkingConfig: { includeThoughts: true, thinkingBudget: 1024 } },
+    },
   },
 };
