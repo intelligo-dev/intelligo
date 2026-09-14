@@ -35,9 +35,11 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   trims the persisted path it replaces.
 - `@intelligo-dev/core`: migration `0043_attachments` (stored
   attachments); `listConversations` projects `metadata`.
-- Registry T3: `ai-task`, `ai-approval` and `ai-chain-of-thought` are
-  removed — `ai-todo-list`, `ai-tool-approval` / `ai-approval-card` and
-  `ai-agent-activity` replace them; the `chat` item no longer depends on
+- Registry T3: `ai-task`, `ai-approval`, `ai-chain-of-thought`,
+  `ai-sources`, `ai-inline-citation`, `ai-image` and `ai-tool` are
+  removed — `ai-todo-list`, `ai-tool-approval` / `ai-approval-card`,
+  `ai-agent-activity`, `ai-citations`, a plain image and
+  `ai-tool-result` replace them; the `chat` item no longer depends on
   shadcn's `bubble`, `message`, `message-scroller` or `questionnaire`.
 
 ### Added
