@@ -257,12 +257,14 @@
       "name": "ai-code-block",
       "type": "registry:ui",
       "title": "AI Code Block",
-      "description": "Highlighted code with a copy action, light and dark (ADR-0013, T3; ported from Vercel AI Elements).",
+      "description": "Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark (ADR-0013, T3).",
       "dependencies": [
-        "shiki"
+        "shiki",
+        "lucide-react"
       ],
       "registryDependencies": [
-        "@intelligo/copy-button"
+        "@intelligo/copy-button",
+        "spinner"
       ],
       "files": [
         {
@@ -377,14 +379,16 @@
       "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (ADR-0013, T3; ported from Vercel AI Elements).",
       "dependencies": [
         "ai@^6.0.77",
-        "lucide-react"
+        "lucide-react",
+        "motion"
       ],
       "registryDependencies": [
         "attachment",
+        "button",
         "dropdown-menu",
-        "input-group",
         "select",
-        "spinner"
+        "spinner",
+        "@intelligo/ai-motion"
       ],
       "files": [
         {
@@ -410,67 +414,6 @@
           "path": "base/ui/ai-branch/ai-branch.tsx",
           "type": "registry:ui",
           "target": "components/ui/ai-branch.tsx"
-        }
-      ]
-    },
-    {
-      "name": "ai-chain-of-thought",
-      "type": "registry:ui",
-      "title": "AI Chain of Thought",
-      "description": "An agent's steps as a collapsible timeline with a status each \u2014 reasoning, searches, tool calls, workflow steps (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "collapsible",
-        "spinner"
-      ],
-      "files": [
-        {
-          "path": "base/ui/ai-chain-of-thought/ai-chain-of-thought.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/ai-chain-of-thought.tsx"
-        }
-      ]
-    },
-    {
-      "name": "ai-task",
-      "type": "registry:ui",
-      "title": "AI Task",
-      "description": "A plan the agent is working through: items with pending, running, done and failed states (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "collapsible",
-        "spinner"
-      ],
-      "files": [
-        {
-          "path": "base/ui/ai-task/ai-task.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/ai-task.tsx"
-        }
-      ]
-    },
-    {
-      "name": "ai-approval",
-      "type": "registry:ui",
-      "title": "AI Approval",
-      "description": "A human-in-the-loop decision: what a tool is about to do, allow or deny, an optional reason, the outcome (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "button",
-        "textarea",
-        "@intelligo/status-badge"
-      ],
-      "files": [
-        {
-          "path": "base/ui/ai-approval/ai-approval.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/ai-approval.tsx"
         }
       ]
     },
@@ -547,10 +490,27 @@
       ]
     },
     {
+      "name": "ai-motion",
+      "type": "registry:ui",
+      "title": "AI Motion",
+      "description": "The motion vocabulary the AI parts share: easing curves, spring presets, a transform-only disclosure and a text swap, all gated on reduced motion (ADR-0013, T3).",
+      "dependencies": [
+        "motion"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/ai-motion/ai-motion.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-motion.tsx"
+        }
+      ]
+    },
+    {
       "name": "ai-shimmer-text",
       "type": "registry:ui",
       "title": "AI Shimmer Text",
-      "description": "A status line that reads as alive while the agent works; swaps with motion, honours reduced motion (ADR-0013, T3).",
+      "description": "A status line that reads as alive while the agent works; a token gradient sweeps the text and the words swap with motion, honouring reduced motion (ADR-0013, T3).",
       "dependencies": [
         "motion"
       ],
@@ -560,6 +520,326 @@
           "path": "base/ui/ai-shimmer-text/ai-shimmer-text.tsx",
           "type": "registry:ui",
           "target": "components/ui/ai-shimmer-text.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-agent-activity",
+      "type": "registry:ui",
+      "title": "AI Agent Activity",
+      "description": "One adaptive stream of what the agent is doing: reasoning text, plan steps, web searches with results, tool calls and structured traces, gliding while it works and folding into a summary when done (ADR-0013, T3).",
+      "dependencies": [
+        "motion",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-motion",
+        "@intelligo/ai-shimmer-text"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-agent-activity/ai-agent-activity.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-agent-activity.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-approval-card",
+      "type": "registry:ui",
+      "title": "AI Approval Card",
+      "description": "A decision surface: approve, reject or request changes, or step through single-choice, multiple-choice and freeform questions and submit the answers (ADR-0013, T3).",
+      "dependencies": [
+        "lucide-react",
+        "motion"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-motion",
+        "button",
+        "checkbox",
+        "input",
+        "radio-group",
+        "spinner"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-approval-card/ai-approval-card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-approval-card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-file-diff",
+      "type": "registry:ui",
+      "title": "AI File Diff",
+      "description": "A file the agent is changing: the path with live added and removed counts, opening onto a unified diff whose highlighted rows arrive while the change streams (ADR-0013, T3).",
+      "dependencies": [
+        "motion",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-code-block",
+        "@intelligo/ai-motion",
+        "button",
+        "spinner"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-file-diff/ai-file-diff.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-file-diff.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-message-bubble",
+      "type": "registry:ui",
+      "title": "AI Message Bubble",
+      "description": "The speech bubble inside a message row: six surface variants that pop into place, grouped bubbles and a collapsible long body (ADR-0013, T3).",
+      "dependencies": [
+        "motion",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-motion",
+        "@intelligo/ai-message"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-message-bubble/ai-message-bubble.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-message-bubble.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-message-scroller",
+      "type": "registry:ui",
+      "title": "AI Message Scroller",
+      "description": "The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages (ADR-0013, T3).",
+      "dependencies": [
+        "motion"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-motion"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-message-scroller/ai-message-scroller.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-message-scroller.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-message",
+      "type": "registry:ui",
+      "title": "AI Message",
+      "description": "One turn of a conversation: the row with its side, optional avatar, content column, header, footer, a centred marker and the typing indicator (ADR-0013, T3).",
+      "dependencies": [
+        "motion"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-motion"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-message/ai-message.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-message.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-todo-list",
+      "type": "registry:ui",
+      "title": "AI Todo List",
+      "description": "The agent's to-do list: a collapsible plan whose status marks morph between pending, in progress, completed and cancelled, with a rolling completion count (ADR-0013, T3).",
+      "dependencies": [
+        "motion",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-motion"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-todo-list/ai-todo-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-todo-list.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-tool-approval",
+      "type": "registry:ui",
+      "title": "AI Tool Approval",
+      "description": "A permission card for a tool call: name, parameters behind a disclosure, allow once / always allow / deny, and the outcome as a status (ADR-0013, T3).",
+      "dependencies": [
+        "lucide-react",
+        "motion"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-code-block",
+        "@intelligo/ai-motion",
+        "button",
+        "input",
+        "spinner"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-tool-approval/ai-tool-approval.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-tool-approval.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-tool-result",
+      "type": "registry:ui",
+      "title": "AI Tool Result",
+      "description": "The result of a tool the agent ran: a summary line that opens onto highlighted output, status rolling from running to done, copy and run-again actions (ADR-0013, T3).",
+      "dependencies": [
+        "motion",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-code-block",
+        "@intelligo/ai-motion",
+        "button",
+        "spinner"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-tool-result/ai-tool-result.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-tool-result.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-agent-progress",
+      "type": "registry:ui",
+      "title": "AI Agent Progress",
+      "description": "A long-running step: a pulsing grid beside the verb and an elapsed-time counter (ADR-0013, T3).",
+      "dependencies": [
+        "motion"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-motion"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-agent-progress/ai-agent-progress.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-agent-progress.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-citations",
+      "type": "registry:ui",
+      "title": "AI Citations",
+      "description": "The sources an answer leans on: inline markers, favicon stacks and a collapsible reference list (ADR-0013, T3).",
+      "dependencies": [
+        "lucide-react",
+        "motion"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-motion"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-citations/ai-citations.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-citations.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-image-generation",
+      "type": "registry:ui",
+      "title": "AI Image Generation",
+      "description": "An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes (ADR-0013, T3).",
+      "dependencies": [
+        "lucide-react",
+        "motion"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-motion",
+        "button"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-image-generation/ai-image-generation.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-image-generation.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-reasoning-text",
+      "type": "registry:ui",
+      "title": "AI Reasoning Text",
+      "description": "What the agent is doing while it reasons: phrases cycle with a cascade, swap or scramble behind an ASCII loader (ADR-0013, T3).",
+      "dependencies": [
+        "motion"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-motion",
+        "@intelligo/ai-shimmer-text"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-reasoning-text/ai-reasoning-text.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-reasoning-text.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-streaming-response",
+      "type": "registry:ui",
+      "title": "AI Streaming Response",
+      "description": "An assistant reply as it streams and once it lands: content, copy, retry and feedback actions, and a sources disclosure (ADR-0013, T3).",
+      "dependencies": [
+        "lucide-react",
+        "motion"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-citations",
+        "@intelligo/ai-motion",
+        "button"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-streaming-response/ai-streaming-response.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-streaming-response.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-sidebar",
+      "type": "registry:ui",
+      "title": "AI Sidebar",
+      "description": "The AI product's sidebar: a shell that morphs between a panel and an icon rail with tooltips, slides in as a sheet on mobile, holds menus with a gliding hover and active pill and staggered submenus, and a resource tree of folders, projects, conversations, files and bookmarks with keyboard and drag-and-drop moves, rename and a row menu (ADR-0013, T3).",
+      "dependencies": [
+        "motion",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-motion",
+        "button",
+        "popover",
+        "tooltip"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-sidebar/ai-sidebar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-sidebar.tsx"
         }
       ]
     },
@@ -1951,7 +2231,6 @@
         "alert",
         "alert-dialog",
         "attachment",
-        "bubble",
         "button",
         "dialog",
         "dropdown-menu",
@@ -1959,19 +2238,14 @@
         "input",
         "input-group",
         "item",
-        "message",
-        "message-scroller",
-        "questionnaire",
         "select",
         "sheet",
         "skeleton",
         "spinner",
         "textarea",
         "tooltip",
-        "@intelligo/ai-approval",
         "@intelligo/ai-artifact",
         "@intelligo/ai-branch",
-        "@intelligo/ai-chain-of-thought",
         "@intelligo/ai-code-block",
         "@intelligo/ai-composer-menu",
         "@intelligo/ai-image",
@@ -1982,10 +2256,16 @@
         "@intelligo/ai-sources",
         "@intelligo/ai-speech-input",
         "@intelligo/ai-suggestion",
-        "@intelligo/ai-task",
         "@intelligo/ai-tool",
         "@intelligo/copy-button",
-        "@intelligo/status-badge"
+        "@intelligo/status-badge",
+        "@intelligo/ai-message",
+        "@intelligo/ai-message-bubble",
+        "@intelligo/ai-message-scroller",
+        "@intelligo/ai-todo-list",
+        "@intelligo/ai-approval-card",
+        "@intelligo/ai-tool-approval",
+        "@intelligo/ai-agent-activity"
       ],
       "dependencies": [
         "ai@^6.0.77",

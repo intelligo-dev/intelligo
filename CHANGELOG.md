@@ -35,6 +35,10 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   trims the persisted path it replaces.
 - `@intelligo-dev/core`: migration `0043_attachments` (stored
   attachments); `listConversations` projects `metadata`.
+- Registry T3: `ai-task`, `ai-approval` and `ai-chain-of-thought` are
+  removed — `ai-todo-list`, `ai-tool-approval` / `ai-approval-card` and
+  `ai-agent-activity` replace them; the `chat` item no longer depends on
+  shadcn's `bubble`, `message`, `message-scroller` or `questionnaire`.
 
 ### Added
 
@@ -70,6 +74,19 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   `ResolvedAgent.providerOptions`) reach `streamText` as-is — a thinking
   budget, `includeThoughts` — which is what makes `reasoning: true`
   show a model's thoughts.
+- Registry T3, ported from the MIT-licensed agents set onto Base UI and the token contract: `ai-motion` (easings,
+  springs, `Disclosure`, `SwapText`), `ai-message`, `ai-message-bubble`,
+  `ai-message-scroller` (reader-aware, preview rail), `ai-todo-list`,
+  `ai-agent-activity`, `ai-streaming-response`, `ai-citations`,
+  `ai-tool-result`, `ai-file-diff`, `ai-tool-approval`,
+  `ai-approval-card`, `ai-image-generation`, `ai-reasoning-text`,
+  `ai-agent-progress`, `ai-sidebar`; `ai-code-block` (stable streaming
+  rows, focused lines, header), `ai-prompt-input` (one rounded field,
+  auto-growing textarea, morphing send/stop) and `ai-shimmer-text`
+  (token gradient sweep) are rewritten in place. The `chat` item draws
+  turns without avatars — a solid bubble for the reader, plain text for
+  the assistant — and scrolls, plans, asks and seeks approval through
+  the new parts.
 - Registry: the `artifacts` item shows a document the way it was
   written — markdown (math, diagrams) for text, highlighted code with
   line numbers for code, rows for a sheet, the image itself — inside a

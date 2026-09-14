@@ -7,13 +7,14 @@
 import * as React from "react";
 import type { ChatStatus, FileUIPart } from "ai";
 import {
-  CornerDownLeftIcon,
+  ArrowUpIcon,
   ImageIcon,
   PaperclipIcon,
   PlusIcon,
   SquareIcon,
   XIcon,
 } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import {
   Attachment,
@@ -30,12 +31,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupTextarea,
-} from "@/components/ui/input-group";
+import { Button } from "@/components/ui/button";
+import { SPRING_SWAP } from "@/components/ui/ai-motion";
 import {
   Select,
   SelectContent,
@@ -52,6 +49,9 @@ import { cn } from "@/lib/utils";
 // the external PromptInputProvider are not ported. Errors report a code and
 // every label is passed in, so nothing is English by default. File ids come
 // from crypto.randomUUID, not nanoid. Menu items act on click (Base UI).
+// The surface follows the MIT-licensed prompt input: one rounded field, the textarea growing with its content, a
+// bottom row of quiet controls and a round send button that morphs into
+// stop while a reply streams.
 
 type AttachmentFile = FileUIPart & { id: string };
 
@@ -293,7 +293,12 @@ function PromptInput({
         ref={formRef}
         {...props}
       >
-        <InputGroup className="overflow-hidden">{children}</InputGroup>
+        <div
+          data-slot="prompt-input-surface"
+          className="flex w-full flex-col rounded-2xl border border-border/80 bg-background p-2 transition-colors focus-within:border-foreground/25 has-[textarea:disabled]:opacity-60"
+        >
+          {children}
+        </div>
       </form>
     </AttachmentsContext.Provider>
   );
@@ -314,7 +319,7 @@ function PromptInputTextarea({
   onKeyDown,
   onPaste,
   ...props
-}: React.ComponentProps<typeof InputGroupTextarea>) {
+}: React.ComponentProps<"textarea">) {
   const attachments = usePromptInputAttachments();
   const [isComposing, setIsComposing] = React.useState(false);
 
@@ -365,9 +370,13 @@ function PromptInputTextarea({
   }
 
   return (
-    <InputGroupTextarea
+    <textarea
       data-slot="prompt-input-textarea"
-      className={cn("field-sizing-content max-h-48 min-h-16", className)}
+      rows={2}
+      className={cn(
+        "field-sizing-content block max-h-64 min-h-12 w-full resize-none bg-transparent px-2 pt-1.5 text-sm leading-6 text-foreground outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed",
+        className
+      )}
       name="message"
       onCompositionEnd={() => setIsComposing(false)}
       onCompositionStart={() => setIsComposing(true)}
@@ -381,12 +390,11 @@ function PromptInputTextarea({
 function PromptInputHeader({
   className,
   ...props
-}: Omit<React.ComponentProps<typeof InputGroupAddon>, "align">) {
+}: React.ComponentProps<"div">) {
   return (
-    <InputGroupAddon
+    <div
       data-slot="prompt-input-header"
-      align="block-end"
-      className={cn("order-first flex-wrap gap-1", className)}
+      className={cn("order-first flex flex-wrap items-center gap-1 px-1 pb-1", className)}
       {...props}
     />
   );
@@ -395,12 +403,11 @@ function PromptInputHeader({
 function PromptInputFooter({
   className,
   ...props
-}: Omit<React.ComponentProps<typeof InputGroupAddon>, "align">) {
+}: React.ComponentProps<"div">) {
   return (
-    <InputGroupAddon
+    <div
       data-slot="prompt-input-footer"
-      align="block-end"
-      className={cn("justify-between gap-1", className)}
+      className={cn("mt-1 flex min-h-8 items-center justify-between gap-1", className)}
       {...props}
     />
   );
@@ -422,16 +429,21 @@ function PromptInputTools({
 function PromptInputButton({
   variant = "ghost",
   size,
+  className,
   ...props
-}: React.ComponentProps<typeof InputGroupButton>) {
+}: React.ComponentProps<typeof Button>) {
+  const iconOnly = React.Children.count(props.children) <= 1;
   return (
-    <InputGroupButton
+    <Button
       data-slot="prompt-input-button"
-      size={
-        size ?? (React.Children.count(props.children) > 1 ? "sm" : "icon-sm")
-      }
+      size={size ?? (iconOnly ? "icon-sm" : "sm")}
       type="button"
       variant={variant}
+      className={cn(
+        "rounded-full text-muted-foreground hover:text-foreground",
+        iconOnly && "size-8",
+        className
+      )}
       {...props}
     />
   );
@@ -449,7 +461,7 @@ function PromptInputAttachments({
   return (
     <AttachmentGroup
       data-slot="prompt-input-attachments"
-      className={cn("w-full px-3 pt-3", className)}
+      className={cn("w-full px-1 pt-1", className)}
       {...props}
     >
       {attachments.files.map((file) => (
@@ -503,8 +515,20 @@ function PromptInputActionMenuTrigger({
   children,
   ...props
 }: React.ComponentProps<typeof PromptInputButton>) {
+  // The plus turns into a cross while the menu is open — a CSS turn, so
+  // it needs no motion gate.
   return (
-    <DropdownMenuTrigger render={<PromptInputButton {...props} />}>
+    <DropdownMenuTrigger
+      render={
+        <PromptInputButton
+          {...props}
+          className={cn(
+            "[&>svg]:transition-transform [&>svg]:duration-200 aria-expanded:[&>svg]:rotate-45 motion-reduce:[&>svg]:transition-none",
+            props.className
+          )}
+        />
+      }
+    >
       {children ?? <PlusIcon />}
     </DropdownMenuTrigger>
   );
@@ -512,9 +536,16 @@ function PromptInputActionMenuTrigger({
 
 function PromptInputActionMenuContent({
   align = "start",
+  className,
   ...props
 }: React.ComponentProps<typeof DropdownMenuContent>) {
-  return <DropdownMenuContent align={align} {...props} />;
+  return (
+    <DropdownMenuContent
+      align={align}
+      className={cn("w-56 rounded-xl p-1.5", className)}
+      {...props}
+    />
+  );
 }
 
 function PromptInputActionMenuItem(
@@ -543,21 +574,24 @@ function PromptInputSubmit({
   label,
   variant = "default",
   size = "icon-sm",
+  className,
   children,
   ...props
-}: React.ComponentProps<typeof InputGroupButton> & {
+}: React.ComponentProps<typeof Button> & {
   status?: ChatStatus;
   /** Accessible name — "Send", or "Stop" while streaming. */
   label: string;
 }) {
+  const reduced = useReducedMotion() ?? false;
   const pending = status === "submitted" || status === "streaming";
-  let icon = <CornerDownLeftIcon />;
+  let icon = <ArrowUpIcon />;
   if (status === "submitted") icon = <Spinner />;
-  else if (status === "streaming") icon = <SquareIcon />;
+  else if (status === "streaming") icon = <SquareIcon className="size-3 fill-current" />;
   else if (status === "error") icon = <XIcon />;
+  const key = status === "submitted" || status === "streaming" ? "stop" : status === "error" ? "error" : "send";
 
   return (
-    <InputGroupButton
+    <Button
       data-slot="prompt-input-submit"
       aria-label={label}
       aria-busy={status === "submitted" || undefined}
@@ -565,10 +599,25 @@ function PromptInputSubmit({
       // While a reply is pending the button stops it; it never resubmits.
       type={pending ? "button" : "submit"}
       variant={variant}
+      className={cn("ml-auto size-8 rounded-full", className)}
       {...props}
     >
-      {children ?? icon}
-    </InputGroupButton>
+      {children ?? (
+        // Send and stop trade places with a small pop; reduced motion swaps them plainly.
+        <AnimatePresence initial={false} mode="popLayout">
+          <motion.span
+            key={key}
+            initial={reduced ? { opacity: 1 } : { opacity: 0, y: 3, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: -3, scale: 0.8 }}
+            transition={reduced ? { duration: 0 } : SPRING_SWAP}
+            className="grid place-items-center [&>svg]:size-4"
+          >
+            {icon}
+          </motion.span>
+        </AnimatePresence>
+      )}
+    </Button>
   );
 }
 
@@ -583,7 +632,7 @@ function PromptInputSelectTrigger({
   return (
     <SelectTrigger
       className={cn(
-        "border-none bg-transparent font-medium text-muted-foreground shadow-none transition-colors hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground",
+        "h-8 max-w-52 rounded-xl border-none bg-transparent px-2 text-xs font-medium text-muted-foreground shadow-none transition-colors hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
         className
       )}
       {...props}

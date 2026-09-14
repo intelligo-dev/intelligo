@@ -32,7 +32,7 @@ import {
 } from "ai";
 import type { FileUIPart, UIMessage } from "ai";
 import { useTranslations } from "use-intl";
-import { BotIcon, PaperclipIcon, UserIcon } from "lucide-react";
+import { PaperclipIcon } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
@@ -40,14 +40,7 @@ import { math } from "@streamdown/math";
 import { mermaid } from "@streamdown/mermaid";
 import "katex/dist/katex.min.css";
 
-import {
-  Approval,
-  ApprovalActions,
-  ApprovalContent,
-  ApprovalHeader,
-  ApprovalOutcome,
-  ApprovalReason,
-} from "@showcase/components/ui/ai-approval";
+import { ToolApproval } from "@showcase/components/ui/ai-tool-approval";
 import {
   Branch,
   BranchNext,
@@ -81,14 +74,16 @@ import {
   AttachmentMedia,
   AttachmentTitle,
 } from "@showcase/components/ui/attachment";
-import { Bubble, BubbleContent } from "@showcase/components/ui/bubble";
 import { Button } from "@showcase/components/ui/button";
 import {
-  MessageAvatar,
   MessageContent,
   MessageFooter,
-  Message as MessageRoot,
-} from "@showcase/components/ui/message";
+  Message as MessageRow,
+} from "@showcase/components/ui/ai-message";
+import {
+  MessageBubble,
+  MessageBubbleContent,
+} from "@showcase/components/ui/ai-message-bubble";
 import { Textarea } from "@showcase/components/ui/textarea";
 import {
   getDataRenderer,
@@ -173,13 +168,7 @@ function messageText(message: UIMessage): string {
     .trim();
 }
 
-/**
- * The avatar reads from the top of the turn, the way a transcript is
- * read — not from the bottom of the last bubble, which is where
- * shadcn's Message parks it for short chat bubbles. The footer variant
- * that lifts a bottom-aligned avatar over the actions row is undone
- * for the same reason.
- */
+
 /**
  * The streaming caret sits at the end of the last line of markdown,
  * not under it: markdown renders as blocks, so a sibling after the
@@ -188,9 +177,6 @@ function messageText(message: UIMessage): string {
  */
 const STREAMING_CARET =
   "[&>:last-child]:after:ml-0.5 [&>:last-child]:after:inline-block [&>:last-child]:after:h-4 [&>:last-child]:after:w-0.5 [&>:last-child]:after:animate-pulse [&>:last-child]:after:rounded-full [&>:last-child]:after:bg-foreground [&>:last-child]:after:align-text-bottom [&>:last-child]:after:content-['']";
-
-const AVATAR_CLASS =
-  "self-start group-has-data-[slot=message-footer]/message:translate-y-0";
 
 export function Message({
   conversationId,
@@ -245,10 +231,7 @@ export function Message({
 
   if (isUser && editing) {
     return (
-      <MessageRoot align="end" className="group/chat-message">
-        <MessageAvatar className={AVATAR_CLASS}>
-          <UserIcon />
-        </MessageAvatar>
+      <MessageRow from="user" className="group/chat-message">
         <MessageContent>
           <EditForm
             initial={text}
@@ -259,19 +242,15 @@ export function Message({
             }}
           />
         </MessageContent>
-      </MessageRoot>
+      </MessageRow>
     );
   }
 
   return (
-    <MessageRoot
-      align={isUser ? "end" : "start"}
+    <MessageRow
+      from={isUser ? "user" : "assistant"}
       className="group/chat-message"
     >
-      <MessageAvatar className={AVATAR_CLASS}>
-        {isUser ? <UserIcon /> : <BotIcon />}
-      </MessageAvatar>
-
       <MessageContent>
         {files.length > 0 ? (
           <AttachmentGroup className="max-w-full">
@@ -288,17 +267,17 @@ export function Message({
             if (!part.text) return null;
             if (isUser) {
               return (
-                <Bubble key={key} align="end">
-                  <BubbleContent className="whitespace-pre-wrap">
+                <MessageBubble key={key} variant="solid">
+                  <MessageBubbleContent className="whitespace-pre-wrap">
                     {part.text}
-                  </BubbleContent>
-                </Bubble>
+                  </MessageBubbleContent>
+                </MessageBubble>
               );
             }
             const streamingText = isStreamingThis && index === lastTextIndex;
             return (
-              <Bubble key={key} variant="ghost">
-                <BubbleContent>
+              <MessageBubble key={key} variant="ghost">
+                <MessageBubbleContent>
                   <Streamdown
                     className={streamingText ? STREAMING_CARET : undefined}
                     mode={streamingText ? "streaming" : "static"}
@@ -312,8 +291,8 @@ export function Message({
                   >
                     {streamingText ? part.text : withCitations(part.text, sources.length)}
                   </Streamdown>
-                </BubbleContent>
-              </Bubble>
+                </MessageBubbleContent>
+              </MessageBubble>
             );
           }
 
@@ -449,7 +428,7 @@ export function Message({
           </MessageFooter>
         ) : null}
       </MessageContent>
-    </MessageRoot>
+    </MessageRow>
   );
 }
 
@@ -587,6 +566,12 @@ function EditForm({
  * about to run and lets the reader allow or deny it, optionally with a
  * reason the model sees.
  */
+/**
+ * The default for a call that waits on the reader: a permission card
+ * with the tool's input as parameters. Allow, or deny with a reason —
+ * the answer rides the approval response and the thread continues on
+ * its own.
+ */
 function ApprovalCard({
   toolName,
   input,
@@ -595,51 +580,48 @@ function ApprovalCard({
   actions,
 }: ToolRendererProps) {
   const t = useTranslations("chat");
-  const [reason, setReason] = useState("");
   const [decided, setDecided] = useState<"approved" | "denied" | null>(null);
+  const parameters =
+    input && typeof input === "object"
+      ? Object.entries(input as Record<string, unknown>).map(([key, value]) => ({
+          id: key,
+          label: key,
+          value: typeof value === "string" ? value : JSON.stringify(value),
+        }))
+      : [];
+  const canDecide = !isReadonly && Boolean(actions) && Boolean(approvalId);
 
-  function decide(approved: boolean) {
+  function decide(approved: boolean, reason?: string) {
     if (!approvalId || !actions) return;
     setDecided(approved ? "approved" : "denied");
     actions.addToolApprovalResponse({
       id: approvalId,
       approved,
-      ...(reason.trim() ? { reason: reason.trim() } : {}),
+      ...(reason?.trim() ? { reason: reason.trim() } : {}),
     });
   }
 
   return (
-    <Approval state={decided ?? "requested"} className="max-w-xl">
-      <ApprovalHeader
-        title={t("approval.title", { tool: toolName })}
-        description={t("approval.description")}
-      />
-      {input !== undefined ? (
-        <ApprovalContent>
-          <pre className="overflow-x-auto rounded-md bg-muted p-2 text-xs">
-            {JSON.stringify(input, null, 2)}
-          </pre>
-        </ApprovalContent>
-      ) : null}
-      {decided ? (
-        <ApprovalOutcome state={decided}>
-          {t(decided === "approved" ? "approval.approved" : "approval.denied")}
-        </ApprovalOutcome>
-      ) : isReadonly || !actions || !approvalId ? null : (
-        <ApprovalContent>
-          <ApprovalReason
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder={t("approval.reasonPlaceholder")}
-          />
-          <ApprovalActions
-            allowLabel={t("approval.allow")}
-            denyLabel={t("approval.deny")}
-            onAllow={() => decide(true)}
-            onDeny={() => decide(false)}
-          />
-        </ApprovalContent>
-      )}
-    </Approval>
+    <ToolApproval
+      className="max-w-xl"
+      tool={toolName}
+      title={t("approval.title", { tool: toolName })}
+      description={t("approval.description")}
+      parameters={parameters}
+      status={decided ?? "pending"}
+      denyReason
+      onAllow={canDecide ? () => decide(true) : undefined}
+      onDeny={canDecide ? (reason) => decide(false, reason) : undefined}
+      allowOnceLabel={t("approval.allow")}
+      denyLabel={t("approval.deny")}
+      cancelLabel={t("approval.cancel")}
+      detailsLabel={t("approval.details")}
+      denyReasonPlaceholder={t("approval.reasonPlaceholder")}
+      statusLabels={{
+        pending: t("approval.pending"),
+        approved: t("approval.approved"),
+        denied: t("approval.denied"),
+      }}
+    />
   );
 }

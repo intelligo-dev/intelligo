@@ -32,7 +32,10 @@
     "greeting": "What can I help with?"
   },
   "list": {
-    "scrollToEnd": "Scroll to the latest message"
+    "label": "Conversation",
+    "navigation": "Jump to a message",
+    "navigationItem": "Go to {sender} message {index} of {total}",
+    "emptyPreview": "Message"
   },
   "message": {
     "reasoning": "Reasoning",
@@ -72,12 +75,16 @@
     "deny": "Deny",
     "reasonPlaceholder": "Why not? (optional)",
     "approved": "Approved",
-    "denied": "Denied"
+    "denied": "Denied",
+    "cancel": "Cancel",
+    "details": "Details",
+    "pending": "Waiting for you"
   },
   "question": {
     "answer": "Answer",
     "answered": "Answered",
-    "freeformPlaceholder": "Type your answer…"
+    "freeformPlaceholder": "Type your answer…",
+    "pending": "Input required"
   },
   "authorization": {
     "required": "{name} needs you to sign in",
@@ -98,6 +105,7 @@
   },
   "task": {
     "title": "Plan",
+    "empty": "No tasks yet",
     "progress": "{done} of {total} done"
   },
   "sources": {

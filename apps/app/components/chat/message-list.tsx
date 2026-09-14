@@ -1,23 +1,15 @@
 "use client";
 
 /**
- * The conversation viewport. shadcn's MessageScroller keeps the newest
- * turn in view while it streams — only when the reader is already at
- * the bottom — and offers a way back down once they scroll up.
+ * The conversation viewport. A reader-aware scroller follows streamed
+ * output at the live edge and lets go the moment the reader scrolls up;
+ * on the page it also draws a preview rail for jumping between turns.
  */
 
 import { useTranslations } from "next-intl";
 import type { FileUIPart, UIMessage } from "ai";
-import { ArrowDownIcon } from "lucide-react";
 
-import {
-  MessageScroller,
-  MessageScrollerButton,
-  MessageScrollerContent,
-  MessageScrollerItem,
-  MessageScrollerProvider,
-  MessageScrollerViewport,
-} from "@/components/ui/message-scroller";
+import { MessageScroller } from "@/components/ui/ai-message-scroller";
 import type { ToolRendererActions } from "@/lib/chat-renderers";
 import { Message, type MessageVersion } from "./message";
 import type { MessageVote } from "./message-actions";
@@ -54,40 +46,38 @@ export function MessageList({
   const t = useTranslations("chat");
 
   return (
-    <MessageScrollerProvider>
-      <MessageScroller className="min-h-0 flex-1">
-        <MessageScrollerViewport>
-          <MessageScrollerContent
-            className={
-              compact
-                ? "w-full px-3 py-4"
-                : "mx-auto w-full max-w-3xl px-4 py-6"
-            }
-          >
-            {messages.map((message, index) => (
-              <MessageScrollerItem key={message.id} messageId={message.id}>
-                <Message
-                  conversationId={conversationId}
-                  message={message}
-                  isLastMessage={index === messages.length - 1}
-                  isStreaming={isStreaming}
-                  statusLabel={index === messages.length - 1 ? statusLabel : null}
-                  readOnly={readOnly}
-                  vote={votes[message.id] ?? null}
-                  version={versionOf?.(message.id) ?? null}
-                  onRegenerate={onRegenerate}
-                  onEdit={onEdit}
-                  toolActions={toolActions}
-                />
-              </MessageScrollerItem>
-            ))}
-          </MessageScrollerContent>
-        </MessageScrollerViewport>
-        <MessageScrollerButton>
-          <ArrowDownIcon />
-          <span className="sr-only">{t("list.scrollToEnd")}</span>
-        </MessageScrollerButton>
-      </MessageScroller>
-    </MessageScrollerProvider>
+    <MessageScroller
+      className="min-h-0 flex-1"
+      busy={isStreaming}
+      label={t("list.label")}
+      navigation={compact ? undefined : "rail"}
+      navigationLabel={t("list.navigation")}
+      navigationItemLabel={(sender, index, total) =>
+        t("list.navigationItem", { sender, index, total })
+      }
+      emptyPreviewLabel={t("list.emptyPreview")}
+      contentClassName={
+        compact
+          ? "flex w-full flex-col gap-4 px-3 py-4"
+          : "mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6"
+      }
+    >
+      {messages.map((message, index) => (
+        <Message
+          key={message.id}
+          conversationId={conversationId}
+          message={message}
+          isLastMessage={index === messages.length - 1}
+          isStreaming={isStreaming}
+          statusLabel={index === messages.length - 1 ? statusLabel : null}
+          readOnly={readOnly}
+          vote={votes[message.id] ?? null}
+          version={versionOf?.(message.id) ?? null}
+          onRegenerate={onRegenerate}
+          onEdit={onEdit}
+          toolActions={toolActions}
+        />
+      ))}
+    </MessageScroller>
   );
 }

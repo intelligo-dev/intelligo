@@ -16,13 +16,12 @@
 import { useTranslations } from "next-intl";
 
 import {
-  ChainOfThought,
-  ChainOfThoughtContent,
-  ChainOfThoughtHeader,
-  ChainOfThoughtStep,
-  ChainOfThoughtSteps,
-  type ChainOfThoughtStepStatus,
-} from "@/components/ui/ai-chain-of-thought";
+  AgentActivity,
+  type AgentActivityItem,
+  type AgentStepStatus,
+} from "@/components/ui/ai-agent-activity";
+
+type ChainOfThoughtStepStatus = AgentStepStatus | "error";
 import type { DataRendererProps } from "@/lib/chat-renderers";
 
 type Snapshot = Record<string, unknown>;
@@ -88,37 +87,50 @@ function Timeline({
   isStreaming: boolean;
 }) {
   const t = useTranslations("chat");
+  const items: AgentActivityItem[] =
+    steps.length === 0
+      ? [
+          {
+            id: "status",
+            type: "step",
+            label: t(statusMessageKey(status)),
+            status: activityStatus(status),
+          },
+        ]
+      : steps.map((step) => ({
+          id: step.id,
+          type: "step" as const,
+          label: step.label,
+          status: activityStatus(step.status),
+          meta: t(statusMessageKey(step.status)),
+        }));
+  const complete = status === "complete" || status === "error";
+
   return (
-    <ChainOfThought className="max-w-xl" defaultOpen={isStreaming}>
-      <ChainOfThoughtHeader>
-        {title}
-        {steps.length > 0 ? (
-          <span className="ml-2 font-normal text-muted-foreground">
-            {t("activity.steps", { count: steps.length })}
-          </span>
-        ) : null}
-      </ChainOfThoughtHeader>
-      <ChainOfThoughtContent>
-        <ChainOfThoughtSteps>
-          {steps.length === 0 ? (
-            <ChainOfThoughtStep
-              status={status}
-              label={t(statusMessageKey(status))}
-            />
-          ) : (
-            steps.map((step) => (
-              <ChainOfThoughtStep
-                key={step.id}
-                status={step.status}
-                label={step.label}
-                statusLabel={t(statusMessageKey(step.status))}
-              />
-            ))
-          )}
-        </ChainOfThoughtSteps>
-      </ChainOfThoughtContent>
-    </ChainOfThought>
+    <AgentActivity
+      className="max-w-xl"
+      items={items}
+      contentType="mixed"
+      status={complete || !isStreaming ? "complete" : "working"}
+      defaultOpen={isStreaming}
+      activeLabel={title}
+      summary={
+        <>
+          {title}
+          {steps.length > 0 ? (
+            <span className="ml-2 font-normal text-muted-foreground">
+              {t("activity.steps", { count: steps.length })}
+            </span>
+          ) : null}
+        </>
+      }
+    />
   );
+}
+
+/** The activity stream knows three step states; a failure reads as complete with its label. */
+function activityStatus(status: ChainOfThoughtStepStatus): AgentStepStatus {
+  return status === "error" ? "complete" : status;
 }
 
 export function MastraWorkflowActivity({ data, isStreaming }: DataRendererProps) {
@@ -140,18 +152,13 @@ export function MastraWorkflowStepActivity({
 }: DataRendererProps) {
   const t = useTranslations("chat");
   const snapshot = asRecord(data);
-  const status = stepStatus(snapshot.status);
   return (
-    <ChainOfThought className="max-w-xl" defaultOpen={isStreaming}>
-      <ChainOfThoughtHeader>
-        {String(snapshot.name ?? snapshot.stepId ?? snapshot.id ?? t("activity.workflow"))}
-      </ChainOfThoughtHeader>
-      <ChainOfThoughtContent>
-        <ChainOfThoughtSteps>
-          <ChainOfThoughtStep status={status} label={t(statusMessageKey(status))} />
-        </ChainOfThoughtSteps>
-      </ChainOfThoughtContent>
-    </ChainOfThought>
+    <Timeline
+      title={String(snapshot.name ?? snapshot.stepId ?? snapshot.id ?? t("activity.workflow"))}
+      status={stepStatus(snapshot.status)}
+      steps={[]}
+      isStreaming={isStreaming}
+    />
   );
 }
 
@@ -187,17 +194,12 @@ export function MastraToolAgentStepActivity({
 }: DataRendererProps) {
   const t = useTranslations("chat");
   const snapshot = asRecord(data);
-  const status = stepStatus(snapshot.status);
   return (
-    <ChainOfThought className="max-w-xl" defaultOpen={isStreaming}>
-      <ChainOfThoughtHeader>
-        {String(snapshot.name ?? snapshot.agentId ?? t("activity.agent"))}
-      </ChainOfThoughtHeader>
-      <ChainOfThoughtContent>
-        <ChainOfThoughtSteps>
-          <ChainOfThoughtStep status={status} label={t(statusMessageKey(status))} />
-        </ChainOfThoughtSteps>
-      </ChainOfThoughtContent>
-    </ChainOfThought>
+    <Timeline
+      title={String(snapshot.name ?? snapshot.agentId ?? t("activity.agent"))}
+      status={stepStatus(snapshot.status)}
+      steps={[]}
+      isStreaming={isStreaming}
+    />
   );
 }

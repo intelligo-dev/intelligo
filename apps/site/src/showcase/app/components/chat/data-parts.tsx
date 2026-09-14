@@ -32,70 +32,49 @@ import {
   ItemTitle,
 } from "@showcase/components/ui/item";
 import {
-  Questionnaire,
-  QuestionnaireActions,
-  QuestionnaireChoice,
-  QuestionnaireChoiceDescription,
-  QuestionnaireChoices,
-  QuestionnaireInput,
-  QuestionnaireItem,
-  QuestionnaireSubmit,
-  QuestionnaireTitle,
-} from "@showcase/components/ui/questionnaire";
+  ApprovalCard,
+  type ApprovalCardAnswers,
+} from "@showcase/components/ui/ai-approval-card";
 import { Spinner } from "@showcase/components/ui/spinner";
 import { StatusBadge } from "@showcase/components/ui/status-badge";
-import {
-  Task,
-  TaskContent,
-  TaskItem,
-  TaskItems,
-  TaskTrigger,
-} from "@showcase/components/ui/ai-task";
+import { TodoList, type TodoItemStatus } from "@showcase/components/ui/ai-todo-list";
 import type { DataRendererProps } from "@showcase/lib/chat-renderers";
 
 export function ChatTaskCard({ data }: DataRendererProps) {
   const t = useTranslations("chat");
   const task = data as ChatTaskData;
-  const items = task.items ?? [];
-  const done = items.filter((item) => item.status === "done").length;
+  const items = (task.items ?? []).map((item) => ({
+    id: item.id,
+    title: item.title,
+    status: todoStatus(item.status),
+  }));
 
   return (
-    <Task className="max-w-xl">
-      <TaskTrigger
-        title={task.title || t("task.title")}
-        progress={
-          items.length > 0
-            ? t("task.progress", { done, total: items.length })
-            : undefined
-        }
-      />
-      {items.length > 0 ? (
-        <TaskContent>
-          <TaskItems>
-            {items.map((item) => (
-              <TaskItem
-                key={item.id}
-                status={item.status}
-                statusLabel={t(`activity.${statusKey(item.status)}`)}
-              >
-                {item.title}
-              </TaskItem>
-            ))}
-          </TaskItems>
-        </TaskContent>
-      ) : null}
-    </Task>
+    <TodoList
+      className="max-w-xl"
+      items={items}
+      title={task.title || t("task.title")}
+      label={t("task.title")}
+      emptyLabel={t("task.empty")}
+      completedLabel={(done, total) => t("task.progress", { done, total })}
+      statusLabels={{
+        pending: t("activity.pending"),
+        "in-progress": t("activity.running"),
+        completed: t("activity.done"),
+        cancelled: t("activity.failed"),
+      }}
+    />
   );
 }
 
-function statusKey(status: ChatTaskData["status"]) {
+function todoStatus(status: ChatTaskData["status"]): TodoItemStatus {
   switch (status) {
     case "in_progress":
-      return "running";
+      return "in-progress";
     case "done":
-      return "done";
+      return "completed";
     case "failed":
-      return "failed";
+      return "cancelled";
     default:
       return "pending";
   }
@@ -211,67 +190,49 @@ export function ChatQuestionCard({
   const [answered, setAnswered] = useState(question.answered ?? false);
   const canAnswer = !answered && !isReadonly && Boolean(actions);
 
+  function submit(answers: ApprovalCardAnswers) {
+    if (!canAnswer) return;
+    const picked = answers[question.id] ?? { selected: [], custom: "" };
+    const labels = picked.selected.map(
+      (value) =>
+        question.options?.find((option) => option.id === value)?.label ?? value
+    );
+    const answer = [...labels, picked.custom?.trim() ?? ""]
+      .filter(Boolean)
+      .join(", ")
+      .trim();
+    if (!answer) return;
+    setAnswered(true);
+    actions?.sendMessage(answer);
+  }
+
   return (
-    <div className="max-w-xl rounded-lg border p-3">
-      <Questionnaire
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!canAnswer) return;
-          const form = new FormData(event.currentTarget);
-          const picked = form
-            .getAll(question.id)
-            .map((value) => String(value))
-            .filter(Boolean);
-          const answer = picked
-            .map(
-              (value) =>
-                question.options?.find((option) => option.id === value)
-                  ?.label ?? value
-            )
-            .join(", ")
-            .trim();
-          if (!answer) return;
-          setAnswered(true);
-          actions?.sendMessage(answer);
-        }}
-      >
-        <QuestionnaireItem
-          name={question.id}
-          required
-          multiple={Boolean(question.options && question.multiple)}
-          disabled={!canAnswer}
-        >
-          <QuestionnaireTitle>{question.prompt}</QuestionnaireTitle>
-          {question.options ? (
-            <QuestionnaireChoices>
-              {question.options.map((option) => (
-                <QuestionnaireChoice key={option.id} value={option.id}>
-                  {option.label}
-                  {option.description ? (
-                    <QuestionnaireChoiceDescription>
-                      {option.description}
-                    </QuestionnaireChoiceDescription>
-                  ) : null}
-                </QuestionnaireChoice>
-              ))}
-            </QuestionnaireChoices>
-          ) : (
-            <QuestionnaireInput
-              placeholder={t("question.freeformPlaceholder")}
-            />
-          )}
-        </QuestionnaireItem>
-        <QuestionnaireActions>
-          {answered ? (
-            <StatusBadge status="success" dot>
-              {t("question.answered")}
-            </StatusBadge>
-          ) : (
-            <QuestionnaireSubmit>{t("question.answer")}</QuestionnaireSubmit>
-          )}
-        </QuestionnaireActions>
-      </Questionnaire>
-    </div>
+    <ApprovalCard
+      className="max-w-xl"
+      status={answered ? "answered" : "pending"}
+      questions={[
+        {
+          id: question.id,
+          title: question.prompt,
+          options: question.options?.map((option) => ({
+            value: option.id,
+            label: option.description
+              ? `${option.label} — ${option.description}`
+              : option.label,
+          })),
+          multiple: Boolean(question.options && question.multiple),
+          allowCustom: !question.options || question.allowFreeform === true,
+          autoAdvance: false,
+        },
+      ]}
+      onSubmit={submit}
+      submitLabel={t("question.answer")}
+      customPlaceholder={t("question.freeformPlaceholder")}
+      statusLabels={{
+        pending: t("question.pending"),
+        answered: t("question.answered"),
+      }}
+    />
   );
 }
 
