@@ -92,7 +92,7 @@ export async function listConversationHistory(): Promise<
   try {
     // Enough to fill a sidebar and be worth searching. The cap is
     // deliberate: past a few hundred, filtering belongs in a query,
-    // not in the browser (see `conversation-sidebar.tsx`).
+    // not in the browser (see `components/chat/chat-history-nav.tsx`).
     const rows = await listConversations(await actor(), { limit: 100 });
     return {
       success: true,

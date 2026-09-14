@@ -203,6 +203,10 @@ export function ChatThread({
   // Set by a card that answers a client-side tool; read by the
   // auto-continue predicate.
   const clientAnswered = useRef(false);
+  // A thread that opened empty creates its conversation row on the
+  // first reply. The shell's history and this page's header are server
+  // rendered, so they learn about it from a refresh — once.
+  const startedEmpty = useRef(initialMessages.length === 0);
   // A transient `data-chat-status` — "Searching…", "Writing…" — shown
   // as the shimmer under the reply until the next one or the finish.
   const [statusLabel, setStatusLabel] = useState<string | null>(null);
@@ -224,6 +228,11 @@ export function ChatThread({
     transport,
     sendAutomaticallyWhen:
       chatConfig.sendAutomaticallyWhen ?? sendWhenClientAnswered(clientAnswered),
+    onFinish: () => {
+      if (!startedEmpty.current) return;
+      startedEmpty.current = false;
+      router.refresh();
+    },
     onData: (part) => {
       if (isChatDataPart(part, "chat-title")) {
         onTitle?.(part.data);

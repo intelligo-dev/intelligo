@@ -30,6 +30,7 @@
 
 import type { ComponentType } from "react";
 
+import { ChatHistory } from "@/components/chat/chat-history";
 import { HeaderExtras } from "@/components/shell/header-extras";
 import { TrialBannerContainer } from "@/components/trial/trial-banner-container";
 
@@ -41,6 +42,11 @@ export interface ShellConfig {
    * notification bell, a language switcher, or both. Takes no props.
    */
   headerRight?: ComponentType;
+  /**
+   * Rendered in the sidebar under the navigation — e.g. conversation
+   * history. Takes no props; may be an async server component.
+   */
+  sidebarContent?: ComponentType;
 }
 
 /**
@@ -52,4 +58,5 @@ export interface ShellConfig {
 export const shellConfig: ShellConfig = {
   bannerTop: TrialBannerContainer,
   headerRight: HeaderExtras,
+  sidebarContent: ChatHistory,
 };

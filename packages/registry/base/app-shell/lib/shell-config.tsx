@@ -5,7 +5,7 @@
  * composition through a config a consumer owns, never a component
  * edit; mirrors the `chat` item's `lib/chat-config.tsx`).
  *
- * One seam so far, optional — a fresh install ships this file with an
+ * Every seam is optional — a fresh install ships this file with an
  * empty `shellConfig`, so the shell renders nothing extra beyond its
  * baseline UI:
  *
@@ -16,6 +16,13 @@
  *    needs data of its own (session, workspace, trial status) fetches
  *    it itself, the same way the first product's `TrialBanner` did
  *    before this seam existed. Default: nothing extra.
+ *  - `headerRight`: a component at the right end of the shell header —
+ *    a notification bell, a language switcher.
+ *  - `sidebarContent`: a component rendered in the sidebar under the
+ *    navigation — the place a chat product keeps its conversation
+ *    history (`ChatHistory` from the `chat` item). It may be an async
+ *    server component; it refreshes with the page. Hidden when the
+ *    sidebar collapses to icons is the component's own call.
  *
  * Edit this file directly to point at your product's own components —
  * this is consumer-owned source, not a package import. Example, once
@@ -38,6 +45,11 @@ export interface ShellConfig {
    * notification bell, a language switcher, or both. Takes no props.
    */
   headerRight?: ComponentType;
+  /**
+   * Rendered in the sidebar under the navigation — e.g. conversation
+   * history. Takes no props; may be an async server component.
+   */
+  sidebarContent?: ComponentType;
 }
 
 /**

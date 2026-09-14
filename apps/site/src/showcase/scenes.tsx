@@ -44,7 +44,6 @@ import { UsageChart } from "@showcase/components/usage/usage-chart";
 import { NotificationList } from "@showcase/components/notifications/notification-list";
 import { MessageList } from "@showcase/components/chat/message-list";
 import { ChatInput } from "@showcase/components/chat/chat-input";
-import { ConversationSidebar } from "@showcase/components/chat/conversation-sidebar";
 import { DocumentList } from "@showcase/components/artifacts/document-list";
 import { TrialBanner } from "@showcase/components/trial/trial-banner";
 import { PaywallBlur } from "@showcase/components/billing/paywall-blur";
@@ -69,7 +68,6 @@ import {
   AUDIT_TRAIL,
   CHAT_MESSAGES,
   CHECKOUT_SESSION,
-  CONVERSATIONS,
   DOCUMENTS,
   FACTS,
   INVITATION,
@@ -722,12 +720,7 @@ function Chat() {
   const [draft, setDraft] = useState("");
   return (
     <AppFrame>
-      <div className="-m-6 grid h-[calc(100%+3rem)] grid-cols-[260px_1fr]">
-        <ConversationSidebar
-          conversations={CONVERSATIONS}
-          activeId="conv_1"
-          className="flex"
-        />
+      <div className="-m-6 grid h-[calc(100%+3rem)] grid-cols-1">
         <div className="flex min-h-0 flex-col">
           <div className="flex min-h-0 flex-1 flex-col">
             <MessageList

@@ -3,32 +3,18 @@
 /**
  * Conversation header — the agent's name, the title with inline
  * rename, the consumer's `headerRight` slot, share, and delete.
- *
- * Below `lg` the sidebar is not on screen, so the header carries a
- * trigger that opens it in a sheet; from `lg` up the page renders the
- * sidebar as a column and the trigger is hidden.
+ * History lives in the shell's sidebar (`ChatHistory`), which already
+ * opens as a sheet on a phone.
  */
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import {
-  CheckIcon,
-  PanelLeftIcon,
-  PencilIcon,
-  Trash2Icon,
-  XIcon,
-} from "lucide-react";
+import { CheckIcon, PencilIcon, Trash2Icon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 import {
   AlertDialog,
@@ -43,28 +29,23 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { deleteConversation, renameConversation } from "@/actions/chat";
-import type { ConversationSummary } from "@/actions/chat";
 import { chatConfig } from "@/lib/chat-config";
-import { ConversationSidebar } from "./conversation-sidebar";
 import { ShareDialog } from "./share-dialog";
 
 interface ConversationHeaderProps {
   conversationId: string;
   title: string | null;
-  conversations: ConversationSummary[];
 }
 
 export function ConversationHeader({
   conversationId,
   title,
-  conversations,
 }: ConversationHeaderProps) {
   const t = useTranslations("chat");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(title ?? "");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const HeaderRight = chatConfig.headerRight;
   const agentName = chatConfig.agent?.name ?? t("agent.defaultName");
   const agentIcon = chatConfig.agent?.icon;
@@ -97,37 +78,15 @@ export function ConversationHeader({
         return;
       }
       router.push("/chat");
+      // The shell's history is rendered by the layout, which a
+      // navigation does not re-render.
+      router.refresh();
     });
   }
 
   return (
     <header className="flex items-center justify-between gap-2 border-b px-4 py-3">
       <div className="flex min-w-0 flex-1 items-center gap-1">
-        {/* Below `lg` this is the only way to reach history; at `lg`
-            and up the page renders the sidebar as a column. */}
-        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="mr-1 shrink-0 lg:hidden"
-                aria-label={t("header.openHistory")}
-              />
-            }
-          >
-            <PanelLeftIcon />
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0">
-            <SheetTitle className="sr-only">{t("sidebar.label")}</SheetTitle>
-            <ConversationSidebar
-              conversations={conversations}
-              activeId={conversationId}
-              onNavigate={() => setSidebarOpen(false)}
-              className="flex h-full w-full border-r-0"
-            />
-          </SheetContent>
-        </Sheet>
 
         <span className="mr-1 flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
           {agentIcon ? <span aria-hidden>{agentIcon}</span> : null}

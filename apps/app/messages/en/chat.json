@@ -35,7 +35,8 @@
     "label": "Conversation",
     "navigation": "Jump to a message",
     "navigationItem": "Go to {sender} message {index} of {total}",
-    "emptyPreview": "Message"
+    "emptyPreview": "Message",
+    "scrollToEnd": "Scroll to the latest message"
   },
   "message": {
     "reasoning": "Reasoning",
@@ -202,7 +203,8 @@
     "rename": "Rename",
     "delete": "Delete",
     "deleted": "Conversation deleted",
-    "undo": "Undo"
+    "undo": "Undo",
+    "newChat": "New chat"
   },
   "canvas": {
     "title": "Canvas",

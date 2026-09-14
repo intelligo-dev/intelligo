@@ -95,8 +95,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     logo: org.logo ?? null,
   }));
 
+  // The shell is exactly one screen tall and `main` scrolls inside it.
+  // A shell that grows with its page scrolls the window instead, and a
+  // page that pins something to the bottom — the chat composer — or
+  // scrolls its own region — the transcript — has no height to work in.
+  const SidebarContent = shellConfig.sidebarContent;
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh overflow-hidden">
       <AppSidebar
         workspace={workspaceContext.workspace}
         workspaces={workspaceList}
@@ -105,8 +110,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           email: session.user.email,
           image: session.user.image,
         }}
-      />
-      <SidebarInset>
+      >
+        {SidebarContent ? <SidebarContent /> : null}
+      </AppSidebar>
+      <SidebarInset className="min-h-0 overflow-hidden">
         <ShellHeader>
           {shellConfig.headerRight && (
             <div className="ml-auto flex items-center gap-2">
@@ -115,7 +122,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           )}
         </ShellHeader>
         {shellConfig.bannerTop && <shellConfig.bannerTop />}
-        <main className="flex-1 overflow-hidden">{children}</main>
+        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

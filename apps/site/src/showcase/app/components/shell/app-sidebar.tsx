@@ -56,6 +56,8 @@ interface AppSidebarProps {
     image?: string | null;
   };
   items?: NavItem[];
+  /** Rendered under the navigation — `shellConfig.sidebarContent`. */
+  children?: React.ReactNode;
 }
 
 export function AppSidebar({
@@ -63,6 +65,7 @@ export function AppSidebar({
   workspaces,
   user,
   items = configuredNavItems,
+  children,
 }: AppSidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("app-shell");
@@ -100,6 +103,7 @@ export function AppSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {children}
       </SidebarContent>
 
       <SidebarFooter>

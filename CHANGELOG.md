@@ -35,6 +35,13 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   trims the persisted path it replaces.
 - `@intelligo-dev/core`: migration `0043_attachments` (stored
   attachments); `listConversations` projects `metadata`.
+- `app-shell`: the shell is one screen tall and `main` scrolls inside
+  it. A shell that grew with its page scrolled the window, which left
+  the chat composer below the fold and the transcript with nothing to
+  scroll; a page that relied on the window scrolling now scrolls `main`.
+- `chat`: the page no longer renders its own history column. History
+  lives in the shell's sidebar — bind `ChatHistory` as `sidebarContent`
+  in `lib/shell-config.tsx`.
 - Registry T3: `ai-task`, `ai-approval`, `ai-chain-of-thought`,
   `ai-sources`, `ai-inline-citation`, `ai-image` and `ai-tool` are
   removed — `ai-todo-list`, `ai-tool-approval` / `ai-approval-card`,
@@ -76,6 +83,15 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   `ResolvedAgent.providerOptions`) reach `streamText` as-is — a thinking
   budget, `includeThoughts` — which is what makes `reasoning: true`
   show a model's thoughts.
+- `app-shell`: `shellConfig.sidebarContent`, rendered under the
+  navigation (it may be an async server component). `chat`:
+  `ChatHistory` and `ChatHistoryNav` for it — recency groups, pinned,
+  search, rename, pin, delete with undo, the open conversation
+  highlighted from the URL; the first reply of a new conversation
+  refreshes it. `ai-message-scroller`: a scroll-to-latest control, and
+  `anchor`, which brings the reader back to the end when they send;
+  following is decided by scroll direction, so a long smooth scroll or
+  content growing under the reader no longer drops it.
 - Registry T3, ported from the MIT-licensed agents set onto Base UI and the token contract: `ai-motion` (easings,
   springs, `Disclosure`, `SwapText`), `ai-message`, `ai-message-bubble`,
   `ai-message-scroller` (reader-aware, preview rail), `ai-todo-list`,

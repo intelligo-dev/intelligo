@@ -44,11 +44,15 @@ export function MessageList({
   compact = false,
 }: MessageListProps) {
   const t = useTranslations("chat");
+  // Sending brings the reader back to the end, even from far up.
+  const lastUserId = messages.findLast((message) => message.role === "user")?.id;
 
   return (
     <MessageScroller
       className="min-h-0 flex-1"
       busy={isStreaming}
+      anchor={lastUserId}
+      scrollToEndLabel={t("list.scrollToEnd")}
       label={t("list.label")}
       navigation={compact ? undefined : "rail"}
       navigationLabel={t("list.navigation")}

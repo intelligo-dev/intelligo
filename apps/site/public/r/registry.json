@@ -542,7 +542,8 @@
       "title": "AI Message Scroller",
       "description": "The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages (ADR-0013, T3).",
       "dependencies": [
-        "motion"
+        "motion",
+        "lucide-react"
       ],
       "registryDependencies": [
         "@intelligo/ai-motion"
@@ -2157,36 +2158,35 @@
         "button",
         "dialog",
         "dropdown-menu",
-        "empty",
         "input",
-        "input-group",
         "item",
         "select",
         "sheet",
+        "sidebar",
         "skeleton",
         "spinner",
         "textarea",
         "tooltip",
+        "@intelligo/ai-agent-activity",
+        "@intelligo/ai-approval-card",
         "@intelligo/ai-artifact",
         "@intelligo/ai-branch",
+        "@intelligo/ai-citations",
         "@intelligo/ai-code-block",
         "@intelligo/ai-composer-menu",
+        "@intelligo/ai-message",
+        "@intelligo/ai-message-bubble",
+        "@intelligo/ai-message-scroller",
         "@intelligo/ai-prompt-input",
         "@intelligo/ai-reasoning",
         "@intelligo/ai-shimmer-text",
         "@intelligo/ai-speech-input",
         "@intelligo/ai-suggestion",
-        "@intelligo/copy-button",
-        "@intelligo/status-badge",
-        "@intelligo/ai-message",
-        "@intelligo/ai-message-bubble",
-        "@intelligo/ai-message-scroller",
         "@intelligo/ai-todo-list",
-        "@intelligo/ai-approval-card",
         "@intelligo/ai-tool-approval",
-        "@intelligo/ai-agent-activity",
-        "@intelligo/ai-citations",
-        "@intelligo/ai-tool-result"
+        "@intelligo/ai-tool-result",
+        "@intelligo/copy-button",
+        "@intelligo/status-badge"
       ],
       "dependencies": [
         "ai@^6.0.77",
@@ -2383,9 +2383,14 @@
           "target": "components/chat/conversation-header.tsx"
         },
         {
-          "path": "base/chat/components/conversation-sidebar.tsx",
+          "path": "base/chat/components/chat-history.tsx",
           "type": "registry:component",
-          "target": "components/chat/conversation-sidebar.tsx"
+          "target": "components/chat/chat-history.tsx"
+        },
+        {
+          "path": "base/chat/components/chat-history-nav.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-history-nav.tsx"
         },
         {
           "path": "base/chat/components/share-dialog.tsx",

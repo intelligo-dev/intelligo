@@ -5,6 +5,7 @@
  * viewport that keeps streamed output pinned to the live edge while the
  * reader stays near it, lets go the moment they scroll up, and can grow
  * a compact preview rail for jumping between message rows. import * as React from "react";
+import { ArrowDownIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { EASE_OUT, SPRING_LAYOUT } from "@showcase/components/ui/ai-motion";
@@ -590,6 +591,18 @@ export interface MessageScrollerProps extends React.ComponentProps<"div"> {
   ) => string;
   /** Preview title for a row that has no readable text. */
   emptyPreviewLabel?: string;
+  /**
+   * Accessible name of the control that brings a reader who scrolled
+   * up back to the live edge. Unset hides the control.
+   */
+  scrollToEndLabel?: string;
+  /**
+   * A value that changes when the reader does something that should
+   * bring them back to the end — the id of their latest message. A
+   * change re-engages following and scrolls down, even if they had
+   * scrolled away.
+   */
+  anchor?: string | number;
   viewportClassName?: string;
   contentClassName?: string;
   railClassName?: string;
@@ -621,6 +634,8 @@ function MessageScroller({
   navigationLabel = "Message navigation",
   navigationItemLabel = defaultNavigationItemLabel,
   emptyPreviewLabel = "Message",
+  scrollToEndLabel = "Scroll to the latest message",
+  anchor,
   viewportClassName,
   contentClassName,
   railClassName,
@@ -649,6 +664,7 @@ function MessageScroller({
     onScroll: onViewportScroll,
     onWheel: onViewportWheel,
     onTouchStart: onViewportTouchStart,
+    onPointerDown: onViewportPointerDown,
     onKeyDown: onViewportKeyDown,
     ...restViewportProps
   } = viewportProps ?? {};
@@ -665,10 +681,15 @@ function MessageScroller({
     [externalViewportRef]
   );
 
+  // Mirrors `followingRef` for rendering: the scroll-to-latest control
+  // shows only while the reader is away from the live edge.
+  const [atEnd, setAtEnd] = React.useState(followOutput);
+
   const setFollowing = React.useCallback(
     (next: boolean) => {
       if (followingRef.current === next) return;
       followingRef.current = next;
+      setAtEnd(next);
       onFollowChange?.(next);
     },
     [onFollowChange]
@@ -799,13 +820,22 @@ function MessageScroller({
     );
   }, []);
 
+  // Following is decided by direction, not by distance alone: a smooth
+  // scroll down a long transcript outlives any fixed "programmatic"
+  // window, and content growing under the viewport widens the gap
+  // without the reader doing anything. Only a move up that the reader
+  // made lets go; reaching the end, by any means, takes hold again.
+  const lastScrollTopRef = React.useRef(0);
   const handleScroll = React.useCallback(() => {
     const viewport = viewportRef.current;
-    if (!viewport || programmaticScrollRef.current) return;
+    if (!viewport) return;
 
-    const distance =
-      viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
-    setFollowing(distance <= followThreshold);
+    const top = viewport.scrollTop;
+    const movedUp = top < lastScrollTopRef.current - 1;
+    lastScrollTopRef.current = top;
+    const distance = viewport.scrollHeight - top - viewport.clientHeight;
+    if (distance <= followThreshold) setFollowing(true);
+    else if (movedUp && !programmaticScrollRef.current) setFollowing(false);
     updateActiveRailItem();
   }, [followThreshold, setFollowing, updateActiveRailItem]);
 
@@ -923,6 +953,19 @@ function MessageScroller({
     [railItems, reduced, scrollToEnd, setFollowing, smooth]
   );
 
+  const anchorRef = React.useRef(anchor);
+  React.useEffect(() => {
+    if (anchorRef.current === anchor) return;
+    anchorRef.current = anchor;
+    setFollowing(true);
+    scrollToEnd(reduced || !smooth ? "auto" : "smooth");
+  }, [anchor, reduced, scrollToEnd, setFollowing, smooth]);
+
+  const returnToEnd = React.useCallback(() => {
+    setFollowing(true);
+    scrollToEnd(reduced || !smooth ? "auto" : "smooth");
+  }, [reduced, scrollToEnd, setFollowing, smooth]);
+
   const viewport = (
     <section
       ref={setViewportRef}
@@ -940,6 +983,11 @@ function MessageScroller({
       onTouchStart={(event) => {
         leaveLiveEdge();
         onViewportTouchStart?.(event);
+      }}
+      onPointerDown={(event) => {
+        // A drag on the scrollbar is the reader's scroll too.
+        leaveLiveEdge();
+        onViewportPointerDown?.(event);
       }}
       onKeyDown={(event) => {
         if (["ArrowUp", "PageUp", "Home"].includes(event.key)) {
@@ -974,7 +1022,7 @@ function MessageScroller({
   return (
     <div
       data-slot="message-scroller"
-      className={cn("min-h-0", className)}
+      className={cn("relative min-h-0", className)}
       {...props}
     >
       {navigation === "rail" ? (
@@ -1002,6 +1050,25 @@ function MessageScroller({
       ) : (
         viewport
       )}
+      <AnimatePresence>
+        {scrollToEndLabel && !atEnd ? (
+          <motion.button
+            key="scroll-to-end"
+            type="button"
+            data-slot="message-scroller-button"
+            aria-label={scrollToEndLabel}
+            title={scrollToEndLabel}
+            onClick={returnToEnd}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.9 }}
+            transition={reduced ? { duration: 0.12 } : SPRING_LAYOUT}
+            className="absolute bottom-3 left-1/2 z-20 grid size-9 -translate-x-1/2 place-items-center rounded-full border bg-background text-muted-foreground shadow-md outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <ArrowDownIcon className="size-4" />
+          </motion.button>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
