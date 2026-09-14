@@ -1823,7 +1823,8 @@
         "scroll-area",
         "skeleton",
         "spinner",
-        "@intelligo/page-header"
+        "@intelligo/page-header",
+        "@intelligo/ai-code-block"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1831,7 +1832,13 @@
         "lucide-react",
         "sonner",
         "server-only",
-        "next-intl"
+        "next-intl",
+        "streamdown",
+        "@streamdown/code",
+        "@streamdown/math",
+        "@streamdown/mermaid",
+        "@streamdown/cjk",
+        "katex"
       ],
       "files": [
         {
@@ -1874,7 +1881,10 @@
           "type": "registry:file",
           "target": "messages/en/artifacts.json"
         }
-      ]
+      ],
+      "css": {
+        "@source \"../node_modules/streamdown/dist/*.js\"": {}
+      }
     },
     {
       "name": "privacy-settings",

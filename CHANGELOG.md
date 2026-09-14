@@ -66,6 +66,16 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   `motion` must read `useReducedMotion`.
 - `packages/registry` has a vitest project (the eve mapper, the
   composer's trigger detection).
+- `@intelligo-dev/chat`: `agent.providerOptions` (and
+  `ResolvedAgent.providerOptions`) reach `streamText` as-is — a thinking
+  budget, `includeThoughts` — which is what makes `reasoning: true`
+  show a model's thoughts.
+- Registry: the `artifacts` item shows a document the way it was
+  written — markdown (math, diagrams) for text, highlighted code with
+  line numbers for code, rows for a sheet, the image itself — inside a
+  dialog that scrolls instead of spilling; the reference app's
+  `saveArtifact` tool takes `kind: "text" | "code"` so the model can
+  save source as source.
 
 ## [Unreleased — design system]
 

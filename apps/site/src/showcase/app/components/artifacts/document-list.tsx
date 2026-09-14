@@ -20,8 +20,15 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import type { ComponentProps } from "react";
 import { useFormatter, useTranslations } from "use-intl";
 import { Bot, Code, File, FileText, ImageIcon, Sheet } from "lucide-react";
+import { Streamdown } from "streamdown";
+import { cjk } from "@streamdown/cjk";
+import { code } from "@streamdown/code";
+import { math } from "@streamdown/math";
+import { mermaid } from "@streamdown/mermaid";
+import "katex/dist/katex.min.css";
 
 import { Link } from "@showcase/i18n/navigation";
 import { Badge } from "@showcase/components/ui/badge";
@@ -34,9 +41,78 @@ import {
   DialogTitle,
 } from "@showcase/components/ui/dialog";
 import { ScrollArea } from "@showcase/components/ui/scroll-area";
+import { CodeBlock } from "@showcase/components/ui/ai-code-block";
 
 import type { ArtifactListItem } from "@showcase/actions/documents";
 import { DocumentActions } from "./document-actions";
+
+// The plugin packages type `Pluggable` against their own `unified`
+// copy; the shapes are the ones Streamdown expects.
+const MARKDOWN_PLUGINS = { code, math, mermaid, cjk } as unknown as NonNullable<
+  ComponentProps<typeof Streamdown>["plugins"]
+>;
+
+const LANGUAGE_BY_EXTENSION: Record<string, string> = {
+  ts: "typescript",
+  tsx: "tsx",
+  js: "javascript",
+  jsx: "jsx",
+  py: "python",
+  rb: "ruby",
+  go: "go",
+  rs: "rust",
+  java: "java",
+  kt: "kotlin",
+  swift: "swift",
+  cs: "csharp",
+  sh: "bash",
+  sql: "sql",
+  json: "json",
+  yaml: "yaml",
+  yml: "yaml",
+  md: "markdown",
+  html: "html",
+  css: "css",
+};
+
+type CodeLanguage = ComponentProps<typeof CodeBlock>["language"];
+
+/** The language a code document is shown in, from its title's extension. */
+function languageOf(title: string): CodeLanguage {
+  const extension = title.split(".").pop()?.toLowerCase() ?? "";
+  return (LANGUAGE_BY_EXTENSION[extension] ?? "text") as CodeLanguage;
+}
+
+/**
+ * A document reads the way it was written: notes and drafts as
+ * markdown (math and diagrams included), code highlighted with line
+ * numbers, a sheet as its raw rows, an image as itself. An unknown
+ * kind falls back to plain text rather than nothing.
+ */
+function DocumentContent({ kind, title, content }: { kind: string; title: string; content: string }) {
+  switch (kind) {
+    case "code":
+      return <CodeBlock code={content} language={languageOf(title)} showLineNumbers />;
+    case "sheet":
+      return (
+        <pre className="overflow-x-auto px-1 font-mono text-xs leading-relaxed whitespace-pre">
+          {content}
+        </pre>
+      );
+    case "image":
+      return <img src={content} alt={title} className="max-w-full rounded-md" />;
+    case "text":
+      return (
+        <div className="prose prose-sm max-w-none px-1 dark:prose-invert">
+          <Streamdown plugins={MARKDOWN_PLUGINS}>{content}</Streamdown>
+        </div>
+      );
+    default:
+      return (
+        <div className="px-1 text-sm leading-relaxed whitespace-pre-wrap">{content}</div>
+      );
+  }
+}
 
 function kindIcon(kind: string) {
   switch (kind) {
@@ -233,11 +309,13 @@ export function DocumentList({ documents }: DocumentListProps) {
               </div>
             </DialogHeader>
 
-            <ScrollArea className="mt-4 flex-1">
+            <ScrollArea className="mt-4 min-h-0 flex-1">
               {selected.content ? (
-                <div className="whitespace-pre-wrap px-1 text-sm leading-relaxed">
-                  {selected.content}
-                </div>
+                <DocumentContent
+                  kind={selected.kind}
+                  title={selected.title}
+                  content={selected.content}
+                />
               ) : (
                 <p className="text-sm italic text-muted-foreground">
                   {t("noContent")}

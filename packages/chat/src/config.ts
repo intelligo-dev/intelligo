@@ -34,6 +34,12 @@ import type {
   UIMessageChunk,
   UIMessageStreamWriter,
 } from "ai";
+import type { streamText } from "ai";
+
+/** The provider-specific options `streamText` accepts (`ai` does not export the type). */
+export type ProviderOptions = NonNullable<
+  Parameters<typeof streamText>[0]["providerOptions"]
+>;
 
 import type { Conversation } from "@intelligo-dev/core/conversations";
 import type { Executions } from "@intelligo-dev/executions";
@@ -99,6 +105,14 @@ export interface ResolvedAgent {
   /** Overrides the config's; `null` disables the gate for this agent. */
   featureKey?: string | null;
   capability?: string;
+  /**
+   * Passed to `streamText` as-is — the provider's own knobs, e.g. a
+   * thinking budget (`{ google: { thinkingConfig: { includeThoughts: true } } }`,
+   * `{ anthropic: { thinking: { type: "enabled", budgetTokens: 2048 } } }`).
+   * With `reasoning: true` this is what makes a model's thoughts reach
+   * the transcript at all; the transport never names a provider.
+   */
+  providerOptions?: ProviderOptions;
 }
 
 /** A turn with its agent resolved — what the hooks below receive. */
@@ -263,6 +277,8 @@ export interface ChatServerConfig {
     id?: string;
     systemPrompt?: string;
     tools?: ToolSet | ((turn: ChatTurnContext) => ToolSet | Promise<ToolSet>);
+    /** See `ResolvedAgent.providerOptions`. */
+    providerOptions?: ProviderOptions;
   };
   /**
    * Which agent runs this turn — from the body, the row, a table. The

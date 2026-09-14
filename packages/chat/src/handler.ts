@@ -313,6 +313,9 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       id: turn.conversation?.agentId ?? shorthand.id ?? DEFAULT_AGENT_ID,
       systemPrompt: shorthand.systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
       ...(tools ? { tools } : {}),
+      ...(shorthand.providerOptions
+        ? { providerOptions: shorthand.providerOptions }
+        : {}),
     };
   }
 
@@ -832,6 +835,9 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         const result = streamText({
           model,
           system: prepared.system ?? agent.systemPrompt,
+          ...(agent.providerOptions
+            ? { providerOptions: agent.providerOptions }
+            : {}),
           messages: await convertToModelMessages(modelMessages, {
             ...(tools ? { tools } : {}),
           }),

@@ -116,27 +116,29 @@ function artifactTools(turn: ChatTurnContext): ToolSet {
   return {
     saveArtifact: tool({
       description:
-        "Save a document artifact for the user — a note, summary, draft, or any text worth keeping outside the conversation.",
+        "Save a document artifact for the user — a note, summary, draft, or source code worth keeping outside the conversation. " +
+        'Use kind "code" for source code (raw code only, no fences; give the title a file extension such as report.py) and "text" for markdown prose.',
       inputSchema: z.object({
         title: z.string().min(1).max(200),
         content: z.string().min(1),
+        kind: z.enum(["text", "code"]).default("text"),
       }),
-      execute: async ({ title, content }) => {
+      execute: async ({ title, content, kind }) => {
         // The document streams into the canvas beside the chat as it
         // is written — a few hundred characters at a time here, since
         // the whole text is already in hand — and the persisted `ready`
         // part reopens it from the card after a reload.
-        const doc = createArtifactWriter(turn, { kind: "text", title });
+        const doc = createArtifactWriter(turn, { kind, title });
         try {
           for (let at = 0; at < content.length; at += 200) {
             doc.append(content.slice(at, at + 200));
           }
           const saved = await saveDocument(
             { workspaceId: turn.workspaceId, userId: turn.userId },
-            { id: doc.id, title, content, kind: "text" }
+            { id: doc.id, title, content, kind }
           );
           doc.finish({ documentId: saved.id });
-          return { id: saved.id, documentId: saved.id, title: saved.title, kind: "text" };
+          return { id: saved.id, documentId: saved.id, title: saved.title, kind };
         } catch (error) {
           doc.fail(error);
           throw error;
@@ -169,7 +171,10 @@ export const chatServerConfig: ChatServerConfig = {
     id: "assistant",
     systemPrompt:
       "You are a helpful assistant embedded in a SaaS product. Be concise and direct. " +
-      "When the user asks you to save, note, or keep something, call the saveArtifact tool.",
+      "Answer questions, explain, draft text and write code in full, as any capable assistant does; " +
+      "format with markdown, fenced code blocks, tables, $$ math and mermaid diagrams where they help. " +
+      "Tools are extras on top of that, never the limit of what you can do: " +
+      "when the user asks you to save, note, or keep something, call the saveArtifact tool.",
     tools: artifactTools,
   },
 };
