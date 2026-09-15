@@ -13,10 +13,13 @@
  * agent's reasoning and the tool calls between its words fold into one
  * activity stream (`ToolActivity`); a tool with its own card, a call
  * awaiting approval, text, files and `data-*` parts (through
- * `DATA_RENDERERS`) stand on their own. `source-url` and
- * `source-document` parts are collected and shown once the reply is
- * complete — never mid-stream. A Mastra or eve turn renders through the
- * same switch.
+ * `DATA_RENDERERS`) stand on their own. A Mastra or eve turn renders
+ * through the same switch.
+ *
+ * Sources are collected by `collectSources` — the AI SDK's `source-*`
+ * parts and the sources a tool returned — so a `[3]` in the text is an
+ * inline pill naming the site as soon as the search behind it settled,
+ * and the finished reply ends with a sources button.
  *
  * A finished assistant message carries the action row; a user message
  * can be edited in place, which re-sends it as a new turn and keeps
@@ -43,7 +46,11 @@ import {
   BranchPage,
   BranchPrevious,
 } from "@/components/ui/ai-branch";
-import { Citation, Citations } from "@/components/ui/ai-citations";
+import {
+  CitationPill,
+  CitationSources,
+  type CitationItem,
+} from "@/components/ui/ai-citations";
 import { ShimmerText } from "@/components/ui/ai-shimmer-text";
 import {
   Attachment,
@@ -72,9 +79,15 @@ import {
   type ToolRendererProps,
 } from "@/lib/chat-renderers";
 import {
+  collectSources,
   groupParts,
-  hostnameOf,
   isActivityWorking,
+  linkCitations,
+  parseCitationHref,
+  sourceDomain,
+  sourcesFromSourcePart,
+  sourcesFromToolOutput,
+  type NumberedSource,
 } from "@/lib/message-parts";
 import { MessageActions, type MessageVote } from "./message-actions";
 import { ToolActivity } from "./tool-activity";
@@ -105,20 +118,6 @@ interface MessageProps {
 
 type Part = UIMessage["parts"][number];
 
-type SourcePart = {
-  type: "source-url" | "source-document";
-  sourceId: string;
-  url?: string;
-  title?: string;
-  mediaType?: string;
-  filename?: string;
-};
-
-function isSourcePart(part: unknown): part is SourcePart {
-  const type = (part as { type?: unknown }).type;
-  return type === "source-url" || type === "source-document";
-}
-
 function isFilePart(part: unknown): part is FileUIPart {
   return (part as { type?: unknown }).type === "file";
 }
@@ -129,23 +128,6 @@ const MARKDOWN_PLUGINS = { code, math, mermaid, cjk } as unknown as NonNullable<
   React.ComponentProps<typeof Streamdown>["plugins"]
 >;
 
-const CITE_PREFIX = "#cite-";
-
-/**
- * `[3]` in a finished reply becomes a link to `#cite-3`, which the
- * anchor override below renders as a citation marker. Only once the
- * text is complete (scrimui's rule: a citation appears when the claim
- * is grounded, never while it streams) and only when the reply has
- * sources to point at.
- */
-function withCitations(text: string, count: number): string {
-  if (count === 0) return text;
-  return text.replace(/\[(\d{1,2})\](?!\()/g, (match, n: string) => {
-    const index = Number(n);
-    return index >= 1 && index <= count ? `[${n}](${CITE_PREFIX}${n})` : match;
-  });
-}
-
 /** The message's plain text, for copying, editing and artifact content. */
 function messageText(message: UIMessage): string {
   return message.parts
@@ -155,6 +137,26 @@ function messageText(message: UIMessage): string {
     .trim();
 }
 
+/** The sources a part carries: a source part itself, or a settled tool's output. */
+function sourcesOf(part: Part) {
+  if (isToolUIPart(part)) {
+    if (part.state !== "output-available") return [];
+    const read = resolveToolRenderer(getToolName(part)).sources ?? sourcesFromToolOutput;
+    return read(part.output);
+  }
+  return sourcesFromSourcePart(part);
+}
+
+function citationItem(source: NumberedSource): CitationItem {
+  const domain = sourceDomain(source);
+  return {
+    id: source.id,
+    title: source.title ?? domain ?? source.url ?? "",
+    ...(domain ? { domain } : {}),
+    ...(source.url ? { url: source.url } : {}),
+    ...(source.snippet ? { snippet: source.snippet } : {}),
+  };
+}
 
 /**
  * The streaming caret sits at the end of the last line of markdown,
@@ -196,11 +198,10 @@ export function Message({
   const files = message.parts.flatMap((part) =>
     isFilePart(part) ? [part] : []
   );
-  const sources = isStreamingThis
-    ? []
-    : message.parts.flatMap((part) =>
-        isSourcePart(part) && (part.url || part.title) ? [part] : []
-      );
+  const sources = isUser ? [] : collectSources(message.parts, sourcesOf);
+  const citations = new Map(
+    sources.map((source) => [source.index, citationItem(source)])
+  );
   const lastTextIndex = message.parts.reduce(
     (last, part, index) => (isTextUIPart(part) ? index : last),
     -1
@@ -267,6 +268,15 @@ export function Message({
     );
   }
 
+  const markdownComponents =
+    citations.size > 0
+      ? {
+          a: (props: React.ComponentProps<"a">) => (
+            <CitationAnchor {...props} citations={citations} />
+          ),
+        }
+      : undefined;
+
   function renderPart(part: Part, index: number) {
     const key = `${message.id}-${index}`;
 
@@ -290,21 +300,9 @@ export function Message({
               mode={streamingText ? "streaming" : "static"}
               isAnimating={streamingText}
               plugins={MARKDOWN_PLUGINS}
-              components={
-                sources.length > 0
-                  ? {
-                      a: (props) => (
-                        <CitationAnchor
-                          {...props}
-                          sources={sources}
-                          idPrefix={`cite-${message.id}`}
-                        />
-                      ),
-                    }
-                  : undefined
-              }
+              components={markdownComponents}
             >
-              {streamingText ? part.text : withCitations(part.text, sources.length)}
+              {linkCitations(part.text, new Set(citations.keys()))}
             </Streamdown>
           </MessageBubbleContent>
         </MessageBubble>
@@ -383,17 +381,12 @@ export function Message({
           )
         )}
 
-        {sources.length > 0 ? (
-          <Citations
+        {!isStreamingThis && sources.length > 0 ? (
+          <CitationSources
             className="mt-1"
-            idPrefix={`cite-${message.id}`}
-            title={t("sources.title", { count: sources.length })}
-            citations={sources.map((source, index) => ({
-              id: String(index + 1),
-              title: source.title ?? source.filename ?? source.url ?? "",
-              url: source.url,
-              domain: hostnameOf(source.url),
-            }))}
+            citations={[...citations.values()]}
+            label={t("sources.title", { count: sources.length })}
+            title={t("sources.heading")}
           />
         ) : null}
 
@@ -438,24 +431,26 @@ export function Message({
   );
 }
 
-/** `[n]` markers render as citations; every other link stays a link. */
+/** `[n]` markers render as source pills; every other link stays a link. */
 function CitationAnchor({
   href,
   children,
-  sources,
-  idPrefix,
+  citations,
   ...props
-}: React.ComponentProps<"a"> & { sources: SourcePart[]; idPrefix: string }) {
+}: React.ComponentProps<"a"> & { citations: Map<number, CitationItem> }) {
   const t = useTranslations("chat");
-  if (href?.startsWith(CITE_PREFIX)) {
-    const index = Number(href.slice(CITE_PREFIX.length));
-    if (sources[index - 1]) {
+  const numbers = parseCitationHref(href);
+  if (numbers) {
+    const cited = numbers.flatMap((n) => {
+      const citation = citations.get(n);
+      return citation ? [citation] : [];
+    });
+    const first = cited[0];
+    if (first) {
       return (
-        <Citation
-          citationId={String(index)}
-          index={index}
-          idPrefix={idPrefix}
-          label={t("sources.citation", { index })}
+        <CitationPill
+          citations={cited}
+          label={t("sources.pill", { name: first.domain ?? String(first.title) })}
         />
       );
     }

@@ -125,7 +125,9 @@
   },
   "sources": {
     "title": "{count, plural, one {# source} other {# sources}}",
-    "citation": "Source {index}"
+    "heading": "Sources",
+    "citation": "Source {index}",
+    "pill": "Source: {name}"
   },
   "actions": {
     "conversationNotFound": "That conversation no longer exists.",

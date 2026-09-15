@@ -2,8 +2,10 @@
 
 /*
  * The sources an answer leans
- * on: an inline marker that jumps to its reference, favicon stacks, and
- * a collapsible reference list. import * as React from "react";
+ * on: an inline pill naming the site a claim came from, with a preview
+ * on hover; favicon stacks; a sources button that opens the full list
+ * in a sheet; and the older numbered marker and collapsible list.
+ * import * as React from "react";
 import {
   BookOpenTextIcon,
   ChevronDownIcon,
@@ -18,13 +20,28 @@ import {
   SPRING_LAYOUT,
   SPRING_SWAP,
 } from "@/components/ui/ai-motion";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 export interface CitationItem {
   id: string;
   title: React.ReactNode;
-  domain?: React.ReactNode;
+  /** The site, as shown: `wikipedia.org`. */
+  domain?: string;
   url?: string;
+  /** A line or two from the page. */
+  snippet?: React.ReactNode;
 }
 
 /** The 10px index badges; the type scale has no step this small. */
@@ -78,8 +95,13 @@ function citationTargetId(prefix: string, citationId: string) {
   return `${prefix}-${citationId.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 }
 
+/** What a citation reads as when it has to be short: its site, else its title. */
+function shortName(citation: CitationItem): React.ReactNode {
+  return citation.domain ?? citation.title;
+}
+
 /* ----------------------------------------------------------------------------
- * Citation: the inline marker inside the answer.
+ * Citation: the numbered inline marker that jumps to its reference.
  * ------------------------------------------------------------------------- */
 
 export interface CitationProps
@@ -124,12 +146,15 @@ function Citation({
 
 function CitationFavicon({
   url,
+  domain,
   className,
 }: {
   url?: string;
+  /** Used when there is no url to read the site from. */
+  domain?: string;
   className?: string;
 }) {
-  const favicon = useFavicon(url);
+  const favicon = useFavicon(url ?? (domain ? `https://${domain}` : undefined));
 
   return (
     <span
@@ -175,10 +200,192 @@ function CitationStack({ citations, limit = 3, className }: CitationStackProps) 
         <CitationFavicon
           key={citation.id}
           url={citation.url}
+          domain={citation.domain}
           className="size-6 rounded-full bg-background ring-2 ring-background"
         />
       ))}
     </span>
+  );
+}
+
+/* ----------------------------------------------------------------------------
+ * CitationCard: one source, read at a glance — site, title, snippet.
+ * ------------------------------------------------------------------------- */
+
+function CitationCard({
+  citation,
+  index,
+  className,
+}: {
+  citation: CitationItem;
+  index?: number;
+  className?: string;
+}) {
+  const content = (
+    <>
+      <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+        <CitationFavicon
+          url={citation.url}
+          domain={citation.domain}
+          className="size-4 [&_img]:size-3.5 [&_svg]:size-3"
+        />
+        <span className="min-w-0 truncate">{shortName(citation)}</span>
+        {index !== undefined ? (
+          <span
+            className="ml-auto grid size-4 shrink-0 place-items-center rounded bg-foreground/5 font-semibold tabular-nums"
+            style={TINY_TEXT}
+          >
+            {index}
+          </span>
+        ) : null}
+      </span>
+      {citation.domain && citation.title !== citation.domain ? (
+        <span className="line-clamp-2 text-sm leading-5 font-medium text-foreground">
+          {citation.title}
+        </span>
+      ) : null}
+      {citation.snippet ? (
+        <span className="line-clamp-2 text-xs leading-4 text-muted-foreground">
+          {citation.snippet}
+        </span>
+      ) : null}
+    </>
+  );
+  const classes = cn(
+    "grid gap-1 rounded-md p-2 text-left outline-none transition-colors",
+    citation.url && "hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
+    className
+  );
+
+  return citation.url ? (
+    <a
+      data-slot="citation-card"
+      href={citation.url}
+      target="_blank"
+      rel="noreferrer noopener"
+      className={classes}
+    >
+      {content}
+    </a>
+  ) : (
+    <div data-slot="citation-card" className={classes}>
+      {content}
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------------
+ * CitationPill: the inline source — `wikipedia.org +2` — with the sources
+ * it stands for on hover. Clicking it opens the first source.
+ * ------------------------------------------------------------------------- */
+
+export interface CitationPillProps {
+  /** The sources this claim cites, in order; the first names the pill. */
+  citations: CitationItem[];
+  /** Assistive-tech name, e.g. "Source: wikipedia.org". */
+  label?: string;
+  className?: string;
+}
+
+function CitationPill({ citations, label, className }: CitationPillProps) {
+  const [first, ...rest] = citations;
+  if (!first) return null;
+
+  const pillClass = cn(
+    "mx-0.5 inline-flex max-w-44 -translate-y-px items-center gap-1 rounded-full bg-muted px-1.5 align-middle text-xs leading-5 font-medium text-muted-foreground no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring",
+    className
+  );
+  const pill = (
+    <>
+      <CitationFavicon
+        url={first.url}
+        domain={first.domain}
+        className="size-3.5 [&_img]:size-3 [&_svg]:size-3"
+      />
+      <span className="min-w-0 truncate">{shortName(first)}</span>
+      {rest.length > 0 ? (
+        <span className="shrink-0 tabular-nums opacity-70">+{rest.length}</span>
+      ) : null}
+    </>
+  );
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger
+        data-slot="citation-pill"
+        delay={150}
+        aria-label={label}
+        className={pillClass}
+        render={
+          first.url ? (
+            <a href={first.url} target="_blank" rel="noreferrer noopener" />
+          ) : (
+            <span tabIndex={0} />
+          )
+        }
+      >
+        {pill}
+      </HoverCardTrigger>
+      <HoverCardContent side="top" align="start" className="grid w-80 gap-0.5 p-1">
+        {citations.map((citation) => (
+          <CitationCard key={citation.id} citation={citation} />
+        ))}
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
+
+/* ----------------------------------------------------------------------------
+ * CitationSources: the favicons and a count under an answer; the full
+ * list opens in a sheet beside it.
+ * ------------------------------------------------------------------------- */
+
+export interface CitationSourcesProps {
+  citations: CitationItem[];
+  /** The button's text, e.g. "5 sources". */
+  label: React.ReactNode;
+  /** The sheet's heading, e.g. "Sources". */
+  title: React.ReactNode;
+  className?: string;
+}
+
+function CitationSources({
+  citations,
+  label,
+  title,
+  className,
+}: CitationSourcesProps) {
+  if (citations.length === 0) return null;
+
+  return (
+    <Sheet>
+      <SheetTrigger
+        data-slot="citation-sources"
+        render={<button type="button" />}
+        className={cn(
+          "inline-flex h-8 w-fit items-center gap-2 rounded-full border bg-background py-1 pr-3 pl-1 text-sm text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+          className
+        )}
+      >
+        <CitationStack citations={citations} className="[&>span]:size-5.5" />
+        <span className="font-medium">{label}</span>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-md">
+        <SheetHeader className="border-b pr-12">
+          <SheetTitle>{title}</SheetTitle>
+        </SheetHeader>
+        <div className="grid min-h-0 flex-1 content-start gap-0.5 overflow-y-auto p-2">
+          {citations.map((citation) => (
+            <CitationCard
+              key={citation.id}
+              citation={citation}
+              index={Number.isNaN(Number(citation.id)) ? undefined : Number(citation.id)}
+              className="p-2.5"
+            />
+          ))}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -197,7 +404,7 @@ function CitationRow({
 }) {
   const content = (
     <>
-      <CitationFavicon url={citation.url} />
+      <CitationFavicon url={citation.url} domain={citation.domain} />
       <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="truncate text-sm font-medium text-foreground/80 transition-colors group-hover/citation:text-foreground">
           {citation.title}
@@ -367,4 +574,13 @@ function Citations({
   );
 }
 
-export { Citation, CitationFavicon, CitationStack, CitationList, Citations };
+export {
+  Citation,
+  CitationCard,
+  CitationFavicon,
+  CitationList,
+  CitationPill,
+  Citations,
+  CitationSources,
+  CitationStack,
+};

@@ -112,6 +112,17 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   `status` and `details`; `ai-tool-approval` is a lighter card, and a
   decided call joins the stream from the part's own state, so the
   decision survives a reload.
+- `chat`: sources read like the sites they are. A `[3]` in the reply
+  is an inline pill with the site's favicon and domain (`+2` for
+  adjacent markers), previewing its sources on hover, as soon as the
+  search behind it settled; a finished reply ends with a favicon stack
+  and a count that opens every source in a sheet. Sources come from the
+  AI SDK's source parts and from tool outputs (`output.sources`, or a
+  renderer's `sources`), numbered by the tool when it numbers them.
+  `ai-citations` adds `CitationPill`, `CitationSources` and
+  `CitationCard` and depends on `hover-card` and `sheet`. The reference
+  app's `webSearch` resolves Google's grounding redirects to the pages
+  themselves and numbers its sources across the conversation.
 - Registry T3, ported from the MIT-licensed agents set onto Base UI and the token contract: `ai-motion` (easings,
   springs, `Disclosure`, `SwapText`), `ai-message`, `ai-message-bubble`,
   `ai-message-scroller` (reader-aware, preview rail), `ai-todo-list`,

@@ -665,13 +665,15 @@
       "name": "ai-citations",
       "type": "registry:ui",
       "title": "AI Citations",
-      "description": "The sources an answer leans on: inline markers, favicon stacks and a collapsible reference list (ADR-0013, T3).",
+      "description": "The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list (ADR-0013, T3).",
       "dependencies": [
         "lucide-react",
         "motion"
       ],
       "registryDependencies": [
-        "@intelligo/ai-motion"
+        "@intelligo/ai-motion",
+        "hover-card",
+        "sheet"
       ],
       "files": [
         {

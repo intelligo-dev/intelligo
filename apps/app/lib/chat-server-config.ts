@@ -150,12 +150,57 @@ function artifactTools(turn: ChatTurnContext): ToolSet {
 }
 
 /**
+ * Google Search grounding links through a redirect
+ * (`vertexaisearch.cloud.google.com/grounding-api-redirect/…`): every
+ * source would read as Google's host and show Google's icon. The
+ * redirect's `Location` is the page itself — read it without following
+ * it, briefly, and keep the redirect when that fails.
+ */
+async function resolveGroundingUrl(url: string, signal?: AbortSignal): Promise<string> {
+  if (!url.includes("grounding-api-redirect")) return url;
+  const timeout = AbortSignal.timeout(2500);
+  try {
+    const response = await fetch(url, {
+      method: "HEAD",
+      redirect: "manual",
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+    });
+    return response.headers.get("location") ?? url;
+  } catch {
+    return url;
+  }
+}
+
+/** The highest source number an earlier `webSearch` in the conversation handed out. */
+function lastSourceIndex(messages: readonly unknown[]): number {
+  let last = 0;
+  for (const message of messages) {
+    const content = (message as { role?: string; content?: unknown }).content;
+    if (!Array.isArray(content)) continue;
+    for (const part of content) {
+      const result = part as { type?: string; toolName?: string; output?: { value?: unknown } };
+      if (result.type !== "tool-result" || result.toolName !== "webSearch") continue;
+      const sources = (result.output?.value as { sources?: Array<{ index?: unknown }> } | undefined)
+        ?.sources;
+      for (const source of sources ?? []) {
+        if (typeof source.index === "number") last = Math.max(last, source.index);
+      }
+    }
+  }
+  return last;
+}
+
+/**
  * `webSearch`: Google Search grounding behind a function tool. Gemini
  * 2.5 does not accept function tools and `google.tools.googleSearch` in
  * one request, so binding the provider tool directly would drop
  * `saveArtifact`. The search runs as its own grounded call instead and
  * returns the answer with its sources — that inner call's tokens are
  * not part of the turn's settled usage.
+ *
+ * Sources are numbered across the conversation, so the `[n]` the model
+ * cites is the number the chat shows; `lib/chat-renderers.tsx` reads
+ * them from `output.sources` for the search row and the citations.
  *
  * Bound only when a Gemini key is configured; the stub never calls it.
  */
@@ -164,23 +209,37 @@ function webSearchTools(): ToolSet {
   return {
     webSearch: tool({
       description:
-        "Search the web for current events or facts you are unsure of. Returns a grounded answer with source URLs.",
+        "Search the web for current events or facts you are unsure of. Returns a grounded answer and numbered sources; cite a claim with its source's number in brackets, like [3].",
       inputSchema: z.object({ query: z.string().min(1).max(500) }),
-      execute: async ({ query }, { abortSignal }) => {
+      execute: async ({ query }, { abortSignal, messages }) => {
         const result = await generateText({
           model: getChatModel(CHAT_MODEL_ID),
           tools: { google_search: google.tools.googleSearch({}) },
           prompt: query,
           abortSignal,
         });
-        return {
-          answer: result.text,
-          sources: result.sources.flatMap((source) =>
+        const found = await Promise.all(
+          result.sources.flatMap((source) =>
             source.sourceType === "url"
-              ? [{ title: source.title, url: source.url }]
+              ? [
+                  resolveGroundingUrl(source.url, abortSignal).then((url) => ({
+                    url,
+                    // Grounding titles are the site's domain.
+                    domain: source.title,
+                  })),
+                ]
               : []
-          ),
-        };
+          )
+        );
+        const seen = new Set<string>();
+        let index = lastSourceIndex(messages);
+        const sources = found.flatMap((source) => {
+          if (seen.has(source.url)) return [];
+          seen.add(source.url);
+          index += 1;
+          return [{ index, ...source }];
+        });
+        return { answer: result.text, sources };
       },
     }),
   };
