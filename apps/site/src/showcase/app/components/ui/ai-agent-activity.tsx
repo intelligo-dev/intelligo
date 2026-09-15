@@ -9,6 +9,7 @@
 import {
   CheckIcon,
   ChevronDownIcon,
+  CircleAlertIcon,
   CircleIcon,
   FileTextIcon,
   Globe2Icon,
@@ -60,21 +61,30 @@ export interface AgentSearchResult {
   icon?: React.ReactNode;
 }
 
+/** A row's own state inside the stream; rows are complete by default. */
+export type AgentRowStatus = "running" | "complete" | "error";
+
 export interface AgentActivitySearch {
   id: string;
   type: "search";
   query: React.ReactNode;
   results?: AgentSearchResult[];
   moreCount?: number;
+  status?: AgentRowStatus;
+  /** Shown under the row when the reader opens it — the raw call, say. */
+  details?: React.ReactNode;
 }
 
 export interface AgentActivityTool {
   id: string;
   type: "tool";
   action: "read" | "edit" | "run" | (string & {});
-  target: React.ReactNode;
+  target?: React.ReactNode;
   additions?: number;
   deletions?: number;
+  status?: AgentRowStatus;
+  /** Shown under the row when the reader opens it — the raw call, say. */
+  details?: React.ReactNode;
 }
 
 export type AgentTraceKind =
@@ -245,13 +255,15 @@ function SearchResultRow({ result }: { result: AgentSearchResult }) {
   );
   const className = cn(
     "flex min-h-7 items-center gap-2 rounded-md px-1.5 py-1 text-left outline-none transition-colors",
-    result.url && "focus-visible:ring-2 focus-visible:ring-ring"
+    result.url && "hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring"
   );
 
   return result.url ? (
     <a
       data-slot="agent-activity-search-result"
       href={result.url}
+      target="_blank"
+      rel="noreferrer noopener"
       className={className}
     >
       {content}
@@ -259,6 +271,93 @@ function SearchResultRow({ result }: { result: AgentSearchResult }) {
   ) : (
     <div data-slot="agent-activity-search-result" className={className}>
       {content}
+    </div>
+  );
+}
+
+/** A row's glyph, pulsing while its call runs; an alert once it failed. */
+function RowStatusIcon({
+  status,
+  children,
+}: {
+  status: AgentRowStatus;
+  children: React.ReactNode;
+}) {
+  const reduce = useReducedMotion() ?? false;
+  if (status === "error") {
+    return <CircleAlertIcon className="size-4 text-destructive" strokeWidth={1.8} />;
+  }
+  if (status === "running") {
+    return (
+      <motion.span
+        className="grid size-4 place-items-center"
+        animate={reduce ? { opacity: 0.7 } : { opacity: [0.4, 1, 0.4] }}
+        transition={
+          reduce
+            ? { duration: 0 }
+            : { duration: 1.4, repeat: Number.POSITIVE_INFINITY }
+        }
+      >
+        {children}
+      </motion.span>
+    );
+  }
+  return <>{children}</>;
+}
+
+/** A row that opens onto its details, when it has any. */
+function RowWithDetails({
+  details,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<"div">, "children" | "className"> & {
+  details?: React.ReactNode;
+  className: string;
+  children: React.ReactNode;
+}) {
+  const reduce = useReducedMotion() ?? false;
+  const [open, setOpen] = React.useState(false);
+  const detailsId = React.useId();
+
+  if (!details) {
+    return (
+      <div className={className} {...props}>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div {...props}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={detailsId}
+        onClick={() => setOpen(!open)}
+        className={cn(
+          className,
+          "group/row w-full text-left outline-none transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring"
+        )}
+      >
+        {children}
+        <motion.span
+          aria-hidden="true"
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={reduce ? { duration: 0 } : SPRING_SWAP}
+          className={cn(
+            "inline-flex shrink-0 text-muted-foreground/60 transition-opacity group-hover/row:opacity-100 group-focus-visible/row:opacity-100",
+            open ? "opacity-100" : "opacity-0"
+          )}
+        >
+          <ChevronDownIcon className="size-3.5" />
+        </motion.span>
+      </button>
+      <Disclosure id={detailsId} open={open}>
+        <div data-slot="agent-activity-details" className="pt-1 pr-1.5 pb-2 pl-8">
+          {details}
+        </div>
+      </Disclosure>
     </div>
   );
 }
@@ -283,15 +382,22 @@ function SearchRow({
       };
 
   return (
-    <div data-slot="agent-activity-search" className="space-y-0.5">
-      <div className="flex min-h-7 items-center gap-2.5 rounded-md px-1.5 py-1 text-muted-foreground">
-        <SearchIcon
-          aria-hidden="true"
-          className="size-4 shrink-0"
-          strokeWidth={1.7}
-        />
-        <span className="min-w-0 truncate">{item.query}</span>
-      </div>
+    <div
+      data-slot="agent-activity-search"
+      data-status={item.status ?? "complete"}
+      className="space-y-0.5"
+    >
+      <RowWithDetails
+        details={item.details}
+        className="flex min-h-7 items-center gap-2.5 rounded-md px-1.5 py-1 text-muted-foreground"
+      >
+        <span aria-hidden="true" className="grid size-4 shrink-0 place-items-center">
+          <RowStatusIcon status={item.status ?? "complete"}>
+            <SearchIcon className="size-4" strokeWidth={1.7} />
+          </RowStatusIcon>
+        </span>
+        <span className="min-w-0 flex-1 truncate">{item.query}</span>
+      </RowWithDetails>
       {item.results?.length ? (
         <div className="space-y-0.5 pl-4">
           <AnimatePresence initial mode="popLayout">
@@ -345,23 +451,37 @@ function ToolRow({
   actionLabels?: Record<string, string>;
 }) {
   const action = actionLabels?.[item.action] ?? defaultActionLabel(item.action);
+  const status = item.status ?? "complete";
 
   return (
-    <div
+    <RowWithDetails
       data-slot="agent-activity-tool"
       data-action={item.action}
+      data-status={status}
+      details={item.details}
       className="flex min-h-8 min-w-0 items-center gap-2.5 rounded-md px-1.5 py-0.5 leading-5"
     >
       <span
         aria-hidden="true"
         className="grid size-4 shrink-0 place-items-center text-muted-foreground/70"
       >
-        <ActionIcon action={item.action} />
+        <RowStatusIcon status={status}>
+          <ActionIcon action={item.action} />
+        </RowStatusIcon>
       </span>
       <span className="shrink-0 font-medium text-foreground/90">{action}</span>
-      <span className="min-w-0 flex-1 truncate rounded-lg bg-muted/80 px-2.5 py-1 font-mono text-xs text-muted-foreground/70">
-        {item.target}
-      </span>
+      {item.target ? (
+        <span
+          className={cn(
+            "min-w-0 flex-1 truncate rounded-lg bg-muted/80 px-2.5 py-1 font-mono text-xs text-muted-foreground",
+            status === "error" && "bg-transparent px-0 font-sans text-destructive"
+          )}
+        >
+          {item.target}
+        </span>
+      ) : (
+        <span className="flex-1" />
+      )}
       {typeof item.additions === "number" ||
       typeof item.deletions === "number" ? (
         <span className="flex shrink-0 items-center gap-2 font-mono tabular-nums">
@@ -373,7 +493,7 @@ function ToolRow({
           ) : null}
         </span>
       ) : null}
-    </div>
+    </RowWithDetails>
   );
 }
 

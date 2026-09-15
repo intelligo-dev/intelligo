@@ -10,13 +10,24 @@
  * card compiles against the structural props here rather than against
  * the AI SDK's types.
  *
- * An entry is either a component, or `{ component, label, canvas }`:
+ * A tool call is either a row in the activity stream — the one-line
+ * "Searched the web ▸" the agent's work folds into — or its own card.
+ * A tool with no entry is a row. An entry is a component (a card), or
+ * `{ component?, label?, activity?, sources?, canvas? }`:
  *
- *   - `component` renders the call in the transcript, in every state
- *     the SDK has (`input-streaming` → `output-available`, and the
- *     approval states of a gated tool).
- *   - `label` is a message key shown while the call streams, in place
- *     of the tool's raw name ("Generating report…").
+ *   - `component` draws the call as its own card, in every state the
+ *     SDK has (`input-streaming` → `output-available`, and the approval
+ *     states of a gated tool). Without one the call is a row.
+ *   - `label` is a message key naming the call in its row and in the
+ *     stream's status line, in place of the tool's raw name
+ *     ("Generating report…").
+ *   - `activity` builds the call's row when the default is not enough.
+ *     The default reads the input's first string as the target, and a
+ *     call whose input has a `query` renders as a search, its results
+ *     from `sources`.
+ *   - `sources` reads the sources the call's output carries, which
+ *     become the answer's citations. The default reads `output.sources`
+ *     (`{ url, title?, domain?, snippet?, index? }[]`).
  *   - `canvas` says the tool's output also lives in the side panel
  *     (`lib/chat-canvas-config.tsx` decides how a `kind` renders). A
  *     document the tool streams with `createArtifactWriter` opens the
@@ -32,10 +43,6 @@
  * emits. The framework's `data-chat-*` parts have renderers in
  * `components/chat/data-parts.tsx`; Mastra's arrive under their own
  * names and render on the activity timeline.
- *
- * A tool with no entry falls back to `DefaultToolCard` — the T3 Tool
- * part with the raw input and output, so a new tool always renders
- * something honest while its card is being written.
  */
 
 import type { ComponentType } from "react";
@@ -43,6 +50,10 @@ import type { FileUIPart } from "ai";
 import { useTranslations } from "use-intl";
 import { FileTextIcon } from "lucide-react";
 
+import type {
+  AgentActivitySearch,
+  AgentActivityTool,
+} from "@showcase/components/ui/ai-agent-activity";
 import {
   ToolResult,
   ToolResultOutput,
@@ -58,6 +69,7 @@ import {
   ItemTitle,
 } from "@showcase/components/ui/item";
 import { Link } from "@showcase/i18n/navigation";
+import type { SourceItem } from "@showcase/lib/message-parts";
 
 import {
   ChatAgentCard,
@@ -143,10 +155,20 @@ export interface ToolRendererProps {
   actions?: ToolRendererActions;
 }
 
+/** A call's row in the activity stream; the stream assigns the id. */
+export type ToolActivityRow =
+  | Omit<AgentActivitySearch, "id">
+  | Omit<AgentActivityTool, "id">;
+
 export interface ToolRenderer {
-  component: ComponentType<ToolRendererProps>;
-  /** A message key (namespace-less, like `chatConfig.starters`) shown while the call streams. */
+  /** Draws the call as its own card. Without one the call is a row in the activity stream. */
+  component?: ComponentType<ToolRendererProps>;
+  /** A message key (namespace-less, like `chatConfig.starters`) naming the call. */
   label?: string;
+  /** The call's row, when the default row is not enough. `null` keeps the default. */
+  activity?: (props: ToolRendererProps) => ToolActivityRow | null;
+  /** The sources the call's output carries. Default: `output.sources`. */
+  sources?: (output: unknown) => SourceItem[];
   /**
    * The tool's output also lives in the canvas, as this kind, when its
    * result does not say. A document the tool streams through
@@ -180,6 +202,7 @@ export interface DataRendererProps {
  *   export const TOOL_RENDERERS: Record<string, ToolRenderer | ComponentType<ToolRendererProps>> = {
  *     saveArtifact: { component: ArtifactLinkCard, canvas: { kind: "text" } },
  *     getWeather: WeatherCard,
+ *     lookupInvoice: { label: "invoices.lookingUp" },
  *     generateReport: { component: ReportCard, label: "reports.generating", canvas: { kind: "text" } },
  *   };
  */
@@ -209,15 +232,25 @@ export const DATA_RENDERERS: Record<string, ComponentType<DataRendererProps>> =
     "tool-agent-step": MastraToolAgentStepActivity,
   };
 
-export function resolveToolRenderer(toolName: string): ToolRenderer {
+export function resolveToolRenderer(
+  toolName: string
+): ToolRenderer & { component: ComponentType<ToolRendererProps> } {
   const entry = TOOL_RENDERERS[toolName];
   if (!entry) return { component: DefaultToolCard };
-  return typeof entry === "function" ? { component: entry } : entry;
+  if (typeof entry === "function") return { component: entry };
+  return { ...entry, component: entry.component ?? DefaultToolCard };
 }
 
-/** Whether a tool has its own card, or falls back to the default one. */
+/** Whether a tool has an entry of its own. */
 export function hasToolRenderer(toolName: string): boolean {
   return toolName in TOOL_RENDERERS;
+}
+
+/** Whether a tool's call draws its own card rather than a row in the activity stream. */
+export function hasToolCard(toolName: string): boolean {
+  const entry = TOOL_RENDERERS[toolName];
+  if (!entry) return false;
+  return typeof entry === "function" || Boolean(entry.component);
 }
 
 /** Kept for cards written against the earlier seam. */
@@ -254,11 +287,19 @@ const TOOL_RESULT_STATUS: Record<ToolPartState, ToolResultStatus> = {
   "output-denied": "cancelled",
 };
 
-function toolLabel(toolName: string): string {
-  const spaced = toolName.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+/** `webSearch` → "Web search". */
+export function toolLabel(toolName: string): string {
+  const spaced = toolName
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2");
   return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
 }
 
+/**
+ * The call with its raw input and output. The activity stream shows
+ * this under a row the reader opens; a card that has nothing better to
+ * show yet can draw it too.
+ */
 export function DefaultToolCard({
   toolName,
   state,
@@ -283,7 +324,6 @@ export function DefaultToolCard({
       title={toolLabel(toolName)}
       status={status}
       kind="custom"
-      collapseOnComplete={false}
       statusLabels={{
         running: t(STATE_MESSAGE_KEY[state]),
         success: t("toolCard.done"),

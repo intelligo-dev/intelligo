@@ -69,8 +69,22 @@
     "output": "Result",
     "errorHeading": "Error"
   },
+  "toolActivity": {
+    "working": "Working…",
+    "searching": "Searching the web…",
+    "searched": "Searched the web",
+    "ranTools": "{count, plural, one {Ran a tool} other {Ran # tools}}",
+    "searchedAndRan": "{count, plural, one {Searched the web and ran a tool} other {Searched the web and ran # tools}}",
+    "thought": "Thought it through",
+    "more": "+{count} more",
+    "failed": "{tool} failed",
+    "denied": "{tool} was denied",
+    "input": "Input",
+    "output": "Result",
+    "error": "Error"
+  },
   "approval": {
-    "title": "{tool} needs your approval",
+    "title": "Allow {tool} to run?",
     "description": "Review what it is about to do before it runs.",
     "allow": "Allow",
     "deny": "Deny",

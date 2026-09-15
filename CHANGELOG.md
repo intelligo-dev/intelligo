@@ -99,6 +99,19 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   The canvas text editor spells out its typography (the theme ships no
   typography plugin, so lists had lost their numbers), and the preview
   rail stays off on a phone.
+- `chat`: the agent's work reads as one activity stream. Reasoning and
+  the tool calls between the reply's words fold into a single
+  `ai-agent-activity` run — live while it works, then one line
+  ("Searched the web ▸") — instead of a stack of cards with their JSON
+  open. A call with a `query` renders as a search with its results; the
+  raw input and output sit under a row the reader opens.
+  `lib/message-parts.ts` holds the layout rules (tested).
+  `TOOL_RENDERERS` entries gain `activity` and `sources`, `component`
+  is optional (a tool without one is a row, a tool with one keeps its
+  card), and `label` is finally read. `ai-agent-activity` rows take
+  `status` and `details`; `ai-tool-approval` is a lighter card, and a
+  decided call joins the stream from the part's own state, so the
+  decision survives a reload.
 - Registry T3, ported from the MIT-licensed agents set onto Base UI and the token contract: `ai-motion` (easings,
   springs, `Disclosure`, `SwapText`), `ai-message`, `ai-message-bubble`,
   `ai-message-scroller` (reader-aware, preview rail), `ai-todo-list`,

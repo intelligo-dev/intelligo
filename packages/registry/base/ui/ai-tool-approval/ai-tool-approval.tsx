@@ -202,17 +202,17 @@ function ToolApproval({
       data-state={status}
       aria-busy={busy || undefined}
       className={cn(
-        "w-full overflow-hidden rounded-2xl border border-border/60 bg-muted/20 text-sm",
+        "w-full overflow-hidden rounded-xl border bg-card text-sm",
         className
       )}
       {...props}
     >
-      <div data-slot="tool-approval-header" className="flex items-start gap-3 p-4">
+      <div data-slot="tool-approval-header" className="flex items-start gap-2.5 p-3">
         <span
           data-slot="tool-approval-icon"
           aria-hidden="true"
           className={cn(
-            "mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl border border-border/60 bg-background text-muted-foreground",
+            "mt-0.5 grid size-4 shrink-0 place-items-center text-muted-foreground",
             error && "text-destructive"
           )}
         >
@@ -224,35 +224,38 @@ function ToolApproval({
             <div className="min-w-0">
               <div
                 data-slot="tool-approval-title"
-                className="font-medium text-foreground"
+                className="leading-5 font-medium text-foreground"
               >
                 {title}
               </div>
-              <div
-                data-slot="tool-approval-tool"
-                className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
-              >
-                {tool}
-              </div>
-            </div>
-            <span
-              data-slot="tool-approval-status"
-              className={cn(
-                "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors",
-                BADGE_CLASS[status]
+              {description ? (
+                <p
+                  data-slot="tool-approval-description"
+                  className="mt-0.5 leading-5 text-muted-foreground"
+                >
+                  {description}
+                </p>
+              ) : (
+                <div
+                  data-slot="tool-approval-tool"
+                  className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
+                >
+                  {tool}
+                </div>
               )}
-            >
-              {statusLabel}
-            </span>
+            </div>
+            {pending ? null : (
+              <span
+                data-slot="tool-approval-status"
+                className={cn(
+                  "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors",
+                  BADGE_CLASS[status]
+                )}
+              >
+                {statusLabel}
+              </span>
+            )}
           </div>
-          {description ? (
-            <p
-              data-slot="tool-approval-description"
-              className="mt-2 leading-5 text-muted-foreground"
-            >
-              {description}
-            </p>
-          ) : null}
 
           {parameters.length ? (
             <button
@@ -279,7 +282,7 @@ function ToolApproval({
       <Disclosure id={detailsId} open={currentOpen}>
         <dl
           data-slot="tool-approval-details"
-          className="mx-4 mb-4 grid gap-2 rounded-xl border border-border/50 bg-background/70 p-3"
+          className="mx-3 mb-3 grid gap-2 rounded-lg bg-muted/60 p-3"
         >
           {parameters.map((parameter) => (
             <div
@@ -305,7 +308,7 @@ function ToolApproval({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduced ? 0.12 : 0.22, ease: EASE_OUT }}
-            className="flex flex-wrap items-center gap-2 border-t border-border/60 px-4 py-3"
+            className="flex flex-wrap items-center justify-end gap-2 px-3 pb-3"
           >
             {denying ? (
               <form

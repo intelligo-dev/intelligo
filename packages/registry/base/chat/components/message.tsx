@@ -3,18 +3,19 @@
 /**
  * Renders one `UIMessage`'s parts on the design system's conversation
  * components (ADR-0013): shadcn's Message and Bubble for the turn, the
- * T3 parts for reasoning, sources and tools, and the seams in
- * `@/lib/chat-renderers` for tool calls and data parts. Text renders
+ * T3 parts for the agent's activity, sources and tools, and the seams
+ * in `@/lib/chat-renderers` for tool calls and data parts. Text renders
  * with `streamdown`, the markdown-while-streaming renderer, because
  * replies are routinely lists, code and headings arriving a token at a
  * time.
  *
- * Every part type the AI SDK has is handled here: `text`, `reasoning`,
- * `tool-*` / `dynamic-tool` (with approval states), `source-url` and
- * `source-document` (collected and shown once the reply is complete —
- * never mid-stream), `file` (images inline, other files as
- * attachments), `step-start` (a boundary, nothing to draw) and `data-*`
- * (through `DATA_RENDERERS`). A Mastra or eve turn renders through the
+ * Parts are laid out by `groupParts` (`@/lib/message-parts`): the
+ * agent's reasoning and the tool calls between its words fold into one
+ * activity stream (`ToolActivity`); a tool with its own card, a call
+ * awaiting approval, text, files and `data-*` parts (through
+ * `DATA_RENDERERS`) stand on their own. `source-url` and
+ * `source-document` parts are collected and shown once the reply is
+ * complete — never mid-stream. A Mastra or eve turn renders through the
  * same switch.
  *
  * A finished assistant message carries the action row; a user message
@@ -24,12 +25,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
-import {
-  getToolName,
-  isReasoningUIPart,
-  isTextUIPart,
-  isToolUIPart,
-} from "ai";
+import { getToolName, isTextUIPart, isToolUIPart } from "ai";
 import type { FileUIPart, UIMessage } from "ai";
 import { useTranslations } from "next-intl";
 import { PaperclipIcon } from "lucide-react";
@@ -50,11 +46,6 @@ import {
 import { Citation, Citations } from "@/components/ui/ai-citations";
 import { ShimmerText } from "@/components/ui/ai-shimmer-text";
 import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningTrigger,
-} from "@/components/ui/ai-reasoning";
-import {
   Attachment,
   AttachmentContent,
   AttachmentGroup,
@@ -74,12 +65,19 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   getDataRenderer,
+  hasToolCard,
   hasToolRenderer,
   resolveToolRenderer,
   type ToolRendererActions,
   type ToolRendererProps,
 } from "@/lib/chat-renderers";
+import {
+  groupParts,
+  hostnameOf,
+  isActivityWorking,
+} from "@/lib/message-parts";
 import { MessageActions, type MessageVote } from "./message-actions";
+import { ToolActivity } from "./tool-activity";
 
 export type MessageVersion = {
   index: number;
@@ -104,6 +102,8 @@ interface MessageProps {
   onEdit?: (messageId: string, text: string, files: FileUIPart[]) => void;
   toolActions?: ToolRendererActions;
 }
+
+type Part = UIMessage["parts"][number];
 
 type SourcePart = {
   type: "source-url" | "source-document";
@@ -216,6 +216,40 @@ export function Message({
     if (typeof id === "string") documentsShownByTools.add(id);
   }
 
+  function toolProps(part: Part): ToolRendererProps {
+    if (!isToolUIPart(part)) throw new Error("not a tool part");
+    const approval =
+      "approval" in part
+        ? (part.approval as { id?: string } | undefined)
+        : undefined;
+    return {
+      toolName: getToolName(part),
+      state: part.state,
+      input: "input" in part ? part.input : undefined,
+      output: part.state === "output-available" ? part.output : undefined,
+      errorText: part.state === "output-error" ? part.errorText : undefined,
+      toolCallId: "toolCallId" in part ? part.toolCallId : undefined,
+      approvalId: approval?.id,
+      messageId: message.id,
+      isStreaming: isStreamingThis,
+      isReadonly: readOnly,
+      actions: toolActions,
+    };
+  }
+
+  // A call awaiting the reader, or a tool with a card of its own, stands
+  // apart; every other call is a row in the activity stream.
+  const segments = groupParts(
+    message.parts,
+    (part) =>
+      isToolUIPart(part) &&
+      (part.state === "approval-requested" || hasToolCard(getToolName(part)))
+  );
+  const lastSegment = segments.at(-1);
+  const activityLive =
+    lastSegment?.kind === "activity" &&
+    isActivityWorking(lastSegment, true, isStreamingThis);
+
   if (isUser && editing) {
     return (
       <MessageRow from="user" className="group/chat-message">
@@ -233,6 +267,91 @@ export function Message({
     );
   }
 
+  function renderPart(part: Part, index: number) {
+    const key = `${message.id}-${index}`;
+
+    if (isTextUIPart(part)) {
+      if (!part.text) return null;
+      if (isUser) {
+        return (
+          <MessageBubble key={key} variant="solid">
+            <MessageBubbleContent className="whitespace-pre-wrap">
+              {part.text}
+            </MessageBubbleContent>
+          </MessageBubble>
+        );
+      }
+      const streamingText = isStreamingThis && index === lastTextIndex;
+      return (
+        <MessageBubble key={key} variant="ghost">
+          <MessageBubbleContent>
+            <Streamdown
+              className={streamingText ? STREAMING_CARET : undefined}
+              mode={streamingText ? "streaming" : "static"}
+              isAnimating={streamingText}
+              plugins={MARKDOWN_PLUGINS}
+              components={
+                sources.length > 0
+                  ? {
+                      a: (props) => (
+                        <CitationAnchor
+                          {...props}
+                          sources={sources}
+                          idPrefix={`cite-${message.id}`}
+                        />
+                      ),
+                    }
+                  : undefined
+              }
+            >
+              {streamingText ? part.text : withCitations(part.text, sources.length)}
+            </Streamdown>
+          </MessageBubbleContent>
+        </MessageBubble>
+      );
+    }
+
+    if (isToolUIPart(part)) {
+      const props = toolProps(part);
+      if (part.state === "approval-requested" && !hasToolRenderer(props.toolName)) {
+        return <ApprovalCard key={key} {...props} />;
+      }
+      const { component: Renderer } = resolveToolRenderer(props.toolName);
+      return <Renderer key={key} {...props} />;
+    }
+
+    if (part.type.startsWith("data-")) {
+      const name = part.type.slice("data-".length);
+      if (name === "chat-title" || name === "chat-status") return null;
+      const Renderer = getDataRenderer(name);
+      if (!Renderer) return null;
+      const data = part as { id?: string; data: unknown };
+      if (name === "chat-artifact") {
+        const artifact = data.data as { id?: string; documentId?: string };
+        if (
+          (artifact.documentId && documentsShownByTools.has(artifact.documentId)) ||
+          (artifact.id && documentsShownByTools.has(artifact.id))
+        ) {
+          return null;
+        }
+      }
+      return (
+        <Renderer
+          key={data.id ? `${message.id}-data-${data.id}` : key}
+          name={name}
+          id={data.id}
+          data={data.data}
+          messageId={message.id}
+          isStreaming={isStreamingThis}
+          isReadonly={readOnly}
+          actions={toolActions}
+        />
+      );
+    }
+
+    return null;
+  }
+
   return (
     <MessageRow
       from={isUser ? "user" : "assistant"}
@@ -247,127 +366,22 @@ export function Message({
           </AttachmentGroup>
         ) : null}
 
-        {message.parts.map((part, index) => {
-          const key = `${message.id}-${index}`;
-
-          if (isTextUIPart(part)) {
-            if (!part.text) return null;
-            if (isUser) {
-              return (
-                <MessageBubble key={key} variant="solid">
-                  <MessageBubbleContent className="whitespace-pre-wrap">
-                    {part.text}
-                  </MessageBubbleContent>
-                </MessageBubble>
-              );
-            }
-            const streamingText = isStreamingThis && index === lastTextIndex;
-            return (
-              <MessageBubble key={key} variant="ghost">
-                <MessageBubbleContent>
-                  <Streamdown
-                    className={streamingText ? STREAMING_CARET : undefined}
-                    mode={streamingText ? "streaming" : "static"}
-                    isAnimating={streamingText}
-                    plugins={MARKDOWN_PLUGINS}
-                    components={
-                      sources.length > 0
-                        ? {
-                            a: (props) => (
-                              <CitationAnchor
-                                {...props}
-                                sources={sources}
-                                idPrefix={`cite-${message.id}`}
-                              />
-                            ),
-                          }
-                        : undefined
-                    }
-                  >
-                    {streamingText ? part.text : withCitations(part.text, sources.length)}
-                  </Streamdown>
-                </MessageBubbleContent>
-              </MessageBubble>
-            );
-          }
-
-          if (isReasoningUIPart(part)) {
-            if (!part.text) return null;
-            const reasoningStreaming =
-              isStreamingThis && index === message.parts.length - 1;
-            return (
-              <Reasoning key={key} isStreaming={reasoningStreaming}>
-                <ReasoningTrigger
-                  getThinkingMessage={(streaming, duration) =>
-                    streaming
-                      ? t("message.thinking")
-                      : duration === undefined
-                        ? t("message.thoughtBriefly")
-                        : t("message.thoughtFor", { seconds: duration })
-                  }
-                />
-                <ReasoningContent>{part.text}</ReasoningContent>
-              </Reasoning>
-            );
-          }
-
-          if (isToolUIPart(part)) {
-            const toolName = getToolName(part);
-            const { component: Renderer } = resolveToolRenderer(toolName);
-            const approval =
-              "approval" in part
-                ? (part.approval as { id?: string } | undefined)
-                : undefined;
-            const props: ToolRendererProps = {
-              toolName,
-              state: part.state,
-              input: "input" in part ? part.input : undefined,
-              output: part.state === "output-available" ? part.output : undefined,
-              errorText: part.state === "output-error" ? part.errorText : undefined,
-              toolCallId: "toolCallId" in part ? part.toolCallId : undefined,
-              approvalId: approval?.id,
-              messageId: message.id,
-              isStreaming: isStreamingThis,
-              isReadonly: readOnly,
-              actions: toolActions,
-            };
-            if (part.state === "approval-requested" && !hasToolRenderer(toolName)) {
-              return <ApprovalCard key={key} {...props} />;
-            }
-            return <Renderer key={key} {...props} />;
-          }
-
-          if (part.type.startsWith("data-")) {
-            const name = part.type.slice("data-".length);
-            if (name === "chat-title" || name === "chat-status") return null;
-            const Renderer = getDataRenderer(name);
-            if (!Renderer) return null;
-            const data = part as { id?: string; data: unknown };
-            if (name === "chat-artifact") {
-              const artifact = data.data as { id?: string; documentId?: string };
-              if (
-                (artifact.documentId && documentsShownByTools.has(artifact.documentId)) ||
-                (artifact.id && documentsShownByTools.has(artifact.id))
-              ) {
-                return null;
-              }
-            }
-            return (
-              <Renderer
-                key={data.id ? `${message.id}-data-${data.id}` : key}
-                name={name}
-                id={data.id}
-                data={data.data}
-                messageId={message.id}
-                isStreaming={isStreamingThis}
-                isReadonly={readOnly}
-                actions={toolActions}
-              />
-            );
-          }
-
-          return null;
-        })}
+        {segments.map((segment, position) =>
+          segment.kind === "activity" ? (
+            <ToolActivity
+              key={`${message.id}-${segment.key}`}
+              parts={segment.parts}
+              working={isActivityWorking(
+                segment,
+                position === segments.length - 1,
+                isStreamingThis
+              )}
+              toolProps={toolProps}
+            />
+          ) : (
+            renderPart(segment.part, segment.index)
+          )
+        )}
 
         {sources.length > 0 ? (
           <Citations
@@ -383,7 +397,7 @@ export function Message({
           />
         ) : null}
 
-        {isStreamingThis && (isEmptyAssistant || statusLabel) ? (
+        {isStreamingThis && !activityLive && (isEmptyAssistant || statusLabel) ? (
           <ShimmerText>{statusLabel ?? t("message.thinking")}</ShimmerText>
         ) : null}
 
@@ -451,16 +465,6 @@ function CitationAnchor({
       {children}
     </a>
   );
-}
-
-/** The host a source lives on, for the citation list's domain line. */
-function hostnameOf(url: string | undefined): string | undefined {
-  if (!url) return undefined;
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return undefined;
-  }
 }
 
 function FileAttachment({ file }: { file: FileUIPart }) {
@@ -559,16 +563,11 @@ function EditForm({
 }
 
 /**
- * The default card for a gated tool awaiting the reader's decision.
- * A tool with its own renderer draws its own; this one shows what is
- * about to run and lets the reader allow or deny it, optionally with a
- * reason the model sees.
- */
-/**
  * The default for a call that waits on the reader: a permission card
  * with the tool's input as parameters. Allow, or deny with a reason —
- * the answer rides the approval response and the thread continues on
- * its own.
+ * the answer rides the approval response, the part moves on to
+ * `approval-responded`, and the call joins the activity stream as a
+ * row. The decision lives in the part, so it survives a reload.
  */
 function ApprovalCard({
   toolName,
@@ -578,7 +577,6 @@ function ApprovalCard({
   actions,
 }: ToolRendererProps) {
   const t = useTranslations("chat");
-  const [decided, setDecided] = useState<"approved" | "denied" | null>(null);
   const parameters =
     input && typeof input === "object"
       ? Object.entries(input as Record<string, unknown>).map(([key, value]) => ({
@@ -591,7 +589,6 @@ function ApprovalCard({
 
   function decide(approved: boolean, reason?: string) {
     if (!approvalId || !actions) return;
-    setDecided(approved ? "approved" : "denied");
     actions.addToolApprovalResponse({
       id: approvalId,
       approved,
@@ -606,7 +603,7 @@ function ApprovalCard({
       title={t("approval.title", { tool: toolName })}
       description={t("approval.description")}
       parameters={parameters}
-      status={decided ?? "pending"}
+      status="pending"
       denyReason
       onAllow={canDecide ? () => decide(true) : undefined}
       onDeny={canDecide ? (reason) => decide(false, reason) : undefined}
