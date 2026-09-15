@@ -2162,7 +2162,6 @@
         "dropdown-menu",
         "input",
         "item",
-        "select",
         "sheet",
         "sidebar",
         "skeleton",
@@ -2383,6 +2382,11 @@
           "path": "base/chat/components/tool-activity.tsx",
           "type": "registry:component",
           "target": "components/chat/tool-activity.tsx"
+        },
+        {
+          "path": "base/chat/components/artifact-card.tsx",
+          "type": "registry:component",
+          "target": "components/chat/artifact-card.tsx"
         },
         {
           "path": "base/chat/components/chat-input.tsx",

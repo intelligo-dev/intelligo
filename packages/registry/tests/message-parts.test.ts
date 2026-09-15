@@ -15,6 +15,7 @@ import {
   primaryInput,
   sourcesFromSourcePart,
   sourcesFromToolOutput,
+  titleFromUrl,
   type PartLike,
 } from "../base/chat/lib/message-parts";
 
@@ -159,6 +160,12 @@ describe("citations in text", () => {
     );
   });
 
+  it("links a comma-separated marker", () => {
+    expect(linkCitations("Released [2, 3].", new Set([2, 3]))).toBe(
+      "Released [2,3](#cite-2,3)."
+    );
+  });
+
   it("leaves markdown links alone", () => {
     expect(linkCitations("[1](https://x.com)", new Set([1]))).toBe("[1](https://x.com)");
   });
@@ -166,6 +173,20 @@ describe("citations in text", () => {
   it("parses what it wrote", () => {
     expect(parseCitationHref("#cite-1,2")).toEqual([1, 2]);
     expect(parseCitationHref("https://x.com")).toBeNull();
+  });
+});
+
+describe("titleFromUrl", () => {
+  it("de-slugs the last meaningful path segment", () => {
+    expect(
+      titleFromUrl("https://www.herodevs.com/blog-posts/node-js-end-of-life-dates")
+    ).toBe("Node js end of life dates");
+    expect(titleFromUrl("https://en.wikipedia.org/wiki/TypeScript")).toBe("TypeScript");
+  });
+
+  it("skips ids and names nothing for a front page", () => {
+    expect(titleFromUrl("https://github.com/nodejs/node/releases/123456")).toBe("Releases");
+    expect(titleFromUrl("https://dev.to/")).toBeUndefined();
   });
 });
 

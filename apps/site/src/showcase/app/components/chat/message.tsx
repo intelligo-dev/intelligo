@@ -82,11 +82,13 @@ import {
   collectSources,
   groupParts,
   isActivityWorking,
+  isSettledToolState,
   linkCitations,
   parseCitationHref,
   sourceDomain,
   sourcesFromSourcePart,
   sourcesFromToolOutput,
+  titleFromUrl,
   type NumberedSource,
 } from "@showcase/lib/message-parts";
 import { MessageActions, type MessageVote } from "./message-actions";
@@ -149,9 +151,10 @@ function sourcesOf(part: Part) {
 
 function citationItem(source: NumberedSource): CitationItem {
   const domain = sourceDomain(source);
+  const named = source.title && source.title !== domain ? source.title : undefined;
   return {
     id: source.id,
-    title: source.title ?? domain ?? source.url ?? "",
+    title: named ?? titleFromUrl(source.url) ?? domain ?? source.url ?? "",
     ...(domain ? { domain } : {}),
     ...(source.url ? { url: source.url } : {}),
     ...(source.snippet ? { snippet: source.snippet } : {}),
@@ -210,8 +213,20 @@ export function Message({
   // streamed `data-chat-artifact` part for the same document is what
   // opened the canvas, not a second card.
   const documentsShownByTools = new Set<string>();
+  // While a document tool is still running its card already shows the
+  // document being written; the part it streams would be a second card.
+  let documentToolRunning = false;
   for (const part of message.parts) {
-    if (!isToolUIPart(part) || part.state !== "output-available") continue;
+    if (!isToolUIPart(part)) continue;
+    if (part.state !== "output-available") {
+      if (
+        resolveToolRenderer(getToolName(part)).canvas &&
+        !isSettledToolState(part.state)
+      ) {
+        documentToolRunning = true;
+      }
+      continue;
+    }
     const output = part.output as { documentId?: unknown; id?: unknown } | undefined;
     const id = output?.documentId ?? output?.id;
     if (typeof id === "string") documentsShownByTools.add(id);
@@ -327,6 +342,7 @@ export function Message({
       if (name === "chat-artifact") {
         const artifact = data.data as { id?: string; documentId?: string };
         if (
+          documentToolRunning ||
           (artifact.documentId && documentsShownByTools.has(artifact.documentId)) ||
           (artifact.id && documentsShownByTools.has(artifact.id))
         ) {

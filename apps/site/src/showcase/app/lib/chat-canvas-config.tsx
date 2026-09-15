@@ -4,19 +4,22 @@
  * Canvas kinds — how a document opened beside the chat is shown and
  * edited, by `kind`. Consumer-owned, a plain object literal (ADR-0005).
  *
- * A kind is the content component plus, optionally, actions in the
- * panel's header (copy, run, download) and toolbar items that send a
- * message about the document ("Polish the wording"). The framework
- * ships `text` (ProseMirror over markdown), `code` (CodeMirror),
- * `sheet` (a CSV grid) and `image`; a product adds its own — a
- * `report` kind that renders its JSON as a designed page, a `diagram`
- * kind on a graph library — by adding an entry here:
+ * A kind is the content component plus, optionally, its glyph and name
+ * (on the transcript's card and the panel's header), a rendered
+ * `preview` beside the source for content that has one, the extension
+ * a download gets, actions in the panel's header (run, publish) and
+ * toolbar items that send a message about the document ("Polish the
+ * wording"). The framework ships `text` (ProseMirror over markdown),
+ * `code` (CodeMirror, with a live preview for HTML and SVG), `sheet`
+ * (a CSV grid) and `image`; a product adds its own — a `report` kind
+ * that renders its JSON as a designed page, a `diagram` kind on a graph
+ * library — by adding an entry here:
  *
  *   import { ReportCanvas } from "@showcase/components/reports/report-canvas";
  *
  *   export const CANVAS_KINDS: Record<string, CanvasKind> = {
  *     ...DEFAULT_CANVAS_KINDS,
- *     report: { content: ReportCanvas },
+ *     report: { content: ReportCanvas, icon: ChartIcon, labelKey: "reports.kind" },
  *   };
  *
  * The editors load lazily: a document that is still streaming, or one
@@ -34,7 +37,13 @@ import {
   type ComponentType,
   type ReactNode,
 } from "react";
-import type { LucideIcon } from "lucide-react";
+import {
+  FileCodeIcon,
+  FileTextIcon,
+  ImageIcon,
+  SheetIcon,
+  type LucideIcon,
+} from "lucide-react";
 import { Streamdown } from "streamdown";
 
 import { CodeBlock } from "@showcase/components/ui/ai-code-block";
@@ -74,6 +83,18 @@ export interface CanvasToolbarItem {
 
 export interface CanvasKind {
   content: ComponentType<CanvasContentProps>;
+  /** The kind's glyph on its card and in the panel's header. */
+  icon?: LucideIcon;
+  /** A message key naming the kind — "Document", "Code". */
+  labelKey?: string;
+  /**
+   * A rendered view of the document, offered beside its source when
+   * `previewable` says this document has one.
+   */
+  preview?: ComponentType<CanvasContentProps>;
+  previewable?: (title: string) => boolean;
+  /** The extension a download gets when the title has none. */
+  extension?: string;
   actions?: CanvasAction[];
   toolbar?: CanvasToolbarItem[];
 }
@@ -125,6 +146,25 @@ function CodeCanvas(props: CanvasContentProps) {
   );
 }
 
+/**
+ * An HTML page or an SVG, rendered in a sandbox: scripts run, but in an
+ * opaque origin with no access to the app, its cookies or its storage.
+ * The document asks for a light canvas, so a page written without a
+ * background reads as it would on its own.
+ */
+function CodePreview({ content, title }: CanvasContentProps) {
+  return (
+    <iframe
+      title={title}
+      sandbox="allow-scripts"
+      srcDoc={`<meta name="color-scheme" content="light">${content}`}
+      className="size-full min-h-96 rounded-lg border"
+    />
+  );
+}
+
+const PREVIEWABLE_EXTENSIONS = new Set(["html", "htm", "svg"]);
+
 function SheetCanvas(props: CanvasContentProps) {
   if (props.status === "streaming") {
     return (
@@ -172,21 +212,57 @@ const LANGUAGE_BY_EXTENSION: Record<string, string> = {
   yml: "yaml",
   md: "markdown",
   html: "html",
+  htm: "html",
+  svg: "xml",
   css: "css",
 };
 
 type CodeLanguage = ComponentProps<typeof CodeBlock>["language"];
 
-function languageOf(title: string): CodeLanguage {
-  const extension = title.split(".").pop()?.toLowerCase() ?? "";
-  return (LANGUAGE_BY_EXTENSION[extension] ?? "text") as CodeLanguage;
+/** A title's file extension, lower-cased: `report.PY` → `py`. */
+export function extensionOf(title: string): string | undefined {
+  const match = /\.([a-z0-9]{1,8})$/i.exec(title.trim());
+  return match?.[1]?.toLowerCase();
+}
+
+export function languageOf(title: string): CodeLanguage {
+  return (LANGUAGE_BY_EXTENSION[extensionOf(title) ?? ""] ?? "text") as CodeLanguage;
+}
+
+/** The name a downloaded document gets: its title, with an extension. */
+export function fileNameOf(title: string, kind: CanvasKind): string {
+  if (extensionOf(title)) return title.trim();
+  const base = title.trim().replace(/[\\/:*?"<>|]+/g, "-") || "document";
+  return `${base}.${kind.extension ?? "txt"}`;
 }
 
 export const DEFAULT_CANVAS_KINDS: Record<string, CanvasKind> = {
-  text: { content: TextCanvas },
-  code: { content: CodeCanvas },
-  sheet: { content: SheetCanvas },
-  image: { content: ImageCanvas },
+  text: {
+    content: TextCanvas,
+    icon: FileTextIcon,
+    labelKey: "chat.canvas.kinds.text",
+    extension: "md",
+  },
+  code: {
+    content: CodeCanvas,
+    icon: FileCodeIcon,
+    labelKey: "chat.canvas.kinds.code",
+    preview: CodePreview,
+    previewable: (title) => PREVIEWABLE_EXTENSIONS.has(extensionOf(title) ?? ""),
+    extension: "txt",
+  },
+  sheet: {
+    content: SheetCanvas,
+    icon: SheetIcon,
+    labelKey: "chat.canvas.kinds.sheet",
+    extension: "csv",
+  },
+  image: {
+    content: ImageCanvas,
+    icon: ImageIcon,
+    labelKey: "chat.canvas.kinds.image",
+    extension: "png",
+  },
 };
 
 export const CANVAS_KINDS: Record<string, CanvasKind> = {

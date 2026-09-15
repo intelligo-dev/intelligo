@@ -12,7 +12,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { BotIcon, ExternalLinkIcon, FileTextIcon } from "lucide-react";
+import { BotIcon, ExternalLinkIcon } from "lucide-react";
 
 import type {
   ChatAgentData,
@@ -38,6 +38,10 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { TodoList, type TodoItemStatus } from "@/components/ui/ai-todo-list";
+import {
+  ArtifactCard,
+  useArtifactStream,
+} from "@/components/chat/artifact-card";
 import type { DataRendererProps } from "@/lib/chat-renderers";
 
 export function ChatTaskCard({ data }: DataRendererProps) {
@@ -127,31 +131,19 @@ export function ChatArtifactCard({
   isReadonly,
   actions,
 }: DataRendererProps) {
-  const t = useTranslations("chat");
   const artifact = data as ChatArtifactData;
+  const streamed = useArtifactStream(artifact.id);
 
   return (
-    <Item variant="outline" size="sm" className="max-w-xl">
-      <ItemMedia variant="icon">
-        {artifact.status === "streaming" ? <Spinner /> : <FileTextIcon />}
-      </ItemMedia>
-      <ItemContent>
-        <ItemTitle>{artifact.title}</ItemTitle>
-        <ItemDescription>
-          {artifact.status === "streaming"
-            ? t("artifactCard.streaming")
-            : artifact.status === "error"
-              ? (artifact.error ?? t("artifactCard.failed"))
-              : t("artifactCard.saved")}
-        </ItemDescription>
-      </ItemContent>
-      {!isReadonly && actions && artifact.status !== "error" ? (
-        <ItemActions>
-          <Button
-            size="sm"
-            variant="outline"
-            type="button"
-            onClick={() =>
+    <ArtifactCard
+      title={artifact.title}
+      kind={artifact.kind}
+      status={artifact.status}
+      error={artifact.error}
+      preview={streamed ?? artifact.content}
+      onOpen={
+        !isReadonly && actions && artifact.status !== "error"
+          ? () =>
               actions.openCanvas({
                 id: artifact.id,
                 kind: artifact.kind,
@@ -164,13 +156,9 @@ export function ChatArtifactCard({
                   : {}),
                 status: artifact.status,
               })
-            }
-          >
-            {t("artifactCard.open")}
-          </Button>
-        </ItemActions>
-      ) : null}
-    </Item>
+          : undefined
+      }
+    />
   );
 }
 

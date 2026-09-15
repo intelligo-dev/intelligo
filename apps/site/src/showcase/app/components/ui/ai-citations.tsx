@@ -292,7 +292,7 @@ function CitationPill({ citations, label, className }: CitationPillProps) {
   if (!first) return null;
 
   const pillClass = cn(
-    "mx-0.5 inline-flex max-w-44 -translate-y-px items-center gap-1 rounded-full bg-muted px-1.5 align-middle text-xs leading-5 font-medium text-muted-foreground no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring",
+    "mx-0.5 inline-flex max-w-44 -translate-y-px items-center gap-1 rounded-full bg-muted px-1.5 align-middle text-xs leading-5 font-medium text-muted-foreground no-underline! outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring",
     className
   );
   const pill = (

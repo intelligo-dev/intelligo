@@ -178,7 +178,8 @@
     "saved": "Saved to your artifacts",
     "open": "Open",
     "streaming": "Writing…",
-    "failed": "Couldn't create the document"
+    "failed": "Couldn't create the document",
+    "untitled": "Untitled document"
   },
   "attachments": {
     "add": "Add photos or files",
@@ -229,9 +230,26 @@
     "latest": "Latest",
     "openInArtifacts": "Open in Artifacts",
     "copy": "Copy content",
+    "download": "Download",
     "save": "Save",
     "saved": "Saved as a new version.",
-    "unsavedChanges": "Unsaved changes"
+    "unsavedChanges": "Unsaved changes",
+    "view": "View",
+    "preview": "Preview",
+    "source": "Code",
+    "olderVersion": "Older version",
+    "newerVersion": "Newer version",
+    "versionOf": "{index} / {count}",
+    "restore": "Restore",
+    "expand": "Fill the page",
+    "collapse": "Show the conversation",
+    "resize": "Resize the canvas",
+    "kinds": {
+      "text": "Document",
+      "code": "Code",
+      "sheet": "Spreadsheet",
+      "image": "Image"
+    }
   },
   "share": {
     "title": "Share this conversation",

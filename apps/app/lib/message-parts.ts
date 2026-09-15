@@ -211,21 +211,49 @@ export function sourceDomain(source: SourceItem): string | undefined {
 const CITE_PREFIX = "#cite-";
 
 /**
- * `[3]` and `[3][4]` in the text become one link each run —
+ * `[3]`, `[3][4]` and `[3, 4]` in the text become one link each run —
  * `[3](#cite-3)`, `[3,4](#cite-3,4)` — which the markdown anchor
  * override renders as a citation pill. Only numbers the message has a
  * source for; a markdown link (`[3](…)`) is left alone.
  */
 export function linkCitations(text: string, known: ReadonlySet<number>): string {
   if (known.size === 0) return text;
-  return text.replace(/(?:\[\d{1,3}\])+(?!\()/g, (run) => {
-    const numbers = [...run.matchAll(/\[(\d{1,3})\]/g)]
-      .map((match) => Number(match[1]))
+  return text.replace(/(?:\[\d{1,3}(?:\s*,\s*\d{1,3})*\])+(?!\()/g, (run) => {
+    const numbers = [...run.matchAll(/\d{1,3}/g)]
+      .map((match) => Number(match[0]))
       .filter((n) => known.has(n));
     if (numbers.length === 0) return run;
     const unique = [...new Set(numbers)];
     return `[${unique.join(",")}](${CITE_PREFIX}${unique.join(",")})`;
   });
+}
+
+/**
+ * A readable name for a page that came with none — search grounding
+ * often gives only the domain: the last meaningful path segment,
+ * de-slugged. `…/blog-posts/node-js-end-of-life-dates` → "Node js end
+ * of life dates". Undefined for a site's front page.
+ */
+export function titleFromUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  let segments: string[];
+  try {
+    segments = new URL(url).pathname.split("/").filter(Boolean);
+  } catch {
+    return undefined;
+  }
+  for (const segment of segments.reverse()) {
+    const words = decodeURIComponent(segment)
+      .replace(/\.(html?|php|aspx?)$/i, "")
+      .replace(/[-_+]+/g, " ")
+      .trim();
+    // Ids, hashes and dates name nothing a reader recognises.
+    if (words.length < 4 || !/[a-z]{3}/i.test(words) || /^[\d\s]+$/.test(words)) {
+      continue;
+    }
+    return words.charAt(0).toUpperCase() + words.slice(1);
+  }
+  return undefined;
 }
 
 /** The source numbers a citation link points at, or null for any other link. */

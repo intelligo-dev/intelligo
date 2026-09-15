@@ -48,8 +48,8 @@
 import type { ComponentType } from "react";
 import type { FileUIPart } from "ai";
 import { useTranslations } from "use-intl";
-import { FileTextIcon } from "lucide-react";
 
+import { ArtifactCard } from "@showcase/components/chat/artifact-card";
 import type {
   AgentActivitySearch,
   AgentActivityTool,
@@ -59,16 +59,6 @@ import {
   ToolResultOutput,
   type ToolResultStatus,
 } from "@showcase/components/ui/ai-tool-result";
-import { Button } from "@showcase/components/ui/button";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from "@showcase/components/ui/item";
-import { Link } from "@showcase/i18n/navigation";
 import type { SourceItem } from "@showcase/lib/message-parts";
 
 import {
@@ -358,105 +348,71 @@ export function DefaultToolCard({
   );
 }
 
+function stringField(record: Record<string, unknown> | null, key: string) {
+  const value = record?.[key];
+  return typeof value === "string" ? value : undefined;
+}
+
 /**
- * Renderer for a tool that produced a document. Expects the tool's
- * output to carry a `title` (and optionally a `documentId`, `kind`
- * and `content`); anything else falls back to the generic card, so a
- * tool whose shape drifts renders honestly rather than blank.
+ * Renderer for a tool that produces a document. While the model writes
+ * the call, the card shows the title and the last lines of the content
+ * as they arrive; once the tool returns a `title` (and optionally a
+ * `documentId`, `kind` and `content`) the whole card opens it. A
+ * finished call with no title falls back to the generic card, so a tool
+ * whose shape drifts renders honestly rather than blank.
  *
  * Opening lands in the canvas when the page has one, and on the
- * `/artifacts` page otherwise.
+ * document's preview on the `/artifacts` page otherwise.
  */
-export function ArtifactLinkCard({
-  toolName,
-  state,
-  input,
-  output,
-  errorText,
-  messageId,
-  isStreaming,
-  isReadonly,
-  actions,
-}: ToolRendererProps) {
+export function ArtifactLinkCard(props: ToolRendererProps) {
+  const { toolName, state, input, output, errorText, messageId, isReadonly, actions } =
+    props;
   const t = useTranslations("chat");
 
   const result =
-    output && typeof output === "object"
-      ? (output as {
-          title?: unknown;
-          documentId?: unknown;
-          id?: unknown;
-          kind?: unknown;
-          content?: unknown;
-        })
-      : null;
-  const title = typeof result?.title === "string" ? result.title : undefined;
+    output && typeof output === "object" ? (output as Record<string, unknown>) : null;
+  const draft =
+    input && typeof input === "object" ? (input as Record<string, unknown>) : null;
+  const title = stringField(result, "title") ?? stringField(draft, "title");
 
-  if (state !== "output-available" || !title) {
-    return (
-      <DefaultToolCard
-        toolName={toolName}
-        state={state}
-        input={input}
-        output={output}
-        errorText={errorText}
-        messageId={messageId}
-        isStreaming={isStreaming}
-        isReadonly={isReadonly}
-      />
-    );
-  }
+  if (state === "output-available" && !title) return <DefaultToolCard {...props} />;
 
-  const documentId =
-    typeof result?.documentId === "string"
-      ? result.documentId
-      : typeof result?.id === "string"
-        ? result.id
-        : undefined;
+  const kind =
+    stringField(result, "kind") ??
+    stringField(draft, "kind") ??
+    resolveToolRenderer(toolName).canvas?.kind ??
+    "text";
+  const status =
+    state === "output-error" || state === "output-denied"
+      ? "error"
+      : state === "output-available"
+        ? "ready"
+        : "streaming";
+  const documentId = stringField(result, "documentId") ?? stringField(result, "id");
+  const content = stringField(result, "content");
   const ref: CanvasRef = {
     id: documentId ?? messageId,
-    kind:
-      typeof result?.kind === "string"
-        ? result.kind
-        : (resolveToolRenderer(toolName).canvas?.kind ?? "text"),
-    title,
+    kind,
+    title: title ?? "",
     ...(documentId ? { documentId } : {}),
-    ...(typeof result?.content === "string" ? { content: result.content } : {}),
+    ...(content !== undefined ? { content } : {}),
     status: "ready",
   };
+  const canOpen = status === "ready" && !isReadonly;
 
   return (
-    <Item variant="outline" size="sm" className="max-w-xl">
-      <ItemMedia variant="icon">
-        <FileTextIcon />
-      </ItemMedia>
-      <ItemContent>
-        <ItemTitle>{title}</ItemTitle>
-        <ItemDescription>{t("artifactCard.saved")}</ItemDescription>
-      </ItemContent>
-      {isReadonly ? null : (
-        <ItemActions>
-          {actions ? (
-            <Button
-              size="sm"
-              variant="outline"
-              type="button"
-              onClick={() => actions.openCanvas(ref)}
-            >
-              {t("artifactCard.open")}
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              render={<Link href="/artifacts" />}
-              nativeButton={false}
-            >
-              {t("artifactCard.open")}
-            </Button>
-          )}
-        </ItemActions>
-      )}
-    </Item>
+    <ArtifactCard
+      title={title || t("artifactCard.untitled")}
+      kind={kind}
+      status={status}
+      error={errorText}
+      preview={stringField(draft, "content")}
+      onOpen={canOpen && actions ? () => actions.openCanvas(ref) : undefined}
+      href={
+        canOpen && !actions && documentId
+          ? `/artifacts?document=${encodeURIComponent(documentId)}`
+          : undefined
+      }
+    />
   );
 }

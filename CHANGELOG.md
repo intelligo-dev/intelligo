@@ -123,6 +123,21 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   `CitationCard` and depends on `hover-card` and `sheet`. The reference
   app's `webSearch` resolves Google's grounding redirects to the pages
   themselves and numbers its sources across the conversation.
+- `chat`: a document reads as a document. One `ArtifactCard` serves the
+  tool's card and the streamed part: the kind's glyph, the title, what
+  it is ("Code · py"), the whole card opens it, and while it is written
+  the last lines arrive under a fade (from the tool's input, or the
+  canvas's stream through `ArtifactStreamProvider`); a running document
+  tool no longer draws a second card for the part it streams. The
+  canvas header is two quiet rows — glyph, title, kind and state with
+  expand and close; then a preview/code switch (HTML and SVG render in
+  a sandbox), a `‹ 2 / 3 ›` version stepper with restore, copy,
+  download, and "Open in Artifacts", which now lands on the document
+  (`/artifacts?document=<id>`). The panel no longer draws a double
+  border, the reader drags its edge (or uses the arrow keys) to resize
+  it, and it can fill the page. `CanvasKind` gains `icon`, `labelKey`,
+  `preview`, `previewable` and `extension`; `chat-canvas-config` exports
+  `extensionOf`, `languageOf` and `fileNameOf`.
 - Registry T3, ported from the MIT-licensed agents set onto Base UI and the token contract: `ai-motion` (easings,
   springs, `Disclosure`, `SwapText`), `ai-message`, `ai-message-bubble`,
   `ai-message-scroller` (reader-aware, preview rail), `ai-todo-list`,

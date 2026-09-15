@@ -157,6 +157,13 @@ export function DocumentList({ documents }: DocumentListProps) {
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // `/artifacts?document=<id>` — the chat canvas's "Open in Artifacts" —
+  // lands on that document's preview.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("document");
+    if (id) setSelectedId(id);
+  }, []);
+
   /**
    * A known kind (text/code/sheet/image) resolves through this item's
    * own messages; a product-defined custom kind (see the module doc

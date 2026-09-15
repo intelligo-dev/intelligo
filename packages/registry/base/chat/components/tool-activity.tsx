@@ -39,6 +39,7 @@ import {
   primaryInput,
   sourceDomain,
   sourcesFromToolOutput,
+  titleFromUrl,
   type PartAt,
 } from "@/lib/message-parts";
 
@@ -127,6 +128,8 @@ export function ToolActivity({ parts, working, toolProps }: ToolActivityProps) {
   return (
     <AgentActivity
       className="max-w-2xl"
+      // Room for a row the reader opened onto its call.
+      maxHeight={working ? 208 : 480}
       items={items}
       status={working ? "working" : "complete"}
       activeLabel={liveLabel ?? t("toolActivity.working")}
@@ -159,10 +162,13 @@ function defaultRow(
       status,
       results: sources.slice(0, VISIBLE_RESULTS).map((source, index) => {
         const domain = sourceDomain(source);
+        const title =
+          (source.title && source.title !== domain ? source.title : undefined) ??
+          titleFromUrl(source.url);
         return {
           id: source.url ?? `${index}`,
-          title: source.title && source.title !== domain ? source.title : (domain ?? source.url ?? ""),
-          ...(domain && source.title && source.title !== domain ? { domain } : {}),
+          title: title ?? domain ?? source.url ?? "",
+          ...(domain && title ? { domain } : {}),
           ...(source.url ? { url: source.url } : {}),
         };
       }),
