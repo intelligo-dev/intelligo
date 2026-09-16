@@ -1793,9 +1793,8 @@
       "name": "dashboard",
       "type": "registry:block",
       "title": "Dashboard",
-      "description": "An AI-first workspace home: a hero with starter prompts, a sticky prompt bar that opens a new conversation, a resume affordance for unfinished work, recent conversations, and a compact plan/usage strip. Configurable through lib/dashboard-config.tsx (copy, starters, chat base path, shortcuts) and lib/dashboard-data.ts (what \"resume\" means). Pairs with the chat item for its /chat routes and the pricing item for lib/billing-config.ts's CURRENCY; install those first.",
+      "description": "An AI-first workspace home: a hero and a real composer centred as one unit, starter chips that fill it, a resume affordance for unfinished work, and one quiet strip of recent conversations and plan state at the foot. Configurable through lib/dashboard-config.tsx (copy, starters, chat base path) and lib/dashboard-data.ts (what \"resume\" means). Pairs with the chat item for its /chat routes and the pricing item for lib/billing-config.ts's CURRENCY; install those first.",
       "registryDependencies": [
-        "progress",
         "skeleton",
         "@intelligo/ai-prompt-input",
         "@intelligo/ai-speech-input"

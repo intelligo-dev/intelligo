@@ -1,21 +1,23 @@
 "use client";
 
 /**
- * The five most recent conversations, as frameless rows.
+ * The left half of the page's foot: a few conversations to walk back
+ * into.
  *
- * This is what "recent work" means on an AI product's home page —
- * conversations you can walk back into, not execution records. (The
- * `usage` item's table is the right place for the billing-shaped view
- * of the same activity.)
+ * Three, not five, and inline rather than a titled list of rows: the
+ * sidebar already carries the full history, so a second full list on
+ * the home page was the same information twice at twice the weight.
+ * What earns its place here is the shortest possible way back into
+ * recent work.
  *
- * Timestamps render as an absolute date on the server and swap to
- * relative once mounted, since `Date.now()` during render would differ
- * between server and client.
+ * Timestamps are gone for the same reason — the sidebar groups by day,
+ * and a relative time next to every title made three links read as a
+ * table. (The `usage` item's table is the right place for the
+ * billing-shaped view of the same activity.)
  */
 
-import { useEffect, useState } from "react";
 import { MessageSquare } from "lucide-react";
-import { useFormatter, useTranslations } from "use-intl";
+import { useTranslations } from "use-intl";
 
 import { Link } from "@showcase/i18n/navigation";
 import { dashboardConfig } from "@showcase/lib/dashboard-config";
@@ -27,50 +29,37 @@ export interface RecentConversation {
   updatedAt: string;
 }
 
+/** How many of the recent conversations the strip shows. */
+const SHOWN = 3;
+
 export function RecentConversations({
   conversations,
 }: {
   conversations: RecentConversation[];
 }) {
   const t = useTranslations("dashboard");
-  const format = useFormatter();
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => setNow(new Date()), []);
 
   if (conversations.length === 0) return null;
 
   const chatBasePath = dashboardConfig.chatBasePath ?? "/chat";
 
   return (
-    <div className="mx-auto mt-12 w-full max-w-2xl">
-      <p className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+      <span className="font-medium uppercase tracking-wide text-muted-foreground">
         {t("recent.title")}
-      </p>
-      <ul className="mt-2">
-        {conversations.map((conversation) => {
-          const updated = new Date(conversation.updatedAt);
-          return (
-            <li key={conversation.id}>
-              <Link
-                href={`${chatBasePath}/${conversation.id}`}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-accent/40"
-              >
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                  <MessageSquare className="size-3.5" strokeWidth={2} />
-                </span>
-                <span className="min-w-0 flex-1 truncate text-sm">
-                  {conversation.title ?? t("recent.untitled")}
-                </span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {now
-                    ? format.relativeTime(updated, now)
-                    : format.dateTime(updated, { dateStyle: "medium" })}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      </span>
+      {conversations.slice(0, SHOWN).map((conversation) => (
+        <Link
+          key={conversation.id}
+          href={`${chatBasePath}/${conversation.id}`}
+          className="inline-flex max-w-full items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <MessageSquare className="size-3.5 shrink-0" strokeWidth={2} />
+          <span className="truncate">
+            {conversation.title ?? t("recent.untitled")}
+          </span>
+        </Link>
+      ))}
     </div>
   );
 }
