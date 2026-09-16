@@ -377,6 +377,18 @@ describe("leaf subpaths", () => {
     ).toEqual([]);
   });
 
+  it("executions/pricing imports only core's own leaves", () => {
+    // The model registry and the cost math are what a client bundle
+    // reads to show a model name or a price; Drizzle must stay out.
+    const specs = importSpecifiers(
+      readFileSync(path.join(PACKAGES_DIR, "executions/src/pricing.ts"), "utf8")
+    );
+    expect([...new Set(specs)].sort()).toEqual([
+      "@intelligo-dev/core/money",
+      "@intelligo-dev/core/registry",
+    ]);
+  });
+
   it("core/prompt imports nothing", () => {
     // Reached from tools and the chat transport's prepareMessages seam;
     // a dependency here is a dependency of every prompt.

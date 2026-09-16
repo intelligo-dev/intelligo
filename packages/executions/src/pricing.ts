@@ -37,6 +37,14 @@
  * price is needed, naming the id and what to do about it.
  */
 
+import {
+  convert,
+  currency,
+  money,
+  multiply,
+  type CurrencyCode,
+  type Money,
+} from "@intelligo-dev/core/money";
 import { createRegistry } from "@intelligo-dev/core/registry";
 
 export type ModelCapabilities = {
@@ -251,6 +259,97 @@ export function calculateCost(
     (outputTokens / 1_000_000) * config.costPerMOutputTokens
   );
 }
+
+/** Providers quote in USD; every cost in this module starts there. */
+export const PROVIDER_CURRENCY: CurrencyCode = currency("USD");
+
+/**
+ * What the provider charges for this call, in USD.
+ *
+ * Exact in micros with no floating detour: a price quoted per million
+ * tokens is, per token, that many millionths of a dollar — so the
+ * micros are `tokens × price`. Fractions round up, which keeps the
+ * cheapest models from pricing a real call at nothing.
+ *
+ * @throws {UnknownModelError} when the id has no registered price.
+ */
+export function providerCost(
+  modelId: string,
+  inputTokens: number,
+  outputTokens: number
+): Money {
+  const config = requireModel(modelId);
+  return money(
+    Math.ceil(
+      inputTokens * config.costPerMInputTokens +
+        outputTokens * config.costPerMOutputTokens
+    ),
+    PROVIDER_CURRENCY
+  );
+}
+
+/**
+ * What a deployment bills in: its currency, what one USD costs in it
+ * (micros, so `1_000_000` is a USD deployment and `3_450_000_000` is
+ * 3450₮), and the margin over provider cost in basis points of a
+ * multiplier — `40_000` is 4×.
+ *
+ * Read per request from `billing_settings`; there is no ambient rate,
+ * because a framework that guesses an exchange rate is inventing money.
+ */
+export type BillingRate = {
+  currency: CurrencyCode;
+  usdRateMicros: number;
+  marginBp: number;
+};
+
+/** `40_000` bp = 4× provider cost. See the margin invariant below. */
+export const DEFAULT_MARGIN_BP = 40_000;
+
+const BP_PER_MULTIPLE = 10_000;
+
+/**
+ * Provider cost and what the reader is charged for it: cost × margin,
+ * converted into the deployment's currency at its own rate.
+ *
+ * Both steps round up, so a charge is at most two micros over — a
+ * millionth of a cent, against a fraction that would otherwise be the
+ * deployment's to eat on every request.
+ *
+ * @throws {UnknownModelError} when the id has no registered price.
+ * @throws {MoneyError} when a USD deployment passes a rate that is not 1.
+ */
+export function chargeFor(
+  modelId: string,
+  inputTokens: number,
+  outputTokens: number,
+  rate: BillingRate
+): { providerCost: Money; charged: Money } {
+  const cost = providerCost(modelId, inputTokens, outputTokens);
+  const withMargin = multiply(cost, rate.marginBp / BP_PER_MULTIPLE);
+  return {
+    providerCost: cost,
+    charged: convert(withMargin, rate.currency, rate.usdRateMicros),
+  };
+}
+
+/**
+ * The ceiling one turn on this model could charge, for admission:
+ * the model's own output limit against a 16K input budget (system
+ * prompt plus history). Refusing on the ceiling is what stops a turn
+ * that cannot be paid for from burning provider tokens first.
+ *
+ * @throws {UnknownModelError} when the id has no registered price.
+ */
+export function estimateWorstCaseCharge(
+  modelId: string,
+  rate: BillingRate
+): Money {
+  const outputBudget = requireModel(modelId).maxOutputTokens;
+  return chargeFor(modelId, ESTIMATE_INPUT_BUDGET, outputBudget, rate).charged;
+}
+
+const ESTIMATE_INPUT_BUDGET = 16_000;
 
 /**
  * Default billing margin multiplier applied on top of raw model cost.

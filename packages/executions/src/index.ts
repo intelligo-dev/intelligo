@@ -61,13 +61,19 @@ export {
   clearModels,
   DEFAULT_BILLING_MARGIN,
   DEFAULT_USD_TO_MNT_RATE,
+  DEFAULT_MARGIN_BP,
+  PROVIDER_CURRENCY,
   calculateCost,
   calculateChargedMnt,
   estimateWorstCaseChargedMnt,
+  providerCost,
+  chargeFor,
+  estimateWorstCaseCharge,
 } from "./pricing";
 export type {
   ModelId,
   ModelPricing,
   ModelCapabilities,
   ChargedAmount,
+  BillingRate,
 } from "./pricing";

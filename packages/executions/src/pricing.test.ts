@@ -11,16 +11,28 @@
 import { beforeEach, describe, it, expect } from "vitest";
 
 import {
+  compare,
+  currency,
+  fromMajor,
+  toMajor,
+} from "@intelligo-dev/core/money";
+
+import {
+  DEFAULT_MARGIN_BP,
   DEFAULT_MODELS,
   DEFAULT_BILLING_MARGIN,
   DEFAULT_USD_TO_MNT_RATE,
   UnknownModelError,
   calculateCost,
   calculateChargedMnt,
+  chargeFor,
   clearModels,
+  estimateWorstCaseCharge,
   estimateWorstCaseChargedMnt,
+  providerCost,
   registerModels,
   registeredModelIds,
+  type BillingRate,
 } from "./pricing";
 
 // Nothing self-registers: the registry is populated from a composition
@@ -219,6 +231,97 @@ describe("estimateWorstCaseChargedMnt", () => {
     expect(estimateWorstCaseChargedMnt("test/tiny")).toBeLessThan(
       estimateWorstCaseChargedMnt("google/gemini-2.5-flash")
     );
+  });
+});
+
+describe("providerCost", () => {
+  it("is exact in micros — a price per million is millionths per token", () => {
+    // Flash: $0.30 in + $2.50 out per million.
+    const cost = providerCost("google/gemini-2.5-flash", 1_000_000, 1_000_000);
+    expect(cost).toEqual(fromMajor(2.8, "USD"));
+  });
+
+  it("keeps a real call off zero by rounding the fraction up", () => {
+    expect(providerCost("google/gemini-2.5-flash", 1, 0).amount).toBe(1);
+  });
+
+  it("throws for an unregistered id rather than guessing a price", () => {
+    expect(() => providerCost("unknown/model", 1, 1)).toThrow(UnknownModelError);
+  });
+});
+
+describe("chargeFor", () => {
+  const USD: BillingRate = {
+    currency: currency("USD"),
+    usdRateMicros: 1_000_000,
+    marginBp: DEFAULT_MARGIN_BP,
+  };
+  const MNT: BillingRate = {
+    currency: currency("MNT"),
+    usdRateMicros: 3_450_000_000,
+    marginBp: DEFAULT_MARGIN_BP,
+  };
+  // The turn from the browser walkthrough: 1,447 tokens on Flash.
+  const TURN = { input: 1_100, output: 347 };
+
+  it("charges a USD deployment a fraction of a cent for one turn", () => {
+    const { providerCost: cost, charged } = chargeFor(
+      "google/gemini-2.5-flash",
+      TURN.input,
+      TURN.output,
+      USD
+    );
+    // 1,100 × 0.3 + 347 × 2.5 = 1,197.5 → 1,198 micros of provider cost.
+    expect(cost.amount).toBe(1_198);
+    expect(charged.currency).toBe("USD");
+    expect(toMajor(charged)).toBeCloseTo(0.004792, 6);
+    // The bug this replaces: the usage page read this turn as "$15".
+    expect(toMajor(charged)).toBeLessThan(0.01);
+  });
+
+  it("matches the old whole-tugrik math for an MNT deployment", () => {
+    const { providerCost: cost, charged } = chargeFor(
+      "google/gemini-2.5-flash",
+      TURN.input,
+      TURN.output,
+      MNT
+    );
+    const old = calculateChargedMnt(
+      "google/gemini-2.5-flash",
+      TURN.input,
+      TURN.output
+    ).chargedMnt;
+    expect(charged.currency).toBe("MNT");
+    // The old number was this one, ceilinged to a whole tugrik.
+    expect(Math.abs(toMajor(charged) - old)).toBeLessThan(1);
+    expect(toMajor(cost)).toBeCloseTo(0.001198, 6);
+  });
+
+  it("refuses a USD deployment whose rate is not 1.0", () => {
+    expect(() =>
+      chargeFor("google/gemini-2.5-flash", 10, 10, {
+        ...USD,
+        usdRateMicros: 3_450_000_000,
+      })
+    ).toThrow(/not a conversion/);
+  });
+
+  it("estimates a ceiling above a typical turn", () => {
+    const ceiling = estimateWorstCaseCharge("google/gemini-2.5-flash", USD);
+    const typical = chargeFor(
+      "google/gemini-2.5-flash",
+      TURN.input,
+      TURN.output,
+      USD
+    ).charged;
+    expect(compare(ceiling, typical)).toBe(1);
+  });
+});
+
+describe("DEFAULT_MARGIN_BP — 65% gross margin invariant", () => {
+  it("keeps the floor the multiplier constant keeps", () => {
+    // gross margin = 1 − 1/multiplier ≥ 0.65 → multiplier ≥ 2.857…
+    expect(DEFAULT_MARGIN_BP / 10_000).toBeGreaterThanOrEqual(1 / 0.35);
   });
 });
 
