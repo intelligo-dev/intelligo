@@ -44,13 +44,13 @@
   "pnpm": {
     "overrides": {
       "pg": "8.18.0",
-      "next": "~16.2.11",
+      "next": "~16.3.5",
       "next-intl": ">=4.9.1",
       "drizzle-orm": ">=0.45.2",
-      "eslint-config-next": "~16.2.11",
+      "eslint-config-next": "~16.3.5",
       "next-mdx-remote": ">=6.0.0",
       "axios": ">=1.15.0",
-      "nodemailer": ">=9.0.1",
+      "nodemailer@9": ">=9.1.1",
       "@hono/node-server": ">=1.19.15",
       "hono": ">=4.12.34",
       "vite": ">=8.0.16",
@@ -78,11 +78,15 @@
       "linkify-it@5": "^5.0.2",
       "js-yaml@4": "^4.3.1",
       "postcss": ">=8.5.23",
-      "sharp": ">=0.35.0",
+      "sharp": ">=0.35.4",
       "body-parser": ">=2.3.0",
       "@babel/core": "^7.29.6",
       "uuid": "^11.1.1",
-      "@types/react": "19.2.18"
+      "@types/react": "19.2.18",
+      "browserslist": ">=4.28.7",
+      "baseline-browser-mapping": ">=2.11.0",
+      "@humanfs/node": "^0.16.8",
+      "postcss-selector-parser": ">=7.1.3"
     }
   }
 }
