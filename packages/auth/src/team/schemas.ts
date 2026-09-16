@@ -17,7 +17,10 @@ import { z } from "zod";
 export const inviteMemberSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   role: z.enum(["admin", "member"], {
-    required_error: "Please select a role",
+    // zod 4 folded `required_error` and `invalid_type_error` into one
+    // `error`: a missing role and a role that is not one of these two
+    // are the same mistake to whoever is reading the form.
+    error: "Please select a role",
   }),
 });
 
