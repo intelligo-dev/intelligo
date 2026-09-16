@@ -74,7 +74,7 @@ export function LocalPaymentModal({
   const createInvoice = useCallback(async () => {
     setStep("creating");
     setError(null);
-    const result = await startLocalPayment(reference, amount);
+    const result = await startLocalPayment(reference);
     if (!result.success) {
       setError(result.error);
       setStep("failed");
@@ -82,7 +82,7 @@ export function LocalPaymentModal({
     }
     setInvoice(result.data);
     setStep("waiting");
-  }, [reference, amount]);
+  }, [reference]);
 
   useEffect(() => {
     if (!open) return;

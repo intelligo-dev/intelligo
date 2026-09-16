@@ -61,7 +61,7 @@ d("attachments service — real DB integration", () => {
     await client.end();
   });
 
-  it("creates, reads inside the workspace, hides outside it", async () => {
+  it("creates, reads back for its uploader, hides it from everyone else", async () => {
     const created = await service.createAttachment(actor, {
       storageKey: `ws/${workspaceId}/att/${suffix}-1`,
       filename: "q3.pdf",
@@ -70,11 +70,26 @@ d("attachments service — real DB integration", () => {
     });
     expect(created.conversationId).toBeNull();
 
-    const read = await service.getAttachment({ workspaceId }, created.id);
+    const read = await service.getAttachment(actor, created.id);
     expect(read.filename).toBe("q3.pdf");
 
     await expect(
-      service.getAttachment({ workspaceId: otherWorkspaceId }, created.id)
+      service.getAttachment(
+        { workspaceId: otherWorkspaceId, userId },
+        created.id
+      )
+    ).rejects.toSatisfy(
+      (e: unknown) => isAttachmentServiceError(e) && e.code === "not_found"
+    );
+
+    // Conversations are user-private, so an attachment is too: a
+    // colleague who holds the id gets nothing, not a signed URL to
+    // someone else's upload.
+    await expect(
+      service.getAttachment(
+        { workspaceId, userId: `${userId}-colleague` },
+        created.id
+      )
     ).rejects.toSatisfy(
       (e: unknown) => isAttachmentServiceError(e) && e.code === "not_found"
     );
@@ -92,16 +107,13 @@ d("attachments service — real DB integration", () => {
     });
     expect(orphans.map((a) => a.id)).toContain(created.id);
 
-    await service.setExtractedText(
-      { workspaceId },
-      {
-        id: created.id,
-        text: "abc",
-      }
+    await service.setExtractedText(actor, {
+      id: created.id,
+      text: "abc",
+    });
+    expect((await service.getAttachment(actor, created.id)).extractedText).toBe(
+      "abc"
     );
-    expect(
-      (await service.getAttachment({ workspaceId }, created.id)).extractedText
-    ).toBe("abc");
 
     const deleted = await service.deleteAttachment(actor, created.id);
     expect(deleted.id).toBe(created.id);

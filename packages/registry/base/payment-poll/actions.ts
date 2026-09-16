@@ -28,8 +28,7 @@ export type PaymentActionResult<T> =
   | { success: false; error: string };
 
 export async function startLocalPayment(
-  reference: string,
-  amount: number
+  reference: string
 ): Promise<PaymentActionResult<LocalPaymentInvoice>> {
   const t = await getTranslations("payment-poll");
 
@@ -40,7 +39,7 @@ export async function startLocalPayment(
   }
 
   try {
-    const invoice = await createLocalPayment({ reference, amount });
+    const invoice = await createLocalPayment({ reference });
     return { success: true, data: invoice };
   } catch {
     // Provider errors can carry account identifiers and endpoint

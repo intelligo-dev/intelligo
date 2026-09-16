@@ -16,8 +16,7 @@ const QR_PREVIEW = `data:image/svg+xml;utf8,${encodeURIComponent(
 let polls = 0;
 
 export async function startLocalPayment(
-  _reference: string,
-  _amount: number
+  _reference: string
 ): Promise<PaymentActionResult<LocalPaymentInvoice>> {
   polls = 0;
   await wait();
@@ -27,8 +26,8 @@ export async function startLocalPayment(
       invoiceId: "inv_preview",
       qrCode: QR_PREVIEW,
       deeplinks: [
-        { app: "Khan Bank", url: "#" },
-        { app: "SocialPay", url: "#" },
+        { app: "Bank App", url: "#" },
+        { app: "Wallet App", url: "#" },
       ],
     },
   };

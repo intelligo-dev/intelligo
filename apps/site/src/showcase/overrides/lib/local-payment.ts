@@ -8,6 +8,5 @@ export interface LocalPaymentInvoice {
 export type LocalPaymentStatus = "pending" | "paid" | "failed";
 
 export interface LocalPaymentRequest {
-  amount: number;
   reference: string;
 }

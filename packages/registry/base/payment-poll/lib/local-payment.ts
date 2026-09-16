@@ -33,9 +33,13 @@ export interface LocalPaymentInvoice {
 export type LocalPaymentStatus = "pending" | "paid" | "failed";
 
 export interface LocalPaymentRequest {
-  /** Amount in the currency `lib/billing-config.ts` declares. */
-  amount: number;
-  /** What is being bought — a plan slug, a credit bundle id, an order. */
+  /**
+   * What is being bought — a plan slug, a credit bundle id, an order.
+   *
+   * Your implementation prices it server-side. The browser says what it
+   * wants, never what it costs: an amount that arrives as an argument
+   * is an amount the buyer chose.
+   */
   reference: string;
 }
 

@@ -440,5 +440,6 @@ jobs:
             packages/core/src/conversations/service.integration.test.ts \
             packages/core/src/documents/service.integration.test.ts \
             packages/core/src/identity/service.integration.test.ts \
+            packages/core/src/attachments/service.integration.test.ts \
             packages/auth/src/team/service.integration.test.ts \
             packages/auth/src/workspace/service.integration.test.ts

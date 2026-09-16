@@ -4,9 +4,14 @@
  * The bytes live behind the storage port (`../storage`); this table is
  * what makes a URL safe to hand out: who uploaded it, which workspace
  * it belongs to, what it is, how big it is, and — once the turn that
- * carried it is persisted — which conversation it belongs to. A read
- * is scoped to the workspace so a colleague's link works inside the
- * tenant and nobody else's does.
+ * carried it is persisted — which conversation it belongs to.
+ *
+ * Every read and write is scoped to the workspace *and* the uploader.
+ * Conversations are user-private (ADR-0009), so an attachment is too:
+ * the ids reach this module from the request body, and a workspace-only
+ * scope let any member trade a colleague's attachment id for a signed
+ * URL to their private upload. `deleteAttachment` always filtered both;
+ * the reads now agree with it.
  *
  * SERVER-ONLY.
  */
@@ -62,9 +67,9 @@ export async function createAttachment(
   return row;
 }
 
-/** One attachment, if it belongs to the actor's workspace. */
+/** One attachment, if the actor uploaded it in their own workspace. */
 export async function getAttachment(
-  actor: Pick<AttachmentActor, "workspaceId">,
+  actor: AttachmentActor,
   id: string
 ): Promise<Attachment> {
   const [row] = await db
@@ -73,7 +78,8 @@ export async function getAttachment(
     .where(
       and(
         eq(attachments.id, id),
-        eq(attachments.workspaceId, actor.workspaceId)
+        eq(attachments.workspaceId, actor.workspaceId),
+        eq(attachments.userId, actor.userId)
       )
     )
     .limit(1);
@@ -83,9 +89,9 @@ export async function getAttachment(
   return row;
 }
 
-/** The attachments among `ids` that belong to the actor's workspace. */
+/** The attachments among `ids` that the actor uploaded. */
 export async function getAttachments(
-  actor: Pick<AttachmentActor, "workspaceId">,
+  actor: AttachmentActor,
   ids: readonly string[]
 ): Promise<Attachment[]> {
   if (ids.length === 0) return [];
@@ -95,14 +101,15 @@ export async function getAttachments(
     .where(
       and(
         inArray(attachments.id, [...ids]),
-        eq(attachments.workspaceId, actor.workspaceId)
+        eq(attachments.workspaceId, actor.workspaceId),
+        eq(attachments.userId, actor.userId)
       )
     );
 }
 
 /** Tie uploaded files to the conversation whose turn carried them. */
 export async function attachToConversation(
-  actor: Pick<AttachmentActor, "workspaceId">,
+  actor: AttachmentActor,
   params: { ids: readonly string[]; conversationId: string }
 ): Promise<void> {
   if (params.ids.length === 0) return;
@@ -113,13 +120,14 @@ export async function attachToConversation(
       and(
         inArray(attachments.id, [...params.ids]),
         eq(attachments.workspaceId, actor.workspaceId),
+        eq(attachments.userId, actor.userId),
         isNull(attachments.conversationId)
       )
     );
 }
 
 export async function setExtractedText(
-  actor: Pick<AttachmentActor, "workspaceId">,
+  actor: AttachmentActor,
   params: { id: string; text: string | null }
 ): Promise<void> {
   await db
@@ -128,7 +136,8 @@ export async function setExtractedText(
     .where(
       and(
         eq(attachments.id, params.id),
-        eq(attachments.workspaceId, actor.workspaceId)
+        eq(attachments.workspaceId, actor.workspaceId),
+        eq(attachments.userId, actor.userId)
       )
     );
 }
