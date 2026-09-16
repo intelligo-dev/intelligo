@@ -441,7 +441,12 @@ export async function getCheckoutSession(
       planName = product.name as string;
     }
 
-    const interval = item?.price?.recurring?.interval;
+    // Typed as a plain string on purpose: Stripe 22 made its enums
+    // open (`"month" | "year" | (string & {})`), so a value Stripe
+    // adds later still arrives, and comparing the branded member
+    // against a literal narrows nothing. Widening first makes the two
+    // intervals this product bills in narrow the way they read.
+    const interval: string | undefined = item?.price?.recurring?.interval;
     if (interval === "month" || interval === "year") {
       billingInterval = interval;
     }
@@ -501,9 +506,7 @@ export type BillingOverviewOwner = {
 };
 
 export type BillingOverview =
-  | BillingOverviewMember
-  | BillingOverviewAdmin
-  | BillingOverviewOwner;
+  BillingOverviewMember | BillingOverviewAdmin | BillingOverviewOwner;
 
 const billingOverviewSchema = z.object({
   workspaceId: z.string().min(1),

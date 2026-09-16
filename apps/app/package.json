@@ -74,7 +74,7 @@
     "@types/node": "^22.20.3",
     "@types/react": "19.2.18",
     "@types/react-dom": "^19.3.0",
-    "dotenv": "^16.6.1",
+    "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "eslint": "^10.10.0",
     "shadcn": "^4.21.0",
