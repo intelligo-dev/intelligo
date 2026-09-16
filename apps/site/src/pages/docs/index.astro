@@ -1,0 +1,39 @@
+---
+/** /docs: where to start, and every section with its pages. */
+import Docs from "@/layouts/Docs.astro";
+import { docsSidebar } from "@/lib/docs-nav";
+import { SITE } from "@/lib/site";
+
+const sections = await docsSidebar();
+const START = [
+  { href: SITE.start, title: "Getting started", body: "Create an app, point it at Postgres, install the pages and run it against the stub model." },
+  { href: "/docs/concepts/boundary", title: "The boundary", body: "What Intelligo owns, what stays yours, and why your AI framework is never wrapped." },
+  { href: "/docs/registry", title: "Installing blocks", body: "Pages as source you own: install order, config seams and translations." },
+];
+---
+<Docs
+  path="/docs"
+  section="Docs"
+  title="Intelligo documentation"
+  description="Build a vertical AI SaaS on Intelligo: the scaffold, the concepts that hold it together, the registry blocks, every package and the CLI."
+  next={{ href: SITE.start, label: "Getting started" }}
+>
+  <div class="not-prose grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-3">
+    {START.map((s) => (
+      <a href={s.href} class="group flex flex-col bg-background p-5 no-underline transition-colors hover:bg-card">
+        <span class="text-[1rem] font-semibold text-foreground">{s.title}</span>
+        <span class="mt-1.5 text-[0.86rem] leading-snug text-foreground/70">{s.body}</span>
+        <span class="mono mt-auto pt-4 text-[0.7rem] text-muted-foreground group-hover:text-foreground">read →</span>
+      </a>
+    ))}
+  </div>
+
+  {sections.map((s) => (
+    <section>
+      <h2 id={s.id}>{s.title}</h2>
+      <ul>
+        {s.items.map((i) => <li><a href={i.href}>{i.label}</a></li>)}
+      </ul>
+    </section>
+  ))}
+</Docs>
