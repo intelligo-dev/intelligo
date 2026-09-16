@@ -4,38 +4,32 @@
  * component values that must never cross the RSC boundary as props).
  *
  * The shipped defaults render a complete, honest AI-first home with no
- * editing: a hero from this item's own messages, a prompt bar that
- * opens a new conversation, recent conversations, and a compact plan
- * summary. Every part is replaceable here rather than in a component:
+ * editing: a hero from this item's own messages, a composer that opens
+ * a new conversation, starter chips that fill it, a resume affordance
+ * for unfinished work, and a quiet strip of recent conversations and
+ * plan state at the foot. Every part is replaceable here rather than in
+ * a component:
  *
  *  - `hero`: icon plus fully-qualified message keys for the title and
  *    subtitle. Point them at your product's namespace to say what this
  *    workspace is actually for.
  *  - `starters`: fully-qualified message keys (the `chatConfig.starters`
- *    contract). Each renders as a card that opens a new conversation
- *    prefilled with that text. Empty hides the grid.
- *  - `chatBasePath`: where the prompt bar and starters send the user.
+ *    contract). Each renders as a chip under the composer that opens a
+ *    new conversation prefilled with that text. Empty hides the row.
+ *  - `chatBasePath`: where the composer and the starters send the user.
  *    Defaults to the `chat` item's `/chat`; change it if your chat
- *    surface lives elsewhere, and note that the whole prompt-bar
+ *    surface lives elsewhere, and note that the whole composer
  *    affordance only makes sense with a chat surface installed.
- *  - `shortcuts`: secondary links under the plan summary.
  *  - `showPlanSummary`: set false for a product that doesn't want
  *    billing state on its home page at all.
+ *
+ * There is no `shortcuts` seam: the links it held (artifacts, usage,
+ * team) are all in the shell's navigation, and a second copy of the
+ * same three links under the composer was the app's own menu rendered
+ * twice.
  */
 
-import {
-  BarChart3,
-  FileText,
-  Sparkles,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
-
-export interface DashboardShortcut {
-  titleKey: string;
-  href: string;
-  icon: LucideIcon;
-}
+import { Sparkles, type LucideIcon } from "lucide-react";
 
 export interface DashboardConfig {
   hero?: {
@@ -46,7 +40,6 @@ export interface DashboardConfig {
   /** Fully-qualified message keys, resolved namespace-less. */
   starters?: string[];
   chatBasePath?: string;
-  shortcuts?: DashboardShortcut[];
   showPlanSummary?: boolean;
 }
 
@@ -62,18 +55,5 @@ export const dashboardConfig: DashboardConfig = {
     "dashboard.starters.third",
   ],
   chatBasePath: "/chat",
-  shortcuts: [
-    {
-      titleKey: "dashboard.shortcuts.artifacts",
-      href: "/artifacts",
-      icon: FileText,
-    },
-    { titleKey: "dashboard.shortcuts.usage", href: "/usage", icon: BarChart3 },
-    {
-      titleKey: "dashboard.shortcuts.team",
-      href: "/settings/team",
-      icon: Users,
-    },
-  ],
   showPlanSummary: true,
 };

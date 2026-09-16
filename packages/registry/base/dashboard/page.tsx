@@ -1,23 +1,29 @@
 /**
  * Workspace dashboard — an AI-first home, not a metrics console.
  *
- * The order on this page is the argument: what you can do (hero,
- * starters, prompt bar), what you were doing (resume pill, recent
- * conversations), and only then what it costs (plan summary). The
- * previous version of this item led with five stat tiles and five
- * settings links, which reads as an admin console for a product the
- * person hasn't used yet.
+ * The page is one argument in three parts, and the order is the
+ * argument: what you can do (hero, composer, starters), what you were
+ * doing (the resume pill, recent conversations), and only then what it
+ * costs (plan state). An earlier version led with five stat tiles and
+ * five settings links, which reads as an admin console for a product
+ * the person hasn't used yet.
+ *
+ * The layout: the hero and the composer are one unit, centred in the
+ * viewport, and everything secondary is one quiet strip at the foot.
+ * Before this, the hero sat at the top and the composer was pinned to
+ * the bottom with a page of nothing between them, and the secondary
+ * material was three separate sections at three different widths.
+ * Everything now shares one measure.
  *
  * Everything configurable lives in two consumer-owned seams:
- * `@/lib/dashboard-config` (hero copy, starters, chat base path,
- * shortcuts) and `@/lib/dashboard-data` (`getResume` — what
- * "unfinished work" means for this product). Neither requires editing
- * a file this item ships.
+ * `@/lib/dashboard-config` (hero copy, starters, chat base path) and
+ * `@/lib/dashboard-data` (`getResume` — what "unfinished work" means
+ * for this product). Neither requires editing a file this item ships.
  *
- * Pairs with the `chat` item: the hero's starters and the prompt bar
- * open `${chatBasePath}/<new-uuid>?query=…`, which the chat panel sends
- * as the first turn. Without a chat surface installed, set
- * `chatBasePath` or drop those affordances.
+ * Pairs with the `chat` item: the composer and the starters open
+ * `${chatBasePath}/<new-uuid>?query=…`, which the chat panel sends as
+ * the first turn. Without a chat surface installed, set `chatBasePath`
+ * or drop those affordances.
  *
  * Workspace resolution: `requireWorkspace()` is called directly and
  * allowed to throw. The `app-shell` item's layout already guarantees an
@@ -43,7 +49,6 @@ import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { PlanSummary } from "@/components/dashboard/plan-summary";
 import { PromptBar } from "@/components/dashboard/prompt-bar";
 import { RecentConversations } from "@/components/dashboard/recent-conversations";
-import { Link } from "@/i18n/navigation";
 import { dashboardConfig } from "@/lib/dashboard-config";
 import { getResume } from "@/lib/dashboard-data";
 
@@ -108,9 +113,6 @@ async function startOfMonth(): Promise<Date> {
 
 export default async function DashboardPage() {
   const t = await getTranslations("dashboard");
-  // Namespace-less: shortcut `titleKey`s are fully qualified so a
-  // product can point them at its own namespace.
-  const tAny = await getTranslations();
   const { workspace, user } = await requireWorkspace();
   const actor = { workspaceId: workspace.id, userId: user.id };
 
@@ -125,60 +127,49 @@ export default async function DashboardPage() {
     getTrialStatus(workspace.id),
   ]);
 
-  const shortcuts = dashboardConfig.shortcuts ?? [];
+  const showPlan = dashboardConfig.showPlanSummary !== false;
 
   return (
-    <div className="flex min-h-full flex-col">
-      {/* Bottom padding so the last thing on the page clears the
-          composer's band instead of ending flush against it. */}
-      <div className="flex-1 px-4 pt-12 pb-8 md:pt-16">
-        <DashboardHero resume={resume} />
-
-        <RecentConversations
-          conversations={recent.map((conversation) => ({
-            id: conversation.id,
-            title: conversation.title,
-            updatedAt: conversation.updatedAt.toISOString(),
-          }))}
-        />
-
-        {dashboardConfig.showPlanSummary !== false ? (
-          <PlanSummary
-            planName={billing.plan?.name ?? t("plan.freeName")}
-            billingMode={billing.billingMode}
-            charged={monthSummary.totals.charged[0] ?? null}
-            requestsThisMonth={monthSummary.totals.count}
-            trial={{
-              hasTrialCredits: trial.hasTrialCredits,
-              status: trial.status,
-              creditsRemaining: trial.creditsRemaining,
-              initialCredits: trial.initialCredits,
-              percentageRemaining: trial.percentageRemaining,
-              daysRemaining: trial.daysRemaining,
-            }}
-          />
-        ) : null}
-
-        {shortcuts.length > 0 ? (
-          <div className="mx-auto mt-8 flex w-full max-w-2xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
-            {shortcuts.map((shortcut) => {
-              const Icon = shortcut.icon;
-              return (
-                <Link
-                  key={shortcut.href}
-                  href={shortcut.href}
-                  className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <Icon className="size-3.5" />
-                  {tAny(shortcut.titleKey)}
-                </Link>
-              );
-            })}
-          </div>
-        ) : null}
+    <div className="flex min-h-full flex-col px-4">
+      {/* The hero and the composer are one unit, centred in whatever the
+          viewport leaves: a question and the box that answers it should
+          not be a page apart. */}
+      <div className="flex flex-1 flex-col justify-center py-10">
+        <div className="mx-auto w-full max-w-3xl">
+          <DashboardHero resume={resume} />
+          <PromptBar />
+        </div>
       </div>
 
-      <PromptBar />
+      {/* One quiet strip, not three sections: what you were doing on the
+          left, what it costs on the right, both at the page's measure. */}
+      <div className="mx-auto w-full max-w-3xl">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t py-4">
+          <RecentConversations
+            conversations={recent.map((conversation) => ({
+              id: conversation.id,
+              title: conversation.title,
+              updatedAt: conversation.updatedAt.toISOString(),
+            }))}
+          />
+
+          {showPlan ? (
+            <PlanSummary
+              planName={billing.plan?.name ?? t("plan.freeName")}
+              charged={monthSummary.totals.charged[0] ?? null}
+              requestsThisMonth={monthSummary.totals.count}
+              trial={{
+                hasTrialCredits: trial.hasTrialCredits,
+                status: trial.status,
+                creditsRemaining: trial.creditsRemaining,
+                initialCredits: trial.initialCredits,
+                percentageRemaining: trial.percentageRemaining,
+                daysRemaining: trial.daysRemaining,
+              }}
+            />
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

@@ -10,7 +10,6 @@ import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { PlanSummary } from "@/components/dashboard/plan-summary";
 import { PromptBar } from "@/components/dashboard/prompt-bar";
 import { RecentConversations } from "@/components/dashboard/recent-conversations";
-import { Link } from "@/i18n/navigation";
 import { dashboardConfig } from "@/lib/dashboard-config";
 import { getResume } from "@/lib/dashboard-data";
 
@@ -75,9 +74,6 @@ async function startOfMonth(): Promise<Date> {
 
 export default async function DashboardPage() {
   const t = await getTranslations("dashboard");
-  // Namespace-less: shortcut `titleKey`s are fully qualified so a
-  // product can point them at its own namespace.
-  const tAny = await getTranslations();
   const { workspace, user } = await requireWorkspace();
   const actor = { workspaceId: workspace.id, userId: user.id };
 
@@ -92,60 +88,49 @@ export default async function DashboardPage() {
     getTrialStatus(workspace.id),
   ]);
 
-  const shortcuts = dashboardConfig.shortcuts ?? [];
+  const showPlan = dashboardConfig.showPlanSummary !== false;
 
   return (
-    <div className="flex min-h-full flex-col">
-      {/* Bottom padding so the last thing on the page clears the
-          composer's band instead of ending flush against it. */}
-      <div className="flex-1 px-4 pt-12 pb-8 md:pt-16">
-        <DashboardHero resume={resume} />
-
-        <RecentConversations
-          conversations={recent.map((conversation) => ({
-            id: conversation.id,
-            title: conversation.title,
-            updatedAt: conversation.updatedAt.toISOString(),
-          }))}
-        />
-
-        {dashboardConfig.showPlanSummary !== false ? (
-          <PlanSummary
-            planName={billing.plan?.name ?? t("plan.freeName")}
-            billingMode={billing.billingMode}
-            charged={monthSummary.totals.charged[0] ?? null}
-            requestsThisMonth={monthSummary.totals.count}
-            trial={{
-              hasTrialCredits: trial.hasTrialCredits,
-              status: trial.status,
-              creditsRemaining: trial.creditsRemaining,
-              initialCredits: trial.initialCredits,
-              percentageRemaining: trial.percentageRemaining,
-              daysRemaining: trial.daysRemaining,
-            }}
-          />
-        ) : null}
-
-        {shortcuts.length > 0 ? (
-          <div className="mx-auto mt-8 flex w-full max-w-2xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
-            {shortcuts.map((shortcut) => {
-              const Icon = shortcut.icon;
-              return (
-                <Link
-                  key={shortcut.href}
-                  href={shortcut.href}
-                  className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <Icon className="size-3.5" />
-                  {tAny(shortcut.titleKey)}
-                </Link>
-              );
-            })}
-          </div>
-        ) : null}
+    <div className="flex min-h-full flex-col px-4">
+      {/* The hero and the composer are one unit, centred in whatever the
+          viewport leaves: a question and the box that answers it should
+          not be a page apart. */}
+      <div className="flex flex-1 flex-col justify-center py-10">
+        <div className="mx-auto w-full max-w-3xl">
+          <DashboardHero resume={resume} />
+          <PromptBar />
+        </div>
       </div>
 
-      <PromptBar />
+      {/* One quiet strip, not three sections: what you were doing on the
+          left, what it costs on the right, both at the page's measure. */}
+      <div className="mx-auto w-full max-w-3xl">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t py-4">
+          <RecentConversations
+            conversations={recent.map((conversation) => ({
+              id: conversation.id,
+              title: conversation.title,
+              updatedAt: conversation.updatedAt.toISOString(),
+            }))}
+          />
+
+          {showPlan ? (
+            <PlanSummary
+              planName={billing.plan?.name ?? t("plan.freeName")}
+              charged={monthSummary.totals.charged[0] ?? null}
+              requestsThisMonth={monthSummary.totals.count}
+              trial={{
+                hasTrialCredits: trial.hasTrialCredits,
+                status: trial.status,
+                creditsRemaining: trial.creditsRemaining,
+                initialCredits: trial.initialCredits,
+                percentageRemaining: trial.percentageRemaining,
+                daysRemaining: trial.daysRemaining,
+              }}
+            />
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

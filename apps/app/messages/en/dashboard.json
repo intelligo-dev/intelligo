@@ -25,17 +25,10 @@
   "plan": {
     "title": "Plan & usage",
     "freeName": "Free",
-    "subscription": "Subscription billing",
-    "credit": "Credit billing",
     "requests": "{count, plural, =0 {No requests this month} one {# request this month} other {# requests this month}}",
     "trialRemaining": "{remaining} of {initial} trial credits left",
     "trialDays": "{days, plural, one {# day left} other {# days left}}",
     "viewUsage": "View usage",
     "viewPlans": "View plans"
-  },
-  "shortcuts": {
-    "artifacts": "Artifacts",
-    "usage": "Usage",
-    "team": "Team"
   }
 }

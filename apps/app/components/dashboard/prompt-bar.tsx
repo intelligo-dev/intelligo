@@ -1,18 +1,22 @@
 "use client";
 
 /**
- * Sticky composer at the bottom of the dashboard — start a conversation
- * from the home page without first navigating to the chat surface.
+ * The composer, and the ways of filling it.
+ *
+ * It sits directly under the hero rather than pinned to the foot of the
+ * page: the question and the box that answers it belong together, and
+ * with the composer stuck to the bottom the eye had to cross an empty
+ * page to get from one to the other.
  *
  * It composes the same primitives the `chat` item's composer does, so
- * the home page behaves like the real thing rather than approximating
- * it: Enter sends and Shift+Enter breaks a line (IME-safe), the
- * textarea grows with its content, and dictation appends to the draft.
+ * the home page behaves like the surface it hands off to: Enter sends
+ * and Shift+Enter breaks a line (IME-safe), the textarea grows with its
+ * content, and dictation appends to the draft.
  *
- * Like the hero's starter cards, it mints a client-side UUID and
- * navigates to `${chatBasePath}/${id}?query=…`; the chat panel sends
- * that as the first turn. Nothing is written here, so an abandoned
- * prompt leaves no empty conversation behind.
+ * Both affordances — the composer and the starter cards — mint a
+ * client-side UUID and navigate to `${chatBasePath}/${id}?query=…`; the
+ * chat panel sends that as the first turn. Nothing is written here, so
+ * an abandoned prompt leaves no empty conversation behind.
  *
  * No attachments, deliberately: the handoff to the chat surface is a
  * URL, which carries text and nothing else, so a file picked here would
@@ -36,28 +40,27 @@ import { dashboardConfig } from "@/lib/dashboard-config";
 
 export function PromptBar() {
   const t = useTranslations("dashboard");
+  // Namespace-less: starter keys are fully qualified so a product can
+  // point them at its own namespace (the `chatConfig.starters` contract).
+  const tAny = useTranslations();
   const router = useRouter();
   const [message, setMessage] = useState("");
 
   const chatBasePath = dashboardConfig.chatBasePath ?? "/chat";
+  const starters = (dashboardConfig.starters ?? []).map((key) => tAny(key));
+
+  function start(prompt: string) {
+    const id = crypto.randomUUID();
+    router.push(`${chatBasePath}/${id}?query=${encodeURIComponent(prompt)}`);
+  }
 
   return (
-    // The band, not just the pill, carries a background: the composer
-    // is sticky, so while the page scrolls everything passes underneath
-    // it — and with only the pill painted, the plan card and the
-    // shortcut row showed through the gutter around it. The gradient
-    // ends transparent so the content fades out rather than meeting a
-    // hard edge.
-    <div className="pointer-events-none sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent px-4 pt-8 pb-6">
+    <div className="mt-8">
       <PromptInput
-        className="pointer-events-auto mx-auto w-full max-w-3xl"
         onSubmit={({ text }) => {
           const prompt = (text ?? "").trim();
           if (!prompt) return;
-          const id = crypto.randomUUID();
-          router.push(
-            `${chatBasePath}/${id}?query=${encodeURIComponent(prompt)}`
-          );
+          start(prompt);
         }}
       >
         <PromptInputTextarea
@@ -88,6 +91,23 @@ export function PromptBar() {
           />
         </PromptInputFooter>
       </PromptInput>
+
+      {starters.length > 0 ? (
+        // Chips, not cards: under the composer these are one more way to
+        // fill it, and at card weight they competed with it for the eye.
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          {starters.map((starter, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => start(starter)}
+              className="max-w-full rounded-full border border-border/60 px-3.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-border hover:bg-accent/40 hover:text-foreground"
+            >
+              <span className="block truncate">{starter}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
