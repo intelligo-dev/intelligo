@@ -30,12 +30,7 @@
  * blank.
  */
 
-import {
-  Suspense,
-  lazy,
-  type ComponentType,
-  type ReactNode,
-} from "react";
+import { Suspense, lazy, type ComponentType, type ReactNode } from "react";
 import { type LucideIcon } from "lucide-react";
 
 import {

@@ -76,7 +76,10 @@ export function DashboardHero({ resume }: DashboardHeroProps) {
           // than the screen and wrapped the pill into a block.
           className="mt-4 inline-flex max-w-full items-center gap-1.5 rounded-full bg-accent/60 px-3.5 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
         >
-          <span className="size-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+          <span
+            className="size-1.5 shrink-0 rounded-full bg-primary"
+            aria-hidden
+          />
           <span className="truncate">{resume.label ?? t("hero.resume")}</span>
           <ArrowRight className="size-3.5 shrink-0" />
         </button>

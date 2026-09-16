@@ -242,7 +242,9 @@ export function ChatAuthorizationCard({ data }: DataRendererProps) {
         <ExternalLinkIcon />
       </ItemMedia>
       <ItemContent>
-        <ItemTitle>{t("authorization.required", { name: auth.name })}</ItemTitle>
+        <ItemTitle>
+          {t("authorization.required", { name: auth.name })}
+        </ItemTitle>
         {auth.instructions || auth.description ? (
           <ItemDescription>
             {auth.instructions ?? auth.description}

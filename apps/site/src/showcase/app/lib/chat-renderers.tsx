@@ -208,19 +208,21 @@ export const TOOL_RENDERERS: Record<
  * framework's own parts and Mastra's are shipped; a product adds the
  * parts its tools write with `turn.write`.
  */
-export const DATA_RENDERERS: Record<string, ComponentType<DataRendererProps>> =
-  {
-    "chat-task": ChatTaskCard,
-    "chat-agent": ChatAgentCard,
-    "chat-artifact": ChatArtifactCard,
-    "chat-question": ChatQuestionCard,
-    "chat-authorization": ChatAuthorizationCard,
-    workflow: MastraWorkflowActivity,
-    "workflow-step": MastraWorkflowStepActivity,
-    network: MastraNetworkActivity,
-    "tool-agent": MastraToolAgentActivity,
-    "tool-agent-step": MastraToolAgentStepActivity,
-  };
+export const DATA_RENDERERS: Record<
+  string,
+  ComponentType<DataRendererProps>
+> = {
+  "chat-task": ChatTaskCard,
+  "chat-agent": ChatAgentCard,
+  "chat-artifact": ChatArtifactCard,
+  "chat-question": ChatQuestionCard,
+  "chat-authorization": ChatAuthorizationCard,
+  workflow: MastraWorkflowActivity,
+  "workflow-step": MastraWorkflowStepActivity,
+  network: MastraNetworkActivity,
+  "tool-agent": MastraToolAgentActivity,
+  "tool-agent-step": MastraToolAgentStepActivity,
+};
 
 export function resolveToolRenderer(
   toolName: string
@@ -365,17 +367,30 @@ function stringField(record: Record<string, unknown> | null, key: string) {
  * document's preview on the `/artifacts` page otherwise.
  */
 export function ArtifactLinkCard(props: ToolRendererProps) {
-  const { toolName, state, input, output, errorText, messageId, isReadonly, actions } =
-    props;
+  const {
+    toolName,
+    state,
+    input,
+    output,
+    errorText,
+    messageId,
+    isReadonly,
+    actions,
+  } = props;
   const t = useTranslations("chat");
 
   const result =
-    output && typeof output === "object" ? (output as Record<string, unknown>) : null;
+    output && typeof output === "object"
+      ? (output as Record<string, unknown>)
+      : null;
   const draft =
-    input && typeof input === "object" ? (input as Record<string, unknown>) : null;
+    input && typeof input === "object"
+      ? (input as Record<string, unknown>)
+      : null;
   const title = stringField(result, "title") ?? stringField(draft, "title");
 
-  if (state === "output-available" && !title) return <DefaultToolCard {...props} />;
+  if (state === "output-available" && !title)
+    return <DefaultToolCard {...props} />;
 
   const kind =
     stringField(result, "kind") ??
@@ -388,7 +403,8 @@ export function ArtifactLinkCard(props: ToolRendererProps) {
       : state === "output-available"
         ? "ready"
         : "streaming";
-  const documentId = stringField(result, "documentId") ?? stringField(result, "id");
+  const documentId =
+    stringField(result, "documentId") ?? stringField(result, "id");
   const content = stringField(result, "content");
   const ref: CanvasRef = {
     id: documentId ?? messageId,

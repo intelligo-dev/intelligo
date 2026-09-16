@@ -104,16 +104,25 @@ export function ToolActivity({ parts, working, toolProps }: ToolActivityProps) {
     if (!isToolUIPart(part)) continue;
     const props = toolProps(part);
     const renderer = resolveToolRenderer(getToolName(part));
-    const name = renderer.label ? tAny(renderer.label) : toolLabel(props.toolName);
-    const row = renderer.activity?.(props) ?? defaultRow(props, name, renderer.sources, t);
+    const name = renderer.label
+      ? tAny(renderer.label)
+      : toolLabel(props.toolName);
+    const row =
+      renderer.activity?.(props) ??
+      defaultRow(props, name, renderer.sources, t);
     const details = <ToolCallDetails {...props} />;
 
     if (row.type === "search") searches += 1;
     else tools += 1;
     if (row.status === "running") {
-      liveLabel = row.type === "search" ? t("toolActivity.searching") : `${name}…`;
+      liveLabel =
+        row.type === "search" ? t("toolActivity.searching") : `${name}…`;
     }
-    items.push({ ...row, id, details: row.details ?? details } as AgentActivityItem);
+    items.push({
+      ...row,
+      id,
+      details: row.details ?? details,
+    } as AgentActivityItem);
   }
 
   const summary =
@@ -142,7 +151,9 @@ export function ToolActivity({ parts, working, toolProps }: ToolActivityProps) {
 function defaultRow(
   props: ToolRendererProps,
   name: string,
-  readSources: ((output: unknown) => ReturnType<typeof sourcesFromToolOutput>) | undefined,
+  readSources:
+    | ((output: unknown) => ReturnType<typeof sourcesFromToolOutput>)
+    | undefined,
   t: (key: string, values?: Record<string, string | number>) => string
 ): ToolActivityRow {
   const status =
@@ -163,8 +174,9 @@ function defaultRow(
       results: sources.slice(0, VISIBLE_RESULTS).map((source, index) => {
         const domain = sourceDomain(source);
         const title =
-          (source.title && source.title !== domain ? source.title : undefined) ??
-          titleFromUrl(source.url);
+          (source.title && source.title !== domain
+            ? source.title
+            : undefined) ?? titleFromUrl(source.url);
         return {
           id: source.url ?? `${index}`,
           title: title ?? domain ?? source.url ?? "",
@@ -192,14 +204,30 @@ function defaultRow(
 /** The call as it happened: what went in, what came back. */
 function ToolCallDetails({ input, output, errorText }: ToolRendererProps) {
   const t = useTranslations("chat");
-  const blocks: Array<{ label: string; code: string; language: "json" | "text" }> = [];
+  const blocks: Array<{
+    label: string;
+    code: string;
+    language: "json" | "text";
+  }> = [];
   if (input !== undefined) {
-    blocks.push({ label: t("toolActivity.input"), code: stringify(input), language: "json" });
+    blocks.push({
+      label: t("toolActivity.input"),
+      code: stringify(input),
+      language: "json",
+    });
   }
   if (errorText) {
-    blocks.push({ label: t("toolActivity.error"), code: errorText, language: "text" });
+    blocks.push({
+      label: t("toolActivity.error"),
+      code: errorText,
+      language: "text",
+    });
   } else if (output !== undefined) {
-    blocks.push({ label: t("toolActivity.output"), code: stringify(output), language: "json" });
+    blocks.push({
+      label: t("toolActivity.output"),
+      code: stringify(output),
+      language: "json",
+    });
   }
   if (blocks.length === 0) return null;
 
@@ -207,7 +235,9 @@ function ToolCallDetails({ input, output, errorText }: ToolRendererProps) {
     <div className="grid gap-2">
       {blocks.map((block) => (
         <div key={block.label} className="grid gap-1">
-          <span className="text-xs font-medium text-muted-foreground">{block.label}</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            {block.label}
+          </span>
           <CodeBlock
             code={block.code}
             language={block.language}

@@ -16,10 +16,7 @@
         "@base-ui/react",
         "lucide-react"
       ],
-      "registryDependencies": [
-        "utils",
-        "font-geist"
-      ],
+      "registryDependencies": ["utils", "font-geist"],
       "config": {
         "style": "base-nova",
         "tailwind": {
@@ -207,9 +204,7 @@
       "type": "registry:ui",
       "title": "Stat Card",
       "description": "A metric on a card — label, value, an action such as a status badge, and a footer (ADR-0013, T4).",
-      "registryDependencies": [
-        "card"
-      ],
+      "registryDependencies": ["card"],
       "files": [
         {
           "path": "base/ui/stat-card/stat-card.tsx",
@@ -223,9 +218,7 @@
       "type": "registry:ui",
       "title": "Status Badge",
       "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour (ADR-0013, T4).",
-      "dependencies": [
-        "class-variance-authority"
-      ],
+      "dependencies": ["class-variance-authority"],
       "files": [
         {
           "path": "base/ui/status-badge/status-badge.tsx",
@@ -239,12 +232,8 @@
       "type": "registry:ui",
       "title": "Copy Button",
       "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own (ADR-0013, T4).",
-      "dependencies": [
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "button"
-      ],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button"],
       "files": [
         {
           "path": "base/ui/copy-button/copy-button.tsx",
@@ -258,14 +247,8 @@
       "type": "registry:ui",
       "title": "AI Code Block",
       "description": "Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark (ADR-0013, T3).",
-      "dependencies": [
-        "shiki",
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "@intelligo/copy-button",
-        "spinner"
-      ],
+      "dependencies": ["shiki", "lucide-react"],
+      "registryDependencies": ["@intelligo/copy-button", "spinner"],
       "files": [
         {
           "path": "base/ui/ai-code-block/ai-code-block.tsx",
@@ -279,13 +262,8 @@
       "type": "registry:ui",
       "title": "AI Reasoning",
       "description": "Streamed reasoning, collapsible, with the time it took (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": [
-        "lucide-react",
-        "streamdown"
-      ],
-      "registryDependencies": [
-        "collapsible"
-      ],
+      "dependencies": ["lucide-react", "streamdown"],
+      "registryDependencies": ["collapsible"],
       "files": [
         {
           "path": "base/ui/ai-reasoning/ai-reasoning.tsx",
@@ -299,10 +277,7 @@
       "type": "registry:ui",
       "title": "AI Suggestion",
       "description": "Conversation starters and follow-ups in a scrollable row (ADR-0013, T3; ported from Vercel AI Elements).",
-      "registryDependencies": [
-        "button",
-        "scroll-area"
-      ],
+      "registryDependencies": ["button", "scroll-area"],
       "files": [
         {
           "path": "base/ui/ai-suggestion/ai-suggestion.tsx",
@@ -316,13 +291,8 @@
       "type": "registry:ui",
       "title": "AI Artifact",
       "description": "A generated document's frame: header, actions and content (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": [
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "button",
-        "tooltip"
-      ],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button", "tooltip"],
       "files": [
         {
           "path": "base/ui/ai-artifact/ai-artifact.tsx",
@@ -336,11 +306,7 @@
       "type": "registry:ui",
       "title": "AI Prompt Input",
       "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": [
-        "ai@^6.0.77",
-        "lucide-react",
-        "motion"
-      ],
+      "dependencies": ["ai@^6.0.77", "lucide-react", "motion"],
       "registryDependencies": [
         "attachment",
         "button",
@@ -362,12 +328,8 @@
       "type": "registry:ui",
       "title": "AI Branch",
       "description": "A pager over the versions of a reply or an edited message — previous, next, `2 / 3` (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "button"
-      ],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button"],
       "files": [
         {
           "path": "base/ui/ai-branch/ai-branch.tsx",
@@ -381,12 +343,8 @@
       "type": "registry:ui",
       "title": "AI Speech Input",
       "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "button"
-      ],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button"],
       "files": [
         {
           "path": "base/ui/ai-speech-input/ai-speech-input.tsx",
@@ -401,9 +359,7 @@
       "title": "AI Composer Menu",
       "description": "The picker a composer opens for slash commands and @ mentions, anchored above the textarea (ADR-0013, T3).",
       "dependencies": [],
-      "registryDependencies": [
-        "command"
-      ],
+      "registryDependencies": ["command"],
       "files": [
         {
           "path": "base/ui/ai-composer-menu/ai-composer-menu.tsx",
@@ -417,9 +373,7 @@
       "type": "registry:ui",
       "title": "AI Motion",
       "description": "The motion vocabulary the AI parts share: easing curves, spring presets, a transform-only disclosure and a text swap, all gated on reduced motion (ADR-0013, T3).",
-      "dependencies": [
-        "motion"
-      ],
+      "dependencies": ["motion"],
       "registryDependencies": [],
       "files": [
         {
@@ -434,9 +388,7 @@
       "type": "registry:ui",
       "title": "AI Shimmer Text",
       "description": "A status line that reads as alive while the agent works; a token gradient sweeps the text and the words swap with motion, honouring reduced motion (ADR-0013, T3).",
-      "dependencies": [
-        "motion"
-      ],
+      "dependencies": ["motion"],
       "registryDependencies": [],
       "files": [
         {
@@ -451,10 +403,7 @@
       "type": "registry:ui",
       "title": "AI Agent Activity",
       "description": "One adaptive stream of what the agent is doing: reasoning text, plan steps, web searches with results, tool calls and structured traces, gliding while it works and folding into a summary when done (ADR-0013, T3).",
-      "dependencies": [
-        "motion",
-        "lucide-react"
-      ],
+      "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-motion",
         "@intelligo/ai-shimmer-text"
@@ -472,10 +421,7 @@
       "type": "registry:ui",
       "title": "AI Approval Card",
       "description": "A decision surface: approve, reject or request changes, or step through single-choice, multiple-choice and freeform questions and submit the answers (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react",
-        "motion"
-      ],
+      "dependencies": ["lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/ai-motion",
         "button",
@@ -497,10 +443,7 @@
       "type": "registry:ui",
       "title": "AI File Diff",
       "description": "A file the agent is changing: the path with live added and removed counts, opening onto a unified diff whose highlighted rows arrive while the change streams (ADR-0013, T3).",
-      "dependencies": [
-        "motion",
-        "lucide-react"
-      ],
+      "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-code-block",
         "@intelligo/ai-motion",
@@ -520,14 +463,8 @@
       "type": "registry:ui",
       "title": "AI Message Bubble",
       "description": "The speech bubble inside a message row: six surface variants that pop into place, grouped bubbles and a collapsible long body (ADR-0013, T3).",
-      "dependencies": [
-        "motion",
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "@intelligo/ai-motion",
-        "@intelligo/ai-message"
-      ],
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": ["@intelligo/ai-motion", "@intelligo/ai-message"],
       "files": [
         {
           "path": "base/ui/ai-message-bubble/ai-message-bubble.tsx",
@@ -541,13 +478,8 @@
       "type": "registry:ui",
       "title": "AI Message Scroller",
       "description": "The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages (ADR-0013, T3).",
-      "dependencies": [
-        "motion",
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "@intelligo/ai-motion"
-      ],
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/ai-message-scroller/ai-message-scroller.tsx",
@@ -561,12 +493,8 @@
       "type": "registry:ui",
       "title": "AI Message",
       "description": "One turn of a conversation: the row with its side, optional avatar, content column, header, footer, a centred marker and the typing indicator (ADR-0013, T3).",
-      "dependencies": [
-        "motion"
-      ],
-      "registryDependencies": [
-        "@intelligo/ai-motion"
-      ],
+      "dependencies": ["motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/ai-message/ai-message.tsx",
@@ -580,13 +508,8 @@
       "type": "registry:ui",
       "title": "AI Todo List",
       "description": "The agent's to-do list: a collapsible plan whose status marks morph between pending, in progress, completed and cancelled, with a rolling completion count (ADR-0013, T3).",
-      "dependencies": [
-        "motion",
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "@intelligo/ai-motion"
-      ],
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/ai-todo-list/ai-todo-list.tsx",
@@ -600,10 +523,7 @@
       "type": "registry:ui",
       "title": "AI Tool Approval",
       "description": "A permission card for a tool call: name, parameters behind a disclosure, allow once / always allow / deny, and the outcome as a status (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react",
-        "motion"
-      ],
+      "dependencies": ["lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/ai-code-block",
         "@intelligo/ai-motion",
@@ -624,10 +544,7 @@
       "type": "registry:ui",
       "title": "AI Tool Result",
       "description": "The result of a tool the agent ran: a summary line that opens onto highlighted output, status rolling from running to done, copy and run-again actions (ADR-0013, T3).",
-      "dependencies": [
-        "motion",
-        "lucide-react"
-      ],
+      "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-code-block",
         "@intelligo/ai-motion",
@@ -647,12 +564,8 @@
       "type": "registry:ui",
       "title": "AI Agent Progress",
       "description": "A long-running step: a pulsing grid beside the verb and an elapsed-time counter (ADR-0013, T3).",
-      "dependencies": [
-        "motion"
-      ],
-      "registryDependencies": [
-        "@intelligo/ai-motion"
-      ],
+      "dependencies": ["motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/ai-agent-progress/ai-agent-progress.tsx",
@@ -666,15 +579,8 @@
       "type": "registry:ui",
       "title": "AI Citations",
       "description": "The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react",
-        "motion"
-      ],
-      "registryDependencies": [
-        "@intelligo/ai-motion",
-        "hover-card",
-        "sheet"
-      ],
+      "dependencies": ["lucide-react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion", "hover-card", "sheet"],
       "files": [
         {
           "path": "base/ui/ai-citations/ai-citations.tsx",
@@ -688,14 +594,8 @@
       "type": "registry:ui",
       "title": "AI Image Generation",
       "description": "An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react",
-        "motion"
-      ],
-      "registryDependencies": [
-        "@intelligo/ai-motion",
-        "button"
-      ],
+      "dependencies": ["lucide-react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion", "button"],
       "files": [
         {
           "path": "base/ui/ai-image-generation/ai-image-generation.tsx",
@@ -709,9 +609,7 @@
       "type": "registry:ui",
       "title": "AI Reasoning Text",
       "description": "What the agent is doing while it reasons: phrases cycle with a cascade, swap or scramble behind an ASCII loader (ADR-0013, T3).",
-      "dependencies": [
-        "motion"
-      ],
+      "dependencies": ["motion"],
       "registryDependencies": [
         "@intelligo/ai-motion",
         "@intelligo/ai-shimmer-text"
@@ -729,10 +627,7 @@
       "type": "registry:ui",
       "title": "AI Streaming Response",
       "description": "An assistant reply as it streams and once it lands: content, copy, retry and feedback actions, and a sources disclosure (ADR-0013, T3).",
-      "dependencies": [
-        "lucide-react",
-        "motion"
-      ],
+      "dependencies": ["lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/ai-citations",
         "@intelligo/ai-motion",
@@ -751,10 +646,7 @@
       "type": "registry:ui",
       "title": "AI Sidebar",
       "description": "The AI product's sidebar: a shell that morphs between a panel and an icon rail with tooltips, slides in as a sheet on mobile, holds menus with a gliding hover and active pill and staggered submenus, and a resource tree of folders, projects, conversations, files and bookmarks with keyboard and drag-and-drop moves, rename and a row menu (ADR-0013, T3).",
-      "dependencies": [
-        "motion",
-        "lucide-react"
-      ],
+      "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-motion",
         "button",
@@ -783,9 +675,7 @@
         "katex",
         "lucide-react"
       ],
-      "registryDependencies": [
-        "@intelligo/ai-code-block"
-      ],
+      "registryDependencies": ["@intelligo/ai-code-block"],
       "files": [
         {
           "path": "base/ui/document-viewer/document-viewer.tsx",
@@ -799,10 +689,7 @@
       "type": "registry:block",
       "title": "Registry Smoke Test",
       "description": "Permanent canary item that proves the registry build and install pipeline end to end.",
-      "registryDependencies": [
-        "button",
-        "card"
-      ],
+      "registryDependencies": ["button", "card"],
       "files": [
         {
           "path": "base/smoke/page.tsx",
@@ -820,23 +707,15 @@
           "target": "messages/en/smoke.json"
         }
       ],
-      "dependencies": [
-        "next-intl"
-      ]
+      "dependencies": ["next-intl"]
     },
     {
       "name": "route-error",
       "type": "registry:block",
       "title": "Route Error States",
       "description": "The app's error surfaces: a shared RouteError component every error.tsx renders, message-based error classification, an (app) group boundary, a translated 404, and a dependency-free global-error. Error reporting goes through the lib/error-reporting.ts seam (a no-op until you bind a reporter), so no SDK enters the registry. Items that ship an error.tsx depend on this one - install it first.",
-      "registryDependencies": [
-        "alert",
-        "button"
-      ],
-      "dependencies": [
-        "lucide-react",
-        "next-intl"
-      ],
+      "registryDependencies": ["alert", "button"],
+      "dependencies": ["lucide-react", "next-intl"],
       "files": [
         {
           "path": "base/route-error/components/route-error.tsx",
@@ -1035,12 +914,7 @@
       "type": "registry:block",
       "title": "Invitation Accept",
       "description": "Accept or decline a workspace invitation via the team service. Requires the team-settings item (provides lib/team.ts and the role badge); install it first.",
-      "registryDependencies": [
-        "alert",
-        "card",
-        "skeleton",
-        "button"
-      ],
+      "registryDependencies": ["alert", "card", "skeleton", "button"],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
@@ -1163,14 +1037,8 @@
       "type": "registry:block",
       "title": "Settings Shell",
       "description": "The shared frame around every /settings page: layout with heading and width constraint, a configurable tab bar (lib/settings-nav.ts), and a /settings index that redirects to the first tab. Install alongside the settings items - without it they render unframed and plain /settings links 404.",
-      "registryDependencies": [
-        "tabs",
-        "@intelligo/page-header"
-      ],
-      "dependencies": [
-        "lucide-react",
-        "next-intl"
-      ],
+      "registryDependencies": ["tabs", "@intelligo/page-header"],
+      "dependencies": ["lucide-react", "next-intl"],
       "files": [
         {
           "path": "base/settings-shell/layout.tsx",
@@ -1265,13 +1133,7 @@
       "type": "registry:block",
       "title": "Auth: Login",
       "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first.",
-      "registryDependencies": [
-        "alert",
-        "button",
-        "input",
-        "spinner",
-        "field"
-      ],
+      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -1328,13 +1190,7 @@
       "type": "registry:block",
       "title": "Auth: Signup",
       "description": "Email/password and OAuth account creation. Requires the auth-login item (provides the shared AuthCard shell, SocialLoginButtons, and lib/auth-validation.ts schemas); install it first. Redirects to auth-email-verification's /verify-email route when the server requires email verification.",
-      "registryDependencies": [
-        "alert",
-        "button",
-        "input",
-        "spinner",
-        "field"
-      ],
+      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -1365,13 +1221,7 @@
       "type": "registry:block",
       "title": "Auth: Password Reset",
       "description": "Forgot-password and reset-password pages, backed by the Better-Auth client SDK's requestPasswordReset/resetPassword actions. Requires the auth-login item (provides the shared AuthCard shell and lib/auth-validation.ts schemas); install it first.",
-      "registryDependencies": [
-        "alert",
-        "button",
-        "input",
-        "spinner",
-        "field"
-      ],
+      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -1412,18 +1262,8 @@
       "type": "registry:block",
       "title": "Auth: Email Verification",
       "description": "Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action. Reads the ?error=/?email= search params Better-Auth's own /verify-email link handler redirects back with. Requires the auth-login item (provides the shared AuthCard shell); install it first.",
-      "registryDependencies": [
-        "alert",
-        "button",
-        "input",
-        "spinner",
-        "field"
-      ],
-      "dependencies": [
-        "@intelligo-dev/auth",
-        "lucide-react",
-        "next-intl"
-      ],
+      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
+      "dependencies": ["@intelligo-dev/auth", "lucide-react", "next-intl"],
       "files": [
         {
           "path": "base/auth-email-verification/page.tsx",
@@ -1447,14 +1287,8 @@
       "type": "registry:block",
       "title": "Language Switcher",
       "description": "Locale dropdown over the locales i18n/routing.ts declares, labeled with each language's own name. Renders nothing in a single-locale deployment, so it is safe to mount unconditionally (e.g. in shellConfig.headerRight). Adding a locale to routing.ts plus a messages directory is the whole job.",
-      "registryDependencies": [
-        "button",
-        "dropdown-menu"
-      ],
-      "dependencies": [
-        "lucide-react",
-        "next-intl"
-      ],
+      "registryDependencies": ["button", "dropdown-menu"],
+      "dependencies": ["lucide-react", "next-intl"],
       "files": [
         {
           "path": "base/language-switcher/components/language-switcher.tsx",
@@ -1473,9 +1307,7 @@
       "type": "registry:block",
       "title": "Trial Banner",
       "description": "Dismissable trial-status strip for the app shell's bannerTop seam: days and credits remaining with an upgrade CTA, urgency-ramped visuals, dismiss-for-today, and a consumer config (lib/trial-banner-config.ts) for the CTA target and route suppression (hidden on /chat by default). Bind TrialBannerContainer as shellConfig.bannerTop.",
-      "registryDependencies": [
-        "button"
-      ],
+      "registryDependencies": ["button"],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
@@ -1578,13 +1410,7 @@
       "type": "registry:block",
       "title": "Pricing",
       "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on — install this item first.",
-      "registryDependencies": [
-        "alert",
-        "badge",
-        "button",
-        "card",
-        "skeleton"
-      ],
+      "registryDependencies": ["alert", "badge", "button", "card", "skeleton"],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
@@ -1749,16 +1575,8 @@
       "type": "registry:block",
       "title": "Feature Gating",
       "description": "The vocabulary for selling a plan: a server-side FeatureGate that renders gated content only to entitled workspaces, three densities of upgrade prompt (full, compact, inline), a quota warning that escalates as a limit approaches, and a preview paywall that blurs content instead of hiding it. Which features exist and which plan unlocks them is consumer config (lib/feature-catalog.ts). Install pricing or billing-settings for somewhere to send the user.",
-      "registryDependencies": [
-        "button",
-        "card",
-        "dialog"
-      ],
-      "dependencies": [
-        "@intelligo-dev/billing",
-        "lucide-react",
-        "next-intl"
-      ],
+      "registryDependencies": ["button", "card", "dialog"],
+      "dependencies": ["@intelligo-dev/billing", "lucide-react", "next-intl"],
       "files": [
         {
           "path": "base/feature-gating/components/feature-gate.tsx",
@@ -1812,11 +1630,7 @@
       "type": "registry:block",
       "title": "QR Payment (poll)",
       "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
-      "registryDependencies": [
-        "button",
-        "dialog",
-        "spinner"
-      ],
+      "registryDependencies": ["button", "dialog", "spinner"],
       "dependencies": [
         "@intelligo-dev/auth",
         "lucide-react",
@@ -1915,11 +1729,7 @@
       "type": "registry:block",
       "title": "Onboarding",
       "description": "A generic multi-step onboarding wizard driven by a consumer-owned steps config: text and single-select-card fields, a completion screen, skip, and back/next - backed by the framework's onboarding service (durable step progress, no vertical-specific UI).",
-      "registryDependencies": [
-        "button",
-        "input",
-        "label"
-      ],
+      "registryDependencies": ["button", "input", "label"],
       "dependencies": [
         "@intelligo-dev/auth",
         "lucide-react",
@@ -1986,7 +1796,9 @@
       "description": "An AI-first workspace home: a hero with starter prompts, a sticky prompt bar that opens a new conversation, a resume affordance for unfinished work, recent conversations, and a compact plan/usage strip. Configurable through lib/dashboard-config.tsx (copy, starters, chat base path, shortcuts) and lib/dashboard-data.ts (what \"resume\" means). Pairs with the chat item for its /chat routes and the pricing item for lib/billing-config.ts's CURRENCY; install those first.",
       "registryDependencies": [
         "progress",
-        "skeleton"
+        "skeleton",
+        "@intelligo/ai-prompt-input",
+        "@intelligo/ai-speech-input"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -2469,14 +2281,8 @@
       "type": "registry:block",
       "title": "Chat Panel",
       "description": "The chat as a side panel on any page: a sheet that opens the same thread the chat page runs, with the page's context on every turn. Requires the chat item.",
-      "registryDependencies": [
-        "button",
-        "sheet"
-      ],
-      "dependencies": [
-        "lucide-react",
-        "next-intl"
-      ],
+      "registryDependencies": ["button", "sheet"],
+      "dependencies": ["lucide-react", "next-intl"],
       "files": [
         {
           "path": "base/chat-panel/components/chat-panel.tsx",
@@ -2495,13 +2301,8 @@
       "type": "registry:block",
       "title": "Chat Widget",
       "description": "The floating assistant: a launcher in a corner of every page and a compact chat over it, configured in lib/chat-widget-config.tsx. Requires the chat item.",
-      "registryDependencies": [
-        "button"
-      ],
-      "dependencies": [
-        "lucide-react",
-        "next-intl"
-      ],
+      "registryDependencies": ["button"],
+      "dependencies": ["lucide-react", "next-intl"],
       "files": [
         {
           "path": "base/chat-widget/components/chat-widget.tsx",
@@ -2525,9 +2326,7 @@
       "type": "registry:block",
       "title": "Chat Share",
       "description": "A conversation its owner published, readable by anyone with the link at /share/[id]: the same transcript, read-only, minus reasoning, tool details and attachments. Requires the chat item.",
-      "registryDependencies": [
-        "button"
-      ],
+      "registryDependencies": ["button"],
       "dependencies": [
         "ai@^6.0.77",
         "next-intl",
@@ -2562,10 +2361,7 @@
       "type": "registry:lib",
       "title": "Chat: eve binding",
       "description": "eve through the chat transport: a streamTurn for lib/chat-server-config.ts that runs a turn as an eve session over HTTP and NDJSON and maps its events to the AI SDK's chunks — text, reasoning, tool calls, approvals, questions, subagents, authorization — so an eve agent renders through the same tool renderers as any other. Consumer-owned; imports nothing from eve. Requires the chat item.",
-      "dependencies": [
-        "ai@^6.0.77",
-        "@intelligo-dev/chat"
-      ],
+      "dependencies": ["ai@^6.0.77", "@intelligo-dev/chat"],
       "files": [
         {
           "path": "base/chat-eve/lib/chat-eve.ts",

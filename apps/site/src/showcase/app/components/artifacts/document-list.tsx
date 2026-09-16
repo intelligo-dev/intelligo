@@ -392,7 +392,14 @@ export function DocumentList({ documents }: DocumentListProps) {
               </div>
             </DialogHeader>
 
-            <ScrollArea className="mt-2 min-h-0 flex-1">
+            {/* `flex flex-col` is what makes this scroll. ScrollArea's
+                viewport fills its root with `size-full`, and a percentage
+                height against a flex item that was *shrunk* to fit
+                resolves to `auto`: the viewport grew to the document's
+                full height and a long document ran past the dialog
+                instead of scrolling inside it. A flex parent sizes the
+                viewport by layout rather than by percentage. */}
+            <ScrollArea className="mt-2 flex min-h-0 flex-1 flex-col">
               {selected.content ? (
                 canPreview && view === "preview" ? (
                   <HtmlPreview

@@ -36,8 +36,10 @@ const SIGNIFICANT_DIGITS = 2;
 /** What `Intl` says this currency's minor unit is: 2 for USD, 0 for MNT. */
 function currencyDigits(currency: string): number {
   return (
-    new Intl.NumberFormat("en-US", { style: "currency", currency })
-      .resolvedOptions().maximumFractionDigits ?? 2
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+    }).resolvedOptions().maximumFractionDigits ?? 2
   );
 }
 

@@ -307,7 +307,11 @@ export function ChatHistoryNav({
                             <DropdownMenuItem
                               onClick={() => togglePin(conversation)}
                             >
-                              {conversation.pinned ? <PinOffIcon /> : <PinIcon />}
+                              {conversation.pinned ? (
+                                <PinOffIcon />
+                              ) : (
+                                <PinIcon />
+                              )}
                               {conversation.pinned
                                 ? t("sidebar.unpin")
                                 : t("sidebar.pin")}

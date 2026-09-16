@@ -4,16 +4,33 @@
  * Sticky composer at the bottom of the dashboard — start a conversation
  * from the home page without first navigating to the chat surface.
  *
+ * It composes the same primitives the `chat` item's composer does, so
+ * the home page behaves like the real thing rather than approximating
+ * it: Enter sends and Shift+Enter breaks a line (IME-safe), the
+ * textarea grows with its content, and dictation appends to the draft.
+ *
  * Like the hero's starter cards, it mints a client-side UUID and
  * navigates to `${chatBasePath}/${id}?query=…`; the chat panel sends
  * that as the first turn. Nothing is written here, so an abandoned
  * prompt leaves no empty conversation behind.
+ *
+ * No attachments, deliberately: the handoff to the chat surface is a
+ * URL, which carries text and nothing else, so a file picked here would
+ * be dropped by the navigation that follows. Attachments belong to the
+ * conversation, one navigation later.
  */
 
 import { useState } from "react";
-import { Send } from "lucide-react";
 import { useTranslations } from "use-intl";
 
+import {
+  PromptInput,
+  PromptInputFooter,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+} from "@showcase/components/ui/ai-prompt-input";
+import { SpeechInput } from "@showcase/components/ui/ai-speech-input";
 import { useRouter } from "@showcase/i18n/navigation";
 import { dashboardConfig } from "@showcase/lib/dashboard-config";
 
@@ -24,14 +41,6 @@ export function PromptBar() {
 
   const chatBasePath = dashboardConfig.chatBasePath ?? "/chat";
 
-  function submit(event: React.FormEvent) {
-    event.preventDefault();
-    const text = message.trim();
-    if (!text) return;
-    const id = crypto.randomUUID();
-    router.push(`${chatBasePath}/${id}?query=${encodeURIComponent(text)}`);
-  }
-
   return (
     // The band, not just the pill, carries a background: the composer
     // is sticky, so while the page scrolls everything passes underneath
@@ -40,29 +49,45 @@ export function PromptBar() {
     // ends transparent so the content fades out rather than meeting a
     // hard edge.
     <div className="pointer-events-none sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent px-4 pt-8 pb-6">
-      <form
-        onSubmit={submit}
+      <PromptInput
         className="pointer-events-auto mx-auto w-full max-w-3xl"
+        onSubmit={({ text }) => {
+          const prompt = (text ?? "").trim();
+          if (!prompt) return;
+          const id = crypto.randomUUID();
+          router.push(
+            `${chatBasePath}/${id}?query=${encodeURIComponent(prompt)}`
+          );
+        }}
       >
-        <div className="flex items-center gap-2 rounded-2xl border border-border/60 bg-card/95 px-5 py-3 shadow-lg backdrop-blur">
-          <input
-            type="text"
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            placeholder={t("promptBar.placeholder")}
-            aria-label={t("promptBar.placeholder")}
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-          <button
-            type="submit"
+        <PromptInputTextarea
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          placeholder={t("promptBar.placeholder")}
+          aria-label={t("promptBar.placeholder")}
+        />
+        <PromptInputFooter>
+          <PromptInputTools>
+            <SpeechInput
+              startLabel={t("promptBar.voiceStart")}
+              stopLabel={t("promptBar.voiceStop")}
+              onTranscript={(spokenText, isFinal) => {
+                if (!isFinal) return;
+                const spoken = spokenText.trim();
+                if (!spoken) return;
+                setMessage((current) =>
+                  current ? `${current.replace(/\s+$/, "")} ${spoken}` : spoken
+                );
+              }}
+            />
+          </PromptInputTools>
+          <PromptInputSubmit
+            status="ready"
+            label={t("promptBar.send")}
             disabled={!message.trim()}
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity disabled:opacity-30"
-            aria-label={t("promptBar.send")}
-          >
-            <Send className="size-4" />
-          </button>
-        </div>
-      </form>
+          />
+        </PromptInputFooter>
+      </PromptInput>
     </div>
   );
 }

@@ -132,7 +132,9 @@ export function ChatInput({
 
   function reportError(error: PromptInputError) {
     if (error.code === "max_files") {
-      toast.error(t("attachments.tooMany", { max: attachments?.maxFiles ?? 1 }));
+      toast.error(
+        t("attachments.tooMany", { max: attachments?.maxFiles ?? 1 })
+      );
     } else if (error.code === "max_file_size") {
       toast.error(t("attachments.tooLarge"));
     } else {
@@ -141,7 +143,11 @@ export function ChatInput({
   }
 
   return (
-    <div className={compact ? "bg-background p-3 pt-2" : "bg-background px-4 pt-2 pb-4"}>
+    <div
+      className={
+        compact ? "bg-background p-3 pt-2" : "bg-background px-4 pt-2 pb-4"
+      }
+    >
       <PromptInput
         className={compact ? "w-full" : "mx-auto max-w-3xl"}
         accept={attachments?.accept.join(",")}
@@ -215,7 +221,9 @@ export function ChatInput({
           <PromptInputTools>
             {attachments ? (
               <PromptInputActionMenu>
-                <PromptInputActionMenuTrigger aria-label={t("attachments.add")} />
+                <PromptInputActionMenuTrigger
+                  aria-label={t("attachments.add")}
+                />
                 <PromptInputActionMenuContent>
                   <PromptInputActionAddAttachments
                     label={t("attachments.add")}
@@ -230,7 +238,9 @@ export function ChatInput({
                 if (!isFinal) return;
                 const spoken = text.trim();
                 if (!spoken) return;
-                onChange(value ? `${value.replace(/\s+$/, "")} ${spoken}` : spoken);
+                onChange(
+                  value ? `${value.replace(/\s+$/, "")} ${spoken}` : spoken
+                );
               }}
             />
             {models.length > 1 && modelId && onModelChange ? (
@@ -261,11 +271,11 @@ export function ChatInput({
             ) : null}
           </PromptInputTools>
           <PromptInputSubmit
-            status={isStreaming ? "streaming" : uploading ? "submitted" : "ready"}
-            label={isStreaming ? t("input.stop") : t("input.send")}
-            disabled={
-              !isStreaming && (disabled || uploading || !value.trim())
+            status={
+              isStreaming ? "streaming" : uploading ? "submitted" : "ready"
             }
+            label={isStreaming ? t("input.stop") : t("input.send")}
+            disabled={!isStreaming && (disabled || uploading || !value.trim())}
             onClick={isStreaming ? onStop : undefined}
           />
         </PromptInputFooter>

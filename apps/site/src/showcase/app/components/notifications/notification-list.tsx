@@ -157,7 +157,11 @@ export function NotificationList({
           <p className="max-w-xs text-xs">{t("list.emptyDescription")}</p>
         </div>
       ) : variant === "compact" ? (
-        <ScrollArea className="max-h-100">
+        // `flex flex-col`: the viewport's `size-full` height is a
+        // percentage, which resolves to `auto` against a capped-but-
+        // indefinite root — the rows would spill past the cap instead
+        // of scrolling under it.
+        <ScrollArea className="flex max-h-100 flex-col">
           <div className="flex flex-col">{rows}</div>
         </ScrollArea>
       ) : (

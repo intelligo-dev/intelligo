@@ -149,7 +149,12 @@ export function ArtifactCard({
 
   if (onOpen) {
     return (
-      <button type="button" data-slot="artifact-card" className={classes} onClick={onOpen}>
+      <button
+        type="button"
+        data-slot="artifact-card"
+        className={classes}
+        onClick={onOpen}
+      >
         {content}
       </button>
     );
@@ -162,7 +167,11 @@ export function ArtifactCard({
     );
   }
   return (
-    <div data-slot="artifact-card" className={classes} aria-busy={status === "streaming" || undefined}>
+    <div
+      data-slot="artifact-card"
+      className={classes}
+      aria-busy={status === "streaming" || undefined}
+    >
       {content}
     </div>
   );

@@ -65,14 +65,17 @@ export default function SheetEditor({
       cellClass: "bg-muted text-muted-foreground",
       headerCellClass: "bg-muted",
     };
-    const data = Array.from({ length: width }, (_, index): Column<Row> => ({
-      key: String(index),
-      name: columnName(index),
-      width: 120,
-      resizable: true,
-      renderEditCell: isReadonly ? undefined : renderTextEditor,
-      headerCellClass: "bg-muted",
-    }));
+    const data = Array.from(
+      { length: width },
+      (_, index): Column<Row> => ({
+        key: String(index),
+        name: columnName(index),
+        width: 120,
+        resizable: true,
+        renderEditCell: isReadonly ? undefined : renderTextEditor,
+        headerCellClass: "bg-muted",
+      })
+    );
     return [rowNumber, ...data];
   }, [width, isReadonly]);
 
@@ -94,7 +97,9 @@ export default function SheetEditor({
   function handleRowsChange(next: Row[]) {
     setRows(next);
     const table = next.map((row) =>
-      Array.from({ length: width }, (_, index) => String(row[String(index)] ?? ""))
+      Array.from({ length: width }, (_, index) =>
+        String(row[String(index)] ?? "")
+      )
     );
     // Trailing empty rows and columns are padding, not content.
     while (table.length && table[table.length - 1]!.every((cell) => !cell)) {
@@ -105,7 +110,9 @@ export default function SheetEditor({
 
   return (
     <DataGrid
-      className={resolvedTheme === "dark" ? "rdg-dark h-full" : "rdg-light h-full"}
+      className={
+        resolvedTheme === "dark" ? "rdg-dark h-full" : "rdg-light h-full"
+      }
       columns={columns}
       rows={rows}
       rowKeyGetter={(row) => row.id}

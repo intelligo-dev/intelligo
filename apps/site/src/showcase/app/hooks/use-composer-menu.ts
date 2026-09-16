@@ -190,7 +190,8 @@ export function useComposerMenu({
   const clearPicked = useCallback(() => setPicked([]), []);
 
   return {
-    open: trigger !== null && (options.length > 0 || trigger.kind === "mention"),
+    open:
+      trigger !== null && (options.length > 0 || trigger.kind === "mention"),
     kind: trigger?.kind ?? null,
     query: trigger?.query ?? "",
     options,

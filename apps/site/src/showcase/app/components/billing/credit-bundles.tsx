@@ -94,10 +94,10 @@ export function CreditBundles({ currentBalance }: CreditBundlesProps) {
         {currentBalance && (
           <p className="text-sm text-muted-foreground">
             {t("creditBundles.currentBalance", {
-              balance: format.number(
-                currentBalance.amount / MICROS_PER_UNIT,
-                { style: "currency", currency: currentBalance.currency }
-              ),
+              balance: format.number(currentBalance.amount / MICROS_PER_UNIT, {
+                style: "currency",
+                currency: currentBalance.currency,
+              }),
             })}
           </p>
         )}

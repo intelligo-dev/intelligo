@@ -1,9 +1,9 @@
 {
   "sampledAt": "2026-09-16",
-  "version": "1.0.0-beta.6",
+  "version": "1.0.0-beta.7",
   "packages": 11,
-  "testFiles": 83,
-  "testCases": 809,
+  "testFiles": 82,
+  "testCases": 799,
   "architectureTests": 10,
   "registryItems": 28,
   "adrs": 15

@@ -36,7 +36,11 @@ function stepStatus(raw: unknown): ChainOfThoughtStepStatus {
     return "complete";
   }
   if (status === "failed" || status === "error") return "error";
-  if (status === "running" || status === "in_progress" || status === "streaming") {
+  if (
+    status === "running" ||
+    status === "in_progress" ||
+    status === "streaming"
+  ) {
     return "active";
   }
   return "pending";
@@ -133,12 +137,17 @@ function activityStatus(status: ChainOfThoughtStepStatus): AgentStepStatus {
   return status === "error" ? "complete" : status;
 }
 
-export function MastraWorkflowActivity({ data, isStreaming }: DataRendererProps) {
+export function MastraWorkflowActivity({
+  data,
+  isStreaming,
+}: DataRendererProps) {
   const t = useTranslations("chat");
   const snapshot = asRecord(data);
   return (
     <Timeline
-      title={String(snapshot.name ?? snapshot.workflowId ?? t("activity.workflow"))}
+      title={String(
+        snapshot.name ?? snapshot.workflowId ?? t("activity.workflow")
+      )}
       status={stepStatus(snapshot.status)}
       steps={stepsOf(snapshot)}
       isStreaming={isStreaming}
@@ -154,7 +163,12 @@ export function MastraWorkflowStepActivity({
   const snapshot = asRecord(data);
   return (
     <Timeline
-      title={String(snapshot.name ?? snapshot.stepId ?? snapshot.id ?? t("activity.workflow"))}
+      title={String(
+        snapshot.name ??
+          snapshot.stepId ??
+          snapshot.id ??
+          t("activity.workflow")
+      )}
       status={stepStatus(snapshot.status)}
       steps={[]}
       isStreaming={isStreaming}
@@ -162,12 +176,17 @@ export function MastraWorkflowStepActivity({
   );
 }
 
-export function MastraNetworkActivity({ data, isStreaming }: DataRendererProps) {
+export function MastraNetworkActivity({
+  data,
+  isStreaming,
+}: DataRendererProps) {
   const t = useTranslations("chat");
   const snapshot = asRecord(data);
   return (
     <Timeline
-      title={String(snapshot.name ?? snapshot.networkId ?? t("activity.network"))}
+      title={String(
+        snapshot.name ?? snapshot.networkId ?? t("activity.network")
+      )}
       status={stepStatus(snapshot.status)}
       steps={stepsOf(snapshot)}
       isStreaming={isStreaming}
@@ -175,12 +194,17 @@ export function MastraNetworkActivity({ data, isStreaming }: DataRendererProps) 
   );
 }
 
-export function MastraToolAgentActivity({ data, isStreaming }: DataRendererProps) {
+export function MastraToolAgentActivity({
+  data,
+  isStreaming,
+}: DataRendererProps) {
   const t = useTranslations("chat");
   const snapshot = asRecord(data);
   return (
     <Timeline
-      title={String(snapshot.name ?? snapshot.agentId ?? snapshot.id ?? t("activity.agent"))}
+      title={String(
+        snapshot.name ?? snapshot.agentId ?? snapshot.id ?? t("activity.agent")
+      )}
       status={stepStatus(snapshot.status)}
       steps={stepsOf(snapshot)}
       isStreaming={isStreaming}

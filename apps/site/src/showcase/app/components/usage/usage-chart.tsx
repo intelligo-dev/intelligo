@@ -141,7 +141,11 @@ export function UsageChart({ points }: UsageChartProps) {
                   stopColor="var(--primary)"
                   stopOpacity="0.28"
                 />
-                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+                <stop
+                  offset="100%"
+                  stopColor="var(--primary)"
+                  stopOpacity="0"
+                />
               </linearGradient>
             </defs>
 
@@ -212,7 +216,10 @@ export function UsageChart({ points }: UsageChartProps) {
 
           {/* Hit targets: full-height slices, reachable by pointer and
               by keyboard, so the series is not pointer-only. */}
-          <div className="absolute inset-0 flex" onMouseLeave={() => setActive(null)}>
+          <div
+            className="absolute inset-0 flex"
+            onMouseLeave={() => setActive(null)}
+          >
             {points.map((point, index) => (
               <button
                 key={point.date}
@@ -255,9 +262,7 @@ export function UsageChart({ points }: UsageChartProps) {
         {axisDates.map((index, position) => (
           <span
             key={points[index]!.date}
-            className={
-              position === 1 ? "hidden sm:inline" : undefined
-            }
+            className={position === 1 ? "hidden sm:inline" : undefined}
           >
             {shortDate(dateOf(points[index]!.date))}
           </span>
