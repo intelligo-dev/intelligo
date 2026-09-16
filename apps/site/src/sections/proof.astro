@@ -2,7 +2,7 @@
 import SectionHead from "@/components/section-head.astro";
 import { PROOF, PROOF_STATS } from "@/lib/proof";
 import { SITE } from "@/lib/site";
-import { Scale, FileText, ShieldCheck, GitPullRequest, type LucideIcon } from "lucide-react";
+import { Scale, ShieldCheck, GitPullRequest, type LucideIcon } from "lucide-react";
 
 /** How the project is run, every link a real file in the repository. */
 const OPEN: { icon: LucideIcon; title: string; body: string; href: string; cta: string }[] = [
@@ -12,13 +12,6 @@ const OPEN: { icon: LucideIcon; title: string; body: string; href: string; cta: 
     body: "Use it commercially, fork it, ship it. No open-core split.",
     href: SITE.license,
     cta: "LICENSE",
-  },
-  {
-    icon: FileText,
-    title: `${PROOF.adrs} decisions, in writing`,
-    body: "Every boundary that matters is an ADR, with the alternatives that lost.",
-    href: SITE.adrs,
-    cta: "docs/adr",
   },
   {
     icon: ShieldCheck,
@@ -41,7 +34,7 @@ const OPEN: { icon: LucideIcon; title: string; body: string; href: string; cta: 
     <SectionHead
       tag="open source · engineering proof"
       title="Not a pitch. A count."
-      lede="Counted from the framework repository, not typed into a landing page — and every decision behind the numbers is public."
+      lede="Counted from the framework repository, not typed into a landing page — and the rules behind them fail the build when broken."
     />
     <div class="reveal mt-8 grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
       {PROOF_STATS.map((s) => (
@@ -56,7 +49,7 @@ const OPEN: { icon: LucideIcon; title: string; body: string; href: string; cta: 
       counted {PROOF.sampledAt} · v{PROOF.version} · <a href={`${SITE.github}/blob/main/apps/site/scripts/sync-framework.mjs`} class="hover:text-foreground">by a script, committed with the site →</a>
     </p>
 
-    <ul class="reveal mt-8 grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+    <ul class="reveal mt-8 grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-3">
       {OPEN.map(({ icon: Icon, title, body, href, cta }) => (
         <li>
           <a href={href} class="group flex h-full items-start gap-3 bg-background px-4 py-3.5 no-underline transition-colors hover:bg-card">

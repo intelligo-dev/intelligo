@@ -27,6 +27,6 @@ export const FAQ = [
   },
   {
     q: "What if the maintainer disappears?",
-    a: "Nothing is rented. Apache-2.0, no open-core split, no hosted dependency; the packages are on npm and the pages are already in your repository. The reasoning is written down as ADRs, so the next maintainer has the why, not just the what.",
+    a: "Nothing is rented. Apache-2.0, no open-core split, no hosted dependency; the packages are on npm and the pages are already in your repository.",
   },
 ];

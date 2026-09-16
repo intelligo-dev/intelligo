@@ -3,25 +3,7 @@ import Page from "@/layouts/Page.astro";
 import { PackageMap } from "@/components/package-map";
 import { RuleToggles } from "@/components/rule-toggles";
 import { PROOF } from "@/lib/proof";
-import { SITE } from "@/lib/site";
 
-const ADRS = [
-  ["0001", "Category and positioning", "0001-category-and-positioning.md"],
-  ["0002", "Product ownership — dependency upgrades never overwrite consumer source", "0002-product-ownership.md"],
-  ["0003", "AI frameworks stay native; Intelligo records only the execution boundary", "0003-ai-framework-boundary.md"],
-  ["0004", "One PostgreSQL database, explicit per-table ownership", "0004-database-ownership.md"],
-  ["0005", "One service layer behind two thin transports, one composition root", "0005-transport-and-composition.md"],
-  ["0006", "The package allowlist", "0006-package-allowlist.md"],
-  ["0007", "The execution boundary is a lifecycle with ports, not a wrapper", "0007-execution-boundary.md"],
-  ["0008", "Dissolving the undecided packages", "0008-dissolving-the-undecided-packages.md"],
-  ["0009", "Conversation and document persistence are framework capabilities", "0009-public-conversation-and-document-contracts.md"],
-  ["0010", "Registry items are i18n-native and installed unmodified", "0010-registry-i18n-standard.md"],
-  ["0011", "One package per runtime target; shared types are subpaths", "0011-package-topology.md"],
-  ["0012", "The chat transport is a package; the chat UI is registry source", "0012-headless-chat-transport.md"],
-  ["0013", "One design system: shadcn base-nova, an additive token contract, a tiered catalog", "0013-design-system.md"],
-  ["0014", "One runtime seam, consumer-owned bindings, and the tool renderer contract", "0014-chat-extension-contract.md"],
-  ["0015", "Money is micros with a currency attached; a deployment declares the one it bills in", "0015-money-is-micros-with-a-currency.md"],
-];
 
 const OWNERSHIP = [
   ["Packages", "Versioned on npm as @intelligo-dev/*. Services, schema, migrations. Upgraded with SemVer; never edited in place."],
@@ -34,8 +16,8 @@ const OWNERSHIP = [
   path="/architecture"
   tag="architecture"
   title={`${PROOF.packages} packages, one database,<br />and the rules that hold them apart.`}
-  lede="The full package graph, the dependency rules as the tests that enforce them, who owns which files, and the decisions behind it all."
-  description="The Intelligo architecture: package dependency graph, boundaries enforced as tests, ownership model and design decisions."
+  lede="The full package graph, the dependency rules as the tests that enforce them, and who owns which files."
+  description="The Intelligo architecture: package dependency graph, boundaries enforced as tests, and the ownership model."
 >
   <section id="packages" class="xline">
     <div class="px-6 py-10 md:px-10 md:py-14">
@@ -82,23 +64,4 @@ const OWNERSHIP = [
     </div>
   </section>
 
-  <section id="decisions" class="xline">
-    <div class="px-6 py-10 md:px-10 md:py-14">
-      <div class="section-head">
-        <span class="tag">decisions</span>
-        <h2>{PROOF.adrs} decisions, recorded as ADRs.</h2>
-      </div>
-      <ol class="mt-6 border-t border-border">
-        {ADRS.map(([n, title, file]) => (
-          <li class="border-b border-border">
-            <a href={`${SITE.adrs}/${file}`} class="flex items-baseline gap-4 py-3 no-underline hover:bg-card">
-              <span class="mono w-12 shrink-0 text-[0.72rem] text-muted-foreground">{n}</span>
-              <span class="text-[0.95rem] text-foreground">{title}</span>
-              <span class="mono ml-auto text-[0.7rem] text-muted-foreground">↗</span>
-            </a>
-          </li>
-        ))}
-      </ol>
-    </div>
-  </section>
 </Page>

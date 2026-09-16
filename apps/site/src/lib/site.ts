@@ -13,7 +13,6 @@ export const SITE = {
   githubOwner: "intelligo-mn",
   githubRepo: "framework",
   license: "https://github.com/intelligo-mn/framework/blob/main/LICENSE",
-  adrs: "https://github.com/intelligo-mn/framework/tree/main/docs/adr",
   docs: "/docs",
   /** Where every "Get started" lands. */
   start: "/docs/getting-started",
@@ -40,7 +39,10 @@ export const NAV = [
   { href: "/why", label: "Why" },
 ] as const;
 
-export const FOOTER: { title: string; links: { href: string; label: string }[] }[] = [
+export const FOOTER: {
+  title: string;
+  links: { href: string; label: string }[];
+}[] = [
   {
     title: "Product",
     links: [
@@ -71,7 +73,6 @@ export const FOOTER: { title: string; links: { href: string; label: string }[] }
     links: [
       { href: SITE.github, label: "GitHub" },
       { href: SITE.npm, label: "npm" },
-      { href: SITE.adrs, label: "Decisions" },
       { href: SITE.license, label: "License" },
     ],
   },
