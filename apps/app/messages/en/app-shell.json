@@ -4,10 +4,6 @@
       "dashboard": "Dashboard",
       "chat": "Chat",
       "artifacts": "Artifacts",
-      "usage": "Usage",
-      "notifications": "Notifications",
-      "pricing": "Pricing",
-      "settings": "Settings",
       "teamSettings": "Team settings",
       "workspaceSettings": "Workspace settings"
     }
@@ -15,6 +11,8 @@
   "userMenu": {
     "profile": "Profile",
     "workspaceSettings": "Workspace settings",
+    "usage": "Usage",
+    "pricing": "Pricing",
     "theme": "Theme",
     "themeLight": "Light",
     "themeDark": "Dark",

@@ -74,22 +74,30 @@ export const shellConfig: ShellConfig = {
 
 ### `lib/nav-config.ts`
 
-Exports `navItems`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/nav-config.ts)
+Exports `navItems`, `accountItems`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/nav-config.ts)
 
 Sidebar nav config — consumer-owned, imported directly by the client
 `AppSidebar` (never passed through a Server Component: icons are
 React components, which cannot cross the server->client boundary).
 
+Two lists, because the shell has two places to put a link.
+`navItems` is the sidebar proper: the surfaces a person came here to
+work in. `accountItems` is the user menu at the foot of the sidebar:
+what the account costs and what plan it is on — things you go and
+look at, not things you work in.
+
 `titleKey`s point into the `app-shell` namespace
 (`messages/<locale>/app-shell.json`) — add your own keys there when
-you add routes. The shipped default covers every top-level surface
-the registry catalogue installs — the product ones first (chat,
-artifacts), the account ones after — so a full install is navigable
-out of the box. Team/workspace/profile/privacy/billing settings are
-reached through the Settings entry (the `settings-shell` item's tab
-bar), not as their own sidebar rows.
+you add routes.
 
-Installing a subset? Delete the rows whose routes you didn't
+Deliberately in neither list: a Notifications row, because the
+header's bell already opens that surface, and a Settings row,
+because the user menu's Profile and Workspace settings entries both
+land inside `/settings`. Team, workspace, profile, privacy and
+billing settings are reached through the settings tab bar rather
+than as rows of their own.
+
+Installing a subset? Delete the entries whose routes you didn't
 install — a nav entry pointing at a missing route is a 404.
 
 ## [trial-banner](/blocks/trial-banner)

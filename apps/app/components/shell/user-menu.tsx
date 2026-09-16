@@ -11,11 +11,15 @@
  * check avoids a hydration mismatch between the server render (no theme
  * yet) and the client's resolved theme.
  *
- * No notifications entry: that surface belongs to the separate
- * `notifications` registry item. Once it's installed, add:
- *   <DropdownMenuItem render={<Link href="/notifications" />}>
- *     <Bell />Notifications
- *   </DropdownMenuItem>
+ * The account pages — usage, pricing, whatever a product adds — come
+ * from `accountItems` in `@/lib/nav-config`, the same consumer-owned
+ * file the sidebar reads. They live here rather than in the sidebar
+ * because they are things you go and look at, not things you work in,
+ * and a row for each one pushed the product's own surfaces down the
+ * list.
+ *
+ * No notifications entry: the header's bell already opens that
+ * surface, and the `notifications` item ships it.
  */
 
 import * as React from "react";
@@ -35,6 +39,7 @@ import { authClient } from "@intelligo-dev/auth/client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useRouter } from "@/i18n/navigation";
+import { accountItems } from "@/lib/nav-config";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -147,6 +152,26 @@ export function UserMenu({ user }: UserMenuProps) {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+
+        {accountItems.length > 0 ? (
+          <>
+            <DropdownMenuGroup>
+              {accountItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <DropdownMenuItem
+                    key={item.href}
+                    render={<Link href={item.href} />}
+                  >
+                    {Icon ? <Icon /> : null}
+                    {t(item.titleKey)}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
 
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
