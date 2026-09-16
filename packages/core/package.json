@@ -131,6 +131,14 @@
         "types": "./dist/identity/index.d.ts",
         "default": "./dist/identity/index.js"
       },
+      "./attachments": {
+        "types": "./dist/attachments/index.d.ts",
+        "default": "./dist/attachments/index.js"
+      },
+      "./storage": {
+        "types": "./dist/storage/index.d.ts",
+        "default": "./dist/storage/index.js"
+      },
       "./env": {
         "types": "./dist/env.d.ts",
         "default": "./dist/env.js"

@@ -29,6 +29,8 @@ type PackageManifest = {
   files?: string[];
   engines?: { node?: string };
   sideEffects?: false | string[];
+  exports?: Record<string, unknown>;
+  publishConfig?: { exports?: Record<string, unknown> };
 };
 
 function manifest(pkg: string): PackageManifest {
@@ -369,6 +371,29 @@ describe("publishability", () => {
         manifest(pkg).files ?? [],
         `packages/${pkg} would publish its tsbuildinfo`
       ).toContain("!dist/**/*.tsbuildinfo");
+    }
+  });
+
+  it("publishes every subpath it exports", () => {
+    // `publishConfig.exports` replaces `exports` wholesale at publish
+    // time. A key present in the workspace map and missing from the
+    // published one therefore resolves all through development and not
+    // at all from the tarball — and nothing else notices, because the
+    // workspace never reads `publishConfig`. That is how core's
+    // `./attachments` and `./storage` shipped unresolvable in
+    // 1.0.0-beta.6, taking `@intelligo-dev/chat` down with them.
+    for (const pkg of PUBLISHED) {
+      const pkgManifest = manifest(pkg);
+      const published = pkgManifest.publishConfig?.exports;
+      if (!published) continue;
+
+      const missing = Object.keys(pkgManifest.exports ?? {}).filter(
+        (subpath) => !(subpath in published)
+      );
+      expect(
+        missing,
+        `packages/${pkg} exports ${missing.join(", ")} in the workspace but not from the published tarball`
+      ).toEqual([]);
     }
   });
 
