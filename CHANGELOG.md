@@ -14,9 +14,11 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
-## [Unreleased]
+## [1.0.0-beta.7] — 2026-09-16
 
-The chat at ChatGPT level, on one runtime seam (ADR-0014).
+The chat at ChatGPT level on one runtime seam (ADR-0014), one design
+system (ADR-0013), and a framework that no longer speaks one product's
+language.
 
 ### Breaking
 
@@ -143,6 +145,47 @@ IF EXISTS` would otherwise delete amounts nothing had copied.
   - `tests/architecture/money-migration.test.ts` keeps the shape from
     coming back: no schema column named for a currency, and no
     identifier ending in `Mnt` in a published package.
+- **The framework stops speaking one product's language.** A public
+  framework greeted every consumer in Mongolian, and the publishability
+  rule that should have caught it matches a list of private names with
+  no language check at all. `@intelligo-dev/billing` loses `referral.ts`
+  — a named growth program exported as public API, whose
+  `grantReferralUpgrade` also picked a workspace with `.limit(1)` and no
+  `ORDER BY` — along with `generation-quota.ts`, an image quota for a
+  route that does not exist here whose limit function returned 0 for
+  every plan, and the dead `seed-plans.ts`. `PlanConfig` drops the
+  required `descriptionMn` and `featuresMn`; `checkFeatureQuota` returns
+  `nearingLimit: boolean` where it returned a `warning` string it
+  composed itself, because the sentence belongs to whoever owns the
+  voice. `@intelligo-dev/core`'s nine email templates lose their
+  `locale?: "en" | "mn"` prop and its hardcoded branch — `senders.ts`
+  never passed a locale, so that branch was unreachable — and
+  `BilingualText = { en, mn }` becomes
+  `LocalizedText = Record<string, string>` across six JSONB columns. It
+  is a `$type`, so no migration.
+- `payment-poll`: `startLocalPayment` no longer takes `amount`, and
+  `LocalPaymentRequest` no longer carries one. The action forwarded the
+  browser's number to the payment provider, three lines under a doc
+  comment explaining that this is exactly why the parameter is not in
+  the signature. Your binding prices `reference` server-side.
+- `@intelligo-dev/core`: `getAttachment`, `getAttachments`,
+  `attachToConversation` and `setExtractedText` take the full actor and
+  filter `userId` beside `workspaceId`. Conversations are user-private
+  (ADR-0009) and the ids arrive in the request body, so a workspace-only
+  scope traded a colleague's attachment id for a signed URL to their
+  upload. `deleteAttachment` always filtered both.
+- `@intelligo-dev/executions`: `listExecutions` requires `workspaceId`.
+  Omitting it applied no filter, so the default reading of the
+  executions table was every tenant's rows.
+- **A quota row is per (user, workspace).** `user_quotas` carried
+  `UNIQUE` on `user_id` alone, so someone who belongs to a paid
+  workspace and a free one shared a single row between them: whichever
+  wrote last set `plan`, both then read the other's limits, and the
+  per-action counters in `usage` were the sum of everything that person
+  did anywhere — the free tenant enforcing the paid tenant's allowance,
+  every action counted twice. Migration `0046_user_quotas_per_workspace`
+  replaces the constraint with a unique `(user_id, workspace_id)`, and
+  `recordFeatureUsage` takes `workspaceId` as its second argument.
 
 ### Added
 
@@ -343,12 +386,56 @@ IF EXISTS` would otherwise delete amounts nothing had copied.
   keeps an unprefixed `max-w-*` beside it as a different variant group,
   so the responsive rule won above 640px — which is also why the
   previous `max-w-2xl` never applied.
+- **`@intelligo-dev/chat` did not resolve from npm at 1.0.0-beta.6.**
+  `publishConfig.exports` replaces `exports` wholesale at publish time,
+  and core's copy was missing `./attachments` and `./storage`. Both
+  resolve in the workspace, neither resolved from the tarball, and
+  nothing looked — the workspace never reads `publishConfig`. The
+  architecture suite now asserts the two maps agree.
+- Stripe's credit branch granted before checking `payment_status`.
+  Delayed-notification methods fire `checkout.session.completed` while
+  the money is still in flight; `async_payment_succeeded` is the event
+  that says it arrived.
+- Two unauthenticated remote-code-execution advisories: `next` moves to
+  `~16.3.5`, since 16.2.x is affected and both are patched in 16.3.3.
+  Floors also rise for `sharp`, `nodemailer`, `browserslist`,
+  `baseline-browser-mapping`, `@humanfs/node` and
+  `postcss-selector-parser`, each scoped to the major already in the
+  tree. `pnpm audit` goes from ten advisories to one.
+- `main` had not type-checked since the money slice: the site's credit
+  card still passed `currentCredits` to a component that had taken a
+  typed `currentBalance` since that commit. The formatting gate was
+  failing on 106 files, and `packages/registry/base/ui/` now joins the
+  prettierignore beside the installed copies it is the source of —
+  formatting one side of that pair breaks the reference app's
+  byte-for-byte check.
+- The migration chain is frozen at 47 rather than 44. The unmanaged
+  database the freeze was written for holds no data, so the baseline it
+  waited on protects nothing, and every push had been failing that step.
+- Documentation that stated counts the tree contradicts: the README
+  claimed twenty-five page families and listed nineteen of
+  twenty-eight, the site hardcoded the one registry count `pnpm sync`
+  does not generate, and `architecture.astro` listed ten ADRs beside
+  the "15 decisions" the same page rendered.
+- Stripe's success and cancel URLs were built from the `Host` header,
+  which is whatever the client sent. A forged one points the
+  post-payment redirect — carrying `{CHECKOUT_SESSION_ID}` — at another
+  domain. `NEXT_PUBLIC_APP_URL` is used when it is set, and the header
+  stays as the fallback for a deployment that has not set it.
+- `getBillingSettings` fell back to the shipped tugrik defaults whenever
+  the database read threw, so one transient outage billed a USD
+  deployment at an MNT rate for as long as it lasted. An expired reading
+  of the real row is still right about the currency, so it prefers that
+  and reaches the defaults only when it has never read one.
+- The CLI scaffold still wrote `descriptionMn` and `featuresMn` into
+  `lib/plans.ts`, which is why a generated app stopped compiling the
+  moment those fields left `PlanConfig`.
 
-## [Unreleased — design system]
+### Design system (ADR-0013)
 
 One design system (ADR-0013).
 
-### Breaking
+#### Breaking
 
 - Registry items require shadcn `base-nova` (Base UI): they compose with
   `render`, not `asChild`, and depend on the `intelligo` token contract.
@@ -358,7 +445,7 @@ One design system (ADR-0013).
 - The chat item is rebuilt on MessageScroller, Message, Bubble and the T3
   AI parts; its seams keep their names and shapes.
 
-### Added
+#### Added
 
 - `intelligo.dev/r/intelligo.json`: the `registry:base` preset — base-nova,
   a WCAG AA-checked neutral theme, status, layer and motion tokens.
@@ -369,12 +456,12 @@ One design system (ADR-0013).
   contract on every surface, AA contrast.
 - intelligo.dev `/components` and `/blocks`.
 
-### Changed
+#### Changed
 
 - The CLI scaffold writes base-nova, the intelligo tokens and the
   `@intelligo` registry (template 1.11.0).
 
-### Repository
+#### Repository
 
 - The repository is public. Community files: `NOTICE`, `CODE_OF_CONDUCT.md`,
   `SUPPORT.md`, issue and pull request templates, Dependabot.
@@ -425,9 +512,11 @@ first product still carried — the prompt sanitiser — has its home.
 
 - **Releases publish themselves.** A release is one commit — every
   published manifest bumped, `CHANGELOG.md` headed with the version's
-  section — and merging it to main builds, runs the suite, publishes
-  pushes the tag, creates the GitHub release from that
-  section and applies `scripts/npm-deprecations.json`. The hand-pushed
+  section — and merging it to main builds, runs the suite, publishes,
+  pushes the tag and creates the GitHub release from that section.
+  Deprecations are not part of it: `scripts/npm-deprecations.json` is
+  applied by a maintainer running `node scripts/npm-maintain.mjs`, which
+  the release workflow cannot do under OIDC. The hand-pushed
   tag still works as a fallback. A version with no changelog section
   does not release: the notes are the one thing a script cannot write.
 

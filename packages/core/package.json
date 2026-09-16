@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/core",
-  "version": "1.0.0-beta.6",
+  "version": "1.0.0-beta.7",
   "description": "Database schema, email, logging, notifications, and the conversation, document and identity contracts.",
   "keywords": [
     "intelligo",
