@@ -1,15 +1,20 @@
 ---
 /**
- * The homepage as a film: a title card, four scenes on one pinned stage
- * (the build · the run · make it yours · time passes), then the count,
- * the quickstart and the questions. Deeper material lives on
- * /blocks, /components, /architecture, /why and /docs.
+ * The homepage, problem to install: a title card; the two halves of an
+ * AI product; the film — four scenes on one pinned stage (the build ·
+ * the run · make it yours · time passes); what you take home; the
+ * boundary in code; the count; the quickstart; the questions. Each
+ * section is a door into /why, /blocks, /components, /architecture or
+ * /docs.
  */
 import Base from "@/layouts/Base.astro";
 import Footer from "@/components/footer.astro";
 import { Nav } from "@/components/nav";
 import Hero from "@/sections/hero.astro";
+import Halves from "@/sections/halves.astro";
 import Film from "@/sections/film.astro";
+import WhatYouGet from "@/sections/what-you-get.astro";
+import Code from "@/sections/code.astro";
 import Proof from "@/sections/proof.astro";
 import Quickstart from "@/sections/quickstart.astro";
 import Faq from "@/sections/faq.astro";
@@ -18,7 +23,10 @@ import Faq from "@/sections/faq.astro";
   <Nav client:load current="/" />
   <main class="rails">
     <Hero />
+    <Halves />
     <Film />
+    <WhatYouGet />
+    <Code />
     <Proof />
     <Quickstart />
     <Faq />

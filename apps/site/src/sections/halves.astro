@@ -1,0 +1,50 @@
+---
+/**
+ * Before the film: the two halves of an AI product, so the build that
+ * follows reads as "this is the half you don't write". Every line on the
+ * right is a service in the packages today (lib/ledger.ts).
+ */
+import SectionHead from "@/components/section-head.astro";
+import { OTHER_HALF, YOUR_HALF } from "@/lib/ledger";
+
+const PKGS = [...new Set(OTHER_HALF.map((l) => l.pkg))].map((pkg) => ({
+  pkg,
+  lines: OTHER_HALF.filter((l) => l.pkg === pkg),
+}));
+---
+<section id="halves" class="xline">
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag="the problem"
+      title="Every AI product is two halves.<br />You should only write one."
+      lede="The interesting half is your agent. The other half — who is signed in, what their plan allows, what a run cost, who to bill, what to tell an auditor — is the same in every AI SaaS, and it is where the time goes."
+    />
+    <div class="reveal mt-10 grid gap-px overflow-hidden rounded-md border border-border bg-border lg:grid-cols-[1fr_2fr]">
+      <div class="bg-card p-6 top-shade">
+        <div class="tag">yours · in your AI framework</div>
+        <ul class="mt-4 space-y-3">
+          {YOUR_HALF.map((h) => (
+            <li>
+              <span class="block text-[1.05rem] font-semibold text-foreground">{h.title}</span>
+              <span class="block text-[0.85rem] text-foreground/70">{h.note}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div class="bg-background p-6">
+        <div class="tag">intelligo · {OTHER_HALF.length} services and surfaces, shipped</div>
+        <div class="mt-4 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+          {PKGS.map(({ pkg, lines }) => (
+            <div>
+              <div class="mono text-[0.7rem] text-muted-foreground">@intelligo-dev/{pkg}</div>
+              <ul class="mt-1.5 space-y-1">
+                {lines.map((l) => <li class="text-[0.86rem] leading-snug text-foreground/80">{l.text}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <a href="/why" class="mono mt-6 inline-block text-[0.75rem] text-muted-foreground hover:text-foreground">why a good agent still gets this half wrong →</a>
+      </div>
+    </div>
+  </div>
+</section>

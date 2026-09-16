@@ -53,7 +53,7 @@ export function RegistryExplorer() {
     <TooltipProvider>
       <div
         data-explorer
-        className="grid gap-5 lg:grid-cols-[280px_1fr]"
+        className="grid grid-cols-1 gap-5 lg:grid-cols-[280px_minmax(0,1fr)]"
         tabIndex={0}
         aria-label="Registry explorer. Use arrow keys to move between items."
       >

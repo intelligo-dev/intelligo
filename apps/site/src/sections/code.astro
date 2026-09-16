@@ -1,0 +1,68 @@
+---
+/**
+ * The boundary, in code: the two-line route a registry install writes,
+ * the config you edit instead of it, and the bracket around a run in any
+ * framework. Every snippet is the real API (packages/chat,
+ * packages/executions/src/lifecycle.ts).
+ */
+import { Code } from "astro:components";
+import SectionHead from "@/components/section-head.astro";
+
+const ROUTE = `// app/api/chat/route.ts — installed by the chat block
+import { createChatHandler } from "@intelligo-dev/chat";
+import { chatServerConfig } from "@/lib/chat-server-config";
+
+export const { POST, DELETE } = createChatHandler(chatServerConfig);`;
+
+const CONFIG = `// lib/chat-server-config.ts — yours to edit
+agent: {
+  systemPrompt: "You answer from the workspace's documents.",
+  tools: ({ workspaceId }) => ({
+    searchDocs: tool({
+      description: "Search the workspace's documents",
+      inputSchema: z.object({ query: z.string() }),
+      execute: ({ query }) => search(workspaceId, query),
+    }),
+  }),
+},`;
+
+const BRACKET = `// anywhere else: Mastra, the AI SDK, your own loop
+const run = await executions.begin({ workspaceId, userId, capability: "support.reply" });
+if (!run.allowed) return refuse(run.reason);
+try {
+  const result = await supportAgent.generate(messages); // native
+  await run.complete({ usage: result.usage, model: result.model });
+} catch (error) {
+  await run.fail({ error });
+}`;
+
+const POINTS = [
+  ["Auth, limits, gates, persistence, billing", "happen inside createChatHandler — every turn admitted, streamed and settled exactly once."],
+  ["Prompts, tools and models", "stay in your framework's own idiom, in a config file the install hands you."],
+  ["Outside chat", "bracket any run with begin → complete or fail. No wrapper, no agent abstraction to adopt."],
+];
+---
+<section id="code" class="xline">
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div class="px-6 py-14 md:px-10 md:py-20">
+      <SectionHead
+        tag="your AI framework stays native"
+        title="Two lines of route.<br />The rest is your agent."
+      />
+      <ul class="reveal mt-8 space-y-5">
+        {POINTS.map(([h, b]) => (
+          <li class="border-l border-border pl-4">
+            <span class="block text-[0.95rem] font-semibold text-foreground">{h}</span>
+            <span class="block text-[0.88rem] text-foreground/70">{b}</span>
+          </li>
+        ))}
+      </ul>
+      <a href="/docs/concepts/boundary" class="mono mt-8 inline-block text-[0.75rem] text-muted-foreground hover:text-foreground">the boundary, in the docs →</a>
+    </div>
+    <div class="reveal min-w-0 space-y-3 border-t border-border px-6 py-10 md:px-10 lg:border-l lg:border-t-0 lg:py-20">
+      <Code code={ROUTE} lang="ts" themes={{ light: "github-light", dark: "github-dark" }} />
+      <Code code={CONFIG} lang="ts" themes={{ light: "github-light", dark: "github-dark" }} />
+      <Code code={BRACKET} lang="ts" themes={{ light: "github-light", dark: "github-dark" }} />
+    </div>
+  </div>
+</section>

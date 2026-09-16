@@ -1,0 +1,62 @@
+---
+/**
+ * After the film: the three things you actually take home, each a door
+ * into the page that shows all of it. Counts come from the synced
+ * registry and proof, never typed in.
+ */
+import SectionHead from "@/components/section-head.astro";
+import { REGISTRY_COUNT, REGISTRY_GROUPS, REGISTRY_ITEMS } from "@/lib/registry-items";
+import { INTELLIGO } from "@/lib/primitives";
+import { PACKAGES } from "@/lib/packages";
+import { PROOF } from "@/lib/proof";
+
+const DOORS = [
+  {
+    n: String(REGISTRY_COUNT),
+    title: "Blocks",
+    body: "Page families installed with the shadcn CLI as your own source — used as-is, varied through config and message files.",
+    chips: REGISTRY_GROUPS.map((g) => `${g.toLowerCase()} ${REGISTRY_ITEMS.filter((i) => i.group === g).length}`),
+    href: "/blocks",
+    cta: "see every block, live",
+  },
+  {
+    n: String(INTELLIGO.length),
+    title: "AI components",
+    body: "Messages, reasoning, tool calls, approvals, citations, artifacts — the parts an agent's interface is made of, on base-nova and one token contract.",
+    chips: INTELLIGO.filter((c) => c.tier === "T3").slice(0, 6).map((c) => c.name.replace(/^ai-/, "")),
+    href: "/components",
+    cta: "open the design system",
+  },
+  {
+    n: String(PROOF.packages),
+    title: "Packages",
+    body: "Versioned on npm as @intelligo-dev/*. Services behind ports, one database, rules enforced as failing tests.",
+    chips: PACKAGES.filter((p) => p.layer === "intelligo").map((p) => p.label),
+    href: "/architecture",
+    cta: "see how they fit",
+  },
+];
+---
+<section id="what-you-get" class="xline">
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag="what you get"
+      title="Pages you own, parts you compose,<br />packages you upgrade."
+    />
+    <ul class="reveal mt-10 grid gap-px overflow-hidden rounded-md border border-border bg-border md:grid-cols-3">
+      {DOORS.map((d) => (
+        <li>
+          <a href={d.href} class="group flex h-full flex-col bg-background p-6 no-underline transition-colors hover:bg-card">
+            <span class="heading text-[2.6rem] font-semibold leading-none tabular-nums text-foreground">{d.n}</span>
+            <span class="mt-3 text-[1.1rem] font-semibold text-foreground">{d.title}</span>
+            <span class="mt-2 text-[0.88rem] leading-snug text-foreground/70">{d.body}</span>
+            <span class="mt-4 flex flex-wrap gap-1">
+              {d.chips.map((c) => <span class="mono rounded-md border border-border px-1.5 py-0.5 text-[0.66rem] text-muted-foreground">{c}</span>)}
+            </span>
+            <span class="mono mt-auto pt-6 text-[0.72rem] text-muted-foreground transition-colors group-hover:text-foreground">{d.cta} →</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

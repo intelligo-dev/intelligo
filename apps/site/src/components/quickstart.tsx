@@ -58,7 +58,7 @@ export function Quickstart() {
 
   return (
     <TooltipProvider>
-      <div className="grid gap-5 lg:grid-cols-[1fr_1.15fr]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         <ol className="border-t border-border">
           {STEPS.map((st, n) => (
             <li

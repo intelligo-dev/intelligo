@@ -371,6 +371,9 @@ details.q .a { padding: 0 1.25rem 1.1rem; color: var(--muted-foreground); font-s
   margin: 0;
 }
 
+/* shiki renders both themes; the dark one takes over under .dark */
+.dark .astro-code, .dark .astro-code span { color: var(--shiki-dark) !important; }
+
 /* reveal-on-scroll (reduced motion is collapsed globally above) */
 .js .reveal { opacity: 0; transform: translateY(12px); transition: opacity 0.6s var(--ease-standard), transform 0.6s var(--ease-standard); }
 .js .reveal.is-in { opacity: 1; transform: none; }
