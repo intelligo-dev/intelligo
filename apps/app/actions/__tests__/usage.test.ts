@@ -43,6 +43,8 @@ vi.mock("next-intl/server", () => ({
   getTranslations: async () => (key: string) => key,
 }));
 
+import { withRequestHeaders } from "@intelligo-dev/core/request-context";
+
 import { getUsageOverview } from "@/actions/usage";
 
 beforeEach(() => {
@@ -124,5 +126,74 @@ describe("getUsageOverview daily series", () => {
 
     const dates = (await daily()).map((point) => point.date);
     expect([...dates].sort()).toEqual(dates);
+  });
+});
+
+/**
+ * The period is the reader's, not the server's.
+ *
+ * The zone travels as a cookie the app shell writes, so these drive the
+ * real `getRequestHeaders`/`resolveTimeZone` path through
+ * `withRequestHeaders` rather than mocking it — the parsing is half of
+ * what can go wrong. A reader whose calendar day differs from UTC's is
+ * the whole point: the page shipped a series that ended "yesterday" for
+ * everyone east of UTC, and the window has to move with the buckets or
+ * the two disagree by a day at every edge.
+ */
+describe("getUsageOverview in the reader's time zone", () => {
+  async function dailyIn(timeZone?: string) {
+    const call = () => getUsageOverview();
+    const result = timeZone
+      ? await withRequestHeaders(
+          new Headers({ cookie: `tz=${encodeURIComponent(timeZone)}` }),
+          call
+        )
+      : await call();
+    if (!result.success) throw new Error(result.error);
+    return result.data.daily;
+  }
+
+  it("ends on the reader's today when they are already on the next day", async () => {
+    // 18:00Z on the 12th is 02:00 on the 13th in +08:00.
+    vi.setSystemTime(new Date("2026-03-12T18:00:00Z"));
+
+    const points = await dailyIn("Asia/Ulaanbaatar");
+
+    expect(points.at(-1)!.date).toBe("2026-03-13");
+    expect(points).toHaveLength(13); // the 1st through the 13th
+  });
+
+  it("ends on the reader's today when UTC has rolled over and they have not", async () => {
+    // 02:00Z on the 13th is still 22:00 on the 12th in New York.
+    vi.setSystemTime(new Date("2026-03-13T02:00:00Z"));
+
+    const points = await dailyIn("America/New_York");
+
+    expect(points.at(-1)!.date).toBe("2026-03-12");
+    expect(points).toHaveLength(12);
+  });
+
+  it("buckets where it windows, so the query and the series agree", async () => {
+    vi.setSystemTime(new Date("2026-03-12T18:00:00Z"));
+
+    await dailyIn("Asia/Ulaanbaatar");
+
+    expect(mocks.summarizeExecutionsByDay).toHaveBeenCalledWith(
+      "ws_1",
+      expect.anything(),
+      { timeZone: "Asia/Ulaanbaatar" }
+    );
+  });
+
+  it("falls back to UTC when the request carries no zone", async () => {
+    vi.setSystemTime(new Date("2026-03-12T18:00:00Z"));
+
+    expect((await dailyIn()).at(-1)!.date).toBe("2026-03-12");
+  });
+
+  it("falls back to UTC for a zone this runtime does not know", async () => {
+    vi.setSystemTime(new Date("2026-03-12T18:00:00Z"));
+
+    expect((await dailyIn("Mars/Olympus_Mons")).at(-1)!.date).toBe("2026-03-12");
   });
 });

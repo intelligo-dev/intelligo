@@ -98,6 +98,28 @@ export async function getRequestHeaders(): Promise<Headers> {
 }
 
 /**
+ * A time zone the caller can be trusted with, from a value they sent.
+ *
+ * The reader's zone arrives from the browser — a cookie an app writes
+ * from `Intl.DateTimeFormat().resolvedOptions()` — so it is input, not
+ * configuration: it reaches SQL (`AT TIME ZONE`) and `Intl`, both of
+ * which take a string. Anything that is not a zone this runtime knows
+ * becomes `UTC`, which is also the honest default when a request
+ * carries no zone at all: a server has no business guessing where
+ * someone is sitting.
+ */
+export function resolveTimeZone(value: string | null | undefined): string {
+  if (!value) return "UTC";
+  try {
+    // Throws RangeError for anything that is not a zone it knows.
+    new Intl.DateTimeFormat("en-US", { timeZone: value });
+    return value;
+  } catch {
+    return "UTC";
+  }
+}
+
+/**
  * Run `fn` with these headers, whatever the ambient source says.
  *
  * For the callers that have a request but are not inside the

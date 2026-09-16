@@ -3,7 +3,31 @@ import path from "node:path";
 
 import { getRequestConfig } from "next-intl/server";
 
+import {
+  getRequestHeaders,
+  resolveTimeZone,
+} from "@intelligo-dev/core/request-context";
+
 import { routing } from "./routing";
+
+/**
+ * The reader's own time zone, from the cookie the app shell writes.
+ *
+ * Every date and time on the page formats against this, so a reader in
+ * +08:00 sees the day they actually had rather than UTC's. Anything the
+ * runtime does not recognise — and a first request, which has no cookie
+ * yet — falls back to UTC.
+ */
+async function requestTimeZone(): Promise<string> {
+  try {
+    const cookie = (await getRequestHeaders()).get("cookie") ?? "";
+    const match = cookie.match(/(?:^|;\s*)tz=([^;]*)/);
+    return resolveTimeZone(match?.[1] ? decodeURIComponent(match[1]) : null);
+  } catch {
+    // No request context bound (a build-time render, a script).
+    return "UTC";
+  }
+}
 
 const MESSAGES_ROOT = path.join(process.cwd(), "messages");
 
@@ -47,5 +71,6 @@ export default getRequestConfig(async ({ requestLocale }) => {
   return {
     locale,
     messages: loadMessages(locale),
+    timeZone: await requestTimeZone(),
   };
 });

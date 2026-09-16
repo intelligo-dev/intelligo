@@ -50,6 +50,7 @@ import { users } from "@intelligo-dev/core/db/schema";
 
 import { AppSidebar } from "@/components/shell/app-sidebar";
 import { ShellHeader } from "@/components/shell/shell-header";
+import { TimeZoneCookie } from "@/components/shell/time-zone-cookie";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { redirect } from "@/i18n/navigation";
 import { shellConfig } from "@/lib/shell-config";
@@ -102,6 +103,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const SidebarContent = shellConfig.sidebarContent;
   return (
     <SidebarProvider className="h-svh overflow-hidden">
+      {/* Renders nothing; tells the server which day it is here. */}
+      <TimeZoneCookie />
       <AppSidebar
         workspace={workspaceContext.workspace}
         workspaces={workspaceList}

@@ -20,6 +20,10 @@ import { getTranslations } from "next-intl/server";
 
 import { requireWorkspace } from "@intelligo-dev/auth";
 import {
+  getRequestHeaders,
+  resolveTimeZone,
+} from "@intelligo-dev/core/request-context";
+import {
   getQuotaThresholds,
   getTrialStatus,
   getWorkspaceBilling,
@@ -107,32 +111,121 @@ export type ActionResult<T> =
   | { success: false; error: string };
 
 /**
- * Windows are computed in UTC because the per-day read model buckets
- * in UTC (`summarizeExecutionsByDay`). Mixing the two — a local month
- * boundary against UTC buckets — silently produces a leading or
- * trailing day that belongs to the wrong period, and the size of the
- * error depends on where the reader is sitting.
+ * The reader's own time zone, from the cookie the app shell writes.
+ * Falls back to UTC on the first request of a session, which has no
+ * cookie yet, and anywhere no request context is bound.
  */
-function periodWindow(period: UsagePeriod): { from: Date; to: Date } {
-  const to = new Date();
-
-  if (period === "current") {
-    return {
-      from: new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), 1)),
-      to,
-    };
+async function readerTimeZone(): Promise<string> {
+  try {
+    const cookie = (await getRequestHeaders()).get("cookie") ?? "";
+    const match = cookie.match(/(?:^|;\s*)tz=([^;]*)/);
+    return resolveTimeZone(match?.[1] ? decodeURIComponent(match[1]) : null);
+  } catch {
+    return "UTC";
   }
+}
 
-  const from = new Date(to);
-  from.setUTCDate(from.getUTCDate() - (period === "7d" ? 7 : 30));
-  return { from, to };
+type CalendarDay = { year: number; month: number; day: number };
+
+/** The calendar day an instant falls on, as it reads in `timeZone`. */
+function partsIn(date: Date, timeZone: string): CalendarDay {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const value = (type: string) =>
+    Number(parts.find((part) => part.type === type)?.value ?? "0");
+  return { year: value("year"), month: value("month"), day: value("day") };
+}
+
+/** How far `timeZone` is from UTC at this instant, in milliseconds. */
+function offsetMs(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(date);
+  const value = (type: string) =>
+    Number(parts.find((part) => part.type === type)?.value ?? "0");
+  // The wall clock there, read as if it were UTC, minus the real instant.
+  const asUtc = Date.UTC(
+    value("year"),
+    value("month") - 1,
+    value("day"),
+    value("hour") % 24,
+    value("minute"),
+    value("second")
+  );
+  return asUtc - date.getTime();
+}
+
+/**
+ * The instant a calendar day begins in `timeZone`.
+ *
+ * Takes the day, not another instant: an earlier version took an
+ * instant, read its calendar day in the zone, and then chased its own
+ * output — for a UTC month start it settled a day late, which is how
+ * the usage page came to render nothing at all. The offset is applied
+ * twice because the first correction can land on the other side of a
+ * DST change, where the offset differs.
+ */
+function startOfDay(day: CalendarDay, timeZone: string): Date {
+  const naive = Date.UTC(day.year, day.month - 1, day.day);
+  const guess = naive - offsetMs(new Date(naive), timeZone);
+  return new Date(naive - offsetMs(new Date(guess), timeZone));
+}
+
+const labelOf = (day: CalendarDay) =>
+  `${day.year}-${String(day.month).padStart(2, "0")}-${String(day.day).padStart(2, "0")}`;
+
+/** The calendar day `count` days after this one. */
+function addDays(day: CalendarDay, count: number): CalendarDay {
+  const moved = new Date(Date.UTC(day.year, day.month - 1, day.day + count));
+  return {
+    year: moved.getUTCFullYear(),
+    month: moved.getUTCMonth() + 1,
+    day: moved.getUTCDate(),
+  };
+}
+
+/**
+ * Windows are computed in the reader's zone, because the per-day read
+ * model now buckets there too (`summarizeExecutionsByDay`). Mixing the
+ * two — a local month boundary against UTC buckets — silently produces
+ * a leading or trailing day that belongs to the wrong period, and the
+ * size of the error depends on where the reader is sitting.
+ */
+function periodWindow(
+  period: UsagePeriod,
+  timeZone: string
+): { from: Date; to: Date } {
+  const to = new Date();
+  const today = partsIn(to, timeZone);
+
+  const first =
+    period === "current"
+      ? { ...today, day: 1 }
+      : addDays(today, period === "7d" ? -7 : -30);
+
+  return { from: startOfDay(first, timeZone), to };
 }
 
 async function summarizePeriod(
   workspaceId: string,
-  period: UsagePeriod
+  period: UsagePeriod,
+  timeZone: string
 ): Promise<UsagePeriodSummary> {
-  const summary = await summarizeExecutions(workspaceId, periodWindow(period));
+  const summary = await summarizeExecutions(
+    workspaceId,
+    periodWindow(period, timeZone)
+  );
   return {
     tokensUsed: summary.totals.totalTokens,
     chargedAmount: summary.totals.chargedMnt,
@@ -151,33 +244,28 @@ async function summarizePeriod(
  */
 function fillDailyGaps(
   rows: Array<{ date: string; totalTokens: number; count: number }>,
-  window: { from: Date; to: Date }
+  window: { from: Date; to: Date },
+  timeZone: string
 ): UsageDailyPoint[] {
   const byDate = new Map(rows.map((row) => [row.date, row]));
   const points: UsageDailyPoint[] = [];
 
-  const cursor = new Date(
-    Date.UTC(
-      window.from.getUTCFullYear(),
-      window.from.getUTCMonth(),
-      window.from.getUTCDate()
-    )
-  );
-  const end = Date.UTC(
-    window.to.getUTCFullYear(),
-    window.to.getUTCMonth(),
-    window.to.getUTCDate()
-  );
+  // Walk the reader's calendar days, which is what the query grouped
+  // by. Counting days rather than adding 24 hours to an instant keeps
+  // a DST change from skipping or repeating one.
+  let cursor = partsIn(window.from, timeZone);
+  const end = labelOf(partsIn(window.to, timeZone));
 
-  while (cursor.getTime() <= end) {
-    const date = cursor.toISOString().slice(0, 10);
+  for (let guard = 0; guard < 400; guard += 1) {
+    const date = labelOf(cursor);
     const row = byDate.get(date);
     points.push({
       date,
       tokensUsed: row?.totalTokens ?? 0,
       requestCount: row?.count ?? 0,
     });
-    cursor.setUTCDate(cursor.getUTCDate() + 1);
+    if (date >= end) break;
+    cursor = addDays(cursor, 1);
   }
 
   return points;
@@ -193,16 +281,17 @@ export async function getUsageOverview(): Promise<ActionResult<UsageOverview>> {
   try {
     const { workspace } = await requireWorkspace();
 
-    const window = periodWindow("current");
+    const timeZone = await readerTimeZone();
+    const window = periodWindow("current", timeZone);
 
     const [currentPeriod, quota, trial, billing, recent, daily] =
       await Promise.all([
-        summarizePeriod(workspace.id, "current"),
+        summarizePeriod(workspace.id, "current", timeZone),
         getQuotaThresholds(workspace.id),
         getTrialStatus(workspace.id),
         getWorkspaceBilling(workspace.id),
         listExecutions({ workspaceId: workspace.id, limit: 25 }),
-        summarizeExecutionsByDay(workspace.id, window),
+        summarizeExecutionsByDay(workspace.id, window, { timeZone }),
       ]);
 
     return {
@@ -222,7 +311,7 @@ export async function getUsageOverview(): Promise<ActionResult<UsageOverview>> {
           initialCredits: trial.initialCredits,
           percentageRemaining: trial.percentageRemaining,
         },
-        daily: fillDailyGaps(daily, window),
+        daily: fillDailyGaps(daily, window, timeZone),
         records: recent.map((execution) => ({
           id: execution.id,
           capability: execution.capability,
@@ -265,7 +354,11 @@ export async function getUsagePeriodSummary(
 
   try {
     const { workspace } = await requireWorkspace();
-    const data = await summarizePeriod(workspace.id, period);
+    const data = await summarizePeriod(
+      workspace.id,
+      period,
+      await readerTimeZone()
+    );
     return { success: true, data };
   } catch {
     return {

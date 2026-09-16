@@ -1,7 +1,7 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { CURRENCY } from "@/lib/billing-config";
 import { formatMoney } from "@/lib/format-money";
 import {
@@ -17,15 +17,20 @@ import type { UsageRecord } from "@/actions/usage";
 
 import { UsageEmptyState } from "./usage-empty-state";
 
+/**
+ * A table of runs is a list, not a set of alerts: the status reads as a
+ * quiet dot and a word, and only a failure is allowed to carry colour
+ * that pulls the eye.
+ */
 const STATUS_VARIANT: Record<
   UsageRecord["status"],
-  "default" | "secondary" | "destructive" | "outline"
+  "success" | "warning" | "destructive" | "neutral"
 > = {
-  succeeded: "default",
-  running: "secondary",
-  settling: "secondary",
+  succeeded: "success",
+  running: "warning",
+  settling: "warning",
   failed: "destructive",
-  refused: "outline",
+  refused: "neutral",
 };
 
 export async function UsageRecordsTable({
@@ -90,9 +95,9 @@ export async function UsageRecordsTable({
                   {record.model ?? empty}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={STATUS_VARIANT[record.status]}>
+                  <StatusBadge status={STATUS_VARIANT[record.status]} dot>
                     {t(`recordsTable.status.${record.status}`)}
-                  </Badge>
+                  </StatusBadge>
                 </TableCell>
                 <TableCell className="hidden text-right sm:table-cell">
                   {record.totalTokens !== null

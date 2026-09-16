@@ -939,7 +939,6 @@
       "title": "Usage",
       "description": "Workspace usage dashboard: current-period summary tiles, a period selector, and a table of recent AI execution records.",
       "registryDependencies": [
-        "badge",
         "card",
         "progress",
         "skeleton",
@@ -953,9 +952,10 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
+        "@intelligo-dev/core",
         "@intelligo-dev/executions",
-        "next-intl",
-        "lucide-react"
+        "lucide-react",
+        "next-intl"
       ],
       "files": [
         {
@@ -1105,6 +1105,11 @@
           "path": "base/app-shell/components/theme-provider.tsx",
           "type": "registry:component",
           "target": "components/shell/theme-provider.tsx"
+        },
+        {
+          "path": "base/app-shell/components/time-zone-cookie.tsx",
+          "type": "registry:component",
+          "target": "components/shell/time-zone-cookie.tsx"
         },
         {
           "path": "base/app-shell/lib/workspace-bootstrap.ts",

@@ -147,13 +147,18 @@ export async function summarizeExecutions(
  *
  * Days with no activity are absent rather than zero — the caller knows
  * the window it asked for, and a gap means "nothing ran", which a
- * chart should draw as zero and a table should leave empty. `date` is
- * a `YYYY-MM-DD` string in UTC, so the series is stable regardless of
- * where the reader is.
+ * chart should draw as zero and a table should leave empty.
+ *
+ * `date` is a `YYYY-MM-DD` string in `timeZone`, which defaults to UTC.
+ * A reader in +08:00 filed their 00:36 turn on the 16th; bucketing it
+ * in UTC files it on the 15th and ends their month a day early, which
+ * is what the usage page did. Pass the reader's own zone and the series
+ * matches the days they lived through.
  */
 export async function summarizeExecutionsByDay(
   workspaceId: string,
-  window: { from: Date; to: Date }
+  window: { from: Date; to: Date },
+  options: { timeZone?: string } = {}
 ): Promise<
   Array<{
     date: string;
@@ -163,7 +168,16 @@ export async function summarizeExecutionsByDay(
     charged: Money[];
   }>
 > {
-  const day = sql<string>`to_char(${executions.startedAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`;
+  // Bound, not interpolated: the zone reaches here from a cookie the
+  // browser wrote, so it is caller input like any other.
+  //
+  // Two conversions, both needed. `started_at` is a naive timestamp
+  // holding a UTC instant, so `AT TIME ZONE 'UTC'` turns it into an
+  // instant, and the second `AT TIME ZONE` reads that instant as wall
+  // time where the reader is. One conversion would instead *declare*
+  // the stored time to be the reader's, which is a different moment.
+  const timeZone = options.timeZone ?? "UTC";
+  const day = sql<string>`to_char(${executions.startedAt} AT TIME ZONE 'UTC' AT TIME ZONE ${timeZone}, 'YYYY-MM-DD')`;
 
   const rows = await db
     .select({
@@ -182,8 +196,12 @@ export async function summarizeExecutionsByDay(
         lte(executions.startedAt, window.to)
       )
     )
-    .groupBy(day, executions.currency)
-    .orderBy(day);
+    // By ordinal, not by the expression: drizzle inlines the fragment
+    // again for each clause, and with the zone bound as a parameter
+    // that makes three *different* expressions — Postgres then refuses
+    // the grouping. A literal zone matched textually and hid this.
+    .groupBy(sql`1`, executions.currency)
+    .orderBy(sql`1`);
 
   // One row per day and currency; the series a chart draws is per day.
   const byDay = new Map<string, (typeof rows)[number][]>();
