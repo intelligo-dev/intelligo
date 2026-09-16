@@ -12,11 +12,13 @@ import "server-only";
  */
 
 import {
+  ensureBillingSettingsRow,
   reserveQuota,
   recordTokenUsage,
   releaseReservation,
   findSettlementByRequestId,
 } from "@intelligo-dev/billing";
+import { DEFAULT_MARGIN_BP } from "@intelligo-dev/executions/pricing";
 import {
   registerProductFeatures,
   registerProductPlans,
@@ -66,6 +68,18 @@ export function composeIntelligo(): void {
   // which prices it is billing against, and can register its own
   // contracted rates — or a model the framework has never heard of.
   registerModels(DEFAULT_MODELS);
+
+  // What this deployment bills in. There is no default rate: provider
+  // prices are USD, so a USD deployment converts at exactly 1.0, and
+  // one selling in another currency states its own rate here. Seeds the
+  // settings row once; an existing row is left alone, because changing
+  // the currency under a ledger that already holds balances is an
+  // operator's decision, not a deploy's.
+  void ensureBillingSettingsRow({
+    currency: "USD",
+    usdRateMicros: 1_000_000,
+    marginBp: DEFAULT_MARGIN_BP,
+  });
 }
 
 export const executions = createExecutions({

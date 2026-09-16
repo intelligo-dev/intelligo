@@ -20,6 +20,7 @@
  * deployment needs bundle names in more than one language.
  */
 
+import { fromMajor } from "@intelligo-dev/core/money";
 import type { CreditBundle } from "@intelligo-dev/billing";
 
 // Must match lib/intelligo.ts's PRODUCT_SLUG (the composition root is
@@ -44,24 +45,31 @@ export const PRODUCT_SLUG = "reference";
  */
 export const CURRENCY = "USD";
 
+/**
+ * Each pack states what it costs and what it grants, separately: the
+ * buyer is charged `price` through the payment provider, and the
+ * workspace receives `grant` in this deployment's billing currency.
+ * They are the same currency here only because this deployment sells
+ * and bills in dollars.
+ */
 export const CREDIT_BUNDLES: CreditBundle[] = [
   {
     id: "credits-small",
     name: "Small credit pack",
-    credits: 100_000,
-    priceUsd: 5,
+    grant: fromMajor(5, CURRENCY),
+    price: fromMajor(5, "USD"),
   },
   {
     id: "credits-medium",
     name: "Medium credit pack",
-    credits: 300_000,
-    priceUsd: 12,
+    grant: fromMajor(13, CURRENCY),
+    price: fromMajor(12, "USD"),
   },
   {
     id: "credits-large",
     name: "Large credit pack",
-    credits: 1_000_000,
-    priceUsd: 35,
+    grant: fromMajor(40, CURRENCY),
+    price: fromMajor(35, "USD"),
   },
 ];
 

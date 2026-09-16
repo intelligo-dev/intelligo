@@ -59,7 +59,11 @@ export function getPlanMonthlyAllowance(
   const declared =
     (planSlug ? configs[planSlug]?.monthlyAllowance : undefined) ??
     configs.free?.monthlyAllowance;
-  if (declared) return declared;
+  // A catalogue declaring one currency while the settings row says
+  // another is a half-finished switch, not an exchange rate. Read the
+  // legacy allowance rather than hand back an amount that every
+  // add/subtract against the pools would throw on.
+  if (declared && declared.currency === currency) return declared;
   return money(
     getPlanMonthlyCreditMnt(planSlug, productSlug) * MICROS_PER_UNIT,
     currency

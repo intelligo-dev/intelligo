@@ -206,7 +206,7 @@
       "name": "stat-card",
       "type": "registry:ui",
       "title": "Stat Card",
-      "description": "A metric on a card \u2014 label, value, an action such as a status badge, and a footer (ADR-0013, T4).",
+      "description": "A metric on a card — label, value, an action such as a status badge, and a footer (ADR-0013, T4).",
       "registryDependencies": [
         "card"
       ],
@@ -222,7 +222,7 @@
       "name": "status-badge",
       "type": "registry:ui",
       "title": "Status Badge",
-      "description": "A status shown in a status token \u2014 neutral, info, success, warning or destructive \u2014 never a palette colour (ADR-0013, T4).",
+      "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour (ADR-0013, T4).",
       "dependencies": [
         "class-variance-authority"
       ],
@@ -361,7 +361,7 @@
       "name": "ai-branch",
       "type": "registry:ui",
       "title": "AI Branch",
-      "description": "A pager over the versions of a reply or an edited message \u2014 previous, next, `2 / 3` (ADR-0013, T3).",
+      "description": "A pager over the versions of a reply or an edited message — previous, next, `2 / 3` (ADR-0013, T3).",
       "dependencies": [
         "lucide-react"
       ],
@@ -1547,7 +1547,7 @@
       "name": "pricing",
       "type": "registry:block",
       "title": "Pricing",
-      "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on \u2014 install this item first.",
+      "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on — install this item first.",
       "registryDependencies": [
         "alert",
         "badge",
@@ -1613,6 +1613,11 @@
           "path": "base/pricing/lib/billing-config.ts",
           "type": "registry:file",
           "target": "lib/billing-config.ts"
+        },
+        {
+          "path": "base/pricing/lib/format-money.ts",
+          "type": "registry:file",
+          "target": "lib/format-money.ts"
         },
         {
           "path": "base/pricing/messages/en.json",
@@ -1776,7 +1781,7 @@
       "name": "payment-poll",
       "type": "registry:block",
       "title": "QR Payment (poll)",
-      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic \u2014 QPay, SocialPay, PIX, UPI, PromptPay all fit \u2014 through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
+      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
       "registryDependencies": [
         "button",
         "dialog",
@@ -2152,7 +2157,7 @@
       "name": "chat",
       "type": "registry:block",
       "title": "Chat",
-      "description": "A ChatGPT-level AI chat surface: a streaming thread with edit, regenerate and response versions, attachments, a model picker, reasoning, sources, tool cards and human-in-the-loop approvals, agent activity for Mastra and eve turns, a canvas beside the chat for documents a tool streams, a sidebar with pinned and dated groups, share links and feedback \u2014 on a two-line Route Handler that binds @intelligo-dev/chat's transport (auth, rate limit, feature gate, persistence, the execution boundary) to consumer-owned config (lib/chat-server-config.ts). Every tool renders through one entry in lib/chat-renderers.tsx, inline and in the canvas. Ships with a deterministic stub model so a clean install streams with no API keys. The config imports lib/intelligo.ts (the composition root) and lib/plans.ts, which are provided by the `intelligo create` scaffold, not by any registry item - in a hand-rolled app, create both before installing (see the CLI's app-scaffold templates).",
+      "description": "A ChatGPT-level AI chat surface: a streaming thread with edit, regenerate and response versions, attachments, a model picker, reasoning, sources, tool cards and human-in-the-loop approvals, agent activity for Mastra and eve turns, a canvas beside the chat for documents a tool streams, a sidebar with pinned and dated groups, share links and feedback — on a two-line Route Handler that binds @intelligo-dev/chat's transport (auth, rate limit, feature gate, persistence, the execution boundary) to consumer-owned config (lib/chat-server-config.ts). Every tool renders through one entry in lib/chat-renderers.tsx, inline and in the canvas. Ships with a deterministic stub model so a clean install streams with no API keys. The config imports lib/intelligo.ts (the composition root) and lib/plans.ts, which are provided by the `intelligo create` scaffold, not by any registry item - in a hand-rolled app, create both before installing (see the CLI's app-scaffold templates).",
       "registryDependencies": [
         "alert",
         "alert-dialog",
@@ -2525,7 +2530,7 @@
       "name": "chat-eve",
       "type": "registry:lib",
       "title": "Chat: eve binding",
-      "description": "eve through the chat transport: a streamTurn for lib/chat-server-config.ts that runs a turn as an eve session over HTTP and NDJSON and maps its events to the AI SDK's chunks \u2014 text, reasoning, tool calls, approvals, questions, subagents, authorization \u2014 so an eve agent renders through the same tool renderers as any other. Consumer-owned; imports nothing from eve. Requires the chat item.",
+      "description": "eve through the chat transport: a streamTurn for lib/chat-server-config.ts that runs a turn as an eve session over HTTP and NDJSON and maps its events to the AI SDK's chunks — text, reasoning, tool calls, approvals, questions, subagents, authorization — so an eve agent renders through the same tool renderers as any other. Consumer-owned; imports nothing from eve. Requires the chat item.",
       "dependencies": [
         "ai@^6.0.77",
         "@intelligo-dev/chat"

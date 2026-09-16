@@ -13,6 +13,7 @@
  * only `priceOneTime` hides the toggle entirely.
  */
 
+import { fromMajor } from "@intelligo-dev/core/money";
 import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
 export const REFERENCE_PLANS: Record<string, PlanConfig> = {
@@ -24,6 +25,11 @@ export const REFERENCE_PLANS: Record<string, PlanConfig> = {
     priceOneTime: 0,
     targetAudience: "Everyone",
     aiModelLabel: "Base",
+    // Half a dollar a month of model time: roughly a hundred turns on
+    // Flash at the shipped margin, which is what "try the assistant"
+    // costs. The `monthlyCreditMnt` below is the same allowance in the
+    // old untyped form, kept until migration 0045 drops it.
+    monthlyAllowance: fromMajor(0.5, "USD"),
     limits: {
       monthlyCreditMnt: 2_000,
       rolloverEnabled: false,
@@ -42,6 +48,8 @@ export const REFERENCE_PLANS: Record<string, PlanConfig> = {
     priceYearly: 192,
     targetAudience: "Teams",
     aiModelLabel: "Advanced",
+    /** $15 of model time inside a $20 plan. */
+    monthlyAllowance: fromMajor(15, "USD"),
     limits: {
       monthlyCreditMnt: 60_000,
       rolloverEnabled: true,

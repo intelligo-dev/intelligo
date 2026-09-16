@@ -53,7 +53,9 @@ beforeEach(() => {
 
   mocks.requireWorkspace.mockResolvedValue({ workspace: { id: "ws_1" } });
   mocks.summarizeExecutions.mockResolvedValue({
-    totals: { totalTokens: 0, chargedMnt: 0, count: 0 },
+    // `charged` is one entry per currency; a workspace that spent
+    // nothing has none.
+    totals: { totalTokens: 0, chargedMnt: 0, count: 0, charged: [] },
   });
   mocks.listExecutions.mockResolvedValue([]);
   mocks.getQuotaThresholds.mockResolvedValue({

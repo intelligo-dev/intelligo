@@ -14,11 +14,15 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Progress } from "@/components/ui/progress";
 import { CURRENCY } from "@/lib/billing-config";
+import { formatMoney, type MoneyLike } from "@/lib/format-money";
 
 export interface PlanSummaryProps {
   planName: string;
   billingMode: "subscription" | "credit";
+  /** @deprecated Pass `charged`. */
   chargedThisMonth: number;
+  /** This month's spend, in micros with its currency. */
+  charged?: MoneyLike | null;
   requestsThisMonth: number;
   trial: {
     hasTrialCredits: boolean;
@@ -34,6 +38,7 @@ export async function PlanSummary({
   planName,
   billingMode,
   chargedThisMonth,
+  charged = null,
   requestsThisMonth,
   trial,
 }: PlanSummaryProps) {
@@ -64,11 +69,13 @@ export async function PlanSummary({
               {t("plan.requests", { count: requestsThisMonth })}
             </span>
             <span className="font-medium">
-              {format.number(chargedThisMonth, {
-                style: "currency",
-                currency: CURRENCY,
-                maximumFractionDigits: 0,
-              })}
+              {charged
+                ? formatMoney(format, charged)
+                : format.number(chargedThisMonth, {
+                    style: "currency",
+                    currency: CURRENCY,
+                    maximumFractionDigits: 0,
+                  })}
             </span>
           </div>
         </div>

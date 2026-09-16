@@ -3,6 +3,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CURRENCY } from "@/lib/billing-config";
+import { formatMoney } from "@/lib/format-money";
 import {
   Table,
   TableBody,
@@ -99,13 +100,15 @@ export async function UsageRecordsTable({
                     : empty}
                 </TableCell>
                 <TableCell className="text-right">
-                  {record.chargedAmount !== null
-                    ? format.number(record.chargedAmount, {
-                        style: "currency",
-                        currency: CURRENCY,
-                        maximumFractionDigits: 0,
-                      })
-                    : empty}
+                  {record.charged
+                    ? formatMoney(format, record.charged)
+                    : record.chargedAmount !== null
+                      ? format.number(record.chargedAmount, {
+                          style: "currency",
+                          currency: CURRENCY,
+                          maximumFractionDigits: 0,
+                        })
+                      : empty}
                 </TableCell>
               </TableRow>
             ))}

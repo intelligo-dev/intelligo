@@ -60,6 +60,7 @@ export default async function DashboardPage() {
             planName={billing.plan?.name ?? t("plan.freeName")}
             billingMode={billing.billingMode}
             chargedThisMonth={monthSummary.totals.chargedMnt}
+            charged={monthSummary.totals.charged[0] ?? null}
             requestsThisMonth={monthSummary.totals.count}
             trial={{
               hasTrialCredits: trial.hasTrialCredits,
