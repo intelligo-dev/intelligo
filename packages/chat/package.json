@@ -42,10 +42,10 @@
     "@intelligo-dev/executions": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "ai": "^6.0.77",
-    "typescript": "^5.7.2",
-    "zod": "^3.24.1"
+    "@types/node": "^22.20.3",
+    "ai": "^6.0.283",
+    "typescript": "^5.9.3",
+    "zod": "^3.25.76"
   },
   "files": [
     "dist",

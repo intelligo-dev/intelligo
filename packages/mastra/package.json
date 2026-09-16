@@ -44,8 +44,8 @@
     }
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.7.2"
+    "@types/node": "^22.20.3",
+    "typescript": "^5.9.3"
   },
   "files": [
     "dist",

@@ -46,11 +46,11 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/react": "^19.0.10",
-    "better-auth": "~1.6.30",
-    "drizzle-orm": "^0.45.1",
-    "typescript": "^5.7.2",
-    "zod": "^3.24.1"
+    "@types/react": "19.2.18",
+    "better-auth": "~1.6.33",
+    "drizzle-orm": "^0.45.2",
+    "typescript": "^5.9.3",
+    "zod": "^3.25.76"
   },
   "files": [
     "dist",

@@ -27,22 +27,22 @@
     "app:regenerate": "bash scripts/regenerate-reference-app.sh"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
-    "@stryker-mutator/core": "10",
-    "@stryker-mutator/vitest-runner": "10",
-    "@types/pg": "^8.16.0",
-    "@typescript-eslint/eslint-plugin": "^8.22.1",
-    "@typescript-eslint/parser": "^8.22.1",
-    "@vitest/coverage-v8": "^4.0.18",
-    "eslint": "^9.19.0",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "pg": "^8.18.0",
-    "prettier": "^3.4.2",
+    "@playwright/test": "^1.63.0",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
+    "@types/pg": "^8.23.1",
+    "@typescript-eslint/eslint-plugin": "^8.70.0",
+    "@typescript-eslint/parser": "^8.70.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "pg": "8.18.0",
+    "prettier": "^3.9.7",
     "shadcn": "^4.21.0",
-    "tsx": "^4.21.0",
-    "turbo": "^2.9.14",
-    "typescript": "^5.7.2",
-    "vitest": "^4.1.0"
+    "tsx": "^4.23.13",
+    "turbo": "^2.10.13",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
   },
   "pnpm": {
     "overrides": {
