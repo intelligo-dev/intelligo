@@ -2,6 +2,7 @@
 title: Getting started
 description: Create an application, connect PostgreSQL, install the pages and run the whole product against a stub model — before you configure an AI provider.
 order: 0
+label: Quickstart
 ---
 
 ## Requirements
@@ -38,7 +39,7 @@ cp .env.example .env.local
 
 Two values are required before the app boots:
 
-```bash
+```ini title=".env.local"
 DATABASE_URL=postgres://…
 BETTER_AUTH_SECRET=…   # any long random string
 ```

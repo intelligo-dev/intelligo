@@ -10,7 +10,7 @@ The chat speaks the AI SDK's `UIMessage` — text, reasoning, tool calls with th
 
 A tool with no entry renders as a **row** in the agent's activity stream ("Searched the web ▸"). An entry turns it into a **card**, or refines the row:
 
-```tsx
+```tsx title="lib/chat-renderers.tsx"
 export const TOOL_RENDERERS: Record<string, ToolRenderer | ComponentType<ToolRendererProps>> = {
   saveArtifact: { component: ArtifactLinkCard, canvas: { kind: "text" } },
   getWeather: WeatherCard,

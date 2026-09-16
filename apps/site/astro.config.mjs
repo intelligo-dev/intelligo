@@ -3,6 +3,8 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 
+import { codeFrame } from "./src/lib/markdown.mjs";
+
 // intelligo.dev — the framework's public site. Its own repository, no
 // `@intelligo-dev/*` dependency: what it shows about the framework
 // (registry items, counts, history) is pulled in by `pnpm sync` and
@@ -16,9 +18,13 @@ export default defineConfig({
     react(),
     sitemap({ filter: (page) => !page.endsWith("/404/") }),
   ],
-  // Docs code blocks carry both themes; global.css switches under .dark.
+  // Docs code blocks carry both themes (global.css switches under .dark),
+  // and a frame with a label and a copy button (src/lib/markdown.mjs).
   markdown: {
-    shikiConfig: { themes: { light: "github-light", dark: "github-dark" } },
+    shikiConfig: {
+      themes: { light: "github-light", dark: "github-dark" },
+      transformers: [codeFrame],
+    },
   },
   vite: {
     plugins: [tailwindcss()],

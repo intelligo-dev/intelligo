@@ -12,7 +12,7 @@ A fresh install chats against a deterministic stub model. Everything that makes 
 
 <!-- snippet: packages/registry/base/chat/route.ts -->
 
-```ts
+```ts title="app/api/chat/route.ts"
 import { createChatHandler } from "@intelligo-dev/chat";
 
 import { chatServerConfig } from "@/lib/chat-server-config";
@@ -24,7 +24,7 @@ export const { POST, DELETE } = createChatHandler(chatServerConfig);
 
 Every turn goes through auth, the plan's rate limit, the feature gate, conversation persistence and the execution boundary inside `createChatHandler`. You change what the turn _does_ in `lib/chat-server-config.ts`:
 
-```ts
+```ts title="lib/chat-server-config.ts"
 import { tool } from "ai";
 import { z } from "zod";
 

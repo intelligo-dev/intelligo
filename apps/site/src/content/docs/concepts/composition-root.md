@@ -11,7 +11,7 @@ label: Composition root
 
 <!-- snippet: packages/cli/templates/app-scaffold/intelligo.ts.tpl#composeIntelligo -->
 
-```ts
+```ts title="lib/intelligo.ts"
 export function composeIntelligo(): void {
   if (composed) return;
   composed = true;
@@ -64,7 +64,7 @@ Packages never reach sideways. `@intelligo-dev/auth` does not import billing; `@
 
 <!-- snippet: packages/cli/templates/app-scaffold/intelligo.ts.tpl#executions -->
 
-```ts
+```ts title="lib/intelligo.ts"
 export const executions = createExecutions({
   async checkEntitlement({ workspaceId, requestId, model }) {
     // Passing requestId makes admission atomic: the worst-case cost is
