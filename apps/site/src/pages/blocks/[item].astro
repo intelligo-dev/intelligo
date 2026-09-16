@@ -1,0 +1,150 @@
+---
+/**
+ * One registry block: the live component, what installing it writes into
+ * the app, which of those files are yours to edit, and what it builds on.
+ * Everything comes from registry.json, so the page cannot describe a file
+ * the item does not ship.
+ */
+import Page from "@/layouts/Page.astro";
+import { BlockPreview } from "@/components/block-preview";
+import { InstallCommand } from "@/components/install-command";
+import { Toaster } from "sonner";
+import { REGISTRY_ITEMS, blockHref, type RegistryItem } from "@/lib/registry-items";
+import { SITE } from "@/lib/site";
+
+export function getStaticPaths() {
+  return REGISTRY_ITEMS.map((item, i) => ({
+    params: { item: item.name },
+    props: {
+      item,
+      prev: REGISTRY_ITEMS[i - 1],
+      next: REGISTRY_ITEMS[i + 1],
+    },
+  }));
+}
+
+interface Props {
+  item: RegistryItem;
+  prev?: RegistryItem;
+  next?: RegistryItem;
+}
+const { item, prev, next } = Astro.props;
+
+const cmd = `pnpm exec shadcn add ${SITE.registryBase}/${item.name}.json`;
+const components = item.primitives
+  .filter((p) => p !== "utils" && !p.startsWith("font-"))
+  .map((p) => ({ label: p, href: `/components#${p.replace(/^@intelligo\//, "")}` }));
+
+/** Installed files, grouped by what shadcn calls them. */
+const KINDS: [string, string][] = [
+  ["page", "Routes"],
+  ["component", "Components"],
+  ["hook", "Hooks"],
+  ["lib", "Libraries"],
+  ["file", "Actions, config and messages"],
+];
+const byKind = KINDS.map(([type, label]) => ({
+  label,
+  files: item.files.filter((f) => f.type === type).map((f) => f.target),
+})).filter((g) => g.files.length > 0);
+const messages = item.files.find((f) => f.target.startsWith("messages/"))?.target;
+---
+<Page
+  path={blockHref(item.name)}
+  tag={`blocks · ${item.group.toLowerCase()} · ${item.name}`}
+  title={item.title}
+  lede={item.fullDescription}
+  description={`${item.title} — an Intelligo registry block, installed as source with the shadcn CLI. ${item.description}`}
+>
+  <section class="xline">
+    <div class="px-6 py-8 md:px-10 md:py-10">
+      <InstallCommand client:visible cmd={cmd} />
+      <div class="mt-6">
+        <BlockPreview client:visible name={item.name} dependsOn={item.dependsOn} bodyClassName="aspect-[16/10] max-h-[640px] w-full" />
+      </div>
+    </div>
+  </section>
+
+  <section class="xline">
+    <div class="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div class="space-y-8 px-6 py-10 md:px-10">
+        <div>
+          <div class="tag mb-2">yours to edit</div>
+          {item.seams.length > 0 ? (
+            <ul class="space-y-1">
+              {item.seams.map((s) => <li class="mono text-[0.8rem] text-foreground">{s}</li>)}
+            </ul>
+          ) : (
+            <p class="text-[0.86rem] text-foreground/70">No config seam of its own — it follows the app shell and the messages file.</p>
+          )}
+          {messages && <p class="mono mt-2 text-[0.8rem] text-foreground">{messages}</p>}
+          <p class="mt-3 text-[0.82rem] text-muted-foreground">
+            Everything else is used verbatim; a deployment varies through these files and translations.
+            <a href="/docs/registry/config-seams" class="ml-1 hover:text-foreground">How seams work →</a>
+          </p>
+        </div>
+
+        {item.dependsOn.length > 0 && (
+          <div>
+            <div class="tag mb-2">requires</div>
+            <div class="flex flex-wrap gap-1">
+              {item.dependsOn.map((d) => (
+                <a href={blockHref(d)} class="mono rounded-md border border-border px-2 py-0.5 text-[0.72rem] text-foreground/70 no-underline hover:text-foreground">{d}</a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {components.length > 0 && (
+          <div>
+            <div class="tag mb-2">built from</div>
+            <div class="flex flex-wrap gap-1">
+              {components.map((c) => (
+                <a href={c.href} class="mono rounded-md border border-border px-2 py-0.5 text-[0.72rem] text-foreground/70 no-underline hover:text-foreground">{c.label}</a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {item.dependencies.length > 0 && (
+          <div>
+            <div class="tag mb-2">npm packages it adds</div>
+            <p class="mono break-words text-[0.75rem] text-foreground/70">{item.dependencies.join(" · ")}</p>
+          </div>
+        )}
+      </div>
+
+      <div class="border-t border-border px-6 py-10 md:border-l md:border-t-0 md:px-10">
+        <div class="tag mb-3">what shadcn add writes · {item.fileCount} files</div>
+        <div class="space-y-5">
+          {byKind.map((g) => (
+            <div>
+              <div class="mono mb-1 text-[0.66rem] uppercase tracking-[0.08em] text-muted-foreground">{g.label}</div>
+              <ul class="space-y-0.5">
+                {g.files.map((f) => <li class="mono break-all text-[0.75rem] text-foreground/80">{f}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nav aria-label="Other blocks" class="xline">
+    <div class="grid grid-cols-2">
+      {prev ? (
+        <a href={blockHref(prev.name)} class="px-6 py-6 no-underline hover:bg-card md:px-10">
+          <span class="mono block text-[0.68rem] text-muted-foreground">← previous</span>
+          <span class="block text-[0.95rem] text-foreground">{prev.title}</span>
+        </a>
+      ) : <a href="/blocks" class="px-6 py-6 no-underline hover:bg-card md:px-10"><span class="mono block text-[0.68rem] text-muted-foreground">← all blocks</span></a>}
+      {next ? (
+        <a href={blockHref(next.name)} class="border-l border-border px-6 py-6 text-right no-underline hover:bg-card md:px-10">
+          <span class="mono block text-[0.68rem] text-muted-foreground">next →</span>
+          <span class="block text-[0.95rem] text-foreground">{next.title}</span>
+        </a>
+      ) : <a href="/blocks" class="border-l border-border px-6 py-6 text-right no-underline hover:bg-card md:px-10"><span class="mono block text-[0.68rem] text-muted-foreground">all blocks →</span></a>}
+    </div>
+  </nav>
+  <Toaster client:idle position="bottom-right" richColors closeButton />
+</Page>

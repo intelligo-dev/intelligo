@@ -17,6 +17,10 @@ export type RegistryItem = {
   /** npm packages the item adds. */
   dependencies: string[];
   fileCount: number;
+  /** Where each file lands in the consumer app. */
+  files: { target: string; type: string }[];
+  /** The installed files a deployment edits: the item's seams (ADR-0010). */
+  seams: string[];
   group: RegistryGroup;
   dependsOn: string[];
 };
@@ -83,13 +87,16 @@ type RawItem = {
   description?: string;
   registryDependencies?: string[];
   dependencies?: string[];
-  files?: unknown[];
+  files?: { path: string; type: string; target?: string }[];
 };
 // Blocks only: the design-system base item (ADR-0013) configures an app
 // and is not a page family.
 const raw = (registry as { items: RawItem[] }).items.filter(
   (i) => i.type === "registry:block" && i.name !== "smoke"
 );
+
+/** Consumer-owned config: `lib/nav-config.ts`, `lib/onboarding-steps.ts`, `lib/chat-renderers.tsx`… */
+const SEAM = /^lib\/[^/]*(config|steps|renderers|patterns|bootstrap)\.tsx?$/;
 
 export const REGISTRY_ITEMS: RegistryItem[] = (
   Object.keys(GROUPS) as RegistryGroup[]
@@ -105,6 +112,13 @@ export const REGISTRY_ITEMS: RegistryItem[] = (
       primitives: i.registryDependencies ?? [],
       dependencies: i.dependencies ?? [],
       fileCount: i.files?.length ?? 0,
+      files: (i.files ?? []).map((f) => ({
+        target: f.target ?? f.path,
+        type: f.type.replace(/^registry:/, ""),
+      })),
+      seams: (i.files ?? [])
+        .map((f) => f.target ?? f.path)
+        .filter((t) => SEAM.test(t)),
       group,
       dependsOn: DEPENDS[i.name] ?? [],
     }))
@@ -113,6 +127,9 @@ export const REGISTRY_ITEMS: RegistryItem[] = (
 export const REGISTRY_COUNT = raw.length;
 
 export const REGISTRY_GROUPS = Object.keys(GROUPS) as RegistryGroup[];
+
+/** A block's page on this site. */
+export const blockHref = (name: string) => `/blocks/${name}`;
 
 function firstSentence(s: string): string {
   const m = s.match(/^(.+?[.!?])(\s|$)/);

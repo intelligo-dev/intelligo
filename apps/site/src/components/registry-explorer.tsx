@@ -5,7 +5,11 @@ import { Showcase, SCENE_FOR_ITEM } from "@/showcase/scenes";
 import { BrowserFrame } from "@/components/browser-frame";
 import { CommandLine } from "@/components/command-line";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { REGISTRY_ITEMS, type RegistryGroup } from "@/lib/registry-items";
+import {
+  REGISTRY_ITEMS,
+  blockHref,
+  type RegistryGroup,
+} from "@/lib/registry-items";
 
 /**
  * Every page family from registry.json (the count comes from the sync). Every item renders the real
@@ -127,7 +131,13 @@ export function RegistryExplorer() {
           </BrowserFrame>
 
           <p className="mt-3 text-[0.9rem] text-foreground/70">
-            {item.description}
+            {item.description}{" "}
+            <a
+              href={blockHref(item.name)}
+              className="mono whitespace-nowrap text-[0.75rem] text-muted-foreground hover:text-foreground"
+            >
+              files, seams, install →
+            </a>
           </p>
           <CommandLine cmd={cmd} className="mt-2" />
         </div>

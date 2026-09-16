@@ -12,10 +12,10 @@ import { SITE } from "@/lib/site";
   <section class="xline">
     <div class="grid gap-px border-b border-border bg-border px-0 sm:grid-cols-2 lg:grid-cols-4">
       {[
-        ["/", "Home", "the framework in one page"],
-        ["/pages", "Pages", "every registry item, rendered"],
+        [SITE.docs, "Docs", "getting started, concepts, packages"],
+        ["/blocks", "Blocks", "every registry item, rendered"],
+        ["/components", "Components", "the design system, live"],
         ["/architecture", "Architecture", "packages, rules, decisions"],
-        [SITE.docs, "Docs", "quickstart and setup on GitHub"],
       ].map(([href, h, b]) => (
         <a href={href} class="bg-background px-6 py-6 no-underline transition-colors hover:bg-card md:px-10">
           <span class="block text-[1rem] font-semibold text-foreground">{h} →</span>

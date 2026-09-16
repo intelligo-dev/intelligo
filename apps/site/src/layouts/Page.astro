@@ -1,11 +1,10 @@
 ---
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 /**
- * A secondary page: the material the homepage only summarises
- * (/pages, /blocks, /components, /architecture, /why-intelligo,
- * /compare). Same rails, same nav, a page header instead of the hero.
+ * A secondary page (/blocks, /components, /architecture, /why): same
+ * rails, same nav, a page header instead of the hero. Docs have their
+ * own layout.
  */
+import { buttonVariants } from "@/components/ui/button";
 import Base from "@/layouts/Base.astro";
 import Footer from "@/components/footer.astro";
 import { Nav } from "@/components/nav";
@@ -36,11 +35,11 @@ const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
     <slot />
     <section class="xline">
       <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-10 md:px-10">
-        <p class="text-[0.95rem] text-muted-foreground">Ready to try it? The homepage quickstart is three commands.</p>
+        <p class="text-[0.95rem] text-muted-foreground">Ready to try it? Three commands and the app runs against a stub model.</p>
         <div class="flex items-center gap-2">
           <a href={SITE.github} class={buttonVariants({ variant: "outline" })}>GitHub</a>
           <a href={SITE.docs} class={buttonVariants({ variant: "outline" })}>Docs</a>
-          <a href="/#quickstart" class={buttonVariants()}>Get started</a>
+          <a href={SITE.start} class={buttonVariants()}>Get started</a>
         </div>
       </div>
     </section>

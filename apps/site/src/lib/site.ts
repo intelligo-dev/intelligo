@@ -14,8 +14,9 @@ export const SITE = {
   githubRepo: "framework",
   license: "https://github.com/intelligo-mn/framework/blob/main/LICENSE",
   adrs: "https://github.com/intelligo-mn/framework/tree/main/docs/adr",
-  /** Implementation docs live in the framework README until a docs site exists. */
-  docs: "https://github.com/intelligo-mn/framework#quickstart",
+  docs: "/docs",
+  /** Where every "Get started" lands. */
+  start: "/docs/getting-started",
   npm: "https://www.npmjs.com/org/intelligo-dev",
   /** The hosted registry: `pnpm exec shadcn add https://intelligo.dev/r/<item>.json`. */
   registryBase: "https://intelligo.dev/r",
@@ -27,14 +28,51 @@ export const SITE = {
 } as const;
 
 /**
- * Site navigation. Hash links resolve on the homepage; path links are
- * the secondary pages that hold the material the homepage only summarises.
+ * Site navigation: one entry per job — build with it (Docs), see and
+ * install it (Blocks, Components), understand it (Architecture, Why).
+ * An entry is active on its own path and everything under it.
  */
 export const NAV = [
-  { href: "/#film", label: "The film" },
-  { href: "/pages", label: "Pages" },
+  { href: "/docs", label: "Docs" },
   { href: "/blocks", label: "Blocks" },
   { href: "/components", label: "Components" },
   { href: "/architecture", label: "Architecture" },
-  { href: SITE.docs, label: "Docs" },
+  { href: "/why", label: "Why" },
 ] as const;
+
+export const FOOTER: { title: string; links: { href: string; label: string }[] }[] = [
+  {
+    title: "Product",
+    links: [
+      { href: "/why", label: "Why Intelligo" },
+      { href: "/why#compare", label: "Compare" },
+      { href: "/architecture", label: "Architecture" },
+    ],
+  },
+  {
+    title: "Registry",
+    links: [
+      { href: "/blocks", label: "Blocks" },
+      { href: "/components", label: "Components" },
+      { href: "/r/intelligo.json", label: "Hosted registry" },
+    ],
+  },
+  {
+    title: "Docs",
+    links: [
+      { href: SITE.start, label: "Getting started" },
+      { href: "/docs/concepts/boundary", label: "Concepts" },
+      { href: "/docs/packages", label: "Packages" },
+      { href: "/docs/cli", label: "CLI" },
+    ],
+  },
+  {
+    title: "Project",
+    links: [
+      { href: SITE.github, label: "GitHub" },
+      { href: SITE.npm, label: "npm" },
+      { href: SITE.adrs, label: "Decisions" },
+      { href: SITE.license, label: "License" },
+    ],
+  },
+];

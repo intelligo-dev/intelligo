@@ -29,12 +29,6 @@ function useTheme() {
   return { theme, toggle };
 }
 
-/** `/#framework` → `framework`; a path or external link has no section. */
-function sectionId(href: string): string | null {
-  const i = href.indexOf("#");
-  return i === -1 ? null : href.slice(i + 1);
-}
-
 /** how far down the page we are, 0 → 1, for the hairline under the nav */
 function useReadingProgress() {
   const [v, setV] = useState(0);
@@ -60,41 +54,15 @@ function useReadingProgress() {
   return v;
 }
 
-function useScrollSpy(ids: string[]) {
-  const [active, setActive] = useState<string>("");
-  useEffect(() => {
-    const els = ids
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => !!el);
-    if (!els.length) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible) setActive(visible.target.id);
-      },
-      { rootMargin: "-40% 0px -50% 0px", threshold: [0, 0.2, 0.5] }
-    );
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, [ids.join(",")]);
-  return active;
-}
-
 export function Nav({ current }: { current?: string }) {
   const { theme, toggle } = useTheme();
-  const active = useScrollSpy(
-    NAV.map((n) => sectionId(n.href)).filter((id): id is string => !!id)
-  );
   const [open, setOpen] = useState(false);
   const progress = useReadingProgress();
 
-  const isActive = (href: string) => {
-    const id = sectionId(href);
-    if (id) return active === id;
-    return current !== undefined && href === current;
-  };
+  /** `/docs` is active on `/docs/cli` too; `/` only on itself. */
+  const isActive = (href: string) =>
+    current !== undefined &&
+    (current === href || current.startsWith(`${href}/`));
 
   return (
     <nav className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
@@ -158,7 +126,7 @@ export function Nav({ current }: { current?: string }) {
             </a>
           )}
           <a
-            href="/#quickstart"
+            href={SITE.start}
             className={cn(
               buttonVariants({ size: "sm" }),
               "hidden sm:inline-flex"
@@ -194,7 +162,7 @@ export function Nav({ current }: { current?: string }) {
               </a>
             ))}
             <a
-              href="/#quickstart"
+              href={SITE.start}
               onClick={() => setOpen(false)}
               className="py-2.5 text-[0.95rem] text-foreground no-underline"
             >
