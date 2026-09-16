@@ -37,7 +37,9 @@ const mocks = vi.hoisted(() => ({
   hasActiveTrialMnt: vi.fn(),
   getBillingSettings: vi.fn(),
   estimateWorstCaseChargedMnt: vi.fn(),
+  estimateWorstCaseCharge: vi.fn(),
   calculateChargedMnt: vi.fn(),
+  chargeFor: vi.fn(),
   calculateCost: vi.fn(),
   checkNotificationTriggers: vi.fn(),
 }));
@@ -84,7 +86,9 @@ vi.mock("./quota-plan", async () => {
 });
 vi.mock("@intelligo-dev/executions/pricing", () => ({
   estimateWorstCaseChargedMnt: mocks.estimateWorstCaseChargedMnt,
+  estimateWorstCaseCharge: mocks.estimateWorstCaseCharge,
   calculateChargedMnt: mocks.calculateChargedMnt,
+  chargeFor: mocks.chargeFor,
   calculateCost: mocks.calculateCost,
   UnknownModelError: pricing.UnknownModelError,
 }));
@@ -152,6 +156,8 @@ vi.mock("@intelligo-dev/core/db", () => {
   };
 });
 
+import { money } from "@intelligo-dev/core/money";
+
 import { checkQuota, estimateQuota, reserveQuota } from "./quota";
 import { db } from "@intelligo-dev/core/db";
 
@@ -167,11 +173,16 @@ beforeEach(() => {
   mocks.getCurrentMonthlyUsage.mockResolvedValue({ chargedMnt: 0 });
   mocks.hasActiveTrialMnt.mockResolvedValue({ active: false, remainingMnt: 0 });
   mocks.getBillingSettings.mockResolvedValue({
+    currency: "MNT",
+    usdRateMicros: 3_450_000_000,
+    marginBp: 40_000,
     usdToMntRate: 3450,
     marginMultiplier: 4,
   });
   // Worst-case estimate: 1500₮ — the 2000₮ free allowance fits exactly one.
   mocks.estimateWorstCaseChargedMnt.mockReturnValue(1500);
+  // The same ceiling, typed: micros of the deployment's own currency.
+  mocks.estimateWorstCaseCharge.mockReturnValue(money(1_500_000_000, "MNT"));
 });
 
 describe("checkQuota — read-only mode (no requestId)", () => {

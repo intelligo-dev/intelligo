@@ -411,7 +411,13 @@ describe("leaf subpaths", () => {
     // keeps the property by walking every relative import from each.
     const billingSrc = path.join(PACKAGES_DIR, "billing/src");
     const PURE = ["plans", "plan-registry", "payment", "quota-types"];
-    const ALLOWED_BARE = new Set(["@intelligo-dev/core/registry"]);
+    // core's own leaves are allowed because they are themselves
+    // import-free: reaching one adds nothing to a client bundle. Both
+    // are asserted above, so this list cannot quietly widen.
+    const ALLOWED_BARE = new Set([
+      "@intelligo-dev/core/registry",
+      "@intelligo-dev/core/money",
+    ]);
 
     function reachable(entry: string): { files: string[]; bare: string[] } {
       const files = new Set<string>();
@@ -433,7 +439,7 @@ describe("leaf subpaths", () => {
       return { files: [...files], bare: [...bare] };
     }
 
-    it.each(PURE)("%s reaches only core/registry", (entry) => {
+    it.each(PURE)("%s reaches only core's own leaves", (entry) => {
       const { files, bare } = reachable(entry);
       const forbidden = bare.filter((spec) => !ALLOWED_BARE.has(spec));
       expect(

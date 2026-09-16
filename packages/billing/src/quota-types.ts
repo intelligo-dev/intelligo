@@ -4,6 +4,8 @@
  * Shared types for the quota enforcement system.
  */
 
+import type { Money } from "@intelligo-dev/core/money";
+
 export const GRACE_OVERAGE_PERCENTAGE = 0.05;
 
 /**
@@ -34,9 +36,18 @@ export type QuotaCheckResult = {
   reason?: string;
   billingMode: "subscription" | "credit";
   usage: { used: number; limit: number; percentage: number };
+  /** @deprecated Read `creditBalance`. */
   creditBalanceMnt?: number;
+  /** @deprecated Read `estimated`. */
   estimatedMnt?: number;
+  /** @deprecated Read `remaining`. */
   remainingMnt?: number;
+  /** The top-up balance, in the deployment's billing currency. */
+  creditBalance?: Money;
+  /** The worst-case charge for one turn on the model asked about. */
+  estimated?: Money;
+  /** Plan allowance + top-up + trial, together. */
+  remaining?: Money;
   usingTrialCredits: boolean;
   graceActive: boolean;
   /** Set when admission created a credit reservation for this request. */
@@ -77,13 +88,22 @@ export type RecordUsageParams = {
  * `chargedMnt === planMnt + topupMnt + trialMnt`.
  */
 export type SettlementOutcome = {
+  /** @deprecated Read `charged`. */
   chargedMnt: number;
-  /** Funded by this period's plan allowance. */
+  /** @deprecated Read `plan`. Funded by this period's plan allowance. */
   planMnt: number;
-  /** Debited from the top-up balance. */
+  /** @deprecated Read `topup`. Debited from the top-up balance. */
   topupMnt: number;
-  /** Debited from the trial grant. */
+  /** @deprecated Read `trial`. Debited from the trial grant. */
   trialMnt: number;
+  /** What the turn charged: `charged === plan + topup + trial`. */
+  charged: Money;
+  /** Funded by this period's plan allowance. */
+  plan: Money;
+  /** Debited from the top-up balance. */
+  topup: Money;
+  /** Debited from the trial grant. */
+  trial: Money;
 };
 
 export type UsageSummary = {

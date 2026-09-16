@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   getWorkspaceBilling: vi.fn(),
   getBillingSettings: vi.fn(),
   calculateChargedMnt: vi.fn(),
+  chargeFor: vi.fn(),
   checkNotificationTriggers: vi.fn(),
 }));
 
@@ -50,7 +51,9 @@ vi.mock("./quota-plan", () => ({
 }));
 vi.mock("@intelligo-dev/executions/pricing", () => ({
   estimateWorstCaseChargedMnt: vi.fn(),
+  estimateWorstCaseCharge: vi.fn(),
   calculateChargedMnt: mocks.calculateChargedMnt,
+  chargeFor: mocks.chargeFor,
   calculateCost: vi.fn(),
 }));
 vi.mock("@intelligo-dev/core/logger", () => ({
@@ -165,7 +168,14 @@ vi.mock("@intelligo-dev/core/db", () => {
   };
 });
 
+import { money, zero } from "@intelligo-dev/core/money";
+
 import { recordTokenUsage } from "./quota";
+
+/** 500₮, the charge every test here settles, in micros. */
+const CHARGED = money(500_000_000, "MNT");
+/** A share of that charge, for the pool split. */
+const mnt = (amount: number) => money(amount * 1_000_000, "MNT");
 
 const settle = (over: Partial<Parameters<typeof recordTokenUsage>[0]> = {}) =>
   recordTokenUsage({
@@ -189,12 +199,19 @@ beforeEach(() => {
   state.log = [];
   mocks.getWorkspaceBilling.mockResolvedValue({ plan: { slug: "free" } });
   mocks.getBillingSettings.mockResolvedValue({
+    currency: "MNT",
+    usdRateMicros: 3_450_000_000,
+    marginBp: 40_000,
     usdToMntRate: 3450,
     marginMultiplier: 4,
   });
   mocks.calculateChargedMnt.mockReturnValue({
     rawCostUsd: 0.05,
     chargedMnt: 500,
+  });
+  mocks.chargeFor.mockReturnValue({
+    providerCost: money(50_000, "USD"),
+    charged: CHARGED,
   });
   mocks.checkNotificationTriggers.mockResolvedValue(undefined);
 });
@@ -207,6 +224,10 @@ describe("recordTokenUsage", () => {
       planMnt: 500,
       topupMnt: 0,
       trialMnt: 0,
+      charged: CHARGED,
+      plan: CHARGED,
+      topup: zero("MNT"),
+      trial: zero("MNT"),
     });
     expect(updates()).toEqual([
       "update monthly_usage",
@@ -222,6 +243,10 @@ describe("recordTokenUsage", () => {
       planMnt: 200,
       topupMnt: 300,
       trialMnt: 0,
+      charged: CHARGED,
+      plan: mnt(200),
+      topup: mnt(300),
+      trial: zero("MNT"),
     });
     expect(updates()).toEqual([
       "update monthly_usage",
@@ -238,6 +263,10 @@ describe("recordTokenUsage", () => {
       planMnt: 0,
       topupMnt: 500,
       trialMnt: 0,
+      charged: CHARGED,
+      plan: zero("MNT"),
+      topup: CHARGED,
+      trial: zero("MNT"),
     });
     expect(updates()).toContain("update credit_balances");
     expect(updates()).not.toContain("update trial_credits");
@@ -252,6 +281,10 @@ describe("recordTokenUsage", () => {
       planMnt: 0,
       topupMnt: 0,
       trialMnt: 500,
+      charged: CHARGED,
+      plan: zero("MNT"),
+      topup: zero("MNT"),
+      trial: CHARGED,
     });
     expect(updates()).toContain("update trial_credits");
     expect(updates()).not.toContain("update credit_balances");

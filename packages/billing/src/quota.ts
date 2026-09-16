@@ -33,8 +33,18 @@ import { checkNotificationTriggers } from "./notifications";
 import {
   UnknownModelError,
   calculateChargedMnt,
+  chargeFor,
+  estimateWorstCaseCharge,
   estimateWorstCaseChargedMnt,
+  type BillingRate,
 } from "@intelligo-dev/executions/pricing";
+import {
+  money,
+  multiply,
+  subtract,
+  zero,
+  type Money,
+} from "@intelligo-dev/core/money";
 import { getBillingSettings } from "./billing-settings";
 import { getWorkspaceBilling } from "./queries";
 import type {
@@ -84,6 +94,8 @@ type Pools = {
   trialRemainingMnt: number;
   usdToMntRate: number;
   marginMultiplier: number;
+  /** What this deployment bills in — currency, USD rate, margin. */
+  rate: BillingRate;
 };
 
 async function readPools(workspaceId: string): Promise<Pools> {
@@ -108,6 +120,11 @@ async function readPools(workspaceId: string): Promise<Pools> {
     trialRemainingMnt: trial.active ? trial.remainingMnt : 0,
     usdToMntRate: settings.usdToMntRate,
     marginMultiplier: settings.marginMultiplier,
+    rate: {
+      currency: settings.currency,
+      usdRateMicros: settings.usdRateMicros,
+      marginBp: settings.marginBp,
+    },
   };
 }
 
@@ -219,6 +236,8 @@ export async function reserveQuota(
         workspaceId,
         requestId,
         estimatedMnt: decision.estimatedMnt ?? 0,
+        estimatedMicros: decision.estimated?.amount ?? 0,
+        currency: decision.estimated?.currency ?? "MNT",
         status: "active",
         expiresAt: new Date(Date.now() + RESERVATION_TTL_MS),
       });
@@ -273,12 +292,17 @@ function decideQuota(
     // Refuse with a code the transport can turn into a 402 that says
     // why, rather than letting the throw become a 500.
     let estimatedMnt: number;
+    let estimated: Money;
     try {
       estimatedMnt = estimateWorstCaseChargedMnt(
         modelId,
         pools.usdToMntRate,
         pools.marginMultiplier
       );
+      // The same ceiling, typed. Computed from the deployment's rate
+      // rather than from the pools, so it is right in the deployment's
+      // own currency even while the pools are still whole tugrik.
+      estimated = estimateWorstCaseCharge(modelId, pools.rate);
     } catch (error) {
       if (error instanceof UnknownModelError) {
         return {
@@ -304,6 +328,7 @@ function decideQuota(
       creditBalanceMnt: topupBalanceMnt,
       estimatedMnt,
       remainingMnt,
+      estimated,
       graceActive: false,
     };
 
@@ -427,6 +452,21 @@ export async function recordTokenUsage(
     settings.marginMultiplier
   );
 
+  // The same charge, typed: exact in micros and carrying the currency.
+  // This is what the ledger's `*_micros` columns and every surface that
+  // shows an amount now read.
+  const rate: BillingRate = {
+    currency: settings.currency,
+    usdRateMicros: settings.usdRateMicros,
+    marginBp: settings.marginBp,
+  };
+  const { providerCost, charged } = chargeFor(
+    params.model ?? "unknown",
+    params.inputTokens ?? 0,
+    params.outputTokens ?? 0,
+    rate
+  );
+
   const requestId =
     params.requestId ??
     (typeof params.metadata === "object" && params.metadata !== null
@@ -455,6 +495,11 @@ export async function recordTokenUsage(
       marginMultiplier: settings.marginMultiplier,
       fxRate: settings.usdToMntRate,
       chargedMnt,
+      providerCostMicros: providerCost.amount,
+      marginBp: rate.marginBp,
+      usdRateMicros: rate.usdRateMicros,
+      chargedMicros: charged.amount,
+      currency: charged.currency,
       requestId,
       conversationId:
         typeof params.metadata === "object" && params.metadata !== null
@@ -479,6 +524,8 @@ export async function recordTokenUsage(
         periodEnd,
         tokensUsed: 0,
         chargedMnt: 0,
+        allowanceUsedMicros: 0,
+        currency: rate.currency,
         requestCount: 0,
       })
       .onConflictDoNothing({
@@ -503,11 +550,20 @@ export async function recordTokenUsage(
     );
     const remainderMnt = chargedMnt - planMnt;
 
+    // The typed split mirrors the decision the tugrik pools just made —
+    // the allowance takes its share, and whatever is left goes to
+    // exactly one of trial or top-up, never both. Taking the remainder
+    // by subtraction keeps `charged === plan + topup + trial` exact
+    // rather than a micro out from two separate roundings.
+    const plan = multiply(charged, chargedMnt > 0 ? planMnt / chargedMnt : 1);
+    const remainder = subtract(charged, plan);
+
     await tx
       .update(monthlyUsage)
       .set({
         tokensUsed: sql`${monthlyUsage.tokensUsed} + ${params.totalTokens}`,
         chargedMnt: sql`${monthlyUsage.chargedMnt} + ${planMnt}`,
+        allowanceUsedMicros: sql`${monthlyUsage.allowanceUsedMicros} + ${plan.amount}`,
         requestCount: sql`${monthlyUsage.requestCount} + 1`,
         updatedAt: new Date(),
       })
@@ -578,7 +634,16 @@ export async function recordTokenUsage(
         .where(eq(creditReservations.requestId, requestId));
     }
 
-    return { chargedMnt, planMnt, topupMnt, trialMnt };
+    return {
+      chargedMnt,
+      planMnt,
+      topupMnt,
+      trialMnt,
+      charged,
+      plan,
+      topup: trialMnt > 0 ? zero(charged.currency) : remainder,
+      trial: trialMnt > 0 ? remainder : zero(charged.currency),
+    };
   });
 
   checkNotificationTriggers(params.workspaceId).catch((err) =>
@@ -596,9 +661,13 @@ export async function recordTokenUsage(
 export async function findSettlementByRequestId(
   workspaceId: string,
   requestId: string
-): Promise<{ chargedMnt: number } | null> {
+): Promise<{ chargedMnt: number; charged?: Money } | null> {
   const rows = await db
-    .select({ chargedMnt: usageRecords.chargedMnt })
+    .select({
+      chargedMnt: usageRecords.chargedMnt,
+      chargedMicros: usageRecords.chargedMicros,
+      currency: usageRecords.currency,
+    })
     .from(usageRecords)
     .where(
       and(
@@ -608,7 +677,13 @@ export async function findSettlementByRequestId(
     )
     .limit(1);
   const row = rows[0];
-  return row ? { chargedMnt: Number(row.chargedMnt ?? 0) } : null;
+  if (!row) return null;
+  return {
+    chargedMnt: Number(row.chargedMnt ?? 0),
+    ...(row.currency
+      ? { charged: money(Number(row.chargedMicros ?? 0), row.currency) }
+      : {}),
+  };
 }
 
 // ---------------------------------------------------------------------------
