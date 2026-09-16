@@ -14,32 +14,9 @@ The app `intelligo create` scaffolds is already registry-ready: shadcn base-nova
 
 ## Install order
 
-Some blocks import files another block ships. Install the dependency first:
+Some blocks import files another block ships, so install the dependency first — `route-error` before any page, `auth-login` before the other auth flows, `pricing` before the commerce blocks, `chat` before the other chat surfaces. [Install order](/docs/registry/install-order) is the full list with the scaffold files and feature keys each block needs, generated from `packages/registry/requires.json` — the same file CI installs from and `intelligo doctor` checks against.
 
-| Block | Needs |
-| --- | --- |
-| everything with pages | `route-error` |
-| `auth-signup`, `auth-password-reset`, `auth-email-verification` | `auth-login` |
-| `invitation-accept` | `team-settings` |
-| `usage`, `billing-settings`, `dashboard`, `feature-gating`, `payment-poll` | `pricing` |
-| `chat-panel`, `chat-widget`, `chat-share` | `chat` |
-
-A full install, in an order that satisfies all of it:
-
-```text
-route-error app-shell settings-shell
-auth-login auth-signup auth-password-reset auth-email-verification onboarding
-team-settings invitation-accept workspace-settings profile-settings privacy-settings
-pricing checkout billing-settings usage feature-gating payment-poll trial-banner
-language-switcher notifications dashboard artifacts
-chat chat-panel chat-widget chat-share
-```
-
-The machine-readable version is `packages/registry/requires.json` in the framework repository; CI installs in that order on every run, and `intelligo doctor` checks an app against it.
-
-## Feature keys
-
-A block that gates on a feature needs that key in your `lib/plans.ts`. An unregistered feature is denied, so the `chat` block returns 403 on every request until `chat` is granted to a plan. The scaffold grants it to every plan by default.
+A block that gates on a feature needs that key granted to a plan in `lib/plans.ts`; an unregistered feature is denied, so `chat` returns 403 until `chat` is granted. The scaffold grants it to every plan.
 
 ## Three rules
 

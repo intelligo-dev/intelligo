@@ -5,7 +5,7 @@ order: 3
 label: Execution boundary
 ---
 
-`@intelligo-dev/executions` turns an AI run into a record the rest of the SaaS can trust: who ran what, in which workspace, whether it was allowed, what it used and what it cost ([ADR-0007](https://github.com/intelligo-mn/framework/blob/main/docs/adr/0007-execution-boundary.md)).
+`@intelligo-dev/executions` turns an AI run into a record the rest of the SaaS can trust: who ran what, in which workspace, whether it was allowed, what it used and what it cost.
 
 ## The lifecycle
 
@@ -35,7 +35,7 @@ Every provider-prefixed model id must be registered with its per-token pricing a
 
 ## Money carries its currency
 
-Provider prices are USD. A deployment declares the currency it bills in and its rate per USD in micros, once, through `ensureBillingSettingsRow`; costs convert through that rate plus a configurable margin, and every amount on a row says which currency it is ([ADR-0015](https://github.com/intelligo-mn/framework/blob/main/docs/adr/0015-money-is-micros-with-a-currency.md)).
+Provider prices are USD. A deployment declares the currency it bills in and its rate per USD in micros, once, through `ensureBillingSettingsRow`; costs convert through that rate plus a configurable margin, and every amount on a row says which currency it is.
 
 ## Where you call it
 

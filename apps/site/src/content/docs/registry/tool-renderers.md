@@ -4,7 +4,7 @@ description: A tool your agent calls renders as a row in the activity stream, or
 order: 3
 ---
 
-The chat speaks the AI SDK's `UIMessage` — text, reasoning, tool calls with their approval states, sources, files, data parts — and renders all of it through one switch ([ADR-0014](https://github.com/intelligo-mn/framework/blob/main/docs/adr/0014-chat-extension-contract.md)). What a product adds is an entry in `lib/chat-renderers.tsx`.
+The chat speaks the AI SDK's `UIMessage` — text, reasoning, tool calls with their approval states, sources, files, data parts — and renders all of it through one switch. What a product adds is an entry in `lib/chat-renderers.tsx`.
 
 ## Rows and cards
 
@@ -19,13 +19,13 @@ export const TOOL_RENDERERS: Record<string, ToolRenderer | ComponentType<ToolRen
 };
 ```
 
-| Field | What it does |
-| --- | --- |
+| Field       | What it does                                                                                                                |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `component` | Draws the call as its own card, in every state: input streaming → output available, and the approval states of a gated tool |
-| `label` | A message key naming the call in its row and in the status line, instead of the raw tool name |
-| `activity` | Builds the row when the default isn't enough |
-| `sources` | Reads citations from the tool's output; the default reads `output.sources` |
-| `canvas` | The output also lives in the side panel; `lib/chat-canvas-config.tsx` decides how its `kind` renders |
+| `label`     | A message key naming the call in its row and in the status line, instead of the raw tool name                               |
+| `activity`  | Builds the row when the default isn't enough                                                                                |
+| `sources`   | Reads citations from the tool's output; the default reads `output.sources`                                                  |
+| `canvas`    | The output also lives in the side panel; `lib/chat-canvas-config.tsx` decides how its `kind` renders                        |
 
 There is no `register()` call: the object is plain source, populated at build time.
 

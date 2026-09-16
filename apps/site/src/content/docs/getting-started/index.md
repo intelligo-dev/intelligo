@@ -19,14 +19,14 @@ pnpm install
 
 `create` writes a Next.js 16 application with shadcn (base-nova), Tailwind 4 and next-intl already wired, plus the files that make it an Intelligo app:
 
-| File | What it is |
-| --- | --- |
-| `lib/intelligo.ts` | The [composition root](/docs/concepts/composition-root): plans, models, the request context and the execution boundary, bound once |
-| `lib/plans.ts` | Your plans and which features each grants |
-| `instrumentation.ts` | Runs the composition root once per server process |
-| `app/api/auth/[...all]/route.ts` | Better-Auth's handlers, from `@intelligo-dev/next/auth` |
-| `app/api/webhooks/stripe/route.ts` | The Stripe webhook receiver |
-| `intelligo.manifest.json` | A hash of every generated file, so `doctor` and `upgrade --check` know what you changed |
+| File                               | What it is                                                                                                                         |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `lib/intelligo.ts`                 | The [composition root](/docs/concepts/composition-root): plans, models, the request context and the execution boundary, bound once |
+| `lib/plans.ts`                     | Your plans and which features each grants                                                                                          |
+| `instrumentation.ts`               | Runs the composition root once per server process                                                                                  |
+| `app/api/auth/[...all]/route.ts`   | Better-Auth's handlers, from `@intelligo-dev/next/auth`                                                                            |
+| `app/api/webhooks/stripe/route.ts` | The Stripe webhook receiver                                                                                                        |
+| `intelligo.manifest.json`          | A hash of every generated file, so `doctor` and `upgrade --check` know what you changed                                            |
 
 Every one of these is yours from the first commit. Intelligo never overwrites them.
 

@@ -10,14 +10,19 @@ A fresh install chats against a deterministic stub model. Everything that makes 
 
 `app/api/chat/route.ts` is two lines and stays that way:
 
+<!-- snippet: packages/registry/base/chat/route.ts -->
+
 ```ts
 import { createChatHandler } from "@intelligo-dev/chat";
+
 import { chatServerConfig } from "@/lib/chat-server-config";
+
+export const maxDuration = 300;
 
 export const { POST, DELETE } = createChatHandler(chatServerConfig);
 ```
 
-Every turn goes through auth, the plan's rate limit, the feature gate, conversation persistence and the execution boundary inside `createChatHandler`. You change what the turn *does* in `lib/chat-server-config.ts`:
+Every turn goes through auth, the plan's rate limit, the feature gate, conversation persistence and the execution boundary inside `createChatHandler`. You change what the turn _does_ in `lib/chat-server-config.ts`:
 
 ```ts
 import { tool } from "ai";
@@ -49,15 +54,15 @@ Every model id must be registered with its pricing before it runs. `registerMode
 
 ### More seams
 
-| Field | Use it when |
-| --- | --- |
-| `resolveAgent(turn)` | More than one agent — pick prompt, tools and model per conversation |
-| `streamTurn(turn, prepared)` | Another runtime than `streamText`, such as a Mastra agent |
-| `models` | Letting the reader pick among allowed models |
-| `prepareMessages(turn, msgs)` | Windowing, summaries or injected context |
-| `attachments` | Accepting files, optionally stored and signed for the model only |
-| `deriveTitle` | A model-written conversation title |
-| `onTurn` | Telemetry for start, complete, fail, refuse, approval and feedback |
+| Field                         | Use it when                                                         |
+| ----------------------------- | ------------------------------------------------------------------- |
+| `resolveAgent(turn)`          | More than one agent — pick prompt, tools and model per conversation |
+| `streamTurn(turn, prepared)`  | Another runtime than `streamText`, such as a Mastra agent           |
+| `models`                      | Letting the reader pick among allowed models                        |
+| `prepareMessages(turn, msgs)` | Windowing, summaries or injected context                            |
+| `attachments`                 | Accepting files, optionally stored and signed for the model only    |
+| `deriveTitle`                 | A model-written conversation title                                  |
+| `onTurn`                      | Telemetry for start, complete, fail, refuse, approval and feedback  |
 
 Anything user-authored that reaches a system prompt — a stored summary, profile context — goes through `sanitizeForSystemPrompt()` from `@intelligo-dev/core/prompt` first.
 

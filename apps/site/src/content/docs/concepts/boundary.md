@@ -26,7 +26,7 @@ Intelligo ships the second half and stays out of the first.
 
 ## No agent abstraction, on purpose
 
-There is no `IntelligoAgent`, no `IntelligoTool`, no wrapper around your model calls ([ADR-0003](https://github.com/intelligo-mn/framework/blob/main/docs/adr/0003-ai-framework-boundary.md)). Intelligo records only the narrow boundary of a run — actor, workspace, capability, entitlement, status, usage, cost — through a lifecycle you call from your own code:
+There is no `IntelligoAgent`, no `IntelligoTool`, no wrapper around your model calls. Intelligo records only the narrow boundary of a run — actor, workspace, capability, entitlement, status, usage, cost — through a lifecycle you call from your own code:
 
 ```ts
 const run = await executions.begin({ workspaceId, userId, capability: "support.reply" });
