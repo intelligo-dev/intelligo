@@ -61,7 +61,7 @@ cd my-app && pnpm install
 pnpm dlx shadcn@latest add https://intelligo.dev/r/app-shell.json --yes   # repeat per item
 ```
 
-Set `DATABASE_URL` and `BETTER_AUTH_SECRET` in `.env`, then `pnpm db:push` and `pnpm dev`. The chat page streams against a built-in stub model, so the entire surface — sign-up, verification, workspaces, team, billing, usage, chat, artifacts — runs before you configure an AI provider.
+Copy `.env.example` to `.env.local` and set `DATABASE_URL` and `BETTER_AUTH_SECRET`, then `pnpm db:migrate` (the framework's migration chain, then your own) and `pnpm dev`. The chat page streams against a built-in stub model, so the entire surface — sign-up, verification, workspaces, team, billing, usage, chat, artifacts — runs before you configure an AI provider.
 
 Prefer to explore first? Clone this repository, run `pnpm install && pnpm dev`, and open **`apps/app`**, the reference application: a complete generic workspace AI SaaS built from nothing but the public packages and installed registry items. CI recreates it from a clean scaffold on every run.
 

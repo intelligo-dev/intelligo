@@ -16,9 +16,10 @@ pnpm add @intelligo-dev/cli
 
 ```bash
 npx @intelligo-dev/cli create my-app   # a registry-ready Next.js app
-intelligo add <item>                   # install a registry page
+intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance)
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate [--check]            # apply the framework chain
+intelligo upgrade --check              # what a template upgrade would change
 ```
 
 ## Why `migrate` is not `drizzle-kit migrate`
@@ -30,8 +31,9 @@ migrate` selects pending work by content hash, applies it in one transaction,
 and records it in the same table drizzle uses so both tools agree afterwards.
 
 It also **refuses** a database that has the schema but no records — the state
-`drizzle-kit push` leaves behind. Applying 44 migrations to tables that already
-exist fails part-way; `--check` reports `baseline` instead.
+`drizzle-kit push` leaves behind. Applying the chain to tables that already
+exist fails part-way; `--check` reports the database as unmanaged instead, to be
+baselined first.
 
 ## Licence
 

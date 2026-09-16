@@ -37,8 +37,8 @@ The framework migration chain ships inside this package
 [`@intelligo-dev/cli`](https://www.npmjs.com/package/@intelligo-dev/cli).
 
 Do not provision with `drizzle-kit push`. A pushed database has the schema and
-no migration records, and the migrator refuses it rather than half-applying 44
-files to tables that already exist.
+no migration records, and the migrator refuses it rather than half-applying the
+chain to tables that already exist.
 
 ## Licence
 
