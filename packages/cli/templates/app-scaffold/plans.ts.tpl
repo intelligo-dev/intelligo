@@ -4,10 +4,13 @@
  * This file is yours. Intelligo's billing engine knows only the shape;
  * the names, prices, and limits are entirely your product's, and it
  * reads them through the registry your composition root populates
- * (ADR-0006). Two limit keys are special because the credit engine
- * reads them directly: `monthlyCreditMnt` and `rolloverEnabled`.
+ * (ADR-0006). `monthlyAllowance` is what the credit engine enforces:
+ * an amount with its currency, which must be the one your composition
+ * root declares to `ensureBillingSettingsRow`. `rolloverEnabled` in
+ * `limits` is read directly too.
  */
 
+import { fromMajor } from "@intelligo-dev/core/money";
 import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
 export const PLANS: Record<string, PlanConfig> = {
@@ -19,7 +22,9 @@ export const PLANS: Record<string, PlanConfig> = {
     priceOneTime: 0,
     targetAudience: "Everyone",
     aiModelLabel: "Base",
-    limits: { monthlyCreditMnt: 2_000, rolloverEnabled: false },
+    /** Half a dollar of model time a month — roughly a hundred cheap turns. */
+    monthlyAllowance: fromMajor(0.5, "USD"),
+    limits: { rolloverEnabled: false },
     features: [],
     featuresMn: [],
   },
@@ -28,10 +33,12 @@ export const PLANS: Record<string, PlanConfig> = {
     slug: "pro",
     description: "For daily use",
     descriptionMn: "",
-    priceOneTime: 20_000,
+    priceOneTime: 20,
     targetAudience: "Teams",
     aiModelLabel: "Advanced",
-    limits: { monthlyCreditMnt: 60_000, rolloverEnabled: true },
+    /** $15 of model time inside a $20 plan. */
+    monthlyAllowance: fromMajor(15, "USD"),
+    limits: { rolloverEnabled: true },
     features: [],
     featuresMn: [],
   },

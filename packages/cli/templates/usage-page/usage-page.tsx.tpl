@@ -10,7 +10,14 @@
  */
 
 import { requireWorkspace } from "@intelligo-dev/auth";
+import { formatMoney, type Money } from "@intelligo-dev/core/money";
 import { listExecutions, summarizeExecutions } from "@intelligo-dev/executions";
+
+/** Amounts arrive as micros with their currency; never assume a symbol. */
+const show = (amounts: Money[]) =>
+  amounts.length === 0
+    ? "—"
+    : amounts.map((amount) => formatMoney(amount, "en-US")).join(" · ");
 
 export default async function UsagePage() {
   const { workspace } = await requireWorkspace();
@@ -30,7 +37,7 @@ export default async function UsagePage() {
       <p>
         {summary.totals.count} executions this month ·{" "}
         {summary.totals.totalTokens.toLocaleString()} tokens ·{" "}
-        {summary.totals.chargedMnt.toLocaleString()}₮
+        {show(summary.totals.charged)}
       </p>
 
       <table cellPadding={8}>
@@ -49,7 +56,14 @@ export default async function UsagePage() {
               <td>{e.capability}</td>
               <td>{e.status}</td>
               <td align="right">{e.totalTokens ?? 0}</td>
-              <td align="right">{e.chargedMnt ?? 0}₮</td>
+              <td align="right">
+                {e.chargedMicros !== null && e.currency
+                  ? formatMoney(
+                      { amount: e.chargedMicros, currency: e.currency } as Money,
+                      "en-US"
+                    )
+                  : "—"}
+              </td>
               <td>{e.startedAt.toISOString()}</td>
             </tr>
           ))}

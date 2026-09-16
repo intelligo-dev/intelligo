@@ -14,11 +14,13 @@ import "server-only";
  */
 
 import {
+  ensureBillingSettingsRow,
   reserveQuota,
   recordTokenUsage,
   releaseReservation,
   findSettlementByRequestId,
 } from "@intelligo-dev/billing";
+import { DEFAULT_MARGIN_BP } from "@intelligo-dev/executions/pricing";
 import {
   registerProductFeatures,
   registerProductPlans,
@@ -73,6 +75,18 @@ export function composeIntelligo(): void {
   // contracted rates, or add a model the framework has never heard of,
   // by passing your own array here.
   registerModels(DEFAULT_MODELS);
+
+  // What you bill in. Provider prices are USD, so a USD deployment
+  // converts at exactly 1.0; selling in another currency means stating
+  // its rate per USD here, in micros. There is no default rate — a
+  // framework that guesses one is inventing money. Seeds the row once;
+  // an existing row is left alone, because changing the currency under
+  // a ledger that holds balances is your decision, not a deploy's.
+  void ensureBillingSettingsRow({
+    currency: "USD",
+    usdRateMicros: 1_000_000,
+    marginBp: DEFAULT_MARGIN_BP,
+  });
 }
 
 export const executions = createExecutions({
@@ -85,14 +99,15 @@ export const executions = createExecutions({
       allowed: quota.allowed,
       code: quota.code,
       reason: quota.reason,
-      estimatedMnt: quota.estimatedMnt,
+      // The hold, as an amount with its currency.
+      estimated: quota.estimated,
       usingTrialCredits: quota.usingTrialCredits,
     };
   },
 
   async settleUsage(s) {
     // Returns what was charged and which pool funded it; the lifecycle
-    // records chargedMnt on the execution row.
+    // records the amount and its currency on the execution row.
     return recordTokenUsage({
       workspaceId: s.workspaceId,
       userId: s.userId ?? "",
