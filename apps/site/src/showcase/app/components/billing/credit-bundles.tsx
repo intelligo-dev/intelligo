@@ -11,18 +11,16 @@
  * (ADR-0010); localize it in that config file if this deployment
  * needs bundle names in more than one language.
  *
- * The bundle price is NOT formatted with `CURRENCY`. `CreditBundle`'s
- * amount field is `priceUsd`, and `createCreditCheckout` charges it
- * through Stripe with `currency: "usd"` — so the number on this card is
- * a US dollar amount whatever the deployment's ledger currency is.
- * Formatting it with `CURRENCY` printed a $1.01 pack as "₮1" in the
- * first non-USD deployment: right glyph, wrong money, and rounded to
- * nothing by `maximumFractionDigits: 0`. `CURRENCY` stays correct for
- * balances and usage, which really are in the ledger unit.
+ * A bundle carries two amounts and each is formatted in its own
+ * currency: `price` is what the buyer pays the payment provider, and
+ * `grant` is what lands in the ledger. They are not the same money —
+ * a pack can cost $5 and grant ₮100,000 — and the version of this card
+ * that formatted one number with the ledger's `CURRENCY` printed a
+ * $1.01 pack as "₮1": right glyph, wrong money, rounded to nothing.
  *
- * This is an interim honesty fix. The real repair is a `CreditBundle`
- * that carries its own currency on both the price and the grant, so the
- * two can never be read in each other's unit.
+ * A bundle still written in the older `{ credits, priceUsd }` shape is
+ * read the way the ledger read it: whole units of `CURRENCY`, priced
+ * in dollars.
  */
 
 import { useState } from "react";
@@ -34,15 +32,30 @@ import { Button } from "@showcase/components/ui/button";
 import { Card } from "@showcase/components/ui/card";
 
 import { createCreditPurchaseSession } from "@showcase/actions/billing";
-import { CREDIT_BUNDLES } from "@showcase/lib/billing-config";
+import { CREDIT_BUNDLES, CURRENCY } from "@showcase/lib/billing-config";
 
-/**
- * The currency `CreditBundle.priceUsd` is denominated in, and the one
- * `createCreditCheckout` passes to Stripe. Fixed by the framework
- * today, not a deployment choice — hence a constant here rather than a
- * value read from `@/lib/billing-config`.
- */
-const BUNDLE_PRICE_CURRENCY = "USD";
+/** Micros are millionths of one major unit. */
+const MICROS_PER_UNIT = 1_000_000;
+
+type Bundle = (typeof CREDIT_BUNDLES)[number];
+type Amount = { amount: number; currency: string };
+
+/** What the workspace receives, in the ledger's own currency. */
+function grantOf(bundle: Bundle): Amount {
+  return "grant" in bundle
+    ? bundle.grant
+    : { amount: bundle.credits * MICROS_PER_UNIT, currency: CURRENCY };
+}
+
+/** What the buyer pays, in the currency the provider charges. */
+function priceOf(bundle: Bundle): Amount {
+  return "price" in bundle
+    ? bundle.price
+    : {
+        amount: Math.round(bundle.priceUsd * MICROS_PER_UNIT),
+        currency: "USD",
+      };
+}
 
 interface CreditBundlesProps {
   currentCredits?: number;
@@ -85,6 +98,8 @@ export function CreditBundles({ currentCredits }: CreditBundlesProps) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {CREDIT_BUNDLES.map((bundle) => {
           const isLoading = loadingId === bundle.id;
+          const grant = grantOf(bundle);
+          const price = priceOf(bundle);
           return (
             <Card key={bundle.id} className="space-y-4 p-6">
               <div className="flex items-center gap-2">
@@ -92,16 +107,16 @@ export function CreditBundles({ currentCredits }: CreditBundlesProps) {
                 <p className="font-medium">{bundle.name}</p>
               </div>
               <p className="text-2xl font-semibold text-foreground">
-                {format.number(bundle.credits)}{" "}
-                <span className="text-sm font-normal text-muted-foreground">
-                  {t("creditBundles.creditsUnit", { count: bundle.credits })}
-                </span>
+                {format.number(grant.amount / MICROS_PER_UNIT, {
+                  style: "currency",
+                  currency: grant.currency,
+                })}
               </p>
               <p className="text-sm text-muted-foreground">
                 {t("creditBundles.oneTime", {
-                  price: format.number(bundle.priceUsd, {
+                  price: format.number(price.amount / MICROS_PER_UNIT, {
                     style: "currency",
-                    currency: BUNDLE_PRICE_CURRENCY,
+                    currency: price.currency,
                   }),
                 })}
               </p>

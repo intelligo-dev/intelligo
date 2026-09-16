@@ -21,6 +21,9 @@ const mocks = vi.hoisted(() => ({
   getOrCreateStripeCustomer: vi.fn(),
   getWorkspaceBilling: vi.fn(),
 
+  // ./billing-settings — what the deployment bills in.
+  getBillingSettings: vi.fn(),
+
   // db
   selectLimit: vi.fn(),
   selectWhere: vi.fn(),
@@ -41,6 +44,10 @@ vi.mock("./plans", () => ({
 vi.mock("./queries", () => ({
   getOrCreateStripeCustomer: mocks.getOrCreateStripeCustomer,
   getWorkspaceBilling: mocks.getWorkspaceBilling,
+}));
+
+vi.mock("./billing-settings", () => ({
+  getBillingSettings: mocks.getBillingSettings,
 }));
 
 vi.mock("@intelligo-dev/core/db", () => ({
@@ -77,6 +84,14 @@ beforeEach(() => {
   mocks.selectLimit.mockResolvedValue([
     { email: "a@example.com", name: "Alice", preferredLanguage: "en" },
   ]);
+  // A tugrik deployment, which is what the legacy bundle shape assumed.
+  mocks.getBillingSettings.mockResolvedValue({
+    currency: "MNT",
+    usdRateMicros: 3_450_000_000,
+    marginBp: 40_000,
+    usdToMntRate: 3450,
+    marginMultiplier: 4,
+  });
 
   mocks.insertValues.mockResolvedValue(undefined);
   mocks.insert.mockReturnValue({ values: mocks.insertValues });
@@ -241,6 +256,68 @@ describe("createCreditCheckout", () => {
       workspaceId: "ws_1",
       userId: "user_1",
       bundle: { id: "x", name: "x", credits: -1, priceUsd: 1 } as never,
+      successUrl: "https://app.example.com/settings/billing",
+      cancelUrl: "https://app.example.com/settings/billing",
+    });
+
+    await expect(call).rejects.toMatchObject({ code: "invalid_bundle" });
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("records what was paid and what was granted, separately", async () => {
+    mocks.checkoutSessionsCreate.mockResolvedValue({
+      url: "https://checkout.stripe.com/session_typed",
+    });
+
+    await createCreditCheckout({
+      workspaceId: "ws_1",
+      userId: "user_1",
+      bundle: {
+        id: "pack-5",
+        name: "Credit pack",
+        // ₮100,000 of credit, sold for $5. One number could never have
+        // said both, which is how a pack granted 100,000 of whatever
+        // the rate row happened to mean.
+        grant: { amount: 100_000_000_000, currency: "MNT" },
+        price: { amount: 5_000_000, currency: "USD" },
+      },
+      successUrl: "https://app.example.com/settings/billing?credits=success",
+      cancelUrl: "https://app.example.com/settings/billing?credits=cancelled",
+    });
+
+    expect(mocks.insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        grantedMicros: 100_000_000_000,
+        grantedCurrency: "MNT",
+        priceMinor: 500,
+        priceCurrency: "USD",
+      })
+    );
+    // The buyer is charged in the price's own currency, not a hardcoded one.
+    expect(mocks.checkoutSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [
+          expect.objectContaining({
+            price_data: expect.objectContaining({
+              currency: "usd",
+              unit_amount: 500,
+            }),
+          }),
+        ],
+      })
+    );
+  });
+
+  it("refuses a grant in a currency the ledger is not denominated in", async () => {
+    const call = createCreditCheckout({
+      workspaceId: "ws_1",
+      userId: "user_1",
+      bundle: {
+        id: "pack-usd",
+        name: "Credit pack",
+        grant: { amount: 5_000_000, currency: "USD" },
+        price: { amount: 5_000_000, currency: "USD" },
+      },
       successUrl: "https://app.example.com/settings/billing",
       cancelUrl: "https://app.example.com/settings/billing",
     });

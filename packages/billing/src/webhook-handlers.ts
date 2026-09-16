@@ -17,6 +17,7 @@ import {
 } from "@intelligo-dev/core/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { getStripe } from "./stripe";
+import { getBillingSettings } from "./billing-settings";
 import { resetMonthlyQuota } from "./quota";
 import { convertTrialToPaid } from "./trial";
 import { invalidateFeatureCache } from "./features";
@@ -28,6 +29,9 @@ import {
 } from "./webhook-helpers";
 
 const log = createLogger("Webhook");
+
+/** Micros are millionths of one major unit; whole units × this. */
+const MICROS_PER_UNIT = 1_000_000;
 
 // ---------------------------------------------------------------------------
 // WEB-01: Handle checkout.session.completed
@@ -172,11 +176,30 @@ export async function handleCheckoutCompleted(
         .where(eq(creditPurchases.id, purchase.id));
     }
 
-    // Credit the balance admission reads and settlement debits
-    // (`balance_mnt`, in the deployment's charging unit — the bundle's
-    // `credits` is denominated in that unit). The legacy `balance`
-    // column is not the balance; writing there made purchases invisible
-    // to enforcement. Arithmetic SQL so a replay cannot double-credit.
+    // Credit the balance admission reads and settlement debits. The
+    // purchase row says what was granted and in which currency; a row
+    // written before 0044 says only `credits`, which was always whole
+    // units of the billing currency. The legacy `balance` column is not
+    // the balance; writing there made purchases invisible to
+    // enforcement. Arithmetic SQL so a replay cannot double-credit.
+    const settings = await getBillingSettings();
+    const grantedCurrency = purchase.grantedCurrency ?? settings.currency;
+    const grantedMicros =
+      purchase.grantedMicros ?? purchase.credits * MICROS_PER_UNIT;
+
+    if (grantedCurrency !== settings.currency) {
+      // Crediting one currency into a ledger denominated in another is
+      // how a $5 pack became 100,000 of something else. Leave the
+      // purchase pending for an operator rather than guess a rate.
+      log.error("Credit purchase currency does not match the ledger", {
+        workspaceId,
+        purchaseId: purchase.id,
+        grantedCurrency,
+        ledgerCurrency: settings.currency,
+      });
+      return;
+    }
+
     await db
       .insert(creditBalances)
       .values({
@@ -184,6 +207,9 @@ export async function handleCheckoutCompleted(
         workspaceId,
         balanceMnt: purchase.credits,
         totalPurchasedMnt: purchase.credits,
+        balanceMicros: grantedMicros,
+        totalPurchasedMicros: grantedMicros,
+        currency: grantedCurrency,
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
@@ -191,8 +217,13 @@ export async function handleCheckoutCompleted(
         set: {
           balanceMnt: sql`${creditBalances.balanceMnt} + ${purchase.credits}`,
           totalPurchasedMnt: sql`${creditBalances.totalPurchasedMnt} + ${purchase.credits}`,
+          balanceMicros: sql`${creditBalances.balanceMicros} + ${grantedMicros}`,
+          totalPurchasedMicros: sql`${creditBalances.totalPurchasedMicros} + ${grantedMicros}`,
           updatedAt: new Date(),
         },
+        // A ledger already denominated in something else is not this
+        // purchase's to add to.
+        setWhere: sql`${creditBalances.currency} = ${grantedCurrency}`,
       });
 
     // Update status last so replay webhooks see completed and skip above.

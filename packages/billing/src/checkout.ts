@@ -22,10 +22,20 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@intelligo-dev/core/db";
 import { users, creditPurchases } from "@intelligo-dev/core/db/schema";
+import {
+  fromMajor,
+  money,
+  toMinor,
+  type Money,
+} from "@intelligo-dev/core/money";
 
+import { getBillingSettings } from "./billing-settings";
 import { getStripe } from "./stripe";
 import { getPlanBySlug } from "./plans";
 import { getOrCreateStripeCustomer, getWorkspaceBilling } from "./queries";
+
+/** Micros are millionths of one major unit; whole units × this. */
+const MICROS_PER_UNIT = 1_000_000;
 
 // ---------------------------------------------------------------------------
 // Errors
@@ -180,14 +190,39 @@ export async function createSubscriptionCheckout(
  * consumer's bound `lib/billing.ts`) passes the bundle it wants sold,
  * resolved from its own config; this schema only validates the shape.
  */
-export const creditBundleSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  /** Credits granted on completion. */
-  credits: z.number().int().positive(),
-  /** USD price, matching the unit `getOrCreateStripeCustomer`'s Stripe line item expects. */
-  priceUsd: z.number().positive(),
+const moneySchema = z.object({
+  /** Micros — millionths of one major unit. */
+  amount: z.number().int(),
+  currency: z.string().length(3),
 });
+
+/**
+ * Two amounts, deliberately separate: `price` is what the buyer is
+ * charged, in the currency the payment provider takes, and `grant` is
+ * what the workspace receives, in the deployment's billing currency.
+ *
+ * The older shape named one number for both — `credits: 100_000` sold
+ * for `priceUsd: 5` credited 100,000 of a unit nobody had named, worth
+ * ₮100,000 or $100,000 depending on a rate row. It is still accepted
+ * and read as whole units of the billing currency, which is what the
+ * ledger actually did with it.
+ */
+export const creditBundleSchema = z.union([
+  z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    grant: moneySchema,
+    price: moneySchema,
+  }),
+  z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    /** @deprecated Whole units of the billing currency; use `grant`. */
+    credits: z.number().int().positive(),
+    /** @deprecated USD price; use `price`. */
+    priceUsd: z.number().positive(),
+  }),
+]);
 
 export type CreditBundle = z.infer<typeof creditBundleSchema>;
 
@@ -231,14 +266,37 @@ export async function createCreditCheckout(
     userRow?.name ?? ""
   );
 
+  const settings = await getBillingSettings();
+  const grant: Money =
+    "grant" in bundle
+      ? money(bundle.grant.amount, bundle.grant.currency)
+      : money(bundle.credits * MICROS_PER_UNIT, settings.currency);
+  const price: Money =
+    "price" in bundle
+      ? money(bundle.price.amount, bundle.price.currency)
+      : fromMajor(bundle.priceUsd, "USD");
+
+  // Granting one currency into a ledger denominated in another is the
+  // bug this shape exists to prevent; refuse rather than invent a rate.
+  if (grant.currency !== settings.currency) {
+    throw new BillingServiceError(
+      "invalid_bundle",
+      `This deployment bills in ${settings.currency}, so a bundle granting ${grant.currency} cannot be credited to it.`
+    );
+  }
+
   const purchaseId = crypto.randomUUID();
-  const amountCents = Math.round(bundle.priceUsd * 100);
+  const priceMinor = toMinor(price);
 
   await db.insert(creditPurchases).values({
     id: purchaseId,
     workspaceId,
-    amount: amountCents,
-    credits: bundle.credits,
+    amount: priceMinor,
+    credits: Math.round(grant.amount / MICROS_PER_UNIT),
+    priceMinor,
+    priceCurrency: price.currency,
+    grantedMicros: grant.amount,
+    grantedCurrency: grant.currency,
     stripeCheckoutSessionId: "pending", // filled in by the webhook
     status: "pending",
   });
@@ -250,12 +308,14 @@ export async function createCreditCheckout(
     line_items: [
       {
         price_data: {
-          currency: "usd",
+          // The buyer is charged in the price's own currency, not in a
+          // hardcoded one the deployment may not sell in.
+          currency: price.currency.toLowerCase(),
           product_data: {
             name: bundle.name,
-            description: `${bundle.credits.toLocaleString()} AI credits`,
+            description: `${(grant.amount / MICROS_PER_UNIT).toLocaleString()} ${grant.currency} of AI credit`,
           },
-          unit_amount: amountCents,
+          unit_amount: priceMinor,
         },
         quantity: 1,
       },
@@ -263,7 +323,8 @@ export async function createCreditCheckout(
     metadata: {
       workspaceId,
       bundleId: bundle.id,
-      credits: String(bundle.credits),
+      grantedMicros: String(grant.amount),
+      grantedCurrency: grant.currency,
       purchaseId,
     },
     success_url: successUrl,
