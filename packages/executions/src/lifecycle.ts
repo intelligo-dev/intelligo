@@ -25,6 +25,7 @@
 
 import { db } from "@intelligo-dev/core/db";
 import { createLogger } from "@intelligo-dev/core/logger";
+import type { Money } from "@intelligo-dev/core/money";
 import { recordAuditEvent } from "@intelligo-dev/audit";
 import { and, eq } from "drizzle-orm";
 
@@ -78,7 +79,10 @@ export type ExecutionRun = {
   code?: string;
   /** Set when allowed is false. */
   reason?: string;
+  /** @deprecated Read `estimated`. */
   estimatedMnt?: number;
+  /** The hold entitlement took for this run. */
+  estimated?: Money;
   usingTrialCredits: boolean;
   complete(input?: CompleteExecutionInput): Promise<void>;
   fail(input: { error: unknown }): Promise<void>;
@@ -113,6 +117,8 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       status: decision.allowed ? "running" : "refused",
       model: input.model ?? null,
       reservedMnt: decision.estimatedMnt ?? null,
+      reservedMicros: decision.estimated?.amount ?? null,
+      currency: decision.estimated?.currency ?? null,
       refusalReason: decision.allowed ? null : (decision.reason ?? "refused"),
       startedAt,
       finishedAt: decision.allowed ? null : startedAt,
@@ -145,6 +151,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         code: decision.code,
         reason: decision.reason,
         estimatedMnt: decision.estimatedMnt,
+        estimated: decision.estimated,
         usingTrialCredits,
         async complete() {},
         async fail() {},
@@ -184,6 +191,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       requestId,
       allowed: true,
       estimatedMnt: decision.estimatedMnt,
+      estimated: decision.estimated,
       usingTrialCredits,
 
       async complete(result: CompleteExecutionInput = {}) {
@@ -213,6 +221,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         }
 
         let chargedMnt: number | undefined;
+        let charged: Money | undefined;
         if (ports.settleUsage) {
           try {
             const settled = await ports.settleUsage({
@@ -228,6 +237,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
               metadata: result.metadata ?? input.metadata,
             });
             chargedMnt = settled?.chargedMnt;
+            charged = settled?.charged;
           } catch (error) {
             // Usage is money: never silently drop it. The row stays
             // `settling` — a non-terminal state the stale sweep reports
@@ -265,6 +275,10 @@ export function createExecutions(ports: ExecutionPorts = {}) {
             outputTokens,
             totalTokens,
             chargedMnt: chargedMnt ?? null,
+            chargedMicros: charged?.amount ?? null,
+            // Only a real charge names the currency; a free capability
+            // leaves whatever the hold wrote.
+            ...(charged ? { currency: charged.currency } : {}),
           })
         );
 
@@ -280,6 +294,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
             model,
             totalTokens,
             chargedMnt,
+            charged,
           },
         });
       },
@@ -442,10 +457,23 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       const moved = await cas(
         "settling",
         "succeeded",
-        finish({ chargedMnt: existing.chargedMnt ?? null })
+        finish({
+          chargedMnt: existing.chargedMnt ?? null,
+          chargedMicros: existing.charged?.amount ?? null,
+          ...(existing.charged ? { currency: existing.charged.currency } : {}),
+        })
       );
-      if (moved) await audit("confirmed", { chargedMnt: existing.chargedMnt });
-      return { action: "confirmed", chargedMnt: existing.chargedMnt };
+      if (moved) {
+        await audit("confirmed", {
+          chargedMnt: existing.chargedMnt,
+          charged: existing.charged,
+        });
+      }
+      return {
+        action: "confirmed",
+        chargedMnt: existing.chargedMnt,
+        charged: existing.charged,
+      };
     }
 
     if (!ports.settleUsage || row.totalTokens === null) {
@@ -469,13 +497,18 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       metadata: row.metadata ?? undefined,
     });
     const chargedMnt = settled?.chargedMnt;
+    const charged = settled?.charged;
     await cas(
       "settling",
       "succeeded",
-      finish({ chargedMnt: chargedMnt ?? null })
+      finish({
+        chargedMnt: chargedMnt ?? null,
+        chargedMicros: charged?.amount ?? null,
+        ...(charged ? { currency: charged.currency } : {}),
+      })
     );
-    await audit("settled", { chargedMnt });
-    return { action: "settled", chargedMnt };
+    await audit("settled", { chargedMnt, charged });
+    return { action: "settled", chargedMnt, charged };
   }
 
   return { begin, reconcile };
@@ -488,9 +521,9 @@ export type ReconcileResult =
       reason?: string;
     }
   /** The ledger already held the charge; the row now says so. */
-  | { action: "confirmed"; chargedMnt?: number }
+  | { action: "confirmed"; chargedMnt?: number; charged?: Money }
   /** Settlement was re-run from the recorded usage. */
-  | { action: "settled"; chargedMnt?: number }
+  | { action: "settled"; chargedMnt?: number; charged?: Money }
   /** A stale `running` row was failed and its hold released. */
   | { action: "abandoned" };
 

@@ -4,9 +4,32 @@
  */
 
 import { db } from "@intelligo-dev/core/db";
+import { money, type Money } from "@intelligo-dev/core/money";
 import { and, desc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 
 import { executions } from "./db/schema";
+
+/**
+ * Charges summed per currency.
+ *
+ * A workspace bills in one currency, so this is normally one entry —
+ * but the rows are what the ledger holds, and adding two currencies
+ * into a single number is how a total starts lying. Rows with no
+ * currency are executions that were never charged.
+ */
+function chargedByCurrency(
+  rows: ReadonlyArray<{ currency: string | null; chargedMicros: unknown }>
+): Money[] {
+  const totals = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.currency) continue;
+    // `sum()` of a bigint column arrives as a string.
+    const amount = Number(row.chargedMicros ?? 0);
+    if (amount === 0) continue;
+    totals.set(row.currency, (totals.get(row.currency) ?? 0) + amount);
+  }
+  return [...totals].map(([code, amount]) => money(amount, code));
+}
 
 export type ListExecutionsOptions = {
   workspaceId?: string;
@@ -60,9 +83,11 @@ export async function summarizeExecutions(
   const rows = await db
     .select({
       status: executions.status,
+      currency: executions.currency,
       count: sql<number>`count(*)`,
       totalTokens: sql<number>`coalesce(sum(${executions.totalTokens}), 0)`,
       chargedMnt: sql<number>`coalesce(sum(${executions.chargedMnt}), 0)`,
+      chargedMicros: sql<string>`coalesce(sum(${executions.chargedMicros}), 0)`,
     })
     .from(executions)
     .where(
@@ -72,29 +97,42 @@ export async function summarizeExecutions(
         lte(executions.startedAt, window.to)
       )
     )
-    .groupBy(executions.status);
+    .groupBy(executions.status, executions.currency);
 
-  const byStatus = Object.fromEntries(
-    rows.map((r) => [
-      r.status,
-      {
-        count: Number(r.count),
-        totalTokens: Number(r.totalTokens),
-        chargedMnt: Number(r.chargedMnt),
-      },
-    ])
-  );
+  // A status can now arrive as several rows — one per currency — so the
+  // per-status view folds them back together.
+  const byStatus: Record<
+    string,
+    { count: number; totalTokens: number; chargedMnt: number; charged: Money[] }
+  > = {};
+  for (const r of rows) {
+    const seen = byStatus[r.status] ?? {
+      count: 0,
+      totalTokens: 0,
+      chargedMnt: 0,
+      charged: [],
+    };
+    byStatus[r.status] = {
+      count: seen.count + Number(r.count),
+      totalTokens: seen.totalTokens + Number(r.totalTokens),
+      chargedMnt: seen.chargedMnt + Number(r.chargedMnt),
+      charged: chargedByCurrency(rows.filter((row) => row.status === r.status)),
+    };
+  }
 
   return {
     byStatus,
-    totals: rows.reduce(
-      (acc, r) => ({
-        count: acc.count + Number(r.count),
-        totalTokens: acc.totalTokens + Number(r.totalTokens),
-        chargedMnt: acc.chargedMnt + Number(r.chargedMnt),
-      }),
-      { count: 0, totalTokens: 0, chargedMnt: 0 }
-    ),
+    totals: {
+      ...rows.reduce(
+        (acc, r) => ({
+          count: acc.count + Number(r.count),
+          totalTokens: acc.totalTokens + Number(r.totalTokens),
+          chargedMnt: acc.chargedMnt + Number(r.chargedMnt),
+        }),
+        { count: 0, totalTokens: 0, chargedMnt: 0 }
+      ),
+      charged: chargedByCurrency(rows),
+    },
   };
 }
 
@@ -122,6 +160,7 @@ export async function summarizeExecutionsByDay(
     count: number;
     totalTokens: number;
     chargedMnt: number;
+    charged: Money[];
   }>
 > {
   const day = sql<string>`to_char(${executions.startedAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`;
@@ -129,9 +168,11 @@ export async function summarizeExecutionsByDay(
   const rows = await db
     .select({
       date: day,
+      currency: executions.currency,
       count: sql<number>`count(*)`,
       totalTokens: sql<number>`coalesce(sum(${executions.totalTokens}), 0)`,
       chargedMnt: sql<number>`coalesce(sum(${executions.chargedMnt}), 0)`,
+      chargedMicros: sql<string>`coalesce(sum(${executions.chargedMicros}), 0)`,
     })
     .from(executions)
     .where(
@@ -141,14 +182,21 @@ export async function summarizeExecutionsByDay(
         lte(executions.startedAt, window.to)
       )
     )
-    .groupBy(day)
+    .groupBy(day, executions.currency)
     .orderBy(day);
 
-  return rows.map((row) => ({
-    date: row.date,
-    count: Number(row.count),
-    totalTokens: Number(row.totalTokens),
-    chargedMnt: Number(row.chargedMnt),
+  // One row per day and currency; the series a chart draws is per day.
+  const byDay = new Map<string, (typeof rows)[number][]>();
+  for (const row of rows) {
+    byDay.set(row.date, [...(byDay.get(row.date) ?? []), row]);
+  }
+
+  return [...byDay].map(([date, dayRows]) => ({
+    date,
+    count: dayRows.reduce((sum, row) => sum + Number(row.count), 0),
+    totalTokens: dayRows.reduce((sum, row) => sum + Number(row.totalTokens), 0),
+    chargedMnt: dayRows.reduce((sum, row) => sum + Number(row.chargedMnt), 0),
+    charged: chargedByCurrency(dayRows),
   }));
 }
 

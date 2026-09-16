@@ -13,6 +13,8 @@
  * reference app and any non-metered capability want.
  */
 
+import type { Money } from "@intelligo-dev/core/money";
+
 export type EntitlementDecision = {
   allowed: boolean;
   /**
@@ -23,8 +25,15 @@ export type EntitlementDecision = {
   code?: string;
   /** Human-readable refusal, surfaced to the caller and recorded. */
   reason?: string;
-  /** Worst-case charge held for this execution, in MNT. */
+  /**
+   * Worst-case charge held for this execution, in MNT.
+   *
+   * @deprecated Bind `estimated` instead; this is read only while a
+   * port still speaks whole tugrik, and goes with migration 0045.
+   */
   estimatedMnt?: number;
+  /** Worst-case charge held for this execution. Wins over `estimatedMnt`. */
+  estimated?: Money;
   /** True when the hold came out of the trial grant. */
   usingTrialCredits?: boolean;
 };
@@ -52,8 +61,15 @@ export type UsageSettlement = {
 };
 
 export type SettlementResult = {
-  /** Actual amount charged, in MNT, if the port computed one. */
+  /**
+   * Actual amount charged, in MNT, if the port computed one.
+   *
+   * @deprecated Return `charged` instead; this is read only while a
+   * port still speaks whole tugrik, and goes with migration 0045.
+   */
   chargedMnt?: number;
+  /** What the port actually charged. Wins over `chargedMnt`. */
+  charged?: Money;
 };
 
 export type SettlementQuery = {

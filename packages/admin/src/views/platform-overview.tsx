@@ -1,3 +1,5 @@
+import { formatMoney } from "@intelligo-dev/core/money";
+
 import type { PlatformOverview, WorkspaceRow } from "../queries";
 
 /**
@@ -49,7 +51,17 @@ export function PlatformOverviewView({
                 like nothing at all in an error dashboard. */}
             {overview.refused24h} refused
           </li>
-          <li>{overview.chargedMnt24h.toLocaleString()}₮ charged</li>
+          <li>
+            {/* One entry per currency: the console is above any single
+                deployment, and adding two currencies together would be
+                a number that is true of neither. */}
+            {overview.charged24h.length === 0
+              ? "nothing"
+              : overview.charged24h
+                  .map((amount) => formatMoney(amount, "en-US"))
+                  .join(" · ")}{" "}
+            charged
+          </li>
         </ul>
       </section>
 

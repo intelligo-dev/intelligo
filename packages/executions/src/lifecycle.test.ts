@@ -55,6 +55,8 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn((col: unknown, val: unknown) => ({ op: "eq", col, val })),
 }));
 
+import { money } from "@intelligo-dev/core/money";
+
 import { createExecutions } from "./lifecycle";
 
 /** The row inserted by begin(). */
@@ -185,6 +187,23 @@ describe("begin", () => {
     expect(run.usingTrialCredits).toBe(true);
     expect(insertedRow().reservedMnt).toBe(1500);
   });
+
+  it("carries a typed hold onto the row, with the currency it is in", async () => {
+    const executions = createExecutions({
+      checkEntitlement: vi.fn().mockResolvedValue({
+        allowed: true,
+        estimated: money(4_820, "USD"),
+      }),
+    });
+
+    const run = await executions.begin(beginInput);
+
+    expect(run.estimated).toEqual(money(4_820, "USD"));
+    expect(insertedRow()).toMatchObject({
+      reservedMicros: 4_820,
+      currency: "USD",
+    });
+  });
 });
 
 describe("complete", () => {
@@ -217,6 +236,24 @@ describe("complete", () => {
       model: "anthropic/claude-sonnet-4-6",
     });
     expect(auditActions()).toEqual(["execution.completed"]);
+  });
+
+  it("records a typed charge in micros, with the currency it is in", async () => {
+    // What a USD deployment charges for one turn: a fraction of a cent,
+    // which the whole-unit column could only round to nothing or to $1.
+    const settleUsage = vi
+      .fn()
+      .mockResolvedValue({ charged: money(4_792, "USD") });
+    const executions = createExecutions({ settleUsage });
+
+    const run = await executions.begin(beginInput);
+    await run.complete({ usage: { inputTokens: 1_100, outputTokens: 347 } });
+
+    expect(updatedFields(1)).toMatchObject({
+      status: "succeeded",
+      chargedMicros: 4_792,
+      currency: "USD",
+    });
   });
 
   it("derives totalTokens from the split when the provider omits it", async () => {
