@@ -11,7 +11,7 @@
     "type-check": "node scripts/tsconfig-paths.mjs && tsc --noEmit"
   },
   "devDependencies": {
-    "@ai-sdk/react": "^3.0.286",
+    "@ai-sdk/react": "^4.0.106",
     "@codemirror/lang-javascript": "^6.2.5",
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/state": "^6.7.5",
@@ -31,7 +31,7 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "19.2.18",
     "@types/react-dom": "^19.3.0",
-    "ai": "^6.0.283",
+    "ai": "^7.0.103",
     "class-variance-authority": "^0.7.1",
     "codemirror": "^6.0.2",
     "drizzle-orm": "^0.45.2",

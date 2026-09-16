@@ -14,8 +14,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.122",
-    "@ai-sdk/react": "^3.0.286",
+    "@ai-sdk/google": "^4.0.73",
+    "@ai-sdk/react": "^4.0.106",
     "@base-ui/react": "^1.8.0",
     "@codemirror/lang-javascript": "^6.2.5",
     "@codemirror/lang-python": "^6.2.1",
@@ -39,7 +39,7 @@
     "@streamdown/math": "^1.0.2",
     "@streamdown/mermaid": "^1.0.2",
     "@types/papaparse": "^5.5.2",
-    "ai": "^6.0.283",
+    "ai": "^7.0.103",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",
     "cn": "^0.3.0",
