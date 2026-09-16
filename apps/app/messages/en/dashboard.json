@@ -14,7 +14,9 @@
   },
   "promptBar": {
     "placeholder": "Ask anything…",
-    "send": "Send"
+    "send": "Send",
+    "voiceStart": "Start voice input",
+    "voiceStop": "Stop voice input"
   },
   "recent": {
     "title": "Recent",
