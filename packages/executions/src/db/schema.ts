@@ -26,6 +26,7 @@ import {
   text,
   timestamp,
   integer,
+  bigint,
   jsonb,
   index,
 } from "drizzle-orm/pg-core";
@@ -67,6 +68,12 @@ export const executions = pgTable(
     chargedMnt: integer("charged_mnt"),
     /** Worst-case estimate held at admission. */
     reservedMnt: integer("reserved_mnt"),
+    /** Authoritative charge in micros of `currency`, mirrored from usage_records. */
+    chargedMicros: bigint("charged_micros", { mode: "number" }),
+    /** Worst-case estimate held at admission, in micros of `currency`. */
+    reservedMicros: bigint("reserved_micros", { mode: "number" }),
+    /** What this row's amounts are denominated in; null until one is set. */
+    currency: text("currency"),
     /** Populated on status=refused: why entitlement said no. */
     refusalReason: text("refusal_reason"),
     /** Populated on status=failed. */

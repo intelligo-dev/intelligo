@@ -12,6 +12,7 @@ import {
   text,
   timestamp,
   integer,
+  bigint,
   boolean,
   index,
   unique,
@@ -86,6 +87,18 @@ export const creditBalances = pgTable("credit_balances", {
   balanceMnt: integer("balance_mnt").notNull().default(0),
   totalPurchasedMnt: integer("total_purchased_mnt").notNull().default(0),
   totalUsedMnt: integer("total_used_mnt").notNull().default(0),
+  /** The balance, in micros of `currency`. Replaces the `*Mnt` columns. */
+  balanceMicros: bigint("balance_micros", { mode: "number" })
+    .notNull()
+    .default(0),
+  totalPurchasedMicros: bigint("total_purchased_micros", { mode: "number" })
+    .notNull()
+    .default(0),
+  totalUsedMicros: bigint("total_used_micros", { mode: "number" })
+    .notNull()
+    .default(0),
+  /** What this ledger is denominated in; a write in another is refused. */
+  currency: text("currency").notNull().default("MNT"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
@@ -102,6 +115,14 @@ export const billingSettings = pgTable("billing_settings", {
   usdToMntRate: integer("usd_to_mnt_rate").notNull().default(3450),
   /** Markup applied to raw model cost (×100, store as integer for precision) */
   marginMultiplierBp: integer("margin_multiplier_bp").notNull().default(400), // 400 = 4.00x
+  /** The deployment's billing currency — every ledger row is in this. */
+  currency: text("currency").notNull().default("MNT"),
+  /** What one USD costs in it, in micros: 1_000_000 is a USD deployment. */
+  usdRateMicros: bigint("usd_rate_micros", { mode: "number" })
+    .notNull()
+    .default(3_450_000_000),
+  /** Margin over provider cost, in basis points of a multiplier: 40_000 = 4×. */
+  marginBp: integer("margin_bp").notNull().default(40_000),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
@@ -118,6 +139,17 @@ export const creditPurchases = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     amount: integer("amount").notNull(), // cents paid
     credits: integer("credits").notNull(), // balance units credited (same unit as credit_balances.balance_mnt)
+    /** What the buyer paid, in minor units of `priceCurrency`. */
+    priceMinor: integer("price_minor"),
+    priceCurrency: text("price_currency"),
+    /**
+     * What the workspace was granted, in micros of `grantedCurrency`.
+     * Separate from the price on purpose: a pack sold for $5 grants an
+     * amount of the billing currency, and conflating the two is how
+     * 100,000 of one unit came to be sold for $5 of another.
+     */
+    grantedMicros: bigint("granted_micros", { mode: "number" }),
+    grantedCurrency: text("granted_currency"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
     stripeCheckoutSessionId: text("stripe_checkout_session_id"),
     status: text("status").notNull().default("pending"), // pending|completed|failed
@@ -138,7 +170,9 @@ export const financeEvents = pgTable("finance_events", {
   stripeEventId: text("stripe_event_id").notNull().unique(),
   type: text("type").notNull(), // e.g., "checkout.session.completed", "invoice.paid"
   amount: integer("amount"), // cents
-  currency: text("currency").default("usd"),
+  /** Stripe's own amount, in the minor units of `currency`. */
+  amountMinor: integer("amount_minor"),
+  currency: text("currency").default("USD"),
   metadata: text("metadata"), // JSON string
   processedAt: timestamp("processed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -166,6 +200,11 @@ export const creditReservations = pgTable(
     /** Correlates admission with settlement — future execution id. */
     requestId: text("request_id").notNull().unique(),
     estimatedMnt: integer("estimated_mnt").notNull(),
+    /** The hold, in micros of `currency`. */
+    estimatedMicros: bigint("estimated_micros", { mode: "number" })
+      .notNull()
+      .default(0),
+    currency: text("currency").notNull().default("MNT"),
     status: text("status").notNull().default("active"), // active | settled
     createdAt: timestamp("created_at").notNull().defaultNow(),
     expiresAt: timestamp("expires_at").notNull(),

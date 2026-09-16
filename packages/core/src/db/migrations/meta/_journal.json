@@ -316,6 +316,13 @@
       "when": 1789304236375,
       "tag": "0043_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1789491600000,
+      "tag": "0044_money_micros",
+      "breakpoints": true
     }
   ]
 }

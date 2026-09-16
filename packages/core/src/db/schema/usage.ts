@@ -13,6 +13,7 @@ import {
   text,
   timestamp,
   integer,
+  bigint,
   real,
   index,
   unique,
@@ -55,6 +56,20 @@ export const usageRecords = pgTable(
     fxRate: real("fx_rate").notNull().default(0),
     /** Authoritative MNT amount deducted from balance */
     chargedMnt: integer("charged_mnt").notNull().default(0),
+    /** What the provider charged, in USD micros — exact, unlike `cost`. */
+    providerCostMicros: bigint("provider_cost_micros", { mode: "number" })
+      .notNull()
+      .default(0),
+    /** Snapshots of the rate and margin this charge was computed with. */
+    marginBp: integer("margin_bp").notNull().default(0),
+    usdRateMicros: bigint("usd_rate_micros", { mode: "number" })
+      .notNull()
+      .default(0),
+    /** Authoritative charge, in micros of `currency`. */
+    chargedMicros: bigint("charged_micros", { mode: "number" })
+      .notNull()
+      .default(0),
+    currency: text("currency").notNull().default("MNT"),
     /** Request correlation id for log tracing */
     requestId: text("request_id"),
     /**
@@ -100,6 +115,11 @@ export const monthlyUsage = pgTable(
     tokensUsed: integer("tokens_used").notNull().default(0),
     /** MNT-denominated total charged this period — authoritative for plan quota */
     chargedMnt: integer("charged_mnt").notNull().default(0),
+    /** The plan allowance spent this period, in micros of `currency`. */
+    allowanceUsedMicros: bigint("allowance_used_micros", { mode: "number" })
+      .notNull()
+      .default(0),
+    currency: text("currency").notNull().default("MNT"),
     requestCount: integer("request_count").notNull().default(0),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -140,6 +160,15 @@ export const trialCredits = pgTable(
     creditsRemainingMnt: integer("credits_remaining_mnt")
       .notNull()
       .default(5000),
+    /** The grant, in micros of `currency`. */
+    initialMicros: bigint("initial_micros", { mode: "number" })
+      .notNull()
+      .default(0),
+    usedMicros: bigint("used_micros", { mode: "number" }).notNull().default(0),
+    remainingMicros: bigint("remaining_micros", { mode: "number" })
+      .notNull()
+      .default(0),
+    currency: text("currency").notNull().default("MNT"),
     status: text("status").notNull().default("active"), // active|depleted|converted|expired
     provisionedAt: timestamp("provisioned_at").notNull().defaultNow(),
     trialEndDate: timestamp("trial_end_date"), // 14 days from provisioning
