@@ -47,6 +47,8 @@ export async function docsSidebar() {
         id: d.id,
         href: docHref(d.id),
         label: d.data.label ?? d.data.title,
+        /** Package pages are named after the package: set in mono. */
+        code: s.id === "packages" && d.id !== "packages",
       })),
   })).filter((s) => s.items.length > 0);
 }

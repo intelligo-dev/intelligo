@@ -1,9 +1,11 @@
 ---
 /**
  * A docs page: the site's nav and rails, a section sidebar, the article,
- * an on-page contents list on wide screens, and prev/next in reading
- * order. Shares the token contract with every other page, so the theme
- * toggle and the design system reach the docs unchanged.
+ * an on-page contents list with the section you are reading marked, and
+ * prev/next in reading order. Shares the token contract with every other
+ * page, so the theme toggle and the design system reach the docs
+ * unchanged. Code blocks arrive framed from the markdown pipeline
+ * (lib/markdown.mjs); the script below copies them and tracks the TOC.
  */
 import Base from "@/layouts/Base.astro";
 import Footer from "@/components/footer.astro";
@@ -26,26 +28,24 @@ interface Props {
 const { path, section, title, description, headings = [], prev, next, source } = Astro.props;
 const sidebar = await docsSidebar();
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const current = sidebar.flatMap((s) => s.items).find((i) => i.href === path);
 ---
 <Base title={`${title} — ${SITE.name} docs`} description={description}>
   <Nav client:load current={path} />
   <main class="rails">
-    <div class="grid grid-cols-1 border-t border-border lg:grid-cols-[230px_minmax(0,1fr)] xl:grid-cols-[230px_minmax(0,1fr)_200px]">
+    <div class="grid grid-cols-1 border-t border-border lg:grid-cols-[248px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)_216px]">
       <aside class="hidden border-r border-border lg:block">
-        <nav aria-label="Docs" class="sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto px-6 py-8">
+        <nav aria-label="Docs" class="docs-scroll sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto px-5 pb-10 pt-8" data-docs-sidebar>
           {sidebar.map((s) => (
-            <div class="mb-6">
-              <div class="tag mb-1.5">{s.title}</div>
-              <ul class="space-y-0.5">
+            <div class="mb-7 last:mb-0">
+              <div class="docs-section-title">{s.title}</div>
+              <ul class="docs-rail">
                 {s.items.map((i) => (
                   <li>
                     <a
                       href={i.href}
                       aria-current={i.href === path ? "page" : undefined}
-                      class:list={[
-                        "-mx-2 block rounded-md px-2 py-1 text-[0.86rem] no-underline transition-colors",
-                        i.href === path ? "bg-muted font-medium text-foreground" : "text-foreground/70 hover:text-foreground",
-                      ]}
+                      class:list={["docs-link", i.code && "mono text-[0.8rem]"]}
                     >{i.label}</a>
                   </li>
                 ))}
@@ -56,15 +56,27 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
       </aside>
 
       <div class="min-w-0">
-        <details class="border-b border-border lg:hidden">
-          <summary class="mono cursor-pointer px-6 py-3 text-[0.8rem] text-foreground/70">{section} · docs menu</summary>
-          <nav aria-label="Docs" class="px-6 pb-4">
+        <details class="docs-mobile-menu group sticky top-14 z-20 border-b border-border bg-background/90 backdrop-blur-md lg:hidden">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-3">
+            <span class="flex min-w-0 items-center gap-2 text-[0.85rem]">
+              <span class="text-muted-foreground">{section}</span>
+              <span class="text-muted-foreground" aria-hidden="true">/</span>
+              <span class="truncate font-medium text-foreground">{current?.label ?? title}</span>
+            </span>
+            <span class="mono flex shrink-0 items-center gap-1.5 text-[0.72rem] text-muted-foreground">
+              Menu
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="transition-transform duration-normal group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
+            </span>
+          </summary>
+          <nav aria-label="Docs" class="docs-scroll max-h-[70vh] overflow-y-auto border-t border-border px-6 pb-6 pt-4">
             {sidebar.map((s) => (
-              <div class="mt-3">
-                <div class="tag mb-1">{s.title}</div>
-                <ul class="space-y-0.5">
+              <div class="mb-5 last:mb-0">
+                <div class="docs-section-title">{s.title}</div>
+                <ul class="docs-rail">
                   {s.items.map((i) => (
-                    <li><a href={i.href} class:list={["block py-1 text-[0.9rem] no-underline", i.href === path ? "text-foreground" : "text-foreground/70"]}>{i.label}</a></li>
+                    <li>
+                      <a href={i.href} aria-current={i.href === path ? "page" : undefined} class:list={["docs-link", i.code && "mono text-[0.8rem]"]}>{i.label}</a>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -72,53 +84,135 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
           </nav>
         </details>
 
-        <article class="px-6 py-10 md:px-10 md:py-14">
-          <header class="mb-8 border-b border-border pb-8">
-            <span class="tag">{section}</span>
-            <h1 class="heading mt-2 text-[clamp(1.8rem,3vw,2.5rem)] font-medium leading-[1.08]">{title}</h1>
-            <p class="mt-3 max-w-[62ch] text-[1.02rem] text-muted-foreground">{description}</p>
+        <article class="px-6 pb-12 pt-10 md:px-12 md:pt-14">
+          <header class="mb-10">
+            <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-[0.8rem] text-muted-foreground">
+              <a href="/docs" class="no-underline hover:text-foreground">Docs</a>
+              {section !== "Docs" && (
+                <>
+                  <span aria-hidden="true">/</span>
+                  <span>{section}</span>
+                </>
+              )}
+            </nav>
+            <h1 class="heading mt-3 text-[clamp(1.9rem,3.2vw,2.6rem)] font-medium leading-[1.08] tracking-[-0.01em]">{title}</h1>
+            <p class="mt-4 max-w-[62ch] text-[1.05rem] leading-relaxed text-muted-foreground">{description}</p>
           </header>
           <div class="docs-prose">
             <slot />
           </div>
 
-          <nav aria-label="Previous and next" class="mt-14 grid grid-cols-2 gap-3 border-t border-border pt-6">
+          <nav aria-label="Previous and next" class="mt-16 grid gap-3 border-t border-border pt-8 sm:grid-cols-2">
             {prev ? (
-              <a href={prev.href} class="rounded-md border border-border px-4 py-3 no-underline hover:bg-card">
-                <span class="mono block text-[0.68rem] text-muted-foreground">← previous</span>
-                <span class="block text-[0.92rem] text-foreground">{prev.label}</span>
+              <a href={prev.href} class="docs-pager">
+                <span class="mono block text-[0.68rem] uppercase tracking-[0.08em] text-muted-foreground">Previous</span>
+                <span class="mt-1 block text-[0.95rem] font-medium text-foreground">← {prev.label}</span>
               </a>
-            ) : <span />}
+            ) : <span class="hidden sm:block" />}
             {next && (
-              <a href={next.href} class="col-start-2 rounded-md border border-border px-4 py-3 text-right no-underline hover:bg-card">
-                <span class="mono block text-[0.68rem] text-muted-foreground">next →</span>
-                <span class="block text-[0.92rem] text-foreground">{next.label}</span>
+              <a href={next.href} class="docs-pager sm:text-right">
+                <span class="mono block text-[0.68rem] uppercase tracking-[0.08em] text-muted-foreground">Next</span>
+                <span class="mt-1 block text-[0.95rem] font-medium text-foreground">{next.label} →</span>
               </a>
             )}
           </nav>
-          {source && (
-            <p class="mono mt-6 text-[0.7rem] text-muted-foreground">
-              <a href={`${SITE.github}/edit/main/${source}`} class="hover:text-foreground">Edit this page on GitHub →</a>
-            </p>
-          )}
         </article>
       </div>
 
       <aside class="hidden border-l border-border xl:block">
-        {toc.length > 1 && (
-          <nav aria-label="On this page" class="sticky top-14 px-5 py-10">
-            <div class="tag mb-2">On this page</div>
-            <ul class="space-y-1">
-              {toc.map((h) => (
-                <li class:list={[h.depth === 3 && "pl-3"]}>
-                  <a href={`#${h.slug}`} class="block text-[0.8rem] leading-snug text-foreground/70 no-underline hover:text-foreground">{h.text}</a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        )}
+        <div class="docs-scroll sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto px-5 pb-10 pt-8">
+          {toc.length > 1 && (
+            <nav aria-label="On this page" data-docs-toc>
+              <div class="docs-section-title">On this page</div>
+              <ul class="docs-rail">
+                {toc.map((h) => (
+                  <li>
+                    <a href={`#${h.slug}`} data-toc={h.slug} class:list={["docs-link text-[0.8rem]", h.depth === 3 && "pl-6"]}>{h.text}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
+          <div class:list={["space-y-2 text-[0.8rem]", toc.length > 1 && "mt-8 border-t border-border pt-5"]}>
+            {source && (
+              <a href={`${SITE.github}/edit/main/${source}`} class="block text-muted-foreground no-underline hover:text-foreground">Edit this page ↗</a>
+            )}
+            <a href="#top" class="block text-muted-foreground no-underline hover:text-foreground" data-docs-top>Back to top ↑</a>
+          </div>
+        </div>
       </aside>
     </div>
     <Footer />
   </main>
 </Base>
+
+<script>
+  // Copy: every framed code block, by delegation.
+  document.addEventListener("click", async (event) => {
+    const button = (event.target as Element | null)?.closest<HTMLButtonElement>("[data-copy]");
+    if (!button) return;
+    const code = button.closest(".code-frame")?.querySelector("pre")?.innerText ?? "";
+    try {
+      await navigator.clipboard.writeText(code.replace(/\n$/, ""));
+      button.dataset.copied = "";
+      button.setAttribute("aria-label", "Copied");
+      setTimeout(() => {
+        delete button.dataset.copied;
+        button.setAttribute("aria-label", "Copy code");
+      }, 1600);
+    } catch {
+      button.setAttribute("aria-label", "Copy failed");
+    }
+  });
+
+  // The current page in view in the sidebar, without scrolling the page.
+  const sidebar = document.querySelector<HTMLElement>("[data-docs-sidebar]");
+  const active = sidebar?.querySelector<HTMLElement>('[aria-current="page"]');
+  if (sidebar && active) {
+    const top = active.offsetTop - sidebar.clientHeight / 3;
+    if (top > 0) sidebar.scrollTop = top;
+  }
+
+  // A hover anchor on each h2/h3, so a section can be linked to.
+  for (const h of document.querySelectorAll<HTMLElement>(".docs-prose h2[id], .docs-prose h3[id]")) {
+    const a = document.createElement("a");
+    a.href = `#${h.id}`;
+    a.className = "heading-anchor";
+    a.setAttribute("aria-label", `Link to ${h.textContent ?? "this section"}`);
+    a.textContent = "#";
+    h.append(a);
+  }
+
+  // Back to top: the page has no #top on every layout.
+  document.querySelector("[data-docs-top]")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  // The TOC marks the section being read: the last heading above the upper third.
+  const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-toc]")];
+  const headings = links
+    .map((a) => document.getElementById(a.dataset.toc!))
+    .filter((h): h is HTMLElement => !!h);
+  if (headings.length) {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const line = window.innerHeight * 0.3;
+      let current = headings[0]!;
+      for (const h of headings) {
+        if (h.getBoundingClientRect().top <= line) current = h;
+        else break;
+      }
+      const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      if (atEnd) current = headings[headings.length - 1]!;
+      for (const a of links) {
+        if (a.dataset.toc === current.id) a.setAttribute("aria-current", "true");
+        else a.removeAttribute("aria-current");
+      }
+    };
+    update();
+    window.addEventListener("scroll", () => { if (!frame) frame = requestAnimationFrame(update); }, { passive: true });
+    window.addEventListener("resize", update);
+  }
+</script>

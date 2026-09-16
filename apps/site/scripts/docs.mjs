@@ -200,6 +200,7 @@ function packagePages(root) {
       title: "Packages",
       description: `The ${pkgs.length} packages published under @intelligo-dev, at one version.`,
       order: 0,
+      label: "Overview",
     }) +
     `${marker("each package's package.json")}\n\n` +
     `Every package is published at the same version, by one release commit. \`intelligo create\` adds the set an application needs. How the set is cut, and which package may import which: [package topology](/docs/concepts/package-topology).\n\n` +
@@ -269,6 +270,7 @@ function cliPage(root) {
         title: "CLI",
         description: `${pkg.description} Every section below is the command's own source documentation.`,
         order: 0,
+        label: "Commands",
       }) +
       `${marker("packages/cli/src (usage and command doc comments) and packages/cli/templates/manifest.json")}\n\n` +
       "A scaffolded app has `@intelligo-dev/cli` as a dev dependency; run it with `pnpm exec intelligo`.\n\n" +
