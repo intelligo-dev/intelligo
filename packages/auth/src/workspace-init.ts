@@ -20,6 +20,7 @@
 import { auth } from "./server";
 import type { User } from "better-auth/types";
 import { createLogger } from "@intelligo-dev/core/logger";
+import { personalWorkspaceSlug } from "./workspace-slug";
 
 const log = createLogger("WorkspaceInit");
 
@@ -94,14 +95,13 @@ export async function ensureUserWorkspace(
   // completed yet, or user was created via a non-Better-Auth flow.
   // Create the workspace here as a fallback rather than throwing.
   // Idempotent: the unique constraint on organization.slug prevents duplicates
-  // if both this fallback and the hook fire for the same signup.
+  // if both this fallback and the hook fire for the same signup — which
+  // holds only because `personalWorkspaceSlug` is derived from the user
+  // and not from the clock. Concurrent callers therefore collide on the
+  // index and take the adopt-the-winner path below.
   log.warn("No workspace found, creating one (hook may still fire)", {
     email: user.email,
   });
-  const slug = ((user.email || "user").split("@")[0] || "user")
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "-")
-    .slice(0, 30);
 
   let workspaceId: string;
   try {
@@ -109,7 +109,7 @@ export async function ensureUserWorkspace(
       headers,
       body: {
         name: `${user.name || "User"}'s Workspace`,
-        slug: `${slug}-${Date.now().toString(36)}`,
+        slug: personalWorkspaceSlug(user.email, user.id),
         userId: user.id,
       },
     });
@@ -136,6 +136,25 @@ export async function ensureUserWorkspace(
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
+  }
+
+  // Point the session at what we just created. The caller gets the id
+  // back and can render from it, but every later request that resolves a
+  // workspace from the session alone would find none — which is why the
+  // first authenticated render used to fail and a refresh fixed it: the
+  // refresh took the branch above, which does write the pointer. Failing
+  // here is not fatal (the workspace exists, and the next request sets
+  // it), so it is logged rather than thrown.
+  try {
+    await auth.api.setActiveOrganization({
+      headers,
+      body: { organizationId: workspaceId },
+    });
+    log.info("Set new workspace active", { workspaceId });
+  } catch (error) {
+    log.error("Failed to set the new workspace active", {
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   // Fire the optional callback (trial credits, referral tracking, etc.)

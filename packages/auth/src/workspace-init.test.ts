@@ -83,4 +83,54 @@ describe("ensureUserWorkspace", () => {
     expect(id).toBe("org-new");
     expect(api.getSession).not.toHaveBeenCalled();
   });
+
+  it("points the session at the workspace it just created", async () => {
+    // Without this write the creating request renders fine from the
+    // returned id while the session still names no workspace, so the
+    // next request that resolves by session alone finds none.
+    api.listOrganizations.mockResolvedValue([]);
+    api.createOrganization.mockResolvedValue({ id: "org-new" });
+
+    await ensureUserWorkspace(user, headers);
+
+    expect(api.setActiveOrganization).toHaveBeenCalledWith({
+      headers,
+      body: { organizationId: "org-new" },
+    });
+  });
+
+  it("names the workspace from the user, so racing callers collide", async () => {
+    // The slug is what makes provisioning idempotent: a clock-derived
+    // suffix differs per attempt, and every concurrent caller then
+    // creates a workspace of its own.
+    api.listOrganizations.mockResolvedValue([]);
+    api.createOrganization.mockResolvedValue({ id: "org-new" });
+
+    await ensureUserWorkspace(user, headers);
+    await ensureUserWorkspace(user, headers);
+
+    const [first, second] = api.createOrganization.mock.calls.map(
+      (call) => (call[0] as { body: { slug: string } }).body.slug
+    );
+    expect(first).toBe(second);
+    // Derived from the user, not from the clock.
+    expect(first).toContain("u1");
+  });
+
+  it("adopts the winner when the slug is already taken", async () => {
+    api.listOrganizations
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: "org-winner" }]);
+    api.createOrganization.mockRejectedValue(
+      new Error("ORGANIZATION_ALREADY_EXISTS")
+    );
+
+    const id = await ensureUserWorkspace(user, headers);
+
+    expect(id).toBe("org-winner");
+    expect(api.setActiveOrganization).toHaveBeenCalledWith({
+      headers,
+      body: { organizationId: "org-winner" },
+    });
+  });
 });

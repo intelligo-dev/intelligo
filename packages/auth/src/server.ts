@@ -52,6 +52,7 @@ import {
   sendInvitationEmail,
 } from "@intelligo-dev/core/email";
 import { eq } from "drizzle-orm";
+import { personalWorkspaceSlug } from "./workspace-slug";
 
 /**
  * The origin this app is served from.
@@ -164,42 +165,35 @@ export const auth = betterAuth({
         after: async (user) => {
           // Auto-create personal workspace for new users
           try {
-            const slug = ((user.email || "user").split("@")[0] || "user")
-              .toLowerCase()
-              .replace(/[^a-z0-9-]/g, "-")
-              .slice(0, 30);
-
             await auth.api.createOrganization({
-              headers: new Headers(),
+              // Deliberately no `headers`. The organization plugin reads a
+              // session from the context and refuses the call when headers
+              // are present but carry none — `if (!session && (ctx.request
+              // || ctx.headers)) throw UNAUTHORIZED`. An empty
+              // `new Headers()` counts as present, so this hook threw
+              // UNAUTHORIZED on every signup and no workspace was ever
+              // created here; the layout fallback was silently doing all
+              // the work. Omitting headers takes the system path that
+              // `body.userId` exists to enable.
               body: {
                 name: `${user.name || "User"}'s Workspace`,
-                slug: `${slug}-${Date.now().toString(36)}`,
+                slug: personalWorkspaceSlug(user.email, user.id),
                 userId: user.id, // Associate with the user
               },
             });
           } catch (error) {
-            // TR-0024: handle race — if hook fires twice for same signup (two
-            // concurrent requests), the unique slug constraint catches the dup.
-            // Check if an org was created despite the error.
-            if (
-              error instanceof Error &&
-              (error.message?.includes("duplicate") ||
-                error.message?.includes("unique") ||
-                error.message?.includes("slug"))
-            ) {
-              const orgs = await auth.api.listOrganizations({
-                headers: new Headers(),
-              });
-              if (orgs && orgs.length > 0) {
-                // Org already created by the other hook — not an error.
-                return;
-              }
+            // The slug is derived from the user, so a racing provisioner
+            // loses on `organization.slug`'s unique index: the workspace
+            // exists, which is the outcome this hook wanted. Anything else
+            // is worth ops visibility, but never fails the registration.
+            const message =
+              error instanceof Error ? error.message : String(error);
+            if (!/already exists|duplicate|unique|slug/i.test(message)) {
+              console.error(
+                "[user.create hook] Failed to create workspace:",
+                error
+              );
             }
-            // Log for ops visibility; do not throw (user registration succeeded)
-            console.error(
-              "[user.create hook] Failed to create workspace:",
-              error
-            );
           }
 
           // Send welcome email (EMAIL-03, fire-and-forget).
@@ -240,22 +234,30 @@ export const auth = betterAuth({
             throw error; // Re-throw to prevent session creation
           }
 
-          // Auto-set active organization on session creation
-          // NOTE(DB-11): Uses new Headers() — bypasses any future middleware
-          // (bot detection, request signing). Acceptable for v0.2; pass request
-          // headers through hook context if middleware layering is needed later.
+          // Auto-set active organization on session creation.
+          //
+          // Read `member` directly rather than calling
+          // `/organization/list`: that endpoint is `requireHeaders` and
+          // resolves the user from the session it is handed, and it takes
+          // no `userId` query. Called with `new Headers()` it threw
+          // UNAUTHORIZED on every sign-in — including the one
+          // `autoSignInAfterVerification` performs — so the pointer was
+          // never set and the first authenticated render had to discover a
+          // workspace for itself. There is no session to pass here by
+          // definition: this hook runs while one is being created.
           try {
-            const orgs: any = await auth.api.listOrganizations({
-              headers: new Headers(),
-              query: { userId: session.userId },
-            });
+            const [membership] = await db
+              .select({ organizationId: member.organizationId })
+              .from(member)
+              .where(eq(member.userId, session.userId))
+              .orderBy(member.createdAt)
+              .limit(1);
 
-            if (orgs && orgs.length > 0) {
-              // Auto-set active org on session creation
+            if (membership) {
               return {
                 data: {
                   ...session,
-                  activeOrganizationId: orgs[0].id,
+                  activeOrganizationId: membership.organizationId,
                 },
               };
             }
