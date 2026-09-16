@@ -16,18 +16,25 @@ import {
   fromMajor,
   toMajor,
 } from "@intelligo-dev/core/money";
+import { createRegistry } from "@intelligo-dev/core/registry";
 
 import {
   DEFAULT_MARGIN_BP,
   DEFAULT_MODELS,
+  PROVIDER_CURRENCY,
   UnknownModelError,
   chargeFor,
   clearModels,
   estimateWorstCaseCharge,
+  getModelPricing,
+  isModelRegistered,
+  listModels,
   providerCost,
   registerModels,
   registeredModelIds,
   type BillingRate,
+  type ModelCapabilities,
+  type ModelPricing,
 } from "./pricing";
 
 // Nothing self-registers: the registry is populated from a composition
@@ -81,9 +88,128 @@ describe("the registry is open", () => {
   });
 });
 
+describe("the lookups a caller reaches for", () => {
+  it("reads a registered model back, and nothing for one that is not", () => {
+    expect(getModelPricing("google/gemini-2.5-flash")?.displayName).toBe(
+      "Gemini 2.5 Flash"
+    );
+    expect(getModelPricing("unknown/model")).toBeUndefined();
+    expect(isModelRegistered("google/gemini-2.5-flash")).toBe(true);
+    expect(isModelRegistered("unknown/model")).toBe(false);
+  });
+
+  it("lists what is registered, in registration order", () => {
+    expect(listModels().map((m) => m.id)).toEqual(
+      DEFAULT_MODELS.map((m) => m.id)
+    );
+    expect(registeredModelIds()).toEqual(DEFAULT_MODELS.map((m) => m.id));
+  });
+
+  it("stores the catalogue under the documented global key", () => {
+    // The key is the contract with `createRegistry`: a second copy of
+    // this module bills against the same catalogue only if both ask
+    // for `executions/model-pricing`.
+    const shared = createRegistry<ModelPricing>("executions/model-pricing");
+    expect(shared.get("google/gemini-2.5-flash")?.provider).toBe("google");
+  });
+
+  it("denominates provider prices in the currency providers quote", () => {
+    expect(PROVIDER_CURRENCY).toBe("USD");
+  });
+});
+
+describe("UnknownModelError", () => {
+  function thrown(run: () => unknown): UnknownModelError {
+    try {
+      run();
+    } catch (error) {
+      return error as UnknownModelError;
+    }
+    throw new Error("expected an UnknownModelError; nothing was thrown");
+  }
+
+  it("names the id, what is registered instead, and the way out", () => {
+    // The two failures look identical from a stack trace and are
+    // opposite problems: nothing was ever registered, or this one id
+    // is missing from a catalogue that is otherwise there.
+    clearModels();
+    const unconfigured = thrown(() => providerCost("unknown/model", 1, 1));
+    expect(unconfigured.name).toBe("UnknownModelError");
+    expect(unconfigured.code).toBe("unknown_model");
+    expect(unconfigured.message).toContain('"unknown/model"');
+    expect(unconfigured.message).toContain("Registered: none");
+    expect(unconfigured.message).toContain("registerModels");
+
+    registerModels(DEFAULT_MODELS);
+    const misconfigured = thrown(() => providerCost("unknown/model", 1, 1));
+    expect(misconfigured.message).not.toContain("Registered: none");
+    expect(misconfigured.message).toContain(
+      "google/gemini-2.5-flash, google/gemini-2.5-pro"
+    );
+  });
+});
+
+/**
+ * What the shipped catalogue claims, model by model.
+ *
+ * Capabilities are not decoration: a router reads them to decide which
+ * model gets a web-search turn or a vision turn, so a flipped flag
+ * sends work to a model that cannot do it and answers anyway. The
+ * table is here rather than derived from the catalogue, because a test
+ * that reads the value it is checking proves nothing.
+ */
+const EVERY_CAPABILITY: ModelCapabilities = {
+  thinking: true,
+  toolCall: true,
+  vision: true,
+  webSearch: true,
+  codeExec: true,
+};
+
+const SHIPPED_CAPABILITIES: Readonly<Record<string, ModelCapabilities>> = {
+  "google/gemini-2.5-flash": EVERY_CAPABILITY,
+  "google/gemini-2.5-pro": EVERY_CAPABILITY,
+  // The one model in the catalogue that neither searches nor runs code.
+  "openai/gpt-5-mini": {
+    thinking: true,
+    toolCall: true,
+    vision: true,
+    webSearch: false,
+    codeExec: false,
+  },
+  "openai/gpt-5.4-mini": EVERY_CAPABILITY,
+  "openai/o4-mini": EVERY_CAPABILITY,
+  "anthropic/claude-sonnet-4-6": EVERY_CAPABILITY,
+};
+
 describe("DEFAULT_MODELS", () => {
   it("ships six models", () => {
     expect(DEFAULT_MODELS).toHaveLength(6);
+  });
+
+  it("names its provider and that provider's own model id", () => {
+    for (const model of DEFAULT_MODELS) {
+      const [provider, suffix] = model.id.split("/");
+      expect(model.provider, model.id).toBe(provider);
+      // The SDK id is often dated — `claude-sonnet-4-6-20260214` — but
+      // it always starts with the name the registry key carries.
+      expect(
+        model.model.startsWith(suffix!),
+        `${model.id} is sent to the provider as ${model.model}`
+      ).toBe(true);
+      expect(model.displayName.length, model.id).toBeGreaterThan(0);
+    }
+  });
+
+  it("claims the capabilities each model actually has", () => {
+    expect(Object.keys(SHIPPED_CAPABILITIES).sort()).toEqual(
+      DEFAULT_MODELS.map((m) => m.id).sort()
+    );
+    for (const model of DEFAULT_MODELS) {
+      expect(model.capabilities, model.id).toEqual(
+        SHIPPED_CAPABILITIES[model.id]
+      );
+    }
   });
 
   it("prices and bounds every one of them", () => {

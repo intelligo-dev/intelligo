@@ -307,6 +307,7 @@ export function registerTrialConfig(
 /** The product's trial terms, or no trial at all. */
 export function getTrialConfig(productSlug?: string): TrialConfig {
   const slug = productSlug ?? currentProductSlug();
+  // Stryker disable next-line ConditionalExpression: equivalent — the lookup below answers NO_TRIAL for an undefined slug too; the guard says so without making the reader prove it.
   if (!slug) return NO_TRIAL;
   return productTrialConfig.get(slug) ?? NO_TRIAL;
 }
@@ -351,6 +352,7 @@ export function getTeamMemberLimit(
   planSlug: string
 ): number {
   const slug = productSlug ?? currentProductSlug();
+  // Stryker disable next-line ConditionalExpression: equivalent — the lookup below falls through to the same seat count for an undefined slug.
   if (!slug) return 1;
   return productTeamLimits.get(slug)?.[planSlug] ?? 1;
 }
@@ -400,6 +402,7 @@ export function getRateLimit(
   planSlug: string
 ): number {
   const slug = productSlug ?? currentProductSlug();
+  // Stryker disable next-line ConditionalExpression: equivalent — the lookup below falls through to the same ceiling for an undefined slug.
   if (!slug) return DEFAULT_REQUESTS_PER_MINUTE;
   return productRateLimits.get(slug)?.[planSlug] ?? DEFAULT_REQUESTS_PER_MINUTE;
 }

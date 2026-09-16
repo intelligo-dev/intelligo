@@ -258,6 +258,7 @@ import {
   recordFeatureUsage,
   getUserQuotaStats,
 } from "./feature-quota";
+import type { PlanConfig } from "./plans";
 
 // ---------------------------------------------------------------------------
 // checkFeatureQuota
@@ -322,6 +323,16 @@ describe("checkFeatureQuota — free plan", () => {
     const result = await checkFeatureQuota("new-user", "ws-1", "free", "chat");
 
     expect(mocks.mockInsert).toHaveBeenCalled();
+    // The row has to carry who and where, or the next request reads a
+    // quota that belongs to nobody — counters are per (user, workspace)
+    // since migration 0046.
+    expect(mocks.mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "new-user",
+        workspaceId: "ws-1",
+        plan: "free",
+      })
+    );
     expect(result.allowed).toBe(true);
     expect(result.used).toBe(0);
   });
@@ -422,6 +433,122 @@ describe("checkFeatureQuota — unknown plan", () => {
 // recordFeatureUsage
 // ---------------------------------------------------------------------------
 
+describe("the row follows the user's plan", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetChainMocks();
+  });
+
+  it("writes the new plan onto a row that still names the old one", async () => {
+    // An upgrade changes what the user may do immediately; a row left
+    // saying "free" would price the next check against the old plan.
+    mocks.setRow({ userId: "u1", plan: "free", usage: { chat: 1 } });
+
+    await checkFeatureQuota("u1", "ws-1", "standard", "chat");
+
+    expect(mocks.mockUpdateSet).toHaveBeenCalledWith(
+      expect.objectContaining({ plan: "standard" })
+    );
+  });
+
+  it("writes nothing when the plan has not changed", async () => {
+    // Every check would otherwise issue an UPDATE per request.
+    mocks.setRow({ userId: "u1", plan: "free", usage: { chat: 1 } });
+
+    await checkFeatureQuota("u1", "ws-1", "free", "chat");
+
+    expect(mocks.mockUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe("what a check reports back", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetChainMocks();
+  });
+
+  it("reports the exact share used, not just whether it is near", async () => {
+    // The number reaches a progress bar; `used × limit` would fill it
+    // at 7,200% and still pass a "nearing the limit" assertion.
+    mocks.setRow({ userId: "u2", usage: { chat: 24 } });
+    const nearing = await checkFeatureQuota("u2", "ws-1", "free", "chat");
+    expect(nearing.percentage).toBe(80);
+    expect(nearing.nearingLimit).toBe(true);
+
+    mocks.setRow({ userId: "u3", usage: { chat: 3 } });
+    const early = await checkFeatureQuota("u3", "ws-1", "free", "chat");
+    expect(early.percentage).toBe(10);
+    expect(early.nearingLimit).toBe(false);
+
+    mocks.setRow({ userId: "u4", usage: { chat: 30 } });
+    const spent = await checkFeatureQuota("u4", "ws-1", "free", "chat");
+    expect(spent.percentage).toBe(100);
+    expect(spent.nearingLimit).toBe(true);
+  });
+
+  it("reports an unlimited action as not nearing anything", async () => {
+    mocks.setRow({ userId: "u1", plan: "pro", usage: { assessment: 9_000 } });
+
+    const result = await checkFeatureQuota("u1", "ws-1", "pro", "assessment");
+
+    expect(result.limit).toBe(-1);
+    expect(result.remaining).toBe(-1);
+    expect(result.percentage).toBe(0);
+    // A bar that fills up on an unlimited plan is a support ticket.
+    expect(result.nearingLimit).toBe(false);
+  });
+
+  it("falls back to a bare upgrade prompt when the product wrote none", async () => {
+    // `invoice_scan` is registered nowhere: no limit key, no copy. It
+    // is refused (an unconfigured action is not a free one) and the
+    // refusal still has to say something.
+    mocks.setRow({ userId: "u1", usage: {} });
+
+    const result = await checkFeatureQuota(
+      "u1",
+      "ws-1",
+      "free",
+      "invoice_scan"
+    );
+
+    expect(result.limit).toBe(0);
+    expect(result.allowed).toBe(false);
+    expect(result.upgradeMessage).toBe("Upgrade");
+  });
+
+  it("refuses an action the catalogue cannot price", async () => {
+    const { registerProductPlans, setDefaultProductSlug } =
+      await import("./plan-registry");
+    const bare = {
+      name: "Pro",
+      slug: "pro",
+      description: "",
+      priceOneTime: 0,
+      targetAudience: "",
+      aiModelLabel: "",
+      // A limit that is not a number is not a limit.
+      limits: { chat: "lots" },
+      features: [],
+    } as unknown as PlanConfig;
+    registerProductPlans("bare", { pro: bare });
+    setDefaultProductSlug("bare");
+
+    try {
+      mocks.setRow({ userId: "u1", usage: {} });
+      // No such plan, and no `free` to fall back to.
+      const unknownPlan = await checkFeatureQuota("u1", "ws-1", "nope", "chat");
+      expect(unknownPlan.limit).toBe(0);
+      expect(unknownPlan.allowed).toBe(false);
+
+      const malformed = await checkFeatureQuota("u1", "ws-1", "pro", "chat");
+      expect(malformed.limit).toBe(0);
+      expect(malformed.allowed).toBe(false);
+    } finally {
+      setDefaultProductSlug("acme");
+    }
+  });
+});
+
 describe("recordFeatureUsage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -446,6 +573,25 @@ describe("recordFeatureUsage", () => {
     await recordFeatureUsage("u1", "ws-1", "report");
 
     expect(mocks.mockUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it("increments inside the UPDATE rather than in application code", async () => {
+    // A read-modify-write in JS loses an increment whenever two
+    // requests for the same user overlap; the counter has to be
+    // computed by Postgres inside the statement that writes it.
+    await recordFeatureUsage("u1", "ws-1", "chat", 0.5);
+
+    const set = mocks.mockUpdateSet.mock.calls[0]![0] as {
+      usage: { raw: string; values: unknown[] };
+      totalCostUsd: { raw: string; values: unknown[] };
+      updatedAt: Date;
+    };
+    expect(set.usage.raw).toContain("jsonb_build_object");
+    expect(set.usage.raw).toContain("COALESCE");
+    expect(set.usage.values).toContain("chat");
+    expect(set.totalCostUsd.raw).toContain("+");
+    expect(set.totalCostUsd.values).toContain(0.5);
+    expect(set.updatedAt).toBeInstanceOf(Date);
   });
 
   it("defaults costUsd to 0 when omitted", async () => {

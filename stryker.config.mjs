@@ -39,13 +39,23 @@ export default {
     "packages/core/src/prompt.ts",
     "packages/core/src/registry.ts",
     "packages/core/src/documents/classifier.ts",
+    "packages/executions/src/pricing.ts",
+    "packages/billing/src/plan-registry.ts",
+    "packages/billing/src/feature-quota.ts",
+    "packages/chat/src/windowing.ts",
   ],
   // `break` fails the command. It sits just under the score this scope
-  // actually holds (97.6), so a regression is a red build rather than a
+  // actually holds (98.6), so a regression is a red build rather than a
   // number someone stops reading. Raise it with the score; never lower
-  // it to make a run pass. The survivors that keep it off 100 are
-  // whitespace-equivalent regex edits — `\s+` for `\s` where the sweep
-  // collapses the difference away — and one `<` for `<=` in `compare`
-  // that the branch above it already answered.
-  thresholds: { high: 98, low: 95, break: 95 },
+  // it to make a run pass.
+  //
+  // Ten mutants keep it off 100, and none of them is a missing test:
+  // eight are whitespace-equivalent regex edits in the injection list
+  // (`\s+` for `\s`, where the sweep collapses the difference away),
+  // one is `<` for `<=` in `compare`, which the branch above it already
+  // answered, and one is `PROVIDER_CURRENCY`, evaluated at module load
+  // — the runner does not re-import the module, so the edit never
+  // takes effect. The equivalents that could be marked are marked, in
+  // the source, with a reason.
+  thresholds: { high: 99, low: 97, break: 97 },
 };

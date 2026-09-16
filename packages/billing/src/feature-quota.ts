@@ -136,6 +136,7 @@ export async function checkFeatureQuota(
   }
 
   const remaining = Math.max(0, limit - used);
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: equivalent — a limit of zero or less never reaches this value: -1 returned above, and the exceeded branch below reports 100 of its own.
   const percentage = limit > 0 ? Math.round((used / limit) * 100) : 0;
 
   // Exceeded — pull the upgrade copy from the product registry, which

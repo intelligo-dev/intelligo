@@ -13,6 +13,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { money } from "@intelligo-dev/core/money";
+import { createRegistry } from "@intelligo-dev/core/registry";
 
 import {
   BillingNotConfiguredError,
@@ -91,6 +92,12 @@ describe("default product", () => {
       expect((error as BillingNotConfiguredError).code).toBe(
         "billing_not_configured"
       );
+      expect((error as Error).name).toBe("BillingNotConfiguredError");
+      // Both ways out, because a deployment hits this from either side:
+      // a composition root that forgot the call, or an environment
+      // that never set the variable.
+      expect((error as Error).message).toContain("setDefaultProductSlug()");
+      expect((error as Error).message).toContain("INTELLIGO_BILLING_PRODUCT");
     }
   });
 
@@ -188,5 +195,89 @@ describe("registered values", () => {
 
     expect(getTeamMemberLimit(undefined, "team")).toBe(4);
     expect(getTeamMemberLimit("beta", "team")).toBe(99);
+  });
+});
+
+describe("the registries behind the seam", () => {
+  const TRIAL = {
+    initialCredits: 100,
+    grant: money(500_000_000, "MNT"),
+    durationDays: 14,
+    warningThreshold: 0.2,
+    reminderDaysBeforeExpiry: 3,
+  };
+
+  function registerOneOfEverything(): void {
+    setDefaultProductSlug("alpha");
+    registerProductPlans("alpha", { free: plan("free") });
+    registerUpgradeMessages("alpha", { free: { chat: "Upgrade to chat" } });
+    registerActionLabels("alpha", { chat: "messages" });
+    registerProductFeatures("alpha", { deep_report: ["pro"] });
+    registerActionLimitKeys("alpha", { chat: "chatMessages" });
+    registerTrialConfig("alpha", TRIAL);
+    registerTeamMemberLimits("alpha", { team: 4 });
+    registerRateLimits("alpha", { pro: 60 });
+  }
+
+  it("keeps each one under its own documented global key", () => {
+    // Nine registries share one global symbol namespace (ADR-0005), so
+    // the key is the contract twice over: a second copy of this module
+    // finds what the composition root registered only by asking for the
+    // same name, and two registries sharing a name would read each
+    // other's rows.
+    registerOneOfEverything();
+
+    for (const key of [
+      "billing/plans",
+      "billing/upgrade-messages",
+      "billing/action-labels",
+      "billing/features",
+      "billing/action-limit-keys",
+      "billing/trial",
+      "billing/team-limits",
+      "billing/rate-limits",
+    ]) {
+      expect(createRegistry<unknown>(key).get("alpha"), key).toBeDefined();
+    }
+    expect(
+      createRegistry<string>("ref/billing/default-product").get("value")
+    ).toBe("alpha");
+  });
+
+  it("forgets what each clear helper is responsible for", () => {
+    // These run in every suite's beforeEach. A clear that quietly does
+    // nothing leaves one test's catalogue registered for the next, and
+    // the failure then surfaces somewhere else entirely.
+    registerOneOfEverything();
+
+    clearProductPlans();
+    expect(getProductPlans("alpha")).toBeUndefined();
+    expect(getRegisteredProductSlugs()).toEqual([]);
+
+    clearProductFeatures();
+    expect(getProductFeatures("alpha")).toBeUndefined();
+
+    clearActionLimitKeys();
+    expect(getActionLimitKey("alpha", "chat")).toBe("chat");
+
+    clearTrialConfig();
+    expect(getTrialConfig("alpha")).toEqual(NO_TRIAL);
+
+    clearTeamMemberLimits();
+    expect(getTeamMemberLimit("alpha", "team")).toBe(1);
+
+    clearRateLimits();
+    expect(getRateLimit("alpha", "pro")).toBe(DEFAULT_REQUESTS_PER_MINUTE);
+
+    clearDefaultProductSlug();
+    expect(() => getDefaultProductSlug()).toThrow(BillingNotConfiguredError);
+  });
+
+  it("answers for a plan the product's copy never mentions", () => {
+    // A product that wrote copy for one plan and not another gets
+    // undefined here, not a TypeError in the middle of a page render.
+    registerUpgradeMessages("alpha", { free: { chat: "Upgrade to chat" } });
+    expect(getUpgradeMessage("alpha", "pro", "chat")).toBeUndefined();
+    expect(getUpgradeMessage("alpha", "free", "reports")).toBeUndefined();
   });
 });

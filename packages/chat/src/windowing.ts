@@ -38,6 +38,7 @@ export function extractText(parts: ReadonlyArray<unknown>): string {
  * Cyrillic transcript by half and window it far too late.
  */
 export function estimateTokenCount(text: string): number {
+  // Stryker disable next-line ConditionalExpression: equivalent — the loop below counts nothing in an empty string and returns 0 either way.
   if (!text) return 0;
   let nonLatin = 0;
   for (const char of text) {
@@ -89,6 +90,7 @@ export function applyConversationWindow(
   const turns = messages.filter((message) => message.role !== "system");
 
   let start = Math.max(0, turns.length - options.maxMessages);
+  // Stryker disable next-line ConditionalExpression: equivalent — with no budget the comparison against undefined is false, so the loop exits on its first test.
   if (options.maxTokens !== undefined) {
     while (
       start < turns.length - 1 &&
@@ -99,6 +101,7 @@ export function applyConversationWindow(
   }
   // Open on a user message. If none follows, keep the last turn: a
   // window of nothing is worse than one that opens mid-exchange.
+  // Stryker disable next-line OptionalChaining: equivalent — the condition to its left has already proved the index is in range.
   while (start < turns.length - 1 && turns[start]?.role !== "user") start++;
 
   return {
