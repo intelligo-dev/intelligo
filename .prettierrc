@@ -4,5 +4,13 @@
   "tabWidth": 2,
   "trailingComma": "es5",
   "printWidth": 80,
-  "useTabs": false
+  "useTabs": false,
+  "overrides": [
+    {
+      "files": "apps/site/src/content/docs/**/*.md",
+      "options": {
+        "embeddedLanguageFormatting": "off"
+      }
+    }
+  ]
 }

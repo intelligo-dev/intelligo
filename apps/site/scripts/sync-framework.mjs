@@ -9,6 +9,10 @@
  *
  * Writes:
  *   src/data/registry.json   packages/registry/registry.json, verbatim
+ *   src/data/requires.json   packages/registry/requires.json, verbatim
+ *   src/data/seams.json      each block's consumer-owned config files
+ *   src/content/docs/…       the generated reference pages, and the snippets
+ *                            in hand-written ones (scripts/docs.mjs)
  *   src/data/proof.json      counts (tests, items, ADRs, packages) and the version
  *   public/r/*.json          the built registry items — intelligo.dev/r/<item>.json
  *                            is the hosted registry consumers install from
@@ -25,6 +29,15 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import {
+  DOCS_DIR,
+  applySnippets,
+  docFiles,
+  generateData,
+  generateDocs,
+  isGenerated,
+} from "./docs.mjs";
 
 const SITE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 // apps/site lives inside the framework repository: two directories up.
@@ -229,4 +242,31 @@ console.log(
 
 console.log(
   `proof: v${version}, ${packages} packages, ${testCases} tests in ${testFiles.length} files, ${architectureTests} architecture suites, ${registryItems} items, ${adrs} ADRs`
+);
+
+// --- docs: generated reference pages and snippets ----------------------------
+const docsRoot = join(SITE, DOCS_DIR);
+for (const rel of docFiles(SITE)) {
+  if (isGenerated(rel)) rmSync(join(docsRoot, rel)); // a page whose source is gone goes too
+}
+const pages = generateDocs(FRAMEWORK);
+for (const [rel, content] of Object.entries(pages)) {
+  mkdirSync(dirname(join(docsRoot, rel)), { recursive: true });
+  writeFileSync(join(docsRoot, rel), content);
+}
+let snippetFiles = 0;
+for (const rel of docFiles(SITE).filter((r) => !isGenerated(r))) {
+  const file = join(docsRoot, rel);
+  const before = readFileSync(file, "utf8");
+  const after = applySnippets(before, FRAMEWORK);
+  if (after !== before) {
+    writeFileSync(file, after);
+    snippetFiles++;
+  }
+}
+for (const [rel, content] of Object.entries(generateData(FRAMEWORK))) {
+  writeFileSync(join(SITE, rel), content);
+}
+console.log(
+  `docs: ${Object.keys(pages).length} generated pages, snippets refreshed in ${snippetFiles} files`
 );

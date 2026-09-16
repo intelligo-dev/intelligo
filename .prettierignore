@@ -3,6 +3,11 @@
 apps/site/public/r/
 apps/site/src/showcase/app/
 apps/site/src/data/
+# Docs generated from READMEs, ADRs and CLI source by apps/site/scripts/docs.mjs.
+apps/site/src/content/docs/packages/
+apps/site/src/content/docs/cli/
+apps/site/src/content/docs/registry/install-order.md
+apps/site/src/content/docs/registry/config-seams.md
 apps/site/.astro/
 # Build output
 **/dist/

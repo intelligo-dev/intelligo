@@ -5,6 +5,8 @@
  * site-owned data.
  */
 import registry from "@/data/registry.json";
+import requires from "@/data/requires.json";
+import seams from "@/data/seams.json";
 
 export type RegistryItem = {
   name: string;
@@ -62,23 +64,12 @@ const GROUPS: Record<RegistryGroup, string[]> = {
   AI: ["chat", "chat-panel", "chat-widget", "chat-share", "artifacts"],
 };
 
-const DEPENDS: Record<string, string[]> = {
-  "chat-panel": ["chat"],
-  "chat-widget": ["chat"],
-  "chat-share": ["chat"],
-  "auth-signup": ["auth-login"],
-  "auth-password-reset": ["auth-login"],
-  "auth-email-verification": ["auth-login"],
-  "invitation-accept": ["team-settings"],
-  checkout: ["pricing"],
-  "billing-settings": ["pricing"],
-  "payment-poll": ["pricing"],
-  dashboard: ["chat", "pricing"],
-  "workspace-settings": ["settings-shell"],
-  "team-settings": ["settings-shell"],
-  "profile-settings": ["settings-shell"],
-  "privacy-settings": ["settings-shell"],
-};
+/** What each block needs installed first: packages/registry/requires.json, the file CI installs from. */
+const DEPENDS = (requires as { items: Record<string, { items?: string[] }> })
+  .items;
+
+/** Each block's consumer-owned config files, derived by scripts/docs.mjs. */
+const SEAMS = seams as Record<string, string[]>;
 
 type RawItem = {
   name: string;
@@ -94,9 +85,6 @@ type RawItem = {
 const raw = (registry as { items: RawItem[] }).items.filter(
   (i) => i.type === "registry:block" && i.name !== "smoke"
 );
-
-/** Consumer-owned config: `lib/nav-config.ts`, `lib/onboarding-steps.ts`, `lib/chat-renderers.tsx`… */
-const SEAM = /^lib\/[^/]*(config|steps|renderers|patterns|bootstrap)\.tsx?$/;
 
 export const REGISTRY_ITEMS: RegistryItem[] = (
   Object.keys(GROUPS) as RegistryGroup[]
@@ -116,11 +104,9 @@ export const REGISTRY_ITEMS: RegistryItem[] = (
         target: f.target ?? f.path,
         type: f.type.replace(/^registry:/, ""),
       })),
-      seams: (i.files ?? [])
-        .map((f) => f.target ?? f.path)
-        .filter((t) => SEAM.test(t)),
+      seams: SEAMS[i.name] ?? [],
       group,
-      dependsOn: DEPENDS[i.name] ?? [],
+      dependsOn: DEPENDS[i.name]?.items ?? [],
     }))
 );
 

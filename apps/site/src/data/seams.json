@@ -1,0 +1,55 @@
+{
+  "route-error": [],
+  "team-settings": [],
+  "usage": [],
+  "invitation-accept": [],
+  "app-shell": [
+    "lib/workspace-bootstrap.ts",
+    "lib/shell-config.tsx",
+    "lib/nav-config.ts"
+  ],
+  "settings-shell": [],
+  "workspace-settings": [],
+  "auth-login": [],
+  "auth-signup": [],
+  "auth-password-reset": [],
+  "auth-email-verification": [],
+  "language-switcher": [],
+  "trial-banner": [
+    "lib/trial-banner-config.ts"
+  ],
+  "notifications": [],
+  "pricing": [
+    "lib/billing-config.ts"
+  ],
+  "checkout": [],
+  "billing-settings": [],
+  "feature-gating": [
+    "lib/feature-gating-config.ts"
+  ],
+  "payment-poll": [
+    "lib/payment-poll-config.ts"
+  ],
+  "profile-settings": [],
+  "onboarding": [
+    "lib/onboarding-steps.ts"
+  ],
+  "dashboard": [
+    "lib/dashboard-config.tsx"
+  ],
+  "artifacts": [
+    "lib/document-patterns.ts"
+  ],
+  "privacy-settings": [],
+  "chat": [
+    "lib/chat-renderers.tsx",
+    "lib/chat-canvas-config.tsx",
+    "lib/chat-config.tsx",
+    "lib/chat-server-config.ts"
+  ],
+  "chat-panel": [],
+  "chat-widget": [
+    "lib/chat-widget-config.tsx"
+  ],
+  "chat-share": []
+}
