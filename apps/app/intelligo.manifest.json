@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "frameworkVersion": "1.0.0-beta.6",
+  "frameworkVersion": "1.0.0-beta.7",
   "features": {
     "app-scaffold": {
       "templateVersion": "1.11.0",
@@ -31,7 +31,7 @@
         },
         {
           "path": "lib/plans.ts",
-          "hash": "4802d1073fb134931225d5eb055480f308616fe117f674305f823b0a06cacd90"
+          "hash": "46e782a796803964245a135917d8668689365b41f2628775e62aea30444956b3"
         },
         {
           "path": "app/api/auth/[...all]/route.ts",
