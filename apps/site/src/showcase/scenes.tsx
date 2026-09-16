@@ -539,7 +539,9 @@ function BillingSettings() {
               <PortalButton>{t("owner.manageSubscription")}</PortalButton>
             </CardContent>
           </Card>
-          <CreditBundles currentCredits={917} />
+          <CreditBundles
+            currentBalance={{ amount: 917_000_000, currency: "USD" }}
+          />
         </div>
       </div>
     </SettingsFrame>
