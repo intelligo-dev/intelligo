@@ -513,6 +513,9 @@ importers:
       '@intelligo-dev/jobs':
         specifier: workspace:*
         version: link:../jobs
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
     devDependencies:
       '@types/node':
         specifier: ^22.20.3

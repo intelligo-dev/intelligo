@@ -40,7 +40,8 @@
     "@intelligo-dev/auth": "workspace:*",
     "@intelligo-dev/core": "workspace:*",
     "@intelligo-dev/executions": "workspace:*",
-    "@intelligo-dev/jobs": "workspace:*"
+    "@intelligo-dev/jobs": "workspace:*",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.20.3",
