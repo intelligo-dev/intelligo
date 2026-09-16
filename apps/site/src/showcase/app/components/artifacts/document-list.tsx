@@ -316,7 +316,13 @@ export function DocumentList({ documents }: DocumentListProps) {
         onOpenChange={(open) => !open && setSelectedId(null)}
       >
         {selected && (
-          <DialogContent className="flex max-h-[80vh] max-w-5xl flex-col">
+          /* `sm:` matters: DialogContent's own base classes end with
+             `sm:max-w-sm`, and tailwind-merge keeps an unprefixed
+             `max-w-5xl` beside it as a different variant group, so the
+             responsive rule wins at every width above 640px. A reader
+             asking for `max-w-5xl` rendered at 384px — which is also
+             why the old `max-w-2xl` never took effect. */
+          <DialogContent className="flex max-h-[80vh] w-full flex-col sm:max-w-5xl">
             <DialogHeader>
               <div className="flex items-start gap-3 pr-8">
                 <KindTile kind={selected.kind} large />
