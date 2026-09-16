@@ -20,13 +20,12 @@
  *    Defaults to the `chat` item's `/chat`; change it if your chat
  *    surface lives elsewhere, and note that the whole composer
  *    affordance only makes sense with a chat surface installed.
- *  - `showPlanSummary`: set false for a product that doesn't want
- *    billing state on its home page at all.
  *
- * There is no `shortcuts` seam: the links it held (artifacts, usage,
- * team) are all in the shell's navigation, and a second copy of the
- * same three links under the composer was the app's own menu rendered
- * twice.
+ * There are no `shortcuts` or `showPlanSummary` seams. The links the
+ * first held (artifacts, usage, team) are all in the shell's
+ * navigation, and the billing strip the second hid was spend and plan
+ * state on a page nobody opens to read a meter — `/usage` and
+ * `/pricing` own that, one click away.
  */
 
 import { Sparkles, type LucideIcon } from "lucide-react";
@@ -40,7 +39,6 @@ export interface DashboardConfig {
   /** Fully-qualified message keys, resolved namespace-less. */
   starters?: string[];
   chatBasePath?: string;
-  showPlanSummary?: boolean;
 }
 
 export const dashboardConfig: DashboardConfig = {
@@ -55,5 +53,4 @@ export const dashboardConfig: DashboardConfig = {
     "dashboard.starters.third",
   ],
   chatBasePath: "/chat",
-  showPlanSummary: true,
 };

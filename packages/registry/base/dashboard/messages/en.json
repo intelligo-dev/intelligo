@@ -18,17 +18,10 @@
     "voiceStart": "Start voice input",
     "voiceStop": "Stop voice input"
   },
-  "recent": {
-    "title": "Recent",
-    "untitled": "New conversation"
-  },
-  "plan": {
-    "title": "Plan & usage",
-    "freeName": "Free",
-    "requests": "{count, plural, =0 {No requests this month} one {# request this month} other {# requests this month}}",
-    "trialRemaining": "{remaining} of {initial} trial credits left",
-    "trialDays": "{days, plural, one {# day left} other {# days left}}",
-    "viewUsage": "View usage",
-    "viewPlans": "View plans"
+  "promptBar": {
+    "placeholder": "Ask anything…",
+    "send": "Send",
+    "voiceStart": "Start voice input",
+    "voiceStop": "Stop voice input"
   }
 }

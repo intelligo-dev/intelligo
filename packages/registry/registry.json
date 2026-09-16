@@ -1793,7 +1793,7 @@
       "name": "dashboard",
       "type": "registry:block",
       "title": "Dashboard",
-      "description": "An AI-first workspace home: a hero and a real composer centred as one unit, starter chips that fill it, a resume affordance for unfinished work, and one quiet strip of recent conversations and plan state at the foot. Configurable through lib/dashboard-config.tsx (copy, starters, chat base path) and lib/dashboard-data.ts (what \"resume\" means). Pairs with the chat item for its /chat routes and the pricing item for lib/billing-config.ts's CURRENCY; install those first.",
+      "description": "An AI-first workspace home: a hero and a real composer centred as one unit, starter chips that fill it, and a resume affordance for unfinished work — and nothing else, because history belongs to the sidebar and spend to /usage. Configurable through lib/dashboard-config.tsx (copy, starters, chat base path) and lib/dashboard-data.ts (what \"resume\" means). Pairs with the chat item for its /chat routes; install it first.",
       "registryDependencies": [
         "skeleton",
         "@intelligo/ai-prompt-input",
@@ -1801,9 +1801,7 @@
       ],
       "dependencies": [
         "@intelligo-dev/auth",
-        "@intelligo-dev/billing",
         "@intelligo-dev/core",
-        "@intelligo-dev/executions",
         "lucide-react",
         "server-only",
         "next-intl"
@@ -1838,16 +1836,6 @@
           "path": "base/dashboard/components/prompt-bar.tsx",
           "type": "registry:component",
           "target": "components/dashboard/prompt-bar.tsx"
-        },
-        {
-          "path": "base/dashboard/components/recent-conversations.tsx",
-          "type": "registry:component",
-          "target": "components/dashboard/recent-conversations.tsx"
-        },
-        {
-          "path": "base/dashboard/components/plan-summary.tsx",
-          "type": "registry:component",
-          "target": "components/dashboard/plan-summary.tsx"
         },
         {
           "path": "base/dashboard/lib/dashboard-config.tsx",

@@ -1,19 +1,18 @@
 /**
  * Workspace dashboard — an AI-first home, not a metrics console.
  *
- * The page is one argument in three parts, and the order is the
- * argument: what you can do (hero, composer, starters), what you were
- * doing (the resume pill, recent conversations), and only then what it
- * costs (plan state). An earlier version led with five stat tiles and
- * five settings links, which reads as an admin console for a product
- * the person hasn't used yet.
+ * One thing to do, centred: the hero names the surface, the composer
+ * answers it, and starter chips fill the composer. Nothing else.
  *
- * The layout: the hero and the composer are one unit, centred in the
- * viewport, and everything secondary is one quiet strip at the foot.
- * Before this, the hero sat at the top and the composer was pinned to
- * the bottom with a page of nothing between them, and the secondary
- * material was three separate sections at three different widths.
- * Everything now shares one measure.
+ * It got here by subtraction. The page used to carry a shortcuts row
+ * (the shell's own navigation, rendered twice), a list of recent
+ * conversations (the sidebar's history, rendered twice) and a plan and
+ * usage strip. None of it was what a person opened the app to do, and
+ * on a real workspace the recent list repeated itself — two
+ * conversations that begin with the same message are two identical
+ * rows. Spend lives on `/usage`, plans on `/pricing`, history in the
+ * sidebar; each is one click away and none of it competes with the
+ * composer here.
  *
  * Everything configurable lives in two consumer-owned seams:
  * `@/lib/dashboard-config` (hero copy, starters, chat base path) and
@@ -38,17 +37,12 @@
  */
 
 import type { Metadata } from "next";
-import { getTimeZone, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 
 import { requireWorkspace } from "@intelligo-dev/auth";
-import { getTrialStatus, getWorkspaceBilling } from "@intelligo-dev/billing";
-import { listConversations } from "@intelligo-dev/core/conversations";
-import { summarizeExecutions } from "@intelligo-dev/executions";
 
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
-import { PlanSummary } from "@/components/dashboard/plan-summary";
 import { PromptBar } from "@/components/dashboard/prompt-bar";
-import { RecentConversations } from "@/components/dashboard/recent-conversations";
 import { dashboardConfig } from "@/lib/dashboard-config";
 import { getResume } from "@/lib/dashboard-data";
 
@@ -57,118 +51,19 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("meta.title") };
 }
 
-/**
- * The first moment of this month where the reader is sitting.
- *
- * The server's own zone is nobody's: it used to decide when "this
- * month" began, so the figure here and the one on the usage page could
- * disagree for a day at every month boundary. next-intl already
- * resolves the reader's zone for formatting; this uses the same one.
- */
-async function startOfMonth(): Promise<Date> {
-  const timeZone = await getTimeZone();
-
-  /** How far the zone is from UTC at this instant, in milliseconds. */
-  const offsetMs = (date: Date) => {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      hour12: false,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }).formatToParts(date);
-    const value = (type: string) =>
-      Number(parts.find((part) => part.type === type)?.value ?? "0");
-    // The wall clock there, read as if it were UTC, minus the instant.
-    return (
-      Date.UTC(
-        value("year"),
-        value("month") - 1,
-        value("day"),
-        value("hour") % 24,
-        value("minute"),
-        value("second")
-      ) - date.getTime()
-    );
-  };
-
-  const now = new Date();
-  const here = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-  }).formatToParts(now);
-  const value = (type: string) =>
-    Number(here.find((part) => part.type === type)?.value ?? "0");
-
-  // Midnight on the first, corrected by the offset — twice, because the
-  // first correction can land the other side of a DST change.
-  const naive = Date.UTC(value("year"), value("month") - 1, 1);
-  const guess = naive - offsetMs(new Date(naive));
-  return new Date(naive - offsetMs(new Date(guess)));
-}
-
 export default async function DashboardPage() {
-  const t = await getTranslations("dashboard");
   const { workspace, user } = await requireWorkspace();
-  const actor = { workspaceId: workspace.id, userId: user.id };
 
-  const [recent, resume, monthSummary, billing, trial] = await Promise.all([
-    listConversations(actor, { limit: 5 }),
-    getResume(actor, { chatBasePath: dashboardConfig.chatBasePath }),
-    summarizeExecutions(workspace.id, {
-      from: await startOfMonth(),
-      to: new Date(),
-    }),
-    getWorkspaceBilling(workspace.id),
-    getTrialStatus(workspace.id),
-  ]);
-
-  const showPlan = dashboardConfig.showPlanSummary !== false;
+  const resume = await getResume(
+    { workspaceId: workspace.id, userId: user.id },
+    { chatBasePath: dashboardConfig.chatBasePath }
+  );
 
   return (
-    <div className="flex min-h-full flex-col px-4">
-      {/* The hero and the composer are one unit, centred in whatever the
-          viewport leaves: a question and the box that answers it should
-          not be a page apart. */}
-      <div className="flex flex-1 flex-col justify-center py-10">
-        <div className="mx-auto w-full max-w-3xl">
-          <DashboardHero resume={resume} />
-          <PromptBar />
-        </div>
-      </div>
-
-      {/* One quiet strip, not three sections: what you were doing on the
-          left, what it costs on the right, both at the page's measure. */}
+    <div className="flex min-h-full flex-col justify-center px-4 py-10">
       <div className="mx-auto w-full max-w-3xl">
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t py-4">
-          <RecentConversations
-            conversations={recent.map((conversation) => ({
-              id: conversation.id,
-              title: conversation.title,
-              updatedAt: conversation.updatedAt.toISOString(),
-            }))}
-          />
-
-          {showPlan ? (
-            <PlanSummary
-              planName={billing.plan?.name ?? t("plan.freeName")}
-              charged={monthSummary.totals.charged[0] ?? null}
-              requestsThisMonth={monthSummary.totals.count}
-              trial={{
-                hasTrialCredits: trial.hasTrialCredits,
-                status: trial.status,
-                creditsRemaining: trial.creditsRemaining,
-                initialCredits: trial.initialCredits,
-                percentageRemaining: trial.percentageRemaining,
-                daysRemaining: trial.daysRemaining,
-              }}
-            />
-          ) : null}
-        </div>
+        <DashboardHero resume={resume} />
+        <PromptBar />
       </div>
     </div>
   );

@@ -8,7 +8,6 @@ import type { CheckoutSessionSummary } from "@intelligo-dev/billing";
 import type { PlanConfig } from "@intelligo-dev/billing/plans";
 import type { TeamMember } from "@showcase/components/team/member-list";
 import type { Workspace } from "@showcase/components/shell/workspace-switcher";
-import type { RecentConversation } from "@showcase/components/dashboard/recent-conversations";
 import { daysAgo } from "@showcase/actions/_preview";
 export { NOTIFICATIONS } from "@showcase/actions/notifications";
 export { DOCUMENTS } from "@showcase/actions/documents";
@@ -139,12 +138,6 @@ export const PLANS: Record<string, PlanConfig> = {
     ],
   },
 };
-
-export const RECENT: RecentConversation[] = [
-  { id: "conv_1", title: "Q3 support tickets", updatedAt: daysAgo(0, 1) },
-  { id: "conv_2", title: "Pricing audit", updatedAt: daysAgo(1) },
-  { id: "conv_3", title: "Onboarding copy review", updatedAt: daysAgo(4) },
-];
 
 export const CHAT_MESSAGES: UIMessage[] = [
   {

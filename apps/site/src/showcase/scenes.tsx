@@ -25,7 +25,6 @@ import { ShellHeader } from "@showcase/components/shell/shell-header";
 import { SidebarInset, SidebarProvider } from "@showcase/components/ui/sidebar";
 import { DashboardHero } from "@showcase/components/dashboard/dashboard-hero";
 import { PromptBar } from "@showcase/components/dashboard/prompt-bar";
-import { RecentConversations } from "@showcase/components/dashboard/recent-conversations";
 import { SettingsTabs } from "@showcase/components/settings/settings-tabs";
 import { InviteMemberForm } from "@showcase/components/team/invite-member-form";
 import { MemberList } from "@showcase/components/team/member-list";
@@ -75,7 +74,6 @@ import {
   MEMBERS,
   NOTIFICATIONS,
   PLANS,
-  RECENT,
   RESUME,
   USAGE_OVERVIEW,
   USER,
@@ -380,7 +378,6 @@ function Dashboard() {
       <div className="space-y-8 py-6">
         <DashboardHero resume={RESUME} />
         <PromptBar />
-        <RecentConversations conversations={RECENT} />
       </div>
     </AppFrame>
   );

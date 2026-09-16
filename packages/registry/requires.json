@@ -110,7 +110,7 @@
     },
     "dashboard": {
       "marker": "app/[locale]/(app)/dashboard/page.tsx",
-      "items": ["pricing", "route-error"],
+      "items": ["route-error"],
       "files": ["i18n/navigation"]
     },
     "artifacts": {
