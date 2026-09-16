@@ -87,25 +87,28 @@ jobs:
       - name: Doctor
         run: pnpm exec tsx packages/cli/src/bin.ts doctor
 
-      # The migration chain is frozen until the one production database
-      # still running unmanaged has been baselined.
+      # The migration chain is frozen: no migration lands without a
+      # deliberate decision recorded here.
       #
       # `intelligo migrate` refuses a db:push-provisioned database, so a
-      # new migration cannot reach that deployment by the supported
-      # path; the only way in would be another `db:push`, which would
-      # see a renamed or removed column as absent from the schema file
-      # and DROP it. Publishing a migration while that database is
-      # unmanaged is therefore not "a change that waits" — it is a
-      # change that invites the one operation guaranteed to lose data.
+      # new migration cannot reach an unmanaged deployment by the
+      # supported path; the only way in would be another `db:push`,
+      # which would see a renamed or removed column as absent from the
+      # schema file and DROP it. That is what the freeze guards against.
       #
-      # Lifting the freeze: baseline the database (its repository owns
-      # the runbook), confirm `intelligo migrate --check` reports zero
-      # pending, then raise FROZEN_AT in the same commit as the first
-      # new migration.
+      # Raised to 47 for 0043_attachments, 0044_money_micros and
+      # 0045_drop_legacy_money_columns (ADR-0015). The unmanaged
+      # database the freeze was first written for holds no data, so the
+      # baseline it was waiting on costs nothing and protects nothing;
+      # the money slice ships rather than being reverted.
+      #
+      # Raising it again: confirm `intelligo migrate --check` reports
+      # zero pending, then raise FROZEN_AT in the same commit as the
+      # first new migration.
       - name: The migration chain is frozen
         run: |
           set -euo pipefail
-          FROZEN_AT=44
+          FROZEN_AT=47
           entries=$(node -p "require('./packages/core/src/db/migrations/meta/_journal.json').entries.length")
           echo "journal has $entries entries, frozen at $FROZEN_AT"
           if [ "$entries" -gt "$FROZEN_AT" ]; then
