@@ -125,6 +125,19 @@ export async function handleCheckoutCompleted(
       });
     }
   } else if (session.mode === "payment") {
+    // Stripe fires checkout.session.completed for delayed-notification
+    // methods before the money arrives, with payment_status "unpaid".
+    // Granting on that credits a workspace for a payment that may never
+    // settle — `checkout.session.async_payment_succeeded` is the event
+    // that says it did.
+    if (session.payment_status !== "paid") {
+      log.info("Checkout completed but unpaid; no credits granted", {
+        checkoutSessionId: session.id,
+        paymentStatus: session.payment_status,
+      });
+      return;
+    }
+
     const checkoutSessionId = session.id;
     const purchaseId = session.metadata?.purchaseId as string | undefined;
 

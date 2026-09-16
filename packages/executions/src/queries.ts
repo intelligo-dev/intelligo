@@ -32,7 +32,12 @@ function chargedByCurrency(
 }
 
 export type ListExecutionsOptions = {
-  workspaceId?: string;
+  /**
+   * Required. An omitted workspace used to apply no filter at all, so
+   * the default reading of the executions table — in the package whose
+   * whole job is the tenant boundary — was every tenant's rows.
+   */
+  workspaceId: string;
   userId?: string;
   capability?: string;
   status?: "running" | "settling" | "succeeded" | "failed" | "refused";
@@ -41,11 +46,9 @@ export type ListExecutionsOptions = {
   limit?: number;
 };
 
-export async function listExecutions(options: ListExecutionsOptions = {}) {
+export async function listExecutions(options: ListExecutionsOptions) {
   const filters = [
-    options.workspaceId
-      ? eq(executions.workspaceId, options.workspaceId)
-      : undefined,
+    eq(executions.workspaceId, options.workspaceId),
     options.userId ? eq(executions.userId, options.userId) : undefined,
     options.capability
       ? eq(executions.capability, options.capability)
