@@ -1,36 +1,3 @@
-/**
- * Workspace dashboard — an AI-first home, not a metrics console.
- *
- * The order on this page is the argument: what you can do (hero,
- * starters, prompt bar), what you were doing (resume pill, recent
- * conversations), and only then what it costs (plan summary). The
- * previous version of this item led with five stat tiles and five
- * settings links, which reads as an admin console for a product the
- * person hasn't used yet.
- *
- * Everything configurable lives in two consumer-owned seams:
- * `@/lib/dashboard-config` (hero copy, starters, chat base path,
- * shortcuts) and `@/lib/dashboard-data` (`getResume` — what
- * "unfinished work" means for this product). Neither requires editing
- * a file this item ships.
- *
- * Pairs with the `chat` item: the hero's starters and the prompt bar
- * open `${chatBasePath}/<new-uuid>?query=…`, which the chat panel sends
- * as the first turn. Without a chat surface installed, set
- * `chatBasePath` or drop those affordances.
- *
- * Workspace resolution: `requireWorkspace()` is called directly and
- * allowed to throw. The `app-shell` item's layout already guarantees an
- * active workspace before any `(app)` route renders, so a failure here
- * means something is genuinely wrong (a revoked session mid-request),
- * not an empty state — and this item ships an `error.tsx` for exactly
- * that.
- *
- * No `actions.ts`: every read is a plain server-side call with no
- * client-triggered refetch (contrast the `usage` item, whose period
- * selector needs one).
- */
-
 import type { Metadata } from "next";
 import { getTimeZone, getTranslations } from "next-intl/server";
 
