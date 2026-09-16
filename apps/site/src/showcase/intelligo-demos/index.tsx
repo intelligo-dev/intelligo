@@ -53,7 +53,9 @@ export function IntelligoDemo({ name }: { name: string }) {
           </TooltipProvider>
         </Guard>
       ) : (
-        <Placeholder>No live demo yet — install it and see it in its block.</Placeholder>
+        <Placeholder>
+          No live demo yet — install it and see it in its block.
+        </Placeholder>
       )}
     </div>
   );

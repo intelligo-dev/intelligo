@@ -105,7 +105,8 @@ const SOURCES: CitationItem[] = [
   {
     id: "1",
     title: "Q3 support review",
-    snippet: "Median first response fell from 6h to 2h after triage moved to the assistant.",
+    snippet:
+      "Median first response fell from 6h to 2h after triage moved to the assistant.",
   },
   {
     id: "2",
@@ -124,7 +125,10 @@ function CitationsDemo() {
     <div className="flex flex-col gap-4 text-sm leading-6">
       <p>
         Response times improved sharply this quarter
-        <CitationPill citations={SOURCES.slice(0, 2)} label="Sources: Q3 support review" />
+        <CitationPill
+          citations={SOURCES.slice(0, 2)}
+          label="Sources: Q3 support review"
+        />
         , and most new members now finish setup on day one
         <Citation citationId="2" index={2} idPrefix="demo-sources" />. Shared
         inboxes are next on the roadmap
@@ -149,11 +153,15 @@ export const { POST, DELETE } = createChatHandler(chatServerConfig);
 
 function CodeBlockDemo() {
   const [length, setLength] = useState(CODE.length);
-  const status: CodeBlockStatus = length < CODE.length ? "streaming" : "complete";
+  const status: CodeBlockStatus =
+    length < CODE.length ? "streaming" : "complete";
 
   useEffect(() => {
     if (length >= CODE.length) return;
-    const timer = setTimeout(() => setLength((n) => Math.min(CODE.length, n + 6)), 40);
+    const timer = setTimeout(
+      () => setLength((n) => Math.min(CODE.length, n + 6)),
+      40
+    );
     return () => clearTimeout(timer);
   }, [length]);
 
@@ -208,8 +216,16 @@ function ArtifactDemo() {
             <ArtifactDescription>Updated 2 minutes ago</ArtifactDescription>
           </div>
           <ArtifactActions>
-            <ArtifactAction label="Regenerate" tooltip="Regenerate" icon={SparklesIcon} />
-            <ArtifactAction label="Download" tooltip="Download" icon={DownloadIcon} />
+            <ArtifactAction
+              label="Regenerate"
+              tooltip="Regenerate"
+              icon={SparklesIcon}
+            />
+            <ArtifactAction
+              label="Download"
+              tooltip="Download"
+              icon={DownloadIcon}
+            />
             <ArtifactClose label="Close" onClick={() => setOpen(false)} />
           </ArtifactActions>
         </ArtifactHeader>
@@ -298,12 +314,17 @@ const RESOURCES: AISidebarResource[] = [
     id: "research",
     label: "Research",
     kind: "folder",
-    children: [{ id: "interviews", label: "Customer interviews", kind: "file" }],
+    children: [
+      { id: "interviews", label: "Customer interviews", kind: "file" },
+    ],
   },
   { id: "pricing", label: "Pricing questions", kind: "conversation" },
 ];
 
-function resourceLabel(items: AISidebarResource[], id: string): string | undefined {
+function resourceLabel(
+  items: AISidebarResource[],
+  id: string
+): string | undefined {
   for (const item of items) {
     if (item.id === id) return item.label;
     const found = item.children && resourceLabel(item.children, id);
@@ -323,8 +344,7 @@ function SidebarDemo() {
   const [docsOpen, setDocsOpen] = useState(false);
   const [doc, setDoc] = useState<string | null>(null);
 
-  const title =
-    doc ?? NAV.find((item) => item.id === active)?.label ?? "Home";
+  const title = doc ?? NAV.find((item) => item.id === active)?.label ?? "Home";
 
   return (
     <div className="showcase-canvas relative h-85 overflow-hidden rounded-lg border">
@@ -335,7 +355,9 @@ function SidebarDemo() {
               <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary text-xs font-semibold text-primary-foreground">
                 A
               </span>
-              <span className="truncate text-sm font-semibold">Acme workspace</span>
+              <span className="truncate text-sm font-semibold">
+                Acme workspace
+              </span>
             </div>
           </AISidebarHeader>
           <AISidebarContent>
@@ -394,7 +416,9 @@ function SidebarDemo() {
               <AISidebarTree
                 defaultItems={RESOURCES}
                 defaultExpandedIds={["launch"]}
-                onActiveChange={(id) => setDoc(resourceLabel(RESOURCES, id) ?? null)}
+                onActiveChange={(id) =>
+                  setDoc(resourceLabel(RESOURCES, id) ?? null)
+                }
               />
             </AISidebarSection>
           </AISidebarContent>
@@ -403,7 +427,9 @@ function SidebarDemo() {
               <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-xs font-medium">
                 JD
               </span>
-              <span className="truncate text-muted-foreground">jordan@acme.test</span>
+              <span className="truncate text-muted-foreground">
+                jordan@acme.test
+              </span>
             </div>
           </AISidebarFooter>
         </AISidebar>
@@ -413,7 +439,10 @@ function SidebarDemo() {
             <span className="truncate text-sm font-medium">{title}</span>
           </header>
           <div className="flex flex-1 flex-col gap-2 p-4 text-sm text-muted-foreground">
-            <p>Collapse the panel into an icon rail, unfold Documents, or drag a row in the tree.</p>
+            <p>
+              Collapse the panel into an icon rail, unfold Documents, or drag a
+              row in the tree.
+            </p>
           </div>
         </AISidebarInset>
       </AISidebarProvider>
@@ -460,7 +489,12 @@ function MotionDemo() {
             </div>
           </div>
         ))}
-        <Button variant="outline" size="sm" className="self-start" onClick={() => setEnd((v) => !v)}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="self-start"
+          onClick={() => setEnd((v) => !v)}
+        >
           Play curves
         </Button>
       </div>
@@ -494,7 +528,9 @@ function MotionDemo() {
           className="flex w-full items-center justify-between px-3 py-2 text-left font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Reasoning
-          <span className="text-xs text-muted-foreground">{open ? "Hide" : "Show"}</span>
+          <span className="text-xs text-muted-foreground">
+            {open ? "Hide" : "Show"}
+          </span>
         </button>
         <Disclosure open={open}>
           <p className="border-t px-3 py-2 text-muted-foreground">
@@ -553,7 +589,10 @@ function DocumentViewerDemo() {
 
   return (
     <div className="flex flex-col gap-3">
-      <Tabs value={kind} onValueChange={(value) => setKind(value as DocumentKind)}>
+      <Tabs
+        value={kind}
+        onValueChange={(value) => setKind(value as DocumentKind)}
+      >
         <TabsList>
           <TabsTrigger value="text">Text</TabsTrigger>
           <TabsTrigger value="code">Code</TabsTrigger>
@@ -706,14 +745,19 @@ function CopyButtonDemo() {
     timer.current = setTimeout(() => setStatus(""), 2000);
   }
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    []
+  );
 
   return (
     <div className="flex flex-col gap-3 text-sm">
       <div className="flex max-w-md items-center gap-2 rounded-lg border bg-muted/40 py-1 pr-1 pl-3">
-        <code className="min-w-0 flex-1 truncate font-mono text-xs">ws_7f3a9c2e41b8</code>
+        <code className="min-w-0 flex-1 truncate font-mono text-xs">
+          ws_7f3a9c2e41b8
+        </code>
         <CopyButton
           value="ws_7f3a9c2e41b8"
           label="Copy workspace ID"

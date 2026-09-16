@@ -100,8 +100,8 @@ function MessageDemo() {
           <MessageHeader>Assistant</MessageHeader>
           <MessageBubble variant="outline">
             <MessageBubbleContent>
-              Twelve accounts renewed in August, three of them on an annual
-              plan for the first time.
+              Twelve accounts renewed in August, three of them on an annual plan
+              for the first time.
             </MessageBubbleContent>
           </MessageBubble>
           <MessageFooter>Answered in 2.4s</MessageFooter>
@@ -130,7 +130,9 @@ function MessageBubbleDemo() {
         <MessageContent>
           <MessageBubbleGroup>
             <MessageBubble variant="solid">
-              <MessageBubbleContent>Draft the weekly update.</MessageBubbleContent>
+              <MessageBubbleContent>
+                Draft the weekly update.
+              </MessageBubbleContent>
             </MessageBubble>
             <MessageBubble variant="solid">
               <MessageBubbleContent>
@@ -157,9 +159,7 @@ function MessageBubbleDemo() {
             </MessageBubbleContent>
           </MessageBubble>
           <MessageBubble variant="tint">
-            <MessageBubbleContent
-              render={<button type="button" />}
-            >
+            <MessageBubbleContent render={<button type="button" />}>
               Turn this into an email
             </MessageBubbleContent>
           </MessageBubble>
@@ -207,7 +207,8 @@ const FOLLOW_UPS = [
 
 function MessageScrollerDemo() {
   const [turns, setTurns] = useState(SCROLLER_TURNS);
-  const followUp = FOLLOW_UPS[(turns.length - SCROLLER_TURNS.length) % FOLLOW_UPS.length]!;
+  const followUp =
+    FOLLOW_UPS[(turns.length - SCROLLER_TURNS.length) % FOLLOW_UPS.length]!;
 
   return (
     <div className="flex flex-col gap-3">
@@ -218,7 +219,11 @@ function MessageScrollerDemo() {
         anchor={turns.length}
       >
         {turns.map((turn, index) => (
-          <Message key={index} from={turn.from} animateIn={index >= SCROLLER_TURNS.length}>
+          <Message
+            key={index}
+            from={turn.from}
+            animateIn={index >= SCROLLER_TURNS.length}
+          >
             {turn.from === "assistant" ? <AssistantAvatar /> : null}
             <MessageContent>
               <MessageBubble variant={turn.from === "user" ? "soft" : "ghost"}>
@@ -230,13 +235,17 @@ function MessageScrollerDemo() {
       </MessageScroller>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          Scroll up to let go of the live edge; hover the rail to preview a turn.
+          Scroll up to let go of the live edge; hover the rail to preview a
+          turn.
         </p>
         <Button
           size="sm"
           variant="outline"
           onClick={() =>
-            setTurns((current) => [...current, { from: "user", text: followUp }])
+            setTurns((current) => [
+              ...current,
+              { from: "user", text: followUp },
+            ])
           }
         >
           Add a message
@@ -346,7 +355,10 @@ function PromptInputDemo() {
       >
         <PromptInputAttachments>
           {(file) => (
-            <PromptInputAttachment data={file} removeLabel="Remove attachment" />
+            <PromptInputAttachment
+              data={file}
+              removeLabel="Remove attachment"
+            />
           )}
         </PromptInputAttachments>
         <PromptInputTextarea
@@ -484,7 +496,9 @@ function BranchDemo() {
               size="icon-xs"
               aria-label="Regenerate"
               className="text-muted-foreground"
-              onClick={() => setIndex((current) => (current + 1) % VERSIONS.length)}
+              onClick={() =>
+                setIndex((current) => (current + 1) % VERSIONS.length)
+              }
             >
               <RotateCcwIcon />
             </Button>
@@ -567,7 +581,9 @@ function ComposerMenuDemo() {
       <div className="relative">
         <ComposerMenu
           open={open}
-          options={trigger?.kind === "mention" ? MENTION_OPTIONS : COMMAND_OPTIONS}
+          options={
+            trigger?.kind === "mention" ? MENTION_OPTIONS : COMMAND_OPTIONS
+          }
           query={trigger?.query ?? ""}
           onSelect={select}
           emptyLabel="No matches"
@@ -635,7 +651,8 @@ function SpeechInputDemo() {
             }
             setInterim("");
             const clean = spoken.trim();
-            if (clean) setText((current) => (current ? `${current} ${clean}` : clean));
+            if (clean)
+              setText((current) => (current ? `${current} ${clean}` : clean));
           }}
         />
       </div>

@@ -202,7 +202,10 @@ export const INTELLIGO: IntelligoEntry[] = rawItems
       title: i.title ?? i.name,
       tier,
       group: groupOf(i.name, tier),
-      description: text.replace(/\s*\(ADR-0013[^)]*\)/g, "").replace(/\s+/g, " ").trim(),
+      description: text
+        .replace(/\s*\(ADR-0013[^)]*\)/g, "")
+        .replace(/\s+/g, " ")
+        .trim(),
       usedBy: blocks
         .filter((b) => b.registryDependencies?.includes(`@intelligo/${i.name}`))
         .map((b) => b.name),

@@ -12,7 +12,10 @@ import { defineConfig } from "astro/config";
 export default defineConfig({
   output: "static",
   site: "https://intelligo.dev",
-  integrations: [react(), sitemap({ filter: (page) => !page.endsWith("/404/") })],
+  integrations: [
+    react(),
+    sitemap({ filter: (page) => !page.endsWith("/404/") }),
+  ],
   // Docs code blocks carry both themes; global.css switches under .dark.
   markdown: {
     shikiConfig: { themes: { light: "github-light", dark: "github-dark" } },
