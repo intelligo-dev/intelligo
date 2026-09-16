@@ -16,6 +16,8 @@ export const DOCUMENTS: ArtifactListItem[] = [
     agentLabel: "Assistant",
     content:
       "# Q3 support tickets\n\nThree themes dominate: onboarding friction, billing questions, and export requests.",
+    // Written in a chat, so the preview shows the link back to it.
+    conversationId: "conv_1",
     isReport: true,
   },
   {
@@ -25,6 +27,7 @@ export const DOCUMENTS: ArtifactListItem[] = [
     createdAt: daysAgo(3),
     agentLabel: "Assistant",
     content: "Pro at $29 sits below the median of eight comparable tools…",
+    conversationId: null,
     isReport: true,
   },
   {
@@ -35,6 +38,7 @@ export const DOCUMENTS: ArtifactListItem[] = [
     agentLabel: "Assistant",
     content:
       "Step 2 loses 18% of sign-ups; the workspace name field is the culprit.",
+    conversationId: null,
     isReport: false,
   },
   {
@@ -44,6 +48,7 @@ export const DOCUMENTS: ArtifactListItem[] = [
     createdAt: daysAgo(1),
     agentLabel: "Assistant",
     content: null,
+    conversationId: null,
     isReport: false,
   },
 ];

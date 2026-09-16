@@ -36,7 +36,19 @@ type DocumentRow = {
   kind: string;
   createdAt: Date;
   content: string | null;
+  metadata?: unknown;
 };
+
+/**
+ * `metadata` is untyped `jsonb` written by whoever saved the document,
+ * so it is read defensively: anything that is not a non-empty string
+ * is no link at all.
+ */
+function conversationIdOf(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const value = (metadata as { conversationId?: unknown }).conversationId;
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
 
 function toListItem(doc: DocumentRow): DocumentListItem {
   return {
@@ -46,6 +58,7 @@ function toListItem(doc: DocumentRow): DocumentListItem {
     createdAt: doc.createdAt.toISOString(),
     agentLabel: classifyDocumentTitle(doc.title).agentLabel,
     content: doc.content,
+    conversationId: conversationIdOf(doc.metadata),
   };
 }
 
@@ -154,6 +167,12 @@ export async function saveDocument(
     title: string;
     content: string;
     kind: string;
+    /**
+     * The conversation this was written in, stored on `metadata` so
+     * the artifacts page can link back to it. Optional: a document
+     * saved by a job or an import belongs to no conversation.
+     */
+    conversationId?: string;
   }
 ): Promise<DocumentListItem> {
   const existingDocs = await db
@@ -176,6 +195,15 @@ export async function saveDocument(
     }
   }
 
+  // Every save writes a new *version* row, so a link the first version
+  // carried would be dropped by an edit that does not resend it —
+  // editing a document in the canvas would quietly unlink it from the
+  // conversation that wrote it. Carry the known one forward instead.
+  const conversationId =
+    params.conversationId ??
+    existingDocs.map((doc) => conversationIdOf(doc.metadata)).find(Boolean) ??
+    null;
+
   const [newDocument] = await db
     .insert(documents)
     .values({
@@ -186,6 +214,7 @@ export async function saveDocument(
       content: params.content,
       kind: params.kind,
       createdAt: new Date(),
+      metadata: conversationId ? { conversationId } : null,
     })
     .returning();
 

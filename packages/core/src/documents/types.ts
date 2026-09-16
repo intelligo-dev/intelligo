@@ -26,4 +26,12 @@ export type DocumentListItem = {
   createdAt: string; // ISO string for client serialization
   agentLabel: string;
   content: string | null;
+  /**
+   * The conversation this document was written in, when one is known —
+   * read from `metadata.conversationId`, not a column: a document is
+   * not owned by a conversation (a product may write one from a job or
+   * an import), so the link is a fact about this document rather than
+   * a requirement on every document.
+   */
+  conversationId: string | null;
 };

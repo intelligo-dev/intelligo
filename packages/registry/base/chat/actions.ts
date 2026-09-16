@@ -290,6 +290,8 @@ export async function saveMessageAsArtifact(params: {
   messageId: string;
   content: string;
   title?: string;
+  /** Lets the artifacts page link back to where this came from. */
+  conversationId?: string;
 }): Promise<ChatActionResult<{ id: string; title: string }>> {
   const t = await getTranslations("chat");
 
@@ -306,6 +308,9 @@ export async function saveMessageAsArtifact(params: {
       title,
       content,
       kind: "text",
+      ...(params.conversationId
+        ? { conversationId: params.conversationId }
+        : {}),
     });
     revalidatePath("/artifacts");
     return { success: true, data: { id: saved.id, title: saved.title } };

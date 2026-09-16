@@ -1,32 +1,38 @@
 "use client";
 
 /**
- * DocumentList — client component that renders the artifact grid with
- * type-based filtering and a full-content preview dialog.
+ * DocumentList — the artifact library: a grid of what the agents wrote,
+ * and a reader for any one of them.
  *
- * Generalizes the first product's `document-list.tsx`: the "Reports"
- * filter is `doc.isReport`, computed server-side in `@/actions/documents`
- * from `@intelligo-dev/core/documents`'s classifier registry — not a
- * hardcoded title-pattern match — and the kind tabs are derived
- * from whatever `kind` values are actually present in the data, so a
- * product that saves a custom kind beyond text/code/sheet/image still
- * gets a working filter tab for it, with no changes to this file.
+ * A card leads with the document itself — the first lines of the text
+ * or the image — because a library of titles alone makes you open
+ * things to find out what they are. Everything else on the card is
+ * secondary to that: the glyph, the kind, when it was written.
+ *
+ * How a document is drawn is shared with the chat canvas
+ * (`@/components/ui/document-viewer`), so an artifact reads the same
+ * here as it does beside the conversation that wrote it.
+ *
+ * Filtering: the "Reports" tab is `doc.isReport`, computed server-side
+ * in `@/actions/documents` from `@intelligo-dev/core/documents`'s
+ * classifier registry — not a hardcoded title match — and the kind tabs
+ * are derived from the `kind` values actually present, so a product
+ * that saves a custom kind gets a working tab for it with no change
+ * here.
  *
  * Delete is optimistic-local: `document-actions.tsx` calls the server
- * action itself, and this component only removes the item from its own
+ * action itself, and this component only drops the item from its own
  * state on success (the same uncontrolled-list pattern the
- * `notifications` and `team-settings` items use) — no full page
- * `router.refresh()` round trip needed to see the item disappear.
+ * `notifications` and `team-settings` items use).
  */
 
 import { useEffect, useMemo, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
-import { Bot, File } from "lucide-react";
+import { Bot, ExternalLink, File } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -36,37 +42,30 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DocumentView,
+  HtmlPreview,
   documentKindIcon,
+  extensionOf,
+  isPreviewableTitle,
 } from "@/components/ui/document-viewer";
 
 import type { ArtifactListItem } from "@/actions/documents";
 import { DocumentActions } from "./document-actions";
 
-/**
- * How a document is drawn is shared with the chat canvas
- * (`@/components/ui/document-viewer`), so the same artifact reads the
- * same in the library as it does beside the conversation that wrote
- * it. This page used to carry its own copy, and the copies drifted:
- * its extension table had lost `htm` and `svg`, and its language
- * lookup took whatever followed the last dot, so an untitled note was
- * asked for as a language.
- */
-function DocumentContent({
-  kind,
-  title,
-  content,
-}: {
-  kind: string;
-  title: string;
-  content: string;
-}) {
-  return <DocumentView kind={kind} title={title} content={content} />;
+/** How much of a document a card shows before it fades out. */
+const PREVIEW_LINES = 8;
+
+function head(text: string): string {
+  return text.trimStart().split("\n").slice(0, PREVIEW_LINES).join("\n");
 }
 
-function kindIcon(kind: string) {
-  const Icon = documentKindIcon(kind);
-  return <Icon className="size-4 shrink-0" />;
-}
+/**
+ * Alpha-only, and an inline style rather than a class: the design
+ * system's arbitrary-value rule keeps gradients out of class names,
+ * and the chat's artifact card writes its mask the same way. The
+ * direction is the opposite of the chat's, because a card here shows a
+ * document's opening lines while the chat shows its newest ones.
+ */
+const PREVIEW_MASK = "linear-gradient(to bottom, black 60%, transparent)";
 
 interface DocumentListProps {
   documents: ArtifactListItem[];
@@ -92,11 +91,29 @@ function RelativeTime({ iso }: { iso: string }) {
   );
 }
 
+/** The kind's glyph on the tile both the card and the reader use. */
+function KindTile({ kind, large }: { kind: string; large?: boolean }) {
+  const Icon = documentKindIcon(kind);
+  return (
+    <span
+      aria-hidden="true"
+      className={
+        large
+          ? "grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"
+          : "grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"
+      }
+    >
+      <Icon className={large ? "size-5" : "size-4"} />
+    </span>
+  );
+}
+
 export function DocumentList({ documents }: DocumentListProps) {
   const t = useTranslations("artifacts");
   const [items, setItems] = useState(documents);
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [view, setView] = useState<"preview" | "source">("preview");
 
   // `/artifacts?document=<id>` — the chat canvas's "Open in Artifacts" —
   // lands on that document's preview.
@@ -105,28 +122,25 @@ export function DocumentList({ documents }: DocumentListProps) {
     if (id) setSelectedId(id);
   }, []);
 
+  // Each document opens on its rendered form, not on whatever the last
+  // one was left showing.
+  useEffect(() => setView("preview"), [selectedId]);
+
   /**
    * A known kind (text/code/sheet/image) resolves through this item's
-   * own messages; a product-defined custom kind (see the module doc
-   * comment above) falls back to capitalizing the raw value — `t.has`
-   * is the check next-intl exposes for "does this key exist" without
-   * throwing.
+   * own messages; a product-defined custom kind falls back to
+   * capitalizing the raw value — `t.has` is the check next-intl exposes
+   * for "does this key exist" without throwing.
    */
   function kindLabel(kind: string): string {
     const key = `filters.kind.${kind}`;
     return t.has(key) ? t(key) : kind.charAt(0).toUpperCase() + kind.slice(1);
   }
 
-  // A kind is a category, not a status: every kind reads the same, and a
-  // report — the one kind that means something extra — stands out as secondary.
-  function badgeFor(doc: ArtifactListItem): {
-    label: string;
-    variant: "secondary" | "outline";
-  } {
-    if (doc.isReport) {
-      return { label: t("badge.report"), variant: "secondary" };
-    }
-    return { label: kindLabel(doc.kind), variant: "outline" };
+  /** "Code · py" — the same subtitle the chat's artifact card writes. */
+  function subtitleOf(doc: ArtifactListItem): string {
+    const extension = doc.kind === "code" ? extensionOf(doc.title) : undefined;
+    return [kindLabel(doc.kind), extension].filter(Boolean).join(" · ");
   }
 
   const kinds = useMemo(
@@ -136,10 +150,22 @@ export function DocumentList({ documents }: DocumentListProps) {
   const hasReports = items.some((doc) => doc.isReport);
   const selected = items.find((doc) => doc.id === selectedId) ?? null;
 
-  const filters: { type: string; label: string }[] = [
-    { type: "all", label: t("filters.all") },
-    ...(hasReports ? [{ type: "report", label: t("filters.reports") }] : []),
-    ...kinds.map((kind) => ({ type: kind, label: kindLabel(kind) })),
+  const filters: { type: string; label: string; count: number }[] = [
+    { type: "all", label: t("filters.all"), count: items.length },
+    ...(hasReports
+      ? [
+          {
+            type: "report",
+            label: t("filters.reports"),
+            count: items.filter((doc) => doc.isReport).length,
+          },
+        ]
+      : []),
+    ...kinds.map((kind) => ({
+      type: kind,
+      label: kindLabel(kind),
+      count: items.filter((doc) => doc.kind === kind).length,
+    })),
   ];
 
   const filtered = items.filter((doc) => {
@@ -161,50 +187,101 @@ export function DocumentList({ documents }: DocumentListProps) {
     filters.find((filter) => filter.type === activeFilter)?.label ??
     activeFilter;
 
+  // An HTML page or an SVG has a rendered form worth offering; anything
+  // else is only ever its source.
+  const canPreview = selected ? isPreviewableTitle(selected.title) : false;
+
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        {filters.map((filter) => (
-          <Button
-            key={filter.type}
-            type="button"
-            variant={activeFilter === filter.type ? "default" : "outline"}
-            size="sm"
-            className="h-8 rounded-full px-4 text-sm"
-            onClick={() => setActiveFilter(filter.type)}
-          >
-            {filter.label}
-          </Button>
-        ))}
+      {/* One segmented control, not a row of pill buttons: these are
+          views of one list, and the counts say what is behind each. */}
+      <div
+        role="group"
+        aria-label={t("filters.all")}
+        className="flex w-fit max-w-full flex-wrap items-center gap-0.5 rounded-lg bg-muted p-0.5"
+      >
+        {filters.map((filter) => {
+          const active = activeFilter === filter.type;
+          return (
+            <button
+              key={filter.type}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setActiveFilter(filter.type)}
+              className={`h-7 rounded-md px-2.5 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
+                active
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {filter.label}
+              <span className="ml-1.5 tabular-nums opacity-60">
+                {filter.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {filtered.length === 0 ? (
         <FilteredEmptyState filterLabel={activeFilterLabel} />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((doc) => {
-            const { label, variant } = badgeFor(doc);
+            const previewText = doc.content ? head(doc.content) : "";
             return (
-              <Card
+              <div
                 key={doc.id}
-                className="group cursor-pointer transition-shadow hover:shadow-md"
+                className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border bg-card transition-colors hover:border-foreground/20 focus-within:border-foreground/20"
                 onClick={() => setSelectedId(doc.id)}
               >
-                <CardContent className="p-5">
-                  <div className="mb-3 flex items-start gap-3">
-                    <div className="mt-0.5 text-muted-foreground">
-                      {kindIcon(doc.kind)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="mb-1 line-clamp-2 text-sm font-medium leading-tight">
-                        {doc.title}
-                      </p>
-                      <Badge variant={variant}>{label}</Badge>
-                    </div>
+                {/* The document itself, clipped under a fade. Decorative:
+                    the title below is the accessible name. */}
+                {doc.kind === "image" && doc.content ? (
+                  <div className="h-28 overflow-hidden border-b bg-muted/30">
+                    <img
+                      src={doc.content}
+                      alt=""
+                      aria-hidden="true"
+                      className="size-full object-cover"
+                    />
                   </div>
+                ) : previewText ? (
+                  <div
+                    aria-hidden="true"
+                    className="h-28 overflow-hidden border-b bg-muted/30 px-4 pt-3 font-mono text-xs leading-4 whitespace-pre-wrap text-muted-foreground"
+                    style={{
+                      maskImage: PREVIEW_MASK,
+                      WebkitMaskImage: PREVIEW_MASK,
+                    }}
+                  >
+                    {previewText}
+                  </div>
+                ) : (
+                  <div className="grid h-28 place-items-center border-b bg-muted/30">
+                    <File
+                      aria-hidden="true"
+                      className="size-6 text-muted-foreground/40"
+                    />
+                  </div>
+                )}
 
-                  <div className="mt-2 flex items-center justify-between">
-                    <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                <div className="flex min-w-0 items-start gap-3 p-4">
+                  <KindTile kind={doc.kind} />
+                  <div className="min-w-0 flex-1">
+                    {/* A real button, so the card is reachable and
+                        named without nesting controls inside it. */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(doc.id)}
+                      className="line-clamp-2 text-left text-sm leading-tight font-medium outline-none focus-visible:underline"
+                    >
+                      {doc.title}
+                    </button>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {subtitleOf(doc)}
+                    </p>
+                    <div className="mt-2 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
                       <Bot className="size-3 shrink-0" />
                       <span className="truncate">{doc.agentLabel}</span>
                       <span className="shrink-0">·</span>
@@ -212,17 +289,23 @@ export function DocumentList({ documents }: DocumentListProps) {
                         <RelativeTime iso={doc.createdAt} />
                       </span>
                     </div>
-
-                    <DocumentActions
-                      documentId={doc.id}
-                      content={doc.content}
-                      createdAt={doc.createdAt}
-                      onDeleted={() => handleDeleted(doc.id)}
-                      buttonClassName="size-7 opacity-0 transition-opacity group-hover:opacity-100"
-                    />
                   </div>
-                </CardContent>
-              </Card>
+
+                  {doc.isReport ? (
+                    <Badge variant="secondary">{t("badge.report")}</Badge>
+                  ) : null}
+
+                  <DocumentActions
+                    documentId={doc.id}
+                    title={doc.title}
+                    kind={doc.kind}
+                    content={doc.content}
+                    createdAt={doc.createdAt}
+                    onDeleted={() => handleDeleted(doc.id)}
+                    buttonClassName="size-7 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                  />
+                </div>
+              </div>
             );
           })}
         </div>
@@ -233,37 +316,90 @@ export function DocumentList({ documents }: DocumentListProps) {
         onOpenChange={(open) => !open && setSelectedId(null)}
       >
         {selected && (
-          <DialogContent className="flex max-h-[80vh] max-w-2xl flex-col">
+          <DialogContent className="flex max-h-[80vh] max-w-5xl flex-col">
             <DialogHeader>
               <div className="flex items-start gap-3 pr-8">
-                <div className="mt-1 text-muted-foreground">
-                  {kindIcon(selected.kind)}
-                </div>
+                <KindTile kind={selected.kind} large />
                 <div className="min-w-0 flex-1">
                   <DialogTitle className="text-left leading-tight">
                     {selected.title}
                   </DialogTitle>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {selected.agentLabel} ·{" "}
+                  <p className="mt-1 truncate text-xs text-muted-foreground">
+                    {subtitleOf(selected)} · {selected.agentLabel} ·{" "}
                     <RelativeTime iso={selected.createdAt} />
                   </p>
                 </div>
-                <DocumentActions
-                  documentId={selected.id}
-                  content={selected.content}
-                  createdAt={selected.createdAt}
-                  onDeleted={() => handleDeleted(selected.id)}
-                />
+              </div>
+
+              {/* Second row, as in the chat canvas: how to look at the
+                  document, then what to do with it. */}
+              <div className="flex min-w-0 flex-wrap items-center gap-2 pt-1">
+                {canPreview ? (
+                  <div
+                    role="group"
+                    aria-label={t("preview.view")}
+                    className="flex items-center rounded-lg bg-muted p-0.5"
+                  >
+                    {(["preview", "source"] as const).map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        aria-pressed={view === option}
+                        onClick={() => setView(option)}
+                        className={`h-6 rounded-md px-2 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
+                          view === option
+                            ? "bg-background text-foreground shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {option === "preview"
+                          ? t("preview.rendered")
+                          : t("preview.source")}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="ml-auto flex items-center gap-1">
+                  {selected.conversationId ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      render={
+                        <Link href={`/chat/${selected.conversationId}`} />
+                      }
+                      nativeButton={false}
+                    >
+                      <ExternalLink data-icon="inline-start" />
+                      {t("preview.openConversation")}
+                    </Button>
+                  ) : null}
+                  <DocumentActions
+                    documentId={selected.id}
+                    title={selected.title}
+                    kind={selected.kind}
+                    content={selected.content}
+                    createdAt={selected.createdAt}
+                    onDeleted={() => handleDeleted(selected.id)}
+                  />
+                </div>
               </div>
             </DialogHeader>
 
-            <ScrollArea className="mt-4 min-h-0 flex-1">
+            <ScrollArea className="mt-2 min-h-0 flex-1">
               {selected.content ? (
-                <DocumentContent
-                  kind={selected.kind}
-                  title={selected.title}
-                  content={selected.content}
-                />
+                canPreview && view === "preview" ? (
+                  <HtmlPreview
+                    content={selected.content}
+                    title={selected.title}
+                  />
+                ) : (
+                  <DocumentView
+                    kind={selected.kind}
+                    title={selected.title}
+                    content={selected.content}
+                  />
+                )
               ) : (
                 <p className="text-sm italic text-muted-foreground">
                   {t("noContent")}

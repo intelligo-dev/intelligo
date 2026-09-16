@@ -85,6 +85,42 @@ d("documents service — real DB integration", () => {
     expect(fetched.id).toBe(id);
   });
 
+  it("remembers the conversation a document came from, across versions", async () => {
+    const id = `doc-${suffix}-conv`;
+    const saved = await saveDocument(actor, {
+      id,
+      title: "Written in a chat",
+      content: "v1",
+      kind: "text",
+      conversationId: "conv-abc",
+    });
+    expect(saved.conversationId).toBe("conv-abc");
+
+    // The canvas resends title, kind and content on an edit — never the
+    // conversation. Since every save writes a new version row, the link
+    // has to be carried forward or editing a document silently unlinks
+    // it from the conversation that wrote it.
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    const edited = await saveDocument(actor, {
+      id,
+      title: "Written in a chat",
+      content: "v2",
+      kind: "text",
+    });
+    expect(edited.conversationId).toBe("conv-abc");
+    expect((await getDocument(actor, id)).conversationId).toBe("conv-abc");
+  });
+
+  it("reports no conversation for a document nothing linked", async () => {
+    const saved = await saveDocument(actor, {
+      id: `doc-${suffix}-noconv`,
+      title: "Saved by a job",
+      content: "x",
+      kind: "text",
+    });
+    expect(saved.conversationId).toBeNull();
+  });
+
   it("getDocument throws not_found for another workspace/user's document", async () => {
     await expect(getDocument(otherActor, `doc-${suffix}-1`)).rejects.toSatisfy(
       (err: unknown) => isDocumentServiceError(err) && err.code === "not_found"

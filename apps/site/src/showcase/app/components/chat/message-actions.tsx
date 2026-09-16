@@ -102,7 +102,13 @@ export function MessageActions({
 
   function handleSave() {
     startSaving(async () => {
-      const result = await saveMessageAsArtifact({ messageId, content: text });
+      // The conversation travels with it, so the artifacts page can
+      // link the saved reply back to where it was said.
+      const result = await saveMessageAsArtifact({
+        conversationId,
+        messageId,
+        content: text,
+      });
       if (result.success) toast.success(t("actions.savedToArtifacts"));
       else toast.error(result.error);
     });

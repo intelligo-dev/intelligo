@@ -40,12 +40,19 @@
     "title": "No {filterLabel} artifacts",
     "description": "No artifacts match the “{filterLabel}” filter. Try a different filter."
   },
+  "preview": {
+    "view": "View",
+    "rendered": "Preview",
+    "source": "Source",
+    "openConversation": "Open conversation"
+  },
   "documentActions": {
     "copySuccess": "Copied to clipboard",
     "copyErrorTitle": "Failed to copy",
     "copyErrorDescription": "Could not copy to clipboard. Please try again.",
     "copyTooltipCopied": "Copied!",
     "copyTooltipDefault": "Copy to clipboard",
+    "downloadTooltip": "Download",
     "deleteTooltip": "Delete",
     "deleteDialogTitle": "Delete artifact",
     "deleteDialogDescription": "This removes the version shown here. If this artifact has earlier saved versions, it reverts to the previous one instead of disappearing entirely. Artifacts older than 30 days can't be deleted from this page.",

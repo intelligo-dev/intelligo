@@ -116,6 +116,23 @@ export function documentKindIcon(kind: string): LucideIcon {
   return KIND_ICONS[kind] ?? FileTextIcon;
 }
 
+/**
+ * What a download of this kind is called when the title carries no
+ * extension of its own. One table, because both surfaces offer a
+ * download and an extension that disagrees between them is the same
+ * drift this module exists to end.
+ */
+const KIND_EXTENSIONS: Record<string, string> = {
+  text: "md",
+  code: "txt",
+  sheet: "csv",
+  image: "png",
+};
+
+export function documentKindExtension(kind: string): string | undefined {
+  return KIND_EXTENSIONS[kind];
+}
+
 export interface DocumentViewProps {
   content: string;
   title: string;

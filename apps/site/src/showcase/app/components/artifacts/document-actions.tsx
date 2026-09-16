@@ -11,7 +11,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "use-intl";
-import { Check, Copy, Trash2 } from "lucide-react";
+import { Check, Copy, Download, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRouter } from "@showcase/i18n/navigation";
@@ -24,12 +24,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@showcase/components/ui/dialog";
+import {
+  documentKindExtension,
+  fileNameOf,
+} from "@showcase/components/ui/document-viewer";
 import { Spinner } from "@showcase/components/ui/spinner";
 
 import { deleteLatestVersion } from "@showcase/actions/documents";
 
 interface DocumentActionsProps {
   documentId: string;
+  title: string;
+  kind: string;
   content: string | null;
   createdAt: string;
   /** Called after a successful delete, e.g. to drop the item from local state. */
@@ -39,6 +45,8 @@ interface DocumentActionsProps {
 
 export function DocumentActions({
   documentId,
+  title,
+  kind,
   content,
   createdAt,
   onDeleted,
@@ -49,6 +57,28 @@ export function DocumentActions({
   const [copied, setCopied] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isDeleting, startDeleting] = useTransition();
+
+  /**
+   * Saved the way the canvas saves it: an image is already a URL, and
+   * everything else becomes a blob typed by its kind, so a sheet lands
+   * as a `.csv` a spreadsheet will open rather than as plain text.
+   */
+  function handleDownload() {
+    if (!content) return;
+    const link = document.createElement("a");
+    if (kind === "image") {
+      link.href = content;
+    } else {
+      link.href = URL.createObjectURL(
+        new Blob([content], {
+          type: kind === "sheet" ? "text/csv" : "text/plain",
+        })
+      );
+    }
+    link.download = fileNameOf(title, documentKindExtension(kind));
+    link.click();
+    if (link.href.startsWith("blob:")) URL.revokeObjectURL(link.href);
+  }
 
   async function handleCopy() {
     if (!content) return;
@@ -101,6 +131,22 @@ export function DocumentActions({
           ) : (
             <Copy className="size-4" />
           )}
+        </Button>
+      )}
+
+      {content && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={(event) => {
+            event.stopPropagation();
+            handleDownload();
+          }}
+          className={buttonClassName}
+          title={t("documentActions.downloadTooltip")}
+        >
+          <Download className="size-4" />
         </Button>
       )}
 

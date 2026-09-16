@@ -136,7 +136,15 @@ function artifactTools(turn: ChatTurnContext): ToolSet {
           }
           const saved = await saveDocument(
             { workspaceId: turn.workspaceId, userId: turn.userId },
-            { id: doc.id, title, content, kind }
+            {
+              id: doc.id,
+              title,
+              content,
+              kind,
+              // Recorded so /artifacts can offer a way back to the
+              // conversation that produced the document.
+              conversationId: turn.conversationId,
+            }
           );
           doc.finish({ documentId: saved.id });
           return { id: saved.id, documentId: saved.id, title: saved.title, kind };
