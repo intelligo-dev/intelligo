@@ -150,10 +150,10 @@ export async function createSubscriptionCheckout(
     locale ?? userRow?.preferredLanguage ?? "en"
   );
 
-  // The `plans` table seeds one row per registered plan slug as
-  // `plan_${slug}` (see seed-plans.ts) — deriving the id the same way
-  // here keeps subscription checkout generic across products instead
-  // of hardcoding the three plan slugs the original action did.
+  // The `plans` table carries one row per registered plan slug, keyed
+  // `plan_${slug}` — deriving the id the same way here keeps
+  // subscription checkout generic across products instead of
+  // hardcoding the three plan slugs the original action did.
   const planId = `plan_${planSlug}`;
 
   const stripe = getStripe();

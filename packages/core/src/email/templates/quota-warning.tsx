@@ -16,7 +16,6 @@ export interface QuotaWarningEmailProps {
   tokensLimit: number;
   upgradeUrl: string;
   isExceeded: boolean;
-  locale?: "en" | "mn";
 }
 
 export function QuotaWarningEmail({
@@ -26,44 +25,24 @@ export function QuotaWarningEmail({
   tokensLimit,
   upgradeUrl,
   isExceeded,
-  locale = "en",
 }: QuotaWarningEmailProps) {
-  const text =
-    locale === "mn"
-      ? {
-          previewExceeded: "Таны токены хязгаар хэтэрсэн байна",
-          previewWarning: `Та токены хязгаарынхаа ${percentageUsed}%-ийг ашигласан`,
-          headingExceeded: "Хязгаар хэтэрсэн",
-          headingWarning: "Хязгаарын сануулга",
-          bodyExceeded1: "Таны ажлын орчин",
-          bodyExceeded2: "энэ сард бүх",
-          bodyExceeded3: "токеныг ашигласан байна.",
-          warningText:
-            "AI функцүүд одоогоор хязгаарлагдсан байна. Хязгаар шинэчлэгдэх эсвэл төлөвлөгөө сонгох хүртэл.",
-          bodyWarning1: "Таны ажлын орчин",
-          bodyWarning2: "нь",
-          bodyWarning3: "токены",
-          bodyWarning4: "токеныг ашигласан",
-          button: "Төлөвлөгөө сонгох",
-          note: "Таны хязгаар дараагийн төлбөрийн хугацаа эхлэхэд шинэчлэгдэнэ.",
-        }
-      : {
-          previewExceeded: "Your token quota is exceeded",
-          previewWarning: `You've used ${percentageUsed}% of your token quota`,
-          headingExceeded: "Quota Exceeded",
-          headingWarning: "Quota Warning",
-          bodyExceeded1: "Your workspace",
-          bodyExceeded2: "has used all",
-          bodyExceeded3: "tokens this month.",
-          warningText:
-            "AI features are currently restricted until your quota resets or you upgrade.",
-          bodyWarning1: "Your workspace",
-          bodyWarning2: "has used",
-          bodyWarning3: "of",
-          bodyWarning4: "tokens",
-          button: "Upgrade Plan",
-          note: "Your quota resets at the start of your next billing period.",
-        };
+  const text = {
+    previewExceeded: "Your token quota is exceeded",
+    previewWarning: `You've used ${percentageUsed}% of your token quota`,
+    headingExceeded: "Quota Exceeded",
+    headingWarning: "Quota Warning",
+    bodyExceeded1: "Your workspace",
+    bodyExceeded2: "has used all",
+    bodyExceeded3: "tokens this month.",
+    warningText:
+      "AI features are currently restricted until your quota resets or you upgrade.",
+    bodyWarning1: "Your workspace",
+    bodyWarning2: "has used",
+    bodyWarning3: "of",
+    bodyWarning4: "tokens",
+    button: "Upgrade Plan",
+    note: "Your quota resets at the start of your next billing period.",
+  };
 
   return (
     <BaseLayout

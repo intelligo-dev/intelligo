@@ -17,11 +17,7 @@ import { db } from "@intelligo-dev/core/db";
 import { userQuotas } from "@intelligo-dev/core/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { getDefaultProductSlug, getPlanConfigs } from "./plans";
-import {
-  getUpgradeMessage,
-  getActionLabel,
-  getActionLimitKey,
-} from "./plan-registry";
+import { getUpgradeMessage, getActionLimitKey } from "./plan-registry";
 
 /**
  * An opaque action slug owned by the vertical product — "chat",
@@ -36,8 +32,15 @@ export interface FeatureQuotaResult {
   limit: number;
   remaining: number;
   percentage: number;
-  warning?: string; // "6 мессеж үлдлээ"
-  upgradeMessage?: string; // "Standard авбал 500 мессеж нээгдэнэ"
+  /**
+   * True once usage crosses 80%. The sentence that says so is the
+   * consumer's: this package has `remaining` and `percentage` but not
+   * the product's voice, and composing copy here shipped one
+   * deployment's language to every other one.
+   */
+  nearingLimit: boolean;
+  /** Registered by the product through `registerUpgradeMessages()`. */
+  upgradeMessage?: string;
 }
 
 /**
@@ -127,6 +130,7 @@ export async function checkFeatureQuota(
       limit: -1,
       remaining: -1,
       percentage: 0,
+      nearingLimit: false,
     };
   }
 
@@ -143,16 +147,10 @@ export async function checkFeatureQuota(
       limit,
       remaining: 0,
       percentage: 100,
+      nearingLimit: true,
       upgradeMessage:
         getUpgradeMessage(getDefaultProductSlug(), plan, action) ?? "Upgrade",
     };
-  }
-
-  // Warning at 80% — same registry lookup for the action label.
-  let warning: string | undefined;
-  if (percentage >= 80) {
-    const label = getActionLabel(getDefaultProductSlug(), action) ?? action;
-    warning = `${remaining} ${label} үлдлээ`;
   }
 
   return {
@@ -162,7 +160,7 @@ export async function checkFeatureQuota(
     limit,
     remaining,
     percentage,
-    warning,
+    nearingLimit: percentage >= 80,
   };
 }
 

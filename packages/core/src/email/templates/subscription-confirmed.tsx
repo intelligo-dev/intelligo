@@ -13,7 +13,6 @@ export interface SubscriptionConfirmedEmailProps {
   planName: string;
   amount: string;
   dashboardUrl: string;
-  locale?: "en" | "mn";
 }
 
 export function SubscriptionConfirmedEmail({
@@ -21,32 +20,18 @@ export function SubscriptionConfirmedEmail({
   planName,
   amount,
   dashboardUrl,
-  locale = "en",
 }: SubscriptionConfirmedEmailProps) {
-  const text =
-    locale === "mn"
-      ? {
-          preview: `${workspaceName}-ийн захиалга баталгаажлаа`,
-          heading: "Захиалга баталгаажлаа",
-          body1: "Таны ажлын орчин",
-          body2: "одоо",
-          body3: "төлөвлөгөөтэй болсон.",
-          amountLabel: "Дүн:",
-          perMonth: "/сар",
-          button: "Хянах самбар руу очих",
-          note: "Захиалгаа төлбөрийн тохиргооноос удирдаж болно.",
-        }
-      : {
-          preview: `Subscription confirmed for ${workspaceName}`,
-          heading: "Subscription Confirmed",
-          body1: "Your workspace",
-          body2: "is now on the",
-          body3: "plan.",
-          amountLabel: "Amount:",
-          perMonth: "/month",
-          button: "Go to Dashboard",
-          note: "You can manage your subscription from the billing settings.",
-        };
+  const text = {
+    preview: `Subscription confirmed for ${workspaceName}`,
+    heading: "Subscription Confirmed",
+    body1: "Your workspace",
+    body2: "is now on the",
+    body3: "plan.",
+    amountLabel: "Amount:",
+    perMonth: "/month",
+    button: "Go to Dashboard",
+    note: "You can manage your subscription from the billing settings.",
+  };
 
   return (
     <BaseLayout preview={text.preview}>

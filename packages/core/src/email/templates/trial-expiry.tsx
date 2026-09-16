@@ -14,7 +14,6 @@ export interface TrialExpiryEmailProps {
   expiryDate: string;
   daysRemaining: number;
   upgradeUrl: string;
-  locale?: "en" | "mn";
 }
 
 export function TrialExpiryEmail({
@@ -22,29 +21,18 @@ export function TrialExpiryEmail({
   expiryDate,
   daysRemaining,
   upgradeUrl,
-  locale = "en",
 }: TrialExpiryEmailProps) {
   const isExpired = daysRemaining <= 0;
   const isUrgent = daysRemaining <= 1 && daysRemaining > 0;
 
-  const text =
-    locale === "mn"
-      ? {
-          previewExpired: "Таны Pro туршилт дууссан",
-          previewExpiring: `Таны Pro туршилт ${daysRemaining} өдрийн дараа дуусна`,
-          headingExpired: "Таны Pro туршилт дууссан",
-          headingExpiring: `Таны Pro туршилт ${daysRemaining} өдрийн дараа дуусна`,
-          buttonExpired: "Pro болох",
-          buttonUpgrade: "Одоо шинэчлэх",
-        }
-      : {
-          previewExpired: "Your Pro trial has expired",
-          previewExpiring: `Your Pro trial expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`,
-          headingExpired: "Your Pro Trial Has Expired",
-          headingExpiring: `Your Pro Trial Expires in ${daysRemaining} Day${daysRemaining === 1 ? "" : "s"}`,
-          buttonExpired: "Upgrade to Pro",
-          buttonUpgrade: "Upgrade Now",
-        };
+  const text = {
+    previewExpired: "Your Pro trial has expired",
+    previewExpiring: `Your Pro trial expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`,
+    headingExpired: "Your Pro Trial Has Expired",
+    headingExpiring: `Your Pro Trial Expires in ${daysRemaining} Day${daysRemaining === 1 ? "" : "s"}`,
+    buttonExpired: "Upgrade to Pro",
+    buttonUpgrade: "Upgrade Now",
+  };
 
   return (
     <BaseLayout

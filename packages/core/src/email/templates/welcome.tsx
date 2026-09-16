@@ -11,30 +11,16 @@ import { BaseLayout } from "./base-layout";
 export interface WelcomeEmailProps {
   userName: string;
   dashboardUrl: string;
-  locale?: "en" | "mn";
 }
 
-export function WelcomeEmail({
-  userName,
-  dashboardUrl,
-  locale = "en",
-}: WelcomeEmailProps) {
-  const text =
-    locale === "mn"
-      ? {
-          preview: `Тавтай морил, ${userName}!`,
-          heading: "Intelligo-д тавтай морил",
-          greeting: "Сайн байна уу",
-          body: "Бүртгүүлсэнд баярлалаа! Та одоо AI хэрэгслүүдийг ашиглаж бүтээмжээ нэмэгдүүлэх бэлэн боллоо.",
-          button: "Хянах самбар руу очих",
-        }
-      : {
-          preview: `Welcome to Intelligo, ${userName}!`,
-          heading: "Welcome to Intelligo",
-          greeting: "Hi",
-          body: "Thanks for signing up! You're all set to start using AI-powered tools to boost your productivity.",
-          button: "Go to Dashboard",
-        };
+export function WelcomeEmail({ userName, dashboardUrl }: WelcomeEmailProps) {
+  const text = {
+    preview: `Welcome to Intelligo, ${userName}!`,
+    heading: "Welcome to Intelligo",
+    greeting: "Hi",
+    body: "Thanks for signing up! You're all set to start using AI-powered tools to boost your productivity.",
+    button: "Go to Dashboard",
+  };
 
   return (
     <BaseLayout preview={text.preview}>

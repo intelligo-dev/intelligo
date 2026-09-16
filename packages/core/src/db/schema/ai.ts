@@ -20,7 +20,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { vector } from "drizzle-orm/pg-core/columns/vector_extension/vector";
 import { organization, users } from "./auth";
-import type { BilingualText } from "./agents";
+import type { LocalizedText } from "./agents";
 
 /**
  * Generic conversation metadata bag.
@@ -304,8 +304,8 @@ export const suggestions = pgTable(
  */
 export const imageTools = pgTable("image_tools", {
   id: text("id").primaryKey(),
-  name: jsonb("name").notNull().$type<BilingualText>(),
-  description: jsonb("description").notNull().$type<BilingualText>(),
+  name: jsonb("name").notNull().$type<LocalizedText>(),
+  description: jsonb("description").notNull().$type<LocalizedText>(),
   category: text("category").notNull(), // "photo" | "ecommerce" | "style_transfer" | "trending"
   promptTemplate: text("prompt_template").notNull(),
   model: text("model").notNull().default("gpt-image-1"),
@@ -374,9 +374,9 @@ export const knowledgeArticles = pgTable(
     id: text("id").primaryKey(),
     slug: text("slug").notNull(),
     category: text("category").notNull(),
-    title: jsonb("title").notNull().$type<BilingualText>(),
-    description: jsonb("description").notNull().$type<BilingualText>(),
-    content: jsonb("content").notNull().$type<BilingualText>(),
+    title: jsonb("title").notNull().$type<LocalizedText>(),
+    description: jsonb("description").notNull().$type<LocalizedText>(),
+    content: jsonb("content").notNull().$type<LocalizedText>(),
     tags: text("tags").array(),
     readingTimeMinutes: integer("reading_time_minutes").notNull().default(5),
     sortOrder: integer("sort_order").notNull().default(0),

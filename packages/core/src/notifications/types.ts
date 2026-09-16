@@ -16,9 +16,7 @@ export type NotificationType =
   | "payment_failed"
   | "team_member_joined"
   | "subscription_confirmed"
-  | "workspace_invitation"
-  | "referral_signup"
-  | "referral_upgrade";
+  | "workspace_invitation";
 
 export interface CreateNotificationParams {
   userId: string;

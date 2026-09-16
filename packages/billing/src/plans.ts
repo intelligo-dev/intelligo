@@ -29,7 +29,6 @@ export interface PlanConfig {
   name: string;
   slug: string;
   description: string;
-  descriptionMn: string;
   /**
    * Price for a single, non-recurring purchase, in the product's own
    * currency (see `CURRENCY` in a consumer's `lib/billing-config.ts`).
@@ -42,7 +41,7 @@ export interface PlanConfig {
   /** Recurring price per year, when this plan is sold by subscription. */
   priceYearly?: number;
   targetAudience: string;
-  aiModelLabel: string; // "Суурь AI" / "Ухаалаг AI" / "Хамгийн ухаалаг AI"
+  aiModelLabel: string; // How this plan names its model tier, in the product's own words
   /**
    * What this plan grants each period, in the deployment's billing
    * currency. Replaced `limits.monthlyCreditMnt`, which said a number
@@ -51,7 +50,6 @@ export interface PlanConfig {
   monthlyAllowance?: Money;
   limits: PlanLimits;
   features: string[];
-  featuresMn: string[];
   stripePriceIdMonthly?: string;
   stripePriceIdYearly?: string;
 }

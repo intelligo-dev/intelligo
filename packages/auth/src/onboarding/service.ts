@@ -10,11 +10,10 @@
  * table (`onboardingCompleted`, `onboardingStep`) directly via Drizzle.
  *
  * No ports: `complete()` and `skip()` only flip those two columns and
- * return the resulting state — they do NOT provision trial credits,
- * record referrals, or perform any other first-workspace bootstrapping.
- * The product's original `completeOnboarding()` action did exactly that
- * (`provisionTrialCredits`/`recordReferralSignup`/`grantReferralUpgrade`
- * inline), but that work belongs to the consumer's own
+ * return the resulting state — they do NOT provision trial credits or
+ * perform any other first-workspace bootstrapping. The product's
+ * original `completeOnboarding()` action did that inline, but the work
+ * belongs to the consumer's own
  * `onWorkspaceCreated` binding instead — see `../workspace-init.ts`'s
  * `onWorkspaceCreated` port and the `app-shell` registry item's
  * `lib/workspace-bootstrap.ts`, which already runs once per new

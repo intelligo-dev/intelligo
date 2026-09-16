@@ -11,32 +11,20 @@ import { BaseLayout } from "./base-layout";
 export interface PasswordResetEmailProps {
   userName: string;
   resetUrl: string;
-  locale?: "en" | "mn";
 }
 
 export function PasswordResetEmail({
   userName,
   resetUrl,
-  locale = "en",
 }: PasswordResetEmailProps) {
-  const text =
-    locale === "mn"
-      ? {
-          preview: "Нууц үг шинэчлэх",
-          heading: "Нууц үг шинэчлэх",
-          greeting: "Сайн байна уу",
-          body: "Бид таны нууц үг шинэчлэх хүсэлтийг хүлээн авлаа. Шинэ нууц үг сонгохын тулд доорх товчийг дарна уу.",
-          button: "Нууц үг шинэчлэх",
-          note: "Энэхүү холбоос 1 цагийн дараа хүчингүй болно. Хэрэв та нууц үг шинэчлэхийг хүсээгүй бол энэ имэйлийг үл тоомсорлож болно.",
-        }
-      : {
-          preview: "Reset your password",
-          heading: "Reset your password",
-          greeting: "Hi",
-          body: "We received a request to reset your password. Click the button below to choose a new one.",
-          button: "Reset Password",
-          note: "This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.",
-        };
+  const text = {
+    preview: "Reset your password",
+    heading: "Reset your password",
+    greeting: "Hi",
+    body: "We received a request to reset your password. Click the button below to choose a new one.",
+    button: "Reset Password",
+    note: "This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.",
+  };
 
   return (
     <BaseLayout preview={text.preview}>

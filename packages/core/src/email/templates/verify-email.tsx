@@ -12,32 +12,20 @@ import { BaseLayout } from "./base-layout";
 export interface VerifyEmailEmailProps {
   userName: string;
   verificationUrl: string;
-  locale?: "en" | "mn";
 }
 
 export function VerifyEmailEmail({
   userName,
   verificationUrl,
-  locale = "en",
 }: VerifyEmailEmailProps) {
-  const text =
-    locale === "mn"
-      ? {
-          preview: "Имэйл хаягаа баталгаажуулна уу",
-          heading: "Имэйл баталгаажуулах",
-          greeting: "Сайн байна уу",
-          body: "Доорх товчийг дарж имэйл хаягаа баталгаажуулна уу.",
-          button: "Имэйл баталгаажуулах",
-          note: "Энэхүү холбоос 24 цагийн дараа хүчингүй болно. Хэрэв та данс үүсгээгүй бол энэ имэйлийг үл тоомсорлож болно.",
-        }
-      : {
-          preview: "Verify your email address",
-          heading: "Verify your email",
-          greeting: "Hi",
-          body: "Please verify your email address by clicking the button below.",
-          button: "Verify Email",
-          note: "This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.",
-        };
+  const text = {
+    preview: "Verify your email address",
+    heading: "Verify your email",
+    greeting: "Hi",
+    body: "Please verify your email address by clicking the button below.",
+    button: "Verify Email",
+    note: "This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.",
+  };
 
   return (
     <BaseLayout preview={text.preview}>

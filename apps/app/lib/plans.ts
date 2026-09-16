@@ -21,7 +21,6 @@ export const REFERENCE_PLANS: Record<string, PlanConfig> = {
     name: "Free",
     slug: "free",
     description: "Try the assistant",
-    descriptionMn: "",
     priceOneTime: 0,
     targetAudience: "Everyone",
     aiModelLabel: "Base",
@@ -34,13 +33,11 @@ export const REFERENCE_PLANS: Record<string, PlanConfig> = {
       chatMessages: 30,
     },
     features: ["30 messages a month"],
-    featuresMn: [],
   },
   pro: {
     name: "Pro",
     slug: "pro",
     description: "For daily use",
-    descriptionMn: "",
     priceOneTime: 20,
     priceMonthly: 20,
     priceYearly: 192,
@@ -57,7 +54,6 @@ export const REFERENCE_PLANS: Record<string, PlanConfig> = {
       "File uploads",
       "Two months free on yearly",
     ],
-    featuresMn: [],
   },
 };
 

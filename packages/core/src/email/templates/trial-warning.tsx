@@ -16,7 +16,6 @@ export interface TrialWarningEmailProps {
   percentageRemaining: number;
   upgradeUrl: string;
   isDepleted: boolean;
-  locale?: "en" | "mn";
 }
 
 export function TrialWarningEmail({
@@ -26,37 +25,20 @@ export function TrialWarningEmail({
   percentageRemaining,
   upgradeUrl,
   isDepleted,
-  locale = "en",
 }: TrialWarningEmailProps) {
-  const text =
-    locale === "mn"
-      ? {
-          previewDepleted: "Таны туршилтын кредит дууссан",
-          previewWarning: "Таны туршилтын кредит дуусч байна",
-          headingDepleted: "Туршилтын кредит дууссан",
-          headingWarning: "Туршилтын кредит дуусч байна",
-          bodyDepleted1: "Таны ажлын орчин",
-          bodyDepleted2: "бүх туршилтын кредитийг ашигласан.",
-          warningText:
-            "AI функцүүдийг үргэлжлүүлэхийн тулд төлөвлөгөө сонгоно уу.",
-          bodyWarning1: "Таны ажлын орчин",
-          bodyWarning2: "нь",
-          bodyWarning3: "туршилтын кредит үлдсэн",
-          button: "Төлөвлөгөө сонгох",
-        }
-      : {
-          previewDepleted: "Your trial credits are depleted",
-          previewWarning: "Your trial credits are running low",
-          headingDepleted: "Trial Credits Depleted",
-          headingWarning: "Trial Credits Running Low",
-          bodyDepleted1: "Your workspace",
-          bodyDepleted2: "has used all trial credits.",
-          warningText: "Subscribe to a plan to continue using AI features.",
-          bodyWarning1: "Your workspace",
-          bodyWarning2: "has",
-          bodyWarning3: "trial credits remaining",
-          button: "Subscribe Now",
-        };
+  const text = {
+    previewDepleted: "Your trial credits are depleted",
+    previewWarning: "Your trial credits are running low",
+    headingDepleted: "Trial Credits Depleted",
+    headingWarning: "Trial Credits Running Low",
+    bodyDepleted1: "Your workspace",
+    bodyDepleted2: "has used all trial credits.",
+    warningText: "Subscribe to a plan to continue using AI features.",
+    bodyWarning1: "Your workspace",
+    bodyWarning2: "has",
+    bodyWarning3: "trial credits remaining",
+    button: "Subscribe Now",
+  };
 
   return (
     <BaseLayout

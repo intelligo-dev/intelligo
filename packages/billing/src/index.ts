@@ -118,15 +118,7 @@ export {
 } from "./features";
 export type { FeatureKey } from "./features";
 
-// Generation quota (Phase 54)
-export {
-  checkGenerationQuota,
-  recordGeneration,
-  getGenerationUsage,
-} from "./generation-quota";
-export type { GenerationQuotaResult } from "./generation-quota";
-
-// Feature-based quota enforcement (chat/assessment/report limits)
+// Feature-based quota enforcement, keyed by the product's own actions
 export {
   checkFeatureQuota,
   recordFeatureUsage,
@@ -134,16 +126,7 @@ export {
 } from "./feature-quota";
 export type { QuotaAction, FeatureQuotaResult } from "./feature-quota";
 
-// Referral system — "3 найзаа урь → Standard үнэгүй"
-export {
-  getOrCreateReferralCode,
-  recordReferralSignup,
-  hasEarnedReferralUpgrade,
-  getReferralStats,
-  grantReferralUpgrade,
-} from "./referral";
-
-// Payment providers — QPay / SocialPay / Mock
+// Payment providers — the contract, the registry, and the mock
 export {
   getPaymentProvider,
   mockCompletePayment,

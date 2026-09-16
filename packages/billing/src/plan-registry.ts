@@ -82,7 +82,7 @@ export function getUpgradeMessage(
 }
 
 // ---------------------------------------------------------------------------
-// Action labels — used by the "X мессеж үлдлээ" warning template
+// Action labels — how a product names its own action slugs in its UI
 // ---------------------------------------------------------------------------
 
 export type ActionLabelMap = Record<string, string>;

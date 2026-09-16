@@ -173,7 +173,6 @@ d("money path (integration)", () => {
         name: "Free",
         slug: "free",
         description: "",
-        descriptionMn: "",
         priceOneTime: 0,
         targetAudience: "",
         aiModelLabel: "",
@@ -183,7 +182,6 @@ d("money path (integration)", () => {
           chatMessages: 30,
         },
         features: [],
-        featuresMn: [],
       },
     });
 

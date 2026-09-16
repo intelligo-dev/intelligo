@@ -14,7 +14,6 @@ export interface WorkspaceInvitationEmailProps {
   role: string;
   acceptUrl: string;
   declineUrl: string;
-  locale?: "en" | "mn";
 }
 
 export function WorkspaceInvitationEmail({
@@ -23,30 +22,17 @@ export function WorkspaceInvitationEmail({
   role,
   acceptUrl,
   declineUrl,
-  locale = "en",
 }: WorkspaceInvitationEmailProps) {
-  const text =
-    locale === "mn"
-      ? {
-          preview: `${inviterName} таныг ${workspaceName} руу урьсан байна`,
-          heading: "Та урьигдсан байна!",
-          body: "таныг ажлын орчинд",
-          as: "нэртэй",
-          invitedYou: "урьж байна",
-          acceptButton: "Урилга хүлээн авах",
-          declineButton: "Татгалзах",
-          note: "Энэ урилга 7 хоногийн дараа хүчингүй болно.",
-        }
-      : {
-          preview: `${inviterName} invited you to join ${workspaceName}`,
-          heading: "You're invited!",
-          body: "has invited you to join the workspace",
-          as: "as a",
-          invitedYou: "",
-          acceptButton: "Accept Invitation",
-          declineButton: "Decline",
-          note: "This invitation expires in 7 days.",
-        };
+  const text = {
+    preview: `${inviterName} invited you to join ${workspaceName}`,
+    heading: "You're invited!",
+    body: "has invited you to join the workspace",
+    as: "as a",
+    invitedYou: "",
+    acceptButton: "Accept Invitation",
+    declineButton: "Decline",
+    note: "This invitation expires in 7 days.",
+  };
 
   return (
     <BaseLayout preview={text.preview}>

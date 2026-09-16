@@ -12,37 +12,23 @@ export interface PaymentFailedEmailProps {
   workspaceName: string;
   amount: string;
   updatePaymentUrl: string;
-  locale?: "en" | "mn";
 }
 
 export function PaymentFailedEmail({
   workspaceName,
   amount,
   updatePaymentUrl,
-  locale = "en",
 }: PaymentFailedEmailProps) {
-  const text =
-    locale === "mn"
-      ? {
-          preview: `${workspaceName}-ийн төлбөр амжилтгүй`,
-          heading: "Төлбөр амжилтгүй",
-          body1: "Бид таны ажлын орчин",
-          body2: "-ийн",
-          body3: "төлбөрийг боловсруулж чадсангүй.",
-          warning:
-            "Хэрэв төлбөр шинэчлэгдэхгүй бол 3 хоногийн дараа захиалга нь үнэгүй хязгаарт шилжинэ.",
-          button: "Төлбөрийн хэрэгсэл шинэчлэх",
-        }
-      : {
-          preview: `Payment failed for ${workspaceName}`,
-          heading: "Payment Failed",
-          body1: "We were unable to process the payment of",
-          body2: "for your workspace",
-          body3: "",
-          warning:
-            "Your subscription will be restricted to free limits after a 3-day grace period if payment is not updated.",
-          button: "Update Payment Method",
-        };
+  const text = {
+    preview: `Payment failed for ${workspaceName}`,
+    heading: "Payment Failed",
+    body1: "We were unable to process the payment of",
+    body2: "for your workspace",
+    body3: "",
+    warning:
+      "Your subscription will be restricted to free limits after a 3-day grace period if payment is not updated.",
+    button: "Update Payment Method",
+  };
 
   return (
     <BaseLayout preview={text.preview}>

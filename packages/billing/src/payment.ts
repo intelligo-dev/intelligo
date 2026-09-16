@@ -22,8 +22,8 @@ export type PaymentStatus = "pending" | "paid" | "expired" | "failed";
 
 export interface CreatePaymentResult {
   invoiceId: string;
-  qrCode?: string; // QR code image URL/data for QPay/SocialPay
-  deeplinks?: { app: string; url: string }[]; // Bank app deeplinks
+  qrCode?: string; // QR code image URL/data, where the provider issues one
+  deeplinks?: { app: string; url: string }[]; // Payment app deeplinks
   expiresAt: Date;
 }
 
@@ -36,7 +36,7 @@ export interface PaymentCheckResult {
 
 export interface PaymentProvider {
   createPayment(params: {
-    amount: number; // MNT
+    amount: number; // Minor units of the provider's own currency
     description: string;
     userId: string;
     planSlug: string;
@@ -70,10 +70,7 @@ export const mockPaymentProvider: PaymentProvider = {
     return {
       invoiceId,
       qrCode: `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="%23111"/><text x="50%" y="50%" fill="white" text-anchor="middle" dy=".3em" font-size="14">MOCK QR</text></svg>`,
-      deeplinks: [
-        { app: "Khan Bank", url: `mock://pay/${invoiceId}` },
-        { app: "Golomt Bank", url: `mock://pay/${invoiceId}` },
-      ],
+      deeplinks: [{ app: "Mock Payment App", url: `mock://pay/${invoiceId}` }],
       expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min
     };
   },

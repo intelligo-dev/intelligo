@@ -91,7 +91,6 @@ export const PLANS: Record<string, PlanConfig> = {
     name: "Free",
     slug: "free",
     description: "Try the product on a small monthly allowance.",
-    descriptionMn: "",
     priceOneTime: 0,
     priceMonthly: 0,
     priceYearly: 0,
@@ -103,13 +102,11 @@ export const PLANS: Record<string, PlanConfig> = {
       "1 workspace member",
       "Community support",
     ],
-    featuresMn: [],
   },
   pro: {
     name: "Pro",
     slug: "pro",
     description: "For people who use it every day.",
-    descriptionMn: "",
     priceOneTime: 0,
     priceMonthly: 29,
     priceYearly: 290,
@@ -122,13 +119,11 @@ export const PLANS: Record<string, PlanConfig> = {
       "Artifacts & exports",
       "Priority support",
     ],
-    featuresMn: [],
   },
   team: {
     name: "Team",
     slug: "team",
     description: "Shared workspaces, admin console, audit trail.",
-    descriptionMn: "",
     priceOneTime: 0,
     priceMonthly: 99,
     priceYearly: 990,
@@ -142,7 +137,6 @@ export const PLANS: Record<string, PlanConfig> = {
       "Audit log & impersonation",
       "SSO (soon)",
     ],
-    featuresMn: [],
   },
 };
 

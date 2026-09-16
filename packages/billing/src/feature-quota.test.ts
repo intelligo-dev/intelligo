@@ -46,60 +46,54 @@ beforeAll(async () => {
       name: "Free",
       slug: "free",
       description: "",
-      descriptionMn: "",
       priceOneTime: 0,
       targetAudience: "",
       aiModelLabel: "",
       limits: limits.free,
       features: [],
-      featuresMn: [],
     },
     standard: {
       name: "Standard",
       slug: "standard",
       description: "",
-      descriptionMn: "",
       priceOneTime: 29_900,
       targetAudience: "",
       aiModelLabel: "",
       limits: limits.standard,
       features: [],
-      featuresMn: [],
     },
     pro: {
       name: "Pro",
       slug: "pro",
       description: "",
-      descriptionMn: "",
       priceOneTime: 99_000,
       targetAudience: "",
       aiModelLabel: "",
       limits: limits.pro,
       features: [],
-      featuresMn: [],
     },
   });
   registerUpgradeMessages("acme", {
     free: {
-      chat: "Standard авбал 500 мессеж нээгдэнэ",
-      assessment: "Standard авбал 3 удаа дэлгэрэнгүй тест хийнэ",
-      report: "Standard авбал 5 бүтэн тайлан гаргана",
+      chat: "Standard unlocks 500 messages",
+      assessment: "Standard unlocks 3 detailed assessments",
+      report: "Standard unlocks 5 full reports",
     },
     standard: {
-      chat: "Pro авбал 1,000 мессеж нээгдэнэ",
-      assessment: "Pro авбал хязгааргүй тест хийнэ",
-      report: "Тайлан гаргах боломж дууслаа",
+      chat: "Pro unlocks 1,000 messages",
+      assessment: "Pro unlocks unlimited assessments",
+      report: "You have used every report",
     },
     pro: {
-      chat: "Чат мессеж дууслаа",
+      chat: "You have used every message",
       assessment: "",
-      report: "Тайлан гаргах боломж дууслаа",
+      report: "You have used every report",
     },
   });
   registerActionLabels("acme", {
-    chat: "мессеж",
-    assessment: "тест",
-    report: "тайлан",
+    chat: "messages",
+    assessment: "assessments",
+    report: "reports",
   });
   // This product's plan limits are named before its action slugs, so
   // the remap has to be registered too.
@@ -298,8 +292,8 @@ describe("checkFeatureQuota — free plan", () => {
     const result = await checkFeatureQuota("u1", "ws-1", "free", "chat");
 
     expect(result.allowed).toBe(true);
-    expect(result.warning).toBeDefined();
-    expect(result.warning).toContain("6");
+    expect(result.nearingLimit).toBe(true);
+    expect(result.remaining).toBe(6);
   });
 
   it("denies assessment after 1 use", async () => {

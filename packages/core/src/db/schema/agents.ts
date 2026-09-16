@@ -17,21 +17,22 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * Bilingual text type for agent names and descriptions
- * Used for next-intl internationalization
+ * Localized text, keyed by locale tag: `{ en: "…", de: "…" }`.
+ *
+ * Open by construction. It was a closed `{ en, mn }` pair, which made
+ * a framework table require one product's second language on every
+ * agent name, description and prompt — and left a third language no
+ * way in that was not a schema change.
  */
-export type BilingualText = {
-  en: string;
-  mn: string;
-};
+export type LocalizedText = Record<string, string>;
 
 /**
  * Suggestion type for agent quick-start prompts on the dashboard
  */
 export type AgentSuggestion = {
   id: string;
-  label: BilingualText;
-  prompt: BilingualText;
+  label: LocalizedText;
+  prompt: LocalizedText;
 };
 
 /**
@@ -51,10 +52,10 @@ export type AgentModelConfig = {
  */
 export const agents = pgTable("agents", {
   id: text("id").primaryKey(), // Slug, e.g. "support-assistant"
-  name: jsonb("name").notNull().$type<BilingualText>(), // { en: "Support Assistant", mn: "..." }
-  description: jsonb("description").notNull().$type<BilingualText>(), // { en: "...", mn: "..." }
+  name: jsonb("name").notNull().$type<LocalizedText>(), // { en: "Support Assistant", … }
+  description: jsonb("description").notNull().$type<LocalizedText>(), // { en: "…", … }
   systemPromptKey: text("system_prompt_key").notNull(), // Legacy translation namespace key — kept for backfill, no longer read at runtime (see systemPrompt below).
-  systemPrompt: jsonb("system_prompt").$type<BilingualText | null>(), // Phase C: bilingual prompt text. Source of truth for agent instructions.
+  systemPrompt: jsonb("system_prompt").$type<LocalizedText | null>(), // Localized prompt text. Source of truth for agent instructions.
   modelConfig: jsonb("model_config").$type<AgentModelConfig | null>(), // Phase C: forward-compatible routing config; today only `primary` is read.
   icon: text("icon").notNull(), // Icon identifier (e.g., "briefcase", "map-pin")
   defaultModel: text("default_model").notNull(), // AI model ID (e.g., "openai/gpt-4o") — fallback when modelConfig is null.
