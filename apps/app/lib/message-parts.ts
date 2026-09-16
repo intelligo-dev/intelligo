@@ -60,7 +60,11 @@ export function groupParts<P extends PartLike>(
     if (joins) {
       if (!run) {
         run = [];
-        segments.push({ kind: "activity", key: `activity-${index}`, parts: run });
+        segments.push({
+          kind: "activity",
+          key: `activity-${index}`,
+          parts: run,
+        });
       }
       run.push({ index, part });
       return;
@@ -128,7 +132,9 @@ export function sourcesFromToolOutput(output: unknown): SourceItem[] {
         ...(url ? { url } : {}),
         ...(title ? { title } : {}),
         ...(typeof record.domain === "string" ? { domain: record.domain } : {}),
-        ...(typeof record.snippet === "string" ? { snippet: record.snippet } : {}),
+        ...(typeof record.snippet === "string"
+          ? { snippet: record.snippet }
+          : {}),
         ...(typeof record.index === "number" && Number.isInteger(record.index)
           ? { index: record.index }
           : {}),
@@ -216,7 +222,10 @@ const CITE_PREFIX = "#cite-";
  * override renders as a citation pill. Only numbers the message has a
  * source for; a markdown link (`[3](…)`) is left alone.
  */
-export function linkCitations(text: string, known: ReadonlySet<number>): string {
+export function linkCitations(
+  text: string,
+  known: ReadonlySet<number>
+): string {
   if (known.size === 0) return text;
   return text.replace(/(?:\[\d{1,3}(?:\s*,\s*\d{1,3})*\])+(?!\()/g, (run) => {
     const numbers = [...run.matchAll(/\d{1,3}/g)]
@@ -248,7 +257,11 @@ export function titleFromUrl(url: string | undefined): string | undefined {
       .replace(/[-_+]+/g, " ")
       .trim();
     // Ids, hashes and dates name nothing a reader recognises.
-    if (words.length < 4 || !/[a-z]{3}/i.test(words) || /^[\d\s]+$/.test(words)) {
+    if (
+      words.length < 4 ||
+      !/[a-z]{3}/i.test(words) ||
+      /^[\d\s]+$/.test(words)
+    ) {
       continue;
     }
     return words.charAt(0).toUpperCase() + words.slice(1);

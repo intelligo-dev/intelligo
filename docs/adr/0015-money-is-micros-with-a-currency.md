@@ -39,7 +39,7 @@ strength of a refactor that never followed).
 ## Decision
 
 1. **An amount is micros plus a currency.** `Money = { amount: Micros;
-   currency: CurrencyCode }`, where micros are millionths of one major
+currency: CurrencyCode }`, where micros are millionths of one major
    unit. Six decimal places hold a fraction of a cent exactly, which is
    what a turn costs; `add`/`subtract`/`compare` refuse to mix two
    currencies, so the pack that sold 100,000 of one unit for $5 of

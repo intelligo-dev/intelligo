@@ -143,7 +143,8 @@ function messageText(message: UIMessage): string {
 function sourcesOf(part: Part) {
   if (isToolUIPart(part)) {
     if (part.state !== "output-available") return [];
-    const read = resolveToolRenderer(getToolName(part)).sources ?? sourcesFromToolOutput;
+    const read =
+      resolveToolRenderer(getToolName(part)).sources ?? sourcesFromToolOutput;
     return read(part.output);
   }
   return sourcesFromSourcePart(part);
@@ -151,7 +152,8 @@ function sourcesOf(part: Part) {
 
 function citationItem(source: NumberedSource): CitationItem {
   const domain = sourceDomain(source);
-  const named = source.title && source.title !== domain ? source.title : undefined;
+  const named =
+    source.title && source.title !== domain ? source.title : undefined;
   return {
     id: source.id,
     title: named ?? titleFromUrl(source.url) ?? domain ?? source.url ?? "",
@@ -227,7 +229,9 @@ export function Message({
       }
       continue;
     }
-    const output = part.output as { documentId?: unknown; id?: unknown } | undefined;
+    const output = part.output as
+      | { documentId?: unknown; id?: unknown }
+      | undefined;
     const id = output?.documentId ?? output?.id;
     if (typeof id === "string") documentsShownByTools.add(id);
   }
@@ -326,7 +330,10 @@ export function Message({
 
     if (isToolUIPart(part)) {
       const props = toolProps(part);
-      if (part.state === "approval-requested" && !hasToolRenderer(props.toolName)) {
+      if (
+        part.state === "approval-requested" &&
+        !hasToolRenderer(props.toolName)
+      ) {
         return <ApprovalCard key={key} {...props} />;
       }
       const { component: Renderer } = resolveToolRenderer(props.toolName);
@@ -343,7 +350,8 @@ export function Message({
         const artifact = data.data as { id?: string; documentId?: string };
         if (
           documentToolRunning ||
-          (artifact.documentId && documentsShownByTools.has(artifact.documentId)) ||
+          (artifact.documentId &&
+            documentsShownByTools.has(artifact.documentId)) ||
           (artifact.id && documentsShownByTools.has(artifact.id))
         ) {
           return null;
@@ -406,7 +414,9 @@ export function Message({
           />
         ) : null}
 
-        {isStreamingThis && !activityLive && (isEmptyAssistant || statusLabel) ? (
+        {isStreamingThis &&
+        !activityLive &&
+        (isEmptyAssistant || statusLabel) ? (
           <ShimmerText>{statusLabel ?? t("message.thinking")}</ShimmerText>
         ) : null}
 
@@ -466,7 +476,9 @@ function CitationAnchor({
       return (
         <CitationPill
           citations={cited}
-          label={t("sources.pill", { name: first.domain ?? String(first.title) })}
+          label={t("sources.pill", {
+            name: first.domain ?? String(first.title),
+          })}
         />
       );
     }
@@ -503,7 +515,9 @@ function FileAttachment({ file }: { file: FileUIPart }) {
         <PaperclipIcon />
       </AttachmentMedia>
       <AttachmentContent>
-        <AttachmentTitle>{file.filename ?? t("message.attachment")}</AttachmentTitle>
+        <AttachmentTitle>
+          {file.filename ?? t("message.attachment")}
+        </AttachmentTitle>
       </AttachmentContent>
     </Attachment>
   );
@@ -590,11 +604,13 @@ function ApprovalCard({
   const t = useTranslations("chat");
   const parameters =
     input && typeof input === "object"
-      ? Object.entries(input as Record<string, unknown>).map(([key, value]) => ({
-          id: key,
-          label: key,
-          value: typeof value === "string" ? value : JSON.stringify(value),
-        }))
+      ? Object.entries(input as Record<string, unknown>).map(
+          ([key, value]) => ({
+            id: key,
+            label: key,
+            value: typeof value === "string" ? value : JSON.stringify(value),
+          })
+        )
       : [];
   const canDecide = !isReadonly && Boolean(actions) && Boolean(approvalId);
 

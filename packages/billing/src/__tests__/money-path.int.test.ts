@@ -258,7 +258,6 @@ d("money path (integration)", () => {
     await setBalance(0);
   });
 
-
   it("makes a purchase spendable: refused before the credit, admitted after", async () => {
     await setAllowanceUsed(mnt(FREE_ALLOWANCE));
     expect((await begin()).allowed).toBe(false);

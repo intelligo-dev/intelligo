@@ -121,10 +121,5 @@ export default function TextEditor({
     editor.dispatch(transaction);
   }, [content, status, isReadonly]);
 
-  return (
-    <div
-      ref={container}
-      className={EDITOR_CLASS}
-    />
-  );
+  return <div ref={container} className={EDITOR_CLASS} />;
 }

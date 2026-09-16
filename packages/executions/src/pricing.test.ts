@@ -136,7 +136,9 @@ describe("providerCost", () => {
   });
 
   it("throws for an unregistered id rather than guessing a price", () => {
-    expect(() => providerCost("unknown/model", 1, 1)).toThrow(UnknownModelError);
+    expect(() => providerCost("unknown/model", 1, 1)).toThrow(
+      UnknownModelError
+    );
   });
 
   it("names the id and the way out", () => {

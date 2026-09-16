@@ -48,7 +48,9 @@ export function MessageList({
   // The rail is for a pointer: on a phone it only sits on the text.
   const isMobile = useIsMobile();
   // Sending brings the reader back to the end, even from far up.
-  const lastUserId = messages.findLast((message) => message.role === "user")?.id;
+  const lastUserId = messages.findLast(
+    (message) => message.role === "user"
+  )?.id;
 
   return (
     <MessageScroller

@@ -147,7 +147,12 @@ function artifactTools(turn: ChatTurnContext): ToolSet {
             }
           );
           doc.finish({ documentId: saved.id });
-          return { id: saved.id, documentId: saved.id, title: saved.title, kind };
+          return {
+            id: saved.id,
+            documentId: saved.id,
+            title: saved.title,
+            kind,
+          };
         } catch (error) {
           doc.fail(error);
           throw error;
@@ -164,7 +169,10 @@ function artifactTools(turn: ChatTurnContext): ToolSet {
  * redirect's `Location` is the page itself — read it without following
  * it, briefly, and keep the redirect when that fails.
  */
-async function resolveGroundingUrl(url: string, signal?: AbortSignal): Promise<string> {
+async function resolveGroundingUrl(
+  url: string,
+  signal?: AbortSignal
+): Promise<string> {
   if (!url.includes("grounding-api-redirect")) return url;
   const timeout = AbortSignal.timeout(2500);
   try {
@@ -186,12 +194,21 @@ function lastSourceIndex(messages: readonly unknown[]): number {
     const content = (message as { role?: string; content?: unknown }).content;
     if (!Array.isArray(content)) continue;
     for (const part of content) {
-      const result = part as { type?: string; toolName?: string; output?: { value?: unknown } };
-      if (result.type !== "tool-result" || result.toolName !== "webSearch") continue;
-      const sources = (result.output?.value as { sources?: Array<{ index?: unknown }> } | undefined)
-        ?.sources;
+      const result = part as {
+        type?: string;
+        toolName?: string;
+        output?: { value?: unknown };
+      };
+      if (result.type !== "tool-result" || result.toolName !== "webSearch")
+        continue;
+      const sources = (
+        result.output?.value as
+          | { sources?: Array<{ index?: unknown }> }
+          | undefined
+      )?.sources;
       for (const source of sources ?? []) {
-        if (typeof source.index === "number") last = Math.max(last, source.index);
+        if (typeof source.index === "number")
+          last = Math.max(last, source.index);
       }
     }
   }
@@ -286,7 +303,9 @@ export const chatServerConfig: ChatServerConfig = {
     // Gemini only streams its thoughts when asked; with `reasoning` on,
     // the transcript shows them.
     providerOptions: {
-      google: { thinkingConfig: { includeThoughts: true, thinkingBudget: 1024 } },
+      google: {
+        thinkingConfig: { includeThoughts: true, thinkingBudget: 1024 },
+      },
     },
   },
 };

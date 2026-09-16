@@ -72,7 +72,8 @@ function refusalFrom(chatError: Error): ChatBlock | null {
   if (
     parsed.code !== "QUOTA_EXCEEDED" &&
     parsed.code !== "BILLING_NOT_CONFIGURED" &&
-    (parsed.code !== "FEATURE_GATED" || parsed.reasonCode === "model_not_allowed")
+    (parsed.code !== "FEATURE_GATED" ||
+      parsed.reasonCode === "model_not_allowed")
   ) {
     return null;
   }
@@ -92,7 +93,8 @@ const MODEL_STORAGE_KEY = "chat:model";
  */
 function sendWhenClientAnswered(clientAnswered: React.RefObject<boolean>) {
   return (options: { messages: UIMessage[] }) => {
-    if (lastAssistantMessageIsCompleteWithApprovalResponses(options)) return true;
+    if (lastAssistantMessageIsCompleteWithApprovalResponses(options))
+      return true;
     if (!clientAnswered.current) return false;
     if (!lastAssistantMessageIsCompleteWithToolCalls(options)) return false;
     clientAnswered.current = false;
@@ -227,7 +229,8 @@ export function ChatThread({
     messages: initialMessages,
     transport,
     sendAutomaticallyWhen:
-      chatConfig.sendAutomaticallyWhen ?? sendWhenClientAnswered(clientAnswered),
+      chatConfig.sendAutomaticallyWhen ??
+      sendWhenClientAnswered(clientAnswered),
     onFinish: () => {
       if (!startedEmpty.current) return;
       startedEmpty.current = false;
@@ -417,7 +420,11 @@ export function ChatThread({
   const isEmpty = messages.length === 0;
 
   return (
-    <div className={["flex min-h-0 flex-1 flex-col", className].filter(Boolean).join(" ")}>
+    <div
+      className={["flex min-h-0 flex-1 flex-col", className]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {isEmpty && !readOnly ? (
         <ChatEmpty
           starters={starters}
@@ -439,7 +446,8 @@ export function ChatThread({
             return {
               index: version.index,
               count: version.count,
-              onIndexChange: (index) => versions.select(version.anchorId, index),
+              onIndexChange: (index) =>
+                versions.select(version.anchorId, index),
             };
           }}
           onRegenerate={readOnly ? undefined : handleRegenerate}

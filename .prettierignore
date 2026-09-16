@@ -14,3 +14,7 @@ packages/registry/tsconfig.paths.json
 apps/app/components/ui/
 apps/app/hooks/use-mobile.ts
 apps/app/lib/utils.ts
+# The sources those files are installed from. The installed copies are
+# ignored just above, so formatting the source would rewrite one side of
+# a pair the reference app is checked byte-for-byte against.
+packages/registry/base/ui/

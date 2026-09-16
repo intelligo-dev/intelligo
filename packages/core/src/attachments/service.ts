@@ -34,7 +34,10 @@ export async function createAttachment(
     throw new AttachmentServiceError("invalid_input", "Filename is required");
   }
   if (params.sizeBytes < 0) {
-    throw new AttachmentServiceError("invalid_input", "Size cannot be negative");
+    throw new AttachmentServiceError(
+      "invalid_input",
+      "Size cannot be negative"
+    );
   }
   const [row] = await db
     .insert(attachments)
@@ -68,7 +71,10 @@ export async function getAttachment(
     .select()
     .from(attachments)
     .where(
-      and(eq(attachments.id, id), eq(attachments.workspaceId, actor.workspaceId))
+      and(
+        eq(attachments.id, id),
+        eq(attachments.workspaceId, actor.workspaceId)
+      )
     )
     .limit(1);
   if (!row) {

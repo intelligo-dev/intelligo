@@ -168,7 +168,11 @@ export const PLANNED: {
     tier: "T3",
     description: "A numbered marker that reveals its source.",
   },
-  { name: "ai-image", tier: "T3", description: "An image that reserves its space." },
+  {
+    name: "ai-image",
+    tier: "T3",
+    description: "An image that reserves its space.",
+  },
   {
     name: "ai-speech-input",
     tier: "T3",

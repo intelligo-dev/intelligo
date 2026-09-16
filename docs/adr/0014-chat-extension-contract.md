@@ -57,7 +57,7 @@ being clickable and its reports stopped opening in place.
 
 4. **Adding a tool is one entry in a literal the product owns.**
    `lib/chat-renderers.tsx` maps a tool name to `{ component, label,
-   canvas }`; `DATA_RENDERERS` does the same for `data-*` parts;
+canvas }`; `DATA_RENDERERS` does the same for `data-*` parts;
    `lib/chat-canvas-config.tsx` maps a canvas `kind` to how it is shown
    and edited. Every renderer receives the same actions — send the next
    turn, answer a client-side tool, approve or deny a gated call, open

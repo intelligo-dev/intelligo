@@ -54,7 +54,12 @@ describe("sanitizeForShare", () => {
     const [user, assistant] = sanitizeForShare(transcript);
     expect(user!.parts).toEqual([
       { type: "text", text: "Summarise this" },
-      { type: "file", mediaType: "application/pdf", filename: "q3.pdf", url: "" },
+      {
+        type: "file",
+        mediaType: "application/pdf",
+        filename: "q3.pdf",
+        url: "",
+      },
     ]);
     expect(assistant!.parts.map((p) => p.type)).toEqual([
       "tool-search",
@@ -82,7 +87,10 @@ describe("sanitizeForShare", () => {
     const report = assistant!.parts.find(
       (p) => p.type === "tool-generateReport"
     ) as Record<string, unknown>;
-    expect(report).toMatchObject({ input: { kind: "q3" }, output: { title: "Q3" } });
+    expect(report).toMatchObject({
+      input: { kind: "q3" },
+      output: { title: "Q3" },
+    });
   });
 
   it("keeps only the data parts the policy lists", () => {

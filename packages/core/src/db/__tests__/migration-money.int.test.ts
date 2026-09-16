@@ -24,7 +24,12 @@ import { Client } from "pg";
 const PG_URL = process.env.TEST_PG_URL;
 const d = PG_URL ? describe : describe.skip;
 
-const MIGRATION = path.join(__dirname, "..", "migrations", "0044_money_micros.sql");
+const MIGRATION = path.join(
+  __dirname,
+  "..",
+  "migrations",
+  "0044_money_micros.sql"
+);
 
 d("0044_money_micros", () => {
   const client = new Client({ connectionString: PG_URL });
@@ -128,7 +133,9 @@ d("0044_money_micros", () => {
   }, 60_000);
 
   afterAll(async () => {
-    await client.query(`DELETE FROM credit_balances WHERE id = $1`, [balanceId]);
+    await client.query(`DELETE FROM credit_balances WHERE id = $1`, [
+      balanceId,
+    ]);
     await client.query(`DELETE FROM monthly_usage WHERE id = $1`, [monthlyId]);
     await client.query(`DELETE FROM trial_credits WHERE id = $1`, [trialId]);
     await client.query(`DELETE FROM organization WHERE id = $1`, [workspaceId]);
@@ -187,7 +194,10 @@ d("0044_money_micros", () => {
     expect(Number(balance.total_used_micros)).toBe(3_766_000_000);
     expect(balance.currency).toBe("MNT");
 
-    const monthly = await row<{ allowance_used_micros: string; currency: string }>(
+    const monthly = await row<{
+      allowance_used_micros: string;
+      currency: string;
+    }>(
       `SELECT allowance_used_micros, currency FROM monthly_usage WHERE id = $1`,
       monthlyId
     );

@@ -194,6 +194,8 @@ describe("getUsageOverview in the reader's time zone", () => {
   it("falls back to UTC for a zone this runtime does not know", async () => {
     vi.setSystemTime(new Date("2026-03-12T18:00:00Z"));
 
-    expect((await dailyIn("Mars/Olympus_Mons")).at(-1)!.date).toBe("2026-03-12");
+    expect((await dailyIn("Mars/Olympus_Mons")).at(-1)!.date).toBe(
+      "2026-03-12"
+    );
   });
 });

@@ -106,7 +106,9 @@ export function ChatWorkspace({
         ...current!,
         title: artifact.title,
         ...(artifact.documentId ? { documentId: artifact.documentId } : {}),
-        ...(artifact.content !== undefined ? { content: artifact.content } : {}),
+        ...(artifact.content !== undefined
+          ? { content: artifact.content }
+          : {}),
         status: artifact.status,
       };
     });
@@ -135,10 +137,16 @@ export function ChatWorkspace({
 
   function resizeWithKeys(event: KeyboardEvent<HTMLDivElement>) {
     const delta =
-      event.key === "ArrowLeft" ? WIDTH.step : event.key === "ArrowRight" ? -WIDTH.step : 0;
+      event.key === "ArrowLeft"
+        ? WIDTH.step
+        : event.key === "ArrowRight"
+          ? -WIDTH.step
+          : 0;
     if (!delta) return;
     event.preventDefault();
-    setWidth((current) => Math.min(WIDTH.max, Math.max(WIDTH.min, current + delta)));
+    setWidth((current) =>
+      Math.min(WIDTH.max, Math.max(WIDTH.min, current + delta))
+    );
   }
 
   const thread = (
@@ -167,12 +175,16 @@ export function ChatWorkspace({
         )
       }
       expanded={expanded}
-      onToggleExpand={isMobile ? undefined : () => setExpanded((value) => !value)}
+      onToggleExpand={
+        isMobile ? undefined : () => setExpanded((value) => !value)
+      }
     />
   ) : null;
 
   const stream =
-    canvas?.status === "streaming" ? { id: canvas.id, content: canvas.content } : null;
+    canvas?.status === "streaming"
+      ? { id: canvas.id, content: canvas.content }
+      : null;
 
   // One tree for every width: the thread is always the first child of
   // the same row, so crossing the breakpoint (a rotation, a resized
@@ -191,7 +203,10 @@ export function ChatWorkspace({
           {thread}
         </div>
         {isMobile ? (
-          <Sheet open={canvas !== null} onOpenChange={(open) => !open && closeCanvas()}>
+          <Sheet
+            open={canvas !== null}
+            onOpenChange={(open) => !open && closeCanvas()}
+          >
             <SheetContent side="right" className="w-full p-0 sm:max-w-xl">
               <SheetTitle className="sr-only">{t("canvas.title")}</SheetTitle>
               {panel}

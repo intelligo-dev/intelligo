@@ -335,7 +335,9 @@ export async function getPublicConversation(id: string): Promise<{
       updatedAt: conversations.updatedAt,
     })
     .from(conversations)
-    .where(and(eq(conversations.id, id), eq(conversations.visibility, "public")))
+    .where(
+      and(eq(conversations.id, id), eq(conversations.visibility, "public"))
+    )
     .limit(1);
 
   if (!row) {
@@ -625,7 +627,10 @@ export async function clearVote(
   await db
     .delete(votes)
     .where(
-      and(eq(votes.chatId, params.chatId), eq(votes.messageId, params.messageId))
+      and(
+        eq(votes.chatId, params.chatId),
+        eq(votes.messageId, params.messageId)
+      )
     );
 }
 

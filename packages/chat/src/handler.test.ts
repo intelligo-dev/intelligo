@@ -853,7 +853,11 @@ describe("model choice", () => {
   const models = {
     options: [
       { id: MODEL_ID, label: "Fast" },
-      { id: "anthropic/claude-sonnet-4-6", label: "Smart", featureKey: "pro-models" },
+      {
+        id: "anthropic/claude-sonnet-4-6",
+        label: "Smart",
+        featureKey: "pro-models",
+      },
     ],
   };
 
@@ -883,10 +887,12 @@ describe("model choice", () => {
       reasonCode: "model_not_allowed",
     });
 
-    mocks.hasFeature.mockImplementation(async (_ws: string, key: string) =>
-      key !== "pro-models"
+    mocks.hasFeature.mockImplementation(
+      async (_ws: string, key: string) => key !== "pro-models"
     );
-    const gated = await POST(turn("hi", { modelId: "anthropic/claude-sonnet-4-6" }));
+    const gated = await POST(
+      turn("hi", { modelId: "anthropic/claude-sonnet-4-6" })
+    );
     expect(gated.status).toBe(403);
     expect(fake.begin).not.toHaveBeenCalled();
   });
@@ -930,9 +936,7 @@ describe("cross-origin, resumption and continuation", () => {
     );
     expect(stranger.headers.get("Access-Control-Allow-Origin")).toBeNull();
 
-    const streamed = await POST(
-      turn("hi", {}),
-    );
+    const streamed = await POST(turn("hi", {}));
     expect(streamed.headers.get("Access-Control-Allow-Origin")).toBeNull();
     await streamed.text();
 
@@ -1045,7 +1049,9 @@ describe("stored attachments", () => {
         },
       ],
     };
-    const response = await POST(post({ id: CONVERSATION_ID, messages: [message] }));
+    const response = await POST(
+      post({ id: CONVERSATION_ID, messages: [message] })
+    );
     expect(response.status).toBe(200);
     await response.text();
 
@@ -1104,7 +1110,11 @@ describe("stored attachments", () => {
             id: "m",
             role: "user",
             parts: [
-              { type: "file", mediaType: "image/png", url: "data:image/png;base64,AAAA" },
+              {
+                type: "file",
+                mediaType: "image/png",
+                url: "data:image/png;base64,AAAA",
+              },
             ],
           },
         ],
@@ -1121,7 +1131,11 @@ describe("stored attachments", () => {
             role: "user",
             parts: [
               { type: "text", text: "look" },
-              { type: "file", mediaType: "image/png", url: "/api/chat/attachments/att-2" },
+              {
+                type: "file",
+                mediaType: "image/png",
+                url: "/api/chat/attachments/att-2",
+              },
             ],
           },
         ],

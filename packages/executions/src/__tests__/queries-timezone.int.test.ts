@@ -86,7 +86,14 @@ d("summarizeExecutionsByDay (integration)", () => {
             total_tokens, charged_micros, currency, started_at)
          VALUES ($1, $2, $3, 'test.tz', $4, 'succeeded', $5, 1000, 'USD',
                  $6::timestamp)`,
-        [`${id}-${suffix}`, workspaceId, userId, `${id}-req-${suffix}`, tokens, startedAt]
+        [
+          `${id}-${suffix}`,
+          workspaceId,
+          userId,
+          `${id}-req-${suffix}`,
+          tokens,
+          startedAt,
+        ]
       );
     }
   });

@@ -5,7 +5,10 @@ import type { ChatDataChunk } from "./parts";
 
 function collect() {
   const chunks: ChatDataChunk[] = [];
-  return { chunks, turn: { write: vi.fn((chunk: ChatDataChunk) => chunks.push(chunk)) } };
+  return {
+    chunks,
+    turn: { write: vi.fn((chunk: ChatDataChunk) => chunks.push(chunk)) },
+  };
 }
 
 describe("createArtifactWriter", () => {
@@ -61,7 +64,10 @@ describe("createArtifactWriter", () => {
     const { chunks, turn } = collect();
     const doc = createArtifactWriter(turn, { kind: "text", title: "T" });
     doc.finish({ content: "inline" });
-    expect(chunks[0]!.data).toMatchObject({ status: "ready", content: "inline" });
+    expect(chunks[0]!.data).toMatchObject({
+      status: "ready",
+      content: "inline",
+    });
   });
 
   it("marks a failure and then ignores further writes", () => {

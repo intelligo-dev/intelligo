@@ -79,7 +79,10 @@ const actor = { workspaceId: "ws-1", userId: "u-1" };
 function config(extra: Partial<ChatServerConfig> = {}): ChatServerConfig {
   return {
     executions: {} as Executions,
-    model: { defaultId: "google/gemini-2.5-flash", resolve: () => ({}) as never },
+    model: {
+      defaultId: "google/gemini-2.5-flash",
+      resolve: () => ({}) as never,
+    },
     authenticate: async () => actor,
     attachments: {
       accept: ["image/png", "application/pdf"],
@@ -99,7 +102,8 @@ function upload(file: Blob | null, name = "photo.png") {
   });
 }
 
-const png = () => new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" });
+const png = () =>
+  new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" });
 
 let memory: ReturnType<typeof createMemoryStorage>;
 
@@ -227,7 +231,9 @@ describe("createChatAttachmentHandler", () => {
     const id = await stored();
     const response = await get(id);
     expect(response.status).toBe(302);
-    expect(response.headers.get("location")).toMatch(/^data:image\/png;base64,/);
+    expect(response.headers.get("location")).toMatch(
+      /^data:image\/png;base64,/
+    );
     expect(response.headers.get("cache-control")).toBe("private, no-store");
   });
 

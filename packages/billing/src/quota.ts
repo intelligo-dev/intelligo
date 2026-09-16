@@ -57,10 +57,7 @@ import type {
   SettlementOutcome,
   UsageSummary,
 } from "./quota-types";
-import {
-  getPlanMessageLimit,
-  getPlanMonthlyAllowance,
-} from "./quota-plan";
+import { getPlanMessageLimit, getPlanMonthlyAllowance } from "./quota-plan";
 import { BillingNotConfiguredError } from "./plan-registry";
 
 export type {

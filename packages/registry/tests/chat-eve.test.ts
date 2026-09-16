@@ -15,10 +15,17 @@ import {
   type EveEvent,
 } from "../base/chat-eve/lib/chat-eve";
 
-const ev = (type: string, data: Record<string, unknown>, id?: string): EveEvent => ({
+const ev = (
+  type: string,
+  data: Record<string, unknown>,
+  id?: string
+): EveEvent => ({
   type,
   data: { turnId: "turn_1", sequence: 1, stepIndex: 0, ...data },
-  meta: { id: id ?? `${type}-${JSON.stringify(data)}`, at: "2026-09-13T00:00:00Z" },
+  meta: {
+    id: id ?? `${type}-${JSON.stringify(data)}`,
+    at: "2026-09-13T00:00:00Z",
+  },
 });
 
 function mapAll(events: EveEvent[]): UIMessageChunk[] {
@@ -36,7 +43,10 @@ describe("createEveEventMapper", () => {
       ev("message.appended", { messageDelta: "Hello" }),
       ev("message.appended", { messageDelta: " there" }, "m2"),
       ev("message.completed", { message: "Hello there", finishReason: "stop" }),
-      ev("step.completed", { finishReason: "stop", usage: { inputTokens: 5, outputTokens: 2 } }),
+      ev("step.completed", {
+        finishReason: "stop",
+        usage: { inputTokens: 5, outputTokens: 2 },
+      }),
       ev("turn.completed", {}),
     ]);
     expect(chunks.map((c) => c.type)).toEqual([
@@ -51,17 +61,66 @@ describe("createEveEventMapper", () => {
       "text-end",
       "finish-step",
     ]);
-    expect(chunks.filter((c) => c.type === "text-delta").map((c) => (c as { delta: string }).delta)).toEqual(["Hello", " there"]);
+    expect(
+      chunks
+        .filter((c) => c.type === "text-delta")
+        .map((c) => (c as { delta: string }).delta)
+    ).toEqual(["Hello", " there"]);
   });
 
   it("maps tool calls, partial and final results, failures and denials", () => {
     const chunks = mapAll([
-      ev("action.input.appended", { callId: "c1", toolName: "search", inputTextDelta: '{"q":' }),
-      ev("actions.requested", { actions: [{ kind: "tool-call", callId: "c1", toolName: "search", input: { q: "eve" } }] }),
-      ev("action.partial", { result: { kind: "tool-result", callId: "c1", toolName: "search", output: { hits: 1 } } }),
-      ev("action.result", { status: "completed", result: { kind: "tool-result", callId: "c1", toolName: "search", output: { hits: 3 } } }),
-      ev("action.result", { status: "failed", error: { message: "boom" }, result: { kind: "tool-result", callId: "c2", toolName: "x", output: "" } }),
-      ev("action.result", { status: "rejected", result: { kind: "tool-result", callId: "c3", toolName: "x", output: "" } }),
+      ev("action.input.appended", {
+        callId: "c1",
+        toolName: "search",
+        inputTextDelta: '{"q":',
+      }),
+      ev("actions.requested", {
+        actions: [
+          {
+            kind: "tool-call",
+            callId: "c1",
+            toolName: "search",
+            input: { q: "eve" },
+          },
+        ],
+      }),
+      ev("action.partial", {
+        result: {
+          kind: "tool-result",
+          callId: "c1",
+          toolName: "search",
+          output: { hits: 1 },
+        },
+      }),
+      ev("action.result", {
+        status: "completed",
+        result: {
+          kind: "tool-result",
+          callId: "c1",
+          toolName: "search",
+          output: { hits: 3 },
+        },
+      }),
+      ev("action.result", {
+        status: "failed",
+        error: { message: "boom" },
+        result: {
+          kind: "tool-result",
+          callId: "c2",
+          toolName: "x",
+          output: "",
+        },
+      }),
+      ev("action.result", {
+        status: "rejected",
+        result: {
+          kind: "tool-result",
+          callId: "c3",
+          toolName: "x",
+          output: "",
+        },
+      }),
     ]);
     expect(chunks.map((c) => c.type)).toEqual([
       "tool-input-start",
@@ -86,14 +145,25 @@ describe("createEveEventMapper", () => {
             requestId: "req_A",
             kind: "tool-approval",
             prompt: "Delete rows?",
-            options: [{ id: "approve", label: "Approve" }, { id: "reject", label: "Reject" }],
-            action: { kind: "tool-call", callId: "c9", toolName: "deleteRows", input: { table: "users" } },
+            options: [
+              { id: "approve", label: "Approve" },
+              { id: "reject", label: "Reject" },
+            ],
+            action: {
+              kind: "tool-call",
+              callId: "c9",
+              toolName: "deleteRows",
+              input: { table: "users" },
+            },
           },
           {
             requestId: "req_Q",
             kind: "question",
             prompt: "Which region?",
-            options: [{ id: "eu", label: "Europe" }, { id: "us", label: "US" }],
+            options: [
+              { id: "eu", label: "Europe" },
+              { id: "us", label: "US" },
+            ],
             allowFreeform: true,
           },
         ],
@@ -105,19 +175,42 @@ describe("createEveEventMapper", () => {
       "data-chat-question",
     ]);
     expect(chunks[1]).toMatchObject({ approvalId: "req_A", toolCallId: "c9" });
-    expect(chunks[2]).toMatchObject({ id: "req_Q", data: { prompt: "Which region?", allowFreeform: true } });
+    expect(chunks[2]).toMatchObject({
+      id: "req_Q",
+      data: { prompt: "Which region?", allowFreeform: true },
+    });
     expect(mapper.state.pendingQuestion).toEqual({
       requestId: "req_Q",
-      options: [{ id: "eu", label: "Europe" }, { id: "us", label: "US" }],
+      options: [
+        { id: "eu", label: "Europe" },
+        { id: "us", label: "US" },
+      ],
     });
   });
 
   it("maps subagents, authorization, results, failures and cancellation", () => {
     const chunks = mapAll([
-      ev("subagent.called", { callId: "s1", childSessionId: "wrun_x", subagentName: "researcher" }),
-      ev("subagent.completed", { callId: "s1", subagentName: "researcher", output: "done" }),
-      ev("authorization.required", { name: "github", description: "Sign in", attemptId: "a1", authorization: { url: "https://x", instructions: "Open the link" } }),
-      ev("authorization.completed", { name: "github", attemptId: "a1", outcome: "authorized" }),
+      ev("subagent.called", {
+        callId: "s1",
+        childSessionId: "wrun_x",
+        subagentName: "researcher",
+      }),
+      ev("subagent.completed", {
+        callId: "s1",
+        subagentName: "researcher",
+        output: "done",
+      }),
+      ev("authorization.required", {
+        name: "github",
+        description: "Sign in",
+        attemptId: "a1",
+        authorization: { url: "https://x", instructions: "Open the link" },
+      }),
+      ev("authorization.completed", {
+        name: "github",
+        attemptId: "a1",
+        outcome: "authorized",
+      }),
       ev("result.completed", { result: { ok: true } }),
       ev("turn.cancelled", {}),
     ]);
@@ -129,13 +222,17 @@ describe("createEveEventMapper", () => {
       "data-chat-result",
       "abort",
     ]);
-    expect(chunks[1]).toMatchObject({ data: { status: "completed", summary: "done" } });
-    expect(chunks[2]).toMatchObject({ data: { url: "https://x", status: "required" } });
+    expect(chunks[1]).toMatchObject({
+      data: { status: "completed", summary: "done" },
+    });
+    expect(chunks[2]).toMatchObject({
+      data: { url: "https://x", status: "required" },
+    });
 
     const failed = createEveEventMapper();
-    expect(failed.map(ev("turn.failed", { code: "x", message: "It broke" }))).toEqual([
-      { type: "error", errorText: "It broke" },
-    ]);
+    expect(
+      failed.map(ev("turn.failed", { code: "x", message: "It broke" }))
+    ).toEqual([{ type: "error", errorText: "It broke" }]);
     expect(failed.state.failed).toBe("It broke");
   });
 
@@ -144,9 +241,28 @@ describe("createEveEventMapper", () => {
     const first = ev("message.appended", { messageDelta: "a" }, "same");
     expect(mapper.map(first)).toHaveLength(2);
     expect(mapper.map(first)).toHaveLength(0);
-    mapper.map(ev("step.completed", { finishReason: "tool-calls", usage: { inputTokens: 1, outputTokens: 1 } }, "s1"));
-    mapper.map(ev("step.completed", { finishReason: "stop", usage: { inputTokens: 2, outputTokens: 3 } }, "s2"));
-    expect(mapper.state.usage).toEqual({ inputTokens: 3, outputTokens: 4, totalTokens: 7 });
+    mapper.map(
+      ev(
+        "step.completed",
+        {
+          finishReason: "tool-calls",
+          usage: { inputTokens: 1, outputTokens: 1 },
+        },
+        "s1"
+      )
+    );
+    mapper.map(
+      ev(
+        "step.completed",
+        { finishReason: "stop", usage: { inputTokens: 2, outputTokens: 3 } },
+        "s2"
+      )
+    );
+    expect(mapper.state.usage).toEqual({
+      inputTokens: 3,
+      outputTokens: 4,
+      totalTokens: 7,
+    });
     expect(mapper.state.finishReason).toBe("stop");
   });
 });
@@ -167,29 +283,55 @@ describe("approvalResponsesFrom / userContentFrom", () => {
             input: {},
             approval: { id: "req_A", approved: false, reason: "no" },
             callProviderMetadata: {
-              eve: { inputRequest: { requestId: "req_A", options: [{ id: "approve", label: "Approve" }, { id: "reject", label: "Reject" }] } },
+              eve: {
+                inputRequest: {
+                  requestId: "req_A",
+                  options: [
+                    { id: "approve", label: "Approve" },
+                    { id: "reject", label: "Reject" },
+                  ],
+                },
+              },
             },
           } as unknown as UIMessage["parts"][number],
         ],
       },
     ];
-    expect(approvalResponsesFrom(messages)).toEqual([{ requestId: "req_A", optionId: "reject" }]);
+    expect(approvalResponsesFrom(messages)).toEqual([
+      { requestId: "req_A", optionId: "reject" },
+    ]);
   });
 
   it("sends text alone as a string and files as parts", () => {
-    expect(userContentFrom({ id: "u", role: "user", parts: [{ type: "text", text: "hi" }] })).toBe("hi");
+    expect(
+      userContentFrom({
+        id: "u",
+        role: "user",
+        parts: [{ type: "text", text: "hi" }],
+      })
+    ).toBe("hi");
     expect(
       userContentFrom({
         id: "u",
         role: "user",
         parts: [
           { type: "text", text: "see" },
-          { type: "file", mediaType: "image/png", url: "https://x/a.png", filename: "a.png" },
+          {
+            type: "file",
+            mediaType: "image/png",
+            url: "https://x/a.png",
+            filename: "a.png",
+          },
         ],
       })
     ).toEqual([
       { type: "text", text: "see" },
-      { type: "file", data: "https://x/a.png", mediaType: "image/png", filename: "a.png" },
+      {
+        type: "file",
+        data: "https://x/a.png",
+        mediaType: "image/png",
+        filename: "a.png",
+      },
     ]);
   });
 });
@@ -197,20 +339,31 @@ describe("approvalResponsesFrom / userContentFrom", () => {
 describe("eveStreamTurn", () => {
   function fakeEve(events: EveEvent[]) {
     const calls: Array<{ url: string; method: string; body?: unknown }> = [];
-    const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
-      const url = String(input);
-      calls.push({ url, method: init?.method ?? "GET", body: init?.body ? JSON.parse(String(init.body)) : undefined });
-      if (url.endsWith("/eve/v1/session") && init?.method === "POST") {
-        return Response.json({ sessionId: "wrun_1" }, { status: 202 });
+    const fetchImpl = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        const url = String(input);
+        calls.push({
+          url,
+          method: init?.method ?? "GET",
+          body: init?.body ? JSON.parse(String(init.body)) : undefined,
+        });
+        if (url.endsWith("/eve/v1/session") && init?.method === "POST") {
+          return Response.json({ sessionId: "wrun_1" }, { status: 202 });
+        }
+        if (url.includes("/stream")) {
+          const body = events.map((e) => JSON.stringify(e)).join("\n") + "\n";
+          return new Response(body, {
+            status: 200,
+            headers: { "content-type": "application/x-ndjson" },
+          });
+        }
+        if (url.endsWith("/cancel"))
+          return Response.json({ status: "accepted" });
+        if (/\/session\/[^/]+$/.test(url))
+          return Response.json({ sessionId: "wrun_1" }, { status: 202 });
+        return new Response(null, { status: 404 });
       }
-      if (url.includes("/stream")) {
-        const body = events.map((e) => JSON.stringify(e)).join("\n") + "\n";
-        return new Response(body, { status: 200, headers: { "content-type": "application/x-ndjson" } });
-      }
-      if (url.endsWith("/cancel")) return Response.json({ status: "accepted" });
-      if (/\/session\/[^/]+$/.test(url)) return Response.json({ sessionId: "wrun_1" }, { status: 202 });
-      return new Response(null, { status: 404 });
-    });
+    );
     return { fetchImpl: fetchImpl as unknown as typeof fetch, calls };
   }
 
@@ -248,29 +401,65 @@ describe("eveStreamTurn", () => {
   it("creates a session, streams the turn, settles usage and stores the cursor", async () => {
     const { fetchImpl, calls } = fakeEve([
       ev("message.appended", { messageDelta: "hi" }),
-      ev("step.completed", { finishReason: "stop", usage: { inputTokens: 4, outputTokens: 1 } }),
+      ev("step.completed", {
+        finishReason: "stop",
+        usage: { inputTokens: 4, outputTokens: 1 },
+      }),
       ev("turn.completed", {}),
       ev("session.waiting", {}),
     ]);
     const { turn: t, updateMetadata } = turn();
-    const run = eveStreamTurn({ baseUrl: "https://eve.test", fetch: fetchImpl });
+    const run = eveStreamTurn({
+      baseUrl: "https://eve.test",
+      fetch: fetchImpl,
+    });
     const produced = await run(
       t as never,
-      { messages: [{ id: "u", role: "user", parts: [{ type: "text", text: "hello" }] }] },
-      { modelId: "m", abortSignal: new AbortController().signal, writer: {} as never }
+      {
+        messages: [
+          { id: "u", role: "user", parts: [{ type: "text", text: "hello" }] },
+        ],
+      },
+      {
+        modelId: "m",
+        abortSignal: new AbortController().signal,
+        writer: {} as never,
+      }
     );
     const chunks = await drain(produced.stream);
-    expect(chunks.map((c) => c.type)).toEqual(["text-start", "text-delta", "text-end", "finish-step"]);
-    await expect(produced.usage).resolves.toEqual({ inputTokens: 4, outputTokens: 1, totalTokens: 5, finishReason: "stop" });
-    expect(calls[0]).toMatchObject({ url: "https://eve.test/eve/v1/session", method: "POST", body: { message: "hello" } });
-    expect(calls[1]!.url).toBe("https://eve.test/eve/v1/session/wrun_1/stream?startIndex=0");
-    expect(updateMetadata).toHaveBeenCalledWith({ eve: { sessionId: "wrun_1", streamIndex: 3 } });
+    expect(chunks.map((c) => c.type)).toEqual([
+      "text-start",
+      "text-delta",
+      "text-end",
+      "finish-step",
+    ]);
+    await expect(produced.usage).resolves.toEqual({
+      inputTokens: 4,
+      outputTokens: 1,
+      totalTokens: 5,
+      finishReason: "stop",
+    });
+    expect(calls[0]).toMatchObject({
+      url: "https://eve.test/eve/v1/session",
+      method: "POST",
+      body: { message: "hello" },
+    });
+    expect(calls[1]!.url).toBe(
+      "https://eve.test/eve/v1/session/wrun_1/stream?startIndex=0"
+    );
+    expect(updateMetadata).toHaveBeenCalledWith({
+      eve: { sessionId: "wrun_1", streamIndex: 3 },
+    });
   });
 
   it("continues a stored session and answers approvals with input responses", async () => {
     const { fetchImpl, calls } = fakeEve([ev("turn.completed", {})]);
     const { turn: t } = turn({ eve: { sessionId: "wrun_1", streamIndex: 7 } });
-    const run = eveStreamTurn({ baseUrl: "https://eve.test/", agent: "support", fetch: fetchImpl });
+    const run = eveStreamTurn({
+      baseUrl: "https://eve.test/",
+      agent: "support",
+      fetch: fetchImpl,
+    });
     const produced = await run(
       t as never,
       {
@@ -292,7 +481,11 @@ describe("eveStreamTurn", () => {
           },
         ],
       },
-      { modelId: "m", abortSignal: new AbortController().signal, writer: {} as never }
+      {
+        modelId: "m",
+        abortSignal: new AbortController().signal,
+        writer: {} as never,
+      }
     );
     await drain(produced.stream);
     await produced.usage;
@@ -304,13 +497,26 @@ describe("eveStreamTurn", () => {
   });
 
   it("fails the turn when eve fails it", async () => {
-    const { fetchImpl } = fakeEve([ev("turn.failed", { code: "x", message: "It broke" })]);
+    const { fetchImpl } = fakeEve([
+      ev("turn.failed", { code: "x", message: "It broke" }),
+    ]);
     const { turn: t } = turn();
-    const run = eveStreamTurn({ baseUrl: "https://eve.test", fetch: fetchImpl });
+    const run = eveStreamTurn({
+      baseUrl: "https://eve.test",
+      fetch: fetchImpl,
+    });
     const produced = await run(
       t as never,
-      { messages: [{ id: "u", role: "user", parts: [{ type: "text", text: "hello" }] }] },
-      { modelId: "m", abortSignal: new AbortController().signal, writer: {} as never }
+      {
+        messages: [
+          { id: "u", role: "user", parts: [{ type: "text", text: "hello" }] },
+        ],
+      },
+      {
+        modelId: "m",
+        abortSignal: new AbortController().signal,
+        writer: {} as never,
+      }
     );
     const chunks = await drain(produced.stream);
     expect(chunks).toEqual([{ type: "error", errorText: "It broke" }]);

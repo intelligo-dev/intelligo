@@ -13,7 +13,10 @@ export default defineConfig({
   resolve: {
     alias: {
       // The one consumer seam the tested hook reads at module load.
-      "@/lib/chat-config": path.resolve(__dirname, "base/chat/lib/chat-config.tsx"),
+      "@/lib/chat-config": path.resolve(
+        __dirname,
+        "base/chat/lib/chat-config.tsx"
+      ),
     },
   },
   test: {

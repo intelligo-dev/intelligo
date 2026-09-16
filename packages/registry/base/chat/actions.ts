@@ -100,8 +100,7 @@ export async function listConversationHistory(): Promise<
         id: row.id,
         title: row.title,
         updatedAt: row.updatedAt.toISOString(),
-        pinned:
-          (row.metadata as { pinned?: unknown } | null)?.pinned === true,
+        pinned: (row.metadata as { pinned?: unknown } | null)?.pinned === true,
       })),
     };
   } catch (error) {

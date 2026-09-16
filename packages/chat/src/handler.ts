@@ -80,7 +80,11 @@ import type {
 import { CHAT_ERROR_STATUS, DEFAULT_CHAT_MESSAGES, refuse } from "./errors";
 import type { ChatMessages } from "./errors";
 import { lastUserMessage, toUIMessages } from "./messages";
-import type { ChatDataChunk, ChatMessageMetadata, ChatUIMessage } from "./parts";
+import type {
+  ChatDataChunk,
+  ChatMessageMetadata,
+  ChatUIMessage,
+} from "./parts";
 import { truncateTitle } from "./title";
 import { pickUsage, sumStepUsage } from "./usage";
 import type { TokenUsage } from "./usage";

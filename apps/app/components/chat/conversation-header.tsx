@@ -51,7 +51,11 @@ export function ConversationHeader({
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(title ?? "");
-  const slot = useSyncExternalStore(subscribeToNothing, findSlot, noSlotOnServer);
+  const slot = useSyncExternalStore(
+    subscribeToNothing,
+    findSlot,
+    noSlotOnServer
+  );
   const HeaderRight = chatConfig.headerRight;
   const agentName = chatConfig.agent?.name ?? t("agent.defaultName");
   const agentIcon = chatConfig.agent?.icon;
@@ -96,7 +100,6 @@ export function ConversationHeader({
       className="flex min-w-0 flex-1 items-center justify-between gap-2"
     >
       <div className="flex min-w-0 flex-1 items-center gap-1">
-
         <span className="mr-1 flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
           {agentIcon ? <span aria-hidden>{agentIcon}</span> : null}
           <span className="max-w-24 truncate">{agentName}</span>
@@ -194,7 +197,9 @@ export function ConversationHeader({
   // only known in the browser, and the bar appears once it is.
   if (slot === undefined) return null;
   if (slot) return createPortal(bar, slot);
-  return <header className="flex items-center border-b px-4 py-3">{bar}</header>;
+  return (
+    <header className="flex items-center border-b px-4 py-3">{bar}</header>
+  );
 }
 
 const SLOT_SELECTOR = '[data-slot="shell-header-slot"]';

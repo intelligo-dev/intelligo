@@ -122,7 +122,8 @@ async function toBytes(body: StorageBody): Promise<Uint8Array> {
 }
 
 function toBase64(bytes: Uint8Array): string {
-  if (typeof Buffer !== "undefined") return Buffer.from(bytes).toString("base64");
+  if (typeof Buffer !== "undefined")
+    return Buffer.from(bytes).toString("base64");
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary);

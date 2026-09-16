@@ -62,7 +62,9 @@ export async function getPlatformOverview(): Promise<PlatformOverview> {
   // A status arrives once per currency now; the counts fold together.
   const byStatus = new Map<string, { n: number }>();
   for (const r of statusRows) {
-    byStatus.set(r.status, { n: (byStatus.get(r.status)?.n ?? 0) + Number(r.n) });
+    byStatus.set(r.status, {
+      n: (byStatus.get(r.status)?.n ?? 0) + Number(r.n),
+    });
   }
   const total = statusRows.reduce((sum, r) => sum + Number(r.n), 0);
 

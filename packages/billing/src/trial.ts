@@ -43,7 +43,6 @@ export type { TrialStatus };
 export { normalizeEmailForAbuseCheck };
 export { deductTrialCredits };
 
-
 // ---------------------------------------------------------------------------
 // provisionTrialCredits (TRIAL-01)
 // ---------------------------------------------------------------------------

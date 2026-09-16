@@ -51,7 +51,10 @@ function writeStored(
     if (Object.keys(versions).length === 0) {
       sessionStorage.removeItem(storageKey(conversationId));
     } else {
-      sessionStorage.setItem(storageKey(conversationId), JSON.stringify(versions));
+      sessionStorage.setItem(
+        storageKey(conversationId),
+        JSON.stringify(versions)
+      );
     }
   } catch {
     // Storage is a convenience; a private window without it still chats.
@@ -144,7 +147,10 @@ export function useChatVersions({
         if (commit?.anchorId === anchorId) {
           next = {
             ...next,
-            [anchorId]: { tails: [...set.tails, tail], active: set.tails.length },
+            [anchorId]: {
+              tails: [...set.tails, tail],
+              active: set.tails.length,
+            },
           };
           changed = true;
         } else if (tail.length > 0) {
@@ -176,7 +182,10 @@ export function useChatVersions({
 
   /** The pager state for the message that follows `anchorId`, if it has versions. */
   const versionOf = useMemo(() => {
-    const byFirstMessage = new Map<string, ChatVersion & { anchorId: string }>();
+    const byFirstMessage = new Map<
+      string,
+      ChatVersion & { anchorId: string }
+    >();
     for (const [anchorId, set] of Object.entries(versions)) {
       if (set.tails.length < 2) continue;
       const at = anchorIndex(messages, anchorId);

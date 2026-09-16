@@ -9,11 +9,7 @@
 import { useTranslations } from "next-intl";
 import { AlertTriangleIcon, RefreshCwIcon, XIcon } from "lucide-react";
 
-import {
-  Alert,
-  AlertAction,
-  AlertDescription,
-} from "@/components/ui/alert";
+import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 interface ChatErrorStripProps {

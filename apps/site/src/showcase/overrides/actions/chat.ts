@@ -17,7 +17,12 @@ export const CONVERSATIONS: ConversationSummary[] = [
     updatedAt: daysAgo(0, 1),
     pinned: true,
   },
-  { id: "conv_2", title: "Pricing audit", updatedAt: daysAgo(1), pinned: false },
+  {
+    id: "conv_2",
+    title: "Pricing audit",
+    updatedAt: daysAgo(1),
+    pinned: false,
+  },
   {
     id: "conv_3",
     title: "Onboarding copy review",

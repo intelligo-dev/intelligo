@@ -49,9 +49,7 @@ export function getPlanMonthlyAllowance(
   const declared =
     (planSlug ? configs[planSlug]?.monthlyAllowance : undefined) ??
     configs.free?.monthlyAllowance;
-  return declared && declared.currency === currency
-    ? declared
-    : zero(currency);
+  return declared && declared.currency === currency ? declared : zero(currency);
 }
 
 /**

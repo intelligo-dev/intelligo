@@ -56,12 +56,21 @@ export type EveInputRequest = {
   requestId: string;
   kind: "question" | "session-limit" | "tool-approval";
   prompt: string;
-  options?: Array<{ id: string; label: string; description?: string; style?: string }>;
+  options?: Array<{
+    id: string;
+    label: string;
+    description?: string;
+    style?: string;
+  }>;
   allowFreeform?: boolean;
   action?: { callId: string; toolName: string; input?: unknown };
 };
 
-export type EveInputResponse = { requestId: string; optionId?: string; text?: string };
+export type EveInputResponse = {
+  requestId: string;
+  optionId?: string;
+  text?: string;
+};
 
 type EveMetadata = {
   sessionId?: string;
@@ -86,7 +95,9 @@ function optionFor(
   approved: boolean
 ): string | undefined {
   if (!options?.length) return undefined;
-  const wanted = approved ? /approve|allow|yes|confirm|accept/i : /deny|reject|no|cancel|decline/i;
+  const wanted = approved
+    ? /approve|allow|yes|confirm|accept/i
+    : /deny|reject|no|cancel|decline/i;
   const byId = options.find((o) => wanted.test(o.id) || wanted.test(o.label));
   if (byId) return byId.id;
   return approved ? options[0]!.id : options[options.length - 1]!.id;
@@ -150,14 +161,17 @@ export function createEveEventMapper() {
 
       case "step.completed": {
         const usage = asRecord(data.usage);
-        const input = typeof usage.inputTokens === "number" ? usage.inputTokens : 0;
-        const output = typeof usage.outputTokens === "number" ? usage.outputTokens : 0;
+        const input =
+          typeof usage.inputTokens === "number" ? usage.inputTokens : 0;
+        const output =
+          typeof usage.outputTokens === "number" ? usage.outputTokens : 0;
         state.usage = {
           inputTokens: (state.usage.inputTokens ?? 0) + input,
           outputTokens: (state.usage.outputTokens ?? 0) + output,
           totalTokens: (state.usage.totalTokens ?? 0) + input + output,
         };
-        if (typeof data.finishReason === "string") state.finishReason = data.finishReason;
+        if (typeof data.finishReason === "string")
+          state.finishReason = data.finishReason;
         const text = openText.get(step);
         if (text) {
           out.push({ type: "text-end", id: text });
@@ -174,7 +188,11 @@ export function createEveEventMapper() {
           openReasoning.set(step, rid);
           out.push({ type: "reasoning-start", id: rid });
         }
-        out.push({ type: "reasoning-delta", id: rid, delta: str(data.reasoningDelta) });
+        out.push({
+          type: "reasoning-delta",
+          id: rid,
+          delta: str(data.reasoningDelta),
+        });
         break;
       }
       case "reasoning.completed": {
@@ -190,7 +208,11 @@ export function createEveEventMapper() {
         const tid = openText.get(step);
         const target = tid ?? textId(step);
         if (!tid) out.push({ type: "text-start", id: target });
-        out.push({ type: "text-delta", id: target, delta: str(data.messageDelta) });
+        out.push({
+          type: "text-delta",
+          id: target,
+          delta: str(data.messageDelta),
+        });
         break;
       }
       case "message.completed": {
@@ -214,7 +236,11 @@ export function createEveEventMapper() {
             dynamic: true,
           });
         }
-        out.push({ type: "tool-input-delta", toolCallId: callId, inputTextDelta: str(data.inputTextDelta) });
+        out.push({
+          type: "tool-input-delta",
+          toolCallId: callId,
+          inputTextDelta: str(data.inputTextDelta),
+        });
         break;
       }
 
@@ -228,7 +254,10 @@ export function createEveEventMapper() {
           out.push({
             type: "tool-input-available",
             toolCallId: callId,
-            toolName: str(action.toolName ?? action.name ?? action.kind, "tool"),
+            toolName: str(
+              action.toolName ?? action.name ?? action.kind,
+              "tool"
+            ),
             input: action.input ?? {},
             dynamic: true,
             providerMetadata: { eve: { kind: str(action.kind, "tool-call") } },
@@ -263,7 +292,10 @@ export function createEveEventMapper() {
           out.push({
             type: "tool-output-error",
             toolCallId: callId,
-            errorText: str(error.message, typeof result.output === "string" ? result.output : "Tool failed"),
+            errorText: str(
+              error.message,
+              typeof result.output === "string" ? result.output : "Tool failed"
+            ),
             dynamic: true,
           });
         } else {
@@ -307,17 +339,34 @@ export function createEveEventMapper() {
               toolCallId: callId,
             });
           } else {
-            state.pendingQuestion = { requestId: request.requestId, options: request.options };
-            out.push(dataChunk({
-              type: "data-chat-question",
-              id: request.requestId,
-              data: {
+            state.pendingQuestion = {
+              requestId: request.requestId,
+              options: request.options,
+            };
+            out.push(
+              dataChunk({
+                type: "data-chat-question",
                 id: request.requestId,
-                prompt: request.prompt,
-                ...(request.options ? { options: request.options.map(({ id, label, description }) => ({ id, label, ...(description ? { description } : {}) })) } : {}),
-                ...(request.allowFreeform !== undefined ? { allowFreeform: request.allowFreeform } : {}),
-              },
-            }));
+                data: {
+                  id: request.requestId,
+                  prompt: request.prompt,
+                  ...(request.options
+                    ? {
+                        options: request.options.map(
+                          ({ id, label, description }) => ({
+                            id,
+                            label,
+                            ...(description ? { description } : {}),
+                          })
+                        ),
+                      }
+                    : {}),
+                  ...(request.allowFreeform !== undefined
+                    ? { allowFreeform: request.allowFreeform }
+                    : {}),
+                },
+              })
+            );
           }
         }
         break;
@@ -325,71 +374,105 @@ export function createEveEventMapper() {
 
       case "subagent.called": {
         const callId = str(data.callId);
-        out.push(dataChunk({
-          type: "data-chat-agent",
-          id: callId || undefined,
-          data: {
-            id: callId,
-            name: str(data.subagentName ?? data.agentId, "subagent"),
-            status: "started",
-          },
-        }));
+        out.push(
+          dataChunk({
+            type: "data-chat-agent",
+            id: callId || undefined,
+            data: {
+              id: callId,
+              name: str(data.subagentName ?? data.agentId, "subagent"),
+              status: "started",
+            },
+          })
+        );
         break;
       }
       case "subagent.completed": {
         const callId = str(data.callId);
         const output = str(data.output);
-        out.push(dataChunk({
-          type: "data-chat-agent",
-          id: callId || undefined,
-          data: {
-            id: callId,
-            name: str(data.subagentName, "subagent"),
-            status: "completed",
-            ...(output ? { summary: output.length > 280 ? `${output.slice(0, 279)}…` : output } : {}),
-          },
-        }));
+        out.push(
+          dataChunk({
+            type: "data-chat-agent",
+            id: callId || undefined,
+            data: {
+              id: callId,
+              name: str(data.subagentName, "subagent"),
+              status: "completed",
+              ...(output
+                ? {
+                    summary:
+                      output.length > 280 ? `${output.slice(0, 279)}…` : output,
+                  }
+                : {}),
+            },
+          })
+        );
         break;
       }
 
       case "authorization.required": {
         const challenge = asRecord(data.authorization);
-        const id = str(data.attemptId ?? data.candidateId ?? data.name, "authorization");
-        out.push(dataChunk({
-          type: "data-chat-authorization",
-          id,
-          data: {
+        const id = str(
+          data.attemptId ?? data.candidateId ?? data.name,
+          "authorization"
+        );
+        out.push(
+          dataChunk({
+            type: "data-chat-authorization",
             id,
-            name: str(data.name),
-            status: "required",
-            ...(typeof data.description === "string" ? { description: data.description } : {}),
-            ...(typeof challenge.url === "string" ? { url: challenge.url } : {}),
-            ...(typeof challenge.instructions === "string" ? { instructions: challenge.instructions } : {}),
-          },
-        }));
+            data: {
+              id,
+              name: str(data.name),
+              status: "required",
+              ...(typeof data.description === "string"
+                ? { description: data.description }
+                : {}),
+              ...(typeof challenge.url === "string"
+                ? { url: challenge.url }
+                : {}),
+              ...(typeof challenge.instructions === "string"
+                ? { instructions: challenge.instructions }
+                : {}),
+            },
+          })
+        );
         break;
       }
       case "authorization.completed": {
-        const id = str(data.attemptId ?? data.candidateId ?? data.name, "authorization");
-        out.push(dataChunk({
-          type: "data-chat-authorization",
-          id,
-          data: { id, name: str(data.name), status: "completed" },
-        }));
+        const id = str(
+          data.attemptId ?? data.candidateId ?? data.name,
+          "authorization"
+        );
+        out.push(
+          dataChunk({
+            type: "data-chat-authorization",
+            id,
+            data: { id, name: str(data.name), status: "completed" },
+          })
+        );
         break;
       }
 
       case "compaction.requested":
       case "compaction.completed":
-        out.push(dataChunk({
-          type: "data-chat-compaction",
-          data: { status: event.type === "compaction.requested" ? "requested" : "completed" },
-          transient: true,
-        }));
+        out.push(
+          dataChunk({
+            type: "data-chat-compaction",
+            data: {
+              status:
+                event.type === "compaction.requested"
+                  ? "requested"
+                  : "completed",
+            },
+            transient: true,
+          })
+        );
         break;
 
       case "result.completed":
-        out.push(dataChunk({ type: "data-chat-result", data: data.result ?? null }));
+        out.push(
+          dataChunk({ type: "data-chat-result", data: data.result ?? null })
+        );
         break;
 
       case "step.failed":
@@ -446,14 +529,23 @@ export function approvalResponsesFrom(
     const approval = asRecord(part.approval);
     const requestId = str(approval.id);
     if (!requestId) continue;
-    const meta = asRecord(asRecord(asRecord(part.callProviderMetadata).eve).inputRequest);
-    const options = Array.isArray(meta.options) ? (meta.options as EveInputRequest["options"]) : undefined;
+    const meta = asRecord(
+      asRecord(asRecord(part.callProviderMetadata).eve).inputRequest
+    );
+    const options = Array.isArray(meta.options)
+      ? (meta.options as EveInputRequest["options"])
+      : undefined;
     const approved = approval.approved === true;
     const optionId = optionFor(options, approved);
     responses.push(
       optionId
         ? { requestId, optionId }
-        : { requestId, text: approved ? "approve" : `deny${typeof approval.reason === "string" ? `: ${approval.reason}` : ""}` }
+        : {
+            requestId,
+            text: approved
+              ? "approve"
+              : `deny${typeof approval.reason === "string" ? `: ${approval.reason}` : ""}`,
+          }
     );
   }
   return responses;
@@ -462,10 +554,14 @@ export function approvalResponsesFrom(
 /** The user's message as eve's `message` — a string, or parts when files ride along. */
 export function userContentFrom(message: UIMessage): unknown {
   const text = message.parts
-    .filter((part): part is { type: "text"; text: string } => part.type === "text")
+    .filter(
+      (part): part is { type: "text"; text: string } => part.type === "text"
+    )
     .map((part) => part.text)
     .join("\n\n");
-  const files = message.parts.filter((part): part is FileUIPart => part.type === "file");
+  const files = message.parts.filter(
+    (part): part is FileUIPart => part.type === "file"
+  );
   if (files.length === 0) return text;
   return [
     ...(text ? [{ type: "text", text }] : []),
@@ -497,12 +593,15 @@ function routes(options: EveStreamTurnOptions) {
   return {
     create: `${base}/session`,
     session: (id: string) => `${base}/session/${id}`,
-    stream: (id: string, from: number) => `${base}/session/${id}/stream?startIndex=${from}`,
+    stream: (id: string, from: number) =>
+      `${base}/session/${id}/stream?startIndex=${from}`,
     cancel: (id: string) => `${base}/session/${id}/cancel`,
   };
 }
 
-async function* ndjson(body: ReadableStream<Uint8Array>): AsyncGenerator<EveEvent> {
+async function* ndjson(
+  body: ReadableStream<Uint8Array>
+): AsyncGenerator<EveEvent> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -575,10 +674,20 @@ export function eveStreamTurn(options: EveStreamTurnOptions): StreamTurn {
     let sessionId = eve.sessionId;
     let streamIndex = eve.streamIndex ?? 0;
     const send = async (target: string) =>
-      doFetch(target, { method: "POST", headers, body: JSON.stringify(payload), signal: context.abortSignal });
+      doFetch(target, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+        signal: context.abortSignal,
+      });
 
     let response = sessionId ? await send(url.session(sessionId)) : null;
-    if (!response || response.status === 404 || response.status === 409 || response.status === 410) {
+    if (
+      !response ||
+      response.status === 404 ||
+      response.status === 409 ||
+      response.status === 410
+    ) {
       response = await send(url.create);
       sessionId = undefined;
       streamIndex = 0;
@@ -596,17 +705,22 @@ export function eveStreamTurn(options: EveStreamTurnOptions): StreamTurn {
     const fixedSessionId = sessionId;
 
     const mapper = createEveEventMapper();
-    let settle: (usage: TokenUsage & { modelId?: string; finishReason?: string }) => void;
+    let settle: (
+      usage: TokenUsage & { modelId?: string; finishReason?: string }
+    ) => void;
     let fail: (error: unknown) => void;
-    const usage = new Promise<TokenUsage & { modelId?: string; finishReason?: string }>(
-      (resolve, reject) => {
-        settle = resolve;
-        fail = reject;
-      }
-    );
+    const usage = new Promise<
+      TokenUsage & { modelId?: string; finishReason?: string }
+    >((resolve, reject) => {
+      settle = resolve;
+      fail = reject;
+    });
 
     const onAbort = () => {
-      void doFetch(url.cancel(fixedSessionId), { method: "POST", headers }).catch(() => {});
+      void doFetch(url.cancel(fixedSessionId), {
+        method: "POST",
+        headers,
+      }).catch(() => {});
     };
     context.abortSignal.addEventListener("abort", onAbort, { once: true });
 
@@ -626,24 +740,30 @@ export function eveStreamTurn(options: EveStreamTurnOptions): StreamTurn {
             for (const chunk of mapper.map(event)) controller.enqueue(chunk);
             if (mapper.state.done) break;
           }
-          await turn.updateMetadata({
-            eve: {
-              sessionId: fixedSessionId,
-              streamIndex: streamIndex + count,
-              ...(mapper.state.pendingQuestion
-                ? { pendingQuestion: mapper.state.pendingQuestion }
-                : clearQuestion
-                  ? { pendingQuestion: null }
-                  : {}),
-            },
-          }).catch(() => {});
+          await turn
+            .updateMetadata({
+              eve: {
+                sessionId: fixedSessionId,
+                streamIndex: streamIndex + count,
+                ...(mapper.state.pendingQuestion
+                  ? { pendingQuestion: mapper.state.pendingQuestion }
+                  : clearQuestion
+                    ? { pendingQuestion: null }
+                    : {}),
+              },
+            })
+            .catch(() => {});
           if (mapper.state.failed) {
             fail(new Error(mapper.state.failed));
           } else {
             settle({
               ...mapper.state.usage,
-              ...(mapper.state.modelId ? { modelId: mapper.state.modelId } : {}),
-              ...(mapper.state.finishReason ? { finishReason: mapper.state.finishReason } : {}),
+              ...(mapper.state.modelId
+                ? { modelId: mapper.state.modelId }
+                : {}),
+              ...(mapper.state.finishReason
+                ? { finishReason: mapper.state.finishReason }
+                : {}),
             });
           }
           controller.close();

@@ -90,7 +90,7 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   change; without them every date on every page stays UTC.
 - `@intelligo-dev/core`: `DocumentListItem` gains
   `conversationId: string | null`, read from the row's `metadata`.
-  Harmless to read — but anything that *constructs* one (a test double,
+  Harmless to read — but anything that _constructs_ one (a test double,
   a preview fixture) has to supply it.
 - **Migration 0045 drops the money columns 0044 replaced**, and with
   them the last of the surface that named an amount after a currency.
@@ -101,15 +101,15 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   `billing_settings.usd_to_mnt_rate` / `margin_multiplier_bp`.
   - **The deploy order is the reverse of 0044.** That migration was
     additive, so it ran first; this one is destructive, so deploy the
-    code that has stopped writing these columns and *then* migrate.
+    code that has stopped writing these columns and _then_ migrate.
     Running it under the old code breaks inserts immediately —
     `credit_reservations.estimated_mnt` was NOT NULL with no default.
     The migration refuses to run at all if 0044 has not: `DROP COLUMN
-    IF EXISTS` would otherwise delete amounts nothing had copied.
+IF EXISTS` would otherwise delete amounts nothing had copied.
   - Not dropped: `trial_credits.initial_credits`, `credits_used` and
     `credits_remaining`. Those count tokens rather than money, 0044
     never replaced them, and retiring them would change what a trial
-    *is* rather than what it is denominated in.
+    _is_ rather than what it is denominated in.
   - `executions`: `calculateCost`, `calculateChargedMnt`,
     `estimateWorstCaseChargedMnt`, `DEFAULT_BILLING_MARGIN`,
     `DEFAULT_USD_TO_MNT_RATE` and `ChargedAmount` are gone —

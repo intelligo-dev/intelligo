@@ -29,7 +29,11 @@ type Part = PartLike & {
 
 const text = (value: string): Part => ({ type: "text", text: value });
 const reasoning = (value: string): Part => ({ type: "reasoning", text: value });
-const tool = (name: string, state = "output-available", output?: unknown): Part => ({
+const tool = (
+  name: string,
+  state = "output-available",
+  output?: unknown
+): Part => ({
   type: `tool-${name}`,
   state,
   output,
@@ -40,11 +44,21 @@ const notCard = () => false;
 describe("groupParts", () => {
   it("folds reasoning and tool calls between text into one activity", () => {
     const segments = groupParts(
-      [step, reasoning("hm"), tool("webSearch"), step, tool("webSearch"), text("Answer")],
+      [
+        step,
+        reasoning("hm"),
+        tool("webSearch"),
+        step,
+        tool("webSearch"),
+        text("Answer"),
+      ],
       notCard
     );
     expect(segments.map((s) => s.kind)).toEqual(["activity", "part"]);
-    const activity = segments[0] as Extract<(typeof segments)[number], { kind: "activity" }>;
+    const activity = segments[0] as Extract<
+      (typeof segments)[number],
+      { kind: "activity" }
+    >;
     expect(activity.parts.map((p) => p.index)).toEqual([1, 2, 4]);
   });
 
@@ -53,7 +67,12 @@ describe("groupParts", () => {
       [tool("a"), text("so far"), tool("b"), text("done")],
       notCard
     );
-    expect(segments.map((s) => s.kind)).toEqual(["activity", "part", "activity", "part"]);
+    expect(segments.map((s) => s.kind)).toEqual([
+      "activity",
+      "part",
+      "activity",
+      "part",
+    ]);
   });
 
   it("empty text does not break a run", () => {
@@ -66,7 +85,11 @@ describe("groupParts", () => {
       [tool("a"), tool("saveArtifact"), tool("b")],
       (part) => part.type === "tool-saveArtifact"
     );
-    expect(segments.map((s) => s.kind)).toEqual(["activity", "part", "activity"]);
+    expect(segments.map((s) => s.kind)).toEqual([
+      "activity",
+      "part",
+      "activity",
+    ]);
   });
 
   it("drops empty reasoning", () => {
@@ -74,13 +97,19 @@ describe("groupParts", () => {
   });
 
   it("data parts stand on their own", () => {
-    const segments = groupParts([tool("a"), { type: "data-chat-task" }], notCard);
+    const segments = groupParts(
+      [tool("a"), { type: "data-chat-task" }],
+      notCard
+    );
     expect(segments.map((s) => s.kind)).toEqual(["activity", "part"]);
   });
 });
 
 describe("isActivityWorking", () => {
-  const [segment] = groupParts([tool("a", "input-available")], notCard) as Array<{
+  const [segment] = groupParts(
+    [tool("a", "input-available")],
+    notCard
+  ) as Array<{
     kind: "activity";
     key: string;
     parts: Array<{ index: number; part: Part }>;
@@ -167,7 +196,9 @@ describe("citations in text", () => {
   });
 
   it("leaves markdown links alone", () => {
-    expect(linkCitations("[1](https://x.com)", new Set([1]))).toBe("[1](https://x.com)");
+    expect(linkCitations("[1](https://x.com)", new Set([1]))).toBe(
+      "[1](https://x.com)"
+    );
   });
 
   it("parses what it wrote", () => {
@@ -179,13 +210,19 @@ describe("citations in text", () => {
 describe("titleFromUrl", () => {
   it("de-slugs the last meaningful path segment", () => {
     expect(
-      titleFromUrl("https://www.herodevs.com/blog-posts/node-js-end-of-life-dates")
+      titleFromUrl(
+        "https://www.herodevs.com/blog-posts/node-js-end-of-life-dates"
+      )
     ).toBe("Node js end of life dates");
-    expect(titleFromUrl("https://en.wikipedia.org/wiki/TypeScript")).toBe("TypeScript");
+    expect(titleFromUrl("https://en.wikipedia.org/wiki/TypeScript")).toBe(
+      "TypeScript"
+    );
   });
 
   it("skips ids and names nothing for a front page", () => {
-    expect(titleFromUrl("https://github.com/nodejs/node/releases/123456")).toBe("Releases");
+    expect(titleFromUrl("https://github.com/nodejs/node/releases/123456")).toBe(
+      "Releases"
+    );
     expect(titleFromUrl("https://dev.to/")).toBeUndefined();
   });
 });

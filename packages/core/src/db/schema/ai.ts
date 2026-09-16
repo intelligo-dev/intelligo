@@ -120,10 +120,9 @@ export const attachments = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    conversationId: text("conversation_id").references(
-      () => conversations.id,
-      { onDelete: "set null" }
-    ),
+    conversationId: text("conversation_id").references(() => conversations.id, {
+      onDelete: "set null",
+    }),
     storageKey: text("storage_key").notNull(),
     filename: text("filename").notNull(),
     mediaType: text("media_type").notNull(),

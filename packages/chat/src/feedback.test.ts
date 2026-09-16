@@ -27,11 +27,10 @@ afterEach(() => vi.clearAllMocks());
 describe("recordChatFeedback", () => {
   it("writes a vote and tells the feedback hook once", async () => {
     const feedback = vi.fn();
-    const result = await recordChatFeedback(
-      { onTurn: { feedback } },
-      actor,
-      { ...params, vote: "up" }
-    );
+    const result = await recordChatFeedback({ onTurn: { feedback } }, actor, {
+      ...params,
+      vote: "up",
+    });
     expect(result).toEqual({ ok: true });
     expect(mocks.voteMessage).toHaveBeenCalledWith(actor, {
       chatId: "c-1",

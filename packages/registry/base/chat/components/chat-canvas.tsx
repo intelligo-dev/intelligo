@@ -177,7 +177,8 @@ export function ChatCanvas({
     });
   }
 
-  const extension = canvas.kind === "code" ? extensionOf(canvas.title) : undefined;
+  const extension =
+    canvas.kind === "code" ? extensionOf(canvas.title) : undefined;
   const description =
     canvas.status === "streaming" ? (
       <>
@@ -206,7 +207,9 @@ export function ChatCanvas({
             <Icon className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <ArtifactTitle className="truncate leading-5">{canvas.title}</ArtifactTitle>
+            <ArtifactTitle className="truncate leading-5">
+              {canvas.title}
+            </ArtifactTitle>
             <ArtifactDescription className="flex min-h-4 items-center gap-1.5 truncate text-xs leading-4">
               {description}
             </ArtifactDescription>
@@ -240,7 +243,9 @@ export function ChatCanvas({
                     view === option && "bg-background text-foreground shadow-xs"
                   )}
                 >
-                  {option === "preview" ? t("canvas.preview") : t("canvas.source")}
+                  {option === "preview"
+                    ? t("canvas.preview")
+                    : t("canvas.source")}
                 </button>
               ))}
             </div>
@@ -310,13 +315,20 @@ export function ChatCanvas({
                 tooltip={t("canvas.openInArtifacts")}
                 icon={ExternalLinkIcon}
                 render={
-                  <Link href={`/artifacts?document=${encodeURIComponent(documentId)}`} />
+                  <Link
+                    href={`/artifacts?document=${encodeURIComponent(documentId)}`}
+                  />
                 }
                 nativeButton={false}
               />
             ) : null}
             {!isLatest ? (
-              <Button size="xs" variant="outline" type="button" onClick={restore}>
+              <Button
+                size="xs"
+                variant="outline"
+                type="button"
+                onClick={restore}
+              >
                 <HistoryIcon data-icon="inline-start" />
                 {t("canvas.restore")}
               </Button>

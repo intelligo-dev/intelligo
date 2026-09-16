@@ -92,10 +92,13 @@ d("attachments service — real DB integration", () => {
     });
     expect(orphans.map((a) => a.id)).toContain(created.id);
 
-    await service.setExtractedText({ workspaceId }, {
-      id: created.id,
-      text: "abc",
-    });
+    await service.setExtractedText(
+      { workspaceId },
+      {
+        id: created.id,
+        text: "abc",
+      }
+    );
     expect(
       (await service.getAttachment({ workspaceId }, created.id)).extractedText
     ).toBe("abc");

@@ -439,9 +439,7 @@ describe("reconcile", () => {
     const settleUsage = vi.fn();
     const executions = createExecutions({
       settleUsage,
-      findSettlement: vi
-        .fn()
-        .mockResolvedValue({ charged: money(42, "MNT") }),
+      findSettlement: vi.fn().mockResolvedValue({ charged: money(42, "MNT") }),
     });
 
     const r = await executions.reconcile("e-1");
