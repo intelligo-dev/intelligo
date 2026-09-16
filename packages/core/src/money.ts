@@ -255,6 +255,28 @@ export function convert(
   };
 }
 
+/** Two significant digits is enough to read a sub-cent amount by. */
+const SIGNIFICANT_DIGITS = 2;
+
+/**
+ * How many decimals an amount needs to be legible.
+ *
+ * The currency's own minor unit, except when that would render a real
+ * charge as nothing: one chat turn costs a fraction of a cent, and a
+ * usage page that says every request cost `$0.00` is worse than one
+ * that says `$0.0048`. Below the minor unit the amount is shown to two
+ * significant digits, capped at the six decimals micros can hold.
+ */
+export function displayFractionDigits(value: Money): number {
+  const digits = minorExponent(value.currency);
+  const major = Math.abs(toMajor(value));
+  // Zero, and anything that still rounds to a visible minor unit, reads
+  // the way the currency is normally written.
+  if (major === 0 || major >= 10 ** -digits / 2) return digits;
+  const leadingZeros = Math.floor(-Math.log10(major));
+  return Math.min(6, leadingZeros + SIGNIFICANT_DIGITS);
+}
+
 /**
  * Format for a human, in their locale.
  *
@@ -267,7 +289,7 @@ export function formatMoney(
   locale: string,
   options: Intl.NumberFormatOptions = {}
 ): string {
-  const digits = minorExponent(value.currency);
+  const digits = displayFractionDigits(value);
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: value.currency,

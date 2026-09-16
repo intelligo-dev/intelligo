@@ -6,6 +6,7 @@ import {
   compare,
   convert,
   currency,
+  displayFractionDigits,
   formatMoney,
   fromMajor,
   fromMinor,
@@ -159,5 +160,44 @@ describe("formatMoney", () => {
   it("shows no decimals for a zero-decimal currency", () => {
     expect(formatMoney(fromMajor(3450, "MNT"), "en-US")).not.toMatch(/\./);
     expect(formatMoney(fromMajor(1000, "JPY"), "ja-JP")).toBe("￥1,000");
+  });
+
+  it("shows a sub-cent charge instead of rounding it to nothing", () => {
+    // What one chat turn costs. "$0.00" on a usage page is a bug report.
+    expect(formatMoney(fromMajor(0.0048, "USD"), "en-US")).toBe("$0.0048");
+    expect(formatMoney(money(1, "USD"), "en-US")).toBe("$0.000001");
+  });
+
+  it("lets the caller override the digits", () => {
+    expect(
+      formatMoney(fromMajor(0.0048, "USD"), "en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    ).toBe("$0.00");
+  });
+});
+
+describe("displayFractionDigits", () => {
+  it("uses the currency's own minor unit when the amount is visible there", () => {
+    expect(displayFractionDigits(fromMajor(12.34, "USD"))).toBe(2);
+    expect(displayFractionDigits(fromMajor(0.0074, "USD"))).toBe(2); // rounds to 1¢
+    expect(displayFractionDigits(zero("USD"))).toBe(2);
+    expect(displayFractionDigits(fromMajor(17, "MNT"))).toBe(0);
+    expect(displayFractionDigits(fromMajor(0, "JPY"))).toBe(0);
+  });
+
+  it("grows to two significant digits below the minor unit", () => {
+    expect(displayFractionDigits(fromMajor(0.0048, "USD"))).toBe(4);
+    expect(displayFractionDigits(fromMajor(0.00012, "USD"))).toBe(5);
+    expect(displayFractionDigits(fromMajor(0.4, "MNT"))).toBe(2);
+  });
+
+  it("caps at the six decimals micros can hold", () => {
+    expect(displayFractionDigits(money(1, "USD"))).toBe(6);
+  });
+
+  it("reads a negative amount by its magnitude", () => {
+    expect(displayFractionDigits(fromMajor(-0.0048, "USD"))).toBe(4);
   });
 });
