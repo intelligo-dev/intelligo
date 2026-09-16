@@ -1,10 +1,11 @@
 /**
  * The design-system catalog (ADR-0013). T1 and T2 are the shadcn
  * base-nova components installed in this site with the shadcn CLI —
- * the same files a consumer gets. T3 and T4 are Intelligo items the
- * registry migration ships; they are listed here as planned until they
- * exist. The build fails if an installed component has no entry, or a
- * block depends on a component the catalog does not have.
+ * the same files a consumer gets. T3 and T4 are Intelligo's own
+ * `registry:ui` items, read from registry.json so a new one appears here
+ * and a retired one disappears. The build fails if an installed
+ * component has no entry, or a block depends on a component the catalog
+ * does not have.
  */
 import registry from "@/data/registry.json";
 
@@ -21,11 +22,11 @@ export const TIERS: Record<Tier, { title: string; lede: string }> = {
   },
   T3: {
     title: "AI parts",
-    lede: "Reasoning, tool calls, code and sources — ported from Vercel AI Elements to base-nova until upstream supports Base UI.",
+    lede: "The parts an agent's interface is made of — messages, reasoning, tool calls, approvals, citations, artifacts — on Base UI and the token contract.",
   },
   T4: {
     title: "Intelligo patterns",
-    lede: "Only what at least three blocks repeat and no tier above covers.",
+    lede: "Page furniture every block repeats and no tier above covers: page header, stat card, status badge, copy button, document viewer.",
   },
 };
 
@@ -104,112 +105,6 @@ const INSTALLED = {
 
 export type ComponentName = keyof typeof INSTALLED;
 
-/** Planned tiers: shipped by the registry migration (ADR-0013 §6). */
-export const PLANNED: {
-  name: string;
-  tier: Tier;
-  description: string;
-  usedBy?: string[];
-}[] = [
-  {
-    name: "ai-prompt-input",
-    tier: "T3",
-    description:
-      "The composer: autosizing textarea, attachments, submit and stop.",
-  },
-  {
-    name: "ai-reasoning",
-    tier: "T3",
-    description: "Streamed reasoning, collapsible, with its duration.",
-  },
-  {
-    name: "ai-tool",
-    tier: "T3",
-    description: "A tool call: name, state, input and output.",
-  },
-  {
-    name: "ai-code-block",
-    tier: "T3",
-    description: "Highlighted code with copy.",
-  },
-  { name: "ai-sources", tier: "T3", description: "The sources a reply cites." },
-  {
-    name: "ai-suggestion",
-    tier: "T3",
-    description: "Conversation starters and follow-ups.",
-  },
-  {
-    name: "ai-artifact",
-    tier: "T3",
-    description: "A generated document, linked from the turn that made it.",
-  },
-  {
-    name: "ai-branch",
-    tier: "T3",
-    description: "A pager over the versions of a reply.",
-  },
-  {
-    name: "ai-chain-of-thought",
-    tier: "T3",
-    description: "An agent's steps as a timeline with a status each.",
-  },
-  {
-    name: "ai-task",
-    tier: "T3",
-    description: "A plan the agent is working through.",
-  },
-  {
-    name: "ai-approval",
-    tier: "T3",
-    description: "A human-in-the-loop decision: allow or deny a tool.",
-  },
-  {
-    name: "ai-inline-citation",
-    tier: "T3",
-    description: "A numbered marker that reveals its source.",
-  },
-  {
-    name: "ai-image",
-    tier: "T3",
-    description: "An image that reserves its space.",
-  },
-  {
-    name: "ai-speech-input",
-    tier: "T3",
-    description: "Voice into the composer.",
-  },
-  {
-    name: "ai-composer-menu",
-    tier: "T3",
-    description: "Slash commands and @ mentions in the composer.",
-  },
-  {
-    name: "ai-shimmer-text",
-    tier: "T3",
-    description: "A live status line while the agent works.",
-  },
-  {
-    name: "page-header",
-    tier: "T4",
-    description: "The one page title: heading, description, actions.",
-  },
-  {
-    name: "stat-card",
-    tier: "T4",
-    description: "A metric: label, value, change.",
-  },
-  {
-    name: "status-badge",
-    tier: "T4",
-    description: "A status in a status token — never a palette colour.",
-  },
-  {
-    name: "copy-button",
-    tier: "T4",
-    description: "Copy with confirmation, the same everywhere.",
-  },
-];
-
 export type CatalogEntry = {
   name: ComponentName;
   tier: Tier;
@@ -218,7 +113,13 @@ export type CatalogEntry = {
   usedBy: string[];
 };
 
-type RawItem = { name: string; type: string; registryDependencies?: string[] };
+type RawItem = {
+  name: string;
+  type: string;
+  title?: string;
+  description?: string;
+  registryDependencies?: string[];
+};
 const rawItems = (registry as { items: RawItem[] }).items;
 const blocks = rawItems.filter(
   (i) => i.type === "registry:block" && i.name !== "smoke"
@@ -228,13 +129,6 @@ const blocks = rawItems.filter(
 const INTELLIGO_UI = new Set(
   rawItems.filter((i) => i.type === "registry:ui").map((i) => i.name)
 );
-
-/** Which blocks already depend on each planned component. */
-for (const entry of PLANNED) {
-  entry.usedBy = blocks
-    .filter((b) => b.registryDependencies?.includes(`@intelligo/${entry.name}`))
-    .map((b) => b.name);
-}
 
 export const CATALOG: CatalogEntry[] = (
   Object.keys(INSTALLED) as ComponentName[]
@@ -246,6 +140,80 @@ export const CATALOG: CatalogEntry[] = (
     .filter((b) => b.registryDependencies?.includes(name))
     .map((b) => b.name),
 }));
+
+/** Intelligo's own components: T3 AI parts and T4 patterns (`@intelligo/<name>`). */
+export type IntelligoEntry = {
+  name: string;
+  title: string;
+  tier: "T3" | "T4";
+  group: string;
+  description: string;
+  usedBy: string[];
+};
+
+/** How the T3 parts are grouped on /components; an unlisted part lands in "More parts". */
+const AI_GROUPS: Record<string, string[]> = {
+  Conversation: [
+    "ai-message",
+    "ai-message-bubble",
+    "ai-message-scroller",
+    "ai-streaming-response",
+    "ai-prompt-input",
+    "ai-suggestion",
+    "ai-branch",
+    "ai-composer-menu",
+    "ai-speech-input",
+  ],
+  "Agent at work": [
+    "ai-agent-activity",
+    "ai-agent-progress",
+    "ai-reasoning",
+    "ai-reasoning-text",
+    "ai-shimmer-text",
+    "ai-todo-list",
+    "ai-tool-approval",
+    "ai-tool-result",
+    "ai-approval-card",
+    "ai-file-diff",
+  ],
+  "What it produces": [
+    "ai-citations",
+    "ai-code-block",
+    "ai-artifact",
+    "ai-image-generation",
+    "ai-sidebar",
+    "ai-motion",
+  ],
+};
+const groupOf = (name: string, tier: "T3" | "T4") =>
+  tier === "T4"
+    ? "Patterns"
+    : (Object.entries(AI_GROUPS).find(([, names]) =>
+        names.includes(name)
+      )?.[0] ?? "More parts");
+
+export const INTELLIGO: IntelligoEntry[] = rawItems
+  .filter((i) => i.type === "registry:ui")
+  .map((i) => {
+    const text = i.description ?? "";
+    const tier = text.match(/ADR-0013,? (T[34])/)?.[1] === "T3" ? "T3" : "T4";
+    return {
+      name: i.name,
+      title: i.title ?? i.name,
+      tier,
+      group: groupOf(i.name, tier),
+      description: text.replace(/\s*\(ADR-0013[^)]*\)/g, "").replace(/\s+/g, " ").trim(),
+      usedBy: blocks
+        .filter((b) => b.registryDependencies?.includes(`@intelligo/${i.name}`))
+        .map((b) => b.name),
+    };
+  });
+
+export const INTELLIGO_GROUPS = [
+  ...Object.keys(AI_GROUPS),
+  "More parts",
+  "Patterns",
+].filter((g) => INTELLIGO.some((e) => e.group === g));
 
 /** Site-only marketing effects live beside the installed components and are not part of the system. */
 const SITE_EFFECTS = new Set([

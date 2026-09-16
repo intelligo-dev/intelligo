@@ -1,7 +1,15 @@
 ---
+/**
+ * The design system (ADR-0013), in the order a reader cares about it:
+ * Intelligo's own AI parts and patterns first, then the shadcn tiers
+ * they sit on, then the token contract underneath. One sidebar across
+ * all of it; every demo is the installed source, live.
+ */
 import Page from "@/layouts/Page.astro";
 import { PrimitiveDemo } from "@/showcase/primitives";
-import { CATALOG, PLANNED, TIERS, type Tier } from "@/lib/primitives";
+import { IntelligoDemo } from "@/showcase/intelligo-demos";
+import { CATALOG, INTELLIGO, INTELLIGO_GROUPS, TIERS, type ComponentName } from "@/lib/primitives";
+import { blockHref } from "@/lib/registry-items";
 import { CONTRAST_PAIRS, DURATIONS, EASINGS, LAYERS, TOKENS } from "@/lib/design-tokens";
 import { countWord } from "@/lib/count-words";
 import { SITE } from "@/lib/site";
@@ -20,20 +28,104 @@ const FONTS = [
   ["--font-mono", "Geist Mono", "font-mono", "pnpm exec shadcn add intelligo.dev/r/chat.json"],
   ["--font-heading", "Outfit · site only", "heading", "The application framework for vertical AI SaaS."],
 ];
-const live: Tier[] = ["T1", "T2"];
-const Count = countWord(CATALOG.length);
+const idOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+const Count = countWord(INTELLIGO.length);
+
+type Entry = { name: string; description: string; usedBy: string[]; intelligo: boolean };
+type Group = { id: string; tag: string; title: string; lede?: string; entries: Entry[] };
+
+const GROUPS: Group[] = [
+  ...INTELLIGO_GROUPS.map((g) => {
+    const entries = INTELLIGO.filter((e) => e.group === g);
+    const tier = entries[0]!.tier;
+    return {
+      id: idOf(g),
+      tag: `${tier} · ${TIERS[tier].title}`,
+      title: g,
+      lede: g === "Patterns" ? TIERS.T4.lede : undefined,
+      entries: entries.map((e) => ({ ...e, intelligo: true })),
+    };
+  }),
+  ...(["T1", "T2"] as const).map((tier) => ({
+    id: tier.toLowerCase(),
+    tag: `${tier} · shadcn base-nova`,
+    title: TIERS[tier].title,
+    lede: TIERS[tier].lede,
+    entries: CATALOG.filter((c) => c.tier === tier).map((c) => ({ ...c, intelligo: false })),
+  })),
+];
+
+const install = (e: Entry) =>
+  e.intelligo ? `pnpm dlx shadcn add ${SITE.registryBase}/${e.name}.json` : `pnpm dlx shadcn add ${e.name}`;
 ---
 <Page
   path="/components"
   tag="components · the design system"
-  title={`${Count} components,<br />one design system.`}
-  lede="shadcn base-nova on Base UI, the intelligo token contract, and the tiers every registry block is built from (ADR-0013). Everything below is the installed source, live — switch the theme in the nav and it all follows."
-  description={`The Intelligo design system: tokens, WCAG AA contrast, and ${CATALOG.length} base-nova components every registry block renders with.`}
+  title={`${Count} AI parts and patterns,<br />one design system.`}
+  lede={`Intelligo's own components — messages, reasoning, tool calls, approvals, citations, artifacts — on shadcn base-nova, Base UI and the intelligo token contract, beside the ${CATALOG.length} shadcn components every block also uses (ADR-0013). Everything below is the installed source, live; switch the theme in the nav and it follows.`}
+  description={`The Intelligo design system: ${INTELLIGO.length} AI parts and patterns, ${CATALOG.length} base-nova components, the token contract and WCAG AA contrast — all rendered live.`}
 >
-  <section id="tokens" class="xline">
-    <div class="px-6 py-10 md:px-10 md:py-14">
+  <section class="xline">
+    <div class="grid lg:grid-cols-[210px_minmax(0,1fr)]">
+      <aside class="hidden border-r border-border lg:block">
+        <nav aria-label="Components" class="sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto px-6 py-8">
+          {GROUPS.map((g) => (
+            <div class="mb-5">
+              <a href={`#${g.id}`} class="tag block no-underline hover:text-foreground">{g.title}</a>
+              <ul class="mt-1 space-y-0.5">
+                {g.entries.map((e) => (
+                  <li><a href={`#${e.name}`} class="mono block truncate text-[0.72rem] text-foreground/70 no-underline hover:text-foreground">{e.name}</a></li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          <a href="#tokens" class="tag block no-underline hover:text-foreground">Tokens</a>
+        </nav>
+      </aside>
+
+      <div class="min-w-0">
+        <nav aria-label="Component groups" class="flex flex-wrap gap-x-5 gap-y-2 border-b border-border px-6 py-4 lg:hidden">
+          {GROUPS.map((g) => (
+            <a href={`#${g.id}`} class="mono text-[0.75rem] text-foreground/70 no-underline hover:text-foreground">{g.title} <span class="text-muted-foreground">{g.entries.length}</span></a>
+          ))}
+          <a href="#tokens" class="mono text-[0.75rem] text-foreground/70 no-underline hover:text-foreground">Tokens</a>
+        </nav>
+
+        {GROUPS.map((g, i) => (
+          <section id={g.id} class:list={["scroll-mt-16 px-6 py-10 md:px-10 md:py-14", i > 0 && "border-t border-border"]}>
+            <div class="section-head">
+              <span class="tag">{g.tag}</span>
+              <h2 class="heading text-2xl font-medium">{g.title}</h2>
+              {g.lede && <p class="mt-1 text-sm text-muted-foreground">{g.lede}</p>}
+            </div>
+            <div class="mt-10 space-y-14">
+              {g.entries.map((e) => (
+                <article id={e.name} class="scroll-mt-20">
+                  <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <h3 class="mono text-base">{e.name}</h3>
+                    <span class="mono text-xs text-muted-foreground">
+                      {e.usedBy.length ? `used by ${e.usedBy.length} block${e.usedBy.length === 1 ? "" : "s"}` : "not yet used by a block"}
+                    </span>
+                  </div>
+                  <p class="mt-1 max-w-[70ch] text-sm text-foreground/70">{e.description}</p>
+                  <div class="mt-4">
+                    {e.intelligo ? <IntelligoDemo client:visible name={e.name} /> : <PrimitiveDemo client:visible name={e.name as ComponentName} />}
+                  </div>
+                  <div class="mt-3 flex flex-wrap items-center gap-1">
+                    <code class="mono mr-2 max-w-full truncate rounded-md border bg-muted px-2 py-0.5 text-xs text-foreground/70">{install(e)}</code>
+                    {e.usedBy.map((b) => (
+                      <a href={blockHref(b)} class="mono rounded-md border px-1.5 py-0.5 text-xs text-muted-foreground no-underline hover:text-foreground">{b}</a>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ))}
+
+        <section id="tokens" class="scroll-mt-16 border-t border-border px-6 py-10 md:px-10 md:py-14">
       <div class="section-head">
-        <span class="tag">tokens</span>
+        <span class="tag">foundation · tokens</span>
         <h2 class="heading text-2xl font-medium">The token contract.</h2>
         <p class="mt-2 max-w-[60ch] text-sm text-muted-foreground">shadcn's official set, plus status, layer and motion tokens Intelligo adds and never renames. Read from <code class="mono">intelligo.dev/r/intelligo.json</code>.</p>
       </div>
@@ -151,75 +243,12 @@ const Count = countWord(CATALOG.length);
           </table>
         </div>
       </div>
-    </div>
-  </section>
-
-  {live.map((tier) => (
-    <section id={tier.toLowerCase()} class="xline">
-      <div class="grid gap-8 px-6 py-10 md:px-10 md:py-14 lg:grid-cols-[180px_minmax(0,1fr)]">
-        <nav aria-label={TIERS[tier].title} class="lg:sticky lg:top-24 lg:self-start">
-          <div class="tag mb-1">{tier} · {TIERS[tier].title}</div>
-          <ul class="flex flex-wrap gap-1 lg:flex-col lg:gap-0.5">
-            {CATALOG.filter((c) => c.tier === tier).map((c) => (
-              <li>
-                <a href={`#${c.name}`} class="mono block rounded-md border px-2 py-0.5 text-xs text-foreground/70 hover:text-foreground lg:border-transparent lg:px-0">{c.name}</a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <div class="min-w-0 space-y-14">
-          <div class="section-head">
-            <h2 class="heading text-2xl font-medium">{TIERS[tier].title}</h2>
-            <p class="mt-1 text-sm text-muted-foreground">{TIERS[tier].lede}</p>
-          </div>
-          {CATALOG.filter((c) => c.tier === tier).map((c) => (
-            <article id={c.name} class="scroll-mt-24">
-              <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h3 class="mono text-base">{c.name}</h3>
-                <span class="mono text-xs text-muted-foreground">
-                  {c.usedBy.length ? `used by ${c.usedBy.length} block${c.usedBy.length === 1 ? "" : "s"}` : "not yet used by a block"}
-                </span>
-              </div>
-              <p class="mt-1 text-sm text-foreground/70">{c.description}</p>
-              <div class="mt-4">
-                <PrimitiveDemo client:visible name={c.name} />
-              </div>
-              <div class="mt-3 flex flex-wrap items-center gap-1">
-                <code class="mono mr-2 rounded-md border bg-muted px-2 py-0.5 text-xs text-foreground/70">pnpm dlx shadcn add {c.name}</code>
-                {c.usedBy.map((b) => (
-                  <a href={`/blocks#${b}`} class="mono rounded-md border px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground">{b}</a>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
+        </section>
+        <p class="mono border-t border-border px-6 py-6 text-xs text-muted-foreground md:px-10">
+          Every component above is the source a consumer installs — the shadcn tiers with the shadcn CLI, Intelligo's from intelligo.dev/r.
+          <a href={`${SITE.adrs}/0013-design-system.md`} class="ml-1 hover:text-foreground">ADR-0013 →</a>
+        </p>
       </div>
-    </section>
-  ))}
-
-  <section id="planned" class="xline">
-    <div class="px-6 py-10 md:px-10 md:py-14">
-      <div class="section-head">
-        <span class="tag">T3 · T4 · in the registry</span>
-        <h2 class="heading text-2xl font-medium">AI parts and Intelligo patterns.</h2>
-        <p class="mt-2 max-w-[60ch] text-sm text-muted-foreground">Intelligo registry components blocks name as <code class="mono">@intelligo/&lt;name&gt;</code>. Install one with <code class="mono">pnpm dlx shadcn add @intelligo/&lt;name&gt;</code>.</p>
-      </div>
-      <div class="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {PLANNED.map((p) => (
-          <div class="rounded-md border border-dashed p-3">
-            <div class="flex items-center justify-between gap-2">
-              <span class="mono text-sm">{p.name}</span>
-              <span class="mono text-xs text-muted-foreground">{p.tier} · {TIERS[p.tier].title}</span>
-            </div>
-            <p class="mt-1 text-sm text-muted-foreground">{p.description}</p>
-          </div>
-        ))}
-      </div>
-      <p class="mono mt-6 text-xs text-muted-foreground">
-        The components above are the shadcn base-nova files installed in this site with the shadcn CLI — the same files a consumer gets.
-        <a href={`${SITE.adrs}/0013-design-system.md`} class="ml-1 hover:text-foreground">ADR-0013 →</a>
-      </p>
     </div>
   </section>
 </Page>
