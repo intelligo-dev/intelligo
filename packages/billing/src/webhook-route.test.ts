@@ -106,7 +106,7 @@ describe("createStripeWebhookHandler", () => {
       expect.objectContaining({
         stripeEventId: "evt_1",
         workspaceId: "ws-1",
-        amount: 500,
+        amountMinor: 500,
         processedAt: null,
       })
     );

@@ -243,23 +243,6 @@ function requireModel(modelId: string): ModelPricing {
   return pricing;
 }
 
-/**
- * Raw provider cost in USD.
- *
- * @throws {UnknownModelError} when the id has no registered price.
- */
-export function calculateCost(
-  modelId: string,
-  inputTokens: number,
-  outputTokens: number
-): number {
-  const config = requireModel(modelId);
-  return (
-    (inputTokens / 1_000_000) * config.costPerMInputTokens +
-    (outputTokens / 1_000_000) * config.costPerMOutputTokens
-  );
-}
-
 /** Providers quote in USD; every cost in this module starts there. */
 export const PROVIDER_CURRENCY: CurrencyCode = currency("USD");
 
@@ -303,7 +286,16 @@ export type BillingRate = {
   marginBp: number;
 };
 
-/** `40_000` bp = 4× provider cost. See the margin invariant below. */
+/**
+ * `40_000` bp = 4× provider cost, the fallback margin when a
+ * deployment's `billing_settings` row names none.
+ *
+ * INVARIANT — 65% gross margin floor (founder contract):
+ *   gross_margin = 1 − 1/multiplier
+ * Keeping gross_margin ≥ 0.65 means a multiplier ≥ 1/0.35 ≈ 2.857. At
+ * 4× this yields 75%, leaving buffer above the floor for FX moves and
+ * provider price rises. `pricing.test.ts` pins it.
+ */
 export const DEFAULT_MARGIN_BP = 40_000;
 
 const BP_PER_MULTIPLE = 10_000;
@@ -350,70 +342,3 @@ export function estimateWorstCaseCharge(
 }
 
 const ESTIMATE_INPUT_BUDGET = 16_000;
-
-/**
- * Default billing margin multiplier applied on top of raw model cost.
- * Covers infra, tool overhead, FX volatility, and profit. Tunable per
- * deploy via billing_settings.margin_multiplier; this constant is the
- * fallback when the DB value is absent.
- *
- * INVARIANT — 65% gross margin floor (founder contract):
- *   gross_margin = 1 − 1/multiplier
- *   Keeping gross_margin ≥ 0.65 means multiplier ≥ 1/0.35 ≈ 2.857. The
- *   current value of 4 yields 75%, leaving buffer above the floor for
- *   FX moves and provider price rises. `pricing.test.ts` pins it.
- */
-export const DEFAULT_BILLING_MARGIN = 4;
-
-/**
- * Default USD→MNT exchange rate fallback. Real value lives in
- * billing_settings.usd_to_mnt_rate and is read per request.
- */
-export const DEFAULT_USD_TO_MNT_RATE = 3450;
-
-export type ChargedAmount = {
-  rawCostUsd: number;
-  chargedMnt: number;
-};
-
-/**
- * Convert raw model cost to the user-facing charged amount.
- *
- * chargedMnt = ceil( rawCostUsd × margin × fxRate )
- *
- * The rounding is upward so micro-fractions never let a free request
- * slip through; over-billing per request is at most one unit.
- *
- * @throws {UnknownModelError} when the id has no registered price.
- */
-export function calculateChargedMnt(
-  modelId: string,
-  inputTokens: number,
-  outputTokens: number,
-  fxRate: number = DEFAULT_USD_TO_MNT_RATE,
-  margin: number = DEFAULT_BILLING_MARGIN
-): ChargedAmount {
-  const rawCostUsd = calculateCost(modelId, inputTokens, outputTokens);
-  const chargedMnt = Math.ceil(rawCostUsd * margin * fxRate);
-  return { rawCostUsd, chargedMnt };
-}
-
-/**
- * Worst-case cost estimate for a single chat turn against a given
- * model. Used by checkQuota to refuse requests whose ceiling cost would
- * exceed the remaining balance, before provider tokens are burnt. Uses
- * the model's own `maxOutputTokens` and a generous 16K input budget to
- * cover system prompt plus conversation history.
- *
- * @throws {UnknownModelError} when the id has no registered price.
- */
-export function estimateWorstCaseChargedMnt(
-  modelId: string,
-  fxRate: number = DEFAULT_USD_TO_MNT_RATE,
-  margin: number = DEFAULT_BILLING_MARGIN
-): number {
-  const outputBudget = requireModel(modelId).maxOutputTokens;
-  const inputBudget = 16_000;
-  return calculateChargedMnt(modelId, inputBudget, outputBudget, fxRate, margin)
-    .chargedMnt;
-}

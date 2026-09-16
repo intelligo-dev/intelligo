@@ -79,8 +79,6 @@ export type ExecutionRun = {
   code?: string;
   /** Set when allowed is false. */
   reason?: string;
-  /** @deprecated Read `estimated`. */
-  estimatedMnt?: number;
   /** The hold entitlement took for this run. */
   estimated?: Money;
   usingTrialCredits: boolean;
@@ -116,7 +114,6 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       requestId,
       status: decision.allowed ? "running" : "refused",
       model: input.model ?? null,
-      reservedMnt: decision.estimatedMnt ?? null,
       reservedMicros: decision.estimated?.amount ?? null,
       currency: decision.estimated?.currency ?? null,
       refusalReason: decision.allowed ? null : (decision.reason ?? "refused"),
@@ -150,7 +147,6 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         allowed: false,
         code: decision.code,
         reason: decision.reason,
-        estimatedMnt: decision.estimatedMnt,
         estimated: decision.estimated,
         usingTrialCredits,
         async complete() {},
@@ -190,7 +186,6 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       id,
       requestId,
       allowed: true,
-      estimatedMnt: decision.estimatedMnt,
       estimated: decision.estimated,
       usingTrialCredits,
 
@@ -220,7 +215,6 @@ export function createExecutions(ports: ExecutionPorts = {}) {
           return;
         }
 
-        let chargedMnt: number | undefined;
         let charged: Money | undefined;
         if (ports.settleUsage) {
           try {
@@ -236,7 +230,6 @@ export function createExecutions(ports: ExecutionPorts = {}) {
               usingTrialCredits,
               metadata: result.metadata ?? input.metadata,
             });
-            chargedMnt = settled?.chargedMnt;
             charged = settled?.charged;
           } catch (error) {
             // Usage is money: never silently drop it. The row stays
@@ -274,7 +267,6 @@ export function createExecutions(ports: ExecutionPorts = {}) {
             inputTokens,
             outputTokens,
             totalTokens,
-            chargedMnt: chargedMnt ?? null,
             chargedMicros: charged?.amount ?? null,
             // Only a real charge names the currency; a free capability
             // leaves whatever the hold wrote.
@@ -293,7 +285,6 @@ export function createExecutions(ports: ExecutionPorts = {}) {
             capability: input.capability,
             model,
             totalTokens,
-            chargedMnt,
             charged,
           },
         });
@@ -458,22 +449,14 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         "settling",
         "succeeded",
         finish({
-          chargedMnt: existing.chargedMnt ?? null,
           chargedMicros: existing.charged?.amount ?? null,
           ...(existing.charged ? { currency: existing.charged.currency } : {}),
         })
       );
       if (moved) {
-        await audit("confirmed", {
-          chargedMnt: existing.chargedMnt,
-          charged: existing.charged,
-        });
+        await audit("confirmed", { charged: existing.charged });
       }
-      return {
-        action: "confirmed",
-        chargedMnt: existing.chargedMnt,
-        charged: existing.charged,
-      };
+      return { action: "confirmed", charged: existing.charged };
     }
 
     if (!ports.settleUsage || row.totalTokens === null) {
@@ -496,19 +479,17 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       usingTrialCredits: false,
       metadata: row.metadata ?? undefined,
     });
-    const chargedMnt = settled?.chargedMnt;
     const charged = settled?.charged;
     await cas(
       "settling",
       "succeeded",
       finish({
-        chargedMnt: chargedMnt ?? null,
         chargedMicros: charged?.amount ?? null,
         ...(charged ? { currency: charged.currency } : {}),
       })
     );
-    await audit("settled", { chargedMnt, charged });
-    return { action: "settled", chargedMnt, charged };
+    await audit("settled", { charged });
+    return { action: "settled", charged };
   }
 
   return { begin, reconcile };
@@ -521,9 +502,9 @@ export type ReconcileResult =
       reason?: string;
     }
   /** The ledger already held the charge; the row now says so. */
-  | { action: "confirmed"; chargedMnt?: number; charged?: Money }
+  | { action: "confirmed"; charged?: Money }
   /** Settlement was re-run from the recorded usage. */
-  | { action: "settled"; chargedMnt?: number; charged?: Money }
+  | { action: "settled"; charged?: Money }
   /** A stale `running` row was failed and its hold released. */
   | { action: "abandoned" };
 

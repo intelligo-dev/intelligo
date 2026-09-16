@@ -176,16 +176,16 @@ describe("begin", () => {
     const executions = createExecutions({
       checkEntitlement: vi.fn().mockResolvedValue({
         allowed: true,
-        estimatedMnt: 1500,
+        estimated: money(1500, "MNT"),
         usingTrialCredits: true,
       }),
     });
 
     const run = await executions.begin(beginInput);
 
-    expect(run.estimatedMnt).toBe(1500);
+    expect(run.estimated?.amount).toBe(1500);
     expect(run.usingTrialCredits).toBe(true);
-    expect(insertedRow().reservedMnt).toBe(1500);
+    expect(insertedRow().reservedMicros).toBe(1500);
   });
 
   it("carries a typed hold onto the row, with the currency it is in", async () => {
@@ -208,7 +208,9 @@ describe("begin", () => {
 
 describe("complete", () => {
   it("settles usage, marks the row succeeded, and audits", async () => {
-    const settleUsage = vi.fn().mockResolvedValue({ chargedMnt: 320 });
+    const settleUsage = vi
+      .fn()
+      .mockResolvedValue({ charged: money(320, "MNT") });
     const executions = createExecutions({ settleUsage });
 
     const run = await executions.begin({ ...beginInput, requestId: "req-7" });
@@ -232,7 +234,7 @@ describe("complete", () => {
     expect(updatedFields(1)).toMatchObject({
       status: "succeeded",
       totalTokens: 350,
-      chargedMnt: 320,
+      chargedMicros: 320,
       model: "anthropic/claude-sonnet-4-6",
     });
     expect(auditActions()).toEqual(["execution.completed"]);
@@ -300,7 +302,9 @@ describe("complete", () => {
     // The money, not just the audit trail. settleUsage used to run
     // before the compare-and-swap, so a second call deducted again and
     // only then discovered it had lost the race.
-    const settleUsage = vi.fn().mockResolvedValue({ chargedMnt: 100 });
+    const settleUsage = vi
+      .fn()
+      .mockResolvedValue({ charged: money(100, "MNT") });
     const executions = createExecutions({ settleUsage });
     const run = await executions.begin(beginInput);
 
@@ -312,7 +316,9 @@ describe("complete", () => {
   });
 
   it("does not charge when fail() already claimed the execution", async () => {
-    const settleUsage = vi.fn().mockResolvedValue({ chargedMnt: 100 });
+    const settleUsage = vi
+      .fn()
+      .mockResolvedValue({ charged: money(100, "MNT") });
     const executions = createExecutions({ settleUsage });
     const run = await executions.begin(beginInput);
 
@@ -332,7 +338,7 @@ describe("complete", () => {
     });
     const settleUsage = vi.fn().mockImplementation(async () => {
       order.push("settle");
-      return { chargedMnt: 1 };
+      return { charged: money(1, "MNT") };
     });
     const executions = createExecutions({ settleUsage });
     const run = await executions.begin(beginInput);
@@ -389,7 +395,7 @@ describe("fail", () => {
   it("does not release a hold that settlement already claimed", async () => {
     const releaseHold = vi.fn().mockResolvedValue(undefined);
     const executions = createExecutions({
-      settleUsage: vi.fn().mockResolvedValue({ chargedMnt: 50 }),
+      settleUsage: vi.fn().mockResolvedValue({ charged: money(50, "MNT") }),
       releaseHold,
     });
     const run = await executions.begin(beginInput);
@@ -433,23 +439,25 @@ describe("reconcile", () => {
     const settleUsage = vi.fn();
     const executions = createExecutions({
       settleUsage,
-      findSettlement: vi.fn().mockResolvedValue({ chargedMnt: 42 }),
+      findSettlement: vi
+        .fn()
+        .mockResolvedValue({ charged: money(42, "MNT") }),
     });
 
     const r = await executions.reconcile("e-1");
 
-    expect(r).toEqual({ action: "confirmed", chargedMnt: 42 });
+    expect(r).toEqual({ action: "confirmed", charged: money(42, "MNT") });
     expect(settleUsage).not.toHaveBeenCalled();
     expect(updatedFields(0)).toMatchObject({
       status: "succeeded",
-      chargedMnt: 42,
+      chargedMicros: 42,
     });
     expect(auditActions()).toEqual(["execution.reconciled"]);
   });
 
   it("re-runs settlement from the recorded usage when the ledger has no charge", async () => {
     mocks.selectRows.mockResolvedValue([settlingRow()]);
-    const settleUsage = vi.fn().mockResolvedValue({ chargedMnt: 7 });
+    const settleUsage = vi.fn().mockResolvedValue({ charged: money(7, "MNT") });
     const executions = createExecutions({
       settleUsage,
       findSettlement: vi.fn().mockResolvedValue(null),
@@ -457,7 +465,7 @@ describe("reconcile", () => {
 
     const r = await executions.reconcile("e-1");
 
-    expect(r).toEqual({ action: "settled", chargedMnt: 7 });
+    expect(r).toEqual({ action: "settled", charged: money(7, "MNT") });
     expect(settleUsage).toHaveBeenCalledWith(
       expect.objectContaining({
         requestId: "req-1",
@@ -468,7 +476,7 @@ describe("reconcile", () => {
     );
     expect(updatedFields(0)).toMatchObject({
       status: "succeeded",
-      chargedMnt: 7,
+      chargedMicros: 7,
     });
   });
 

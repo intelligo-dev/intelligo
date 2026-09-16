@@ -12,6 +12,8 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { money } from "@intelligo-dev/core/money";
+
 import {
   BillingNotConfiguredError,
   DEFAULT_REQUESTS_PER_MINUTE,
@@ -139,7 +141,7 @@ describe("registered values", () => {
     setDefaultProductSlug("alpha");
     registerTrialConfig("alpha", {
       initialCredits: 100,
-      initialCreditsMnt: 500,
+      grant: money(500_000_000, "MNT"),
       durationDays: 14,
       warningThreshold: 0.2,
       reminderDaysBeforeExpiry: 3,

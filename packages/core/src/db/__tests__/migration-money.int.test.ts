@@ -63,6 +63,48 @@ d("0044_money_micros", () => {
       [workspaceId, `money-mig-${suffix}`]
     );
 
+    // The precondition this test is about, built rather than assumed.
+    // Migration 0045 drops these columns, so a database that has run it
+    // cannot hold a pre-0044 ledger — and this test's subject is
+    // precisely what 0044 does to one. Materialising them here keeps the
+    // test true at any schema state instead of only on the one day the
+    // database sat between the two migrations.
+    // Every column 0044 reads, not merely the ones this test seeds:
+    // its backfills are guarded per table on one sentinel column, and
+    // `finance_events` is not guarded at all — a partial precondition
+    // left that one statement reading a column 0045 had dropped.
+    for (const statement of [
+      `ALTER TABLE billing_settings
+         ADD COLUMN IF NOT EXISTS usd_to_mnt_rate integer NOT NULL DEFAULT 3450,
+         ADD COLUMN IF NOT EXISTS margin_multiplier_bp integer NOT NULL DEFAULT 400`,
+      `ALTER TABLE credit_balances
+         ADD COLUMN IF NOT EXISTS balance_mnt integer NOT NULL DEFAULT 0,
+         ADD COLUMN IF NOT EXISTS total_purchased_mnt integer NOT NULL DEFAULT 0,
+         ADD COLUMN IF NOT EXISTS total_used_mnt integer NOT NULL DEFAULT 0`,
+      `ALTER TABLE credit_purchases
+         ADD COLUMN IF NOT EXISTS amount integer NOT NULL DEFAULT 0,
+         ADD COLUMN IF NOT EXISTS credits integer NOT NULL DEFAULT 0`,
+      `ALTER TABLE finance_events ADD COLUMN IF NOT EXISTS amount integer`,
+      `ALTER TABLE credit_reservations
+         ADD COLUMN IF NOT EXISTS estimated_mnt integer NOT NULL DEFAULT 0`,
+      `ALTER TABLE usage_records
+         ADD COLUMN IF NOT EXISTS charged_mnt integer NOT NULL DEFAULT 0,
+         ADD COLUMN IF NOT EXISTS cost real NOT NULL DEFAULT 0,
+         ADD COLUMN IF NOT EXISTS margin_multiplier real NOT NULL DEFAULT 0,
+         ADD COLUMN IF NOT EXISTS fx_rate real NOT NULL DEFAULT 0`,
+      `ALTER TABLE monthly_usage
+         ADD COLUMN IF NOT EXISTS charged_mnt integer NOT NULL DEFAULT 0`,
+      `ALTER TABLE trial_credits
+         ADD COLUMN IF NOT EXISTS initial_credits_mnt integer NOT NULL DEFAULT 0,
+         ADD COLUMN IF NOT EXISTS credits_used_mnt integer NOT NULL DEFAULT 0,
+         ADD COLUMN IF NOT EXISTS credits_remaining_mnt integer NOT NULL DEFAULT 0`,
+      `ALTER TABLE executions
+         ADD COLUMN IF NOT EXISTS charged_mnt integer,
+         ADD COLUMN IF NOT EXISTS reserved_mnt integer`,
+    ]) {
+      await client.query(statement);
+    }
+
     // Rows as the previous release wrote them: whole tugrik, no currency.
     await client.query(
       `INSERT INTO credit_balances (id, workspace_id, balance_mnt, total_purchased_mnt, total_used_mnt, updated_at)
@@ -90,6 +132,40 @@ d("0044_money_micros", () => {
     await client.query(`DELETE FROM monthly_usage WHERE id = $1`, [monthlyId]);
     await client.query(`DELETE FROM trial_credits WHERE id = $1`, [trialId]);
     await client.query(`DELETE FROM organization WHERE id = $1`, [workspaceId]);
+
+    // Put the schema back the way 0045 leaves it — symmetrical with
+    // what `beforeAll` added. Safe unconditionally: 0044 ran, so the
+    // micros columns these were copied into exist and nothing is lost.
+    for (const statement of [
+      `ALTER TABLE billing_settings
+         DROP COLUMN IF EXISTS usd_to_mnt_rate,
+         DROP COLUMN IF EXISTS margin_multiplier_bp`,
+      `ALTER TABLE credit_balances
+         DROP COLUMN IF EXISTS balance_mnt,
+         DROP COLUMN IF EXISTS total_purchased_mnt,
+         DROP COLUMN IF EXISTS total_used_mnt`,
+      `ALTER TABLE credit_purchases
+         DROP COLUMN IF EXISTS amount,
+         DROP COLUMN IF EXISTS credits`,
+      `ALTER TABLE finance_events DROP COLUMN IF EXISTS amount`,
+      `ALTER TABLE credit_reservations DROP COLUMN IF EXISTS estimated_mnt`,
+      `ALTER TABLE usage_records
+         DROP COLUMN IF EXISTS charged_mnt,
+         DROP COLUMN IF EXISTS cost,
+         DROP COLUMN IF EXISTS margin_multiplier,
+         DROP COLUMN IF EXISTS fx_rate`,
+      `ALTER TABLE monthly_usage DROP COLUMN IF EXISTS charged_mnt`,
+      `ALTER TABLE trial_credits
+         DROP COLUMN IF EXISTS initial_credits_mnt,
+         DROP COLUMN IF EXISTS credits_used_mnt,
+         DROP COLUMN IF EXISTS credits_remaining_mnt`,
+      `ALTER TABLE executions
+         DROP COLUMN IF EXISTS charged_mnt,
+         DROP COLUMN IF EXISTS reserved_mnt`,
+    ]) {
+      await client.query(statement);
+    }
+
     await client.end();
   });
 

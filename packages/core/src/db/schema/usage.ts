@@ -45,18 +45,10 @@ export const usageRecords = pgTable(
     outputTokens: integer("output_tokens").notNull().default(0),
     totalTokens: integer("total_tokens").notNull().default(0),
     /**
-     * Raw provider USD cost snapshot (kept under legacy column name for back-compat).
-     * Do NOT use for arithmetic — floating-point accumulation causes sub-cent
-     * discrepancies over many records. Use chargedMnt (integer MNT) for all math.
+     * What the provider charged, in USD micros. Integer on purpose:
+     * the `real` column this replaces accumulated sub-cent error over
+     * many records, which is why nothing may do arithmetic in floats.
      */
-    cost: real("cost").notNull().default(0),
-    /** Snapshot of billing margin multiplier applied to this request */
-    marginMultiplier: real("margin_multiplier").notNull().default(0),
-    /** Snapshot of USD→MNT FX rate used for conversion */
-    fxRate: real("fx_rate").notNull().default(0),
-    /** Authoritative MNT amount deducted from balance */
-    chargedMnt: integer("charged_mnt").notNull().default(0),
-    /** What the provider charged, in USD micros — exact, unlike `cost`. */
     providerCostMicros: bigint("provider_cost_micros", { mode: "number" })
       .notNull()
       .default(0),
@@ -113,8 +105,6 @@ export const monthlyUsage = pgTable(
     periodStart: timestamp("period_start").notNull(),
     periodEnd: timestamp("period_end").notNull(),
     tokensUsed: integer("tokens_used").notNull().default(0),
-    /** MNT-denominated total charged this period — authoritative for plan quota */
-    chargedMnt: integer("charged_mnt").notNull().default(0),
     /** The plan allowance spent this period, in micros of `currency`. */
     allowanceUsedMicros: bigint("allowance_used_micros", { mode: "number" })
       .notNull()
@@ -154,12 +144,6 @@ export const trialCredits = pgTable(
     initialCredits: integer("initial_credits").notNull().default(100000),
     creditsUsed: integer("credits_used").notNull().default(0),
     creditsRemaining: integer("credits_remaining").notNull().default(100000),
-    /** MNT-denominated trial grant (replaces token-denominated columns above) */
-    initialCreditsMnt: integer("initial_credits_mnt").notNull().default(5000),
-    creditsUsedMnt: integer("credits_used_mnt").notNull().default(0),
-    creditsRemainingMnt: integer("credits_remaining_mnt")
-      .notNull()
-      .default(5000),
     /** The grant, in micros of `currency`. */
     initialMicros: bigint("initial_micros", { mode: "number" })
       .notNull()

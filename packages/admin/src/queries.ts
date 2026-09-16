@@ -25,8 +25,6 @@ export type PlatformOverview = {
   executions24h: number;
   failed24h: number;
   refused24h: number;
-  /** @deprecated Read `charged24h`; this is whole tugrik with no currency. */
-  chargedMnt24h: number;
   /**
    * What the platform charged, one entry per currency in play. A
    * deployment bills in one, but the platform console is above them
@@ -54,7 +52,6 @@ export async function getPlatformOverview(): Promise<PlatformOverview> {
         status: executions.status,
         currency: executions.currency,
         n: sql<number>`count(*)`,
-        chargedMnt: sql<number>`coalesce(sum(${executions.chargedMnt}), 0)`,
         chargedMicros: sql<string>`coalesce(sum(${executions.chargedMicros}), 0)`,
       })
       .from(executions)
@@ -68,7 +65,6 @@ export async function getPlatformOverview(): Promise<PlatformOverview> {
     byStatus.set(r.status, { n: (byStatus.get(r.status)?.n ?? 0) + Number(r.n) });
   }
   const total = statusRows.reduce((sum, r) => sum + Number(r.n), 0);
-  const charged = statusRows.reduce((sum, r) => sum + Number(r.chargedMnt), 0);
 
   const micros = new Map<string, number>();
   for (const r of statusRows) {
@@ -85,7 +81,6 @@ export async function getPlatformOverview(): Promise<PlatformOverview> {
     executions24h: total,
     failed24h: byStatus.get("failed")?.n ?? 0,
     refused24h: byStatus.get("refused")?.n ?? 0,
-    chargedMnt24h: charged,
     charged24h: [...micros].map(([code, amount]) => money(amount, code)),
   };
 }

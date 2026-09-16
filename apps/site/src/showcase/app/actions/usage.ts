@@ -6,7 +6,6 @@ export type MoneyLike = { amount: number; currency: string };
 
 export type UsagePeriodSummary = {
   tokensUsed: number;
-  chargedAmount: number;
   charged: MoneyLike | null;
   requestCount: number;
 };
@@ -29,7 +28,6 @@ export type UsageRecord = {
   status: "running" | "settling" | "succeeded" | "failed" | "refused";
   model: string | null;
   totalTokens: number | null;
-  chargedAmount: number | null;
   charged: MoneyLike | null;
   startedAt: string;
   durationMs: number | null;
@@ -61,19 +59,16 @@ const usd = (major: number): MoneyLike => ({
 const SUMMARY: Record<UsagePeriod, UsagePeriodSummary> = {
   "7d": {
     tokensUsed: 412_300,
-    chargedAmount: 9.4,
     charged: usd(9.4),
     requestCount: 318,
   },
   "30d": {
     tokensUsed: 2_140_000,
-    chargedAmount: 41.2,
     charged: usd(41.2),
     requestCount: 1_284,
   },
   current: {
     tokensUsed: 1_960_500,
-    chargedAmount: 37.8,
     charged: usd(37.8),
     requestCount: 1_162,
   },
@@ -109,7 +104,6 @@ export const USAGE_OVERVIEW: UsageOverview = {
       status: "succeeded",
       model: "anthropic/claude-sonnet-4-6",
       totalTokens: 2_412,
-      chargedAmount: 0.04,
       charged: usd(0.04),
       startedAt: daysAgo(0, 1),
       durationMs: 3_860,
@@ -120,7 +114,6 @@ export const USAGE_OVERVIEW: UsageOverview = {
       status: "succeeded",
       model: "openai/gpt-5-mini",
       totalTokens: 18_930,
-      chargedAmount: 0.31,
       charged: usd(0.31),
       startedAt: daysAgo(0, 4),
       durationMs: 21_400,
@@ -131,7 +124,6 @@ export const USAGE_OVERVIEW: UsageOverview = {
       status: "refused",
       model: null,
       totalTokens: null,
-      chargedAmount: null,
       charged: null,
       startedAt: daysAgo(1, 2),
       durationMs: null,
@@ -142,7 +134,6 @@ export const USAGE_OVERVIEW: UsageOverview = {
       status: "failed",
       model: "google/gemini-2.5-flash",
       totalTokens: 610,
-      chargedAmount: 0,
       charged: usd(0),
       startedAt: daysAgo(1, 6),
       durationMs: 900,

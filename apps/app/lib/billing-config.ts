@@ -36,7 +36,7 @@ export const PRODUCT_SLUG = "reference";
  *
  * It must match what your payment provider actually charges in, and
  * the currency your settlement math produces: `@intelligo-dev/billing`
- * converts raw model cost with the `usdToMntRate` on the billing
+ * converts raw model cost with the `usdRateMicros` on the billing
  * settings row (`ensureBillingSettingsRow`, editable from the admin
  * console). A deployment that charges in USD sets that rate to 1; one
  * that charges in another currency sets it to that currency's rate per

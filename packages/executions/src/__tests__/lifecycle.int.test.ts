@@ -19,6 +19,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Client } from "pg";
 
+import { money } from "@intelligo-dev/core/money";
+
 import { createExecutions } from "../lifecycle";
 import { getExecutionByRequestId, findStaleExecutions } from "../queries";
 
@@ -69,7 +71,7 @@ d("execution lifecycle (integration)", () => {
     const executions = createExecutions({
       settleUsage: async (s) => {
         settled.push(s);
-        return { chargedMnt: 42 };
+        return { charged: money(42, "MNT") };
       },
     });
 
@@ -88,7 +90,8 @@ d("execution lifecycle (integration)", () => {
       capability: "test.capability",
       status: "succeeded",
       totalTokens: 30,
-      chargedMnt: 42,
+      chargedMicros: 42,
+      currency: "MNT",
     });
     expect(row!.finishedAt).toBeTruthy();
     expect(settled).toHaveLength(1);
@@ -100,7 +103,7 @@ d("execution lifecycle (integration)", () => {
       checkEntitlement: async () => ({
         allowed: false,
         reason: "Out of credits",
-        estimatedMnt: 1500,
+        estimated: money(1500, "MNT"),
       }),
     });
 
@@ -115,7 +118,7 @@ d("execution lifecycle (integration)", () => {
     expect(row).toMatchObject({
       status: "refused",
       refusalReason: "Out of credits",
-      reservedMnt: 1500,
+      reservedMicros: 1500,
     });
     expect(await auditActions(run.id)).toEqual(["execution.refused"]);
   });
@@ -149,7 +152,7 @@ d("execution lifecycle (integration)", () => {
     const executions = createExecutions({
       settleUsage: async () => {
         charges += 1;
-        return { chargedMnt: 7 };
+        return { charged: money(7, "MNT") };
       },
     });
 

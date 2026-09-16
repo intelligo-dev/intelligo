@@ -7,6 +7,7 @@ import { getBillingOverview } from "@intelligo-dev/billing";
 import { Link } from "@/i18n/navigation";
 import { Card } from "@/components/ui/card";
 import { CreditBundles } from "@/components/billing/credit-bundles";
+import { formatMoney } from "@/lib/format-money";
 import { PortalButton } from "@/components/billing/portal-button";
 import {
   PageHeader,
@@ -129,16 +130,18 @@ export default async function BillingSettingsPage() {
             <StatCardHeader>
               <StatCardLabel>{t("owner.creditBalanceLabel")}</StatCardLabel>
               <StatCardValue>
-                {format.number(overview.creditBalance)}{" "}
-                <span className="text-sm font-normal text-muted-foreground">
-                  {t("owner.creditsUnit", { count: overview.creditBalance })}
-                </span>
+                {/* An amount that names its own currency — it used to
+                    be a bare number followed by the word "credits",
+                    whatever the deployment actually billed in. */}
+                {overview.creditBalance
+                  ? formatMoney(format, overview.creditBalance)
+                  : "—"}
               </StatCardValue>
             </StatCardHeader>
             <StatCardFooter>{t("owner.creditBalanceNote")}</StatCardFooter>
           </StatCard>
 
-          <CreditBundles currentCredits={overview.creditBalance} />
+          <CreditBundles currentBalance={overview.creditBalance} />
 
           {overview.subscription?.stripeCustomerId && (
             <Card className="space-y-2 p-6">

@@ -58,10 +58,15 @@ function priceOf(bundle: Bundle): Amount {
 }
 
 interface CreditBundlesProps {
-  currentCredits?: number;
+  /**
+   * The top-up balance, in the ledger's own currency. It was a bare
+   * number the page pluralised as "N credits", whatever the deployment
+   * actually billed in.
+   */
+  currentBalance?: Amount | null;
 }
 
-export function CreditBundles({ currentCredits }: CreditBundlesProps) {
+export function CreditBundles({ currentBalance }: CreditBundlesProps) {
   const t = useTranslations("billing-settings");
   const format = useFormatter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -86,10 +91,13 @@ export function CreditBundles({ currentCredits }: CreditBundlesProps) {
     <div className="space-y-4">
       <div>
         <p className="text-sm font-medium">{t("creditBundles.buyMore")}</p>
-        {currentCredits !== undefined && (
+        {currentBalance && (
           <p className="text-sm text-muted-foreground">
             {t("creditBundles.currentBalance", {
-              count: currentCredits,
+              balance: format.number(
+                currentBalance.amount / MICROS_PER_UNIT,
+                { style: "currency", currency: currentBalance.currency }
+              ),
             })}
           </p>
         )}

@@ -34,13 +34,10 @@ const pricing = vi.hoisted(() => {
 const mocks = vi.hoisted(() => ({
   getWorkspaceBilling: vi.fn(),
   getCurrentMonthlyUsage: vi.fn(),
-  hasActiveTrialMnt: vi.fn(),
+  getActiveTrialGrant: vi.fn(),
   getBillingSettings: vi.fn(),
-  estimateWorstCaseChargedMnt: vi.fn(),
   estimateWorstCaseCharge: vi.fn(),
-  calculateChargedMnt: vi.fn(),
   chargeFor: vi.fn(),
-  calculateCost: vi.fn(),
   checkNotificationTriggers: vi.fn(),
 }));
 
@@ -49,7 +46,7 @@ const store = vi.hoisted(() => ({
   reservations: [] as Array<{
     workspaceId: string;
     requestId: string;
-    estimatedMnt: number;
+    estimatedMicros: number;
     status: string;
     expiresAt: Date;
   }>,
@@ -64,7 +61,7 @@ vi.mock("./quota-usage", () => ({
   getCurrentPeriodEnd: () => new Date("2026-08-31"),
 }));
 vi.mock("./trial", () => ({
-  hasActiveTrialMnt: mocks.hasActiveTrialMnt,
+  getActiveTrialGrant: mocks.getActiveTrialGrant,
 }));
 vi.mock("./billing-settings", () => ({
   getBillingSettings: mocks.getBillingSettings,
@@ -78,11 +75,6 @@ vi.mock("./quota-plan", async () => {
   return {
     // free plan: 2000₮ monthly allowance; "unconfigured" simulates a
     // deployment whose composition root never registered a product.
-    getPlanMonthlyCreditMnt: (slug: string) => {
-      if (slug === "unconfigured") throw new BillingNotConfiguredError();
-      return slug === "free" ? 2000 : 30000;
-    },
-    // The same allowance, typed — what the pools are denominated in.
     getPlanMonthlyAllowance: (slug: string, currency: string) => {
       if (slug === "unconfigured") throw new BillingNotConfiguredError();
       return money((slug === "free" ? 2000 : 30000) * 1_000_000, currency);
@@ -91,11 +83,8 @@ vi.mock("./quota-plan", async () => {
   };
 });
 vi.mock("@intelligo-dev/executions/pricing", () => ({
-  estimateWorstCaseChargedMnt: mocks.estimateWorstCaseChargedMnt,
   estimateWorstCaseCharge: mocks.estimateWorstCaseCharge,
-  calculateChargedMnt: mocks.calculateChargedMnt,
   chargeFor: mocks.chargeFor,
-  calculateCost: mocks.calculateCost,
   UnknownModelError: pricing.UnknownModelError,
 }));
 
@@ -117,7 +106,7 @@ vi.mock("@intelligo-dev/core/db/schema", () => ({
   creditReservations: {
     workspaceId: "workspaceId",
     requestId: "requestId",
-    estimatedMnt: "estimatedMnt",
+    estimatedMicros: "estimatedMicros",
     status: "status",
     expiresAt: "expiresAt",
   },
@@ -136,7 +125,7 @@ vi.mock("@intelligo-dev/core/db", () => {
           {
             total: store.reservations
               .filter((r) => r.status === "active" && r.expiresAt > new Date())
-              .reduce((sum, r) => sum + r.estimatedMnt, 0),
+              .reduce((sum, r) => sum + r.estimatedMicros, 0),
           },
         ]),
       })),
@@ -173,21 +162,25 @@ beforeEach(() => {
 
   mocks.getWorkspaceBilling.mockResolvedValue({
     plan: { slug: "free" },
-    creditBalance: { balanceMnt: 0 },
+    creditBalance: { balanceMicros: 0, currency: "MNT" },
     billingMode: "subscription",
   });
-  mocks.getCurrentMonthlyUsage.mockResolvedValue({ chargedMnt: 0 });
-  mocks.hasActiveTrialMnt.mockResolvedValue({ active: false, remainingMnt: 0 });
+  mocks.getCurrentMonthlyUsage.mockResolvedValue({
+    allowanceUsedMicros: 0,
+    currency: "MNT",
+  });
+  mocks.getActiveTrialGrant.mockResolvedValue({
+    active: false,
+    remainingMicros: 0,
+    currency: null,
+  });
   mocks.getBillingSettings.mockResolvedValue({
     currency: "MNT",
     usdRateMicros: 3_450_000_000,
     marginBp: 40_000,
-    usdToMntRate: 3450,
-    marginMultiplier: 4,
   });
-  // Worst-case estimate: 1500₮ — the 2000₮ free allowance fits exactly one.
-  mocks.estimateWorstCaseChargedMnt.mockReturnValue(1500);
-  // The same ceiling, typed: micros of the deployment's own currency.
+  // Worst-case ceiling: 1500₮ in micros — the 2000₮ free allowance
+  // fits exactly one.
   mocks.estimateWorstCaseCharge.mockReturnValue(money(1_500_000_000, "MNT"));
 });
 
@@ -201,7 +194,10 @@ describe("checkQuota — read-only mode (no requestId)", () => {
   });
 
   it("refuses when the allowance is depleted", async () => {
-    mocks.getCurrentMonthlyUsage.mockResolvedValue({ chargedMnt: 2000 });
+    mocks.getCurrentMonthlyUsage.mockResolvedValue({
+      allowanceUsedMicros: 2_000_000_000,
+      currency: "MNT",
+    });
 
     const result = await checkQuota("ws-1", { modelId: "m" });
 
@@ -210,10 +206,14 @@ describe("checkQuota — read-only mode (no requestId)", () => {
   });
 
   it("falls back to trial credits when non-trial funds are short", async () => {
-    mocks.getCurrentMonthlyUsage.mockResolvedValue({ chargedMnt: 2000 });
-    mocks.hasActiveTrialMnt.mockResolvedValue({
+    mocks.getCurrentMonthlyUsage.mockResolvedValue({
+      allowanceUsedMicros: 2_000_000_000,
+      currency: "MNT",
+    });
+    mocks.getActiveTrialGrant.mockResolvedValue({
       active: true,
-      remainingMnt: 5000,
+      remainingMicros: 5_000_000_000,
+      currency: "MNT",
     });
 
     const result = await checkQuota("ws-1", { modelId: "m" });
@@ -236,7 +236,7 @@ describe("checkQuota — reserving mode (with requestId)", () => {
     expect(store.reservations[0]).toMatchObject({
       workspaceId: "ws-1",
       requestId: "req-1",
-      estimatedMnt: 1500,
+      estimatedMicros: 1_500_000_000,
       status: "active",
     });
     expect(store.reservations[0]!.expiresAt.getTime()).toBeGreaterThan(
@@ -261,7 +261,7 @@ describe("checkQuota — reserving mode (with requestId)", () => {
     store.reservations.push({
       workspaceId: "ws-1",
       requestId: "req-existing",
-      estimatedMnt: 1500,
+      estimatedMicros: 1_500_000_000,
       status: "active",
       expiresAt: new Date(Date.now() + 60_000),
     });
@@ -279,7 +279,7 @@ describe("checkQuota — reserving mode (with requestId)", () => {
     store.reservations.push({
       workspaceId: "ws-1",
       requestId: "req-old",
-      estimatedMnt: 1500,
+      estimatedMicros: 1_500_000_000,
       status: "active",
       expiresAt: new Date(Date.now() - 1000),
     });
@@ -296,7 +296,7 @@ describe("checkQuota — reserving mode (with requestId)", () => {
     store.reservations.push({
       workspaceId: "ws-1",
       requestId: "req-done",
-      estimatedMnt: 1500,
+      estimatedMicros: 1_500_000_000,
       status: "settled",
       expiresAt: new Date(Date.now() + 60_000),
     });
@@ -310,7 +310,10 @@ describe("checkQuota — reserving mode (with requestId)", () => {
   });
 
   it("does not reserve when admission is refused", async () => {
-    mocks.getCurrentMonthlyUsage.mockResolvedValue({ chargedMnt: 2000 });
+    mocks.getCurrentMonthlyUsage.mockResolvedValue({
+      allowanceUsedMicros: 2_000_000_000,
+      currency: "MNT",
+    });
 
     const result = await checkQuota("ws-1", {
       modelId: "m",
@@ -322,10 +325,14 @@ describe("checkQuota — reserving mode (with requestId)", () => {
   });
 
   it("reserves against the trial pool when trial credits admit the request", async () => {
-    mocks.getCurrentMonthlyUsage.mockResolvedValue({ chargedMnt: 2000 });
-    mocks.hasActiveTrialMnt.mockResolvedValue({
+    mocks.getCurrentMonthlyUsage.mockResolvedValue({
+      allowanceUsedMicros: 2_000_000_000,
+      currency: "MNT",
+    });
+    mocks.getActiveTrialGrant.mockResolvedValue({
       active: true,
-      remainingMnt: 1600,
+      remainingMicros: 1_600_000_000,
+      currency: "MNT",
     });
 
     const first = await checkQuota("ws-1", {
@@ -350,7 +357,7 @@ describe("a model with no registered price", () => {
     // uncaught throw here would be a 500 on a deployment whose only
     // mistake was not registering a model — and the request would look
     // like an outage rather than a configuration error.
-    mocks.estimateWorstCaseChargedMnt.mockImplementationOnce(() => {
+    mocks.estimateWorstCaseCharge.mockImplementationOnce(() => {
       throw new pricing.UnknownModelError("bedrock/llama-4-70b");
     });
 
@@ -362,7 +369,7 @@ describe("a model with no registered price", () => {
   });
 
   it("does not reserve credit for a request it cannot price", async () => {
-    mocks.estimateWorstCaseChargedMnt.mockImplementationOnce(() => {
+    mocks.estimateWorstCaseCharge.mockImplementationOnce(() => {
       throw new pricing.UnknownModelError("bedrock/llama-4-70b");
     });
 
@@ -408,15 +415,21 @@ describe("estimateQuota / reserveQuota", () => {
 
   it("codes a refusal: insufficient_credits when something remains", async () => {
     // 2000₮ allowance, 300₮ used → 1700 left; estimate 2000 → refused.
-    mocks.getCurrentMonthlyUsage.mockResolvedValue({ chargedMnt: 300 });
-    mocks.estimateWorstCaseChargedMnt.mockReturnValue(2000);
+    mocks.getCurrentMonthlyUsage.mockResolvedValue({
+      allowanceUsedMicros: 300_000_000,
+      currency: "MNT",
+    });
+    mocks.estimateWorstCaseCharge.mockReturnValue(money(2_000_000_000, "MNT"));
     const r = await reserveQuota("ws-1", { requestId: "req-code-1" });
     expect(r.allowed).toBe(false);
     if (!r.allowed) expect(r.code).toBe("insufficient_credits");
   });
 
   it("codes a refusal: allowance_depleted when nothing remains", async () => {
-    mocks.getCurrentMonthlyUsage.mockResolvedValue({ chargedMnt: 2000 });
+    mocks.getCurrentMonthlyUsage.mockResolvedValue({
+      allowanceUsedMicros: 2_000_000_000,
+      currency: "MNT",
+    });
     const r = await reserveQuota("ws-1", { requestId: "req-code-2" });
     expect(r.allowed).toBe(false);
     if (!r.allowed) expect(r.code).toBe("allowance_depleted");
@@ -425,7 +438,7 @@ describe("estimateQuota / reserveQuota", () => {
   it("refuses with billing_not_configured instead of throwing when no product is registered", async () => {
     mocks.getWorkspaceBilling.mockResolvedValue({
       plan: { slug: "unconfigured" },
-      creditBalance: { balanceMnt: 0 },
+      creditBalance: { balanceMicros: 0, currency: "MNT" },
     });
     const r = await reserveQuota("ws-1", { requestId: "req-code-3" });
     expect(r.allowed).toBe(false);

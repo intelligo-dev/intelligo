@@ -323,6 +323,13 @@
       "when": 1789491600000,
       "tag": "0044_money_micros",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1789528800000,
+      "tag": "0045_drop_legacy_money_columns",
+      "breakpoints": true
     }
   ]
 }

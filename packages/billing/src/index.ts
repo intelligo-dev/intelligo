@@ -10,7 +10,7 @@ export {
   dispatchStripeEvent,
 } from "./webhook-route";
 export type { StripeWebhookOptions } from "./webhook-route";
-export { getPlanBySlug, formatPrice, isUnlimited } from "./plans";
+export { getPlanBySlug, isUnlimited } from "./plans";
 export type { PlanSlug, PlanConfig, PlanLimits } from "./plans";
 
 // Plan registry. The full surface — every register*/clear* pair, the
@@ -81,7 +81,6 @@ export {
   provisionTrialCredits,
   getTrialStatus,
   deductTrialCredits,
-  hasActiveTrialMnt,
   convertTrialToPaid,
   checkTrialAbuse,
   hasActiveTrial,

@@ -21,6 +21,16 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { Client } from "pg";
 
+import { money } from "@intelligo-dev/core/money";
+
+/**
+ * Whole tugrik as micros. Every amount below the migration is micros
+ * now, and the figures this test reasons about — a 2,000₮ allowance, a
+ * 50,000₮ top-up — read as themselves through here rather than as nine
+ * zeroes that have to be counted.
+ */
+const mnt = (whole: number) => whole * 1_000_000;
+
 const PG_URL = process.env.TEST_PG_URL;
 const d = PG_URL ? describe : describe.skip;
 
@@ -40,20 +50,20 @@ d("money path (integration)", () => {
   >;
   let handleCheckoutCompleted: typeof import("../webhook-handlers").handleCheckoutCompleted;
 
-  async function balanceMnt(): Promise<number> {
-    const { rows } = await client.query<{ balance_mnt: number }>(
-      `SELECT balance_mnt FROM credit_balances WHERE workspace_id = $1`,
+  async function balanceMicros(): Promise<number> {
+    const { rows } = await client.query<{ balance_micros: string }>(
+      `SELECT balance_micros FROM credit_balances WHERE workspace_id = $1`,
       [workspaceId]
     );
-    return Number(rows[0]?.balance_mnt ?? 0);
+    return Number(rows[0]?.balance_micros ?? 0);
   }
 
-  async function monthlyChargedMnt(): Promise<number> {
-    const { rows } = await client.query<{ charged_mnt: number }>(
-      `SELECT charged_mnt FROM monthly_usage WHERE workspace_id = $1`,
+  async function allowanceUsedMicros(): Promise<number> {
+    const { rows } = await client.query<{ allowance_used_micros: string }>(
+      `SELECT allowance_used_micros FROM monthly_usage WHERE workspace_id = $1`,
       [workspaceId]
     );
-    return Number(rows[0]?.charged_mnt ?? 0);
+    return Number(rows[0]?.allowance_used_micros ?? 0);
   }
 
   async function activeReservations(): Promise<number> {
@@ -78,24 +88,38 @@ d("money path (integration)", () => {
     };
   }
 
-  async function setAllowanceUsed(mnt: number): Promise<void> {
+  /**
+   * A timestamp as drizzle binds it to a naive `timestamp` column: UTC
+   * wall clock.
+   *
+   * node-postgres binds a JS `Date` as *local* wall clock instead, so on
+   * a machine east of UTC the two write different keys for the same
+   * instant. Seeding through `pg` put the row at `2026-09-01 00:00:00`
+   * while the engine's drizzle query looked for `2026-08-31 16:00:00`,
+   * `getCurrentMonthlyUsage` found nothing, and every assertion here
+   * failed as though the allowance were untouched.
+   */
+  const naive = (date: Date) =>
+    date.toISOString().slice(0, 19).replace("T", " ");
+
+  async function setAllowanceUsed(micros: number): Promise<void> {
     const { start, end } = periodBounds();
     await client.query(
-      `INSERT INTO monthly_usage (id, workspace_id, period_start, period_end, charged_mnt)
-            VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO monthly_usage (id, workspace_id, period_start, period_end, allowance_used_micros, currency)
+            VALUES ($1, $2, $3, $4, $5, 'MNT')
        ON CONFLICT (workspace_id, period_start)
-       DO UPDATE SET charged_mnt = EXCLUDED.charged_mnt`,
-      [`mu-${suffix}`, workspaceId, start, end, mnt]
+       DO UPDATE SET allowance_used_micros = EXCLUDED.allowance_used_micros`,
+      [`mu-${suffix}`, workspaceId, naive(start), naive(end), micros]
     );
   }
 
-  async function setBalance(mnt: number): Promise<void> {
+  async function setBalance(micros: number): Promise<void> {
     await client.query(
-      `INSERT INTO credit_balances (id, workspace_id, balance_mnt)
-            VALUES ($1, $2, $3)
+      `INSERT INTO credit_balances (id, workspace_id, balance_micros, currency)
+            VALUES ($1, $2, $3, 'MNT')
        ON CONFLICT (workspace_id)
-       DO UPDATE SET balance_mnt = EXCLUDED.balance_mnt`,
-      [`cb-${suffix}`, workspaceId, mnt]
+       DO UPDATE SET balance_micros = EXCLUDED.balance_micros`,
+      [`cb-${suffix}`, workspaceId, micros]
     );
   }
 
@@ -122,8 +146,22 @@ d("money path (integration)", () => {
 
     // The FX rate and margin come from a singleton row; without it
     // every estimate is zero and admission becomes meaningless.
-    const { ensureBillingSettingsRow } = await import("../billing-settings");
+    //
+    // Written directly rather than through `ensureBillingSettingsRow`,
+    // which is `onConflictDoNothing` and so cannot correct a row that
+    // already exists. Every figure below is tugrik, and a deployment
+    // billing in anything else now yields a zero allowance rather than
+    // a silent conversion — so a test that inherited whatever currency
+    // the database happened to hold would fail for the wrong reason.
+    const { ensureBillingSettingsRow, invalidateBillingSettingsCache } =
+      await import("../billing-settings");
     await ensureBillingSettingsRow();
+    await client.query(
+      `UPDATE billing_settings
+          SET currency = 'MNT', usd_rate_micros = 3450000000, margin_bp = 40000
+        WHERE id = 'default'`
+    );
+    invalidateBillingSettingsCache();
 
     // Compose in-test what a consumer's lib/intelligo.ts composes: a
     // product with a free plan, and the three ports bound to billing.
@@ -139,8 +177,8 @@ d("money path (integration)", () => {
         priceOneTime: 0,
         targetAudience: "",
         aiModelLabel: "",
+        monthlyAllowance: money(FREE_ALLOWANCE * 1_000_000, "MNT"),
         limits: {
-          monthlyCreditMnt: FREE_ALLOWANCE,
           rolloverEnabled: false,
           chatMessages: 30,
         },
@@ -165,7 +203,7 @@ d("money path (integration)", () => {
         return {
           allowed: q.allowed,
           reason: q.reason,
-          estimatedMnt: q.estimatedMnt,
+          estimated: q.estimated,
           usingTrialCredits: q.usingTrialCredits,
         };
       },
@@ -220,15 +258,18 @@ d("money path (integration)", () => {
     await setBalance(0);
   });
 
+
   it("makes a purchase spendable: refused before the credit, admitted after", async () => {
-    await setAllowanceUsed(FREE_ALLOWANCE);
+    await setAllowanceUsed(mnt(FREE_ALLOWANCE));
     expect((await begin()).allowed).toBe(false);
 
     const purchaseId = `cp-${suffix}`;
     await client.query(
-      `INSERT INTO credit_purchases (id, workspace_id, amount, credits, stripe_checkout_session_id, status)
-       VALUES ($1, $2, 500, 50000, 'pending', 'pending')`,
-      [purchaseId, workspaceId]
+      `INSERT INTO credit_purchases
+         (id, workspace_id, price_minor, price_currency, granted_micros, granted_currency,
+          stripe_checkout_session_id, status)
+       VALUES ($1, $2, 500, 'USD', $3, 'MNT', 'pending', 'pending')`,
+      [purchaseId, workspaceId, mnt(50_000)]
     );
     await handleCheckoutCompleted({
       id: `cs_${suffix}`,
@@ -236,7 +277,7 @@ d("money path (integration)", () => {
       metadata: { workspaceId, purchaseId },
     } as never);
 
-    expect(await balanceMnt()).toBe(50_000);
+    expect(await balanceMicros()).toBe(mnt(50_000));
 
     // A replayed webhook must not credit twice.
     await handleCheckoutCompleted({
@@ -244,7 +285,7 @@ d("money path (integration)", () => {
       mode: "payment",
       metadata: { workspaceId, purchaseId },
     } as never);
-    expect(await balanceMnt()).toBe(50_000);
+    expect(await balanceMicros()).toBe(mnt(50_000));
 
     const run = await begin();
     expect(run.allowed).toBe(true);
@@ -257,8 +298,8 @@ d("money path (integration)", () => {
     // the full amount from both. (1, not a larger number: the charge
     // depends on the FX/margin row, and a guess about it is how this
     // test failed the first time.)
-    await setAllowanceUsed(FREE_ALLOWANCE - 1);
-    await setBalance(50_000);
+    await setAllowanceUsed(mnt(FREE_ALLOWANCE - 1));
+    await setBalance(mnt(50_000));
 
     const run = await begin();
     expect(run.allowed).toBe(true);
@@ -267,23 +308,23 @@ d("money path (integration)", () => {
       model: "openai/gpt-5-mini",
     });
 
-    const { rows } = await client.query<{ charged_mnt: number }>(
-      `SELECT charged_mnt FROM usage_records WHERE workspace_id = $1`,
+    const { rows } = await client.query<{ charged_micros: string }>(
+      `SELECT charged_micros FROM usage_records WHERE workspace_id = $1`,
       [workspaceId]
     );
     expect(rows).toHaveLength(1);
-    const charged = Number(rows[0]!.charged_mnt);
+    const charged = Number(rows[0]!.charged_micros);
     expect(charged).toBeGreaterThan(1);
 
-    const planPortion = (await monthlyChargedMnt()) - (FREE_ALLOWANCE - 1);
-    const topupPortion = 50_000 - (await balanceMnt());
-    expect(planPortion).toBe(1);
+    const planPortion = (await allowanceUsedMicros()) - mnt(FREE_ALLOWANCE - 1);
+    const topupPortion = mnt(50_000) - (await balanceMicros());
+    expect(planPortion).toBe(mnt(1));
     expect(planPortion + topupPortion).toBe(charged);
     expect(await activeReservations()).toBe(0);
   });
 
   it("funds a charge entirely from the allowance without touching the top-up", async () => {
-    await setBalance(50_000);
+    await setBalance(mnt(50_000));
 
     const run = await begin();
     expect(run.allowed).toBe(true);
@@ -292,24 +333,24 @@ d("money path (integration)", () => {
       model: "openai/gpt-5-mini",
     });
 
-    expect(await balanceMnt()).toBe(50_000);
-    expect(await monthlyChargedMnt()).toBeGreaterThan(0);
+    expect(await balanceMicros()).toBe(mnt(50_000));
+    expect(await allowanceUsedMicros()).toBeGreaterThan(0);
   });
 
   it("releases the hold when the run fails, and charges nothing", async () => {
-    await setBalance(50_000);
+    await setBalance(mnt(50_000));
 
     const run = await begin();
     expect(run.allowed).toBe(true);
     await run.fail({ error: new Error("provider exploded") });
 
     expect(await activeReservations()).toBe(0);
-    expect(await balanceMnt()).toBe(50_000);
-    expect(await monthlyChargedMnt()).toBe(0);
+    expect(await balanceMicros()).toBe(mnt(50_000));
+    expect(await allowanceUsedMicros()).toBe(0);
   });
 
   it("refuses when nothing is left, and leaves no reservation behind", async () => {
-    await setAllowanceUsed(FREE_ALLOWANCE);
+    await setAllowanceUsed(mnt(FREE_ALLOWANCE));
 
     const run = await begin();
     expect(run.allowed).toBe(false);
@@ -324,11 +365,11 @@ d("money path (integration)", () => {
   });
 
   it("admits exactly one of two concurrent runs when the balance fits one", async () => {
-    await setAllowanceUsed(FREE_ALLOWANCE);
+    await setAllowanceUsed(mnt(FREE_ALLOWANCE));
 
     const probe = await begin();
     expect(probe.allowed).toBe(false);
-    const estimate = probe.estimatedMnt ?? 0;
+    const estimate = probe.estimated?.amount ?? 0;
     expect(estimate).toBeGreaterThan(0);
 
     await setBalance(estimate);

@@ -41,12 +41,6 @@ export type UsagePeriod = "7d" | "30d" | "current";
 export type UsagePeriodSummary = {
   tokensUsed: number;
   /**
-   * @deprecated Read `charged`. A bare number in "whatever unit the
-   * deployment charges in" is what printed a tugrik ledger with a
-   * dollar sign; it is kept only until migration 0045.
-   */
-  chargedAmount: number;
-  /**
    * What the period charged, in micros with its currency. Null when
    * nothing was charged — or when the rows predate migration 0044 and
    * have no currency to name.
@@ -80,8 +74,6 @@ export type UsageRecord = {
   status: "running" | "settling" | "succeeded" | "failed" | "refused";
   model: string | null;
   totalTokens: number | null;
-  /** @deprecated Read `charged`. */
-  chargedAmount: number | null;
   /** What this run charged, in micros with its currency. */
   charged: MoneyLike | null;
   startedAt: string; // ISO
@@ -228,7 +220,6 @@ async function summarizePeriod(
   );
   return {
     tokensUsed: summary.totals.totalTokens,
-    chargedAmount: summary.totals.chargedMnt,
     // A workspace bills in one currency, so the summary has at most one
     // entry; the array is what keeps a platform-wide read honest.
     charged: summary.totals.charged[0] ?? null,
@@ -318,7 +309,6 @@ export async function getUsageOverview(): Promise<ActionResult<UsageOverview>> {
           status: execution.status as UsageRecord["status"],
           model: execution.model,
           totalTokens: execution.totalTokens,
-          chargedAmount: execution.chargedMnt,
           charged:
             execution.chargedMicros !== null && execution.currency
               ? {

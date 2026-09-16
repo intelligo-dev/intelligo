@@ -57,7 +57,7 @@ beforeEach(() => {
   mocks.summarizeExecutions.mockResolvedValue({
     // `charged` is one entry per currency; a workspace that spent
     // nothing has none.
-    totals: { totalTokens: 0, chargedMnt: 0, count: 0, charged: [] },
+    totals: { totalTokens: 0, count: 0, charged: [] },
   });
   mocks.listExecutions.mockResolvedValue([]);
   mocks.getQuotaThresholds.mockResolvedValue({
@@ -97,8 +97,8 @@ describe("getUsageOverview daily series", () => {
 
   it("keeps the days the read model reported and zeroes the rest", async () => {
     mocks.summarizeExecutionsByDay.mockResolvedValue([
-      { date: "2026-03-03", totalTokens: 1200, count: 4, chargedMnt: 7 },
-      { date: "2026-03-09", totalTokens: 500, count: 2, chargedMnt: 3 },
+      { date: "2026-03-03", totalTokens: 1200, count: 4 },
+      { date: "2026-03-09", totalTokens: 500, count: 2 },
     ]);
 
     const points = await daily();
@@ -120,8 +120,8 @@ describe("getUsageOverview daily series", () => {
 
   it("returns days in ascending order, so the chart cannot draw backwards", async () => {
     mocks.summarizeExecutionsByDay.mockResolvedValue([
-      { date: "2026-03-09", totalTokens: 500, count: 2, chargedMnt: 3 },
-      { date: "2026-03-03", totalTokens: 1200, count: 4, chargedMnt: 7 },
+      { date: "2026-03-09", totalTokens: 500, count: 2 },
+      { date: "2026-03-03", totalTokens: 1200, count: 4 },
     ]);
 
     const dates = (await daily()).map((point) => point.date);

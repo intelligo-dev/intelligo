@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 
-import { CURRENCY } from "@/lib/billing-config";
 import { formatMoney } from "@/lib/format-money";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -101,13 +100,7 @@ export function UsageSummaryCards({
               {/* The amount names its own currency, and shows enough
                   decimals to be worth reading: a month of cheap turns
                   is a few cents, not "$0". */}
-              {summary.charged
-                ? formatMoney(format, summary.charged)
-                : format.number(summary.chargedAmount, {
-                    style: "currency",
-                    currency: CURRENCY,
-                    maximumFractionDigits: 0,
-                  })}
+              {summary.charged ? formatMoney(format, summary.charged) : "—"}
             </StatCardValue>
           </StatCardHeader>
         </StatCard>

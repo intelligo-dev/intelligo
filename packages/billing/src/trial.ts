@@ -25,7 +25,7 @@ import {
   users,
   member,
 } from "@intelligo-dev/core/db/schema";
-import { eq, and, gt, gte, lt, or } from "drizzle-orm";
+import { eq, and, gt, gte, lt } from "drizzle-orm";
 import type { TrialCredit } from "@intelligo-dev/core/db/schema";
 import { sendTrialExpiryEmail } from "@intelligo-dev/core/email";
 import { getBillingSettings } from "./billing-settings";
@@ -43,8 +43,6 @@ export type { TrialStatus };
 export { normalizeEmailForAbuseCheck };
 export { deductTrialCredits };
 
-/** Micros are millionths of one major unit; whole units × this. */
-const MICROS_PER_UNIT = 1_000_000;
 
 // ---------------------------------------------------------------------------
 // provisionTrialCredits (TRIAL-01)
@@ -67,15 +65,22 @@ export async function provisionTrialCredits(params: {
   // No registered grant means this deployment offers no trial. Writing
   // a zero-credit row that expires today would only make the UI say a
   // trial had already run out.
-  if (config.durationDays <= 0) return null;
+  if (config.durationDays <= 0 || !config.grant) return null;
 
   const trialEndDate = new Date();
   trialEndDate.setDate(trialEndDate.getDate() + config.durationDays);
 
-  // The grant is denominated in whatever the deployment bills in; the
-  // config states it in whole units of that currency.
+  // The grant names its own currency now. Refuse one the deployment
+  // does not bill in rather than crediting an amount of something
+  // else — the same rule the credit-pack webhook enforces.
+  const grant = config.grant;
   const settings = await getBillingSettings();
-  const grantMicros = config.initialCreditsMnt * MICROS_PER_UNIT;
+  if (grant.currency !== settings.currency) {
+    throw new Error(
+      `Trial grant is ${grant.currency}, but this deployment bills in ${settings.currency}`
+    );
+  }
+  const grantMicros = grant.amount;
 
   const result = await db
     .insert(trialCredits)
@@ -85,13 +90,10 @@ export async function provisionTrialCredits(params: {
       initialCredits: config.initialCredits,
       creditsRemaining: config.initialCredits,
       creditsUsed: 0,
-      initialCreditsMnt: config.initialCreditsMnt,
-      creditsRemainingMnt: config.initialCreditsMnt,
-      creditsUsedMnt: 0,
       initialMicros: grantMicros,
       remainingMicros: grantMicros,
       usedMicros: 0,
-      currency: settings.currency,
+      currency: grant.currency,
       status: "active",
       trialEndDate,
       createdByEmail: params.email,
@@ -177,22 +179,22 @@ export async function getTrialStatus(
 }
 
 // ---------------------------------------------------------------------------
-// hasActiveTrialMnt (TRIAL-05)
+// getActiveTrialGrant (TRIAL-05)
 // ---------------------------------------------------------------------------
 
 /**
- * Check trial activity in MNT terms — used by the cost-based quota
- * engine to decide whether trial fallback is available.
+ * What is left of the trial grant, for the quota engine's decision
+ * about whether trial fallback is available. Named for the grant
+ * rather than for a currency: it was `hasActiveTrialMnt`, which
+ * answered in whole tugrik whatever the deployment billed in.
  */
-export async function hasActiveTrialMnt(workspaceId: string): Promise<{
+export async function getActiveTrialGrant(workspaceId: string): Promise<{
   active: boolean;
-  remainingMnt: number;
   remainingMicros: number;
   currency: string | null;
 }> {
   const rows = await db
     .select({
-      creditsRemainingMnt: trialCredits.creditsRemainingMnt,
       remainingMicros: trialCredits.remainingMicros,
       currency: trialCredits.currency,
       status: trialCredits.status,
@@ -203,20 +205,13 @@ export async function hasActiveTrialMnt(workspaceId: string): Promise<{
       and(
         eq(trialCredits.workspaceId, workspaceId),
         eq(trialCredits.status, "active"),
-        // Either column may be the live one: a grant written before
-        // 0044 has only whole tugrik, and one written in a currency
-        // whose whole-unit column was never filled has only micros.
-        or(
-          gt(trialCredits.creditsRemainingMnt, 0),
-          gt(trialCredits.remainingMicros, 0)
-        )
+        gt(trialCredits.remainingMicros, 0)
       )
     )
     .limit(1);
 
   const none = {
     active: false,
-    remainingMnt: 0,
     remainingMicros: 0,
     currency: null,
   };
@@ -226,7 +221,6 @@ export async function hasActiveTrialMnt(workspaceId: string): Promise<{
 
   return {
     active: true,
-    remainingMnt: rows[0].creditsRemainingMnt,
     remainingMicros: rows[0].remainingMicros,
     currency: rows[0].currency,
   };

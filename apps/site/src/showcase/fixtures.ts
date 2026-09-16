@@ -76,8 +76,12 @@ export const CHECKOUT_SESSION: CheckoutSessionSummary = {
   customerEmail: USER.email,
 };
 
-const limits = (monthlyCreditMnt: number, members: number) => ({
-  monthlyCreditMnt,
+// Showcase copy, not engine input: the numbers here exist to match the
+// feature bullets beside them ("1,000 credits / month"), and nothing in
+// the preview enforces a quota. The allowance the engine reads is
+// `PlanConfig.monthlyAllowance`, an amount that names its currency.
+const limits = (monthlyCredits: number, members: number) => ({
+  monthlyCredits,
   rolloverEnabled: false,
   teamMembers: members,
 });

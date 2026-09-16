@@ -21,6 +21,7 @@ import {
   createRegistryRef,
 } from "@intelligo-dev/core/registry";
 
+import type { Money } from "@intelligo-dev/core/money";
 import type { PlanConfig } from "./plans";
 
 export type ProductPlanMap = Record<string, PlanConfig>;
@@ -261,8 +262,13 @@ export function clearActionLimitKeys(): void {
 export type TrialConfig = {
   /** Token grant, for display. */
   initialCredits: number;
-  /** The grant that actually funds execution, in minor currency units. */
-  initialCreditsMnt: number;
+  /**
+   * The grant that actually funds execution, in the deployment's
+   * billing currency. Replaced a bare number of "minor currency
+   * units", which stated an amount without stating what of. `null`
+   * when a product registers no trial.
+   */
+  grant: Money | null;
   durationDays: number;
   /** Share remaining at which the UI starts warning. 0–1. */
   warningThreshold: number;
@@ -280,7 +286,10 @@ export type TrialConfig = {
  */
 export const NO_TRIAL: TrialConfig = {
   initialCredits: 0,
-  initialCreditsMnt: 0,
+  // No grant rather than a zero one: a zero amount would still have to
+  // name a currency, and inventing one for a deployment that offers no
+  // trial is the habit ADR-0015 exists to end.
+  grant: null,
   durationDays: 0,
   warningThreshold: 0.2,
   reminderDaysBeforeExpiry: 0,

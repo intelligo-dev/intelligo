@@ -26,9 +26,6 @@ import {
   triggerQuotaNotification,
   triggerTrialNotification,
 } from "@intelligo-dev/core/notifications";
-import { getPlanMonthlyCreditMnt } from "./quota-plan";
-import { getCurrentMonthlyUsage } from "./quota-usage";
-import { getWorkspaceBilling } from "./queries";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -101,21 +98,11 @@ export async function checkNotificationTriggers(
 ): Promise<QuotaNotification[]> {
   const notifications: QuotaNotification[] = [];
 
-  // Get billing data for MNT-based quota calculation
-  const [billing, monthly] = await Promise.all([
-    getWorkspaceBilling(workspaceId),
-    getCurrentMonthlyUsage(workspaceId),
-  ]);
-  const planSlug = billing.plan?.slug ?? "free";
-  const monthlyAllowanceMnt = getPlanMonthlyCreditMnt(planSlug);
-  const chargedMnt = monthly.chargedMnt ?? 0;
-
-  const percentage =
-    monthlyAllowanceMnt > 0
-      ? Math.min(100, Math.round((chargedMnt / monthlyAllowanceMnt) * 100))
-      : 0;
-
-  // Check subscription quota thresholds (QUOTA-08, QUOTA-09)
+  // Check subscription quota thresholds (QUOTA-08, QUOTA-09). The
+  // percentage and the amounts behind it come from there, rather than
+  // being derived a second time here: this file used to recompute the
+  // same figure in whole tugrik from columns of its own, which is two
+  // answers to one question waiting to disagree.
   const thresholds = await getQuotaThresholds(workspaceId);
   if (thresholds.criticalThreshold) {
     notifications.push({
@@ -193,9 +180,9 @@ export async function checkNotificationTriggers(
               userEmail: owner.email,
               workspaceId,
               workspaceName: owner.workspaceName,
-              percentageUsed: percentage,
-              tokensUsed: chargedMnt,
-              tokensLimit: monthlyAllowanceMnt,
+              percentageUsed: thresholds.percentage,
+              tokensUsed: thresholds.usedMicros,
+              tokensLimit: thresholds.limitMicros,
               isExceeded: notification.type === "quota_warning_100",
             }).catch((err) =>
               console.error(

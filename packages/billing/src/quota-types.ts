@@ -36,12 +36,6 @@ export type QuotaCheckResult = {
   reason?: string;
   billingMode: "subscription" | "credit";
   usage: { used: number; limit: number; percentage: number };
-  /** @deprecated Read `creditBalance`. */
-  creditBalanceMnt?: number;
-  /** @deprecated Read `estimated`. */
-  estimatedMnt?: number;
-  /** @deprecated Read `remaining`. */
-  remainingMnt?: number;
   /** The top-up balance, in the deployment's billing currency. */
   creditBalance?: Money;
   /** The worst-case charge for one turn on the model asked about. */
@@ -85,17 +79,9 @@ export type RecordUsageParams = {
 
 /**
  * What one settlement charged and which pools funded it.
- * `chargedMnt === planMnt + topupMnt + trialMnt`.
+ * `charged === plan + topup + trial`.
  */
 export type SettlementOutcome = {
-  /** @deprecated Read `charged`. */
-  chargedMnt: number;
-  /** @deprecated Read `plan`. Funded by this period's plan allowance. */
-  planMnt: number;
-  /** @deprecated Read `topup`. Debited from the top-up balance. */
-  topupMnt: number;
-  /** @deprecated Read `trial`. Debited from the trial grant. */
-  trialMnt: number;
   /** What the turn charged: `charged === plan + topup + trial`. */
   charged: Money;
   /** Funded by this period's plan allowance. */

@@ -28,7 +28,7 @@
   },
   "creditBundles": {
     "buyMore": "Buy more credits",
-    "currentBalance": "Current balance: {count, plural, one {# credit} other {# credits}}",
+    "currentBalance": "Current balance: {balance}",
     "creditsUnit": "{count, plural, one {credit} other {credits}}",
     "oneTime": "{price}, one-time",
     "purchase": "Purchase",

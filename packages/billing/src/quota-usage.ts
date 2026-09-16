@@ -21,7 +21,8 @@ export function getCurrentPeriodEnd(): Date {
 
 /**
  * Get the current monthly_usage row for a workspace in the current period.
- * Returns { tokensUsed, chargedMnt, requestCount } or zero defaults if no row exists.
+ * Returns { tokensUsed, allowanceUsedMicros, requestCount } or zero
+ * defaults if no row exists.
  *
  * Note: FOR UPDATE lock removed. The grace period (which required lock protection)
  * was removed — worst-case per-request cost (~138K MNT) exceeds any realistic grace
@@ -34,7 +35,6 @@ export async function getCurrentMonthlyUsage(workspaceId: string) {
   const rows = await db
     .select({
       tokensUsed: monthlyUsage.tokensUsed,
-      chargedMnt: monthlyUsage.chargedMnt,
       allowanceUsedMicros: monthlyUsage.allowanceUsedMicros,
       currency: monthlyUsage.currency,
       requestCount: monthlyUsage.requestCount,
@@ -52,7 +52,6 @@ export async function getCurrentMonthlyUsage(workspaceId: string) {
   if (rows.length === 0 || !rows[0]) {
     return {
       tokensUsed: 0,
-      chargedMnt: 0,
       allowanceUsedMicros: 0,
       /** Null until a period row exists to denominate. */
       currency: null as string | null,

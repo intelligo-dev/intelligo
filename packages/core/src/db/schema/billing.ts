@@ -80,14 +80,7 @@ export const creditBalances = pgTable("credit_balances", {
     .notNull()
     .unique()
     .references(() => organization.id, { onDelete: "cascade" }),
-  balance: integer("balance").notNull().default(0), // legacy USD-cents column
-  totalPurchased: integer("total_purchased").notNull().default(0),
-  totalUsed: integer("total_used").notNull().default(0),
-  /** Authoritative MNT credit balance (top-ups + carry-over) */
-  balanceMnt: integer("balance_mnt").notNull().default(0),
-  totalPurchasedMnt: integer("total_purchased_mnt").notNull().default(0),
-  totalUsedMnt: integer("total_used_mnt").notNull().default(0),
-  /** The balance, in micros of `currency`. Replaces the `*Mnt` columns. */
+  /** The balance, in micros of `currency`. */
   balanceMicros: bigint("balance_micros", { mode: "number" })
     .notNull()
     .default(0),
@@ -111,10 +104,6 @@ export const creditBalances = pgTable("credit_balances", {
  */
 export const billingSettings = pgTable("billing_settings", {
   id: text("id").primaryKey(),
-  /** USD → MNT conversion rate, e.g., 3450 */
-  usdToMntRate: integer("usd_to_mnt_rate").notNull().default(3450),
-  /** Markup applied to raw model cost (×100, store as integer for precision) */
-  marginMultiplierBp: integer("margin_multiplier_bp").notNull().default(400), // 400 = 4.00x
   /** The deployment's billing currency — every ledger row is in this. */
   currency: text("currency").notNull().default("MNT"),
   /** What one USD costs in it, in micros: 1_000_000 is a USD deployment. */
@@ -137,8 +126,6 @@ export const creditPurchases = pgTable(
     workspaceId: text("workspace_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
-    amount: integer("amount").notNull(), // cents paid
-    credits: integer("credits").notNull(), // balance units credited (same unit as credit_balances.balance_mnt)
     /** What the buyer paid, in minor units of `priceCurrency`. */
     priceMinor: integer("price_minor"),
     priceCurrency: text("price_currency"),
@@ -169,7 +156,6 @@ export const financeEvents = pgTable("finance_events", {
   }),
   stripeEventId: text("stripe_event_id").notNull().unique(),
   type: text("type").notNull(), // e.g., "checkout.session.completed", "invoice.paid"
-  amount: integer("amount"), // cents
   /** Stripe's own amount, in the minor units of `currency`. */
   amountMinor: integer("amount_minor"),
   currency: text("currency").default("USD"),
@@ -199,7 +185,6 @@ export const creditReservations = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     /** Correlates admission with settlement — future execution id. */
     requestId: text("request_id").notNull().unique(),
-    estimatedMnt: integer("estimated_mnt").notNull(),
     /** The hold, in micros of `currency`. */
     estimatedMicros: bigint("estimated_micros", { mode: "number" })
       .notNull()

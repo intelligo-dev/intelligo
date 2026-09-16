@@ -30,8 +30,6 @@ import {
 
 const log = createLogger("Webhook");
 
-/** Micros are millionths of one major unit; whole units × this. */
-const MICROS_PER_UNIT = 1_000_000;
 
 // ---------------------------------------------------------------------------
 // WEB-01: Handle checkout.session.completed
@@ -177,15 +175,13 @@ export async function handleCheckoutCompleted(
     }
 
     // Credit the balance admission reads and settlement debits. The
-    // purchase row says what was granted and in which currency; a row
-    // written before 0044 says only `credits`, which was always whole
-    // units of the billing currency. The legacy `balance` column is not
-    // the balance; writing there made purchases invisible to
-    // enforcement. Arithmetic SQL so a replay cannot double-credit.
+    // purchase row says what was granted and in which currency. The
+    // legacy `balance` column was not the balance; writing there made
+    // purchases invisible to enforcement. Arithmetic SQL so a replay
+    // cannot double-credit.
     const settings = await getBillingSettings();
     const grantedCurrency = purchase.grantedCurrency ?? settings.currency;
-    const grantedMicros =
-      purchase.grantedMicros ?? purchase.credits * MICROS_PER_UNIT;
+    const grantedMicros = purchase.grantedMicros ?? 0;
 
     if (grantedCurrency !== settings.currency) {
       // Crediting one currency into a ledger denominated in another is
@@ -205,8 +201,6 @@ export async function handleCheckoutCompleted(
       .values({
         id: crypto.randomUUID(),
         workspaceId,
-        balanceMnt: purchase.credits,
-        totalPurchasedMnt: purchase.credits,
         balanceMicros: grantedMicros,
         totalPurchasedMicros: grantedMicros,
         currency: grantedCurrency,
@@ -215,8 +209,6 @@ export async function handleCheckoutCompleted(
       .onConflictDoUpdate({
         target: creditBalances.workspaceId,
         set: {
-          balanceMnt: sql`${creditBalances.balanceMnt} + ${purchase.credits}`,
-          totalPurchasedMnt: sql`${creditBalances.totalPurchasedMnt} + ${purchase.credits}`,
           balanceMicros: sql`${creditBalances.balanceMicros} + ${grantedMicros}`,
           totalPurchasedMicros: sql`${creditBalances.totalPurchasedMicros} + ${grantedMicros}`,
           updatedAt: new Date(),
@@ -234,7 +226,8 @@ export async function handleCheckoutCompleted(
 
     log.info("Credit purchase completed", {
       workspaceId,
-      credits: purchase.credits,
+      grantedMicros,
+      currency: grantedCurrency,
     });
   }
 }

@@ -291,8 +291,6 @@ export async function createCreditCheckout(
   await db.insert(creditPurchases).values({
     id: purchaseId,
     workspaceId,
-    amount: priceMinor,
-    credits: Math.round(grant.amount / MICROS_PER_UNIT),
     priceMinor,
     priceCurrency: price.currency,
     grantedMicros: grant.amount,
@@ -492,7 +490,13 @@ export type BillingOverviewOwner = {
     cancelAtPeriodEnd: boolean;
     stripeCustomerId: string | null;
   } | null;
-  creditBalance: number;
+  /**
+   * The top-up balance, in the deployment's billing currency. `null`
+   * when the workspace has no ledger row to denominate. It was a bare
+   * number of whole tugrik, which the billing page rendered as a count
+   * of "credits" whatever the deployment actually billed in.
+   */
+  creditBalance: Money | null;
   billingMode: "subscription" | "credit";
 };
 
@@ -549,7 +553,12 @@ export async function getBillingOverview(
           stripeCustomerId: billing.subscription.stripeCustomerId,
         }
       : null,
-    creditBalance: billing.creditBalance.balanceMnt,
+    creditBalance: billing.creditBalance.currency
+      ? money(
+          billing.creditBalance.balanceMicros,
+          billing.creditBalance.currency
+        )
+      : null,
     billingMode: billing.billingMode,
   };
 }

@@ -139,7 +139,7 @@ async function claimEvent(event: Stripe.Event): Promise<boolean> {
       workspaceId: extractWorkspaceId(event),
       stripeEventId: event.id,
       type: event.type,
-      amount: extractAmount(event),
+      amountMinor: extractAmount(event),
       currency: (event.data.object as { currency?: string }).currency ?? "usd",
       metadata: serializeEvent(event),
       processedAt: null,

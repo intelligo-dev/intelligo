@@ -89,8 +89,6 @@ beforeEach(() => {
     currency: "MNT",
     usdRateMicros: 3_450_000_000,
     marginBp: 40_000,
-    usdToMntRate: 3450,
-    marginMultiplier: 4,
   });
 
   mocks.insertValues.mockResolvedValue(undefined);
@@ -237,8 +235,13 @@ describe("createCreditCheckout", () => {
     expect(mocks.insertValues).toHaveBeenCalledWith(
       expect.objectContaining({
         workspaceId: "ws_1",
-        credits: 100_000,
-        amount: 101, // Math.round(1.01 * 100)
+        // What the buyer pays and what the workspace receives, each
+        // naming its own currency — the pair that replaced a price in
+        // cents beside a bare count of "credits".
+        priceMinor: 101, // Math.round(1.01 * 100)
+        priceCurrency: "USD",
+        grantedMicros: 100_000_000_000,
+        grantedCurrency: "MNT",
         status: "pending",
         stripeCheckoutSessionId: "pending",
       })
@@ -412,7 +415,7 @@ describe("getBillingOverview", () => {
       cancelAtPeriodEnd: false,
       stripeCustomerId: "cus_123",
     },
-    creditBalance: { balanceMnt: 4200 },
+    creditBalance: { balanceMicros: 4_200_000_000, currency: "MNT" },
     billingMode: "subscription" as const,
   };
 
@@ -464,7 +467,9 @@ describe("getBillingOverview", () => {
         cancelAtPeriodEnd: false,
         stripeCustomerId: "cus_123",
       },
-      creditBalance: 4200,
+      // An amount that names its own currency, not a bare count of
+      // "credits" the page then rendered with whatever symbol it chose.
+      creditBalance: { amount: 4_200_000_000, currency: "MNT" },
       billingMode: "subscription",
     });
   });
@@ -473,7 +478,7 @@ describe("getBillingOverview", () => {
     mocks.getWorkspaceBilling.mockResolvedValue({
       plan: null,
       subscription: null,
-      creditBalance: { balanceMnt: 0 },
+      creditBalance: { balanceMicros: 0, currency: "MNT" },
       billingMode: "subscription" as const,
     });
 
@@ -487,7 +492,7 @@ describe("getBillingOverview", () => {
       planName: "Free",
       planSlug: "free",
       subscription: null,
-      creditBalance: 0,
+      creditBalance: { amount: 0, currency: "MNT" },
     });
   });
 });

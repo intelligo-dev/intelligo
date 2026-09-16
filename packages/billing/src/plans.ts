@@ -21,13 +21,6 @@ import type { Money } from "@intelligo-dev/core/money";
  * itself reads them; everything else is whatever the vertical defines.
  */
 export type PlanLimits = {
-  /**
-   * Monthly MNT credit allowance. -1 = unlimited.
-   *
-   * @deprecated Declare `PlanConfig.monthlyAllowance` instead: this
-   * number is whole tugrik whatever the deployment bills in.
-   */
-  monthlyCreditMnt?: number;
   /** Whether unused credits roll over into the next period. */
   rolloverEnabled?: boolean;
 } & Record<string, number | boolean | string | undefined>;
@@ -52,7 +45,7 @@ export interface PlanConfig {
   aiModelLabel: string; // "Суурь AI" / "Ухаалаг AI" / "Хамгийн ухаалаг AI"
   /**
    * What this plan grants each period, in the deployment's billing
-   * currency. Wins over `limits.monthlyCreditMnt`, which says a number
+   * currency. Replaced `limits.monthlyCreditMnt`, which said a number
    * without saying what of.
    */
   monthlyAllowance?: Money;
@@ -128,20 +121,6 @@ export function getPlanBySlug(
   productSlug: string
 ): PlanConfig | null {
   return getPlanConfigs(productSlug)[slug] ?? null;
-}
-
-/**
- * Format a price in Mongolian tugrik.
- *
- * @deprecated Currency and locale are deployment concerns, not package
- * ones: this hardcodes both the symbol and the Mongolian word for
- * "free". Installed pages format money through next-intl against
- * `CURRENCY` in the consumer's `lib/billing-config.ts` instead. Kept
- * for the pre-registry surfaces (admin, marketing) that still call it.
- */
-export function formatPrice(amount: number): string {
-  if (amount === 0) return "Үнэгүй";
-  return `₮${amount.toLocaleString()}`;
 }
 
 /**

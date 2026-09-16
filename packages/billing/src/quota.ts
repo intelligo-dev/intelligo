@@ -28,22 +28,21 @@ import {
   trialCredits,
 } from "@intelligo-dev/core/db/schema";
 import { eq, sql, and, gte, lte, gt } from "drizzle-orm";
-import { hasActiveTrialMnt } from "./trial";
+import { getActiveTrialGrant } from "./trial";
 import { checkNotificationTriggers } from "./notifications";
 import {
   UnknownModelError,
-  calculateChargedMnt,
   chargeFor,
   estimateWorstCaseCharge,
-  estimateWorstCaseChargedMnt,
   type BillingRate,
 } from "@intelligo-dev/executions/pricing";
 import {
   add,
+  compare,
   formatMoney,
   isNegative,
+  isZero,
   money,
-  multiply,
   subtract,
   zero,
   type Money,
@@ -61,7 +60,6 @@ import type {
 import {
   getPlanMessageLimit,
   getPlanMonthlyAllowance,
-  getPlanMonthlyCreditMnt,
 } from "./quota-plan";
 import { BillingNotConfiguredError } from "./plan-registry";
 
@@ -84,27 +82,20 @@ import {
 /**
  * The three pools a workspace can spend from, read once per decision.
  *
- *   remainingMnt = max(0, planAllowance − monthly.chargedMnt) + topupBalanceMnt + trialRemainingMnt
+ *   remaining = max(zero, allowance − used) + topupBalance + trialRemaining
  *
- * `monthly.chargedMnt` is the part of this period's spend that the plan
+ * `allowanceUsedMicros` is the part of this period's spend that the plan
  * allowance funded — `recordTokenUsage` increments it only up to the
  * allowance and sends the remainder to top-up or trial — so the three
  * pools never count one charge twice.
  */
 type Pools = {
   planSlug: string;
-  monthlyAllowanceMnt: number;
-  usedMnt: number;
-  planRemainingMnt: number;
-  topupBalanceMnt: number;
   trialActive: boolean;
-  trialRemainingMnt: number;
-  usdToMntRate: number;
-  marginMultiplier: number;
   /**
-   * The same pools, typed and in the deployment's own currency. A
-   * number that does not say what it is of is how a tugrik ledger came
-   * to be shown with a dollar sign.
+   * The pools, in the deployment's own currency. A number that does not
+   * say what it is of is how a tugrik ledger came to be shown with a
+   * dollar sign.
    */
   allowance: Money;
   used: Money;
@@ -119,55 +110,32 @@ async function readPools(workspaceId: string): Promise<Pools> {
   const [billing, monthly, trial, settings] = await Promise.all([
     getWorkspaceBilling(workspaceId),
     getCurrentMonthlyUsage(workspaceId),
-    hasActiveTrialMnt(workspaceId),
+    getActiveTrialGrant(workspaceId),
     getBillingSettings(),
   ]);
 
   const planSlug = billing.plan?.slug ?? "free";
-  const monthlyAllowanceMnt = getPlanMonthlyCreditMnt(planSlug);
-  const usedMnt = monthly.chargedMnt ?? 0;
 
-  /**
-   * Micros are authoritative when the row is denominated in what the
-   * deployment bills in. A row written before 0044 has only whole
-   * units — which were always in that same currency, because there was
-   * only ever one.
-   */
-  const pooled = (
-    micros: number | null | undefined,
-    whole: number,
-    rowCurrency: string | null
-  ): Money =>
-    rowCurrency === settings.currency && micros
-      ? money(micros, settings.currency)
-      : money(Math.max(0, whole) * MICROS_PER_UNIT, settings.currency);
+  // Micros are the only denomination left: 0045 dropped the whole-unit
+  // columns, so there is no second copy to reconcile against.
+  const pooled = (micros: number | null | undefined): Money =>
+    money(Math.max(0, micros ?? 0), settings.currency);
 
   const allowance = getPlanMonthlyAllowance(planSlug, settings.currency);
-  const used = pooled(monthly.allowanceUsedMicros, usedMnt, monthly.currency);
+  const used = pooled(monthly.allowanceUsedMicros);
   const planLeft = subtract(allowance, used);
   const trialRemaining = trial.active
-    ? pooled(trial.remainingMicros, trial.remainingMnt, trial.currency)
+    ? pooled(trial.remainingMicros)
     : zero(settings.currency);
 
   return {
     planSlug,
-    monthlyAllowanceMnt,
-    usedMnt,
-    planRemainingMnt: Math.max(0, monthlyAllowanceMnt - usedMnt),
-    topupBalanceMnt: Math.max(0, billing.creditBalance.balanceMnt ?? 0),
     trialActive: trial.active,
-    trialRemainingMnt: trial.active ? trial.remainingMnt : 0,
     allowance,
     used,
     planRemaining: isNegative(planLeft) ? zero(settings.currency) : planLeft,
-    topupBalance: pooled(
-      billing.creditBalance.balanceMicros,
-      billing.creditBalance.balanceMnt ?? 0,
-      billing.creditBalance.currency
-    ),
+    topupBalance: pooled(billing.creditBalance.balanceMicros),
     trialRemaining,
-    usdToMntRate: settings.usdToMntRate,
-    marginMultiplier: settings.marginMultiplier,
     rate: {
       currency: settings.currency,
       usdRateMicros: settings.usdRateMicros,
@@ -175,9 +143,6 @@ async function readPools(workspaceId: string): Promise<Pools> {
     },
   };
 }
-
-/** Micros are millionths of one major unit; whole units × this. */
-const MICROS_PER_UNIT = 1_000_000;
 
 const DEFAULT_MODEL_ID = "google/gemini-2.5-flash";
 
@@ -190,9 +155,6 @@ function notConfigured(): QuotaCheckResult {
       "Billing is not configured for this deployment: no product or plans are registered.",
     billingMode: "subscription",
     usage: { used: 0, limit: 0, percentage: 0 },
-    creditBalanceMnt: 0,
-    estimatedMnt: 0,
-    remainingMnt: 0,
     usingTrialCredits: false,
     graceActive: false,
   };
@@ -267,7 +229,7 @@ export async function reserveQuota(
 
       const reservedRows = await tx
         .select({
-          total: sql<number>`coalesce(sum(${creditReservations.estimatedMnt}), 0)`,
+          total: sql<number>`coalesce(sum(${creditReservations.estimatedMicros}), 0)`,
         })
         .from(creditReservations)
         .where(
@@ -277,16 +239,15 @@ export async function reserveQuota(
             gt(creditReservations.expiresAt, new Date())
           )
         );
-      const reservedMnt = Number(reservedRows[0]?.total ?? 0);
+      const reservedMicros = Number(reservedRows[0]?.total ?? 0);
 
-      const decision = decideQuota(pools, modelId, reservedMnt);
+      const decision = decideQuota(pools, modelId, reservedMicros);
       if (!decision.allowed) return decision as QuotaAdmission;
 
       await tx.insert(creditReservations).values({
         id: crypto.randomUUID(),
         workspaceId,
         requestId,
-        estimatedMnt: decision.estimatedMnt ?? 0,
         estimatedMicros: decision.estimated?.amount ?? 0,
         currency: decision.estimated?.currency ?? "MNT",
         status: "active",
@@ -324,39 +285,23 @@ export async function checkQuota(
 function decideQuota(
   pools: Pools,
   modelId: string,
-  reservedMnt: number
+  reservedMicros: number
 ): QuotaCheckResult {
   {
-    const {
-      monthlyAllowanceMnt,
-      usedMnt,
-      planRemainingMnt,
-      topupBalanceMnt,
-      trialActive,
-      trialRemainingMnt,
-    } = pools;
-    const remainingMnt = planRemainingMnt + topupBalanceMnt + trialRemainingMnt;
+    const { trialActive } = pools;
     const remaining = add(
       add(pools.planRemaining, pools.topupBalance),
       pools.trialRemaining
     );
+    const reserved = money(reservedMicros, pools.rate.currency);
 
     // A model with no registered price cannot be estimated, and
     // admission must not invent a ceiling — guessing one is how a turn
     // ran on the cheapest model and billed at the most expensive.
     // Refuse with a code the transport can turn into a 402 that says
     // why, rather than letting the throw become a 500.
-    let estimatedMnt: number;
     let estimated: Money;
     try {
-      estimatedMnt = estimateWorstCaseChargedMnt(
-        modelId,
-        pools.usdToMntRate,
-        pools.marginMultiplier
-      );
-      // The same ceiling, typed. Computed from the deployment's rate
-      // rather than from the pools, so it is right in the deployment's
-      // own currency even while the pools are still whole tugrik.
       estimated = estimateWorstCaseCharge(modelId, pools.rate);
     } catch (error) {
       if (error instanceof UnknownModelError) {
@@ -365,7 +310,11 @@ function decideQuota(
           code: "unknown_model",
           reason: error.message,
           billingMode: "subscription",
-          usage: { used: usedMnt, limit: monthlyAllowanceMnt, percentage: 0 },
+          usage: {
+            used: pools.used.amount,
+            limit: pools.allowance.amount,
+            percentage: 0,
+          },
           usingTrialCredits: false,
           graceActive: false,
         };
@@ -373,36 +322,50 @@ function decideQuota(
       throw error;
     }
     const percentage =
-      monthlyAllowanceMnt > 0
-        ? Math.min(100, Math.round((usedMnt / monthlyAllowanceMnt) * 100))
+      pools.allowance.amount > 0
+        ? Math.min(
+            100,
+            Math.round((pools.used.amount / pools.allowance.amount) * 100)
+          )
         : 0;
 
     const base = {
       billingMode: "subscription" as const,
-      usage: { used: usedMnt, limit: monthlyAllowanceMnt, percentage },
-      creditBalanceMnt: topupBalanceMnt,
-      estimatedMnt,
-      remainingMnt,
+      usage: {
+        used: pools.used.amount,
+        limit: pools.allowance.amount,
+        percentage,
+      },
       estimated,
       creditBalance: pools.topupBalance,
       remaining,
       graceActive: false,
     };
 
-    // Plan + top-up first; trial is fallback only.
-    const nonTrialRemaining = planRemainingMnt + topupBalanceMnt - reservedMnt;
-    if (nonTrialRemaining >= estimatedMnt) {
+    // Plan + top-up first; trial is fallback only. The comparisons are
+    // between amounts now, not between whole tugrik standing in for
+    // them — the pools, the ceiling and the outstanding reservations
+    // are all in the deployment's own currency.
+    const nonTrial = subtract(
+      add(pools.planRemaining, pools.topupBalance),
+      reserved
+    );
+    if (compare(nonTrial, estimated) >= 0) {
       return { allowed: true, usingTrialCredits: false, ...base };
     }
     // Reservations count against the trial pool once the non-trial
     // pool (minus reservations) can no longer cover them.
-    const trialAvailable =
-      trialRemainingMnt -
-      Math.max(0, reservedMnt - (planRemainingMnt + topupBalanceMnt));
-    if (trialActive && trialAvailable >= estimatedMnt) {
+    const overflow = subtract(
+      reserved,
+      add(pools.planRemaining, pools.topupBalance)
+    );
+    const trialAvailable = isNegative(overflow)
+      ? pools.trialRemaining
+      : subtract(pools.trialRemaining, overflow);
+    if (trialActive && compare(trialAvailable, estimated) >= 0) {
       return { allowed: true, usingTrialCredits: true, ...base };
     }
-    return remainingMnt > 0
+    return remaining.amount > 0
       ? {
           allowed: false,
           code: "insufficient_credits",
@@ -503,17 +466,8 @@ export async function recordTokenUsage(
 
   const settings = await getBillingSettings();
 
-  const { rawCostUsd, chargedMnt } = calculateChargedMnt(
-    params.model ?? "unknown",
-    params.inputTokens ?? 0,
-    params.outputTokens ?? 0,
-    settings.usdToMntRate,
-    settings.marginMultiplier
-  );
-
-  // The same charge, typed: exact in micros and carrying the currency.
-  // This is what the ledger's `*_micros` columns and every surface that
-  // shows an amount now read.
+  // Exact in micros and carrying its currency: what the ledger's
+  // `*_micros` columns and every surface that shows an amount read.
   const rate: BillingRate = {
     currency: settings.currency,
     usdRateMicros: settings.usdRateMicros,
@@ -550,10 +504,6 @@ export async function recordTokenUsage(
       inputTokens: params.inputTokens,
       outputTokens: params.outputTokens,
       totalTokens: params.totalTokens,
-      cost: rawCostUsd,
-      marginMultiplier: settings.marginMultiplier,
-      fxRate: settings.usdToMntRate,
-      chargedMnt,
       providerCostMicros: providerCost.amount,
       marginBp: rate.marginBp,
       usdRateMicros: rate.usdRateMicros,
@@ -572,7 +522,10 @@ export async function recordTokenUsage(
     // The plan allowance funds the charge first. Make sure the period
     // row exists, lock it, and take only what is left of the allowance.
     const billing = await getWorkspaceBilling(params.workspaceId);
-    const allowanceMnt = getPlanMonthlyCreditMnt(billing.plan?.slug ?? "free");
+    const allowance = getPlanMonthlyAllowance(
+      billing.plan?.slug ?? "free",
+      rate.currency
+    );
 
     await tx
       .insert(monthlyUsage)
@@ -582,7 +535,6 @@ export async function recordTokenUsage(
         periodStart,
         periodEnd,
         tokensUsed: 0,
-        chargedMnt: 0,
         allowanceUsedMicros: 0,
         currency: rate.currency,
         requestCount: 0,
@@ -592,7 +544,7 @@ export async function recordTokenUsage(
       });
 
     const periodRows = await tx
-      .select({ chargedMnt: monthlyUsage.chargedMnt })
+      .select({ allowanceUsedMicros: monthlyUsage.allowanceUsedMicros })
       .from(monthlyUsage)
       .where(
         and(
@@ -602,26 +554,30 @@ export async function recordTokenUsage(
       )
       .for("update")
       .limit(1);
-    const allowanceUsedMnt = Number(periodRows[0]?.chargedMnt ?? 0);
-    const planMnt = Math.min(
-      chargedMnt,
-      Math.max(0, allowanceMnt - allowanceUsedMnt)
-    );
-    const remainderMnt = chargedMnt - planMnt;
 
-    // The typed split mirrors the decision the tugrik pools just made —
-    // the allowance takes its share, and whatever is left goes to
-    // exactly one of trial or top-up, never both. Taking the remainder
-    // by subtraction keeps `charged === plan + topup + trial` exact
-    // rather than a micro out from two separate roundings.
-    const plan = multiply(charged, chargedMnt > 0 ? planMnt / chargedMnt : 1);
+    // The split is arithmetic on the amounts themselves now. It used to
+    // be decided in whole tugrik and the typed values derived from it by
+    // ratio, which meant the money followed a number that had already
+    // rounded. The allowance takes the lesser of the charge and what is
+    // left of it; whatever remains goes to exactly one of trial or
+    // top-up, never both. Taking the remainder by subtraction keeps
+    // `charged === plan + topup + trial` exact.
+    const allowanceUsed = money(
+      Number(periodRows[0]?.allowanceUsedMicros ?? 0),
+      rate.currency
+    );
+    const allowanceLeft = subtract(allowance, allowanceUsed);
+    const plan = isNegative(allowanceLeft)
+      ? zero(rate.currency)
+      : compare(charged, allowanceLeft) <= 0
+        ? charged
+        : allowanceLeft;
     const remainder = subtract(charged, plan);
 
     await tx
       .update(monthlyUsage)
       .set({
         tokensUsed: sql`${monthlyUsage.tokensUsed} + ${params.totalTokens}`,
-        chargedMnt: sql`${monthlyUsage.chargedMnt} + ${planMnt}`,
         allowanceUsedMicros: sql`${monthlyUsage.allowanceUsedMicros} + ${plan.amount}`,
         requestCount: sql`${monthlyUsage.requestCount} + 1`,
         updatedAt: new Date(),
@@ -633,10 +589,10 @@ export async function recordTokenUsage(
         )
       );
 
-    let trialMnt = 0;
-    let topupMnt = 0;
+    let trial = zero(rate.currency);
+    let topup = zero(rate.currency);
 
-    if (remainderMnt > 0) {
+    if (!isZero(remainder)) {
       // Lock the trial row (if any) so the pool decision is made once.
       const trialRow = await tx
         .select()
@@ -653,31 +609,31 @@ export async function recordTokenUsage(
       const trialHasSufficient =
         params.usingTrialCredits &&
         trialRow.length > 0 &&
-        (trialRow[0]?.creditsRemainingMnt ?? 0) >= remainderMnt;
+        (trialRow[0]?.remainingMicros ?? 0) >= remainder.amount;
 
       if (trialHasSufficient) {
-        trialMnt = remainderMnt;
+        trial = remainder;
         await tx
           .update(trialCredits)
           .set({
-            creditsRemainingMnt: sql`GREATEST(${trialCredits.creditsRemainingMnt} - ${remainderMnt}, 0)`,
-            creditsUsedMnt: sql`${trialCredits.creditsUsedMnt} + ${remainderMnt}`,
+            remainingMicros: sql`GREATEST(${trialCredits.remainingMicros} - ${remainder.amount}, 0)`,
+            usedMicros: sql`${trialCredits.usedMicros} + ${remainder.amount}`,
             creditsRemaining: sql`GREATEST(${trialCredits.creditsRemaining} - ${params.totalTokens}, 0)`,
             creditsUsed: sql`${trialCredits.creditsUsed} + ${params.totalTokens}`,
-            status: sql`CASE WHEN GREATEST(${trialCredits.creditsRemainingMnt} - ${remainderMnt}, 0) <= 0 THEN 'depleted' ELSE ${trialCredits.status} END`,
-            depletedAt: sql`CASE WHEN GREATEST(${trialCredits.creditsRemainingMnt} - ${remainderMnt}, 0) <= 0 THEN NOW() ELSE ${trialCredits.depletedAt} END`,
+            status: sql`CASE WHEN GREATEST(${trialCredits.remainingMicros} - ${remainder.amount}, 0) <= 0 THEN 'depleted' ELSE ${trialCredits.status} END`,
+            depletedAt: sql`CASE WHEN GREATEST(${trialCredits.remainingMicros} - ${remainder.amount}, 0) <= 0 THEN NOW() ELSE ${trialCredits.depletedAt} END`,
           })
           .where(eq(trialCredits.workspaceId, params.workspaceId));
       } else {
         // Top-up balance. GREATEST keeps the stored balance at zero when
-        // the charge exceeds it; total_used_mnt still records the full
-        // remainder so the shortfall is visible.
-        topupMnt = remainderMnt;
+        // the charge exceeds it; total_used_micros still records the
+        // full remainder so the shortfall is visible.
+        topup = remainder;
         await tx
           .update(creditBalances)
           .set({
-            balanceMnt: sql`GREATEST(${creditBalances.balanceMnt} - ${remainderMnt}, 0)`,
-            totalUsedMnt: sql`${creditBalances.totalUsedMnt} + ${remainderMnt}`,
+            balanceMicros: sql`GREATEST(${creditBalances.balanceMicros} - ${remainder.amount}, 0)`,
+            totalUsedMicros: sql`${creditBalances.totalUsedMicros} + ${remainder.amount}`,
             updatedAt: new Date(),
           })
           .where(eq(creditBalances.workspaceId, params.workspaceId));
@@ -693,16 +649,7 @@ export async function recordTokenUsage(
         .where(eq(creditReservations.requestId, requestId));
     }
 
-    return {
-      chargedMnt,
-      planMnt,
-      topupMnt,
-      trialMnt,
-      charged,
-      plan,
-      topup: trialMnt > 0 ? zero(charged.currency) : remainder,
-      trial: trialMnt > 0 ? remainder : zero(charged.currency),
-    };
+    return { charged, plan, topup, trial };
   });
 
   checkNotificationTriggers(params.workspaceId).catch((err) =>
@@ -720,10 +667,9 @@ export async function recordTokenUsage(
 export async function findSettlementByRequestId(
   workspaceId: string,
   requestId: string
-): Promise<{ chargedMnt: number; charged?: Money } | null> {
+): Promise<{ charged?: Money } | null> {
   const rows = await db
     .select({
-      chargedMnt: usageRecords.chargedMnt,
       chargedMicros: usageRecords.chargedMicros,
       currency: usageRecords.currency,
     })
@@ -737,12 +683,9 @@ export async function findSettlementByRequestId(
     .limit(1);
   const row = rows[0];
   if (!row) return null;
-  return {
-    chargedMnt: Number(row.chargedMnt ?? 0),
-    ...(row.currency
-      ? { charged: money(Number(row.chargedMicros ?? 0), row.currency) }
-      : {}),
-  };
+  return row.currency
+    ? { charged: money(Number(row.chargedMicros ?? 0), row.currency) }
+    : {};
 }
 
 // ---------------------------------------------------------------------------
@@ -895,17 +838,26 @@ export async function getQuotaThresholds(workspaceId: string) {
   const monthly = await getCurrentMonthlyUsage(workspaceId);
   const billing = await getWorkspaceBilling(workspaceId);
   const planSlug = billing.plan?.slug ?? "free";
-  const monthlyAllowanceMnt = getPlanMonthlyCreditMnt(planSlug);
-  const usedMnt = monthly.chargedMnt ?? 0;
+  const settings = await getBillingSettings();
+  const allowance = getPlanMonthlyAllowance(planSlug, settings.currency);
+  const used = Math.max(0, monthly.allowanceUsedMicros ?? 0);
   const percentage =
-    monthlyAllowanceMnt > 0
-      ? Math.min(100, Math.round((usedMnt / monthlyAllowanceMnt) * 100))
+    allowance.amount > 0
+      ? Math.min(100, Math.round((used / allowance.amount) * 100))
       : 0;
 
   return {
     percentage,
     warningThreshold: percentage >= 80,
     criticalThreshold: percentage >= 100,
+    /**
+     * The amounts behind the percentage, in micros of the deployment's
+     * billing currency. Returned so a caller that needs them — the
+     * quota email — reads them from the one place that computes them
+     * rather than repeating the arithmetic against columns of its own.
+     */
+    usedMicros: used,
+    limitMicros: allowance.amount,
   };
 }
 

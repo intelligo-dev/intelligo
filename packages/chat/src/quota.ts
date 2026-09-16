@@ -39,8 +39,11 @@ export async function getChatQuotaState(options: {
       allowed: quota.allowed,
       reason: quota.reason ?? null,
       code: quota.code ?? null,
-      remaining: quota.remainingMnt ?? 0,
-      estimated: quota.estimatedMnt ?? 0,
+      // Micros of the deployment's billing currency: the banner shows a
+      // formatted amount, and the pair used to be whole tugrik however
+      // the deployment actually billed.
+      remaining: quota.remaining?.amount ?? 0,
+      estimated: quota.estimated?.amount ?? 0,
       upgradeHref: options.upgradeHref,
     };
   } catch (error) {

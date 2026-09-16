@@ -78,12 +78,6 @@ export async function getWorkspaceCreditBalance(workspaceId: string) {
 
   if (result.length === 0 || !result[0]) {
     return {
-      balance: 0,
-      totalPurchased: 0,
-      totalUsed: 0,
-      balanceMnt: 0,
-      totalPurchasedMnt: 0,
-      totalUsedMnt: 0,
       balanceMicros: 0,
       totalPurchasedMicros: 0,
       totalUsedMicros: 0,
@@ -94,12 +88,6 @@ export async function getWorkspaceCreditBalance(workspaceId: string) {
 
   const record = result[0];
   return {
-    balance: record.balance,
-    totalPurchased: record.totalPurchased,
-    totalUsed: record.totalUsed,
-    balanceMnt: record.balanceMnt,
-    totalPurchasedMnt: record.totalPurchasedMnt,
-    totalUsedMnt: record.totalUsedMnt,
     balanceMicros: record.balanceMicros,
     totalPurchasedMicros: record.totalPurchasedMicros,
     totalUsedMicros: record.totalUsedMicros,

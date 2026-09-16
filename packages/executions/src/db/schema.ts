@@ -64,10 +64,6 @@ export const executions = pgTable(
     inputTokens: integer("input_tokens"),
     outputTokens: integer("output_tokens"),
     totalTokens: integer("total_tokens"),
-    /** Authoritative charge in MNT, mirrored from usage_records. */
-    chargedMnt: integer("charged_mnt"),
-    /** Worst-case estimate held at admission. */
-    reservedMnt: integer("reserved_mnt"),
     /** Authoritative charge in micros of `currency`, mirrored from usage_records. */
     chargedMicros: bigint("charged_micros", { mode: "number" }),
     /** Worst-case estimate held at admission, in micros of `currency`. */

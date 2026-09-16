@@ -92,6 +92,57 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   `conversationId: string | null`, read from the row's `metadata`.
   Harmless to read — but anything that *constructs* one (a test double,
   a preview fixture) has to supply it.
+- **Migration 0045 drops the money columns 0044 replaced**, and with
+  them the last of the surface that named an amount after a currency.
+  `credit_balances`, `credit_purchases`, `finance_events`,
+  `credit_reservations`, `usage_records`, `monthly_usage`,
+  `trial_credits` and `executions` lose their `*_mnt` columns, the
+  legacy cents columns that predated even those, and
+  `billing_settings.usd_to_mnt_rate` / `margin_multiplier_bp`.
+  - **The deploy order is the reverse of 0044.** That migration was
+    additive, so it ran first; this one is destructive, so deploy the
+    code that has stopped writing these columns and *then* migrate.
+    Running it under the old code breaks inserts immediately —
+    `credit_reservations.estimated_mnt` was NOT NULL with no default.
+    The migration refuses to run at all if 0044 has not: `DROP COLUMN
+    IF EXISTS` would otherwise delete amounts nothing had copied.
+  - Not dropped: `trial_credits.initial_credits`, `credits_used` and
+    `credits_remaining`. Those count tokens rather than money, 0044
+    never replaced them, and retiring them would change what a trial
+    *is* rather than what it is denominated in.
+  - `executions`: `calculateCost`, `calculateChargedMnt`,
+    `estimateWorstCaseChargedMnt`, `DEFAULT_BILLING_MARGIN`,
+    `DEFAULT_USD_TO_MNT_RATE` and `ChargedAmount` are gone —
+    `providerCost`, `chargeFor`, `estimateWorstCaseCharge` and
+    `DEFAULT_MARGIN_BP` replace them, and the 65% gross-margin floor is
+    pinned against the new constant. `EntitlementDecision.estimatedMnt`
+    and `SettlementResult.chargedMnt` are gone; bind `estimated` and
+    return `charged`. `summarizeExecutions` and
+    `summarizeExecutionsByDay` no longer report `chargedMnt`.
+  - `billing`: `ResolvedBillingSettings` is exactly a `BillingRate`;
+    `QuotaCheckResult` and `SettlementOutcome` lose their `*Mnt`
+    fields; `PlanLimits.monthlyCreditMnt` and `getPlanMonthlyCreditMnt`
+    are gone (declare `PlanConfig.monthlyAllowance`, and an allowance
+    in a currency the settings row does not name now reads as zero
+    rather than being silently converted); `TrialConfig.initialCreditsMnt`
+    becomes `grant: Money | null`; `hasActiveTrialMnt` becomes
+    `getActiveTrialGrant`; `formatPrice` is gone. Admission and
+    settlement do their arithmetic on amounts now, where the split used
+    to be decided in whole tugrik and the typed values derived from it
+    by ratio. `getQuotaThresholds` also returns `usedMicros` and
+    `limitMicros`, so the quota email reads them from the one place
+    that computes them.
+  - `admin`: `chargedMnt24h` is gone; read `charged24h`.
+  - Registry: `usage`'s `UsagePeriodSummary` and `UsageRecord` lose
+    `chargedAmount`, `dashboard`'s `PlanSummary` loses
+    `chargedThisMonth`, and `billing-settings` renders the top-up
+    balance as an amount — `getBillingOverview` returns
+    `creditBalance: Money | null` and `CreditBundles` takes
+    `currentBalance` where it took a count of "credits". Reinstall the
+    three items.
+  - `tests/architecture/money-migration.test.ts` keeps the shape from
+    coming back: no schema column named for a currency, and no
+    identifier ending in `Mnt` in a published package.
 
 ### Added
 

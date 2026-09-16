@@ -27,11 +27,9 @@ export const REFERENCE_PLANS: Record<string, PlanConfig> = {
     aiModelLabel: "Base",
     // Half a dollar a month of model time: roughly a hundred turns on
     // Flash at the shipped margin, which is what "try the assistant"
-    // costs. The `monthlyCreditMnt` below is the same allowance in the
-    // old untyped form, kept until migration 0045 drops it.
+    // costs.
     monthlyAllowance: fromMajor(0.5, "USD"),
     limits: {
-      monthlyCreditMnt: 2_000,
       rolloverEnabled: false,
       chatMessages: 30,
     },
@@ -51,7 +49,6 @@ export const REFERENCE_PLANS: Record<string, PlanConfig> = {
     /** $15 of model time inside a $20 plan. */
     monthlyAllowance: fromMajor(15, "USD"),
     limits: {
-      monthlyCreditMnt: 60_000,
       rolloverEnabled: true,
       chatMessages: 1_000,
     },

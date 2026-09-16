@@ -8,12 +8,9 @@
  * reappearing in a package that should not know the name.
  */
 
-import { money, type CurrencyCode, type Money } from "@intelligo-dev/core/money";
+import { zero, type CurrencyCode, type Money } from "@intelligo-dev/core/money";
 
 import { getDefaultProductSlug, getPlanConfigs } from "./plans";
-
-/** Micros are millionths of one major unit. */
-const MICROS_PER_UNIT = 1_000_000;
 
 function limit(
   planSlug: string | null | undefined,
@@ -28,27 +25,20 @@ function limit(
 }
 
 /**
- * Monthly MNT credit allowance for a plan.
- *
- * Returns 0 when the product registered nothing or the plan is
- * unknown. No allowance means the request falls through to purchased
- * credits or is refused, which is the safe direction — a non-zero
- * default would hand out free allowance on a misconfigured deploy.
- */
-export function getPlanMonthlyCreditMnt(
-  planSlug: string | null | undefined,
-  productSlug: string = getDefaultProductSlug()
-): number {
-  return limit(planSlug, productSlug, "monthlyCreditMnt");
-}
-
-/**
  * What a plan grants each period, in the deployment's billing currency.
  *
- * A catalogue that declares `monthlyAllowance` says the amount and the
- * currency together. An older one declares `limits.monthlyCreditMnt`, a
- * bare number that was always whole units of whatever the deployment
- * billed in — read that way here, so both catalogues enforce the same.
+ * A catalogue declares `monthlyAllowance`, which states the amount and
+ * the currency together. It replaced `limits.monthlyCreditMnt`, a bare
+ * number that was always whole units of whatever the deployment
+ * happened to bill in.
+ *
+ * Zero when the product registered nothing, when the plan is unknown,
+ * or when the catalogue names a currency the settings row does not.
+ * That last case is a half-finished switch rather than an exchange
+ * rate, and inventing a conversion is what ADR-0015 forbids. No
+ * allowance means the request falls through to purchased credits or is
+ * refused — the safe direction, since a non-zero default hands out free
+ * allowance on a misconfigured deploy.
  */
 export function getPlanMonthlyAllowance(
   planSlug: string | null | undefined,
@@ -59,15 +49,9 @@ export function getPlanMonthlyAllowance(
   const declared =
     (planSlug ? configs[planSlug]?.monthlyAllowance : undefined) ??
     configs.free?.monthlyAllowance;
-  // A catalogue declaring one currency while the settings row says
-  // another is a half-finished switch, not an exchange rate. Read the
-  // legacy allowance rather than hand back an amount that every
-  // add/subtract against the pools would throw on.
-  if (declared && declared.currency === currency) return declared;
-  return money(
-    getPlanMonthlyCreditMnt(planSlug, productSlug) * MICROS_PER_UNIT,
-    currency
-  );
+  return declared && declared.currency === currency
+    ? declared
+    : zero(currency);
 }
 
 /**
