@@ -31,7 +31,13 @@ const FONTS = [
 const idOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const Count = countWord(INTELLIGO.length);
 
-type Entry = { name: string; description: string; usedBy: string[]; intelligo: boolean };
+type Entry = { name: string; label: string; description: string; usedBy: string[]; intelligo: boolean };
+
+/** What a reader calls it: "AI Message Bubble" → "Message bubble", "alert-dialog" → "Alert dialog". */
+const readable = (s: string) => {
+  const words = s.replace(/^AI\s+/, "").replace(/-/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1).toLowerCase();
+};
 type Group = { id: string; tag: string; title: string; lede?: string; entries: Entry[] };
 
 const GROUPS: Group[] = [
@@ -43,7 +49,7 @@ const GROUPS: Group[] = [
       tag: `${tier} · ${TIERS[tier].title}`,
       title: g,
       lede: g === "Patterns" ? TIERS.T4.lede : undefined,
-      entries: entries.map((e) => ({ ...e, intelligo: true })),
+      entries: entries.map((e) => ({ ...e, label: readable(e.title), intelligo: true })),
     };
   }),
   ...(["T1", "T2"] as const).map((tier) => ({
@@ -51,7 +57,7 @@ const GROUPS: Group[] = [
     tag: `${tier} · shadcn base-nova`,
     title: TIERS[tier].title,
     lede: TIERS[tier].lede,
-    entries: CATALOG.filter((c) => c.tier === tier).map((c) => ({ ...c, intelligo: false })),
+    entries: CATALOG.filter((c) => c.tier === tier).map((c) => ({ ...c, label: readable(c.name), intelligo: false })),
   })),
 ];
 
@@ -74,14 +80,14 @@ const install = (e: Entry) =>
               <a href={`#${g.id}`} class="docs-section-title block no-underline hover:text-foreground">{g.title}</a>
               <ul class="docs-rail">
                 {g.entries.map((e) => (
-                  <li><a href={`#${e.name}`} data-spy={e.name} class="docs-link mono truncate text-[0.8rem]">{e.name}</a></li>
+                  <li><a href={`#${e.name}`} data-spy={e.name} data-label={e.label} class="docs-link truncate">{e.label}</a></li>
                 ))}
               </ul>
             </div>
           ))}
           <div class="docs-section-title">Foundation</div>
           <ul class="docs-rail">
-            <li><a href="#tokens" data-spy="tokens" class="docs-link">Tokens</a></li>
+            <li><a href="#tokens" data-spy="tokens" data-label="Tokens" class="docs-link">Tokens</a></li>
           </ul>
         </nav>
       </aside>
@@ -92,7 +98,7 @@ const install = (e: Entry) =>
             <span class="flex min-w-0 items-center gap-2 text-[0.85rem]">
               <span class="text-muted-foreground">Components</span>
               <span class="text-muted-foreground" aria-hidden="true">/</span>
-              <span class="mono truncate text-[0.8rem] text-foreground" data-spy-label>{GROUPS[0]!.entries[0]!.name}</span>
+              <span class="truncate font-medium text-foreground" data-spy-label>{GROUPS[0]!.entries[0]!.label}</span>
             </span>
             <span class="mono flex shrink-0 items-center gap-1.5 text-[0.72rem] text-muted-foreground">
               Menu
@@ -105,14 +111,14 @@ const install = (e: Entry) =>
                 <div class="docs-section-title">{g.title}</div>
                 <ul class="docs-rail">
                   {g.entries.map((e) => (
-                    <li><a href={`#${e.name}`} data-spy={e.name} class="docs-link mono text-[0.8rem]">{e.name}</a></li>
+                    <li><a href={`#${e.name}`} data-spy={e.name} data-label={e.label} class="docs-link">{e.label}</a></li>
                   ))}
                 </ul>
               </div>
             ))}
             <div class="docs-section-title">Foundation</div>
             <ul class="docs-rail">
-              <li><a href="#tokens" data-spy="tokens" class="docs-link">Tokens</a></li>
+              <li><a href="#tokens" data-spy="tokens" data-label="Tokens" class="docs-link">Tokens</a></li>
             </ul>
           </nav>
         </details>
@@ -128,9 +134,9 @@ const install = (e: Entry) =>
               {g.entries.map((e) => (
                 <article id={e.name} class="scroll-mt-20">
                   <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <h3 class="mono text-base">{e.name}</h3>
+                    <h3 class="heading text-[1.3rem] font-medium">{e.label}</h3>
                     <span class="mono text-xs text-muted-foreground">
-                      {e.usedBy.length ? `used by ${e.usedBy.length} block${e.usedBy.length === 1 ? "" : "s"}` : "not yet used by a block"}
+                      {e.name} · {e.usedBy.length ? `used by ${e.usedBy.length} block${e.usedBy.length === 1 ? "" : "s"}` : "not yet used by a block"}
                     </span>
                   </div>
                   <p class="mt-1 max-w-[70ch] text-sm text-foreground/70">{e.description}</p>
@@ -302,7 +308,7 @@ const install = (e: Entry) =>
       if (a.dataset.spy === current) a.setAttribute("aria-current", "true");
       else a.removeAttribute("aria-current");
     }
-    if (label) label.textContent = current === "tokens" ? "Tokens" : current;
+    if (label) label.textContent = links.find((a) => a.dataset.spy === current)?.dataset.label ?? "Tokens";
     const mark = nav?.querySelector<HTMLElement>(`[data-spy="${current}"]`);
     if (nav && mark) {
       const top = mark.offsetTop - nav.scrollTop;
