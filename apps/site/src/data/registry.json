@@ -770,6 +770,31 @@
       ]
     },
     {
+      "name": "document-viewer",
+      "type": "registry:ui",
+      "title": "Document Viewer",
+      "description": "How a saved document reads when nobody is editing it: markdown with maths and diagrams, highlighted code, a sheet's rows, an image, and a sandboxed HTML preview — plus the title-to-language and kind-glyph helpers the chat canvas and the artifacts library share (ADR-0013, T4).",
+      "dependencies": [
+        "streamdown",
+        "@streamdown/code",
+        "@streamdown/math",
+        "@streamdown/mermaid",
+        "@streamdown/cjk",
+        "katex",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "@intelligo/ai-code-block"
+      ],
+      "files": [
+        {
+          "path": "base/ui/document-viewer/document-viewer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/document-viewer.tsx"
+        }
+      ]
+    },
+    {
       "name": "smoke",
       "type": "registry:block",
       "title": "Registry Smoke Test",
@@ -939,7 +964,6 @@
       "title": "Usage",
       "description": "Workspace usage dashboard: current-period summary tiles, a period selector, and a table of recent AI execution records.",
       "registryDependencies": [
-        "badge",
         "card",
         "progress",
         "skeleton",
@@ -953,9 +977,10 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
+        "@intelligo-dev/core",
         "@intelligo-dev/executions",
-        "next-intl",
-        "lucide-react"
+        "lucide-react",
+        "next-intl"
       ],
       "files": [
         {
@@ -1105,6 +1130,11 @@
           "path": "base/app-shell/components/theme-provider.tsx",
           "type": "registry:component",
           "target": "components/shell/theme-provider.tsx"
+        },
+        {
+          "path": "base/app-shell/components/time-zone-cookie.tsx",
+          "type": "registry:component",
+          "target": "components/shell/time-zone-cookie.tsx"
         },
         {
           "path": "base/app-shell/lib/workspace-bootstrap.ts",
@@ -2035,7 +2065,7 @@
         "skeleton",
         "spinner",
         "@intelligo/page-header",
-        "@intelligo/ai-code-block"
+        "@intelligo/document-viewer"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -2192,6 +2222,7 @@
         "@intelligo/ai-tool-approval",
         "@intelligo/ai-tool-result",
         "@intelligo/copy-button",
+        "@intelligo/document-viewer",
         "@intelligo/status-badge"
       ],
       "dependencies": [

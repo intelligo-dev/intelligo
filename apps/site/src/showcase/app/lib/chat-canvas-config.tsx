@@ -33,20 +33,23 @@
 import {
   Suspense,
   lazy,
-  type ComponentProps,
   type ComponentType,
   type ReactNode,
 } from "react";
-import {
-  FileCodeIcon,
-  FileTextIcon,
-  ImageIcon,
-  SheetIcon,
-  type LucideIcon,
-} from "lucide-react";
-import { Streamdown } from "streamdown";
+import { type LucideIcon } from "lucide-react";
 
-import { CodeBlock } from "@showcase/components/ui/ai-code-block";
+import {
+  CodeView,
+  HtmlPreview,
+  ImageView,
+  SheetView,
+  TextView,
+  documentKindIcon,
+  extensionOf,
+  fileNameOf as fileNameFor,
+  isPreviewableTitle,
+  languageOf,
+} from "@showcase/components/ui/document-viewer";
 import { Spinner } from "@showcase/components/ui/spinner";
 
 export interface CanvasContentProps {
@@ -111,15 +114,22 @@ function Loading() {
   );
 }
 
+/**
+ * The viewers below are the shared ones
+ * (`@/components/ui/document-viewer`), so a document reads the same
+ * here as it does in the artifacts library. What stays here is the
+ * editing: which kinds have an editor, and when it is allowed to load.
+ */
+
 /** Editable once settled; a rendered view while it streams or is read-only. */
 function TextCanvas(props: CanvasContentProps) {
   if (props.isReadonly || props.status === "streaming" || !props.onChange) {
     return (
-      <div className="prose prose-sm max-w-none dark:prose-invert">
-        <Streamdown mode={props.status === "streaming" ? "streaming" : "static"}>
-          {props.content}
-        </Streamdown>
-      </div>
+      <TextView
+        content={props.content}
+        title={props.title}
+        streaming={props.status === "streaming"}
+      />
     );
   }
   return (
@@ -131,13 +141,7 @@ function TextCanvas(props: CanvasContentProps) {
 
 function CodeCanvas(props: CanvasContentProps) {
   if (props.isReadonly || props.status === "streaming" || !props.onChange) {
-    return (
-      <CodeBlock
-        code={props.content}
-        language={languageOf(props.title)}
-        showLineNumbers
-      />
-    );
+    return <CodeView content={props.content} title={props.title} />;
   }
   return (
     <Suspense fallback={<Loading />}>
@@ -146,32 +150,13 @@ function CodeCanvas(props: CanvasContentProps) {
   );
 }
 
-/**
- * An HTML page or an SVG, rendered in a sandbox: scripts run, but in an
- * opaque origin with no access to the app, its cookies or its storage.
- * The document asks for a light canvas, so a page written without a
- * background reads as it would on its own.
- */
 function CodePreview({ content, title }: CanvasContentProps) {
-  return (
-    <iframe
-      title={title}
-      sandbox="allow-scripts"
-      srcDoc={`<meta name="color-scheme" content="light">${content}`}
-      className="size-full min-h-96 rounded-lg border"
-    />
-  );
+  return <HtmlPreview content={content} title={title} />;
 }
-
-const PREVIEWABLE_EXTENSIONS = new Set(["html", "htm", "svg"]);
 
 function SheetCanvas(props: CanvasContentProps) {
   if (props.status === "streaming") {
-    return (
-      <pre className="overflow-auto font-mono text-xs whitespace-pre">
-        {props.content}
-      </pre>
-    );
+    return <SheetView content={props.content} title={props.title} />;
   }
   return (
     <Suspense fallback={<Loading />}>
@@ -183,83 +168,45 @@ function SheetCanvas(props: CanvasContentProps) {
 /** A generated image: the content is a data URL or an https URL. */
 function ImageCanvas({ content, title }: CanvasContentProps): ReactNode {
   if (!content) return null;
-  return (
-    <img
-      src={content}
-      alt={title}
-      className="mx-auto max-h-full max-w-full rounded-lg object-contain"
-    />
-  );
+  return <ImageView content={content} title={title} />;
 }
 
-const LANGUAGE_BY_EXTENSION: Record<string, string> = {
-  ts: "typescript",
-  tsx: "tsx",
-  js: "javascript",
-  jsx: "jsx",
-  py: "python",
-  rb: "ruby",
-  go: "go",
-  rs: "rust",
-  java: "java",
-  kt: "kotlin",
-  swift: "swift",
-  cs: "csharp",
-  sh: "bash",
-  sql: "sql",
-  json: "json",
-  yaml: "yaml",
-  yml: "yaml",
-  md: "markdown",
-  html: "html",
-  htm: "html",
-  svg: "xml",
-  css: "css",
-};
-
-type CodeLanguage = ComponentProps<typeof CodeBlock>["language"];
-
-/** A title's file extension, lower-cased: `report.PY` → `py`. */
-export function extensionOf(title: string): string | undefined {
-  const match = /\.([a-z0-9]{1,8})$/i.exec(title.trim());
-  return match?.[1]?.toLowerCase();
-}
-
-export function languageOf(title: string): CodeLanguage {
-  return (LANGUAGE_BY_EXTENSION[extensionOf(title) ?? ""] ?? "text") as CodeLanguage;
-}
+/**
+ * Re-exported, not redefined: the canvas and the transcript's artifact
+ * card ask this module for them, and a kind config is where a reader
+ * looks for "how is this document named and highlighted".
+ */
+export { extensionOf, languageOf };
 
 /** The name a downloaded document gets: its title, with an extension. */
 export function fileNameOf(title: string, kind: CanvasKind): string {
-  if (extensionOf(title)) return title.trim();
-  const base = title.trim().replace(/[\\/:*?"<>|]+/g, "-") || "document";
-  return `${base}.${kind.extension ?? "txt"}`;
+  return fileNameFor(title, kind.extension);
 }
 
 export const DEFAULT_CANVAS_KINDS: Record<string, CanvasKind> = {
   text: {
     content: TextCanvas,
-    icon: FileTextIcon,
+    icon: documentKindIcon("text"),
     labelKey: "chat.canvas.kinds.text",
     extension: "md",
   },
   code: {
     content: CodeCanvas,
-    icon: FileCodeIcon,
+    icon: documentKindIcon("code"),
     labelKey: "chat.canvas.kinds.code",
     preview: CodePreview,
-    previewable: (title) => PREVIEWABLE_EXTENSIONS.has(extensionOf(title) ?? ""),
+    previewable: isPreviewableTitle,
     extension: "txt",
   },
   sheet: {
     content: SheetCanvas,
-    icon: SheetIcon,
+    icon: documentKindIcon("sheet"),
     labelKey: "chat.canvas.kinds.sheet",
     extension: "csv",
   },
   image: {
     content: ImageCanvas,
-    icon: ImageIcon,
+    icon: documentKindIcon("image"),
     labelKey: "chat.canvas.kinds.image",
     extension: "png",
   },
