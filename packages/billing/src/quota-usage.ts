@@ -35,6 +35,8 @@ export async function getCurrentMonthlyUsage(workspaceId: string) {
     .select({
       tokensUsed: monthlyUsage.tokensUsed,
       chargedMnt: monthlyUsage.chargedMnt,
+      allowanceUsedMicros: monthlyUsage.allowanceUsedMicros,
+      currency: monthlyUsage.currency,
       requestCount: monthlyUsage.requestCount,
     })
     .from(monthlyUsage)
@@ -48,7 +50,14 @@ export async function getCurrentMonthlyUsage(workspaceId: string) {
     .execute();
 
   if (rows.length === 0 || !rows[0]) {
-    return { tokensUsed: 0, chargedMnt: 0, requestCount: 0 };
+    return {
+      tokensUsed: 0,
+      chargedMnt: 0,
+      allowanceUsedMicros: 0,
+      /** Null until a period row exists to denominate. */
+      currency: null as string | null,
+      requestCount: 0,
+    };
   }
 
   return rows[0];

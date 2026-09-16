@@ -84,6 +84,11 @@ export async function getWorkspaceCreditBalance(workspaceId: string) {
       balanceMnt: 0,
       totalPurchasedMnt: 0,
       totalUsedMnt: 0,
+      balanceMicros: 0,
+      totalPurchasedMicros: 0,
+      totalUsedMicros: 0,
+      /** Null until a workspace has a ledger row to denominate. */
+      currency: null as string | null,
     };
   }
 
@@ -95,6 +100,10 @@ export async function getWorkspaceCreditBalance(workspaceId: string) {
     balanceMnt: record.balanceMnt,
     totalPurchasedMnt: record.totalPurchasedMnt,
     totalUsedMnt: record.totalUsedMnt,
+    balanceMicros: record.balanceMicros,
+    totalPurchasedMicros: record.totalPurchasedMicros,
+    totalUsedMicros: record.totalUsedMicros,
+    currency: record.currency as string | null,
   };
 }
 

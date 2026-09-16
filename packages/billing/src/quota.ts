@@ -39,6 +39,9 @@ import {
   type BillingRate,
 } from "@intelligo-dev/executions/pricing";
 import {
+  add,
+  formatMoney,
+  isNegative,
   money,
   multiply,
   subtract,
@@ -55,7 +58,11 @@ import type {
   SettlementOutcome,
   UsageSummary,
 } from "./quota-types";
-import { getPlanMonthlyCreditMnt, getPlanMessageLimit } from "./quota-plan";
+import {
+  getPlanMessageLimit,
+  getPlanMonthlyAllowance,
+  getPlanMonthlyCreditMnt,
+} from "./quota-plan";
 import { BillingNotConfiguredError } from "./plan-registry";
 
 export type {
@@ -94,6 +101,16 @@ type Pools = {
   trialRemainingMnt: number;
   usdToMntRate: number;
   marginMultiplier: number;
+  /**
+   * The same pools, typed and in the deployment's own currency. A
+   * number that does not say what it is of is how a tugrik ledger came
+   * to be shown with a dollar sign.
+   */
+  allowance: Money;
+  used: Money;
+  planRemaining: Money;
+  topupBalance: Money;
+  trialRemaining: Money;
   /** What this deployment bills in — currency, USD rate, margin. */
   rate: BillingRate;
 };
@@ -110,6 +127,28 @@ async function readPools(workspaceId: string): Promise<Pools> {
   const monthlyAllowanceMnt = getPlanMonthlyCreditMnt(planSlug);
   const usedMnt = monthly.chargedMnt ?? 0;
 
+  /**
+   * Micros are authoritative when the row is denominated in what the
+   * deployment bills in. A row written before 0044 has only whole
+   * units — which were always in that same currency, because there was
+   * only ever one.
+   */
+  const pooled = (
+    micros: number | null | undefined,
+    whole: number,
+    rowCurrency: string | null
+  ): Money =>
+    rowCurrency === settings.currency && micros
+      ? money(micros, settings.currency)
+      : money(Math.max(0, whole) * MICROS_PER_UNIT, settings.currency);
+
+  const allowance = getPlanMonthlyAllowance(planSlug, settings.currency);
+  const used = pooled(monthly.allowanceUsedMicros, usedMnt, monthly.currency);
+  const planLeft = subtract(allowance, used);
+  const trialRemaining = trial.active
+    ? pooled(trial.remainingMicros, trial.remainingMnt, trial.currency)
+    : zero(settings.currency);
+
   return {
     planSlug,
     monthlyAllowanceMnt,
@@ -118,6 +157,15 @@ async function readPools(workspaceId: string): Promise<Pools> {
     topupBalanceMnt: Math.max(0, billing.creditBalance.balanceMnt ?? 0),
     trialActive: trial.active,
     trialRemainingMnt: trial.active ? trial.remainingMnt : 0,
+    allowance,
+    used,
+    planRemaining: isNegative(planLeft) ? zero(settings.currency) : planLeft,
+    topupBalance: pooled(
+      billing.creditBalance.balanceMicros,
+      billing.creditBalance.balanceMnt ?? 0,
+      billing.creditBalance.currency
+    ),
+    trialRemaining,
     usdToMntRate: settings.usdToMntRate,
     marginMultiplier: settings.marginMultiplier,
     rate: {
@@ -127,6 +175,9 @@ async function readPools(workspaceId: string): Promise<Pools> {
     },
   };
 }
+
+/** Micros are millionths of one major unit; whole units × this. */
+const MICROS_PER_UNIT = 1_000_000;
 
 const DEFAULT_MODEL_ID = "google/gemini-2.5-flash";
 
@@ -285,6 +336,10 @@ function decideQuota(
       trialRemainingMnt,
     } = pools;
     const remainingMnt = planRemainingMnt + topupBalanceMnt + trialRemainingMnt;
+    const remaining = add(
+      add(pools.planRemaining, pools.topupBalance),
+      pools.trialRemaining
+    );
 
     // A model with no registered price cannot be estimated, and
     // admission must not invent a ceiling — guessing one is how a turn
@@ -329,6 +384,8 @@ function decideQuota(
       estimatedMnt,
       remainingMnt,
       estimated,
+      creditBalance: pools.topupBalance,
+      remaining,
       graceActive: false,
     };
 
@@ -349,7 +406,9 @@ function decideQuota(
       ? {
           allowed: false,
           code: "insufficient_credits",
-          reason: `Insufficient credits for this request (need ~${estimatedMnt}₮, have ${remainingMnt}₮). Top up to continue.`,
+          // Both amounts name their own currency: a deployment that
+          // bills in dollars was being told it was short of tugrik.
+          reason: `Insufficient credits for this request (need ~${formatMoney(estimated, "en-US")}, have ${formatMoney(remaining, "en-US")}). Top up to continue.`,
           usingTrialCredits: false,
           ...base,
         }

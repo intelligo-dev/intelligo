@@ -74,12 +74,18 @@ vi.mock("./notifications", () => ({
 }));
 vi.mock("./quota-plan", async () => {
   const { BillingNotConfiguredError } = await import("./plan-registry");
+  const { money } = await import("@intelligo-dev/core/money");
   return {
     // free plan: 2000₮ monthly allowance; "unconfigured" simulates a
     // deployment whose composition root never registered a product.
     getPlanMonthlyCreditMnt: (slug: string) => {
       if (slug === "unconfigured") throw new BillingNotConfiguredError();
       return slug === "free" ? 2000 : 30000;
+    },
+    // The same allowance, typed — what the pools are denominated in.
+    getPlanMonthlyAllowance: (slug: string, currency: string) => {
+      if (slug === "unconfigured") throw new BillingNotConfiguredError();
+      return money((slug === "free" ? 2000 : 30000) * 1_000_000, currency);
     },
     getPlanMessageLimit: () => 100,
   };

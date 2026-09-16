@@ -8,7 +8,12 @@
  * reappearing in a package that should not know the name.
  */
 
+import { money, type CurrencyCode, type Money } from "@intelligo-dev/core/money";
+
 import { getDefaultProductSlug, getPlanConfigs } from "./plans";
+
+/** Micros are millionths of one major unit. */
+const MICROS_PER_UNIT = 1_000_000;
 
 function limit(
   planSlug: string | null | undefined,
@@ -35,6 +40,30 @@ export function getPlanMonthlyCreditMnt(
   productSlug: string = getDefaultProductSlug()
 ): number {
   return limit(planSlug, productSlug, "monthlyCreditMnt");
+}
+
+/**
+ * What a plan grants each period, in the deployment's billing currency.
+ *
+ * A catalogue that declares `monthlyAllowance` says the amount and the
+ * currency together. An older one declares `limits.monthlyCreditMnt`, a
+ * bare number that was always whole units of whatever the deployment
+ * billed in — read that way here, so both catalogues enforce the same.
+ */
+export function getPlanMonthlyAllowance(
+  planSlug: string | null | undefined,
+  currency: CurrencyCode,
+  productSlug: string = getDefaultProductSlug()
+): Money {
+  const configs = getPlanConfigs(productSlug);
+  const declared =
+    (planSlug ? configs[planSlug]?.monthlyAllowance : undefined) ??
+    configs.free?.monthlyAllowance;
+  if (declared) return declared;
+  return money(
+    getPlanMonthlyCreditMnt(planSlug, productSlug) * MICROS_PER_UNIT,
+    currency
+  );
 }
 
 /**

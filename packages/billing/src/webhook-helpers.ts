@@ -14,7 +14,8 @@ import {
   plans,
 } from "@intelligo-dev/core/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { formatPrice } from "./plans";
+import { formatMoney, fromMajor } from "@intelligo-dev/core/money";
+import { getBillingSettings } from "./billing-settings";
 import { handleSubscriptionConfirmedEmail } from "./email-triggers";
 import { createLogger } from "@intelligo-dev/core/logger";
 
@@ -122,8 +123,15 @@ export async function sendSubscriptionConfirmation(params: {
     return;
   }
 
-  const amount = formatPrice(
-    params.isYearly ? planDetails.priceYearly : planDetails.priceMonthly
+  // The plans table stores a bare number; it is whole units of whatever
+  // the deployment bills in, which is the one place that says so.
+  const settings = await getBillingSettings();
+  const amount = formatMoney(
+    fromMajor(
+      params.isYearly ? planDetails.priceYearly : planDetails.priceMonthly,
+      settings.currency
+    ),
+    "en-US"
   );
 
   await handleSubscriptionConfirmedEmail({

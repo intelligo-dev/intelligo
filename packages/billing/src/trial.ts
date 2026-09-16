@@ -25,9 +25,10 @@ import {
   users,
   member,
 } from "@intelligo-dev/core/db/schema";
-import { eq, and, gt, gte, lt } from "drizzle-orm";
+import { eq, and, gt, gte, lt, or } from "drizzle-orm";
 import type { TrialCredit } from "@intelligo-dev/core/db/schema";
 import { sendTrialExpiryEmail } from "@intelligo-dev/core/email";
+import { getBillingSettings } from "./billing-settings";
 import { getWorkspaceSubscription, ensureFreeSubscription } from "./queries";
 import { getTrialConfig, type TrialStatus } from "./trial-types";
 import { normalizeEmailForAbuseCheck, checkTrialAbuse } from "./trial-abuse";
@@ -41,6 +42,9 @@ export type { TrialStatus };
 // Re-export helpers
 export { normalizeEmailForAbuseCheck };
 export { deductTrialCredits };
+
+/** Micros are millionths of one major unit; whole units × this. */
+const MICROS_PER_UNIT = 1_000_000;
 
 // ---------------------------------------------------------------------------
 // provisionTrialCredits (TRIAL-01)
@@ -68,6 +72,11 @@ export async function provisionTrialCredits(params: {
   const trialEndDate = new Date();
   trialEndDate.setDate(trialEndDate.getDate() + config.durationDays);
 
+  // The grant is denominated in whatever the deployment bills in; the
+  // config states it in whole units of that currency.
+  const settings = await getBillingSettings();
+  const grantMicros = config.initialCreditsMnt * MICROS_PER_UNIT;
+
   const result = await db
     .insert(trialCredits)
     .values({
@@ -79,6 +88,10 @@ export async function provisionTrialCredits(params: {
       initialCreditsMnt: config.initialCreditsMnt,
       creditsRemainingMnt: config.initialCreditsMnt,
       creditsUsedMnt: 0,
+      initialMicros: grantMicros,
+      remainingMicros: grantMicros,
+      usedMicros: 0,
+      currency: settings.currency,
       status: "active",
       trialEndDate,
       createdByEmail: params.email,
@@ -171,12 +184,17 @@ export async function getTrialStatus(
  * Check trial activity in MNT terms — used by the cost-based quota
  * engine to decide whether trial fallback is available.
  */
-export async function hasActiveTrialMnt(
-  workspaceId: string
-): Promise<{ active: boolean; remainingMnt: number }> {
+export async function hasActiveTrialMnt(workspaceId: string): Promise<{
+  active: boolean;
+  remainingMnt: number;
+  remainingMicros: number;
+  currency: string | null;
+}> {
   const rows = await db
     .select({
       creditsRemainingMnt: trialCredits.creditsRemainingMnt,
+      remainingMicros: trialCredits.remainingMicros,
+      currency: trialCredits.currency,
       status: trialCredits.status,
       trialEndDate: trialCredits.trialEndDate,
     })
@@ -185,20 +203,33 @@ export async function hasActiveTrialMnt(
       and(
         eq(trialCredits.workspaceId, workspaceId),
         eq(trialCredits.status, "active"),
-        gt(trialCredits.creditsRemainingMnt, 0)
+        // Either column may be the live one: a grant written before
+        // 0044 has only whole tugrik, and one written in a currency
+        // whose whole-unit column was never filled has only micros.
+        or(
+          gt(trialCredits.creditsRemainingMnt, 0),
+          gt(trialCredits.remainingMicros, 0)
+        )
       )
     )
     .limit(1);
 
-  if (rows.length === 0 || !rows[0]) {
-    return { active: false, remainingMnt: 0 };
-  }
+  const none = {
+    active: false,
+    remainingMnt: 0,
+    remainingMicros: 0,
+    currency: null,
+  };
 
-  if (rows[0].trialEndDate && rows[0].trialEndDate < new Date()) {
-    return { active: false, remainingMnt: 0 };
-  }
+  if (rows.length === 0 || !rows[0]) return none;
+  if (rows[0].trialEndDate && rows[0].trialEndDate < new Date()) return none;
 
-  return { active: true, remainingMnt: rows[0].creditsRemainingMnt };
+  return {
+    active: true,
+    remainingMnt: rows[0].creditsRemainingMnt,
+    remainingMicros: rows[0].remainingMicros,
+    currency: rows[0].currency,
+  };
 }
 
 // ---------------------------------------------------------------------------

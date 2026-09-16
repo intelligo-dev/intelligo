@@ -14,12 +14,19 @@
  * to be published.
  */
 
+import type { Money } from "@intelligo-dev/core/money";
+
 /**
  * Per-plan limits. Two fields are named because the credit engine
  * itself reads them; everything else is whatever the vertical defines.
  */
 export type PlanLimits = {
-  /** Monthly MNT credit allowance. -1 = unlimited. */
+  /**
+   * Monthly MNT credit allowance. -1 = unlimited.
+   *
+   * @deprecated Declare `PlanConfig.monthlyAllowance` instead: this
+   * number is whole tugrik whatever the deployment bills in.
+   */
   monthlyCreditMnt?: number;
   /** Whether unused credits roll over into the next period. */
   rolloverEnabled?: boolean;
@@ -43,6 +50,12 @@ export interface PlanConfig {
   priceYearly?: number;
   targetAudience: string;
   aiModelLabel: string; // "Суурь AI" / "Ухаалаг AI" / "Хамгийн ухаалаг AI"
+  /**
+   * What this plan grants each period, in the deployment's billing
+   * currency. Wins over `limits.monthlyCreditMnt`, which says a number
+   * without saying what of.
+   */
+  monthlyAllowance?: Money;
   limits: PlanLimits;
   features: string[];
   featuresMn: string[];
