@@ -54,8 +54,19 @@ function friendlyError(error: unknown, t: Translator): string {
   return error instanceof Error ? error.message : t("errors.genericFailure");
 }
 
-/** This deployment's origin, for Stripe's success/cancel redirect URLs. */
+/**
+ * This deployment's origin, for Stripe's success/cancel redirect URLs.
+ *
+ * `NEXT_PUBLIC_APP_URL` first: the `Host` header is whatever the client
+ * sent, and a forged one points the post-payment redirect — which
+ * carries `{CHECKOUT_SESSION_ID}` — at someone else's domain. The
+ * header stays as the fallback for a deployment that has not set the
+ * variable.
+ */
 async function origin(): Promise<string> {
+  const configured = process.env.NEXT_PUBLIC_APP_URL;
+  if (configured) return configured.replace(/\/+$/, "");
+
   const requestHeaders = await headers();
   const host = requestHeaders.get("host");
   const protocol = process.env.NODE_ENV === "production" ? "https" : "http";

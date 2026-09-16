@@ -202,6 +202,10 @@ vi.mock("drizzle-orm", () => ({
     if (col === "userId") mocks.setLastWhereUserId(val as string);
     return { op: "eq", col, val };
   }),
+  // A quota row is per (user, workspace) since migration 0046, so the
+  // module composes its predicates. The fake still keys off the `eq`
+  // on `userId`, which `and` receives already evaluated.
+  and: vi.fn((...conditions: unknown[]) => ({ op: "and", conditions })),
   sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
     raw: strings.join("?"),
     values,
@@ -425,7 +429,7 @@ describe("recordFeatureUsage", () => {
   });
 
   it("issues an update on the user_quotas table for chat", async () => {
-    await recordFeatureUsage("u1", "chat", 0.05);
+    await recordFeatureUsage("u1", "ws-1", "chat", 0.05);
 
     expect(mocks.mockUpdate).toHaveBeenCalledTimes(1);
     expect(mocks.mockUpdateSet).toHaveBeenCalledTimes(1);
@@ -433,19 +437,21 @@ describe("recordFeatureUsage", () => {
   });
 
   it("issues an update for assessment action", async () => {
-    await recordFeatureUsage("u1", "assessment");
+    await recordFeatureUsage("u1", "ws-1", "assessment");
 
     expect(mocks.mockUpdate).toHaveBeenCalledTimes(1);
   });
 
   it("issues an update for report action", async () => {
-    await recordFeatureUsage("u1", "report");
+    await recordFeatureUsage("u1", "ws-1", "report");
 
     expect(mocks.mockUpdate).toHaveBeenCalledTimes(1);
   });
 
   it("defaults costUsd to 0 when omitted", async () => {
-    await expect(recordFeatureUsage("u1", "chat")).resolves.not.toThrow();
+    await expect(
+      recordFeatureUsage("u1", "ws-1", "chat")
+    ).resolves.not.toThrow();
   });
 });
 

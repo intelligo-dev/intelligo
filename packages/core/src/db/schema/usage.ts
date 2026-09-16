@@ -265,7 +265,6 @@ export const userQuotas = pgTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .unique()
       .references(() => users.id, { onDelete: "cascade" }),
     workspaceId: text("workspace_id")
       .notNull()
@@ -290,6 +289,15 @@ export const userQuotas = pgTable(
   (table) => [
     index("user_quotas_user_id_idx").on(table.userId),
     index("user_quotas_workspace_id_idx").on(table.workspaceId),
+    // One row per (user, workspace). `user_id` alone was UNIQUE, which
+    // gave someone in a paid workspace and a free one a single shared
+    // row: the last writer set `plan`, both read the other's limits,
+    // and the per-action counters summed everything they did anywhere
+    // (migration 0046).
+    unique("user_quotas_user_workspace_unique").on(
+      table.userId,
+      table.workspaceId
+    ),
   ]
 );
 

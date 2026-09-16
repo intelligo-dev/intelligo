@@ -81,7 +81,13 @@ export async function getBillingSettings(): Promise<ResolvedBillingSettings> {
     cached = { value, expiresAt: now + CACHE_TTL_MS };
     return value;
   } catch (error) {
-    console.error("[BillingSettings] DB read failed, using defaults:", error);
+    // Never block billing on a transient outage — and never silently
+    // change what a deployment bills in either. An expired reading of
+    // the real row is still right about the currency; DEFAULTS is
+    // tugrik, so on a USD deployment falling back to it would charge
+    // every turn at the wrong rate until the database came back.
+    console.error("[BillingSettings] DB read failed:", error);
+    if (cached) return cached.value;
     return DEFAULTS;
   }
 }

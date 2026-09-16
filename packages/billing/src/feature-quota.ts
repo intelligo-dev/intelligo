@@ -15,7 +15,7 @@
 
 import { db } from "@intelligo-dev/core/db";
 import { userQuotas } from "@intelligo-dev/core/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { getDefaultProductSlug, getPlanConfigs } from "./plans";
 import { getUpgradeMessage, getActionLimitKey } from "./plan-registry";
 
@@ -81,18 +81,19 @@ async function ensureUserQuota(
   workspaceId: string,
   plan: string
 ): Promise<EnsuredQuota> {
-  const existing = await db
-    .select()
-    .from(userQuotas)
-    .where(eq(userQuotas.userId, userId))
-    .limit(1);
+  const scope = and(
+    eq(userQuotas.userId, userId),
+    eq(userQuotas.workspaceId, workspaceId)
+  );
+
+  const existing = await db.select().from(userQuotas).where(scope).limit(1);
 
   if (existing[0]) {
     if (existing[0].plan !== plan) {
       await db
         .update(userQuotas)
         .set({ plan, updatedAt: new Date() })
-        .where(eq(userQuotas.userId, userId));
+        .where(scope);
     }
     return { usage: (existing[0].usage as Record<string, number>) ?? {} };
   }
@@ -174,6 +175,7 @@ export async function checkFeatureQuota(
  */
 export async function recordFeatureUsage(
   userId: string,
+  workspaceId: string,
   action: QuotaAction,
   costUsd: number = 0
 ): Promise<void> {
@@ -184,7 +186,12 @@ export async function recordFeatureUsage(
       totalCostUsd: sql`${userQuotas.totalCostUsd} + ${costUsd}`,
       updatedAt: new Date(),
     })
-    .where(eq(userQuotas.userId, userId));
+    .where(
+      and(
+        eq(userQuotas.userId, userId),
+        eq(userQuotas.workspaceId, workspaceId)
+      )
+    );
 }
 
 /**

@@ -18,7 +18,6 @@ export const PLANS: Record<string, PlanConfig> = {
     name: "Free",
     slug: "free",
     description: "Get started",
-    descriptionMn: "",
     priceOneTime: 0,
     targetAudience: "Everyone",
     aiModelLabel: "Base",
@@ -26,13 +25,11 @@ export const PLANS: Record<string, PlanConfig> = {
     monthlyAllowance: fromMajor(0.5, "USD"),
     limits: { rolloverEnabled: false },
     features: [],
-    featuresMn: [],
   },
   pro: {
     name: "Pro",
     slug: "pro",
     description: "For daily use",
-    descriptionMn: "",
     priceOneTime: 20,
     targetAudience: "Teams",
     aiModelLabel: "Advanced",
@@ -40,7 +37,6 @@ export const PLANS: Record<string, PlanConfig> = {
     monthlyAllowance: fromMajor(15, "USD"),
     limits: { rolloverEnabled: true },
     features: [],
-    featuresMn: [],
   },
 };
 
