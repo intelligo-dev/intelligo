@@ -11,7 +11,7 @@ The decisions the framework is built on. New ADRs get the next number; supersede
 | [0005](0005-transport-and-composition.md)                  | One service layer behind two transports; one composition root                                           | Accepted                   |
 | [0006](0006-package-allowlist.md)                          | Public / private / undecided package allowlists                                                         | Superseded in part by 0011 |
 | [0007](0007-execution-boundary.md)                         | The execution boundary is a lifecycle with ports, not a wrapper                                         | Accepted                   |
-| [0008](0008-dissolving-the-undecided-packages.md)          | `agents`, `ai` and `chat` dissolve; none is published                                                   | Accepted                   |
+| [0008](0008-dissolving-the-undecided-packages.md)          | `agents`, `ai` and `chat` dissolve; none is published                                                   | Amended in part by 0012    |
 | [0009](0009-public-conversation-and-document-contracts.md) | Conversation and document persistence are public `core` capabilities                                    | Accepted                   |
 | [0010](0010-registry-i18n-standard.md)                     | Registry items are i18n-native (next-intl); consumers install them unmodified                           | Accepted                   |
 | [0011](0011-package-topology.md)                           | One package per runtime target; shared types are subpaths; the registry is a private workspace          | Accepted                   |

@@ -3,6 +3,8 @@
  * dependency-direction architecture test enforces exactly this set,
  * so if the map is wrong the build is red.
  */
+import { PROOF } from "@/lib/proof";
+
 export type PackageInfo = {
   id: string;
   label: string;
@@ -18,7 +20,7 @@ export const PACKAGES: PackageInfo[] = [
     layer: "app",
     summary: "Your source. Rendered by your own shadcn primitives.",
     bullets: [
-      "25 registry items, used as-is",
+      `${PROOF.registryItems} registry items, used as-is`,
       "variance through config files",
       "copy from per-item message files",
     ],

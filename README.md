@@ -133,15 +133,18 @@ export const { POST, DELETE } = createChatHandler(chatServerConfig);
 
 ## Pages
 
-Twenty-five page families install into your application as **source you own**, through the official [shadcn registry](https://ui.shadcn.com/docs/registry) protocol — pages, components, loading/empty/error states, and thin actions, rendered by your own shadcn primitives:
+Twenty-eight page families install into your application as **source you own**, through the official [shadcn registry](https://ui.shadcn.com/docs/registry) protocol — pages, components, loading/empty/error states, and thin actions, rendered by your own shadcn primitives:
 
-|                      |                     |                       |                           |
-| -------------------- | ------------------- | --------------------- | ------------------------- |
-| `auth-login`         | `auth-signup`       | `auth-password-reset` | `auth-email-verification` |
-| `onboarding`         | `invitation-accept` | `app-shell`           | `dashboard`               |
-| `workspace-settings` | `team-settings`     | `profile-settings`    | `privacy-settings`        |
-| `pricing`            | `checkout`          | `billing-settings`    | `usage`                   |
-| `notifications`      | `chat`              | `artifacts`           | _+ a smoke canary_        |
+|                    |                      |                       |                           |
+| ------------------ | -------------------- | --------------------- | ------------------------- |
+| `auth-login`       | `auth-signup`        | `auth-password-reset` | `auth-email-verification` |
+| `onboarding`       | `invitation-accept`  | `app-shell`           | `dashboard`               |
+| `settings-shell`   | `workspace-settings` | `team-settings`       | `profile-settings`        |
+| `privacy-settings` | `language-switcher`  | `notifications`       | `route-error`             |
+| `pricing`          | `checkout`           | `billing-settings`    | `usage`                   |
+| `feature-gating`   | `trial-banner`       | `payment-poll`        | `artifacts`               |
+| `chat`             | `chat-panel`         | `chat-widget`         | `chat-share`              |
+| _+ a smoke canary_ |                      |                       |                           |
 
 Three rules make installed pages hold up over time:
 
@@ -185,6 +188,9 @@ Recorded as ADRs in [docs/adr](docs/adr/README.md):
 - Registry items are i18n-native and installed unmodified — [ADR-0010](docs/adr/0010-registry-i18n-standard.md)
 - One package per runtime target; shared types are subpaths; the registry is a private workspace — [ADR-0011](docs/adr/0011-package-topology.md)
 - The chat transport is a package; the chat UI is registry source — [ADR-0012](docs/adr/0012-headless-chat-transport.md)
+- One design system: shadcn base-nova, an additive token contract, a tiered catalog — [ADR-0013](docs/adr/0013-design-system.md)
+- One runtime seam, consumer-owned bindings, and the tool renderer contract — [ADR-0014](docs/adr/0014-chat-extension-contract.md)
+- Money is micros with a currency attached; a deployment declares the one it bills in — [ADR-0015](docs/adr/0015-money-is-micros-with-a-currency.md)
 
 ## What it is not
 
