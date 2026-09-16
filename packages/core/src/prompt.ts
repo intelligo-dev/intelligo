@@ -91,6 +91,10 @@ export function detectPromptInjection(
   text: string,
   patterns: readonly InjectionPattern[] = INJECTION_PATTERNS
 ): InjectionReport {
+  // Stryker disable next-line all: a fast path, not behaviour. Empty or
+  // blank text matches no pattern, so every mutant of this guard —
+  // dropping it, inverting it, swapping the operator — returns the same
+  // report the loop below would have built.
   if (!text || text.trim().length === 0) {
     return { isInjection: false, patterns: [] };
   }

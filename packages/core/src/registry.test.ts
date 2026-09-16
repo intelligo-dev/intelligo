@@ -54,7 +54,19 @@ describe("createRegistry", () => {
 
     expect(createRegistry<number>(k)).toBe(planted);
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]![0]).toContain(k);
+
+    // The warning has to be actionable on its own: which registry,
+    // which two module instances, and that the map itself is fine —
+    // otherwise it reads as an error and someone "fixes" the registry.
+    const message = warn.mock.calls[0]![0] as string;
+    expect(message).toContain(k);
+    // Both ends of the duplication: the copy that is asking now, and
+    // the copy that got there first.
+    expect(message).toContain("core/src/registry.ts");
+    expect(message).toContain("file:///some/other/bundle/registry.js");
+    expect(message).toMatch(/second module/);
+    expect(message).toMatch(/safe/);
+    expect(message).toMatch(/duplicated/);
 
     // Once per key: the condition persists for the life of the
     // process, and a warning on every read would bury the log.
@@ -99,5 +111,23 @@ describe("createRegistryRef", () => {
     expect(createRegistryRef<string | undefined>(k, "initial").get()).toBe(
       undefined
     );
+  });
+
+  it("reads back the initial value it was created with", () => {
+    // Without this the ref could store nothing until someone calls
+    // `set`, and every reader before the composition root would see
+    // undefined — which is the "No billing product configured" bug.
+    expect(createRegistryRef(key(), "initial").get()).toBe("initial");
+  });
+
+  it("keeps its box in its own namespace, under a stable slot name", () => {
+    const k = key();
+    createRegistryRef<string | undefined>(k, "initial");
+
+    // A ref is a map of one entry; both halves of that are contract,
+    // because the other copy of the module has to find the same box.
+    expect(createRegistry<string>(`ref/${k}`).get("value")).toBe("initial");
+    // And it does not squat on the plain key of the same name.
+    expect(createRegistry<string>(k).size).toBe(0);
   });
 });

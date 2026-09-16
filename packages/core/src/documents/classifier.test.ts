@@ -6,6 +6,7 @@ import {
   listRegisteredDocumentPatterns,
   clearDocumentPatternRegistry,
 } from "./classifier";
+import { createRegistry } from "../registry";
 
 describe("document classifier registry", () => {
   afterEach(() => {
@@ -30,6 +31,35 @@ describe("document classifier registry", () => {
       productSlug: "finance",
       agentLabel: "Finance Advisor",
     });
+  });
+
+  it("matches a title that carries any one of an entry's patterns", () => {
+    // ANY, not ALL: a product registers the several shapes its titles
+    // take, and a document carries one of them.
+    registerDocumentPatterns({
+      productSlug: "finance",
+      agentLabel: "Finance Advisor",
+      patterns: ["invoice", "budget"],
+    });
+
+    expect(classifyDocumentTitle("Q3 budget").productSlug).toBe("finance");
+    expect(classifyDocumentTitle("March invoice").productSlug).toBe("finance");
+  });
+
+  it("stores its entries under the documented global registry key", () => {
+    // The key is the contract with `createRegistry` (ADR-0005): a
+    // second copy of this module finds the same entries only if both
+    // ask for `core/document-patterns`.
+    registerDocumentPatterns({
+      productSlug: "finance",
+      agentLabel: "Finance Advisor",
+      patterns: ["finance"],
+    });
+
+    const shared = createRegistry<{ agentLabel: string }>(
+      "core/document-patterns"
+    );
+    expect(shared.get("finance")?.agentLabel).toBe("Finance Advisor");
   });
 
   it("checks patterns in registration order and returns the first match", () => {

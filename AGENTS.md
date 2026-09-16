@@ -26,6 +26,7 @@ pnpm build            # Build all
 pnpm lint / pnpm type-check
 pnpm test             # Vitest (root projects config — the real suite)
 pnpm vitest run path/to/file.test.ts
+pnpm test:mutation    # Stryker over the scope in stryker.config.mjs (~1 min)
 
 # Registry
 pnpm registry:build   # shadcn build → packages/registry/public/r/*.json
@@ -88,6 +89,7 @@ Server Actions are thin transports over package services (installed `actions/*`)
 - TypeScript strict; ESLint flat config; `_`-prefix for allowed unused vars.
 - **i18n via next-intl**: per-item namespaces under `messages/<locale>/<item>.json` (merged by filename in `i18n/request.ts`).
 - Vitest: root projects config; mock `@ai-sdk/*` for CI; `vi.stubEnv` + `vi.resetModules` + dynamic import for module-load-time env; integration suites `describe.skipIf(!TEST_PG_URL)`.
+- **Mutation testing** (`pnpm test:mutation`, CI job "Mutation score"): Stryker edits the source — an operator flipped, a string emptied — and reports what no test caught. `stryker.config.mjs` holds the scope and the breaking threshold; `vitest.stryker.config.ts` is its flat single-project vitest config (the root `projects` config loses per-mutant test selection) and lists the suites that can kill the scope's mutants, so the two grow together. A genuinely equivalent mutant gets a one-line `// Stryker disable next-line <mutator>: <why>` above it — the directive must be the last comment line — never a lowered threshold.
 - `pnpm.overrides` pins `pg` 8.18.0; the ajv floor is scoped `ajv@6` (shadcn needs ajv 8). Dependabot alerts on transitive packages are resolved there too — a `>=` floor, scoped to the major already in the tree (`js-yaml@4`, `^0.28.x`) where a newer major exists, never a forced major.
 - Conventional commits, small and scoped; repo stays green after every slice.
 

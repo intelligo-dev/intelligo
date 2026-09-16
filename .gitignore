@@ -35,6 +35,9 @@ pnpm-debug.log*
 # Testing
 coverage/
 .nyc_output/
+# Mutation testing (`pnpm test:mutation`): scratch tree and HTML report.
+.stryker-tmp/
+reports/
 RESEARCH/*
 test-results/
 playwright/

@@ -45,6 +45,11 @@ export const IGNORED_DIRS = new Set([
   ".wrangler",
   ".git",
   "coverage",
+  // `pnpm test:mutation` copies the whole tree into a sandbox per test
+  // runner process and edits the copies. Walking one means reading the
+  // repository twice, the second time with deliberately broken source.
+  ".stryker-tmp",
+  "reports",
 ]);
 
 /** Sub-directories of `dir` that carry a package.json. */

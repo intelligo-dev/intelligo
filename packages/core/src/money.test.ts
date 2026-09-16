@@ -200,4 +200,91 @@ describe("displayFractionDigits", () => {
   it("reads a negative amount by its magnitude", () => {
     expect(displayFractionDigits(fromMajor(-0.0048, "USD"))).toBe(4);
   });
+
+  it("counts an amount that rounds up to a visible minor unit as visible", () => {
+    // The boundary is inclusive: half a cent renders as $0.01, so it
+    // reads in cents. A hair under it does not, and grows digits.
+    expect(displayFractionDigits(money(5_000, "USD"))).toBe(2);
+    expect(displayFractionDigits(money(4_999, "USD"))).toBe(4);
+  });
+});
+
+describe("inspection", () => {
+  it("is false for the amounts it is not describing", () => {
+    expect(isZero(fromMajor(1, "USD"))).toBe(false);
+    expect(isNegative(zero("USD"))).toBe(false);
+    expect(isNegative(fromMajor(1, "USD"))).toBe(false);
+  });
+});
+
+/** The error a call threw, so a test can read its code and its message. */
+function thrown(run: () => unknown): MoneyError {
+  try {
+    run();
+  } catch (error) {
+    return error as MoneyError;
+  }
+  throw new Error("expected a MoneyError; nothing was thrown");
+}
+
+describe("the errors themselves", () => {
+  // A framework's error is an API: a caller branches on `code`, and a
+  // developer at 2am reads `message`. Both are pinned here, because
+  // both are what a misuse of this module actually looks like.
+
+  it("carries one catchable name", () => {
+    expect(thrown(() => currency("nope")).name).toBe("MoneyError");
+    expect(thrown(() => currency("nope"))).toBeInstanceOf(MoneyError);
+  });
+
+  it("codes the malformed inputs, and says what it received", () => {
+    const badCode = thrown(() => currency("nope"));
+    expect(badCode.code).toBe("invalid_currency");
+    expect(badCode.message).toContain("ISO-4217");
+    expect(badCode.message).toContain("nope");
+
+    expect(thrown(() => micros(1.5)).code).toBe("not_an_integer");
+    expect(thrown(() => micros(Number.MAX_SAFE_INTEGER + 2)).code).toBe(
+      "out_of_range"
+    );
+  });
+
+  it("names both currencies and the operation that refused them", () => {
+    const usd = fromMajor(1, "USD");
+    const mnt = fromMajor(1, "MNT");
+
+    const added = thrown(() => add(usd, mnt));
+    expect(added.code).toBe("currency_mismatch");
+    expect(added.message).toContain("Cannot add USD and MNT");
+    expect(thrown(() => subtract(usd, mnt)).message).toContain(
+      "Cannot subtract USD and MNT"
+    );
+    expect(thrown(() => compare(usd, mnt)).message).toContain(
+      "Cannot compare USD and MNT"
+    );
+  });
+
+  it("refuses a factor that is not finite", () => {
+    // Infinity and NaN both reach Math.ceil without complaint; the
+    // amount they produce is not a number anybody can charge.
+    const infinite = thrown(() =>
+      multiply(money(1000, "USD"), Number.POSITIVE_INFINITY)
+    );
+    expect(infinite.code).toBe("invalid_factor");
+    expect(infinite.message).toContain("finite");
+    expect(thrown(() => multiply(money(1000, "USD"), Number.NaN)).code).toBe(
+      "invalid_factor"
+    );
+  });
+
+  it("codes both rate refusals, and prints the rate as the decimal it is", () => {
+    const usd = fromMajor(1, "USD");
+    expect(thrown(() => convert(usd, "MNT", 0)).code).toBe("invalid_rate");
+
+    const self = thrown(() => convert(usd, "USD", 2_000_000));
+    expect(self.code).toBe("invalid_rate");
+    // 2_000_000 micros is a rate of 2.0 — the message says so in the
+    // unit the caller thinks in, not in micros.
+    expect(self.message).toContain("at 2 is not a conversion");
+  });
 });
