@@ -48,6 +48,37 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   `ai-agent-activity`, `ai-citations`, a plain image and
   `ai-tool-result` replace them; the `chat` item no longer depends on
   shadcn's `bubble`, `message`, `message-scroller` or `questionnaire`.
+- **Money is micros with the currency attached (ADR-0015).** Every
+  amount in a public type is now `Money` from `@intelligo-dev/core/money`
+  — micros (millionths of a major unit) plus an ISO code — because a
+  bare number whose unit lived in a field name is what showed one
+  Gemini Flash turn as "$15" on the usage page, and what let a $5
+  credit pack grant 100,000 units of a currency nobody had named.
+  - `executions`: ports and `ExecutionRun` gain `estimated` / `charged`
+    beside the deprecated `estimatedMnt` / `chargedMnt`;
+    `summarizeExecutions` and `summarizeExecutionsByDay` return
+    `charged: Money[]`, one entry per currency, rather than summing
+    two currencies into one number. `providerCost`, `chargeFor`,
+    `estimateWorstCaseCharge`, `DEFAULT_MARGIN_BP` and
+    `PROVIDER_CURRENCY` are added; `calculateChargedMnt`,
+    `estimateWorstCaseChargedMnt` and `DEFAULT_USD_TO_MNT_RATE` are
+    deprecated and go next release.
+  - `billing`: `ResolvedBillingSettings` is a `BillingRate`
+    (`currency`, `usdRateMicros`, `marginBp`), and
+    `ensureBillingSettingsRow` takes it — a deployment declares what it
+    bills in, and there is no default exchange rate.
+    `SettlementOutcome` and `QuotaCheckResult` gain typed amounts,
+    `PlanConfig.monthlyAllowance` replaces `limits.monthlyCreditMnt`,
+    and `CreditBundle` is `{ grant, price }`: what the workspace
+    receives and what the buyer pays, in their own currencies. Stripe
+    is charged in the price's currency, and the webhook refuses to
+    credit a grant the ledger is not denominated in.
+  - `admin`: `chargedMnt24h` → `charged24h: Money[]`.
+  - Migration **0044** adds micros and currency columns across the
+    billing and execution tables and backfills existing rows as MNT at
+    ×1,000,000. Run `intelligo migrate` before deploying this release.
+    The old columns are still written and read; a later release drops
+    them.
 
 ### Added
 
@@ -79,6 +110,25 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   `motion` must read `useReducedMotion`.
 - `packages/registry` has a vitest project (the eve mapper, the
   composer's trigger detection).
+- `@intelligo-dev/core/money` is finally the module the framework
+  denominates in, and gains `displayFractionDigits`: an amount shows
+  the currency's own decimals, except when that would render a real
+  charge as nothing — one chat turn costs a fraction of a cent, and a
+  usage page saying every request cost `$0.00` is worse than one saying
+  `$0.0048`.
+- Registry: `pricing` ships `lib/format-money.ts`, the one place an
+  installed page turns an amount into a string (its decimals come from
+  `Intl`, not a currency table). The `usage` and `dashboard` items
+  render through it, so a deployment's figures read in the currency it
+  actually bills in. `usage`'s action returns `charged` per period and
+  per record.
+- `packages/core/src/db/__tests__/migration-money.int.test.ts`: the
+  0044 backfill converts a tugrik ledger at exactly a million micros to
+  the unit, and a second run changes nothing.
+- [ADR-0015](docs/adr/0015-money-is-micros-with-a-currency.md): money
+  is micros with a currency attached, a deployment declares the one it
+  bills in, there is no default exchange rate, and a grant and a price
+  are separate amounts.
 - `@intelligo-dev/chat`: `agent.providerOptions` (and
   `ResolvedAgent.providerOptions`) reach `streamText` as-is — a thinking
   budget, `includeThoughts` — which is what makes `reasoning: true`
