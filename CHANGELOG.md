@@ -79,6 +79,19 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
     ×1,000,000. Run `intelligo migrate` before deploying this release.
     The old columns are still written and read; a later release drops
     them.
+- Registry: `chat` and `artifacts` now draw documents through one
+  `@intelligo/document-viewer` item, and `artifacts` no longer depends
+  on `@intelligo/ai-code-block`. Reinstall both. `DocumentActions`
+  gains required `title` and `kind` props — a download has to know
+  what it is saving.
+- `app-shell` ships `TimeZoneCookie`, which records the reader's IANA
+  zone, and the CLI scaffold's `i18n/request.ts` returns it as
+  next-intl's `timeZone`. Reinstall `app-shell` and take the scaffold
+  change; without them every date on every page stays UTC.
+- `@intelligo-dev/core`: `DocumentListItem` gains
+  `conversationId: string | null`, read from the row's `metadata`.
+  Harmless to read — but anything that *constructs* one (a test double,
+  a preview fixture) has to supply it.
 
 ### Added
 
@@ -207,6 +220,78 @@ The chat at ChatGPT level, on one runtime seam (ADR-0014).
   dialog that scrolls instead of spilling; the reference app's
   `saveArtifact` tool takes `kind: "text" | "code"` so the model can
   save source as source.
+- Registry: `@intelligo/document-viewer`, the one place a saved
+  document is drawn. `chat` and `artifacts` had each grown a copy of
+  the extension table and the kind switch, and the copies had drifted:
+  the library's had lost `htm` and `svg`, its `languageOf` took
+  whatever followed the last dot (so an untitled note was looked up as
+  a language), and the two rendered markdown through different plugin
+  sets. Exports `DocumentView` and the read-only views, `extensionOf`,
+  `languageOf`, `fileNameOf`, `isPreviewableTitle`, `documentKindIcon`
+  and `documentKindExtension`. Editing stays with the chat's canvas,
+  and each item keeps its own words for a kind.
+- Registry: the `artifacts` library leads with the documents. A card
+  shows the opening lines (or the image) under a fade instead of a
+  title over an empty body, the filters are one segmented control
+  carrying counts, and the reader is wide, with the canvas's two-row
+  header, a preview/source switch for HTML and SVG, download, and a
+  link back to the conversation that wrote it.
+- `@intelligo-dev/core`: `saveDocument` takes an optional
+  `conversationId`, stored on the row's `metadata`. Every save writes a
+  new version, so a known conversation is carried forward — otherwise
+  editing a document in the canvas silently unlinked it from its chat.
+- `@intelligo-dev/core/request-context`: `resolveTimeZone(value)` — an
+  IANA zone arrives from a browser cookie, so it is caller input:
+  anything this runtime does not know becomes `UTC`.
+- `@intelligo-dev/executions`: `summarizeExecutionsByDay` takes
+  `{ timeZone }`, defaulting to UTC, so existing callers are unchanged.
+- Tests: `queries-timezone.int.test.ts` (UTC, New York and Ulaanbaatar
+  split the same three rows three different ways, against real
+  Postgres) and documents integration tests for the conversation link
+  surviving a new version.
+
+### Fixed
+
+- The usage page rendered "Usage unavailable" for every workspace.
+  Drizzle inlines a `sql` fragment once per clause, so binding the time
+  zone turned one grouped expression into three different placeholders
+  and Postgres refused the grouping; the query groups by ordinal now.
+- Days were bucketed in UTC, so anyone east of it saw a chart that
+  ended yesterday and their late-evening turns filed on the day before.
+  `started_at AT TIME ZONE $zone` does not convert a naive timestamp —
+  it declares it — so the pair `AT TIME ZONE 'UTC' AT TIME ZONE $zone`
+  is what reads the stored instant where the reader sits, and the
+  period window is computed in that zone too.
+- The usage chart's date labels disagreed between the server and the
+  browser whenever they sat in different zones, which React reports as
+  a hydration mismatch. The day string is already the reader's calendar
+  day, so it is parsed and formatted as UTC rather than projected
+  through a zone a second time.
+- The dashboard composer painted only its pill, so while the page
+  scrolled the plan card and the shortcut row showed through the band
+  around it. Starter cards were fixed at `h-28`, which put a one-line
+  suggestion in a tall empty box, and the resume pill wrapped into a
+  block on a phone.
+- `privacy-settings` was written as a standalone page and kept its own
+  container and a second `h1` inside the settings shell, so the tab was
+  narrower than its siblings and titled twice; `profile-settings` was
+  the only other tab constraining its own width.
+- The notifications list titled itself in every variant, so the page
+  read "Notifications" twice, one line apart. Only the bell dropdown
+  names itself now.
+- Pricing: the interval switch stretched across the content column as
+  two large tabs, the plan grid was hard-coded to three columns (two
+  plans hung against the left edge), and "Current plan" was a disabled
+  default fill, which reads as the page's primary action greyed out.
+- The workspace URL helper printed the stored slug back instead of the
+  address it produces, and did not follow what was typed.
+- The team owner's role badge was the solid primary fill, which in a
+  table of members reads as an alert rather than as a role.
+- The artifact reader rendered at 384px however wide it asked to be.
+  `DialogContent`'s classes end with `sm:max-w-sm`, and tailwind-merge
+  keeps an unprefixed `max-w-*` beside it as a different variant group,
+  so the responsive rule won above 640px — which is also why the
+  previous `max-w-2xl` never applied.
 
 ## [Unreleased — design system]
 
