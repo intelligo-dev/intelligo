@@ -18,13 +18,16 @@ export function IntervalToggle({ interval, onChange }: IntervalToggleProps) {
   const t = useTranslations("pricing");
 
   return (
-    <div className="flex items-center justify-center gap-2 rounded-lg bg-muted p-1">
+    // Sized to its two words, not to the page: `flex-1` buttons in a
+    // full-width row stretched "Monthly" and "Yearly" across the whole
+    // content column, which read as two large tabs rather than as one
+    // small switch. The parent centres it.
+    <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-muted p-1">
       <Button
         type="button"
         variant={interval === "monthly" ? "default" : "ghost"}
         size="sm"
         onClick={() => onChange("monthly")}
-        className="flex-1"
       >
         {t("intervalToggle.monthly")}
       </Button>
@@ -33,7 +36,6 @@ export function IntervalToggle({ interval, onChange }: IntervalToggleProps) {
         variant={interval === "yearly" ? "default" : "ghost"}
         size="sm"
         onClick={() => onChange("yearly")}
-        className="flex-1"
       >
         {t("intervalToggle.yearly")}
       </Button>

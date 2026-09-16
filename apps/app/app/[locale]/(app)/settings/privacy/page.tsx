@@ -29,10 +29,10 @@ export default async function PrivacySettingsPage() {
   const [facts, auditTrail] = await Promise.all([listFacts(), getAuditTrail()]);
 
   return (
-    <div className="container mx-auto max-w-2xl space-y-6 px-4 py-8">
+    <div className="space-y-6">
       <PageHeader>
         <PageHeaderContent>
-          <PageHeaderTitle>{t("page.title")}</PageHeaderTitle>
+          <PageHeaderTitle level={2}>{t("page.title")}</PageHeaderTitle>
           <PageHeaderDescription>{t("page.description")}</PageHeaderDescription>
         </PageHeaderContent>
       </PageHeader>

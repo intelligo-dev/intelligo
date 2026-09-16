@@ -128,7 +128,10 @@ export function PlanCard({
 
         <div className="mt-auto pt-2">
           {isCurrent ? (
-            <Button disabled className="w-full">
+            // Outline, not the default fill: the plan you are already
+            // on is a statement of fact, and a solid disabled button
+            // reads as the page's primary action greyed out.
+            <Button disabled variant="outline" className="w-full">
               {t("planCard.currentPlanButton")}
             </Button>
           ) : isFree ? (

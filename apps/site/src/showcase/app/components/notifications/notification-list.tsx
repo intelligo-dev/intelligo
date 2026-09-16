@@ -120,19 +120,35 @@ export function NotificationList({
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3">
-        <h3 className="text-sm font-semibold">{t("list.title")}</h3>
-        {hasUnread && (
-          <button
-            type="button"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            onClick={handleMarkAllRead}
+      {/* The heading belongs to whoever has no other one. In the bell
+          dropdown this list is the whole surface, so it names itself;
+          on the notifications page the page's own header already says
+          "Notifications" one line above, and repeating it there read
+          as a bug. The row disappears entirely when it would hold
+          neither a title nor the mark-all action. */}
+      {(variant === "compact" || hasUnread) && (
+        <>
+          <div
+            className={`flex items-center px-4 py-3 ${
+              variant === "compact" ? "justify-between" : "justify-end"
+            }`}
           >
-            {t("list.markAllRead")}
-          </button>
-        )}
-      </div>
-      <Separator />
+            {variant === "compact" ? (
+              <h3 className="text-sm font-semibold">{t("list.title")}</h3>
+            ) : null}
+            {hasUnread && (
+              <button
+                type="button"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                onClick={handleMarkAllRead}
+              >
+                {t("list.markAllRead")}
+              </button>
+            )}
+          </div>
+          <Separator />
+        </>
+      )}
 
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-muted-foreground">

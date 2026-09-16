@@ -33,7 +33,13 @@ export function PromptBar() {
   }
 
   return (
-    <div className="pointer-events-none sticky bottom-0 px-4 pb-6 pt-4">
+    // The band, not just the pill, carries a background: the composer
+    // is sticky, so while the page scrolls everything passes underneath
+    // it — and with only the pill painted, the plan card and the
+    // shortcut row showed through the gutter around it. The gradient
+    // ends transparent so the content fades out rather than meeting a
+    // hard edge.
+    <div className="pointer-events-none sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent px-4 pt-8 pb-6">
       <form
         onSubmit={submit}
         className="pointer-events-auto mx-auto w-full max-w-3xl"

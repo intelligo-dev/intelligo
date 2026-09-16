@@ -96,7 +96,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex min-h-full flex-col">
-      <div className="flex-1 px-4 pt-12 md:pt-16">
+      {/* Bottom padding so the last thing on the page clears the
+          composer's band instead of ending flush against it. */}
+      <div className="flex-1 px-4 pt-12 pb-8 md:pt-16">
         <DashboardHero resume={resume} />
 
         <RecentConversations

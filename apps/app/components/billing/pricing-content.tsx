@@ -65,24 +65,31 @@ export function PricingContent({
       {/* Hidden unless at least one plan is actually priced per period
           — a toggle that changes nothing is worse than no toggle. */}
       {hasIntervalPricing ? (
-        <IntervalToggle interval={interval} onChange={setInterval} />
+        <div className="flex justify-center">
+          <IntervalToggle interval={interval} onChange={setInterval} />
+        </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      {/* Centred wrap rather than a three-column grid: the catalogue is
+          a product-registered map of any size (ADR-0006), and a fixed
+          three columns left two plans hanging against the left edge
+          with a hole where the third would be. Each card takes a fixed
+          width so two, three or five of them stay the same size. */}
+      <div className="flex flex-wrap justify-center gap-6">
         {planEntries.map((plan) => (
-          <PlanCard
-            key={plan.slug}
-            plan={plan}
-            currentPlanSlug={currentPlanSlug}
-            interval={interval}
-            canCheckout={canCheckout}
-            // No plan is singled out as "recommended" here: the
-            // catalogue is an arbitrary, product-registered map
-            // (ADR-0006), and guessing a tier name or position would
-            // reintroduce the vertical-specific assumption this item
-            // is meant to avoid. A deployment that wants a highlighted
-            // plan sets `isRecommended` in its own copy of this file.
-          />
+          <div key={plan.slug} className="w-full sm:w-80">
+            <PlanCard
+              plan={plan}
+              currentPlanSlug={currentPlanSlug}
+              interval={interval}
+              canCheckout={canCheckout}
+              // No plan is singled out as "recommended" here: guessing a
+              // tier name or position would reintroduce the
+              // vertical-specific assumption this item avoids. A
+              // deployment that wants a highlighted plan sets
+              // `isRecommended` in its own copy of this file.
+            />
+          </div>
         ))}
       </div>
     </div>

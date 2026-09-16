@@ -7,7 +7,7 @@
  * a confirmation dialog.
  */
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -57,6 +57,15 @@ export function WorkspaceSettingsForm({
   const [error, setError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  /**
+   * Read after mount, never during render: the server has no window,
+   * and an origin baked into the HTML would differ from the browser's
+   * on any deployment reached by more than one hostname. Until it
+   * arrives the helper shows the path alone, which is already true.
+   */
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -125,7 +134,13 @@ export function WorkspaceSettingsForm({
                 maxLength={50}
                 pattern="[a-z0-9-]+"
               />
-              <p className="text-xs text-muted-foreground">{workspace.slug}</p>
+              {/* The address this slug actually produces, following
+                  what is typed rather than what is saved. The old
+                  helper echoed the stored slug back, which told the
+                  reader nothing the field above it did not. */}
+              <p className="text-xs text-muted-foreground">
+                {origin}/{slug}
+              </p>
             </div>
 
             {canEdit ? (

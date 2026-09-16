@@ -14,7 +14,7 @@ export default async function ProfileSettingsPage() {
   const user = await profile.getProfile();
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6">
       <PageHeader>
         <PageHeaderContent>
           <PageHeaderTitle level={2}>{t("page.title")}</PageHeaderTitle>
