@@ -35,7 +35,7 @@
     "class-variance-authority": "^0.7.1",
     "codemirror": "^6.0.2",
     "drizzle-orm": "^0.45.2",
-    "eslint": "^9.39.5",
+    "eslint": "^10.10.0",
     "katex": "^0.18.7",
     "lucide-react": "^0.563.0",
     "motion": "^13.4.0",

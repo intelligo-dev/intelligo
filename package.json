@@ -33,8 +33,8 @@
     "@types/pg": "^8.23.1",
     "@typescript-eslint/eslint-plugin": "^8.70.0",
     "@typescript-eslint/parser": "^8.70.0",
-    "@vitest/coverage-v8": "^4.1.11",
-    "eslint": "^9.39.5",
+    "@vitest/coverage-v8": "~4.1.11",
+    "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "pg": "8.18.0",
     "prettier": "^3.9.7",
@@ -42,7 +42,7 @@
     "tsx": "^4.23.13",
     "turbo": "^2.10.13",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.11"
+    "vitest": "~4.1.11"
   },
   "pnpm": {
     "overrides": {

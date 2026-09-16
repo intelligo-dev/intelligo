@@ -34,6 +34,26 @@ export default {
   htmlReporter: { fileName: "reports/mutation/index.html" },
   jsonReporter: { fileName: "reports/mutation/mutation.json" },
   tempDirName: ".stryker-tmp",
+  // The sandbox is a copy of the working tree, one per test-runner
+  // process — seven of them here. Left to itself it copies Turborepo's
+  // cache and every build output too, which is gigabytes per sandbox
+  // and fills the disk mid-run (ENOSPC) before the run can finish.
+  // None of it is reachable from the suites in scope: the workspace
+  // `exports` point at `src/*.ts`, not at `dist`.
+  ignorePatterns: [
+    "node_modules",
+    ".git",
+    ".turbo",
+    ".next",
+    ".astro",
+    ".wrangler",
+    "dist",
+    "coverage",
+    "reports",
+    "packages/registry/public",
+    "*.tsbuildinfo",
+    ".stryker-tmp",
+  ],
   mutate: [
     "packages/core/src/money.ts",
     "packages/core/src/prompt.ts",
