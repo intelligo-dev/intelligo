@@ -5,8 +5,7 @@ import type {
 import { wait } from "./_preview";
 
 export type PaymentActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 /** A stand-in QR: the modal shows whatever image the provider returns. */
 const QR_PREVIEW = `data:image/svg+xml;utf8,${encodeURIComponent(

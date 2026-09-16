@@ -24,8 +24,7 @@ import {
 import { team } from "@/lib/team";
 
 export type InvitationActionResult =
-  | { success: true }
-  | { success: false; error: string };
+  { success: true } | { success: false; error: string };
 
 type Translator = Awaited<
   ReturnType<typeof getTranslations<"invitation-accept">>

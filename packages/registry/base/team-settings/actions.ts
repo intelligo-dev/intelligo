@@ -22,8 +22,7 @@ import {
 import { team } from "@/lib/team";
 
 export type TeamActionResult<T = undefined> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 type Translator = Awaited<ReturnType<typeof getTranslations<"team-settings">>>;
 

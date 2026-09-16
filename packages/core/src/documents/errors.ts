@@ -22,10 +22,7 @@
  *   row it was expected to.
  */
 export type DocumentServiceErrorCode =
-  | "not_found"
-  | "forbidden"
-  | "invalid_input"
-  | "database_error";
+  "not_found" | "forbidden" | "invalid_input" | "database_error";
 
 export class DocumentServiceError extends Error {
   readonly code: DocumentServiceErrorCode;

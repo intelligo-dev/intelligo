@@ -56,8 +56,7 @@ export type ChatBodyRejection = {
 };
 
 export type ParsedChatBody =
-  | { ok: true; body: ChatBody }
-  | { ok: false; rejection: ChatBodyRejection };
+  { ok: true; body: ChatBody } | { ok: false; rejection: ChatBodyRejection };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ROLES = new Set(["system", "user", "assistant"]);

@@ -203,8 +203,7 @@ function lastSourceIndex(messages: readonly unknown[]): number {
         continue;
       const sources = (
         result.output?.value as
-          | { sources?: Array<{ index?: unknown }> }
-          | undefined
+          { sources?: Array<{ index?: unknown }> } | undefined
       )?.sources;
       for (const source of sources ?? []) {
         if (typeof source.index === "number")

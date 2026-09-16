@@ -25,8 +25,7 @@ import {
 } from "@intelligo-dev/core/identity";
 
 export type PrivacyActionResult<T = undefined> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 type Translator = Awaited<
   ReturnType<typeof getTranslations<"privacy-settings">>

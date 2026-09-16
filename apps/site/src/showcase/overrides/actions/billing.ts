@@ -1,8 +1,7 @@
 import { wait, PREVIEW_NOTE } from "./_preview";
 
 export type BillingActionResult<T = { url: string }> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 export type CheckoutActionInput = {
   planSlug: string;

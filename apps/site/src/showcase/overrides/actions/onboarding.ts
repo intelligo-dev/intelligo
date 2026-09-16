@@ -1,8 +1,7 @@
 import { wait } from "./_preview";
 
 export type OnboardingActionResult<T = undefined> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 export async function advanceStep(
   ..._args: unknown[]

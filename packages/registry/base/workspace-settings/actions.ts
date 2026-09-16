@@ -25,8 +25,7 @@ import {
 import { workspace } from "@/lib/workspace";
 
 export type WorkspaceActionResult<T = undefined> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 type Translator = Awaited<
   ReturnType<typeof getTranslations<"workspace-settings">>

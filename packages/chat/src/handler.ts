@@ -176,8 +176,7 @@ function approvalAnswers(messages: ReadonlyArray<UIMessage>): ApprovalAnswer[] {
     const part = raw as unknown as Record<string, unknown>;
     if (part.state !== "approval-responded") continue;
     const approval = part.approval as
-      | { id?: unknown; approved?: unknown; reason?: unknown }
-      | undefined;
+      { id?: unknown; approved?: unknown; reason?: unknown } | undefined;
     if (
       !approval ||
       typeof approval.id !== "string" ||

@@ -1,8 +1,7 @@
 import { wait, daysAgo, PREVIEW_NOTE } from "./_preview";
 
 export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 import type { DocumentListItem } from "@intelligo-dev/core/documents";
 
 export type ArtifactListItem = DocumentListItem & { isReport: boolean };

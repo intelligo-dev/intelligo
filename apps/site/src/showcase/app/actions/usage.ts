@@ -47,8 +47,7 @@ export type UsageOverview = {
   records: UsageRecord[];
 };
 export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 /** Dollars, as the framework hands them over: micros with a currency. */
 const usd = (major: number): MoneyLike => ({

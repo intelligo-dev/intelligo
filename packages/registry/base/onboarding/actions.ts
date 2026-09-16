@@ -22,8 +22,7 @@ import {
 } from "@/lib/onboarding-steps";
 
 export type OnboardingActionResult<T = undefined> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 async function friendlyError(error: unknown): Promise<string> {
   if (isOnboardingServiceError(error)) {

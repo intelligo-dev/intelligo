@@ -60,14 +60,12 @@ function extractWorkspaceId(event: Stripe.Event): string | null {
   const metadata = obj.metadata as Record<string, unknown> | undefined;
   if (metadata?.workspaceId) return String(metadata.workspaceId);
   const sub = obj.subscription as
-    | { metadata?: Record<string, unknown> }
-    | undefined;
+    { metadata?: Record<string, unknown> } | undefined;
   if (sub && typeof sub === "object" && sub.metadata?.workspaceId) {
     return String(sub.metadata.workspaceId);
   }
   const customer = obj.customer as
-    | { metadata?: Record<string, unknown> }
-    | undefined;
+    { metadata?: Record<string, unknown> } | undefined;
   if (
     customer &&
     typeof customer === "object" &&

@@ -141,13 +141,12 @@ function AgentActivityDemo() {
   const items = ACTIVITY_ITEMS.slice(
     0,
     Math.min(step, ACTIVITY_ITEMS.length)
-  ).map(
-    (item, index, shown): AgentActivityItem =>
-      working &&
-      index === shown.length - 1 &&
-      (item.type === "search" || item.type === "tool")
-        ? { ...item, status: "running" }
-        : item
+  ).map((item, index, shown): AgentActivityItem =>
+    working &&
+    index === shown.length - 1 &&
+    (item.type === "search" || item.type === "tool")
+      ? { ...item, status: "running" }
+      : item
   );
 
   return (

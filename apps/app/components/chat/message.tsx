@@ -230,8 +230,7 @@ export function Message({
       continue;
     }
     const output = part.output as
-      | { documentId?: unknown; id?: unknown }
-      | undefined;
+      { documentId?: unknown; id?: unknown } | undefined;
     const id = output?.documentId ?? output?.id;
     if (typeof id === "string") documentsShownByTools.add(id);
   }

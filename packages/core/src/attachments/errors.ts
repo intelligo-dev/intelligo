@@ -1,8 +1,5 @@
 export type AttachmentServiceErrorCode =
-  | "not_found"
-  | "forbidden"
-  | "invalid_input"
-  | "database_error";
+  "not_found" | "forbidden" | "invalid_input" | "database_error";
 
 export class AttachmentServiceError extends Error {
   constructor(

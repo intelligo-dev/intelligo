@@ -18,8 +18,7 @@ import type { ChatActor, ChatServerConfig } from "./config";
 export type ChatFeedback = "up" | "down" | null;
 
 export type RecordChatFeedbackResult =
-  | { ok: true }
-  | { ok: false; code: "not_found" | "database_error" };
+  { ok: true } | { ok: false; code: "not_found" | "database_error" };
 
 export async function recordChatFeedback(
   config: Pick<ChatServerConfig, "onTurn">,

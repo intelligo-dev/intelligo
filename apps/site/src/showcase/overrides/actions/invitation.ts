@@ -1,8 +1,7 @@
 import { wait, PREVIEW_NOTE } from "./_preview";
 
 export type InvitationActionResult =
-  | { success: true }
-  | { success: false; error: string };
+  { success: true } | { success: false; error: string };
 
 // Both real actions navigate away on success (`router.push("/")`), and the
 // component keeps its pending state until that navigation happens — so

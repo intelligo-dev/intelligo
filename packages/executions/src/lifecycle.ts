@@ -42,11 +42,7 @@ const log = createLogger("Executions");
  * success for usage nobody recorded.
  */
 export type ExecutionStatus =
-  | "running"
-  | "settling"
-  | "succeeded"
-  | "failed"
-  | "refused";
+  "running" | "settling" | "succeeded" | "failed" | "refused";
 
 export type BeginExecutionInput = {
   workspaceId: string;

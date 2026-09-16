@@ -3,7 +3,7 @@
   "version": "1.0.0-beta.7",
   "packages": 11,
   "testFiles": 83,
-  "testCases": 808,
+  "testCases": 853,
   "architectureTests": 11,
   "registryItems": 28,
   "adrs": 15

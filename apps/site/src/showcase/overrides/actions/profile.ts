@@ -1,8 +1,7 @@
 import { wait, PREVIEW_NOTE } from "./_preview";
 
 export type ProfileActionResult<T = undefined> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 export async function updateProfile(
   ..._args: unknown[]

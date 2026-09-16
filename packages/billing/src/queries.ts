@@ -125,8 +125,7 @@ export async function getWorkspaceBilling(workspaceId: string) {
     plan: subscriptionData.plan,
     creditBalance,
     billingMode: subscriptionData.subscription.billingMode as
-      | "subscription"
-      | "credit",
+      "subscription" | "credit",
   };
 }
 

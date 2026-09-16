@@ -17,9 +17,7 @@
  *   failed (network, upstream API error, etc.).
  */
 export type ProfileServiceErrorCode =
-  | "forbidden"
-  | "invalid_input"
-  | "provider_error";
+  "forbidden" | "invalid_input" | "provider_error";
 
 export interface ProfileServiceErrorMeta {
   [key: string]: unknown;

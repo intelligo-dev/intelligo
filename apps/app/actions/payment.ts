@@ -24,8 +24,7 @@ import {
 } from "@/lib/local-payment";
 
 export type PaymentActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 export async function startLocalPayment(
   reference: string

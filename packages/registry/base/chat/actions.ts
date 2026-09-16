@@ -43,8 +43,7 @@ import {
 import { chatServerConfig } from "@/lib/chat-server-config";
 
 export type ChatActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 type Translator = Awaited<ReturnType<typeof getTranslations>>;
 

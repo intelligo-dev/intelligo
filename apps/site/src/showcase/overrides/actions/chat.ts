@@ -1,8 +1,7 @@
 import { wait, daysAgo, PREVIEW_NOTE } from "./_preview";
 
 export type ChatActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 export type ConversationSummary = {
   id: string;
   title: string | null;

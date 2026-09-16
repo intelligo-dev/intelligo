@@ -6,8 +6,7 @@ import type {
 import { wait, TODAY, daysAgo } from "./_preview";
 
 export type PrivacyActionResult<T = undefined> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 const fact = (
   id: string,

@@ -65,17 +65,14 @@ export default function SheetEditor({
       cellClass: "bg-muted text-muted-foreground",
       headerCellClass: "bg-muted",
     };
-    const data = Array.from(
-      { length: width },
-      (_, index): Column<Row> => ({
-        key: String(index),
-        name: columnName(index),
-        width: 120,
-        resizable: true,
-        renderEditCell: isReadonly ? undefined : renderTextEditor,
-        headerCellClass: "bg-muted",
-      })
-    );
+    const data = Array.from({ length: width }, (_, index): Column<Row> => ({
+      key: String(index),
+      name: columnName(index),
+      width: 120,
+      resizable: true,
+      renderEditCell: isReadonly ? undefined : renderTextEditor,
+      headerCellClass: "bg-muted",
+    }));
     return [rowNumber, ...data];
   }, [width, isReadonly]);
 

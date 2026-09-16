@@ -12,8 +12,7 @@ import {
 } from "react";
 
 type Href =
-  | string
-  | { pathname: string; query?: Record<string, string | number> };
+  string | { pathname: string; query?: Record<string, string | number> };
 
 export const PathnameContext = createContext<string>("/dashboard");
 export const NavigateContext = createContext<(href: string) => void>(() => {});

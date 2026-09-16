@@ -32,8 +32,7 @@ import {
 import { PRODUCT_SLUG, getCreditBundle } from "@/lib/billing";
 
 export type BillingActionResult<T = { url: string }> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 type Translator = Awaited<ReturnType<typeof getTranslations<"pricing">>>;
 

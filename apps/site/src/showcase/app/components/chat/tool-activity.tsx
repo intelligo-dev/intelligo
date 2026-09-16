@@ -152,8 +152,7 @@ function defaultRow(
   props: ToolRendererProps,
   name: string,
   readSources:
-    | ((output: unknown) => ReturnType<typeof sourcesFromToolOutput>)
-    | undefined,
+    ((output: unknown) => ReturnType<typeof sourcesFromToolOutput>) | undefined,
   t: (key: string, values?: Record<string, string | number>) => string
 ): ToolActivityRow {
   const status =

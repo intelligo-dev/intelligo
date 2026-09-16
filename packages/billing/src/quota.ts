@@ -481,8 +481,7 @@ export async function recordTokenUsage(
     params.requestId ??
     (typeof params.metadata === "object" && params.metadata !== null
       ? ((params.metadata as Record<string, unknown>).requestId as
-          | string
-          | undefined)
+          string | undefined)
       : undefined) ??
     null;
 
@@ -510,8 +509,7 @@ export async function recordTokenUsage(
       conversationId:
         typeof params.metadata === "object" && params.metadata !== null
           ? (((params.metadata as Record<string, unknown>).conversationId as
-              | string
-              | undefined) ?? null)
+              string | undefined) ?? null)
           : null,
       metadata: params.metadata ? JSON.stringify(params.metadata) : null,
     });

@@ -21,10 +21,7 @@
  *   row it was expected to.
  */
 export type ConversationServiceErrorCode =
-  | "not_found"
-  | "forbidden"
-  | "invalid_input"
-  | "database_error";
+  "not_found" | "forbidden" | "invalid_input" | "database_error";
 
 export class ConversationServiceError extends Error {
   readonly code: ConversationServiceErrorCode;

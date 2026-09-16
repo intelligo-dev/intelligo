@@ -17,9 +17,7 @@
  * - `not_found` — the caller's `users` row could not be found.
  */
 export type OnboardingServiceErrorCode =
-  | "forbidden"
-  | "invalid_input"
-  | "not_found";
+  "forbidden" | "invalid_input" | "not_found";
 
 export class OnboardingServiceError extends Error {
   readonly code: OnboardingServiceErrorCode;

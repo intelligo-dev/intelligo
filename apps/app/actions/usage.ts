@@ -99,8 +99,7 @@ export type UsageOverview = {
 };
 
 export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 /**
  * The reader's own time zone, from the cookie the app shell writes.

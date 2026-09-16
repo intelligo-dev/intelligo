@@ -49,8 +49,7 @@ import {
 } from "@intelligo-dev/core/documents";
 
 export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 /**
  * A document list item plus whether its title matches a pattern

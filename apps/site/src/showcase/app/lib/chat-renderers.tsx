@@ -147,8 +147,7 @@ export interface ToolRendererProps {
 
 /** A call's row in the activity stream; the stream assigns the id. */
 export type ToolActivityRow =
-  | Omit<AgentActivitySearch, "id">
-  | Omit<AgentActivityTool, "id">;
+  Omit<AgentActivitySearch, "id"> | Omit<AgentActivityTool, "id">;
 
 export interface ToolRenderer {
   /** Draws the call as its own card. Without one the call is a row in the activity stream. */

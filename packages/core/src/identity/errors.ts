@@ -22,9 +22,7 @@
  *   was expected to.
  */
 export type IdentityServiceErrorCode =
-  | "not_found"
-  | "invalid_input"
-  | "database_error";
+  "not_found" | "invalid_input" | "database_error";
 
 export class IdentityServiceError extends Error {
   readonly code: IdentityServiceErrorCode;
