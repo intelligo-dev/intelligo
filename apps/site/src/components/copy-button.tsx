@@ -46,16 +46,20 @@ export function CopyButton({
       >
         <div
           className={cn(
-            "transition-all",
-            copied ? "scale-100 opacity-100" : "scale-0 opacity-0"
+            "transition-[scale,opacity,filter] duration-normal ease-standard",
+            copied
+              ? "scale-100 opacity-100 blur-none"
+              : "scale-50 opacity-0 blur-xs"
           )}
         >
           <CheckIcon aria-hidden="true" className="size-3.5 stroke-success" />
         </div>
         <div
           className={cn(
-            "absolute transition-all",
-            copied ? "scale-0 opacity-0" : "scale-100 opacity-100"
+            "absolute transition-[scale,opacity,filter] duration-normal ease-standard",
+            copied
+              ? "scale-50 opacity-0 blur-xs"
+              : "scale-100 opacity-100 blur-none"
           )}
         >
           <CopyIcon aria-hidden="true" className="size-3.5" />

@@ -21,7 +21,6 @@
     "@astrojs/sitemap": "^3.7.4",
     "@base-ui/react": "^1.8.0",
     "@hookform/resolvers": "^5.9.1",
-    "@number-flow/react": "^0.6.2",
     "@shadcn/react": "^0.3.1",
     "@tailwindcss/vite": "^4.3.3",
     "ai": "^7.0.103",

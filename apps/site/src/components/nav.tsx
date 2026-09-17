@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { MenuIcon, MoonIcon, SunIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { NAV, SITE } from "@/lib/site";
@@ -90,8 +91,8 @@ export function Nav({ current }: { current?: string }) {
                 key={n.href}
                 href={n.href}
                 className={cn(
-                  "rounded-md px-2.5 py-1.5 text-[0.85rem] text-muted-foreground no-underline transition-colors hover:text-foreground",
-                  isActive(n.href) && "text-foreground"
+                  "rounded-full px-3 py-1.5 text-[0.85rem] text-muted-foreground no-underline transition-colors duration-fast hover:bg-accent hover:text-foreground",
+                  isActive(n.href) && "bg-accent text-foreground"
                 )}
               >
                 {n.label}
@@ -107,9 +108,29 @@ export function Nav({ current }: { current?: string }) {
                 ? "Switch to light theme"
                 : "Switch to dark theme"
             }
-            className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "icon-sm" }),
+              "relative overflow-hidden"
+            )}
           >
-            {theme === "dark" ? "☾" : "☼"}
+            <SunIcon
+              aria-hidden="true"
+              className={cn(
+                "absolute transition-[rotate,scale,opacity] duration-slow ease-standard",
+                theme === "dark"
+                  ? "scale-50 -rotate-90 opacity-0"
+                  : "scale-100 rotate-0 opacity-100"
+              )}
+            />
+            <MoonIcon
+              aria-hidden="true"
+              className={cn(
+                "absolute transition-[rotate,scale,opacity] duration-slow ease-standard",
+                theme === "dark"
+                  ? "scale-100 rotate-0 opacity-100"
+                  : "scale-50 rotate-90 opacity-0"
+              )}
+            />
           </button>
           {SITE.githubPublic ? (
             <GitHubStarButton
@@ -144,7 +165,11 @@ export function Nav({ current }: { current?: string }) {
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}
           >
-            {open ? "×" : "≡"}
+            {open ? (
+              <XIcon aria-hidden="true" />
+            ) : (
+              <MenuIcon aria-hidden="true" />
+            )}
           </button>
         </div>
       </div>

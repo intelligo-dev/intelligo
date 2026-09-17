@@ -306,9 +306,15 @@
   -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 20%, #000 20%, transparent 72%);
   mask-image: radial-gradient(ellipse 70% 70% at 50% 20%, #000 20%, transparent 72%);
 }
+/* the site's brand accents — a cyan and a violet — live here, never in the intelligo base */
+:root { --brand-cyan: oklch(72% 0.18 195); --brand-violet: oklch(68% 0.22 295); }
+.dark { --brand-cyan: oklch(80% 0.18 195); --brand-violet: oklch(72% 0.18 295); }
 .hero-glow {
   position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(50% 40% at 50% 30%, color-mix(in oklab, var(--foreground) 5%, transparent) 0%, transparent 70%);
+  background:
+    radial-gradient(34% 30% at 38% 30%, color-mix(in oklab, var(--brand-cyan) 12%, transparent) 0%, transparent 70%),
+    radial-gradient(34% 30% at 62% 34%, color-mix(in oklab, var(--brand-violet) 10%, transparent) 0%, transparent 70%),
+    radial-gradient(50% 40% at 50% 30%, color-mix(in oklab, var(--foreground) 4%, transparent) 0%, transparent 70%);
 }
 .hero-frame {
   position: relative; border: 1px solid color-mix(in oklab, var(--foreground) 15%, transparent); background: var(--card);

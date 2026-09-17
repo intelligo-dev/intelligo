@@ -23,9 +23,10 @@
   "menuAccent": "subtle",
   "registries": {
     "@bklit": "https://ui.bklit.com/r/{name}.json",
-    "@componentry": "https://componentry.dev/r/{name}.json",
     "@canvas-ui": "https://canvasui.dev/r/{name}.json",
+    "@componentry": "https://componentry.dev/r/{name}.json",
+    "@efferd": "https://efferd.com/r/{name}.json",
     "@elements": "https://tryelements.dev/r/{name}.json",
-    "@efferd": "https://efferd.com/r/{name}.json"
+    "@intelligo": "https://intelligo.dev/r/{name}.json"
   }
 }
