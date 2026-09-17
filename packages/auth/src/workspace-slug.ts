@@ -23,9 +23,13 @@ export function personalWorkspaceSlug(
   email: string | null | undefined,
   userId: string
 ): string {
-  const base = ((email || "user").split("@")[0] || "user")
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "-")
-    .slice(0, 30);
-  return `${base}-${userId.slice(0, 8)}`;
+  const base = ((email || "user").split("@")[0] || "user").slice(0, 30);
+  // The id fragment is normalised with the rest: Better-Auth ids are
+  // mixed-case, and a slug the workspace settings form refuses
+  // (`[a-z0-9-]+`) makes the personal workspace impossible to rename.
+  return toSlug(`${base}-${userId.slice(0, 8)}`);
+}
+
+function toSlug(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9-]/g, "-");
 }
