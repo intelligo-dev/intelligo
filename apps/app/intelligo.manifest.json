@@ -3,7 +3,7 @@
   "frameworkVersion": "1.0.0-beta.7",
   "features": {
     "app-scaffold": {
-      "templateVersion": "1.12.0",
+      "templateVersion": "1.13.0",
       "files": [
         {
           "path": "package.json",
@@ -15,7 +15,7 @@
         },
         {
           "path": "tsconfig.json",
-          "hash": "486b786a0acdb8dc8dc864422e62ec8b8b9a5ed5a1845b35c1c6da455af381f5"
+          "hash": "bae7d9e474173c4d53ad74a4d2a98b6bc706d60cb0884466eaa7084382a9b8b8"
         },
         {
           "path": ".env.example",
