@@ -1,8 +1,8 @@
 ---
 /**
  * A secondary page (/blocks, /components, /architecture, /why): same
- * rails, same nav, a page header instead of the hero. Docs have their
- * own layout.
+ * nav, a page header instead of the hero, and the full width — only the
+ * homepage sits between the 1152px rails. Docs have their own layout.
  */
 import { buttonVariants } from "@/components/ui/button";
 import Base from "@/layouts/Base.astro";
@@ -22,7 +22,7 @@ const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
 ---
 <Base title={pageTitle} description={description ?? lede ?? SITE.description}>
   <Nav client:load current={path} />
-  <main class="rails">
+  <main class="rails-full">
     <header class="xline">
       <div class="px-6 pb-10 pt-14 md:px-10 md:pb-12 md:pt-20">
         <div class="section-head">

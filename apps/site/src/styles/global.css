@@ -271,6 +271,11 @@
   margin-inline: auto;
   border-inline: 1px solid var(--border);
 }
+/* secondary pages and docs: the full viewport, no side hairlines */
+@utility rails-full {
+  width: 100%;
+  border-inline: 0;
+}
 @utility wrap {
   padding-inline: clamp(1.25rem, 4vw, 2.5rem);
 }
@@ -283,6 +288,8 @@
 }
 .xline::before { left: -0.42em; }
 .xline::after { right: -0.42em; }
+/* no rail to sit on at the viewport edge, and they would overflow it */
+.rails-full .xline::before, .rails-full .xline::after { display: none; }
 
 .card { border: 1px solid var(--border); background: var(--card); border-radius: var(--radius-md); }
 .top-shade { position: relative; }
