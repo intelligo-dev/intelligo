@@ -2,7 +2,7 @@
  * `intelligo upgrade --check`
  *
  * Reports what a template upgrade would do, and does nothing. The
- * promise in ADR-0002 is that dependency upgrades never overwrite
+ * promise is that dependency upgrades never overwrite
  * consumer source, so the interesting output is not "these files
  * changed upstream" but "these changed upstream AND you have edited
  * them" — the set where the consumer has to make a decision.

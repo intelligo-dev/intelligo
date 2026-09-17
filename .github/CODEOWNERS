@@ -1,4 +1,4 @@
-# Code ownership, in the sense ADR-0002 and ADR-0006 mean it: which
+# Code ownership, in the sense the framework's boundary rules mean it: which
 # boundary a path belongs to, so a change that crosses one is visible
 # in review rather than only in CI.
 

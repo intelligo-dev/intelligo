@@ -174,7 +174,7 @@ export const financeEvents = pgTable("finance_events", {
  * ignored by the sum (cleanup cron deletes them).
  *
  * This is the seed of the Phase 2 `credit_reservations` table from the
- * v2 architecture plan (ADR-0004).
+ * v2 architecture plan.
  */
 export const creditReservations = pgTable(
   "credit_reservations",

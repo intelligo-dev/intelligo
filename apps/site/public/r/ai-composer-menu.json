@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-composer-menu",
   "title": "AI Composer Menu",
-  "description": "The picker a composer opens for slash commands and @ mentions, anchored above the textarea (ADR-0013, T3).",
+  "description": "The picker a composer opens for slash commands and @ mentions, anchored above the textarea (T3).",
   "dependencies": [],
   "registryDependencies": [
     "command"

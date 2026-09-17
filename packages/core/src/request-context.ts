@@ -6,8 +6,8 @@
  * five files. That made a package whose subject is authentication —
  * not rendering — unusable outside Next: a queue worker that wants to
  * check a session, a Hono API, a product on another framework, a test
- * that is not running inside a request. ADR-0005 named the fix in its
- * consequences; this is it.
+ * that is not running inside a request. The fix is this: the
+ * application, not the package, says where headers come from.
  *
  * The framework asks for headers through `getRequestHeaders()`. The
  * application says where they come from, once, from its composition

@@ -55,11 +55,11 @@ pnpm lint
 
 ## What will be declined
 
-Import-side-effect registration (ADR-0005) — registries are populated
+Import-side-effect registration — registries are populated
 from an explicit composition root. Universal wrappers over an AI
-framework (ADR-0003) — the framework is used natively and Intelligo
+framework — the framework is used natively and Intelligo
 records only the execution boundary. Anything that widens a public
-package's dependencies past the allowlist in ADR-0006; the
+package's dependencies past the allowlist; the
 dependency-direction test enforces this and it is not advisory.
 
 ## Code of conduct

@@ -5,7 +5,7 @@
  * it runs inside an execution — entitlement decided, worst-case cost
  * held, usage settled, audit emitted. Swap `callModel` for a Mastra
  * agent, an AI SDK call, or anything else and nothing around it
- * changes (ADR-0003).
+ * changes.
  */
 
 import { requireWorkspace } from "@intelligo-dev/auth";

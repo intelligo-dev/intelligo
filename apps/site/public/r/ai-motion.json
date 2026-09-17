@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-motion",
   "title": "AI Motion",
-  "description": "The motion vocabulary the AI parts share: easing curves, spring presets, a transform-only disclosure and a text swap, all gated on reduced motion (ADR-0013, T3).",
+  "description": "The motion vocabulary the AI parts share: easing curves, spring presets, a transform-only disclosure and a text swap, all gated on reduced motion (T3).",
   "dependencies": [
     "motion"
   ],

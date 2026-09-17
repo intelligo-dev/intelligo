@@ -4,7 +4,7 @@
  * Per-category listing of the caller's own facts, with per-fact
  * delete. Generalized from the first product's identity-graph-section.tsx.
  *
- * Copy is translated via `next-intl` (ADR-0010), but category labels
+ * Copy is translated via `next-intl`, but category labels
  * default to Title Case of the schema's category slug rather than a
  * message lookup: categories are open-ended, product-defined data (not
  * UI copy this item authors), so there is no fixed key set to

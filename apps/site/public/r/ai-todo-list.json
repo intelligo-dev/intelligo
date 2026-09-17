@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-todo-list",
   "title": "AI Todo List",
-  "description": "The agent's to-do list: a collapsible plan whose status marks morph between pending, in progress, completed and cancelled, with a rolling completion count (ADR-0013, T3).",
+  "description": "The agent's to-do list: a collapsible plan whose status marks morph between pending, in progress, completed and cancelled, with a rolling completion count (T3).",
   "dependencies": [
     "motion",
     "lucide-react"

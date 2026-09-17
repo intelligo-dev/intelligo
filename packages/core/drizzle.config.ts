@@ -5,7 +5,7 @@ import { config } from "dotenv";
 // cannot assume the consumer's layout, so the default is the repository
 // root and anything else is INTELLIGO_ENV_FILE. This workspace sets it
 // in the root package.json's db:* scripts — keeping the product
-// application's path out of a package headed for publication (ADR-0006).
+// application's path out of a package headed for publication.
 const envPath = process.env.INTELLIGO_ENV_FILE ?? "../../.env";
 config({ path: `${envPath}.local` });
 config({ path: envPath });
@@ -18,7 +18,7 @@ config({ path: envPath });
  * `packages/` — a vertical's own tables, a consumer's product tables —
  * comes from INTELLIGO_EXTRA_SCHEMA (colon-separated). Defaulting it to
  * a path would mean a public package naming a private one, and would
- * also be wrong for every consumer but this repository (ADR-0006).
+ * also be wrong for every consumer but this repository.
  */
 const extraSchema = (process.env.INTELLIGO_EXTRA_SCHEMA ?? "")
   .split(":")

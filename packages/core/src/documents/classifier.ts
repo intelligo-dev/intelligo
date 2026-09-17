@@ -8,7 +8,7 @@
  * server-only persistence chain (db) — its one import, ../registry, is
  * itself dependency-free for the same reason.
  *
- * Ported from @intelligo-dev/agents/documents/classifier (ADR-0009) —
+ * Ported from @intelligo-dev/agents/documents/classifier —
  * unchanged.
  */
 

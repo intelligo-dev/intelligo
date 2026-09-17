@@ -15,7 +15,7 @@ import { createLogger } from "@intelligo-dev/core/logger";
  * framework one, and importing them directly would recreate the very
  * auth → billing cycle `ensureUserWorkspace`'s callback parameter exists
  * to avoid. So the layout injects this callback instead of the package
- * importing anything. Per ADR-0005, that binding happens here, in a file
+ * importing anything. That binding happens here, in a file
  * the composition root owns and calls explicitly — never as an import
  * side effect.
  *

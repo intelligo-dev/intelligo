@@ -3,7 +3,7 @@
  *
  * Wraps a native AI run (Mastra, AI SDK, anything) with entitlement,
  * credit hold, usage/cost recording, and audit — and records nothing
- * about agents, tools, or messages (ADR-0003).
+ * about agents, tools, or messages.
  *
  * The composition root builds one instance with the ports bound:
  *

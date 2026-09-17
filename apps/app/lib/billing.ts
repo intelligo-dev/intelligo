@@ -7,8 +7,8 @@ import "server-only";
  * shipping its own copy — see billing-settings' description).
  *
  * `PRODUCT_SLUG` must match whatever slug your composition root passes
- * to `registerProductPlans`/`setDefaultProductSlug` (`@intelligo-dev/billing`,
- * ADR-0006) — that registry call is what actually populates the plan
+ * to `registerProductPlans`/`setDefaultProductSlug` (`@intelligo-dev/billing`)
+ * — that registry call is what actually populates the plan
  * catalogue `getPlans`/`getPlan` read below. Replace the placeholder
  * with your product's real slug.
  *
@@ -24,7 +24,7 @@ import "server-only";
  *
  * No user-facing copy lives in this file (`getPlans`/`getPlan` return
  * `PlanConfig` data, not rendered strings) — nothing here is routed
- * through `messages/en.json` (ADR-0010).
+ * through `messages/en.json`.
  */
 
 import { getPlanBySlug, type PlanConfig } from "@intelligo-dev/billing";

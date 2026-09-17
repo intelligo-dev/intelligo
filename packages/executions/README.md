@@ -15,8 +15,7 @@ pnpm add @intelligo-dev/executions
 ## The boundary
 
 Intelligo records what an AI execution cost and whether it was allowed. It does
-not wrap the AI framework: prompts, tools and orchestration stay native
-(ADR-0003).
+not wrap the AI framework: prompts, tools and orchestration stay native.
 
 `createExecutions(ports)` takes four optional ports — `checkEntitlement`,
 `settleUsage`, `findSettlement`, `releaseHold` — so this package never imports

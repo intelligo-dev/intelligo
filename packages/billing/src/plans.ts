@@ -3,7 +3,7 @@
  *
  * This file holds SHAPES ONLY. Prices, marketing copy, and
  * product-specific limits are domain IP and live in the vertical that
- * owns them (ADR-0006); they reach the billing engine through
+ * owns them; they reach the billing engine through
  * plan-registry.ts, which the composition root populates.
  *
  * Until Phase 3 this file also carried the first product's catalogue —
@@ -57,7 +57,7 @@ export interface PlanConfig {
 /**
  * Plan slugs the billing engine understands. The *data* behind them —
  * prices, copy, per-plan limits — belongs to whichever vertical
- * registers it, not to this package (ADR-0006).
+ * registers it, not to this package.
  */
 export type PlanSlug = "free" | "standard" | "pro";
 

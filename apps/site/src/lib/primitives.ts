@@ -1,5 +1,5 @@
 /**
- * The design-system catalog (ADR-0013). T1 and T2 are the shadcn
+ * The design-system catalog. T1 and T2 are the shadcn
  * base-nova components installed in this site with the shadcn CLI —
  * the same files a consumer gets. T3 and T4 are Intelligo's own
  * `registry:ui` items, read from registry.json so a new one appears here
@@ -196,14 +196,14 @@ export const INTELLIGO: IntelligoEntry[] = rawItems
   .filter((i) => i.type === "registry:ui")
   .map((i) => {
     const text = i.description ?? "";
-    const tier = text.match(/ADR-0013,? (T[34])/)?.[1] === "T3" ? "T3" : "T4";
+    const tier = text.match(/\((T[34])[^)]*\)/)?.[1] === "T3" ? "T3" : "T4";
     return {
       name: i.name,
       title: i.title ?? i.name,
       tier,
       group: groupOf(i.name, tier),
       description: text
-        .replace(/\s*\(ADR-0013[^)]*\)/g, "")
+        .replace(/\s*\((T[34])[^)]*\)/g, "")
         .replace(/\s+/g, " ")
         .trim(),
       usedBy: blocks

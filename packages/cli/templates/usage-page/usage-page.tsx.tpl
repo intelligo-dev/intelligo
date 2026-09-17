@@ -3,7 +3,7 @@
  *
  * This file is YOURS. Intelligo will not overwrite it: once you edit
  * it, `intelligo upgrade --check` reports the upstream change as a
- * diff and leaves your version alone (ADR-0002).
+ * diff and leaves your version alone.
  *
  * It reads through @intelligo-dev/executions' query API rather than the
  * database directly, so it keeps working across schema changes.

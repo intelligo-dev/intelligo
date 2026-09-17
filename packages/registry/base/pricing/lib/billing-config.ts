@@ -16,7 +16,7 @@
  * No user-facing copy owned by this item lives in this file. The
  * `name` field on each bundle is deployment config rendered verbatim
  * by `credit-bundles.tsx` (`billing-settings` item) — it is not routed
- * through `messages/en.json` (ADR-0010); localize it here if this
+ * through `messages/en.json`; localize it here if this
  * deployment needs bundle names in more than one language.
  */
 

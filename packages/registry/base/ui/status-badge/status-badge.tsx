@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /**
- * A status in a status token (ADR-0013 §6, T4) — never a palette colour.
+ * A status in a status token — never a palette colour.
  * Map a domain state to one of five statuses where the state is known;
  * the badge only knows how each status looks, so re-valuing
  * --success/--warning/--info/--destructive re-themes every badge.

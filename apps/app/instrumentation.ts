@@ -3,7 +3,7 @@
  * request. Composing here is what lets a page, a Server Action or a
  * Route Handler read a registry — plans, model prices, the request
  * context source — without each of them remembering to compose first
- * (ADR-0005). The registries live on `globalThis` (core/registry), so
+ *. The registries live on `globalThis` (core/registry), so
  * a bundle that duplicates `lib/intelligo` still sees what this bound.
  *
  * Route Handlers keep their own `composeIntelligo()` call as well: it is

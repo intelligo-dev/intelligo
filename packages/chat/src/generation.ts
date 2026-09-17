@@ -3,7 +3,7 @@
  * it may not.
  *
  * The transport owns the turn's envelope — auth, the gate, admission,
- * settlement, persistence — and the product owns the AI call (ADR-0003).
+ * settlement, persistence — and the product owns the AI call.
  * Between those two sits one small set of `streamText` options that
  * decide how the model samples: temperature, a token ceiling, a tool
  * choice, a seed. None of them changes what settlement reads back, and

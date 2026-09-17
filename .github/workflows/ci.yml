@@ -102,7 +102,7 @@ jobs:
       # schema file and DROP it. That is what the freeze guards against.
       #
       # Raised to 48 for 0043_attachments, 0044_money_micros,
-      # 0045_drop_legacy_money_columns (ADR-0015) and
+      # 0045_drop_legacy_money_columns and
       # 0046_user_quotas_per_workspace. The unmanaged database the
       # freeze was first written for holds no data, so the baseline it
       # was waiting on costs nothing and protects nothing; the money

@@ -21,7 +21,7 @@ export type RegistryItem = {
   fileCount: number;
   /** Where each file lands in the consumer app. */
   files: { target: string; type: string }[];
-  /** The installed files a deployment edits: the item's seams (ADR-0010). */
+  /** The installed files a deployment edits: the item's seams. */
   seams: string[];
   group: RegistryGroup;
   dependsOn: string[];
@@ -80,7 +80,7 @@ type RawItem = {
   dependencies?: string[];
   files?: { path: string; type: string; target?: string }[];
 };
-// Blocks only: the design-system base item (ADR-0013) configures an app
+// Blocks only: the design-system base item configures an app
 // and is not a page family.
 const raw = (registry as { items: RawItem[] }).items.filter(
   (i) => i.type === "registry:block" && i.name !== "smoke"

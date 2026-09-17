@@ -6,7 +6,7 @@ import type { PlatformOverview, WorkspaceRow } from "../queries";
  * The platform overview screen.
  *
  * Shipped by the package rather than generated into the consumer,
- * unlike product pages: ADR-0002 keeps the *customer-facing* surface
+ * unlike product pages: the *customer-facing* surface stays
  * with the consumer, but the admin console is framework-owned
  * precisely so every deployment shows the same operational truth. A
  * product that forked this screen could quietly stop showing itself

@@ -7,7 +7,7 @@
       "files": [
         {
           "path": "package.json",
-          "hash": "cf9964c43d5df906fa901a957b4960fb12c506390b1099aeb34e78892282aada"
+          "hash": "c5212478db4cc5c3fd3958f812211a50b0c24b8ead24223f9aff9f20183c2d17"
         },
         {
           "path": "next.config.mjs",
@@ -23,15 +23,15 @@
         },
         {
           "path": "lib/intelligo.ts",
-          "hash": "3c2805822c1401f8d7ba65757064bf46d46d7f4d546adb0e3eb6fddd4472225b"
+          "hash": "49ee12b8ffb3116c40a91a78ee715f00e478473ae77a491a7ad80d416467f050"
         },
         {
           "path": "instrumentation.ts",
-          "hash": "61a58976b8062fd28fb8b4ea560507e2f2a78812f50c1f4948b31cf917ae3004"
+          "hash": "15291823b8182f4504b64e0fc95e50844ab2ee9436103c59abda7d0f70ee818f"
         },
         {
           "path": "lib/plans.ts",
-          "hash": "46e782a796803964245a135917d8668689365b41f2628775e62aea30444956b3"
+          "hash": "7b8348b97d4e357044100891e5bb26d6db89e11ef86c93aaa3b66f77fd1eebbe"
         },
         {
           "path": "app/api/auth/[...all]/route.ts",
@@ -39,7 +39,7 @@
         },
         {
           "path": "app/api/assistant/route.ts",
-          "hash": "06b7b1e5cc365b023cdae0c09e7305ff06b43ae0851c9c1f8b5447743b57f218"
+          "hash": "e5aaa3c09c5200ac1c18ee21c208136b77ec35b10079f10fd2500b86bbaa4fa6"
         },
         {
           "path": "components.json",
@@ -51,7 +51,7 @@
         },
         {
           "path": "app/globals.css",
-          "hash": "07dddbfdd59202c32801264bff2ecf4d0baa4381b8d7c936152e827937105e7c"
+          "hash": "8befbab2ef96fe466894cf5402313900809f42dfd6d7488c74301eda6976464c"
         },
         {
           "path": "lib/utils.ts",
@@ -95,7 +95,7 @@
         },
         {
           "path": "lib/db/schema.ts",
-          "hash": "7721146907efbbae0038a989c548173a46adf14f613773ac78dc12210e30ee63"
+          "hash": "9547da722e59e9dfdfc0c5b14ec97fbacb4b3b983ad6ba31ac63f52b72438055"
         },
         {
           "path": "app/api/webhooks/stripe/route.ts",

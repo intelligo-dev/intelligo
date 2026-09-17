@@ -30,8 +30,9 @@ const MICROS_PER_UNIT = 1_000_000;
 let cached: { value: ResolvedBillingSettings; expiresAt: number } | null = null;
 
 /**
- * The rate the framework shipped with, before ADR-0015 required a
- * deployment to name its own. It survives the removal of
+ * The rate the framework shipped with, before money started carrying
+ * its own currency and a deployment had to name its own rate. It
+ * survives the removal of
  * `DEFAULT_USD_TO_MNT_RATE` for one reason: an existing tugrik database
  * with no settings row must keep billing exactly as it did. Anything
  * else says so through `ensureBillingSettingsRow`.

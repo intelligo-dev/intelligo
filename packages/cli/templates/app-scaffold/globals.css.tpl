@@ -1,5 +1,5 @@
 /*
- * The Intelligo design system (ADR-0013): shadcn base-nova tokens with the
+ * The Intelligo design system: shadcn base-nova tokens with the
  * intelligo additions — status, layers, motion — exactly what
  * `shadcn add https://intelligo.dev/r/intelligo.json` writes. This file is
  * yours: re-value the tokens to re-theme every installed page. Keep the

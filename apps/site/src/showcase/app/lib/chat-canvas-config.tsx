@@ -2,7 +2,7 @@
 
 /**
  * Canvas kinds — how a document opened beside the chat is shown and
- * edited, by `kind`. Consumer-owned, a plain object literal (ADR-0005).
+ * edited, by `kind`. Consumer-owned, a plain object literal.
  *
  * A kind is the content component plus, optionally, its glyph and name
  * (on the transcript's card and the panel's header), a rendered

@@ -2,7 +2,7 @@
  * Plan limit helpers for quota enforcement.
  *
  * Reads through the plan registry rather than a compiled-in catalogue:
- * plan data is domain IP owned by the vertical (ADR-0006). The product
+ * plan data is domain IP owned by the vertical. The product
  * comes from the composition root via setDefaultProductSlug() — an
  * `?? "<product>"` fallback here is how the first product's slug kept
  * reappearing in a package that should not know the name.
@@ -35,7 +35,8 @@ function limit(
  * Zero when the product registered nothing, when the plan is unknown,
  * or when the catalogue names a currency the settings row does not.
  * That last case is a half-finished switch rather than an exchange
- * rate, and inventing a conversion is what ADR-0015 forbids. No
+ * rate, and inventing a conversion is the currency mismatch money
+ * handling forbids. No
  * allowance means the request falls through to purchased credits or is
  * refused — the safe direction, since a non-zero default hands out free
  * allowance on a misconfigured deploy.

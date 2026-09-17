@@ -7,7 +7,7 @@
  * `@intelligo-dev/chat`, and everything this deployment decides about
  * it — model, agent, tools, prompt, attachments, title, telemetry,
  * copy — lives in `@/lib/chat-server-config`, consumer-owned source you
- * edit instead of this file (ADR-0012).
+ * edit instead of this file.
  *
  * `maxDuration` is the one thing that belongs here: it is a Next.js
  * route segment option, and a streamed reply with tools can outlast

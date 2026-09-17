@@ -35,7 +35,7 @@ import { getRateLimit } from "./plan-registry";
 // ---------------------------------------------------------------------------
 
 /**
- * Per-plan ceilings moved to the plan registry (ADR-0006): they were
+ * Per-plan ceilings moved to the plan registry: they were
  * `{ free: 10, pro: 60, enterprise: 300 }` here, two of one product's plan names
  * plus an `enterprise` tier that is not in `PlanSlug` at all — so the
  * 300/min row was unreachable and `standard` fell through to the free

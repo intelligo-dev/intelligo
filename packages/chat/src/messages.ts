@@ -11,7 +11,7 @@ function isChatRole(role: string): role is UIMessage["role"] {
 }
 
 /**
- * Stored `messages.parts` is a JSON string (ADR-0009's schema note); a
+ * Stored `messages.parts` is a JSON string; a
  * row that fails to parse is dropped rather than failing the whole
  * conversation. Tool-role rows are not part of the UI transcript.
  */

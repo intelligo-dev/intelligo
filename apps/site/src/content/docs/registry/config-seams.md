@@ -39,7 +39,9 @@ Exports `ShellConfig`, `shellConfig`. [source](https://github.com/intelligo-mn/f
 
 Shell composition config — the consumer-owned extension point for
 everything a vertical wants to add around the authenticated app
-shell without editing `layout.tsx` or `components/shell/*`.
+shell without editing `layout.tsx` or `components/shell/*`
+(composition through a config a consumer owns, never a component
+edit; mirrors the `chat` item's `lib/chat-config.tsx`).
 
 Every seam is optional — a fresh install ships this file with an
 empty `shellConfig`, so the shell renders nothing extra beyond its
@@ -257,7 +259,8 @@ point for the `artifacts` item.
 `@intelligo-dev/core/documents` keeps a small classifier registry
 (`registerDocumentPatterns`) that maps a document's title to a human
 agent label (rendered on every artifact card) and to the "Reports"
-filter tab (`isProductDocument`, used by `@/actions/documents`). Populating that
+filter tab (`isProductDocument`, used by `@/actions/documents`).
+Registration is never an import side effect, so populating that
 registry happens once, at startup, from an explicit composition root
 your app owns — never by importing this file for its side effects,
 and never from a request-scoped file (a Server Action, a page) where
@@ -362,7 +365,8 @@ Exports `ChatHeaderRightProps`, `ChatAgentIdentity`, `ChatAttachmentsConfig`, `C
 
 Chat composition config — the consumer-owned extension point for
 everything a vertical wants to add to the chat surface without
-editing an installed component.
+editing an installed component (composition through a
+config a consumer owns, never a component edit).
 
 Every seam is optional — a fresh install ships this file with an
 empty `chatConfig`, so the chat surface renders its baseline UI:
@@ -492,7 +496,9 @@ cap — stay the transport's and cannot be overridden from here.
 
 Another runtime than `streamText` — a Mastra agent, an eve session —
 binds `streamTurn` and keeps everything else: auth, the rate limit,
-the gate, admission, persistence and settlement stay the transport's. Mastra, natively, through `@mastra/ai-sdk`:
+the gate, admission, persistence and settlement stay the transport's
+(the framework carries no helper for any AI framework; the
+binding is yours, here). Mastra, natively, through `@mastra/ai-sdk`:
 
 ```ts
 import { handleChatStream } from "@mastra/ai-sdk";
@@ -541,7 +547,8 @@ else.
 Exports `ChatWidgetConfig`, `chatWidgetConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat-widget/lib/chat-widget-config.tsx)
 
 Chat widget config — the consumer-owned seam for the floating
-assistant.
+assistant (composition through a config you own, never a
+component edit).
 
  - `position`: which corner the launcher sits in.
  - `agent`: which agent the widget's conversations run as, when it

@@ -15,9 +15,10 @@
  * feature checks fell through to their closed defaults, and nothing
  * threw. Its workaround was a `server-only` side-effect module that
  * every server file had to import, plus an architecture test naming the
- * ten functions that read a registry — ADR-0005 forbids exactly that
- * kind of import-side-effect registration, so the product had to
- * violate the rule inside files the framework had shipped it.
+ * ten functions that read a registry — exactly the kind of
+ * import-side-effect registration the framework forbids, so the
+ * product had to violate the rule inside files the framework had
+ * shipped it.
  *
  * Keying the storage off `Symbol.for()` moves the map out of the module
  * and into the realm's global symbol registry, which the bundler cannot

@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-prompt-input",
   "title": "AI Prompt Input",
-  "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (ADR-0013, T3; ported from Vercel AI Elements).",
+  "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (T3; ported from Vercel AI Elements).",
   "dependencies": [
     "ai@^7.0.103",
     "lucide-react",

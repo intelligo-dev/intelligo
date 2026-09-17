@@ -1,6 +1,6 @@
 /**
- * Live demos for Intelligo's output and pattern components (ADR-0013,
- * T3 and T4): what an answer cites, the code and documents it writes,
+ * Live demos for Intelligo's output and pattern components
+ * (T3 and T4): what an answer cites, the code and documents it writes,
  * the image it makes, the sidebar it lives in, and the page furniture
  * around it. Every demo renders the installed registry source from
  * `@showcase/components/ui` with local state only — no network.

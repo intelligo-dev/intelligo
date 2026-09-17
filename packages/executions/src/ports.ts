@@ -6,7 +6,7 @@
  * mechanics in `credits`, neither of which exists yet. Rather than
  * bake in a dependency that has to be unwound later, the lifecycle
  * declares what it needs and the composition root binds today's
- * billing implementations to it (ADR-0005).
+ * billing implementations to it.
  *
  * Both ports are optional: with neither bound, executions still record
  * the lifecycle, they just don't gate or charge. That is what the

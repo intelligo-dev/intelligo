@@ -5,7 +5,7 @@ import "server-only";
  *
  * The console manages Intelligo's own concepts — workspaces,
  * entitlements, credits, executions, audit, jobs — not any product's
- * customer experience (ADR-0002). So its gate is deliberately NOT a
+ * customer experience. So its gate is deliberately NOT a
  * workspace role: `owner` is per-tenant, and every self-serve signup
  * owns their own workspace. Gating cross-tenant views on it is how the
  * platform-wide analytics leak in `getAdminStats` happened.

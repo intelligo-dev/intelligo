@@ -30,8 +30,8 @@ import { getLocale } from "next-intl/server";
  *    creates one if none exists. First-workspace provisioning (trial
  *    credits, referral bonuses, anything else your product wants to do
  *    exactly once) is bound through `@/lib/workspace-bootstrap` — never
- *    imported directly here (ADR-0005: explicit composition-root
- *    wiring, not an import side effect; it also keeps this file, and
+ *    imported directly here (explicit composition-root wiring, not an
+ *    import side effect; it also keeps this file, and
  *    `@intelligo-dev/auth`, free of a hard dependency on billing).
  */
 

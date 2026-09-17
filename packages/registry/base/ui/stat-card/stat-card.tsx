@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * A metric on a card (ADR-0013 §6, T4): a label, the value, an optional
+ * A metric on a card: a label, the value, an optional
  * action such as a status badge, and a footer for context. Composed from
  * Card so it follows whatever the consumer's card looks like.
  */

@@ -88,7 +88,7 @@ export type TeamServicePorts = {
   /**
    * Plan-defined member cap for a workspace. No port ⇒ unlimited (no
    * gate applied) — matches "no billing dependency without one bound
-   * explicitly" (ADR-0005).
+   * explicitly".
    */
   checkMemberLimit?: (
     workspaceId: string,

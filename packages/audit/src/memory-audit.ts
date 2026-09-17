@@ -1,8 +1,9 @@
 /**
- * Memory-audit event contract (ADR-0008).
+ * Memory-audit event contract.
  *
- * ADR-0008 names `@intelligo-dev/audit` as `recordMemoryAudit`'s
- * destination ("`recordMemoryAudit` to `audit`"). The dependency
+ * The package boundary names `@intelligo-dev/audit` as
+ * `recordMemoryAudit`'s destination ("`recordMemoryAudit` to `audit`").
+ * The dependency
  * allowlist doesn't cooperate with a literal move, though
  * (tests/architecture/dependency-direction.test.ts): this package may
  * depend on `@intelligo-dev/core` (`audit: ["@intelligo-dev/core"]`), but

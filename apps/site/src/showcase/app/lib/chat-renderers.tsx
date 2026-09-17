@@ -6,7 +6,7 @@
  * This is the extension point a product uses most. Adding a tool to
  * the agent is one entry in `TOOL_RENDERERS` below — a plain object
  * literal in source you own; there is no `register()` call, nothing
- * runs as an import side effect (ADR-0005), and a product package's
+ * runs as an import side effect, and a product package's
  * card compiles against the structural props here rather than against
  * the AI SDK's types.
  *

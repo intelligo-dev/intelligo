@@ -1,7 +1,7 @@
 /**
  * `intelligo add <feature>` — generate consumer-owned source.
  *
- * "Owned" is the operative word (ADR-0002): the files land in the
+ * "Owned" is the operative word: the files land in the
  * consumer's repository and Intelligo stops deciding what is in them.
  * The manifest records what was written and its hash so a later
  * upgrade can tell an untouched file from one the consumer has made

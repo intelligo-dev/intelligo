@@ -73,7 +73,7 @@ function readRegistry(): RegistryJson {
 }
 
 /**
- * Design-system items (ADR-0013) configure an app — config, tokens, CSS —
+ * Design-system items configure an app — config, tokens, CSS —
  * and ship no files, pages or messages; the base item has its own describe.
  */
 const DESIGN_SYSTEM_TYPES = new Set([
@@ -93,8 +93,8 @@ function readBlocks(): RegistryJson {
 
 /**
  * Everything that ships source: blocks, and the T3/T4 components
- * (`registry:ui`, ADR-0013 §6) blocks compose. Import, dependency and
- * orphan rules hold for both; messages and requires.json are block rules.
+ * blocks compose. Import, dependency and orphan rules hold for both;
+ * messages and requires.json are block rules.
  */
 function readSourceItems(): RegistryJson {
   const registry = readRegistry();
@@ -218,7 +218,7 @@ describe("registry", () => {
     });
   });
 
-  describe("the intelligo design-system base (ADR-0013)", () => {
+  describe("the intelligo design-system base", () => {
     const registry = readRegistry();
     const bases = registry.items.filter(
       (item) => item.type === "registry:base"
@@ -353,7 +353,7 @@ describe("registry", () => {
             if (!spec.startsWith("@intelligo-dev/")) continue;
             const dep = spec.split("/").slice(0, 2).join("/");
             if (dissolved.includes(dep)) {
-              violations.push(`${rel} → ${spec} (dissolved package, ADR-0008)`);
+              violations.push(`${rel} → ${spec}`);
             } else if (dep === "@intelligo-dev/ui") {
               violations.push(
                 `${rel} → ${spec} (registry items use consumer @/components/ui/*, not @intelligo-dev/ui)`
@@ -671,7 +671,7 @@ describe("registry", () => {
   });
 
   describe("consumer configs reference keys that exist", () => {
-    // Config seams carry message keys, never literal copy (ADR-0010) —
+    // Config seams carry message keys, never literal copy —
     // the failure mode that guards against is a key with no message
     // behind it, which renders as the raw key in production.
     it("resolves every message key the shipped onboarding steps name", () => {
@@ -742,7 +742,7 @@ describe("registry", () => {
     });
   });
 
-  describe("i18n-native items (ADR-0010)", () => {
+  describe("i18n-native items", () => {
     const registry = readBlocks();
 
     describe.each(registry.items)("item: $name", (item) => {

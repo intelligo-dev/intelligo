@@ -4,7 +4,7 @@
  * This lives in `executions` rather than beside the provider clients
  * because it is not AI code: it is what an execution costs. The
  * boundary records actor, workspace, capability, usage and cost
- * (ADR-0003), and the price of a token is the last of those.
+ *, and the price of a token is the last of those.
  *
  * Still a leaf: no database, no provider SDK. Its one import is
  * `@intelligo-dev/core/registry`, which is itself dependency-free, so
@@ -22,8 +22,8 @@
  *
  * `registerModels(DEFAULT_MODELS)` from the composition root gets the
  * old behaviour back in one line. Nothing self-registers: an import
- * that populates a registry is the side effect ADR-0005 bans, and it
- * is also how a deployment ends up billing against a catalogue it
+ * that populates a registry is the side effect the framework bans, and
+ * it is also how a deployment ends up billing against a catalogue it
  * never chose.
  *
  * ## An unregistered id throws

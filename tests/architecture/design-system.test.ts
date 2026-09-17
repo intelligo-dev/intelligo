@@ -1,5 +1,5 @@
 /**
- * The design system's rules (ADR-0013), enforced on the source this
+ * The design system's rules, enforced on the source this
  * repository ships: registry items and the reference app.
  *
  * Today's tree predates the decision, so the source rules compare
@@ -131,7 +131,7 @@ function readBaseline(): Counts {
   }
 }
 
-describe("motion honours prefers-reduced-motion (ADR-0013)", () => {
+describe("motion honours prefers-reduced-motion", () => {
   it("every file that animates with motion reads useReducedMotion", () => {
     const offenders: string[] = [];
     for (const scope of SCOPES) {
@@ -150,7 +150,7 @@ describe("motion honours prefers-reduced-motion (ADR-0013)", () => {
   });
 });
 
-describe("design-system source rules (ADR-0013)", () => {
+describe("design-system source rules", () => {
   const current = collectViolations();
 
   if (process.env.UPDATE_DESIGN_SYSTEM_BASELINE) {
@@ -281,7 +281,7 @@ function contrast(a: string, b: string): number {
   return (hi! + 0.05) / (lo! + 0.05);
 }
 
-describe("the intelligo token contract (ADR-0013)", () => {
+describe("the intelligo token contract", () => {
   const base = readBase();
 
   it("configures base-nova", () => {
@@ -361,7 +361,7 @@ describe("the intelligo token contract (ADR-0013)", () => {
  * Every surface that has moved to the design system uses base-nova and
  * carries the token contract verbatim — the values `shadcn add` writes
  * from the intelligo item, light in `:root` and dark in `.dark`. A
- * surface joins this list in the phase that migrates it (ADR-0013).
+ * surface joins this list in the phase that migrates it.
  */
 const SURFACES = [
   {

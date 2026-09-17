@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-message-scroller",
   "title": "AI Message Scroller",
-  "description": "The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages (ADR-0013, T3).",
+  "description": "The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages (T3).",
   "dependencies": [
     "motion",
     "lucide-react"

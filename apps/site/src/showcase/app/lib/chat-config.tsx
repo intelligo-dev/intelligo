@@ -1,7 +1,7 @@
 /**
  * Chat composition config — the consumer-owned extension point for
  * everything a vertical wants to add to the chat surface without
- * editing an installed component (ADR-0005: composition through a
+ * editing an installed component (composition through a
  * config a consumer owns, never a component edit).
  *
  * Every seam is optional — a fresh install ships this file with an

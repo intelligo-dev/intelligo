@@ -1,5 +1,5 @@
 /*
- * intelligo.dev follows the design system it publishes (ADR-0013).
+ * intelligo.dev follows the design system it publishes.
  *
  * Everything from `@import` to the reduced-motion rule is what
  * `shadcn add https://intelligo.dev/r/intelligo.json` writes into a
@@ -19,7 +19,7 @@
 @theme inline {
     --font-sans: "Geist", "Geist Fallback", -apple-system, "Segoe UI", sans-serif;
     --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, "SFMono-Regular", Menlo, monospace;
-    /* site-only: marketing headings (ADR-0013 §3) */
+    /* site-only: marketing headings */
     --font-heading: "Outfit", "Outfit Fallback", "Geist", sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);

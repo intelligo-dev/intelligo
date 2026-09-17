@@ -14,7 +14,7 @@
  *
  * The handle knows nothing about agents, tools, messages, or streams —
  * only actor, workspace, capability, entitlement, status, usage, cost,
- * credits, and audit (ADR-0003).
+ * credits, and audit.
  *
  * Every terminal transition is idempotent: calling complete() twice, or
  * fail() after complete(), leaves the first outcome in place. Streaming

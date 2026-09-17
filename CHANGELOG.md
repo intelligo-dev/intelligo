@@ -6,7 +6,7 @@ All notable changes to the Intelligo framework. The format follows
 
 Intelligo was built for seven months (February–August 2026) inside the
 original private repository, which also carried a production product.
-That history is not published (ADR-0001), so this file is the record of
+That history is not published, so this file is the record of
 it. Versions **0.1–0.11** are the milestone tags that repository
 carried; **0.12–0.15** are assigned here, after the fact, to the
 untagged milestones that followed. None of them were released to npm —
@@ -16,8 +16,8 @@ it explains a framework decision.
 
 ## [1.0.0-beta.7] — 2026-09-16
 
-The chat at ChatGPT level on one runtime seam (ADR-0014), one design
-system (ADR-0013), and a framework that no longer speaks one product's
+The chat at ChatGPT level on one runtime seam, one design
+system, and a framework that no longer speaks one product's
 language.
 
 ### Breaking
@@ -50,7 +50,7 @@ language.
   `ai-agent-activity`, `ai-citations`, a plain image and
   `ai-tool-result` replace them; the `chat` item no longer depends on
   shadcn's `bubble`, `message`, `message-scroller` or `questionnaire`.
-- **Money is micros with the currency attached (ADR-0015).** Every
+- **Money is micros with the currency attached.** Every
   amount in a public type is now `Money` from `@intelligo-dev/core/money`
   — micros (millionths of a major unit) plus an ISO code — because a
   bare number whose unit lived in a field name is what showed one
@@ -171,7 +171,7 @@ IF EXISTS` would otherwise delete amounts nothing had copied.
 - `@intelligo-dev/core`: `getAttachment`, `getAttachments`,
   `attachToConversation` and `setExtractedText` take the full actor and
   filter `userId` beside `workspaceId`. Conversations are user-private
-  (ADR-0009) and the ids arrive in the request body, so a workspace-only
+  and the ids arrive in the request body, so a workspace-only
   scope traded a colleague's attachment id for a signed URL to their
   upload. `deleteAttachment` always filtered both.
 - `@intelligo-dev/executions`: `listExecutions` requires `workspaceId`.
@@ -247,7 +247,7 @@ IF EXISTS` would otherwise delete amounts nothing had copied.
 - `packages/core/src/db/__tests__/migration-money.int.test.ts`: the
   0044 backfill converts a tugrik ledger at exactly a million micros to
   the unit, and a second run changes nothing.
-- [ADR-0015](docs/adr/0015-money-is-micros-with-a-currency.md): money
+- money
   is micros with a currency attached, a deployment declares the one it
   bills in, there is no default exchange rate, and a grant and a price
   are separate amounts.
@@ -454,9 +454,9 @@ IF EXISTS` would otherwise delete amounts nothing had copied.
   `lib/plans.ts`, which is why a generated app stopped compiling the
   moment those fields left `PlanConfig`.
 
-### Design system (ADR-0013)
+### Design system
 
-One design system (ADR-0013).
+One design system.
 
 #### Breaking
 
@@ -524,7 +524,7 @@ first product still carried — the prompt sanitiser — has its home.
 ### Added
 
 - **`@intelligo-dev/core/prompt`** — `sanitizeForSystemPrompt()` and
-  `detectPromptInjection()`, the sweep ADR-0008 routed to core from the
+  `detectPromptInjection()`, the sweep routed to core from the
   first product's runtime package: role markers, override phrases and
   obfuscated separators stripped from user-authored text before it is
   concatenated into a system prompt, with the pattern list exported so a
@@ -547,9 +547,9 @@ first product still carried — the prompt sanitiser — has its home.
 
 The release that makes the package layout something a developer who did
 not write it can predict. Three packages fold into subpaths under one
-rule (ADR-0011), the Next.js adapter becomes the framework's one door to
+rule, the Next.js adapter becomes the framework's one door to
 `next/*`, the page registry becomes a workspace the toolchain owns, and
-the chat transport becomes a package (ADR-0012) — the UI item binds it
+the chat transport becomes a package — the UI item binds it
 in the next release, once this one is on npm.
 
 ### Breaking
@@ -589,7 +589,7 @@ in the next release, once this one is on npm.
   `persist`, `onTurn` telemetry and a localised `messages` translator.
   It also persists the user's turn, which the route never did: without
   `originalMessages`, `createUIMessageStream`'s `onFinish` sees only
-  the reply. The name was on ADR-0008's dissolved list; ADR-0012
+  the reply. The name was on the dissolved-packages list; this release
   reuses it for the part of the old package that was never UI.
 
 ### Changed
@@ -674,7 +674,7 @@ this repository and only break in somebody else's.
   of a registry and the request path read another — silently. The one
   product to hit it saw "No billing product configured" from a page that
   rendered fine, and worked around it with an import side effect
-  ADR-0005 forbids.
+  the framework forbids.
 - **Admission refuses an unpriceable model instead of 500ing.** A new
   `unknown_model` refusal code, so a deployment that forgot to register
   a model gets a 402 that says why.
@@ -833,8 +833,8 @@ this repository and only break in somebody else's.
   treats a Better-Auth `FORBIDDEN` on the session's active organization
   (a removed member) as "no active workspace" and falls back, instead
   of letting the provider error escape.
-- Documentation and comments brought back in line with the code: ADR-0007
-  and the execution schema/queries now describe `settling` (and its two
+- Documentation and comments brought back in line with the code: the
+  execution schema/queries now describe `settling` (and its two
   readings); the `settleUsage` port no longer promises retries; stale
   notes claiming `sessions.activeOrganizationId` and the organization
   tables are absent are gone; `validate.ts`/`check-db` recommend
@@ -909,7 +909,7 @@ as `@intelligo-dev/*`.
   Apache-2.0, ESM, TypeScript strict, each with unit tests and, where
   it touches money or tenancy, real-database integration tests.
 - A shadcn-compatible page registry of 26 items, i18n-native and
-  installed unmodified (ADR-0010).
+  installed unmodified.
 - A reference application (`apps/app`) that is the registry's canonical
   installed result and CI's proof that a product can be built without
   touching a framework file.
@@ -962,7 +962,7 @@ Two hundred commits, almost all in the last five days of August,
 re-positioned the project from a product monorepo into a framework.
 Everything a consumer touches today dates from here.
 
-#### Decisions (ADR-0001 … ADR-0010)
+#### Decisions
 
 - **0001** Intelligo is an application framework and operational
   platform, not a starter kit; the public repository starts from a clean
@@ -1073,7 +1073,7 @@ Everything a consumer touches today dates from here.
 
 #### Removed
 
-- `agents`, `ai`, `chat` are deprecated and dissolving (ADR-0008): never
+- `agents`, `ai`, `chat` are deprecated and dissolving: never
   published, and no public package or registry item may depend on
   them — CI-enforced.
 - Product-specific catalogue, payment stubs and seed scripts left the
@@ -1112,8 +1112,8 @@ Everything a consumer touches today dates from here.
   the payment-provider interface and quota types; `billing` re-exports
   them.
 - A `definePlugin()` plugin system in `core` with billing and chat
-  adapters — later superseded by the explicit composition root of
-  ADR-0005, but the origin of "registries are populated, never
+  adapters — later superseded by the explicit composition root, but
+  the origin of "registries are populated, never
   self-registering".
 - Credit purchase via packs re-enabled; `WorkspaceRole` union type.
 - Ad-hoc route handlers (document, suggestions, export) folded into

@@ -93,7 +93,7 @@ export type CheckoutSessionResult = { url: string };
  * Create a Stripe subscription-checkout session for a plan upgrade.
  *
  * Resolves the Stripe price id through `getPlanBySlug` (the registry a
- * product registers at composition-root bootstrap — ADR-0006). A plan
+ * product registers at composition-root bootstrap). A plan
  * that exists in the registry but has no `stripePriceIdMonthly`/
  * `stripePriceIdYearly` set (the common dev-environment state, before
  * Stripe products are configured) throws `checkout_unavailable` rather
@@ -185,7 +185,7 @@ export async function createSubscriptionCheckout(
 
 /**
  * A one-time credit bundle offered for purchase. Bundles are product
- * packaging (ADR-0006 territory, same as plans) — this module does not
+ * packaging — this module does not
  * own a bundle catalogue or a registry for one. The caller (a
  * consumer's bound `lib/billing.ts`) passes the bundle it wants sold,
  * resolved from its own config; this schema only validates the shape.

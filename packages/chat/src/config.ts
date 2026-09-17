@@ -3,7 +3,7 @@
  *
  * Two things are required — the execution boundary and a way to run
  * the model — because those are the two things a framework must never
- * guess (ADR-0003, ADR-0007). Everything else has a default that gives
+ * guess. Everything else has a default that gives
  * a clean install a working chat with no API keys: one agent, one
  * prompt, no tools, a window of forty messages, a truncated first line
  * as the title.
@@ -23,7 +23,7 @@
  * the AI SDK's own UI message chunks — a Mastra agent produces them
  * through `@mastra/ai-sdk`, an eve session through a mapper the
  * consumer installs from the registry — so the framework carries no
- * helper for any AI framework (ADR-0003, ADR-0011).
+ * helper for any AI framework.
  */
 
 import type {

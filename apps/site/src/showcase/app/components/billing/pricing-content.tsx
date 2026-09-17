@@ -71,7 +71,7 @@ export function PricingContent({
       ) : null}
 
       {/* Centred wrap rather than a three-column grid: the catalogue is
-          a product-registered map of any size (ADR-0006), and a fixed
+          a product-registered map of any size, and a fixed
           three columns left two plans hanging against the left edge
           with a hole where the third would be. Each card takes a fixed
           width so two, three or five of them stay the same size. */}

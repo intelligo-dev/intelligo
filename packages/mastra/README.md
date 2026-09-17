@@ -13,7 +13,7 @@ pnpm add @intelligo-dev/mastra
 ```
 
 `@mastra/core` is an optional peer dependency and **nothing here imports it** —
-the bridge stays removable and the agent stays native (ADR-0003). What this
+the bridge stays removable and the agent stays native. What this
 package adds is the recording: `runWithExecution` opens an execution, runs the
 agent, and settles what it cost.
 

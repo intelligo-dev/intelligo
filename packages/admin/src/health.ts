@@ -12,7 +12,7 @@ import "server-only";
  * settlement. Everything else is the product's — which payment
  * processor, which mail provider, which model provider — so those
  * arrive through `registerIntegrationProbe` from the composition root
- * (ADR-0005). A framework package guessing at which env vars a product
+ *. A framework package guessing at which env vars a product
  * needs is how it ends up knowing the product's vocabulary, and the
  * dependency-direction test refuses the import that would let it.
  *

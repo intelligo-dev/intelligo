@@ -1,10 +1,10 @@
 {
-  "sampledAt": "2026-09-16",
+  "sampledAt": "2026-09-17",
   "version": "1.0.0-beta.7",
   "packages": 11,
-  "testFiles": 84,
-  "testCases": 863,
-  "architectureTests": 11,
+  "testFiles": 86,
+  "testCases": 890,
+  "architectureTests": 12,
   "registryItems": 28,
   "adrs": 16
 }

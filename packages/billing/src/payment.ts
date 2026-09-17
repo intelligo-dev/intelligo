@@ -2,8 +2,8 @@
  * Payment provider contract and registry.
  *
  * The interface and an in-memory mock live here; real providers are
- * registered by the application's composition root (ADR-0005) and, if
- * they are market-specific, live in a private package (ADR-0006).
+ * registered by the application's composition root and, if
+ * they are market-specific, live in a private package.
  *
  * Until Phase 3 this file also carried QPay and SocialPay
  * implementations. Both threw on every method, so a public package
@@ -119,7 +119,7 @@ export function getMockPayment(invoiceId: string) {
  * Starts empty on purpose.
  *
  * It used to be seeded with `["mock", mockPaymentProvider]` at module
- * scope, which is import-side-effect registration (ADR-0005) wearing a
+ * scope, which is import-side-effect registration wearing a
  * different hat: importing this file registered a provider, so a
  * deployment that wired nothing still resolved one, and
  * `registerPaymentProvider` had no caller anywhere in the repository

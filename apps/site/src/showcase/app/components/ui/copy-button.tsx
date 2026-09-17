@@ -22,7 +22,7 @@ type CopyButtonProps = Omit<
 };
 
 /**
- * Copy with confirmation, the same everywhere (ADR-0013 §6, T4). The
+ * Copy with confirmation, the same everywhere. The
  * icon swaps and a polite live region announces the copy; failures go to
  * `onCopyError` so the caller decides whether to toast.
  */

@@ -2,7 +2,7 @@
 
 /**
  * Artifact (document) server actions — thin transport over
- * `@intelligo-dev/core/documents` (ADR-0009): resolve the caller's actor via
+ * `@intelligo-dev/core/documents`: resolve the caller's actor via
  * `requireWorkspace()`, call the core documents service, map any
  * `DocumentServiceError` to a friendly message, and reshape the result
  * for the page and its components. No business rules here — those live
@@ -31,7 +31,7 @@
  * the "report" filter) register through `@intelligo-dev/core/documents`'s
  * `registerDocumentPatterns` — see `@/lib/document-patterns.ts`, this
  * item's composition-root extension point. Nothing in this file calls
- * it: per ADR-0005 (no import-side-effect registration), that
+ * it: registration is never an import side effect, so that
  * registration happens once, at startup, from an explicit composition
  * root — never from a request-scoped file like this one, and never as
  * an import side effect.

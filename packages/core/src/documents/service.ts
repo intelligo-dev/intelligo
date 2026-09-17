@@ -3,7 +3,7 @@
  *
  * Core CRUD operations for AI-generated document artifacts with
  * workspace + user isolation. Ported from
- * @intelligo-dev/agents/documents (ADR-0009): the tables (`documents`,
+ * @intelligo-dev/agents/documents: the tables (`documents`,
  * `document_types`) always lived in @intelligo-dev/core's schema, only the
  * service layer sat in a dissolving package.
  *

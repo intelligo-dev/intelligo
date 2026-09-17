@@ -4,8 +4,7 @@
  * The screen itself ships from @intelligo-dev/admin so every deployment
  * shows the same operational truth — a fork could quietly stop showing
  * you unsettled executions. What is generated here is only the mount:
- * the route, the authorization call, and your own page chrome
- * (ADR-0002).
+ * the route, the authorization call, and your own page chrome.
  *
  * Access is gated on PLATFORM_ADMIN_EMAILS, not on a workspace role.
  * Workspace `owner` is per-tenant and every signup has one.

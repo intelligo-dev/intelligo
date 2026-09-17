@@ -5,7 +5,7 @@ registry schema) and `base/<item>/**`, one directory per item.
 
 **Never published.** Items are not a runtime dependency; they install into an
 application as consumer-owned source through the standard shadcn CLI
-(ADR-0002, ADR-0010). This directory is a private workspace so the toolchain
+. This directory is a private workspace so the toolchain
 owns it — its own dependencies, `lint`, `type-check` and a turbo task the site
 and the CLI build on — and it lives under `packages/` because that is where a
 Turborepo keeps private tooling workspaces.

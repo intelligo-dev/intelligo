@@ -13,7 +13,7 @@
  * contract as `chatConfig.starters` — so a tab a consumer adds can
  * point into any namespace it owns, not just this item's.
  *
- * Navigation goes through `@/i18n/navigation` (ADR-0010): `Link`
+ * Navigation goes through `@/i18n/navigation`: `Link`
  * localizes the href, and `usePathname` returns the locale-stripped
  * path, so `endsWith` matching works identically in every locale.
  */

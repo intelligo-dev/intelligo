@@ -3,19 +3,19 @@
   "deprecations": [
     {
       "name": "@intelligo-dev/money",
-      "message": "Folded into @intelligo-dev/core/money (ADR-0011)."
+      "message": "Folded into @intelligo-dev/core/money."
     },
     {
       "name": "@intelligo-dev/http",
-      "message": "Folded into @intelligo-dev/core/request-context (the contract) and @intelligo-dev/next (the Next.js binding) (ADR-0011)."
+      "message": "Folded into @intelligo-dev/core/request-context (the contract) and @intelligo-dev/next (the Next.js binding)."
     },
     {
       "name": "@intelligo-dev/billing-core",
-      "message": "Folded into @intelligo-dev/billing/{plans,plan-registry,payment,quota-types} (ADR-0011)."
+      "message": "Folded into @intelligo-dev/billing/{plans,plan-registry,payment,quota-types}."
     },
     {
       "name": "@intelligo-dev/ui",
-      "message": "Replaced by the registry design system (ADR-0013): shadcn base-nova plus https://intelligo.dev/r/intelligo.json."
+      "message": "Replaced by the registry design system: shadcn base-nova plus https://intelligo.dev/r/intelligo.json."
     }
   ]
 }

@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@showcase/lib/utils";
 
 /**
- * The one page title every Intelligo page renders (ADR-0013 §6, T4):
+ * The one page title every Intelligo page renders:
  * a heading, an optional description, and actions that wrap under the
  * heading on narrow screens.
  */

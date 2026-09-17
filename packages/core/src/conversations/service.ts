@@ -4,7 +4,7 @@
  * Persistence-only: conversation lifecycle (create, list, read,
  * rename, delete), message append/window reads, and vote state.
  * Ported from the product application's conversation server actions
- * and chat-route persistence helper (ADR-0009) — the tables
+ * and chat-route persistence helper — the tables
  * (`conversations`, `messages`, `votes`) always lived in
  * @intelligo-dev/core's schema, only the service layer sat in the product
  * application.

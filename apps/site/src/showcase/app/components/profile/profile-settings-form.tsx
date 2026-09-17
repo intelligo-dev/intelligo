@@ -11,7 +11,7 @@
  * adds a typed confirmation on top, the common SaaS pattern).
  *
  * `DELETE_CONFIRMATION` is a stable, non-translated confirmation token
- * (ADR-0010 batch-3 judgment call, this component): the user always
+ *: the user always
  * types the literal string "DELETE" regardless of locale, so the
  * sentence around it is translated but the token itself is not a
  * message key.

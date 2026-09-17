@@ -29,10 +29,10 @@
  * span.** `createTeamService`, `createExecutions` and
  * `createWorkspaceService` are 412, 336 and 203 lines of *declarations
  * plus a return of them* — the pattern AGENTS.md calls "ports over
- * dependencies" and ADR-0005 requires. A size rule that condemns the
- * architecture the repository is built on is wrong, so the carve-out is
- * stated structurally here rather than written out three times in an
- * exemption map. Note this is a real test, not a blanket pass:
+ * dependencies" and the composition root requires. A size rule that
+ * condemns the architecture the repository is built on is wrong, so
+ * the carve-out is stated structurally here rather than written out
+ * three times in an exemption map. Note this is a real test, not a blanket pass:
  * `createChatHandler` is 774 lines and is *not* a factory by it, because
  * its body is a pipeline rather than a set of declarations.
  *
@@ -84,7 +84,7 @@ const FUNCTION_LIMIT = 150;
  */
 const FILE_EXEMPTIONS: Record<string, string> = {
   "packages/chat/src/handler.ts":
-    "the transport's whole pipeline in one function — parse, admit, prepare, stream, settle, persist. Being split leaves-first; the settlement closure graph goes last, and only behind a mutation score that proves the suite would notice (ADR-0007).",
+    "the transport's whole pipeline in one function — parse, admit, prepare, stream, settle, persist. Being split leaves-first; the settlement closure graph goes last, and only behind a mutation score that proves the suite would notice.",
   "packages/billing/src/quota.ts":
     "admission, settlement and reporting in one module. The seam is already cut — `quota.test.ts` and `quota-settlement.test.ts` exist as separate suites — so this splits into three without touching a test.",
   "packages/core/src/conversations/service.ts":
@@ -300,7 +300,7 @@ describe("function size", () => {
 
   it("measures a ports factory by its longest member", () => {
     // The carve-out is load-bearing: without it the rule condemns
-    // ADR-0005's composition pattern. `createTeamService` is 412 code
+    // the composition root's factory pattern. `createTeamService` is 412 code
     // lines of declarations and a return, and must not be reported;
     // `createChatHandler` is longer still and must be, because its body
     // is a pipeline.

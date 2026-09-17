@@ -51,7 +51,7 @@ import "server-only";
  * `@intelligo-dev/chat` for every seam.
  *
  * i18n: the route lives at `app/api/chat/route.ts`, outside the
- * `[locale]` segment (ADR-0010), so there is no URL segment to read a
+ * `[locale]` segment, so there is no URL segment to read a
  * locale from. `messages` below reads the `NEXT_LOCALE` cookie
  * next-intl's middleware already sets on every page navigation, then
  * falls back to the configured default locale — the same "works with
@@ -104,7 +104,7 @@ async function chatMessages(request: Request): Promise<ChatMessages> {
  * closes both: the stub model in `lib/chat-model.ts` calls it whenever
  * a message starts with "save", so a clean install with no API keys
  * still demonstrates the whole path — tool call → document written
- * through `@intelligo-dev/core` (ADR-0009) → `ArtifactLinkCard` in the
+ * through `@intelligo-dev/core` → `ArtifactLinkCard` in the
  * transcript → the document on `/artifacts`.
  *
  * Document ids are minted per call, so each save is its own artifact —

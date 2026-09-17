@@ -1,4 +1,4 @@
-# Migrating an app to the design system (ADR-0013)
+# Migrating an app to the design system
 
 Registry items now compose with Base UI's `render` prop, depend on the
 `intelligo` token contract, and name Intelligo's own components as

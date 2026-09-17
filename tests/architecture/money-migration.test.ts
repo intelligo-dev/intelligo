@@ -1,5 +1,5 @@
 /**
- * Money says what it is of (ADR-0015), and migration 0045 is what made
+ * Money says what it is of, and migration 0045 is what made
  * that true of the database as well as the types.
  *
  * Two rules, because the old shape can come back two ways. A column
@@ -118,7 +118,7 @@ function withoutComments(source: string): string {
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
 }
 
-describe("money is denominated, not named after a currency (ADR-0015)", () => {
+describe("money is denominated, not named after a currency", () => {
   it("scans a schema and a package tree", () => {
     expect(declaredColumns().length).toBeGreaterThan(100);
     expect(packageSources().length).toBeGreaterThan(50);
@@ -153,7 +153,7 @@ describe("money is denominated, not named after a currency (ADR-0015)", () => {
     expect(
       offenders,
       "an amount carries its currency (`Money` from @intelligo-dev/core/money); " +
-        "a name ending in the currency is the shape ADR-0015 replaced"
+        "a name ending in the currency is the shape money-as-micros replaced"
     ).toEqual([]);
   });
 });

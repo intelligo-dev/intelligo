@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-approval-card",
   "title": "AI Approval Card",
-  "description": "A decision surface: approve, reject or request changes, or step through single-choice, multiple-choice and freeform questions and submit the answers (ADR-0013, T3).",
+  "description": "A decision surface: approve, reject or request changes, or step through single-choice, multiple-choice and freeform questions and submit the answers (T3).",
   "dependencies": [
     "lucide-react",
     "motion"

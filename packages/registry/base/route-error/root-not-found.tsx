@@ -10,8 +10,8 @@
  * Static English and inline styles for the same reason `global-error`
  * uses them: this renders outside `[locale]`, so there is no locale to
  * read and no `NextIntlClientProvider` above it. That is the documented
- * ADR-0010 exception — every 404 reachable *within* a locale is
- * translated. If your product only ever serves one language, replace
+ * exception to the i18n-native rule — every 404 reachable *within* a
+ * locale is translated. If your product only ever serves one language, replace
  * the strings here with that language's.
  */
 

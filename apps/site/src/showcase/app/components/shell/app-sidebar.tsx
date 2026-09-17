@@ -6,7 +6,7 @@
  * "registry" items in this catalogue install, so most consumers will
  * want to replace it once they add their own pages.
  *
- * Nav item titles are message keys, not literal strings (ADR-0010):
+ * Nav item titles are message keys, not literal strings:
  * `NavItem.titleKey` points into this item's `app-shell` namespace (e.g.
  * `"sidebar.nav.dashboard"` resolves `messages/en/app-shell.json`'s
  * `sidebar.nav.dashboard`), and this component resolves it via

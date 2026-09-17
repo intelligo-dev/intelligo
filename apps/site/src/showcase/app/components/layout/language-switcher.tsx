@@ -2,7 +2,7 @@
 
 /**
  * Locale switcher — a dropdown over the locales your `i18n/routing.ts`
- * declares. The registry's items are i18n-native (ADR-0010) but nothing
+ * declares. The registry's items are i18n-native but nothing
  * else in the catalogue lets the user actually change language; this
  * closes that gap.
  *

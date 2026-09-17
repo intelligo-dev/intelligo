@@ -2,7 +2,7 @@
  * Conversation windowing: what the model is shown of a long history.
  *
  * `UIMessage`-shaped on purpose — this is the AI SDK's transcript, not
- * persistence (ADR-0009 keeps windowing out of core for that reason).
+ * persistence.
  * The default `prepareMessages` applies it; an application that wants
  * to summarise what was pruned does so in its own `prepareMessages`,
  * with its own model, and hands the summary back as `system`.

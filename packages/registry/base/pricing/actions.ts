@@ -12,7 +12,7 @@
  * rather than shipping its own copy (install `pricing` first).
  *
  * All user-facing error text is resolved via `getTranslations("pricing")`
- * (ADR-0010) — the `BillingServiceError.code` → message map below
+ * — the `BillingServiceError.code` → message map below
  * becomes a code → translation-key map instead of a code → English
  * string map.
  */

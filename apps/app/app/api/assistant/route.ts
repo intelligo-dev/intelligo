@@ -11,8 +11,8 @@
  * the bridge never imports; the callable arrives as an argument, typed
  * structurally. So the bridge is not a Mastra adapter wearing a
  * package name: any framework whose result carries usage reaches the
- * boundary through it, which is the claim ADR-0003 makes and the thing
- * Phase 6 exists to check.
+ * boundary through it, which is the claim the execution boundary makes
+ * and the thing Phase 6 exists to check.
  *
  * The "model call" here is a stub — this app exercises the SaaS
  * boundary, not an AI product. Replacing `callModel` with a real

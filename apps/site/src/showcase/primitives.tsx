@@ -1,7 +1,7 @@
 /**
  * One live demo per catalog entry, built only from the base-nova
  * components installed in `@/components/ui` — exactly what `shadcn add`
- * gives a consumer — composed the way ADR-0013 says blocks compose them.
+ * gives a consumer — composed the way blocks compose them.
  */
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";

@@ -1,7 +1,7 @@
 /**
  * create tests.
  *
- * The scaffold is onboarding, not a boundary (ADR-0001), so the
+ * The scaffold is onboarding, not a boundary, so the
  * behaviours worth pinning are the ones that protect the developer:
  * it never writes into an occupied directory, and what it writes is
  * recorded in the manifest from the first moment so the very first

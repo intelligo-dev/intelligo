@@ -12,7 +12,7 @@ import "server-only";
  * `CHAT_MODEL_ID` is deliberately a real, registered id
  * (`@intelligo-dev/executions/pricing`) even though the stub never calls
  * that provider: the execution boundary bills whatever id the transport
- * settles with (ADR-0003), and an id with no registered price is
+ * settles with, and an id with no registered price is
  * refused at admission. Using a real id here means a clean install
  * exercises the *correct* pricing path — swap in your own model id the
  * moment you swap in a real provider below, and keep it one that is

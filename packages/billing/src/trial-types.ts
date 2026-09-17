@@ -5,7 +5,7 @@
  */
 
 /**
- * The grant itself moved to the plan registry (ADR-0006).
+ * The grant itself moved to the plan registry.
  *
  * `TRIAL_CONFIG` was "100,000 tokens / 5,000₮ / 14 days" hardcoded
  * here: the vertical's pricing-page offer inside a package headed for

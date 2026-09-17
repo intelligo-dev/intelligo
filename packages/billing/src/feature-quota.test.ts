@@ -8,7 +8,7 @@
  * All DB calls are mocked; the tests drive the quota state via a tiny
  * in-memory fake that tracks per-user rows and supports select/update/insert.
  * Plan limits are registered in beforeAll — the framework ships no
- * catalogue to fall back on (ADR-0006).
+ * catalogue to fall back on.
  */
 
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";

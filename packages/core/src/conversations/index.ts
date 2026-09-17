@@ -1,5 +1,5 @@
 /**
- * Conversations Module (ADR-0009)
+ * Conversations Module
  *
  * Conversation/message lifecycle: create, list, read, rename, delete,
  * message append/window reads, vote state. See ./service.ts for the

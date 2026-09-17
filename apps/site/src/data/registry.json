@@ -8,7 +8,7 @@
       "type": "registry:base",
       "extends": "none",
       "title": "Intelligo design system",
-      "description": "The base every Intelligo page is built on (ADR-0013): shadcn base-nova on Base UI, the neutral theme with its focus ring, muted text and destructive raised to WCAG AA, and additive tokens for status (success, warning, info, destructive-foreground), layers and motion. Initialise an app from it before installing any other item.",
+      "description": "The base every Intelligo page is built on: shadcn base-nova on Base UI, the neutral theme with its focus ring, muted text and destructive raised to WCAG AA, and additive tokens for status (success, warning, info, destructive-foreground), layers and motion. Initialise an app from it before installing any other item.",
       "dependencies": [
         "class-variance-authority",
         "cn",
@@ -190,7 +190,7 @@
       "name": "page-header",
       "type": "registry:ui",
       "title": "Page Header",
-      "description": "The one page title every Intelligo page renders: heading, description and actions (ADR-0013, T4).",
+      "description": "The one page title every Intelligo page renders: heading, description and actions (T4).",
       "files": [
         {
           "path": "base/ui/page-header/page-header.tsx",
@@ -203,7 +203,7 @@
       "name": "stat-card",
       "type": "registry:ui",
       "title": "Stat Card",
-      "description": "A metric on a card — label, value, an action such as a status badge, and a footer (ADR-0013, T4).",
+      "description": "A metric on a card — label, value, an action such as a status badge, and a footer (T4).",
       "registryDependencies": ["card"],
       "files": [
         {
@@ -217,7 +217,7 @@
       "name": "status-badge",
       "type": "registry:ui",
       "title": "Status Badge",
-      "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour (ADR-0013, T4).",
+      "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour (T4).",
       "dependencies": ["class-variance-authority"],
       "files": [
         {
@@ -231,7 +231,7 @@
       "name": "copy-button",
       "type": "registry:ui",
       "title": "Copy Button",
-      "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own (ADR-0013, T4).",
+      "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own (T4).",
       "dependencies": ["lucide-react"],
       "registryDependencies": ["button"],
       "files": [
@@ -246,7 +246,7 @@
       "name": "ai-code-block",
       "type": "registry:ui",
       "title": "AI Code Block",
-      "description": "Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark (ADR-0013, T3).",
+      "description": "Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark (T3).",
       "dependencies": ["shiki", "lucide-react"],
       "registryDependencies": ["@intelligo/copy-button", "spinner"],
       "files": [
@@ -261,7 +261,7 @@
       "name": "ai-reasoning",
       "type": "registry:ui",
       "title": "AI Reasoning",
-      "description": "Streamed reasoning, collapsible, with the time it took (ADR-0013, T3; ported from Vercel AI Elements).",
+      "description": "Streamed reasoning, collapsible, with the time it took (T3; ported from Vercel AI Elements).",
       "dependencies": ["lucide-react", "streamdown"],
       "registryDependencies": ["collapsible"],
       "files": [
@@ -276,7 +276,7 @@
       "name": "ai-suggestion",
       "type": "registry:ui",
       "title": "AI Suggestion",
-      "description": "Conversation starters and follow-ups in a scrollable row (ADR-0013, T3; ported from Vercel AI Elements).",
+      "description": "Conversation starters and follow-ups in a scrollable row (T3; ported from Vercel AI Elements).",
       "registryDependencies": ["button", "scroll-area"],
       "files": [
         {
@@ -290,7 +290,7 @@
       "name": "ai-artifact",
       "type": "registry:ui",
       "title": "AI Artifact",
-      "description": "A generated document's frame: header, actions and content (ADR-0013, T3; ported from Vercel AI Elements).",
+      "description": "A generated document's frame: header, actions and content (T3; ported from Vercel AI Elements).",
       "dependencies": ["lucide-react"],
       "registryDependencies": ["button", "tooltip"],
       "files": [
@@ -305,7 +305,7 @@
       "name": "ai-prompt-input",
       "type": "registry:ui",
       "title": "AI Prompt Input",
-      "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (ADR-0013, T3; ported from Vercel AI Elements).",
+      "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (T3; ported from Vercel AI Elements).",
       "dependencies": ["ai@^7.0.103", "lucide-react", "motion"],
       "registryDependencies": [
         "attachment",
@@ -327,7 +327,7 @@
       "name": "ai-branch",
       "type": "registry:ui",
       "title": "AI Branch",
-      "description": "A pager over the versions of a reply or an edited message — previous, next, `2 / 3` (ADR-0013, T3).",
+      "description": "A pager over the versions of a reply or an edited message — previous, next, `2 / 3` (T3).",
       "dependencies": ["lucide-react"],
       "registryDependencies": ["button"],
       "files": [
@@ -342,7 +342,7 @@
       "name": "ai-speech-input",
       "type": "registry:ui",
       "title": "AI Speech Input",
-      "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent (ADR-0013, T3).",
+      "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent (T3).",
       "dependencies": ["lucide-react"],
       "registryDependencies": ["button"],
       "files": [
@@ -357,7 +357,7 @@
       "name": "ai-composer-menu",
       "type": "registry:ui",
       "title": "AI Composer Menu",
-      "description": "The picker a composer opens for slash commands and @ mentions, anchored above the textarea (ADR-0013, T3).",
+      "description": "The picker a composer opens for slash commands and @ mentions, anchored above the textarea (T3).",
       "dependencies": [],
       "registryDependencies": ["command"],
       "files": [
@@ -372,7 +372,7 @@
       "name": "ai-motion",
       "type": "registry:ui",
       "title": "AI Motion",
-      "description": "The motion vocabulary the AI parts share: easing curves, spring presets, a transform-only disclosure and a text swap, all gated on reduced motion (ADR-0013, T3).",
+      "description": "The motion vocabulary the AI parts share: easing curves, spring presets, a transform-only disclosure and a text swap, all gated on reduced motion (T3).",
       "dependencies": ["motion"],
       "registryDependencies": [],
       "files": [
@@ -387,7 +387,7 @@
       "name": "ai-shimmer-text",
       "type": "registry:ui",
       "title": "AI Shimmer Text",
-      "description": "A status line that reads as alive while the agent works; a token gradient sweeps the text and the words swap with motion, honouring reduced motion (ADR-0013, T3).",
+      "description": "A status line that reads as alive while the agent works; a token gradient sweeps the text and the words swap with motion, honouring reduced motion (T3).",
       "dependencies": ["motion"],
       "registryDependencies": [],
       "files": [
@@ -402,7 +402,7 @@
       "name": "ai-agent-activity",
       "type": "registry:ui",
       "title": "AI Agent Activity",
-      "description": "One adaptive stream of what the agent is doing: reasoning text, plan steps, web searches with results, tool calls and structured traces, gliding while it works and folding into a summary when done (ADR-0013, T3).",
+      "description": "One adaptive stream of what the agent is doing: reasoning text, plan steps, web searches with results, tool calls and structured traces, gliding while it works and folding into a summary when done (T3).",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-motion",
@@ -420,7 +420,7 @@
       "name": "ai-approval-card",
       "type": "registry:ui",
       "title": "AI Approval Card",
-      "description": "A decision surface: approve, reject or request changes, or step through single-choice, multiple-choice and freeform questions and submit the answers (ADR-0013, T3).",
+      "description": "A decision surface: approve, reject or request changes, or step through single-choice, multiple-choice and freeform questions and submit the answers (T3).",
       "dependencies": ["lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/ai-motion",
@@ -442,7 +442,7 @@
       "name": "ai-file-diff",
       "type": "registry:ui",
       "title": "AI File Diff",
-      "description": "A file the agent is changing: the path with live added and removed counts, opening onto a unified diff whose highlighted rows arrive while the change streams (ADR-0013, T3).",
+      "description": "A file the agent is changing: the path with live added and removed counts, opening onto a unified diff whose highlighted rows arrive while the change streams (T3).",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-code-block",
@@ -462,7 +462,7 @@
       "name": "ai-message-bubble",
       "type": "registry:ui",
       "title": "AI Message Bubble",
-      "description": "The speech bubble inside a message row: six surface variants that pop into place, grouped bubbles and a collapsible long body (ADR-0013, T3).",
+      "description": "The speech bubble inside a message row: six surface variants that pop into place, grouped bubbles and a collapsible long body (T3).",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": ["@intelligo/ai-motion", "@intelligo/ai-message"],
       "files": [
@@ -477,7 +477,7 @@
       "name": "ai-message-scroller",
       "type": "registry:ui",
       "title": "AI Message Scroller",
-      "description": "The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages (ADR-0013, T3).",
+      "description": "The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages (T3).",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -492,7 +492,7 @@
       "name": "ai-message",
       "type": "registry:ui",
       "title": "AI Message",
-      "description": "One turn of a conversation: the row with its side, optional avatar, content column, header, footer, a centred marker and the typing indicator (ADR-0013, T3).",
+      "description": "One turn of a conversation: the row with its side, optional avatar, content column, header, footer, a centred marker and the typing indicator (T3).",
       "dependencies": ["motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -507,7 +507,7 @@
       "name": "ai-todo-list",
       "type": "registry:ui",
       "title": "AI Todo List",
-      "description": "The agent's to-do list: a collapsible plan whose status marks morph between pending, in progress, completed and cancelled, with a rolling completion count (ADR-0013, T3).",
+      "description": "The agent's to-do list: a collapsible plan whose status marks morph between pending, in progress, completed and cancelled, with a rolling completion count (T3).",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -522,7 +522,7 @@
       "name": "ai-tool-approval",
       "type": "registry:ui",
       "title": "AI Tool Approval",
-      "description": "A permission card for a tool call: name, parameters behind a disclosure, allow once / always allow / deny, and the outcome as a status (ADR-0013, T3).",
+      "description": "A permission card for a tool call: name, parameters behind a disclosure, allow once / always allow / deny, and the outcome as a status (T3).",
       "dependencies": ["lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/ai-code-block",
@@ -543,7 +543,7 @@
       "name": "ai-tool-result",
       "type": "registry:ui",
       "title": "AI Tool Result",
-      "description": "The result of a tool the agent ran: a summary line that opens onto highlighted output, status rolling from running to done, copy and run-again actions (ADR-0013, T3).",
+      "description": "The result of a tool the agent ran: a summary line that opens onto highlighted output, status rolling from running to done, copy and run-again actions (T3).",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-code-block",
@@ -563,7 +563,7 @@
       "name": "ai-agent-progress",
       "type": "registry:ui",
       "title": "AI Agent Progress",
-      "description": "A long-running step: a pulsing grid beside the verb and an elapsed-time counter (ADR-0013, T3).",
+      "description": "A long-running step: a pulsing grid beside the verb and an elapsed-time counter (T3).",
       "dependencies": ["motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -578,7 +578,7 @@
       "name": "ai-citations",
       "type": "registry:ui",
       "title": "AI Citations",
-      "description": "The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list (ADR-0013, T3).",
+      "description": "The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list (T3).",
       "dependencies": ["lucide-react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion", "hover-card", "sheet"],
       "files": [
@@ -593,7 +593,7 @@
       "name": "ai-image-generation",
       "type": "registry:ui",
       "title": "AI Image Generation",
-      "description": "An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes (ADR-0013, T3).",
+      "description": "An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes (T3).",
       "dependencies": ["lucide-react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion", "button"],
       "files": [
@@ -608,7 +608,7 @@
       "name": "ai-reasoning-text",
       "type": "registry:ui",
       "title": "AI Reasoning Text",
-      "description": "What the agent is doing while it reasons: phrases cycle with a cascade, swap or scramble behind an ASCII loader (ADR-0013, T3).",
+      "description": "What the agent is doing while it reasons: phrases cycle with a cascade, swap or scramble behind an ASCII loader (T3).",
       "dependencies": ["motion"],
       "registryDependencies": [
         "@intelligo/ai-motion",
@@ -626,7 +626,7 @@
       "name": "ai-streaming-response",
       "type": "registry:ui",
       "title": "AI Streaming Response",
-      "description": "An assistant reply as it streams and once it lands: content, copy, retry and feedback actions, and a sources disclosure (ADR-0013, T3).",
+      "description": "An assistant reply as it streams and once it lands: content, copy, retry and feedback actions, and a sources disclosure (T3).",
       "dependencies": ["lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/ai-citations",
@@ -645,7 +645,7 @@
       "name": "ai-sidebar",
       "type": "registry:ui",
       "title": "AI Sidebar",
-      "description": "The AI product's sidebar: a shell that morphs between a panel and an icon rail with tooltips, slides in as a sheet on mobile, holds menus with a gliding hover and active pill and staggered submenus, and a resource tree of folders, projects, conversations, files and bookmarks with keyboard and drag-and-drop moves, rename and a row menu (ADR-0013, T3).",
+      "description": "The AI product's sidebar: a shell that morphs between a panel and an icon rail with tooltips, slides in as a sheet on mobile, holds menus with a gliding hover and active pill and staggered submenus, and a resource tree of folders, projects, conversations, files and bookmarks with keyboard and drag-and-drop moves, rename and a row menu (T3).",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-motion",
@@ -665,7 +665,7 @@
       "name": "document-viewer",
       "type": "registry:ui",
       "title": "Document Viewer",
-      "description": "How a saved document reads when nobody is editing it: markdown with maths and diagrams, highlighted code, a sheet's rows, an image, and a sandboxed HTML preview — plus the title-to-language and kind-glyph helpers the chat canvas and the artifacts library share (ADR-0013, T4).",
+      "description": "How a saved document reads when nobody is editing it: markdown with maths and diagrams, highlighted code, a sheet's rows, an image, and a sandboxed HTML preview — plus the title-to-language and kind-glyph helpers the chat canvas and the artifacts library share (T4).",
       "dependencies": [
         "streamdown",
         "@streamdown/code",

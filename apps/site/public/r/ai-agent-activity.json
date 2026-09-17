@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-agent-activity",
   "title": "AI Agent Activity",
-  "description": "One adaptive stream of what the agent is doing: reasoning text, plan steps, web searches with results, tool calls and structured traces, gliding while it works and folding into a summary when done (ADR-0013, T3).",
+  "description": "One adaptive stream of what the agent is doing: reasoning text, plan steps, web searches with results, tool calls and structured traces, gliding while it works and folding into a summary when done (T3).",
   "dependencies": [
     "motion",
     "lucide-react"

@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-speech-input",
   "title": "AI Speech Input",
-  "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent (ADR-0013, T3).",
+  "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent (T3).",
   "dependencies": [
     "lucide-react"
   ],

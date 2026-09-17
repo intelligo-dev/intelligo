@@ -2,7 +2,7 @@
 
 /**
  * Renders one `UIMessage`'s parts on the design system's conversation
- * components (ADR-0013): shadcn's Message and Bubble for the turn, the
+ * components: shadcn's Message and Bubble for the turn, the
  * T3 parts for the agent's activity, sources and tools, and the seams
  * in `@/lib/chat-renderers` for tool calls and data parts. Text renders
  * with `streamdown`, the markdown-while-streaming renderer, because

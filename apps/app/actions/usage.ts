@@ -11,7 +11,7 @@
  * only authenticates the caller, calls those, and reshapes the result
  * for the page and its components.
  *
- * Error fallbacks are translated (`getTranslations("usage")`, ADR-0010)
+ * Error fallbacks are translated (`getTranslations("usage")`)
  * and always generic — a thrown `Error#message` is never surfaced to
  * the UI, since it can carry internals (SQL, hostnames).
  */

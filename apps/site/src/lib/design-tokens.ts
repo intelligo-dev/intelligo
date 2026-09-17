@@ -1,6 +1,6 @@
 /**
  * The token contract as published: read from the `intelligo`
- * registry:base item in registry.json (ADR-0013), so /components shows
+ * registry:base item in registry.json, so /components shows
  * exactly what `shadcn add intelligo.dev/r/intelligo.json` installs.
  * The contrast maths mirrors tests/architecture/design-system.test.ts.
  */

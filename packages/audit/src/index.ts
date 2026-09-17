@@ -25,7 +25,7 @@ const log = createLogger("Audit");
  *
  * This is an extension point, not a plugin system: sinks are
  * registered by the composition root, never by being imported
- * (ADR-0005). What it exists for is the governance work that does not
+ *. What it exists for is the governance work that does not
  * belong in a permissively-licensed package — tamper-evidence,
  * retention policy, shipping the trail to a customer's SIEM — so that
  * a closed module can add it without this package knowing it exists,
@@ -197,7 +197,7 @@ export async function queryAuditEvents(options: QueryAuditEventsOptions = {}) {
 export { auditEvents } from "./db/schema";
 export type { AuditEvent, InsertAuditEvent } from "./db/schema";
 
-// Memory-audit event contract (ADR-0008) — see ./memory-audit.ts for
+// Memory-audit event contract — see ./memory-audit.ts for
 // why this is a type-only re-export rather than a second writer.
 export type {
   AuditTargetKind as MemoryAuditTargetKind,

@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-suggestion",
   "title": "AI Suggestion",
-  "description": "Conversation starters and follow-ups in a scrollable row (ADR-0013, T3; ported from Vercel AI Elements).",
+  "description": "Conversation starters and follow-ups in a scrollable row (T3; ported from Vercel AI Elements).",
   "registryDependencies": [
     "button",
     "scroll-area"

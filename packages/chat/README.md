@@ -13,7 +13,7 @@ pnpm add @intelligo-dev/chat ai
 ```
 
 `ai` (the Vercel AI SDK) is a peer: the transport takes its tools, its models
-and its stop conditions natively, and never wraps them (ADR-0003).
+and its stop conditions natively, and never wraps them.
 
 ## Use
 

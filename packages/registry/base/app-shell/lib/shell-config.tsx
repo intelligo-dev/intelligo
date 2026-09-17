@@ -1,8 +1,8 @@
 /**
  * Shell composition config — the consumer-owned extension point for
  * everything a vertical wants to add around the authenticated app
- * shell without editing `layout.tsx` or `components/shell/*` (ADR-0005:
- * composition through a config a consumer owns, never a component
+ * shell without editing `layout.tsx` or `components/shell/*`
+ * (composition through a config a consumer owns, never a component
  * edit; mirrors the `chat` item's `lib/chat-config.tsx`).
  *
  * Every seam is optional — a fresh install ships this file with an

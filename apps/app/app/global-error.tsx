@@ -7,7 +7,7 @@
  * Deliberately static English and inline styles — this renders *above*
  * `NextIntlClientProvider` and outside the `[locale]` segment, so there
  * is no translator and no guarantee the stylesheet loaded. That is the
- * one documented exception to ADR-0010's i18n-native rule; every other
+ * one documented exception to the i18n-native rule; every other
  * error surface in the catalogue is translated. Keep it dependency-free
  * for the same reason: whatever broke may be one of the dependencies.
  *

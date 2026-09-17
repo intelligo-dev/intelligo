@@ -15,7 +15,7 @@
  *
  * Entitlement is decided at `executions.begin()`, after the agent and
  * model are resolved, so the hold matches what will actually run
- * (ADR-0003, ADR-0007). Everything before it is cheaper and answers
+ *. Everything before it is cheaper and answers
  * without opening an execution.
  *
  * Every terminal path settles exactly once: `complete()` is
@@ -237,7 +237,7 @@ export type ChatHandler = {
 export function createChatHandler(config: ChatServerConfig): ChatHandler {
   if (!config.model.resolve && !config.streamTurn) {
     throw new Error(
-      "createChatHandler: set model.resolve (a model for streamText) or streamTurn (a runtime binding); the transport cannot guess the model (ADR-0003)."
+      "createChatHandler: set model.resolve (a model for streamText) or streamTurn (a runtime binding); the transport cannot guess the model."
     );
   }
 

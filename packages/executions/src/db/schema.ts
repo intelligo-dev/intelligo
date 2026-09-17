@@ -3,11 +3,11 @@
  *
  * One row per AI execution: who ran what capability, whether it was
  * admitted, how it ended, and what it cost. This is the narrow SaaS
- * boundary from ADR-0003 — it deliberately records nothing about
- * agents, tools, workflows, or messages, which stay native to the
+ * boundary the execution record keeps — it deliberately records
+ * nothing about agents, tools, workflows, or messages, which stay native to the
  * chosen AI framework.
  *
- * Relationship to the existing usage tables (ADR-0004):
+ * Relationship to the existing usage tables:
  *   - `usage_records` is the per-request usage/cost detail. It IS the
  *     "usage_events"/"cost_events" of the target structure under its
  *     current name; it gains an `execution_id` FK here rather than

@@ -12,7 +12,7 @@
  * English strings — they carry stable error CODES (plain identifiers, not
  * translated text), and the form component that owns each schema maps a
  * code to `t(\`validation.${code}\`)` under its own registry item's
- * message namespace (ADR-0010). A schema file has no component tree to
+ * message namespace. A schema file has no component tree to
  * call `useTranslations`/`getTranslations` from, so translation happens
  * one layer up, in the form.
  */

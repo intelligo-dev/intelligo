@@ -81,8 +81,7 @@ describe("template catalogue", () => {
     it("imports only packages this repository publishes", () => {
       // Generated code lands in a consumer repository that installs
       // from npm — an `@intelligo-dev/*` name that is not published
-      // would be unresolvable there and is a boundary leak here
-      // (ADR-0006).
+      // would be unresolvable there and is a boundary leak here.
       expect(PUBLISHED.size).toBeGreaterThan(5);
       for (const file of spec.files) {
         const body = readFileSync(

@@ -12,7 +12,7 @@
  * Dependency-free on purpose: it is reached from the chat transport's
  * `prepareMessages` seam, from tools, and from any package that
  * assembles a prompt, none of which should pull anything else in for
- * it. ADR-0008 routed it here from the product's runtime package.
+ * it. Routed here from the product's runtime package it started in.
  *
  * Returns an empty string when more than half of the original was
  * injection patterns: that is a hostile payload, and feeding the

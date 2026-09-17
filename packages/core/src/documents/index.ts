@@ -1,5 +1,5 @@
 /**
- * Documents Module (ADR-0009)
+ * Documents Module
  *
  * Document lifecycle: save, list, read, delete versions, plus
  * ownership and workspace/user access checks. See ./service.ts for

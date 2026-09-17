@@ -43,7 +43,7 @@ afterEach(() => {
 
 describe("the registry starts empty", () => {
   it("registers nothing at import time", () => {
-    // Import-side-effect registration (ADR-0005) is what this guards:
+    // Import-side-effect registration is what this guards:
     // the mock used to be seeded at module scope, so importing the
     // file registered a provider and `registerPaymentProvider` had no
     // caller anywhere without that being visible.

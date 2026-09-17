@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-branch",
   "title": "AI Branch",
-  "description": "A pager over the versions of a reply or an edited message — previous, next, `2 / 3` (ADR-0013, T3).",
+  "description": "A pager over the versions of a reply or an edited message — previous, next, `2 / 3` (T3).",
   "dependencies": [
     "lucide-react"
   ],

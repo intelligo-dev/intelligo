@@ -15,7 +15,7 @@
  * still gives the route the adapter the root bound. Nothing
  * self-registers: an unbound adapter throws where a file is needed,
  * naming the line that fixes it, rather than silently writing to a
- * temp dir that a second instance cannot read (ADR-0005).
+ * temp dir that a second instance cannot read.
  *
  * Keys are the framework's: `ws/<workspaceId>/att/<id>` for chat
  * attachments, so tenancy is in the key as well as in the row and a

@@ -1,6 +1,6 @@
 /**
  * Live demos for the conversation parts of the Intelligo design system
- * (ADR-0013, T3): message rows, bubbles, the transcript scroller, a
+ * (T3): message rows, bubbles, the transcript scroller, a
  * streamed reply, the composer and its pickers. Each demo uses the
  * registry source as installed and simulates its state locally — no
  * network, no model.

@@ -220,7 +220,7 @@ describe("the registries behind the seam", () => {
   }
 
   it("keeps each one under its own documented global key", () => {
-    // Nine registries share one global symbol namespace (ADR-0005), so
+    // Nine registries share one global symbol namespace, so
     // the key is the contract twice over: a second copy of this module
     // finds what the composition root registered only by asking for the
     // same name, and two registries sharing a name would read each

@@ -1,5 +1,5 @@
 /**
- * Identity Module (ADR-0008/ADR-0009 precedent)
+ * Identity Module
  *
  * Privacy-facing reads and mutations over the user identity graph:
  * fact listing/deletion, full-identity export, and the memory-audit

@@ -1,7 +1,7 @@
 /**
  * Generator tests — the ownership promise, not the file copying.
  *
- * ADR-0002 says an upgrade never overwrites consumer source. That is
+ * An upgrade never overwrites consumer source. That is
  * only meaningful if "the consumer edited this" is detectable, so
  * these tests are mostly about the states around a customized file.
  */

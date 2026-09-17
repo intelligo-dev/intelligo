@@ -18,7 +18,7 @@
  * object with English defaults, because it lived in a package and a
  * package cannot reach next-intl — which also meant its defaults
  * hardcoded a currency symbol and a language. An item has no such
- * problem (ADR-0010).
+ * problem.
  *
  * Amounts are credits, not money. That is the unit the balance and the
  * estimate are both in; rendering it as currency would need an

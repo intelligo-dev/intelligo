@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * Your composition root (ADR-0005).
+ * Your composition root.
  *
  * This file is yours — Intelligo generated it once and will not
  * overwrite it. It is the single place the application wires itself

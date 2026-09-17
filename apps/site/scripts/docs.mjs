@@ -38,7 +38,7 @@ export const GENERATED = [
 export const isGenerated = (rel) =>
   GENERATED.some((g) => (g.endsWith("/") ? rel.startsWith(g) : rel === g));
 
-/** A registry file a deployment edits: the item's config seams (ADR-0010). */
+/** A registry file a deployment edits: the item's config seams. */
 export const SEAM =
   /^lib\/[^/]*(config|steps|renderers|patterns|bootstrap)\.tsx?$/;
 
@@ -115,26 +115,30 @@ function rewriteLinks(md, sourcePath) {
 
 /**
  * ADR references, which point readers at the maintainers' record: a
- * parenthetical "(ADR-0005)" or "(ADR-0013, T3; …)" goes, a linked
- * "[ADR-0011](…)" keeps nothing, "Per ADR-0005, x" reads "X", and "the
- * promise in ADR-0002" reads "the promise". The docs test fails on any
+ * parenthetical "(ADR-nnnn)" or "(ADR-nnnn, T3; …)" goes, a linked
+ * "[ADR-nnnn](…)" keeps nothing, "Per ADR-nnnn, x" reads "X", and "the
+ * promise in ADR-nnnn" reads "the promise". The docs test fails on any
  * form this does not cover, so a new one is a rule here or a rewording
- * at the source.
+ * at the source. The character classes below stay [^()\n] rather than
+ * [^()] on purpose — a negated class matches newlines too, so an
+ * unbounded one can span from an unrelated earlier "(" to a later ")"
+ * whenever an ADR id sits somewhere between them, corrupting unrelated
+ * paragraphs. Every real citation lives on one line.
  */
 export function stripAdrRefs(md) {
   return md
     .replace(
-      /\s*\((?:[^()]*?[;,]\s*)?(?:see |per |from )?\[?ADR-\d{4}\]?(?:\([^)]*\))?(?:[^()]|\([^()]*\))*\)/g,
+      /[ \t]*\((?:[^()\n]*?[;,]\s*)?(?:see |per |from )?\[?ADR-\d{4}\]?(?:\([^)\n]*\))?(?:[^()\n]|\([^()\n]*\))*\)/g,
       ""
     )
-    .replace(/\bPer\s+ADR-\d{4}(?:\s*\([^)]*\))?,\s*(\w)/g, (_, c) =>
+    .replace(/\bPer\s+ADR-\d{4}(?:\s*\([^)\n]*\))?,\s*(\w)/g, (_, c) =>
       c.toUpperCase()
     )
     .replace(/\bADR-\d{4}\s+is\s+explicit\s+that\s+(\w)/g, (_, c) =>
       c.toUpperCase()
     )
-    .replace(/\s+in\s+ADR-\d{4}\b/g, "")
-    .replace(/\[(ADR-\d{4})\]\([^)]*\)/g, "$1");
+    .replace(/[ \t]+in\s+ADR-\d{4}\b/g, "")
+    .replace(/\[(ADR-\d{4})\]\([^)\n]*\)/g, "$1");
 }
 
 function publishedPackages(root) {

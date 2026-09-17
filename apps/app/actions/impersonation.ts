@@ -3,7 +3,7 @@
 /**
  * Support impersonation, exposed to the operational console.
  *
- * Thin by design (ADR-0005): the policy — platform-admin gate,
+ * Thin by design: the policy — platform-admin gate,
  * audit-or-refuse, mandatory reason, time cap — is
  * `@intelligo-dev/admin`'s, and these actions only adapt it to a form
  * submission and a redirect. Reimplementing any of it here would

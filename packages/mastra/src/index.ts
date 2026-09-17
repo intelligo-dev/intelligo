@@ -5,7 +5,7 @@
  * What this package deliberately is NOT: a wrapper. There is no
  * IntelligoAgent, no re-declared tool or workflow type, no normalized
  * result. Mastra's own types flow through untouched, and removing this
- * package costs you the accounting, not the AI (ADR-0003).
+ * package costs you the accounting, not the AI.
  *
  * What it does is one repetitive, easy-to-get-wrong thing: open an
  * execution, run the agent, settle usage from whatever shape the

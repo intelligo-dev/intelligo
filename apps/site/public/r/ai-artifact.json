@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-artifact",
   "title": "AI Artifact",
-  "description": "A generated document's frame: header, actions and content (ADR-0013, T3; ported from Vercel AI Elements).",
+  "description": "A generated document's frame: header, actions and content (T3; ported from Vercel AI Elements).",
   "dependencies": [
     "lucide-react"
   ],

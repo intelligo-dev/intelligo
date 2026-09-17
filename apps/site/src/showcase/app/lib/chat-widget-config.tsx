@@ -1,6 +1,6 @@
 /**
  * Chat widget config — the consumer-owned seam for the floating
- * assistant (ADR-0005: composition through a config you own, never a
+ * assistant (composition through a config you own, never a
  * component edit).
  *
  *  - `position`: which corner the launcher sits in.

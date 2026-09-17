@@ -7,7 +7,7 @@
  * carried it is persisted — which conversation it belongs to.
  *
  * Every read and write is scoped to the workspace *and* the uploader.
- * Conversations are user-private (ADR-0009), so an attachment is too:
+ * Conversations are user-private, so an attachment is too:
  * the ids reach this module from the request body, and a workspace-only
  * scope let any member trade a colleague's attachment id for a signed
  * URL to their private upload. `deleteAttachment` always filtered both;

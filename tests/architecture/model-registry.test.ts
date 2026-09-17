@@ -24,7 +24,7 @@ import path from "node:path";
 
 const ROOT = path.resolve(__dirname, "../..");
 
-// The registry lives with execution cost accounting (ADR-0008), not
+// The registry lives with execution cost accounting, not
 // with the provider clients.
 const MODELS_FILE = "packages/executions/src/pricing.ts";
 

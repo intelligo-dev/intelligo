@@ -4,7 +4,7 @@
  * The point of this page existing in the reference app: proving the
  * same `@intelligo-dev/admin` package serves any product, and that
  * mounting it takes a route plus an authorization call rather than a
- * fork (ADR-0002). A product mounts the same package the same way.
+ * fork. A product mounts the same package the same way.
  *
  * It lives inside `(app)` so it inherits the shell — an operator is a
  * signed-in user, not a visitor to a separate application — and a

@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-agent-progress",
   "title": "AI Agent Progress",
-  "description": "A long-running step: a pulsing grid beside the verb and an elapsed-time counter (ADR-0013, T3).",
+  "description": "A long-running step: a pulsing grid beside the verb and an elapsed-time counter (T3).",
   "dependencies": [
     "motion"
   ],

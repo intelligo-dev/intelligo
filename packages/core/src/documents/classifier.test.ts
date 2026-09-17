@@ -47,7 +47,7 @@ describe("document classifier registry", () => {
   });
 
   it("stores its entries under the documented global registry key", () => {
-    // The key is the contract with `createRegistry` (ADR-0005): a
+    // The key is the contract with `createRegistry`: a
     // second copy of this module finds the same entries only if both
     // ask for `core/document-patterns`.
     registerDocumentPatterns({

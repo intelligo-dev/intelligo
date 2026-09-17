@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-tool-approval",
   "title": "AI Tool Approval",
-  "description": "A permission card for a tool call: name, parameters behind a disclosure, allow once / always allow / deny, and the outcome as a status (ADR-0013, T3).",
+  "description": "A permission card for a tool call: name, parameters behind a disclosure, allow once / always allow / deny, and the outcome as a status (T3).",
   "dependencies": [
     "lucide-react",
     "motion"

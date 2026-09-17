@@ -70,7 +70,7 @@ import "server-only";
  * Another runtime than `streamText` — a Mastra agent, an eve session —
  * binds `streamTurn` and keeps everything else: auth, the rate limit,
  * the gate, admission, persistence and settlement stay the transport's
- * (ADR-0003: the framework carries no helper for any AI framework; the
+ * (the framework carries no helper for any AI framework; the
  * binding is yours, here). Mastra, natively, through `@mastra/ai-sdk`:
  *
  *   import { handleChatStream } from "@mastra/ai-sdk";
@@ -104,7 +104,7 @@ import "server-only";
  * status line or a plan with `turn.write({ type: "data-chat-status", … })`.
  *
  * i18n: the route lives at `app/api/chat/route.ts`, outside the
- * `[locale]` segment (ADR-0010), so there is no URL segment to read a
+ * `[locale]` segment, so there is no URL segment to read a
  * locale from. `messages` below reads the `NEXT_LOCALE` cookie
  * next-intl's middleware already sets on every page navigation, then
  * falls back to the configured default locale — the same "works with

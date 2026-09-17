@@ -25,7 +25,7 @@ import {
  * bills against.
  *
  * The matrix itself is product vocabulary and lives in the vertical
- * (ADR-0006); the composition root registers it. Until Phase 3 the
+ *; the composition root registers it. Until Phase 3 the
  * first product's complete list — four feature keys in its own
  * vocabulary — was a hardcoded constant in this file, inside a package
  * headed for publication. The

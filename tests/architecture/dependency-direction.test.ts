@@ -1,5 +1,5 @@
 /**
- * Dependency-direction rules (ADR-0006, ADR-0008).
+ * Dependency-direction rules.
  *
  * Enforces the package boundary at two levels:
  *   1. package.json — each package may declare only its allowlisted
@@ -11,7 +11,7 @@
  *
  * The allowlist is the CURRENT accepted graph. Tightening it is done
  * by removing the edge here — never by adding edges to sneak past CI.
- * (`billing → ai` was the worked example; ADR-0008 moved the cost math
+ * (`billing → ai` was the worked example; the cost math moved
  * to `executions` and the edge is gone.)
  */
 
@@ -42,7 +42,7 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
   jobs: ["@intelligo-dev/core"],
   // executions owns the SaaS boundary and must NOT depend on billing —
   // entitlement and settlement arrive through ports bound by the
-  // composition root (ADR-0005). Adding @intelligo-dev/billing here would
+  // composition root. Adding @intelligo-dev/billing here would
   // undo the whole point of the package.
   executions: ["@intelligo-dev/core", "@intelligo-dev/audit"],
   // The Mastra bridge is deliberately removable: it depends on the
@@ -255,7 +255,7 @@ describe("apps", () => {
 // ---------------------------------------------------------------------------
 
 /**
- * ADR-0008 dissolved `agents`, `ai` and `chat` into `executions`,
+ * `agents`, `ai` and `chat` dissolved into `executions`,
  * `core`, `audit`, `jobs` and product source. They were never
  * published, and the directories are gone. The allowlist above already
  * refuses them as edges; this rule exists so that the reason survives
@@ -270,7 +270,7 @@ describe("nothing depends on the dissolved set", () => {
     for (const name of dissolved) {
       expect(
         PUBLISHED.has(name),
-        `${name} exists again — decide, then update ADR-0008`
+        `${name} exists again — decide, then update the dissolved-packages list`
       ).toBe(false);
     }
   });
@@ -306,7 +306,7 @@ describe("nothing depends on the dissolved set", () => {
 // ---------------------------------------------------------------------------
 
 /**
- * ADR-0011 folded `money`, `http` and `billing-core` into subpaths of
+ * `money`, `http` and `billing-core` folded into subpaths of
  * `core`, `next` and `billing`. Their npm names are deprecated. Unlike
  * the dissolved set, the code still exists — so an import of the old
  * name is told the new one, not merely that the package is gone.
@@ -319,7 +319,7 @@ describe("nothing depends on the folded set", () => {
     for (const name of folded) {
       expect(
         PUBLISHED.has(name),
-        `${name} exists again — decide, then update ADR-0011`
+        `${name} exists again — decide, then update the folded-packages list`
       ).toBe(false);
     }
   });

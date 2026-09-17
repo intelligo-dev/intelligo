@@ -14,8 +14,8 @@ import {
 /**
  * Every page family from registry.json (the count comes from the sync). Every item renders the real
  * registry component — the files `shadcn add` installs — with fixture
- * data in place of the packages' reads and the item's own `messages/en`
- * (ADR-0010). Two items that ship a frame and a page share a scene.
+ * data in place of the packages' reads and the item's own `messages/en`.
+ * Two items that ship a frame and a page share a scene.
  */
 
 const GROUPS: RegistryGroup[] = ["Auth", "Shell", "Settings", "Commerce", "AI"];

@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "document-viewer",
   "title": "Document Viewer",
-  "description": "How a saved document reads when nobody is editing it: markdown with maths and diagrams, highlighted code, a sheet's rows, an image, and a sandboxed HTML preview — plus the title-to-language and kind-glyph helpers the chat canvas and the artifacts library share (ADR-0013, T4).",
+  "description": "How a saved document reads when nobody is editing it: markdown with maths and diagrams, highlighted code, a sheet's rows, an image, and a sandboxed HTML preview — plus the title-to-language and kind-glyph helpers the chat canvas and the artifacts library share (T4).",
   "dependencies": [
     "streamdown",
     "@streamdown/code",

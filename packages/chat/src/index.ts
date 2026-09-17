@@ -5,10 +5,10 @@
  * `{ POST, DELETE, GET }` over Web `Request`/`Response`, and runs every
  * turn through auth, rate limit, feature gate, conversation persistence
  * and the execution boundary. The UI is not here — it installs from the
- * registry as consumer-owned source (ADR-0002, ADR-0010) and imports
+ * registry as consumer-owned source and imports
  * only `@intelligo-dev/chat/client`.
  *
- * Not an agent abstraction (ADR-0003): the config takes AI SDK tools,
+ * Not an agent abstraction: the config takes AI SDK tools,
  * an AI SDK model and AI SDK stop conditions, natively, and `streamTurn`
  * takes the AI SDK's own UI message chunks from whatever runtime a
  * consumer binds. The framework carries no helper for any of them.

@@ -121,7 +121,7 @@ const productFeatures =
  * `scholarship_international` — so the matrix belongs to the vertical,
  * exactly like the plan catalogue. It lived in @intelligo-dev/billing as a
  * hardcoded constant until Phase 3, which put one product's whole
- * feature list inside a package headed for publication (ADR-0006).
+ * feature list inside a package headed for publication.
  */
 export function registerProductFeatures(
   productSlug: string,
@@ -151,7 +151,7 @@ const defaultProduct = createRegistryRef<string | undefined>(
 
 /**
  * Tell the billing engine which product's catalogue it bills against.
- * Called by the composition root (ADR-0005).
+ * Called by the composition root.
  *
  * There is deliberately no built-in default: a `?? "<product>"` inside
  * the engine is how the first product's slug kept reappearing in a
@@ -228,7 +228,7 @@ const productActionLimitKeys = createRegistry<ActionLimitKeyMap>(
  * slugs (`chat` is capped by `chatMessages`), and that remap was
  * hardcoded in @intelligo-dev/billing: three product slugs sitting in
  * the quota engine of a package that is supposed to know nothing about
- * the vertical (ADR-0006).
+ * the vertical.
  */
 export function registerActionLimitKeys(
   productSlug: string,
@@ -255,7 +255,7 @@ export function clearActionLimitKeys(): void {
  *
  * This was `TRIAL_CONFIG` in @intelligo-dev/billing — "100,000 tokens,
  * 5,000₮, 14 days" hardcoded in a package headed for publication
- * (ADR-0006). Those three numbers are the vertical's first-impression
+ *. Those three numbers are the vertical's first-impression
  * offer, written on its pricing page; they are not engine policy, and
  * a second product on the same framework will not want them.
  */
@@ -288,7 +288,7 @@ export const NO_TRIAL: TrialConfig = {
   initialCredits: 0,
   // No grant rather than a zero one: a zero amount would still have to
   // name a currency, and inventing one for a deployment that offers no
-  // trial is the habit ADR-0015 exists to end.
+  // trial is the habit money-as-micros exists to end.
   grant: null,
   durationDays: 0,
   warningThreshold: 0.2,

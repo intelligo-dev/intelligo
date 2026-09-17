@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-reasoning",
   "title": "AI Reasoning",
-  "description": "Streamed reasoning, collapsible, with the time it took (ADR-0013, T3; ported from Vercel AI Elements).",
+  "description": "Streamed reasoning, collapsible, with the time it took (T3; ported from Vercel AI Elements).",
   "dependencies": [
     "lucide-react",
     "streamdown"

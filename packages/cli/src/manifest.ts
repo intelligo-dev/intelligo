@@ -2,7 +2,7 @@
  * Generated-source manifest.
  *
  * Intelligo generates starting source into the consumer's repository
- * and then stops owning it (ADR-0002). That promise needs a mechanism,
+ * and then stops owning it. That promise needs a mechanism,
  * because "never overwrite a customized file" requires knowing which
  * files were generated, from which template version, and whether the
  * consumer has since edited them.

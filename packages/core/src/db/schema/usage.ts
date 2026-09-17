@@ -279,7 +279,7 @@ export const userQuotas = pgTable(
      * by every product and read in preference to this map. Migration
      * 0038 backfilled them into the map and dropped them: a public
      * schema naming one vertical's actions meant no other vertical
-     * could add a counter without a migration to Intelligo (ADR-0004).
+     * could add a counter without a migration to Intelligo.
      */
     usage: jsonb("usage").notNull().default({}),
     totalCostUsd: real("total_cost_usd").notNull().default(0),

@@ -11,7 +11,7 @@ It is deliberately small and deliberately generic. It is not a second
 product, not a demo, and not a place to prototype product features.
 
 It has a second, equally load-bearing role: it is the **canonical
-installed result of the Intelligo registry** (ADR-0010).
+installed result of the Intelligo registry**.
 Every registry item lands here the same way it would in any consumer's
 repository — via `shadcn add`, never hand-written — so a hand-maintained
 parallel implementation drifting from what `shadcn build` actually
@@ -33,8 +33,8 @@ produces is itself a defect this app exists to catch.
 
 ## Consuming the registry
 
-The design tokens in `app/globals.css` are the `intelligo` registry base
-(ADR-0013): shadcn base-nova with status, layer and motion tokens, exactly
+The design tokens in `app/globals.css` are the `intelligo` registry base:
+shadcn base-nova with status, layer and motion tokens, exactly
 what `shadcn add https://intelligo.dev/r/intelligo.json` writes. They are
 consumer-owned; re-value them to re-theme every installed page.
 

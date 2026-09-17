@@ -94,7 +94,7 @@ export type WorkspaceServicePorts = {
   /**
    * Plan-defined workspace cap for the caller. No port ⇒ unlimited (no
    * gate applied) — matches "no billing dependency without one bound
-   * explicitly" (ADR-0005). Not consulted when the caller has zero
+   * explicitly". Not consulted when the caller has zero
    * existing workspaces (their first workspace is always allowed) —
    * see the module doc comment for why the port is keyed by `userId`
    * rather than `workspaceId`.

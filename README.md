@@ -180,17 +180,17 @@ tests/architecture the rules, as tests
 
 Recorded as ADRs in [docs/adr](docs/adr/README.md):
 
-- AI frameworks stay native; Intelligo records only the execution boundary — [ADR-0003](docs/adr/0003-ai-framework-boundary.md)
-- One PostgreSQL database, explicit per-table ownership — [ADR-0004](docs/adr/0004-database-ownership.md)
-- One service layer behind two thin transports, one composition root — [ADR-0005](docs/adr/0005-transport-and-composition.md)
-- The execution boundary is a lifecycle with ports, not a wrapper — [ADR-0007](docs/adr/0007-execution-boundary.md)
-- Conversation and document persistence are framework capabilities — [ADR-0009](docs/adr/0009-public-conversation-and-document-contracts.md)
-- Registry items are i18n-native and installed unmodified — [ADR-0010](docs/adr/0010-registry-i18n-standard.md)
-- One package per runtime target; shared types are subpaths; the registry is a private workspace — [ADR-0011](docs/adr/0011-package-topology.md)
-- The chat transport is a package; the chat UI is registry source — [ADR-0012](docs/adr/0012-headless-chat-transport.md)
-- One design system: shadcn base-nova, an additive token contract, a tiered catalog — [ADR-0013](docs/adr/0013-design-system.md)
-- One runtime seam, consumer-owned bindings, and the tool renderer contract — [ADR-0014](docs/adr/0014-chat-extension-contract.md)
-- Money is micros with a currency attached; a deployment declares the one it bills in — [ADR-0015](docs/adr/0015-money-is-micros-with-a-currency.md)
+- AI frameworks stay native; Intelligo records only the execution boundary
+- One PostgreSQL database, explicit per-table ownership
+- One service layer behind two thin transports, one composition root
+- The execution boundary is a lifecycle with ports, not a wrapper
+- Conversation and document persistence are framework capabilities
+- Registry items are i18n-native and installed unmodified
+- One package per runtime target; shared types are subpaths; the registry is a private workspace
+- The chat transport is a package; the chat UI is registry source
+- One design system: shadcn base-nova, an additive token contract, a tiered catalog
+- One runtime seam, consumer-owned bindings, and the tool renderer contract
+- Money is micros with a currency attached; a deployment declares the one it bills in
 
 ## What it is not
 

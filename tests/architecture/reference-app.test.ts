@@ -1,7 +1,7 @@
 /**
  * `apps/app` is the registry's canonical installed result (AGENTS.md):
  * it is created with `intelligo create` and every item is installed with
- * `shadcn add`. Nothing reaches it by hand (ADR-0010). So every file an
+ * `shadcn add`. Nothing reaches it by hand. So every file an
  * item ships must match its registry source as the CLI writes it, except
  * the seams a deployment is meant to edit. A difference anywhere else is
  * drift — fix the registry item and re-install, never the app.
@@ -18,7 +18,7 @@ const REGISTRY = path.join(ROOT, "packages/registry");
 
 /** Consumer-owned configuration an item ships for the deployment to edit, each with its reason. */
 const SEAMS: [RegExp, string][] = [
-  [/^messages\//, "copy and locales are the deployment's (ADR-0010)"],
+  [/^messages\//, "copy and locales are the deployment's"],
   [/^lib\/shell-config\.tsx$/, "shell banner and header slots"],
   [/^lib\/nav-config\.ts$/, "navigation"],
   [/^lib\/settings-nav\.ts$/, "settings tabs"],
@@ -26,7 +26,7 @@ const SEAMS: [RegExp, string][] = [
   [/^lib\/chat-renderers\.tsx$/, "tool-call renderers"],
   [/^lib\/chat-model\.ts$/, "the deployment's model"],
   [/^lib\/chat-models\.ts$/, "the models the composer offers"],
-  [/^lib\/chat-server-config\.ts$/, "the chat transport's seams (ADR-0012)"],
+  [/^lib\/chat-server-config\.ts$/, "the chat transport's seams"],
   [/^lib\/onboarding-steps\.ts$/, "onboarding steps"],
   [/^lib\/billing-config\.ts$/, "product slug, currency, credit bundles"],
   [/^lib\/workspace-bootstrap\.ts$/, "what a new workspace starts with"],

@@ -19,21 +19,21 @@ const APP_PATTERNS = [
   {
     group: ["@/*"],
     message:
-      "A reusable package must not import application code (ADR-0006). `@/...` resolves inside the consuming application; take what you need as a parameter, or register it from the composition root.",
+      "A reusable package must not import application code. `@/...` resolves inside the consuming application; take what you need as a parameter, or register it from the composition root.",
   },
 ];
 
 /**
- * Packages ADR-0008 dissolved. The same list as
+ * Packages dissolved into other packages. The same list as
  * `tests/architecture/tree.ts`; nothing in the tree may point at one.
  */
 const DISSOLVED_PATTERNS = ["ai", "agents"].map((name) => ({
   group: [`@intelligo-dev/${name}`, `@intelligo-dev/${name}/*`],
-  message: `@intelligo-dev/${name} was dissolved (ADR-0008) and is not published; nothing on npm resolves it.`,
+  message: `@intelligo-dev/${name} was dissolved and is not published; nothing on npm resolves it.`,
 }));
 
 /**
- * Packages ADR-0011 folded into a subpath of another. The same map as
+ * Packages folded into a subpath of another. The same map as
  * `tests/architecture/tree.ts`; the message says where the code went.
  */
 const FOLDED_PATTERNS = Object.entries({
@@ -43,7 +43,7 @@ const FOLDED_PATTERNS = Object.entries({
     "@intelligo-dev/billing/{plans,plan-registry,payment,quota-types}",
 }).map(([name, target]) => ({
   group: [`@intelligo-dev/${name}`, `@intelligo-dev/${name}/*`],
-  message: `@intelligo-dev/${name} was folded (ADR-0011); import ${target} instead.`,
+  message: `@intelligo-dev/${name} was folded; import ${target} instead.`,
 }));
 
 export default [

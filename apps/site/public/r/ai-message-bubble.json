@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-message-bubble",
   "title": "AI Message Bubble",
-  "description": "The speech bubble inside a message row: six surface variants that pop into place, grouped bubbles and a collapsible long body (ADR-0013, T3).",
+  "description": "The speech bubble inside a message row: six surface variants that pop into place, grouped bubbles and a collapsible long body (T3).",
   "dependencies": [
     "motion",
     "lucide-react"

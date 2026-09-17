@@ -1,7 +1,7 @@
 /**
  * `intelligo create <name>` — a new application on the framework.
  *
- * ADR-0001 is explicit that this is onboarding, not the product
+ * This is onboarding, not the product
  * boundary: what it writes is the consumer's from the moment it lands,
  * and the enduring relationship is the versioned packages, not this
  * scaffold. So it generates through the same manifest machinery as

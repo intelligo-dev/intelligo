@@ -22,7 +22,7 @@
  * Then `pnpm db:generate` writes the migration into ./drizzle and
  * `pnpm db:migrate` applies it after the framework's chain.
  *
- * Intelligo never reads these tables (ADR-0004: every table has one
+ * Intelligo never reads these tables (every table has one
  * owner), so their shape is entirely yours.
  */
 

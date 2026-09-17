@@ -8,7 +8,7 @@
  * `bundle.name` is deployment config from `CREDIT_BUNDLES`
  * (`lib/billing-config.ts`), not copy owned by this item — it is
  * rendered verbatim rather than routed through `messages/en.json`
- * (ADR-0010); localize it in that config file if this deployment
+ *; localize it in that config file if this deployment
  * needs bundle names in more than one language.
  *
  * A bundle carries two amounts and each is formatted in its own

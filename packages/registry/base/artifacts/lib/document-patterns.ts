@@ -7,8 +7,8 @@ import "server-only";
  * `@intelligo-dev/core/documents` keeps a small classifier registry
  * (`registerDocumentPatterns`) that maps a document's title to a human
  * agent label (rendered on every artifact card) and to the "Reports"
- * filter tab (`isProductDocument`, used by `@/actions/documents`). Per
- * ADR-0005 (no import-side-effect registration), populating that
+ * filter tab (`isProductDocument`, used by `@/actions/documents`).
+ * Registration is never an import side effect, so populating that
  * registry happens once, at startup, from an explicit composition root
  * your app owns — never by importing this file for its side effects,
  * and never from a request-scoped file (a Server Action, a page) where

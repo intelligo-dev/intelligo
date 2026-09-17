@@ -2,7 +2,7 @@
 
 /**
  * Chat conversation actions — thin transport over
- * `@intelligo-dev/core/conversations` (ADR-0009): resolve the caller's actor
+ * `@intelligo-dev/core/conversations`: resolve the caller's actor
  * via `requireWorkspace()`, call the core service, map any
  * `ConversationServiceError` to a friendly message, and reshape the
  * result for the page and its client components. Sending a message and
@@ -278,7 +278,7 @@ export async function setConversationShared(
  * Saves one assistant reply as a document artifact, so a useful answer
  * doesn't only live in a conversation. This is the manual counterpart
  * to a `saveArtifact` tool: same destination (`@intelligo-dev/core`'s
- * document persistence, ADR-0009), same `/artifacts` page, just driven
+ * document persistence), same `/artifacts` page, just driven
  * by the reader instead of the model.
  *
  * The message id becomes the document id, which makes saving the same

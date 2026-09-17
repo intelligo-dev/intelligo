@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * The reference application's composition root (ADR-0005).
+ * The reference application's composition root.
  *
  * Deliberately the same shape as a real product's: register the product's
  * plans and features, tell the billing engine which product it is

@@ -2,7 +2,7 @@
  * The reference product's plan catalogue and feature matrix.
  *
  * Lives in the application because plan data is the product's, not the
- * framework's (ADR-0006). The shape is all that @intelligo-dev/billing
+ * framework's. The shape is all that @intelligo-dev/billing
  * knows; the names, prices, and limits are entirely ours — and
  * deliberately shared with no real product, which is the point of
  * this app existing.
