@@ -37,6 +37,7 @@ export default defineConfig({
       "packages/billing/src/feature-quota.test.ts",
       "packages/billing/src/features.test.ts",
       "packages/billing/src/quota.test.ts",
+      "packages/billing/src/quota-reporting.test.ts",
       "packages/billing/src/quota-settlement.test.ts",
       "packages/billing/src/rate-limit.test.ts",
       "packages/chat/src/generation.test.ts",
