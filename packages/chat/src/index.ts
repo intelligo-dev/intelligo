@@ -20,7 +20,9 @@ export type { ChatHandler } from "./handler";
 
 export type {
   ChatActor,
+  ChatAgentConfig,
   ChatAttachmentPolicy,
+  ChatGenerationOptions,
   ChatMessageKey,
   ChatMessageParams,
   ChatMessages,
@@ -30,6 +32,7 @@ export type {
   ChatTurnContext,
   ChatTurnEvents,
   PreparedTurn,
+  ProviderOptions,
   RateLimitDecision,
   ResolvedAgent,
   StreamTurn,

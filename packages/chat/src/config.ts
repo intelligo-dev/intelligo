@@ -47,12 +47,14 @@ import type { Executions } from "@intelligo-dev/executions";
 import type { ChatAttachmentPolicy } from "./body";
 import type { ChatErrorCode, ChatModelOption } from "./client";
 import type { ChatMessages } from "./errors";
+import type { ChatGenerationOptions } from "./generation";
 import type { ChatDataChunk, ChatUIMessage } from "./parts";
 import type { TokenUsage } from "./usage";
 import type { ConversationWindowOptions } from "./windowing";
 
 export type { ChatAttachmentPolicy } from "./body";
 export type { ChatMessages, ChatMessageKey, ChatMessageParams } from "./errors";
+export type { ChatGenerationOptions } from "./generation";
 
 /** The resolved caller. Every read and write is scoped to this pair. */
 export interface ChatActor {
@@ -97,7 +99,15 @@ export interface ResolvedAgent {
   tools?: ToolSet;
   /** Names the model may call this turn; every tool when omitted. */
   activeTools?: string[];
-  /** Added after `stepCountIs(maxSteps)`, e.g. `hasToolCall("askUser")`. */
+  /**
+   * Added after `stepCountIs(maxSteps)`, e.g. `hasToolCall("askUser")`.
+   *
+   * Consulted only on a turn that has tools: the SDK stops a run on
+   * this condition "when there are tool results in the last step", and
+   * a turn with no tools never has any, so it is a single step either
+   * way. The step cap itself is not removable — an uncapped step count
+   * is an uncapped bill.
+   */
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
   /** Overrides the request's and the config's model. Must be a registered model id. */
   modelId?: string;
@@ -113,6 +123,30 @@ export interface ResolvedAgent {
    * the transcript at all; the transport never names a provider.
    */
   providerOptions?: ProviderOptions;
+  /**
+   * How the model samples this turn — temperature, a token ceiling, a
+   * tool choice, a seed. An allowlist of the `streamText` options that
+   * do not touch settlement; see `ChatGenerationOptions` for what the
+   * transport keeps and why.
+   */
+  generation?: ChatGenerationOptions;
+}
+
+/**
+ * The one-agent shorthand, derived from `ResolvedAgent` so the two
+ * cannot drift: everything a `resolveAgent` function can return is
+ * settable here too, and the three fields below are the only ones that
+ * differ — an id and a prompt because the transport has defaults for
+ * them, and tools because the shorthand may close over the turn.
+ */
+export interface ChatAgentConfig extends Omit<
+  ResolvedAgent,
+  "id" | "systemPrompt" | "tools"
+> {
+  /** Default `"assistant"`. */
+  id?: string;
+  systemPrompt?: string;
+  tools?: ToolSet | ((turn: ChatTurnContext) => ToolSet | Promise<ToolSet>);
 }
 
 /** A turn with its agent resolved — what the hooks below receive. */
@@ -272,14 +306,7 @@ export interface ChatServerConfig {
    * The one-agent shorthand. Ignored when `resolveAgent` is set.
    * `tools` may close over the turn's tenancy.
    */
-  agent?: {
-    /** Default `"assistant"`. */
-    id?: string;
-    systemPrompt?: string;
-    tools?: ToolSet | ((turn: ChatTurnContext) => ToolSet | Promise<ToolSet>);
-    /** See `ResolvedAgent.providerOptions`. */
-    providerOptions?: ProviderOptions;
-  };
+  agent?: ChatAgentConfig;
   /**
    * Which agent runs this turn — from the body, the row, a table. The
    * default resolves `agent`, keeping the id the conversation was

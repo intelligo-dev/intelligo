@@ -80,6 +80,7 @@ import type {
 } from "./config";
 import { CHAT_ERROR_STATUS, DEFAULT_CHAT_MESSAGES, refuse } from "./errors";
 import type { ChatMessages } from "./errors";
+import { pickGenerationOptions } from "./generation";
 import { lastUserMessage, toUIMessages } from "./messages";
 import type {
   ChatDataChunk,
@@ -312,14 +313,24 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       typeof shorthand.tools === "function"
         ? await shorthand.tools(turn)
         : shorthand.tools;
+    // Everything the shorthand carries beyond the three fields the
+    // transport decides for itself. Spread rather than enumerated:
+    // `ChatAgentConfig` is `Omit<ResolvedAgent, …>`, so a field added
+    // to the agent reaches the model without another line here, and a
+    // key the caller never set is not an own property and cannot
+    // overwrite a default with `undefined`.
+    const {
+      id: _id,
+      systemPrompt: _systemPrompt,
+      tools: _tools,
+      ...rest
+    } = shorthand;
     return {
+      ...rest,
       // A conversation keeps the agent it was created with.
       id: turn.conversation?.agentId ?? shorthand.id ?? DEFAULT_AGENT_ID,
       systemPrompt: shorthand.systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
       ...(tools ? { tools } : {}),
-      ...(shorthand.providerOptions
-        ? { providerOptions: shorthand.providerOptions }
-        : {}),
     };
   }
 
@@ -837,6 +848,12 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
 
         const model = await config.model.resolve!(modelId, context);
         const result = streamText({
+          // The agent's sampling settings, copied by name from the
+          // allowlist. First in the literal on purpose: every key the
+          // transport sets below is written after it and wins, so a
+          // consumer cannot displace the abort signal, the finish
+          // handler or the model admission priced.
+          ...pickGenerationOptions(agent.generation),
           model,
           system: prepared.system ?? agent.systemPrompt,
           ...(agent.providerOptions

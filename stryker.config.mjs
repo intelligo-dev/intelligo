@@ -62,6 +62,7 @@ export default {
     "packages/executions/src/pricing.ts",
     "packages/billing/src/plan-registry.ts",
     "packages/billing/src/feature-quota.ts",
+    "packages/chat/src/generation.ts",
     "packages/chat/src/windowing.ts",
   ],
   // `break` fails the command. It sits just under the score this scope

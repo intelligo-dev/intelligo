@@ -55,6 +55,7 @@ route to get:
 | `streamTurn(turn, prepared)`  | Another runtime than `streamText` — a Mastra agent, an eve session — returning the AI SDK's chunks and the run's usage; everything else stays the transport's |
 | `models`                      | The models a request may pick; anything else is `FEATURE_GATED` (`model_not_allowed`)                                                                         |
 | `prepareMessages(turn, msgs)` | What the model is shown — windowing, summaries, injected context                                                                                              |
+| `agent.generation`            | How the model samples — temperature, a token ceiling, a tool choice, a seed: an allowlist of the `streamText` options that do not touch settlement            |
 | `attachments`                 | Which file parts are accepted; `mode: "stored"` uploads them through the storage port and signs URLs for the model only                                       |
 | `reasoning`, `sources`        | Whether reasoning and source parts stream to the client                                                                                                       |
 | `messageMetadata`             | `{ modelId, usage, finishedAt }` on the reply (default on)                                                                                                    |

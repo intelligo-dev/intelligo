@@ -743,6 +743,114 @@ describe("POST streaming", () => {
     expect(model.doStreamCalls[0]!.tools?.map((t) => t.name)).toEqual(["ping"]);
   });
 
+  it("hands the agent's generation settings to the model", async () => {
+    const model = recordingModel();
+    const { POST } = createChatHandler(
+      baseConfig(fakeExecutions().executions, {
+        agent: {
+          systemPrompt: "Be brief.",
+          generation: {
+            temperature: 0.2,
+            topP: 0.8,
+            maxOutputTokens: 256,
+            seed: 11,
+            stopSequences: ["STOP"],
+            headers: { "x-trace": "abc" },
+          },
+        },
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    await (await POST(turn("go"))).text();
+
+    expect(model.doStreamCalls[0]).toMatchObject({
+      temperature: 0.2,
+      topP: 0.8,
+      maxOutputTokens: 256,
+      seed: 11,
+      stopSequences: ["STOP"],
+      headers: { "x-trace": "abc" },
+    });
+  });
+
+  it("does not let a generation setting displace the transport's own", async () => {
+    // What a consumer would have to write to try: the type forbids
+    // these, so reaching them at all means casting past it. Settlement
+    // depends on both — the abort signal stops a run nobody is reading,
+    // and the finish handler is where whole-run usage is captured.
+    const foreign = new AbortController();
+    const onFinish = vi.fn();
+    const model = recordingModel();
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(
+      baseConfig(fake.executions, {
+        agent: {
+          systemPrompt: "Be brief.",
+          generation: {
+            temperature: 0.4,
+            abortSignal: foreign.signal,
+            onFinish,
+          } as unknown as NonNullable<ChatServerConfig["agent"]>["generation"],
+        },
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    await (await POST(turn("go"))).text();
+
+    // The allowlisted neighbour arrived; the two forbidden ones did not.
+    expect(model.doStreamCalls[0]!.temperature).toBe(0.4);
+    expect(model.doStreamCalls[0]!.abortSignal).not.toBe(foreign.signal);
+    expect(onFinish).not.toHaveBeenCalled();
+
+    // And the turn still settled exactly once, through the transport.
+    await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+    expect(fake.fail).not.toHaveBeenCalled();
+  });
+
+  it("carries every field of the one-agent shorthand, not just four", async () => {
+    // These were reachable only by writing a whole `resolveAgent`
+    // before the shorthand was derived from `ResolvedAgent`.
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(
+      baseConfig(fake.executions, {
+        agent: {
+          systemPrompt: "Be brief.",
+          modelId: MODEL_ID,
+          maxSteps: 3,
+          capability: "support.reply",
+          featureKey: null,
+        },
+      })
+    );
+    const response = await POST(turn("go"));
+    expect(response.status).toBe(200);
+    await response.text();
+
+    expect(mocks.hasFeature).not.toHaveBeenCalled();
+    expect(fake.begin).toHaveBeenCalledWith(
+      expect.objectContaining({ capability: "support.reply", model: MODEL_ID })
+    );
+  });
+
+  it("runs a tool-less turn in one step, whatever stopWhen says", async () => {
+    // The SDK consults `stopWhen` only "when there are tool results in
+    // the last step". With no tools there never are, so the condition
+    // is not reached — pinned here so a reader does not take its
+    // absence from the call for a bug and "fix" it.
+    const { stepCountIs } = await import("ai");
+    const model = recordingModel();
+    const { POST } = createChatHandler(
+      baseConfig(fakeExecutions().executions, {
+        agent: { systemPrompt: "Be brief.", stopWhen: stepCountIs(9) },
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    await (await POST(turn("go"))).text();
+
+    expect(model.doStreamCalls).toHaveLength(1);
+    expect(model.doStreamCalls[0]!.tools).toBeUndefined();
+  });
+
   it("does not persist when persist is false", async () => {
     const { POST } = createChatHandler(
       baseConfig(fakeExecutions().executions, { persist: false })

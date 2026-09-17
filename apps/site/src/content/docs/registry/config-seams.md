@@ -471,6 +471,25 @@ windowing is the default; a product that summarises pruned history
 or injects profile context does it there. See `ChatServerConfig` in
 `@intelligo-dev/chat` for every seam.
 
+How the model samples is `agent.generation` — temperature, a token
+ceiling, a tool choice, a seed, a retry count:
+
+```ts
+agent: {
+  systemPrompt: "…",
+  generation: { temperature: 0.2, maxOutputTokens: 1024 },
+},
+```
+
+Nothing is set below on purpose. A sampling default is a product
+decision, not a framework one, so the transport ships none and passes
+only what you write here. It is an allowlist: the options that decide
+what the model writes go through, and the ones settlement depends on
+— the abort signal, the finish handler, the model itself, the step
+cap — stay the transport's and cannot be overridden from here.
+`providerOptions` is the neighbouring seam for a provider's own knobs
+(a thinking budget, say), passed through untouched.
+
 Another runtime than `streamText` — a Mastra agent, an eve session —
 binds `streamTurn` and keeps everything else: auth, the rate limit,
 the gate, admission, persistence and settlement stay the transport's. Mastra, natively, through `@mastra/ai-sdk`:

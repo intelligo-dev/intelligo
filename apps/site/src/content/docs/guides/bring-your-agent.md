@@ -60,6 +60,7 @@ Every model id must be registered with its pricing before it runs. `registerMode
 | `streamTurn(turn, prepared)`  | Another runtime than `streamText`, such as a Mastra agent           |
 | `models`                      | Letting the reader pick among allowed models                        |
 | `prepareMessages(turn, msgs)` | Windowing, summaries or injected context                            |
+| `agent.generation`            | Temperature, a token ceiling, a tool choice, a seed                 |
 | `attachments`                 | Accepting files, optionally stored and signed for the model only    |
 | `deriveTitle`                 | A model-written conversation title                                  |
 | `onTurn`                      | Telemetry for start, complete, fail, refuse, approval and feedback  |

@@ -189,6 +189,21 @@ IF EXISTS` would otherwise delete amounts nothing had copied.
 
 ### Added
 
+- `@intelligo-dev/chat`: **`agent.generation`** — how the model samples
+  a turn (temperature, `maxOutputTokens`, `topP`/`topK`, penalties,
+  `stopSequences`, `seed`, reasoning effort, `maxRetries`, `headers`,
+  `toolChoice`, `prepareStep`, `telemetry`, `experimental_transform`,
+  `onStepEnd`). Until now the `streamText` call was a closed literal, so
+  setting `temperature` meant taking `streamTurn` and re-implementing
+  the whole model call plus its usage promise. It is an allowlist, not a
+  pass-through: the options settlement depends on — `abortSignal`,
+  `onFinish`/`onEnd`, `onAbort`, `model`, `messages`, `tools`,
+  `stopWhen` — stay the transport's, enforced by the type, by a runtime
+  filter and by key order in the call. The one-agent `agent` shorthand
+  is now derived from `ResolvedAgent`, so `stopWhen`, `activeTools`,
+  `modelId`, `maxSteps`, `capability` and `featureKey` no longer require
+  writing a whole `resolveAgent`. `ChatGenerationOptions`,
+  `ChatAgentConfig` and `ProviderOptions` are exported.
 - `@intelligo-dev/chat`: `streamTurn` (a Mastra agent, an eve session
   — the transport keeps auth, gate, admission, persistence and
   settlement), the `data-chat-*` parts vocabulary and `ChatUIMessage`
