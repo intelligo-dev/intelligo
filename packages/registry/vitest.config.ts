@@ -1,6 +1,12 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
+// tsconfig.json extends the generated, gitignored tsconfig.paths.json,
+// and the transform reads it for every test file. Only `type-check`
+// wrote it, so a run that tests without type-checking first — the
+// release workflow — failed to load the suite.
+import "./scripts/tsconfig-paths.mjs";
+
 /**
  * Registry source is consumer-owned code, so most of it is proven by
  * the architecture suites and by installing it. What has logic worth
