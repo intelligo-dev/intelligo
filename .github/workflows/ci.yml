@@ -39,7 +39,16 @@ jobs:
   verify:
     name: Typecheck, lint, unit tests
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # 25 was the ceiling this job kept touching: it ran 20m56s on one
+    # commit and 22m25s on the next, where the axe fell mid-`next build`
+    # in "Registry items install into the generated app" — a step that
+    # alone takes ten minutes, against 4m for the reference-app check
+    # and 3m for the packed-package check. Nothing was failing; the job
+    # simply has no headroom, and a cold Turborepo cache (any lockfile
+    # change) is enough to tip it. Raised while the real fix waits:
+    # the three generated-app steps belong in their own job, running
+    # beside the fast checks rather than after them.
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
