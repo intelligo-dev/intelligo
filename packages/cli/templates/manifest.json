@@ -11,7 +11,7 @@
     "deprecated": "Superseded by the `usage` registry item \u2014 install it with the shadcn CLI from the Intelligo registry instead; it ships a full page, components and thin actions as consumer-owned source."
   },
   "app-scaffold": {
-    "templateVersion": "1.11.0",
+    "templateVersion": "1.12.0",
     "description": "A new application: composition root (run once per server process from instrumentation.ts), plans, an assistant route, a Stripe webhook endpoint, config, a drizzle config for the tables you own, next-intl i18n plumbing, and a registry-consuming shadcn base-nova setup with the intelligo design tokens",
     "files": [
       {
@@ -105,6 +105,10 @@
       {
         "template": "app-scaffold/db-schema.ts.tpl",
         "target": "lib/db/schema.ts"
+      },
+      {
+        "template": "app-scaffold/drizzle-journal.json.tpl",
+        "target": "drizzle/meta/_journal.json"
       },
       {
         "template": "app-scaffold/stripe-webhook-route.ts.tpl",

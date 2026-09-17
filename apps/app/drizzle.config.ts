@@ -13,6 +13,9 @@ config({ path: ".env" });
  * history, and `intelligo migrate` applies that chain. This config
  * covers the tables you own: list their schema files here, generate
  * with `pnpm db:generate`, apply with `pnpm db:migrate`.
+ * `drizzle/meta/_journal.json` starts empty so `db:migrate` succeeds
+ * before you own a table — drizzle-kit exits 1, with no message, when
+ * the journal is missing.
  *
  * Two chains, one database, so they record themselves in different
  * tables: the framework in drizzle's default `__drizzle_migrations`,

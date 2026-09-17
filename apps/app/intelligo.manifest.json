@@ -3,7 +3,7 @@
   "frameworkVersion": "1.0.0-beta.7",
   "features": {
     "app-scaffold": {
-      "templateVersion": "1.11.0",
+      "templateVersion": "1.12.0",
       "files": [
         {
           "path": "package.json",
@@ -91,11 +91,15 @@
         },
         {
           "path": "drizzle.config.ts",
-          "hash": "c6668755a0d7e128fa44663aabf8db02d4a1007e41b9653c658c5884de3b1468"
+          "hash": "3f0a7ad322f515377b99b0d5aa93c612b3244b96ab889614d20dd0e309d94ffe"
         },
         {
           "path": "lib/db/schema.ts",
           "hash": "9547da722e59e9dfdfc0c5b14ec97fbacb4b3b983ad6ba31ac63f52b72438055"
+        },
+        {
+          "path": "drizzle/meta/_journal.json",
+          "hash": "64587c13331d43c759ad90afd4f2a144fd2b9734118debb860e126a842a98196"
         },
         {
           "path": "app/api/webhooks/stripe/route.ts",
