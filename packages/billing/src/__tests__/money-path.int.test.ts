@@ -271,6 +271,11 @@ d("money path (integration)", () => {
     await handleCheckoutCompleted({
       id: `cs_${suffix}`,
       mode: "payment",
+      // Credits wait for the money: the handler grants nothing unless
+      // the session actually paid, because Stripe completes a session
+      // for delayed-notification methods before the money arrives. A
+      // fixture without this says "unpaid" and grants nothing.
+      payment_status: "paid",
       metadata: { workspaceId, purchaseId },
     } as never);
 
@@ -280,6 +285,7 @@ d("money path (integration)", () => {
     await handleCheckoutCompleted({
       id: `cs_${suffix}`,
       mode: "payment",
+      payment_status: "paid",
       metadata: { workspaceId, purchaseId },
     } as never);
     expect(await balanceMicros()).toBe(mnt(50_000));
