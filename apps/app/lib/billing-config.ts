@@ -7,9 +7,7 @@
  * browser bundle. Validation of a bundle happens server-side when the
  * checkout action passes it to `createCreditCheckout`.
  *
- * `PRODUCT_SLUG` must match whatever slug your composition root passes
- * to `registerProductPlans`/`setDefaultProductSlug`. `CREDIT_BUNDLES`
- * is the one-time credit packaging this deployment sells — product
+ * `CREDIT_BUNDLES` is the one-time credit packaging this deployment sells — product
  * config, not framework policy. Edit or empty the list to match what
  * you actually sell.
  *
@@ -22,10 +20,6 @@
 
 import { fromMajor } from "@intelligo-dev/core/money";
 import type { CreditBundle } from "@intelligo-dev/billing";
-
-// Must match lib/intelligo.ts's PRODUCT_SLUG (the composition root is
-// the source of truth for this deployment's slug).
-export const PRODUCT_SLUG = "reference";
 
 /**
  * ISO 4217 code for the currency this deployment charges and displays

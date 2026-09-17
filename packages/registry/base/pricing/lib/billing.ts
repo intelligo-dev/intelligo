@@ -6,11 +6,10 @@ import "server-only";
  * installs the `pricing` item first and imports this file rather than
  * shipping its own copy — see billing-settings' description).
  *
- * `PRODUCT_SLUG` must match whatever slug your composition root passes
- * to `registerProductPlans`/`setDefaultProductSlug` (`@intelligo-dev/billing`)
- * — that registry call is what actually populates the plan
- * catalogue `getPlans`/`getPlan` read below. Replace the placeholder
- * with your product's real slug.
+ * The plan catalogue `getPlans`/`getPlan` read is the one your
+ * composition root registered for the slug it passed to
+ * `setDefaultProductSlug` (`@intelligo-dev/billing`) — the same slug
+ * `feature-gate.tsx` reads, so there is no second copy to keep in step.
  *
  * `CREDIT_BUNDLES` is the one-time credit packaging this deployment
  * sells. Bundle packaging is product config, not framework or
@@ -28,20 +27,21 @@ import "server-only";
  */
 
 import { getPlanBySlug, type PlanConfig } from "@intelligo-dev/billing";
-import { getProductPlans } from "@intelligo-dev/billing/plans";
+import {
+  getDefaultProductSlug,
+  getProductPlans,
+} from "@intelligo-dev/billing/plans";
 
-import { PRODUCT_SLUG } from "./billing-config";
 export {
-  PRODUCT_SLUG,
   CREDIT_BUNDLES,
   getCreditBundle,
 } from "./billing-config";
 
 /** The registered plan catalogue for this deployment's product. */
 export function getPlans(): Partial<Record<string, PlanConfig>> {
-  return getProductPlans(PRODUCT_SLUG) ?? {};
+  return getProductPlans(getDefaultProductSlug()) ?? {};
 }
 
 export function getPlan(slug: string): PlanConfig | null {
-  return getPlanBySlug(slug, PRODUCT_SLUG);
+  return getPlanBySlug(slug, getDefaultProductSlug());
 }

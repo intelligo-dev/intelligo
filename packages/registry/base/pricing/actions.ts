@@ -28,8 +28,9 @@ import {
   createSubscriptionCheckout,
   isBillingServiceError,
 } from "@intelligo-dev/billing";
+import { getDefaultProductSlug } from "@intelligo-dev/billing/plans";
 
-import { PRODUCT_SLUG, getCreditBundle } from "@/lib/billing";
+import { getCreditBundle } from "@/lib/billing";
 
 export type BillingActionResult<T = { url: string }> =
   { success: true; data: T } | { success: false; error: string };
@@ -101,7 +102,7 @@ export async function createCheckoutSession(
       userId: user.id,
       planSlug: parsed.data.planSlug,
       interval: parsed.data.interval,
-      productSlug: PRODUCT_SLUG,
+      productSlug: getDefaultProductSlug(),
       successUrl: `${base}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${base}/pricing?canceled=true`,
     });

@@ -1412,6 +1412,7 @@
       "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on — install this item first.",
       "registryDependencies": ["alert", "badge", "button", "card", "skeleton"],
       "dependencies": [
+        "@intelligo-dev/core",
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
         "zod@^4.6.5",
