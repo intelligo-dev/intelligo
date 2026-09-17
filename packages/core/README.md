@@ -18,7 +18,7 @@ pnpm add @intelligo-dev/core
 | ------------------ | -------------------------------------------------------------------------------------- |
 | `/db`              | Drizzle client and the workspace-scoped query helpers                                  |
 | `/db/schema`       | Every framework table                                                                  |
-| `/conversations`   | Conversation and message persistence                                        |
+| `/conversations`   | Conversation and message persistence                                                   |
 | `/documents`       | Document persistence and the title classifier                                          |
 | `/identity`        | The identity graph: facts, memories, profile snapshots                                 |
 | `/email`           | Transactional email and its templates                                                  |
