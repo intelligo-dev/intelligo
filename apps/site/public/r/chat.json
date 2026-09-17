@@ -4,8 +4,8 @@
   "title": "Chat",
   "description": "A ChatGPT-level AI chat surface: a streaming thread with edit, regenerate and response versions, attachments, a model picker, reasoning, sources, tool cards and human-in-the-loop approvals, agent activity for Mastra and eve turns, a canvas beside the chat for documents a tool streams, a sidebar with pinned and dated groups, share links and feedback — on a two-line Route Handler that binds @intelligo-dev/chat's transport (auth, rate limit, feature gate, persistence, the execution boundary) to consumer-owned config (lib/chat-server-config.ts). Every tool renders through one entry in lib/chat-renderers.tsx, inline and in the canvas. Ships with a deterministic stub model so a clean install streams with no API keys. The config imports lib/intelligo.ts (the composition root) and lib/plans.ts, which are provided by the `intelligo create` scaffold, not by any registry item - in a hand-rolled app, create both before installing (see the CLI's app-scaffold templates).",
   "dependencies": [
-    "ai@^6.0.77",
-    "@ai-sdk/react@^3.0.79",
+    "ai@^7.0.103",
+    "@ai-sdk/react@^4.0.106",
     "streamdown",
     "lucide-react",
     "sonner",

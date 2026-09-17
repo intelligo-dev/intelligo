@@ -4,7 +4,7 @@
   "title": "AI Prompt Input",
   "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (ADR-0013, T3; ported from Vercel AI Elements).",
   "dependencies": [
-    "ai@^6.0.77",
+    "ai@^7.0.103",
     "lucide-react",
     "motion"
   ],

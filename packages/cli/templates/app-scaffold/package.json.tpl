@@ -25,27 +25,27 @@
     "@intelligo-dev/next": "__INTELLIGO_DEP__",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
-    "drizzle-orm": "^0.45.1",
-    "lucide-react": "^1.45.0",
-    "next": "^16.2.3",
-    "next-intl": "^4.9.2",
+    "drizzle-orm": "^0.45.2",
+    "lucide-react": "^1.46.0",
+    "next": "~16.3.5",
+    "next-intl": "^4.14.5",
     "next-themes": "^0.4.6",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "server-only": "^0.0.1",
-    "sonner": "^2.0.7"
+    "sonner": "^2.0.8"
   },
   "devDependencies": {
     "@intelligo-dev/cli": "__INTELLIGO_DEP__",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "dotenv": "^16.4.7",
-    "drizzle-kit": "^0.31.8",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.20.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
     "shadcn": "^4.21.0",
-    "tailwindcss": "^4",
+    "tailwindcss": "^4.3.3",
     "tw-animate-css": "^1.4.0",
-    "typescript": "^5.7.2"
+    "typescript": "^5.9.3"
   }
 }

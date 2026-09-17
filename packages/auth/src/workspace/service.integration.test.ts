@@ -146,7 +146,7 @@ d("workspace service — real DB integration", () => {
       expect(updated.name).toBe("IT First Workspace Renamed");
     });
 
-    it("deleteWorkspace removes the active workspace and switches to the other", async () => {
+    it("deleteWorkspace removes the active workspace and switches to another", async () => {
       asUser(owner.cookie);
       await service().deleteWorkspace();
 
@@ -156,8 +156,18 @@ d("workspace service — real DB integration", () => {
         1
       );
 
+      // Which one it switches to is not this test's business, and it is
+      // not `secondOrgId` in general: signing up creates a workspace of
+      // its own (the `user.create.after` hook in ../server.ts), so this
+      // owner has three, and the fallback picks from what is left. What
+      // must hold is that the deleted one is gone and the caller still
+      // has an active workspace it belongs to.
+      const remaining = await service().listWorkspaces();
+      expect(remaining.some((o) => o.id === firstOrgId)).toBe(false);
+
       const active = await service().getActiveWorkspace();
-      expect(active.id).toBe(secondOrgId);
+      expect(active.id).not.toBe(firstOrgId);
+      expect(remaining.some((o) => o.id === active.id)).toBe(true);
     });
   });
 
@@ -238,7 +248,10 @@ d("workspace service — real DB integration", () => {
 
       expect(isWorkspaceServiceError(err)).toBe(true);
       expect(err.code).toBe("workspace_limit_reached");
-      expect(checkWorkspaceLimit).toHaveBeenCalledWith(owner.userId, 1);
+      // Two, not one: signing up created a workspace through the
+      // `user.create.after` hook in ../server.ts before this test made
+      // "IT Limit First". The port is told the real count.
+      expect(checkWorkspaceLimit).toHaveBeenCalledWith(owner.userId, 2);
     });
   });
 

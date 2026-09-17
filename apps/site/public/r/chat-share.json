@@ -4,7 +4,7 @@
   "title": "Chat Share",
   "description": "A conversation its owner published, readable by anyone with the link at /share/[id]: the same transcript, read-only, minus reasoning, tool details and attachments. Requires the chat item.",
   "dependencies": [
-    "ai@^6.0.77",
+    "ai@^7.0.103",
     "next-intl",
     "@intelligo-dev/chat",
     "@intelligo-dev/core"

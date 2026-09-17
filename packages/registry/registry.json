@@ -306,7 +306,7 @@
       "type": "registry:ui",
       "title": "AI Prompt Input",
       "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (ADR-0013, T3; ported from Vercel AI Elements).",
-      "dependencies": ["ai@^6.0.77", "lucide-react", "motion"],
+      "dependencies": ["ai@^7.0.103", "lucide-react", "motion"],
       "registryDependencies": [
         "attachment",
         "button",
@@ -1138,7 +1138,7 @@
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
         "@hookform/resolvers@^5.2.2",
-        "zod@^3.25.76",
+        "zod@^4.6.5",
         "lucide-react",
         "next-intl"
       ],
@@ -1414,7 +1414,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
-        "zod@^3.25.76",
+        "zod@^4.6.5",
         "lucide-react",
         "server-only",
         "next-intl"
@@ -2025,8 +2025,8 @@
         "@intelligo/status-badge"
       ],
       "dependencies": [
-        "ai@^6.0.77",
-        "@ai-sdk/react@^3.0.79",
+        "ai@^7.0.103",
+        "@ai-sdk/react@^4.0.106",
         "streamdown",
         "lucide-react",
         "sonner",
@@ -2315,7 +2315,7 @@
       "description": "A conversation its owner published, readable by anyone with the link at /share/[id]: the same transcript, read-only, minus reasoning, tool details and attachments. Requires the chat item.",
       "registryDependencies": ["button"],
       "dependencies": [
-        "ai@^6.0.77",
+        "ai@^7.0.103",
         "next-intl",
         "@intelligo-dev/chat",
         "@intelligo-dev/core"
@@ -2348,7 +2348,7 @@
       "type": "registry:lib",
       "title": "Chat: eve binding",
       "description": "eve through the chat transport: a streamTurn for lib/chat-server-config.ts that runs a turn as an eve session over HTTP and NDJSON and maps its events to the AI SDK's chunks — text, reasoning, tool calls, approvals, questions, subagents, authorization — so an eve agent renders through the same tool renderers as any other. Consumer-owned; imports nothing from eve. Requires the chat item.",
-      "dependencies": ["ai@^6.0.77", "@intelligo-dev/chat"],
+      "dependencies": ["ai@^7.0.103", "@intelligo-dev/chat"],
       "files": [
         {
           "path": "base/chat-eve/lib/chat-eve.ts",

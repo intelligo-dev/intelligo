@@ -7,7 +7,7 @@
     "@intelligo-dev/auth",
     "react-hook-form@^7.71.1",
     "@hookform/resolvers@^5.2.2",
-    "zod@^3.25.76",
+    "zod@^4.6.5",
     "lucide-react",
     "next-intl"
   ],
