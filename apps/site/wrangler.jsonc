@@ -7,7 +7,7 @@
   // An explicit config also stops Workers Builds from auto-configuring
   // an adapter it thinks is missing.
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "intelligo-dev",
+  "name": "intelligo-web",
   "compatibility_date": "2026-08-28",
   "assets": {
     "directory": "./dist",
