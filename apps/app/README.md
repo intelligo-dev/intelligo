@@ -49,3 +49,32 @@ consumer-owned; re-value them to re-theme every installed page.
 The dependency-direction test enforces the first; the registry
 architecture test enforces the no-orphans/no-private-imports checks on
 `registry/`; review enforces the rest.
+
+## Deploying (Vercel + Neon)
+
+`vercel.json` is the whole build: it compiles the CLI (its bin is not
+built in a fresh clone, so pnpm cannot link `intelligo`), applies the
+framework's migration chain and then the app's own, and builds. Both
+chains are idempotent, so every deployment runs them.
+
+1. Import the repository in Vercel with **Root Directory `apps/app`**;
+   the framework is detected and pnpm installs the whole workspace.
+2. Add a Neon database (the Vercel integration sets `DATABASE_URL`).
+   The pooled URL is fine: the driver is chosen from the host.
+3. Set the environment:
+
+   | Variable                                     | Why                                                                                        |
+   | -------------------------------------------- | ------------------------------------------------------------------------------------------ |
+   | `BETTER_AUTH_SECRET`                         | 32+ characters (`openssl rand -base64 32`)                                                 |
+   | `NEXT_PUBLIC_APP_URL`                        | the deployment's origin; it is the only origin auth trusts                                 |
+   | `CRON_SECRET`                                | 32+ characters; Vercel sends it to `/api/cron/maintenance`                                 |
+   | `RESEND_API_KEY`, `EMAIL_FROM`               | production requires a verified email before sign-in, so without a sender nobody can log in |
+   | `PLATFORM_ADMIN_EMAILS`                      | who reaches `/admin`                                                                       |
+   | `GOOGLE_GENERATIVE_AI_API_KEY`               | optional; without it chat runs on the stub model and costs nothing                         |
+   | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | optional; checkout stays unavailable without them                                          |
+
+The cron runs daily because that is what Vercel's Hobby plan allows;
+on Pro, schedule it every five minutes (`*/5 * * * *`) so stale
+executions are reconciled promptly. A preview deployment has its own
+origin, so it needs its own `NEXT_PUBLIC_APP_URL` (and, with the Neon
+integration, gets its own database branch).

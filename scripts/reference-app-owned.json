@@ -25,6 +25,7 @@
     "app/[locale]/(app)/admin/page.tsx": "the admin console mount",
     "app/[locale]/page.tsx": "the app's root page",
     "app/api/cron/maintenance/route.ts": "the app's maintenance cron",
-    "components/shell/header-extras.tsx": "the app's shell header binding"
+    "components/shell/header-extras.tsx": "the app's shell header binding",
+    "vercel.json": "the reference app's deployment: migrations before the build (the CLI's bin is unbuilt in a fresh clone), and the maintenance cron"
   }
 }
