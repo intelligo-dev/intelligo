@@ -8,7 +8,7 @@
     "streamdown"
   ],
   "registryDependencies": [
-    "collapsible"
+    "@intelligo/collapsible"
   ],
   "files": [
     {

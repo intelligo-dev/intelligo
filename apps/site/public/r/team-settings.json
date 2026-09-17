@@ -13,12 +13,12 @@
   ],
   "registryDependencies": [
     "badge",
-    "button",
+    "@intelligo/button",
     "card",
-    "dialog",
-    "input",
+    "@intelligo/dialog",
+    "@intelligo/input",
     "label",
-    "select",
+    "@intelligo/select",
     "skeleton",
     "table",
     "@intelligo/page-header"

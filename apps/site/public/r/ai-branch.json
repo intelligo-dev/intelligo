@@ -7,7 +7,7 @@
     "lucide-react"
   ],
   "registryDependencies": [
-    "button"
+    "@intelligo/button"
   ],
   "files": [
     {

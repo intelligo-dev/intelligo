@@ -14,9 +14,9 @@
   ],
   "registryDependencies": [
     "avatar",
-    "dropdown-menu",
+    "@intelligo/dropdown-menu",
     "separator",
-    "sidebar"
+    "@intelligo/sidebar"
   ],
   "files": [
     {

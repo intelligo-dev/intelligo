@@ -79,6 +79,18 @@ const ALLOWED = new Map<string, string>([
     "a QR code needs a white quiet zone to scan, in dark mode too",
   ],
   [
+    "arbitrary-value max-w-[calc(100%-2rem)]",
+    "a centred dialog keeps a 1rem gutter on a phone before its sm:max-w-sm applies",
+  ],
+  [
+    "arbitrary-value w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]",
+    "the floating and inset sidebar's icon rail is the icon width plus its padding",
+  ],
+  [
+    "arbitrary-value w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]",
+    "the same rail, plus the two border pixels of the floating variant",
+  ],
+  [
     "arbitrary-value max-h-[80vh]",
     "a dialog of arbitrary content stays inside the viewport and scrolls",
   ],

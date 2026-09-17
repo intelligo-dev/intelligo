@@ -9,7 +9,7 @@
   ],
   "registryDependencies": [
     "alert",
-    "button"
+    "@intelligo/button"
   ],
   "files": [
     {

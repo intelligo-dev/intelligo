@@ -13,9 +13,9 @@
   ],
   "registryDependencies": [
     "alert",
-    "button",
-    "input",
-    "spinner",
+    "@intelligo/button",
+    "@intelligo/input",
+    "@intelligo/spinner",
     "field"
   ],
   "files": [

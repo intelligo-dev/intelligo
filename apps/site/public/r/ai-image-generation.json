@@ -9,7 +9,7 @@
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",
-    "button"
+    "@intelligo/button"
   ],
   "files": [
     {

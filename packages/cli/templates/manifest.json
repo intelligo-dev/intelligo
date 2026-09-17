@@ -67,6 +67,10 @@
         "target": "lib/utils.ts"
       },
       {
+        "template": "app-scaffold/use-mobile.ts.tpl",
+        "target": "hooks/use-mobile.ts"
+      },
+      {
         "template": "app-scaffold/layout.tsx.tpl",
         "target": "app/[locale]/layout.tsx"
       },

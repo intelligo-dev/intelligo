@@ -9,7 +9,7 @@
   ],
   "registryDependencies": [
     "@intelligo/copy-button",
-    "spinner"
+    "@intelligo/spinner"
   ],
   "files": [
     {

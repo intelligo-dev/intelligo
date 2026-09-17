@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@ai-sdk/react": "^4.0.106",
+    "@base-ui/react": "^1.8.0",
     "@codemirror/lang-javascript": "^6.2.5",
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/state": "^6.7.5",
@@ -33,6 +34,7 @@
     "@types/react-dom": "^19.3.0",
     "ai": "^7.0.103",
     "class-variance-authority": "^0.7.1",
+    "cmdk": "^1.1.1",
     "codemirror": "^6.0.2",
     "drizzle-orm": "^0.45.2",
     "eslint": "^10.10.0",

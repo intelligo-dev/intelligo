@@ -7,9 +7,7 @@
  * browser bundle. Validation of a bundle happens server-side when the
  * checkout action passes it to `createCreditCheckout`.
  *
- * `PRODUCT_SLUG` must match whatever slug your composition root passes
- * to `registerProductPlans`/`setDefaultProductSlug`. `CREDIT_BUNDLES`
- * is the one-time credit packaging this deployment sells — product
+ * `CREDIT_BUNDLES` is the one-time credit packaging this deployment sells — product
  * config, not framework policy. Edit or empty the list to match what
  * you actually sell.
  *
@@ -20,9 +18,8 @@
  * deployment needs bundle names in more than one language.
  */
 
+import { fromMajor } from "@intelligo-dev/core/money";
 import type { CreditBundle } from "@intelligo-dev/billing";
-
-export const PRODUCT_SLUG = "default";
 
 /**
  * ISO 4217 code for the currency this deployment charges and displays
@@ -33,7 +30,7 @@ export const PRODUCT_SLUG = "default";
  *
  * It must match what your payment provider actually charges in, and
  * the currency your settlement math produces: `@intelligo-dev/billing`
- * converts raw model cost with the `usdToMntRate` on the billing
+ * converts raw model cost with the `usdRateMicros` on the billing
  * settings row (`ensureBillingSettingsRow`, editable from the admin
  * console). A deployment that charges in USD sets that rate to 1; one
  * that charges in another currency sets it to that currency's rate per
@@ -42,24 +39,31 @@ export const PRODUCT_SLUG = "default";
  */
 export const CURRENCY = "USD";
 
+/**
+ * Each pack states what it costs and what it grants, separately: the
+ * buyer is charged `price` through the payment provider, and the
+ * workspace receives `grant` in this deployment's billing currency.
+ * They are the same currency here only because this deployment sells
+ * and bills in dollars.
+ */
 export const CREDIT_BUNDLES: CreditBundle[] = [
   {
     id: "credits-small",
     name: "Small credit pack",
-    credits: 100_000,
-    priceUsd: 5,
+    grant: fromMajor(5, CURRENCY),
+    price: fromMajor(5, "USD"),
   },
   {
     id: "credits-medium",
     name: "Medium credit pack",
-    credits: 300_000,
-    priceUsd: 12,
+    grant: fromMajor(13, CURRENCY),
+    price: fromMajor(12, "USD"),
   },
   {
     id: "credits-large",
     name: "Large credit pack",
-    credits: 1_000_000,
-    priceUsd: 35,
+    grant: fromMajor(40, CURRENCY),
+    price: fromMajor(35, "USD"),
   },
 ];
 

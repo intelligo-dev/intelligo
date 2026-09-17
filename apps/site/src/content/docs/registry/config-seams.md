@@ -122,7 +122,7 @@ costs the most. Empty the list to show it everywhere.
 
 ### `lib/billing-config.ts`
 
-Exports `PRODUCT_SLUG`, `CURRENCY`, `CREDIT_BUNDLES`, `getCreditBundle`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/pricing/lib/billing-config.ts)
+Exports `CURRENCY`, `CREDIT_BUNDLES`, `getCreditBundle`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/pricing/lib/billing-config.ts)
 
 Client-safe billing configuration for this deployment.
 
@@ -132,9 +132,7 @@ packaging without pulling the plan registry or Stripe into the
 browser bundle. Validation of a bundle happens server-side when the
 checkout action passes it to `createCreditCheckout`.
 
-`PRODUCT_SLUG` must match whatever slug your composition root passes
-to `registerProductPlans`/`setDefaultProductSlug`. `CREDIT_BUNDLES`
-is the one-time credit packaging this deployment sells — product
+`CREDIT_BUNDLES` is the one-time credit packaging this deployment sells — product
 config, not framework policy. Edit or empty the list to match what
 you actually sell.
 

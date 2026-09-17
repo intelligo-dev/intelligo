@@ -4,7 +4,7 @@
   "title": "AI Suggestion",
   "description": "Conversation starters and follow-ups in a scrollable row (T3; ported from Vercel AI Elements).",
   "registryDependencies": [
-    "button",
+    "@intelligo/button",
     "scroll-area"
   ],
   "files": [

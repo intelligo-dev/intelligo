@@ -10,8 +10,8 @@
     "next-intl"
   ],
   "registryDependencies": [
-    "button",
-    "popover",
+    "@intelligo/button",
+    "@intelligo/popover",
     "scroll-area",
     "separator",
     "skeleton",

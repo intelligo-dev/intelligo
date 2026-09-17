@@ -7,7 +7,7 @@
     "next-intl"
   ],
   "registryDependencies": [
-    "button",
+    "@intelligo/button",
     "card"
   ],
   "files": [

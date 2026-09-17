@@ -10,7 +10,7 @@
   "registryDependencies": [
     "@intelligo/ai-citations",
     "@intelligo/ai-motion",
-    "button"
+    "@intelligo/button"
   ],
   "files": [
     {

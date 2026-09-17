@@ -10,7 +10,7 @@
     "@intelligo-dev/core"
   ],
   "registryDependencies": [
-    "button"
+    "@intelligo/button"
   ],
   "files": [
     {

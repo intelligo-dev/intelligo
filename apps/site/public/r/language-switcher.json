@@ -8,8 +8,8 @@
     "next-intl"
   ],
   "registryDependencies": [
-    "button",
-    "dropdown-menu"
+    "@intelligo/button",
+    "@intelligo/dropdown-menu"
   ],
   "files": [
     {

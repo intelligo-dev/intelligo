@@ -11,9 +11,9 @@
   ],
   "registryDependencies": [
     "alert",
-    "button",
+    "@intelligo/button",
     "card",
-    "spinner",
+    "@intelligo/spinner",
     "@intelligo/status-badge"
   ],
   "files": [

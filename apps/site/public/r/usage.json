@@ -13,11 +13,11 @@
   ],
   "registryDependencies": [
     "card",
-    "progress",
+    "@intelligo/progress",
     "skeleton",
     "table",
-    "tabs",
-    "button",
+    "@intelligo/tabs",
+    "@intelligo/button",
     "@intelligo/page-header",
     "@intelligo/stat-card",
     "@intelligo/status-badge"

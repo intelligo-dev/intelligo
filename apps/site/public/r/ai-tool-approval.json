@@ -10,9 +10,9 @@
   "registryDependencies": [
     "@intelligo/ai-code-block",
     "@intelligo/ai-motion",
-    "button",
-    "input",
-    "spinner"
+    "@intelligo/button",
+    "@intelligo/input",
+    "@intelligo/spinner"
   ],
   "files": [
     {

@@ -187,6 +187,334 @@
       }
     },
     {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "The action primitive: a pill that presses in and settles back — six variants, eight sizes, composes through render (T1).",
+      "dependencies": ["@base-ui/react", "class-variance-authority"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/button/button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/button.tsx"
+        }
+      ]
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:ui",
+      "title": "Checkbox",
+      "description": "A checkbox whose check draws itself in, with an indeterminate state (T1).",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/checkbox/checkbox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/checkbox.tsx"
+        }
+      ]
+    },
+    {
+      "name": "radio-group",
+      "type": "registry:ui",
+      "title": "Radio Group",
+      "description": "One choice from a set; the dot springs out from the centre (T1).",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/radio-group/radio-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/radio-group.tsx"
+        }
+      ]
+    },
+    {
+      "name": "switch",
+      "type": "registry:ui",
+      "title": "Switch",
+      "description": "An on/off control with a weighted thumb that squeezes while pressed (T1).",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/switch/switch.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/switch.tsx"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "type": "registry:ui",
+      "title": "Input",
+      "description": "A single-line text field whose border and soft ring ease in on focus (T1).",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/input/input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "textarea",
+      "type": "registry:ui",
+      "title": "Textarea",
+      "description": "A multi-line text field that grows with its content (T1).",
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/textarea/textarea.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/textarea.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:ui",
+      "title": "Tooltip",
+      "description": "A short hint on hover or focus that grows out of its trigger; neighbours open instantly (T1).",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/tooltip/tooltip.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tooltip.tsx"
+        }
+      ]
+    },
+    {
+      "name": "popover",
+      "type": "registry:ui",
+      "title": "Popover",
+      "description": "Floating content in a rounded panel that scales out of its trigger (T1).",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/popover/popover.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/popover.tsx"
+        }
+      ]
+    },
+    {
+      "name": "dropdown-menu",
+      "type": "registry:ui",
+      "title": "Dropdown Menu",
+      "description": "Actions, checkboxes and radio groups with submenus, in a panel that scales out of its trigger (T1).",
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/dropdown-menu/dropdown-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/dropdown-menu.tsx"
+        }
+      ]
+    },
+    {
+      "name": "select",
+      "type": "registry:ui",
+      "title": "Select",
+      "description": "A picker for one value from a list, on the input's field and the menu's panel (T1).",
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/select/select.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/select.tsx"
+        }
+      ]
+    },
+    {
+      "name": "dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "A modal window over a blurred backdrop that springs up into place (T1).",
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "registryDependencies": ["@intelligo/button"],
+      "files": [
+        {
+          "path": "base/ui/dialog/dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "alert-dialog",
+      "type": "registry:ui",
+      "title": "Alert Dialog",
+      "description": "A modal that confirms a destructive or irreversible action, with the dialog's backdrop and spring (T1).",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": ["@intelligo/button"],
+      "files": [
+        {
+          "path": "base/ui/alert-dialog/alert-dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/alert-dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "sheet",
+      "type": "registry:ui",
+      "title": "Sheet",
+      "description": "A panel that slides in from any edge on the drawer curve (T1).",
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "registryDependencies": ["@intelligo/button"],
+      "files": [
+        {
+          "path": "base/ui/sheet/sheet.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/sheet.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "Switches between views with one indicator that glides from tab to tab — pill and line variants (T1).",
+      "dependencies": ["@base-ui/react", "class-variance-authority"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/tabs/tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tabs.tsx"
+        }
+      ]
+    },
+    {
+      "name": "collapsible",
+      "type": "registry:ui",
+      "title": "Collapsible",
+      "description": "Content that eases open and closed from its measured height (T1).",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/collapsible/collapsible.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/collapsible.tsx"
+        }
+      ]
+    },
+    {
+      "name": "progress",
+      "type": "registry:ui",
+      "title": "Progress",
+      "description": "A rounded bar whose fill glides to each new value (T1).",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/progress/progress.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/progress.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spinner",
+      "type": "registry:ui",
+      "title": "Spinner",
+      "description": "Pending state: a faint ring with a running arc. Pair with disabled and aria-busy (T2).",
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/spinner/spinner.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/spinner.tsx"
+        }
+      ]
+    },
+    {
+      "name": "attachment",
+      "type": "registry:ui",
+      "title": "Attachment",
+      "description": "A file attached to a message or a prompt (T2).",
+      "dependencies": ["@base-ui/react", "class-variance-authority"],
+      "registryDependencies": ["@intelligo/button"],
+      "files": [
+        {
+          "path": "base/ui/attachment/attachment.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/attachment.tsx"
+        }
+      ]
+    },
+    {
+      "name": "input-group",
+      "type": "registry:ui",
+      "title": "Input Group",
+      "description": "An input or textarea with inline addons, buttons and text (T2).",
+      "dependencies": ["class-variance-authority"],
+      "registryDependencies": [
+        "@intelligo/button",
+        "@intelligo/input",
+        "@intelligo/textarea"
+      ],
+      "files": [
+        {
+          "path": "base/ui/input-group/input-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input-group.tsx"
+        }
+      ]
+    },
+    {
+      "name": "command",
+      "type": "registry:ui",
+      "title": "Command",
+      "description": "A searchable list of actions, inline or in a dialog (T1).",
+      "dependencies": ["cmdk", "lucide-react"],
+      "registryDependencies": ["@intelligo/dialog", "@intelligo/input-group"],
+      "files": [
+        {
+          "path": "base/ui/command/command.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/command.tsx"
+        }
+      ]
+    },
+    {
+      "name": "sidebar",
+      "type": "registry:ui",
+      "title": "Sidebar",
+      "description": "The app sidebar — collapsible to icons, keyboard-toggled, a sheet on mobile (T1).",
+      "dependencies": [
+        "@base-ui/react",
+        "class-variance-authority",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "@intelligo/button",
+        "@intelligo/input",
+        "separator",
+        "@intelligo/sheet",
+        "skeleton",
+        "@intelligo/tooltip"
+      ],
+      "files": [
+        {
+          "path": "base/ui/sidebar/sidebar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/sidebar.tsx"
+        }
+      ]
+    },
+    {
       "name": "page-header",
       "type": "registry:ui",
       "title": "Page Header",
@@ -233,7 +561,7 @@
       "title": "Copy Button",
       "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own (T4).",
       "dependencies": ["lucide-react"],
-      "registryDependencies": ["button"],
+      "registryDependencies": ["@intelligo/button"],
       "files": [
         {
           "path": "base/ui/copy-button/copy-button.tsx",
@@ -248,7 +576,7 @@
       "title": "AI Code Block",
       "description": "Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark (T3).",
       "dependencies": ["shiki", "lucide-react"],
-      "registryDependencies": ["@intelligo/copy-button", "spinner"],
+      "registryDependencies": ["@intelligo/copy-button", "@intelligo/spinner"],
       "files": [
         {
           "path": "base/ui/ai-code-block/ai-code-block.tsx",
@@ -263,7 +591,7 @@
       "title": "AI Reasoning",
       "description": "Streamed reasoning, collapsible, with the time it took (T3; ported from Vercel AI Elements).",
       "dependencies": ["lucide-react", "streamdown"],
-      "registryDependencies": ["collapsible"],
+      "registryDependencies": ["@intelligo/collapsible"],
       "files": [
         {
           "path": "base/ui/ai-reasoning/ai-reasoning.tsx",
@@ -277,7 +605,7 @@
       "type": "registry:ui",
       "title": "AI Suggestion",
       "description": "Conversation starters and follow-ups in a scrollable row (T3; ported from Vercel AI Elements).",
-      "registryDependencies": ["button", "scroll-area"],
+      "registryDependencies": ["@intelligo/button", "scroll-area"],
       "files": [
         {
           "path": "base/ui/ai-suggestion/ai-suggestion.tsx",
@@ -292,7 +620,7 @@
       "title": "AI Artifact",
       "description": "A generated document's frame: header, actions and content (T3; ported from Vercel AI Elements).",
       "dependencies": ["lucide-react"],
-      "registryDependencies": ["button", "tooltip"],
+      "registryDependencies": ["@intelligo/button", "@intelligo/tooltip"],
       "files": [
         {
           "path": "base/ui/ai-artifact/ai-artifact.tsx",
@@ -308,11 +636,11 @@
       "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (T3; ported from Vercel AI Elements).",
       "dependencies": ["ai@^7.0.103", "lucide-react", "motion"],
       "registryDependencies": [
-        "attachment",
-        "button",
-        "dropdown-menu",
-        "select",
-        "spinner",
+        "@intelligo/attachment",
+        "@intelligo/button",
+        "@intelligo/dropdown-menu",
+        "@intelligo/select",
+        "@intelligo/spinner",
         "@intelligo/ai-motion"
       ],
       "files": [
@@ -329,7 +657,7 @@
       "title": "AI Branch",
       "description": "A pager over the versions of a reply or an edited message — previous, next, `2 / 3` (T3).",
       "dependencies": ["lucide-react"],
-      "registryDependencies": ["button"],
+      "registryDependencies": ["@intelligo/button"],
       "files": [
         {
           "path": "base/ui/ai-branch/ai-branch.tsx",
@@ -344,7 +672,7 @@
       "title": "AI Speech Input",
       "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent (T3).",
       "dependencies": ["lucide-react"],
-      "registryDependencies": ["button"],
+      "registryDependencies": ["@intelligo/button"],
       "files": [
         {
           "path": "base/ui/ai-speech-input/ai-speech-input.tsx",
@@ -359,7 +687,7 @@
       "title": "AI Composer Menu",
       "description": "The picker a composer opens for slash commands and @ mentions, anchored above the textarea (T3).",
       "dependencies": [],
-      "registryDependencies": ["command"],
+      "registryDependencies": ["@intelligo/command"],
       "files": [
         {
           "path": "base/ui/ai-composer-menu/ai-composer-menu.tsx",
@@ -424,11 +752,11 @@
       "dependencies": ["lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/ai-motion",
-        "button",
-        "checkbox",
-        "input",
-        "radio-group",
-        "spinner"
+        "@intelligo/button",
+        "@intelligo/checkbox",
+        "@intelligo/input",
+        "@intelligo/radio-group",
+        "@intelligo/spinner"
       ],
       "files": [
         {
@@ -447,8 +775,8 @@
       "registryDependencies": [
         "@intelligo/ai-code-block",
         "@intelligo/ai-motion",
-        "button",
-        "spinner"
+        "@intelligo/button",
+        "@intelligo/spinner"
       ],
       "files": [
         {
@@ -527,9 +855,9 @@
       "registryDependencies": [
         "@intelligo/ai-code-block",
         "@intelligo/ai-motion",
-        "button",
-        "input",
-        "spinner"
+        "@intelligo/button",
+        "@intelligo/input",
+        "@intelligo/spinner"
       ],
       "files": [
         {
@@ -548,8 +876,8 @@
       "registryDependencies": [
         "@intelligo/ai-code-block",
         "@intelligo/ai-motion",
-        "button",
-        "spinner"
+        "@intelligo/button",
+        "@intelligo/spinner"
       ],
       "files": [
         {
@@ -580,7 +908,11 @@
       "title": "AI Citations",
       "description": "The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list (T3).",
       "dependencies": ["lucide-react", "motion"],
-      "registryDependencies": ["@intelligo/ai-motion", "hover-card", "sheet"],
+      "registryDependencies": [
+        "@intelligo/ai-motion",
+        "hover-card",
+        "@intelligo/sheet"
+      ],
       "files": [
         {
           "path": "base/ui/ai-citations/ai-citations.tsx",
@@ -595,7 +927,7 @@
       "title": "AI Image Generation",
       "description": "An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes (T3).",
       "dependencies": ["lucide-react", "motion"],
-      "registryDependencies": ["@intelligo/ai-motion", "button"],
+      "registryDependencies": ["@intelligo/ai-motion", "@intelligo/button"],
       "files": [
         {
           "path": "base/ui/ai-image-generation/ai-image-generation.tsx",
@@ -631,7 +963,7 @@
       "registryDependencies": [
         "@intelligo/ai-citations",
         "@intelligo/ai-motion",
-        "button"
+        "@intelligo/button"
       ],
       "files": [
         {
@@ -649,9 +981,9 @@
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-motion",
-        "button",
-        "popover",
-        "tooltip"
+        "@intelligo/button",
+        "@intelligo/popover",
+        "@intelligo/tooltip"
       ],
       "files": [
         {
@@ -689,7 +1021,7 @@
       "type": "registry:block",
       "title": "Registry Smoke Test",
       "description": "Permanent canary item that proves the registry build and install pipeline end to end.",
-      "registryDependencies": ["button", "card"],
+      "registryDependencies": ["@intelligo/button", "card"],
       "files": [
         {
           "path": "base/smoke/page.tsx",
@@ -714,7 +1046,7 @@
       "type": "registry:block",
       "title": "Route Error States",
       "description": "The app's error surfaces: a shared RouteError component every error.tsx renders, message-based error classification, an (app) group boundary, a translated 404, and a dependency-free global-error. Error reporting goes through the lib/error-reporting.ts seam (a no-op until you bind a reporter), so no SDK enters the registry. Items that ship an error.tsx depend on this one - install it first.",
-      "registryDependencies": ["alert", "button"],
+      "registryDependencies": ["alert", "@intelligo/button"],
       "dependencies": ["lucide-react", "next-intl"],
       "files": [
         {
@@ -766,12 +1098,12 @@
       "description": "Workspace team management: invite members, change roles, remove members, and manage pending invitations, backed by the framework's team service.",
       "registryDependencies": [
         "badge",
-        "button",
+        "@intelligo/button",
         "card",
-        "dialog",
-        "input",
+        "@intelligo/dialog",
+        "@intelligo/input",
         "label",
-        "select",
+        "@intelligo/select",
         "skeleton",
         "table",
         "@intelligo/page-header"
@@ -844,11 +1176,11 @@
       "description": "Workspace usage dashboard: current-period summary tiles, a period selector, and a table of recent AI execution records.",
       "registryDependencies": [
         "card",
-        "progress",
+        "@intelligo/progress",
         "skeleton",
         "table",
-        "tabs",
-        "button",
+        "@intelligo/tabs",
+        "@intelligo/button",
         "@intelligo/page-header",
         "@intelligo/stat-card",
         "@intelligo/status-badge"
@@ -914,7 +1246,12 @@
       "type": "registry:block",
       "title": "Invitation Accept",
       "description": "Accept or decline a workspace invitation via the team service. Requires the team-settings item (provides lib/team.ts and the role badge); install it first.",
-      "registryDependencies": ["alert", "card", "skeleton", "button"],
+      "registryDependencies": [
+        "alert",
+        "card",
+        "skeleton",
+        "@intelligo/button"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
@@ -961,9 +1298,9 @@
       "description": "Authenticated application shell: session and onboarding gate, workspace bootstrap, and a collapsible sidebar with workspace switcher, configurable nav, and user menu.",
       "registryDependencies": [
         "avatar",
-        "dropdown-menu",
+        "@intelligo/dropdown-menu",
         "separator",
-        "sidebar"
+        "@intelligo/sidebar"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1037,7 +1374,7 @@
       "type": "registry:block",
       "title": "Settings Shell",
       "description": "The shared frame around every /settings page: layout with heading and width constraint, a configurable tab bar (lib/settings-nav.ts), and a /settings index that redirects to the first tab. Install alongside the settings items - without it they render unframed and plain /settings links 404.",
-      "registryDependencies": ["tabs", "@intelligo/page-header"],
+      "registryDependencies": ["@intelligo/tabs", "@intelligo/page-header"],
       "dependencies": ["lucide-react", "next-intl"],
       "files": [
         {
@@ -1073,10 +1410,10 @@
       "title": "Workspace Settings",
       "description": "Workspace name/URL editing and owner-only deletion, backed by the framework's workspace service.",
       "registryDependencies": [
-        "button",
+        "@intelligo/button",
         "card",
-        "dialog",
-        "input",
+        "@intelligo/dialog",
+        "@intelligo/input",
         "label",
         "skeleton",
         "@intelligo/page-header"
@@ -1133,7 +1470,13 @@
       "type": "registry:block",
       "title": "Auth: Login",
       "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first.",
-      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
+      "registryDependencies": [
+        "alert",
+        "@intelligo/button",
+        "@intelligo/input",
+        "@intelligo/spinner",
+        "field"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -1190,7 +1533,13 @@
       "type": "registry:block",
       "title": "Auth: Signup",
       "description": "Email/password and OAuth account creation. Requires the auth-login item (provides the shared AuthCard shell, SocialLoginButtons, and lib/auth-validation.ts schemas); install it first. Redirects to auth-email-verification's /verify-email route when the server requires email verification.",
-      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
+      "registryDependencies": [
+        "alert",
+        "@intelligo/button",
+        "@intelligo/input",
+        "@intelligo/spinner",
+        "field"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -1221,7 +1570,13 @@
       "type": "registry:block",
       "title": "Auth: Password Reset",
       "description": "Forgot-password and reset-password pages, backed by the Better-Auth client SDK's requestPasswordReset/resetPassword actions. Requires the auth-login item (provides the shared AuthCard shell and lib/auth-validation.ts schemas); install it first.",
-      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
+      "registryDependencies": [
+        "alert",
+        "@intelligo/button",
+        "@intelligo/input",
+        "@intelligo/spinner",
+        "field"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "react-hook-form@^7.71.1",
@@ -1262,7 +1617,13 @@
       "type": "registry:block",
       "title": "Auth: Email Verification",
       "description": "Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action. Reads the ?error=/?email= search params Better-Auth's own /verify-email link handler redirects back with. Requires the auth-login item (provides the shared AuthCard shell); install it first.",
-      "registryDependencies": ["alert", "button", "input", "spinner", "field"],
+      "registryDependencies": [
+        "alert",
+        "@intelligo/button",
+        "@intelligo/input",
+        "@intelligo/spinner",
+        "field"
+      ],
       "dependencies": ["@intelligo-dev/auth", "lucide-react", "next-intl"],
       "files": [
         {
@@ -1287,7 +1648,7 @@
       "type": "registry:block",
       "title": "Language Switcher",
       "description": "Locale dropdown over the locales i18n/routing.ts declares, labeled with each language's own name. Renders nothing in a single-locale deployment, so it is safe to mount unconditionally (e.g. in shellConfig.headerRight). Adding a locale to routing.ts plus a messages directory is the whole job.",
-      "registryDependencies": ["button", "dropdown-menu"],
+      "registryDependencies": ["@intelligo/button", "@intelligo/dropdown-menu"],
       "dependencies": ["lucide-react", "next-intl"],
       "files": [
         {
@@ -1307,7 +1668,7 @@
       "type": "registry:block",
       "title": "Trial Banner",
       "description": "Dismissable trial-status strip for the app shell's bannerTop seam: days and credits remaining with an upgrade CTA, urgency-ramped visuals, dismiss-for-today, and a consumer config (lib/trial-banner-config.ts) for the CTA target and route suppression (hidden on /chat by default). Bind TrialBannerContainer as shellConfig.bannerTop.",
-      "registryDependencies": ["button"],
+      "registryDependencies": ["@intelligo/button"],
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
@@ -1344,8 +1705,8 @@
       "title": "Notifications",
       "description": "Notification bell with an unread badge and dropdown, plus a full notifications page with mark-as-read and load-more, backed by the framework's notification records.",
       "registryDependencies": [
-        "button",
-        "popover",
+        "@intelligo/button",
+        "@intelligo/popover",
         "scroll-area",
         "separator",
         "skeleton",
@@ -1410,7 +1771,13 @@
       "type": "registry:block",
       "title": "Pricing",
       "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on — install this item first.",
-      "registryDependencies": ["alert", "badge", "button", "card", "skeleton"],
+      "registryDependencies": [
+        "alert",
+        "badge",
+        "@intelligo/button",
+        "card",
+        "skeleton"
+      ],
       "dependencies": [
         "@intelligo-dev/core",
         "@intelligo-dev/auth",
@@ -1490,9 +1857,9 @@
       "description": "Checkout-success page that verifies the Stripe session directly through the framework's checkout service, covering the webhook-race window between the browser redirect and Stripe's webhook delivery.",
       "registryDependencies": [
         "alert",
-        "button",
+        "@intelligo/button",
         "card",
-        "spinner",
+        "@intelligo/spinner",
         "@intelligo/status-badge"
       ],
       "dependencies": [
@@ -1526,7 +1893,7 @@
       "description": "Workspace billing management: current plan, credit balance, credit bundle purchase, and the Stripe billing portal, shaped server-side by role (member/admin/owner). Requires the pricing item (provides lib/billing.ts and actions/billing.ts); install it first.",
       "registryDependencies": [
         "alert",
-        "button",
+        "@intelligo/button",
         "card",
         "skeleton",
         "@intelligo/page-header",
@@ -1576,7 +1943,11 @@
       "type": "registry:block",
       "title": "Feature Gating",
       "description": "The vocabulary for selling a plan: a server-side FeatureGate that renders gated content only to entitled workspaces, three densities of upgrade prompt (full, compact, inline), a quota warning that escalates as a limit approaches, and a preview paywall that blurs content instead of hiding it. Which features exist and which plan unlocks them is consumer config (lib/feature-catalog.ts). Install pricing or billing-settings for somewhere to send the user.",
-      "registryDependencies": ["button", "card", "dialog"],
+      "registryDependencies": [
+        "@intelligo/button",
+        "card",
+        "@intelligo/dialog"
+      ],
       "dependencies": ["@intelligo-dev/billing", "lucide-react", "next-intl"],
       "files": [
         {
@@ -1631,7 +2002,11 @@
       "type": "registry:block",
       "title": "QR Payment (poll)",
       "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
-      "registryDependencies": ["button", "dialog", "spinner"],
+      "registryDependencies": [
+        "@intelligo/button",
+        "@intelligo/dialog",
+        "@intelligo/spinner"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "lucide-react",
@@ -1672,10 +2047,10 @@
       "title": "Profile Settings",
       "description": "User profile name editing, read-only email, and account deletion with typed confirmation, backed by the framework's profile service.",
       "registryDependencies": [
-        "button",
+        "@intelligo/button",
         "card",
-        "dialog",
-        "input",
+        "@intelligo/dialog",
+        "@intelligo/input",
         "label",
         "skeleton",
         "@intelligo/page-header"
@@ -1730,7 +2105,11 @@
       "type": "registry:block",
       "title": "Onboarding",
       "description": "A generic multi-step onboarding wizard driven by a consumer-owned steps config: text and single-select-card fields, a completion screen, skip, and back/next - backed by the framework's onboarding service (durable step progress, no vertical-specific UI).",
-      "registryDependencies": ["button", "input", "label"],
+      "registryDependencies": [
+        "@intelligo/button",
+        "@intelligo/input",
+        "label"
+      ],
       "dependencies": [
         "@intelligo-dev/auth",
         "lucide-react",
@@ -1858,12 +2237,12 @@
       "registryDependencies": [
         "alert",
         "badge",
-        "button",
+        "@intelligo/button",
         "card",
-        "dialog",
+        "@intelligo/dialog",
         "scroll-area",
         "skeleton",
-        "spinner",
+        "@intelligo/spinner",
         "@intelligo/page-header",
         "@intelligo/document-viewer"
       ],
@@ -1933,7 +2312,7 @@
       "title": "Privacy Settings",
       "description": "GDPR-style data export, a read-only memory-audit trail, and per-category fact listing with delete, backed by the framework's identity service.",
       "registryDependencies": [
-        "button",
+        "@intelligo/button",
         "card",
         "skeleton",
         "@intelligo/page-header"
@@ -1990,19 +2369,19 @@
       "description": "A ChatGPT-level AI chat surface: a streaming thread with edit, regenerate and response versions, attachments, a model picker, reasoning, sources, tool cards and human-in-the-loop approvals, agent activity for Mastra and eve turns, a canvas beside the chat for documents a tool streams, a sidebar with pinned and dated groups, share links and feedback — on a two-line Route Handler that binds @intelligo-dev/chat's transport (auth, rate limit, feature gate, persistence, the execution boundary) to consumer-owned config (lib/chat-server-config.ts). Every tool renders through one entry in lib/chat-renderers.tsx, inline and in the canvas. Ships with a deterministic stub model so a clean install streams with no API keys. The config imports lib/intelligo.ts (the composition root) and lib/plans.ts, which are provided by the `intelligo create` scaffold, not by any registry item - in a hand-rolled app, create both before installing (see the CLI's app-scaffold templates).",
       "registryDependencies": [
         "alert",
-        "alert-dialog",
-        "attachment",
-        "button",
-        "dialog",
-        "dropdown-menu",
-        "input",
+        "@intelligo/alert-dialog",
+        "@intelligo/attachment",
+        "@intelligo/button",
+        "@intelligo/dialog",
+        "@intelligo/dropdown-menu",
+        "@intelligo/input",
         "item",
-        "sheet",
-        "sidebar",
+        "@intelligo/sheet",
+        "@intelligo/sidebar",
         "skeleton",
-        "spinner",
-        "textarea",
-        "tooltip",
+        "@intelligo/spinner",
+        "@intelligo/textarea",
+        "@intelligo/tooltip",
         "@intelligo/ai-agent-activity",
         "@intelligo/ai-approval-card",
         "@intelligo/ai-artifact",
@@ -2269,7 +2648,7 @@
       "type": "registry:block",
       "title": "Chat Panel",
       "description": "The chat as a side panel on any page: a sheet that opens the same thread the chat page runs, with the page's context on every turn. Requires the chat item.",
-      "registryDependencies": ["button", "sheet"],
+      "registryDependencies": ["@intelligo/button", "@intelligo/sheet"],
       "dependencies": ["lucide-react", "next-intl"],
       "files": [
         {
@@ -2289,7 +2668,7 @@
       "type": "registry:block",
       "title": "Chat Widget",
       "description": "The floating assistant: a launcher in a corner of every page and a compact chat over it, configured in lib/chat-widget-config.tsx. Requires the chat item.",
-      "registryDependencies": ["button"],
+      "registryDependencies": ["@intelligo/button"],
       "dependencies": ["lucide-react", "next-intl"],
       "files": [
         {
@@ -2314,7 +2693,7 @@
       "type": "registry:block",
       "title": "Chat Share",
       "description": "A conversation its owner published, readable by anyone with the link at /share/[id]: the same transcript, read-only, minus reasoning, tool details and attachments. Requires the chat item.",
-      "registryDependencies": ["button"],
+      "registryDependencies": ["@intelligo/button"],
       "dependencies": [
         "ai@^7.0.103",
         "next-intl",

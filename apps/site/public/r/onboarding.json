@@ -10,8 +10,8 @@
     "next-intl"
   ],
   "registryDependencies": [
-    "button",
-    "input",
+    "@intelligo/button",
+    "@intelligo/input",
     "label"
   ],
   "files": [

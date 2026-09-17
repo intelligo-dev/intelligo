@@ -9,9 +9,9 @@
     "next-intl"
   ],
   "registryDependencies": [
-    "button",
+    "@intelligo/button",
     "card",
-    "dialog"
+    "@intelligo/dialog"
   ],
   "files": [
     {

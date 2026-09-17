@@ -13,7 +13,7 @@
     "alert",
     "card",
     "skeleton",
-    "button"
+    "@intelligo/button"
   ],
   "files": [
     {

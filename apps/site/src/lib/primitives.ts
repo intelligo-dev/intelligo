@@ -41,7 +41,7 @@ const INSTALLED = {
   badge: ["T1", "A small label for roles, statuses and counts."],
   button: [
     "T1",
-    "The action primitive — six variants, eight sizes, composes through render.",
+    "The action primitive — a pill that presses in; six variants, eight sizes, composes through render.",
   ],
   card: ["T1", "A surface with header, action, content and footer slots."],
   dialog: ["T1", "A modal window for forms and focused tasks."],
@@ -67,9 +67,12 @@ const INSTALLED = {
     "Toasts. The one notification seam every block reports through.",
   ],
   table: ["T1", "Rows and columns for members, invitations and executions."],
-  tabs: ["T1", "Switches between views — default and line variants."],
+  tabs: ["T1", "Switches between views; one indicator glides from tab to tab."],
   textarea: ["T1", "A multi-line text field."],
-  tooltip: ["T1", "A short hint on hover or focus."],
+  tooltip: [
+    "T1",
+    "A short hint that grows out of its trigger on hover or focus.",
+  ],
   // T2
   field: [
     "T2",
@@ -137,7 +140,11 @@ export const CATALOG: CatalogEntry[] = (
   tier: INSTALLED[name][0],
   description: INSTALLED[name][1],
   usedBy: blocks
-    .filter((b) => b.registryDependencies?.includes(name))
+    .filter((b) =>
+      [name, `@intelligo/${name}`].some((d) =>
+        b.registryDependencies?.includes(d)
+      )
+    )
     .map((b) => b.name),
 }));
 
@@ -193,7 +200,11 @@ const groupOf = (name: string, tier: "T3" | "T4") =>
       )?.[0] ?? "More parts");
 
 export const INTELLIGO: IntelligoEntry[] = rawItems
-  .filter((i) => i.type === "registry:ui")
+  // T1/T2 items restyle a shadcn primitive and are catalogued with it above.
+  .filter(
+    (i) =>
+      i.type === "registry:ui" && !/\((T[12])[^)]*\)/.test(i.description ?? "")
+  )
   .map((i) => {
     const text = i.description ?? "";
     const tier = text.match(/\((T[34])[^)]*\)/)?.[1] === "T3" ? "T3" : "T4";
@@ -219,15 +230,7 @@ export const INTELLIGO_GROUPS = [
 ].filter((g) => INTELLIGO.some((e) => e.group === g));
 
 /** Site-only marketing effects live beside the installed components and are not part of the system. */
-const SITE_EFFECTS = new Set([
-  "border-beam",
-  "circuit-board",
-  "infinite-slider",
-  "kinetic-text-reveal",
-  "shimmer-button",
-  "spotlight-card",
-  "text-morph",
-]);
+const SITE_EFFECTS = new Set(["circuit-board", "text-reveal"]);
 
 const installed = Object.keys(import.meta.glob("../components/ui/*.tsx"))
   .map((p) =>

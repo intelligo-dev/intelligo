@@ -9,9 +9,9 @@
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",
-    "button",
-    "popover",
-    "tooltip"
+    "@intelligo/button",
+    "@intelligo/popover",
+    "@intelligo/tooltip"
   ],
   "files": [
     {

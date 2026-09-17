@@ -51,11 +51,15 @@
         },
         {
           "path": "app/globals.css",
-          "hash": "8befbab2ef96fe466894cf5402313900809f42dfd6d7488c74301eda6976464c"
+          "hash": "fcc8da9ee3f9cd92dacdd877c56ef80652b1f7baa3fbc0d4e10706e86735b3bf"
         },
         {
           "path": "lib/utils.ts",
           "hash": "55bbdc94cef3e0c8a8bba386e94f97228dd2c967fe61466fc565378890550c08"
+        },
+        {
+          "path": "hooks/use-mobile.ts",
+          "hash": "ad0936f84f1df79d3697bfbff9c18f8ad58431c1cbaf2359c6a853b0fcc9f28b"
         },
         {
           "path": "app/[locale]/layout.tsx",
@@ -67,7 +71,7 @@
         },
         {
           "path": "components/ui/sonner.tsx",
-          "hash": "e5a4353ae37d33324fb0be0970fbefb7178c01d73fc7b010c3efcb6db80758e3"
+          "hash": "eb063e051e70afae4a3b93080b47dcb0ffa908cb3e30450a55195f769a8091cb"
         },
         {
           "path": "i18n/routing.ts",

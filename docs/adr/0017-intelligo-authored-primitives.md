@@ -28,10 +28,15 @@ page, hard grey borders, buttons and popups that snap.
    behaviour underneath: focus, keyboard, dismissal and ARIA are Base UI's,
    never re-implemented. Only look and motion change, so a consumer's code
    and every block compile unchanged.
-3. **Motion is shared.** The easings and springs live in one
-   `motion-presets` item that the primitives and `ai-motion` both use; a
-   CSS transition uses the `--ease-*` tokens, which carry the same curves.
-   Every motion component honours `prefers-reduced-motion`.
+3. **Primitive motion is CSS.** A primitive animates with transitions on
+   the `--ease-*` and `--duration-*` tokens, driven by Base UI's
+   `data-starting-style` / `data-ending-style` and its measured variables
+   (`--active-tab-left`, `--collapsible-panel-height`) — not `motion/react`.
+   A button stays a server-renderable component, `render` can swap its
+   element without losing the press, no primitive adds a runtime
+   dependency, and the base's reduced-motion rule collapses all of it. The
+   ease tokens carry the curves `ai-motion`'s springs settle on, so a T3 part
+   animating with `motion/react` and a primitive beside it move alike.
 4. **The theme's values are Intelligo's.** The contract's names do not
    change (ADR-0013 §3); their values do: an off-white page with a darker
    card, translucent hairline borders and inputs, a near-black primary, a
@@ -51,4 +56,5 @@ page, hard grey borders, buttons and popups that snap.
   against.
 - An upstream base-nova fix no longer reaches these files by reinstall; the
   items track upstream by hand, as T3 does.
-- `motion` becomes a dependency of any app that installs a block.
+- One allow-listed arbitrary value: a centred dialog's
+  `max-w-[calc(100%-2rem)]` phone gutter.

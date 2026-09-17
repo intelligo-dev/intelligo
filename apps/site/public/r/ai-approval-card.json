@@ -9,11 +9,11 @@
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",
-    "button",
-    "checkbox",
-    "input",
-    "radio-group",
-    "spinner"
+    "@intelligo/button",
+    "@intelligo/checkbox",
+    "@intelligo/input",
+    "@intelligo/radio-group",
+    "@intelligo/spinner"
   ],
   "files": [
     {

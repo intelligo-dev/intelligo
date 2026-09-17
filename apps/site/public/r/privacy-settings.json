@@ -11,7 +11,7 @@
     "next-intl"
   ],
   "registryDependencies": [
-    "button",
+    "@intelligo/button",
     "card",
     "skeleton",
     "@intelligo/page-header"

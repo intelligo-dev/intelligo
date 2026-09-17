@@ -10,9 +10,9 @@
     "next-intl"
   ],
   "registryDependencies": [
-    "button",
-    "dialog",
-    "spinner"
+    "@intelligo/button",
+    "@intelligo/dialog",
+    "@intelligo/spinner"
   ],
   "files": [
     {

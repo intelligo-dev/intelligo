@@ -5,7 +5,7 @@
   "description": "The picker a composer opens for slash commands and @ mentions, anchored above the textarea (T3).",
   "dependencies": [],
   "registryDependencies": [
-    "command"
+    "@intelligo/command"
   ],
   "files": [
     {

@@ -11,10 +11,10 @@
     "next-intl"
   ],
   "registryDependencies": [
-    "button",
+    "@intelligo/button",
     "card",
-    "dialog",
-    "input",
+    "@intelligo/dialog",
+    "@intelligo/input",
     "label",
     "skeleton",
     "@intelligo/page-header"

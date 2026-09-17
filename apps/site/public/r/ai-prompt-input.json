@@ -9,11 +9,11 @@
     "motion"
   ],
   "registryDependencies": [
-    "attachment",
-    "button",
-    "dropdown-menu",
-    "select",
-    "spinner",
+    "@intelligo/attachment",
+    "@intelligo/button",
+    "@intelligo/dropdown-menu",
+    "@intelligo/select",
+    "@intelligo/spinner",
     "@intelligo/ai-motion"
   ],
   "files": [

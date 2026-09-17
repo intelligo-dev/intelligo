@@ -10,7 +10,7 @@
   "registryDependencies": [
     "@intelligo/ai-motion",
     "hover-card",
-    "sheet"
+    "@intelligo/sheet"
   ],
   "files": [
     {

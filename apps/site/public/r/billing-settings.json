@@ -11,7 +11,7 @@
   ],
   "registryDependencies": [
     "alert",
-    "button",
+    "@intelligo/button",
     "card",
     "skeleton",
     "@intelligo/page-header",

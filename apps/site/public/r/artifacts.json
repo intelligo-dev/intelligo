@@ -20,12 +20,12 @@
   "registryDependencies": [
     "alert",
     "badge",
-    "button",
+    "@intelligo/button",
     "card",
-    "dialog",
+    "@intelligo/dialog",
     "scroll-area",
     "skeleton",
-    "spinner",
+    "@intelligo/spinner",
     "@intelligo/page-header",
     "@intelligo/document-viewer"
   ],

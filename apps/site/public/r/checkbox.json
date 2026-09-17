@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "checkbox",
+  "title": "Checkbox",
+  "description": "A checkbox whose check draws itself in, with an indeterminate state (T1).",
+  "dependencies": [
+    "@base-ui/react"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "base/ui/checkbox/checkbox.tsx",
+      "content": "\"use client\";\n\n/*\n * The checkbox: the box fills and the check\n * draws itself in, over Base UI's Checkbox. shadcn base-nova's API (MIT).\n */\n\nimport { Checkbox as CheckboxPrimitive } from \"@base-ui/react/checkbox\";\n\nimport { cn } from \"@/lib/utils\";\n\nfunction Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {\n  return (\n    <CheckboxPrimitive.Root\n      data-slot=\"checkbox\"\n      className={cn(\n        \"peer relative flex size-4 shrink-0 items-center justify-center rounded-sm border border-input bg-card transition-[background-color,border-color,box-shadow,scale] duration-fast ease-standard outline-none group-has-disabled/field:opacity-50 group-has-[:focus-visible]/field-label:ring-0 group-has-[:focus-visible]/field-label:not-data-checked:border-input after:absolute after:-inset-x-3 after:-inset-y-2 hover:border-ring/60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 active:scale-92 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground group-has-[:focus-visible]/field-label:data-checked:border-primary\",\n        className\n      )}\n      {...props}\n    >\n      <CheckboxPrimitive.Indicator\n        data-slot=\"checkbox-indicator\"\n        keepMounted\n        className=\"group/checkbox-indicator grid place-content-center text-current\"\n      >\n        <svg\n          viewBox=\"0 0 24 24\"\n          fill=\"none\"\n          stroke=\"currentColor\"\n          strokeWidth={3}\n          strokeLinecap=\"round\"\n          strokeLinejoin=\"round\"\n          aria-hidden\n          className=\"size-3.5\"\n        >\n          <path\n            d=\"M5 13l4 4L19 7\"\n            pathLength={1}\n            className=\"transition-[stroke-dashoffset] duration-normal ease-standard [stroke-dasharray:1] [stroke-dashoffset:1] group-data-checked/checkbox-indicator:[stroke-dashoffset:0] group-data-indeterminate/checkbox-indicator:hidden\"\n          />\n          <path\n            d=\"M6 12h12\"\n            className=\"hidden group-data-indeterminate/checkbox-indicator:block\"\n          />\n        </svg>\n      </CheckboxPrimitive.Indicator>\n    </CheckboxPrimitive.Root>\n  );\n}\n\nexport { Checkbox };\n",
+      "type": "registry:ui",
+      "target": "components/ui/checkbox.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

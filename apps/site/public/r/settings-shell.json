@@ -8,7 +8,7 @@
     "next-intl"
   ],
   "registryDependencies": [
-    "tabs",
+    "@intelligo/tabs",
     "@intelligo/page-header"
   ],
   "files": [
