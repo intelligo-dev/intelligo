@@ -32,6 +32,7 @@ import {
   streamText,
 } from "ai";
 import type {
+  ActiveTools,
   InferUIMessageChunk,
   StopCondition,
   ToolSet,
@@ -848,12 +849,13 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
             ? {
                 tools,
                 stopWhen,
+                // `activeTools`, not `experimental_activeTools`: the
+                // SDK dropped the prefix in 7.0, and the old key lands
+                // in `streamText`'s rest parameter — accepted by the
+                // compiler inside a conditional spread, and silently
+                // ignored at runtime, so the agent ran with every tool.
                 ...(agent.activeTools
-                  ? {
-                      experimental_activeTools: agent.activeTools as Array<
-                        keyof typeof tools
-                      >,
-                    }
+                  ? { activeTools: agent.activeTools as ActiveTools<ToolSet> }
                   : {}),
               }
             : {}),

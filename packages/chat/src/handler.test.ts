@@ -12,6 +12,8 @@ import type { UIMessage } from "ai";
 
 import type { Executions } from "@intelligo-dev/executions";
 
+import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
+
 import { createChatHandler } from "./handler";
 import type { ChatServerConfig } from "./config";
 import { createStubLanguageModel } from "./testing";
@@ -184,6 +186,46 @@ function stub(reply = "hello there") {
     modelId: MODEL_ID,
     reply: () => reply,
     chunkDelayInMs: 0,
+  });
+}
+
+/**
+ * A model that keeps the provider-level call options it was given.
+ *
+ * `createStubLanguageModel` destructures `prompt` and nothing else, so
+ * it cannot witness what the transport actually sent — which tools
+ * survived `activeTools`, which sampling settings arrived. These are
+ * the assertions that tell a seam that works from one that only
+ * type-checks.
+ */
+function recordingModel() {
+  return new MockLanguageModelV3({
+    provider: "recording",
+    modelId: MODEL_ID,
+    doStream: async () => ({
+      stream: simulateReadableStream({
+        chunkDelayInMs: 0,
+        chunks: [
+          { type: "stream-start", warnings: [] },
+          { type: "text-start", id: "1" },
+          { type: "text-delta", id: "1", delta: "ok" },
+          { type: "text-end", id: "1" },
+          {
+            type: "finish",
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 1,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 1, text: 1, reasoning: undefined },
+            },
+          },
+        ] as never[],
+      }),
+    }),
   });
 }
 
@@ -668,6 +710,37 @@ describe("POST streaming", () => {
       fake.complete.mock.calls[0]![0] as { usage: { outputTokens: number } }
     ).usage;
     expect(usage.outputTokens).toBe(2);
+  });
+
+  it("limits the model to the tools activeTools names", async () => {
+    const { jsonSchema, tool } = await import("ai");
+    const model = recordingModel();
+    const anyTool = (description: string) =>
+      tool({
+        description,
+        inputSchema: jsonSchema<{ n: number }>({
+          type: "object",
+          properties: { n: { type: "number" } },
+          required: ["n"],
+        }),
+        execute: async () => ({ ok: true }),
+      });
+
+    const { POST } = createChatHandler(
+      baseConfig(fakeExecutions().executions, {
+        resolveAgent: async () => ({
+          id: "assistant",
+          systemPrompt: "Use tools.",
+          tools: { ping: anyTool("ping"), pong: anyTool("pong") },
+          activeTools: ["ping"],
+        }),
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    await (await POST(turn("go"))).text();
+
+    expect(model.doStreamCalls).toHaveLength(1);
+    expect(model.doStreamCalls[0]!.tools?.map((t) => t.name)).toEqual(["ping"]);
   });
 
   it("does not persist when persist is false", async () => {

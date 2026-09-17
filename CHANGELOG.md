@@ -346,6 +346,14 @@ IF EXISTS` would otherwise delete amounts nothing had copied.
 
 ### Fixed
 
+- **`ResolvedAgent.activeTools` had done nothing since the AI SDK 7
+  upgrade.** The SDK dropped the `experimental_` prefix in 7.0 and the
+  transport kept passing `experimental_activeTools` — a key the
+  compiler accepts inside a conditional spread and `streamText` drops
+  into its rest parameter, so it failed silently rather than loudly. An
+  agent that named a subset of its tools ran with all of them. If you
+  set `activeTools`, it now takes effect; the transport's tests assert
+  the model is offered only the named tools.
 - The usage page rendered "Usage unavailable" for every workspace.
   Drizzle inlines a `sql` fragment once per clause, so binding the time
   zone turned one grouped expression into three different placeholders
