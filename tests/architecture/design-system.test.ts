@@ -50,6 +50,11 @@ const RULES: { id: string; why: string; pattern: RegExp }[] = [
       /(?<![\w-])(?:min-h|max-h|h|min-w|max-w|w|size|text|rounded|shadow|gap|p[xytrbl]?|m[xytrbl]?|top|left|right|bottom|inset|translate-[xy]|leading|tracking|z|grid-cols|basis)-\[[^\]]+\]/g,
   },
   {
+    id: "radius-scale",
+    why: "corners come from the scale: lg for controls and popups, xl for cards and dialogs, full for chips and dots",
+    pattern: /(?<![\w-])rounded(?:-[setblrxy]{1,2})?-(?:2xl|3xl|4xl)(?![\w-])/g,
+  },
+  {
     id: "radix",
     why: "Base UI composes with render; Radix APIs and variables do not ship",
     pattern:

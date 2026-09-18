@@ -15,7 +15,7 @@ export default function DashboardLoading() {
           <Skeleton className="h-4 w-96 max-w-full" />
         </div>
 
-        <Skeleton className="mt-8 h-28 w-full rounded-2xl" />
+        <Skeleton className="mt-8 h-28 w-full rounded-xl" />
 
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           {Array.from({ length: 3 }).map((_, index) => (

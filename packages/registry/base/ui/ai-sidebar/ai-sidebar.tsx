@@ -632,8 +632,8 @@ function AISidebar({
               ? "border-r border-sidebar-border"
               : "border-l border-sidebar-border"),
           variant === "floating" &&
-            "m-2 rounded-2xl border border-sidebar-border shadow-sm",
-          variant === "inset" && "m-2 rounded-2xl",
+            "m-2 rounded-xl border border-sidebar-border shadow-sm",
+          variant === "inset" && "m-2 rounded-xl",
           panelClassName
         )}
       >
@@ -776,7 +776,7 @@ function AISidebarInset({ className, ...props }: React.ComponentProps<"main">) {
       data-slot="sidebar-inset"
       className={cn(
         "relative flex min-h-svh min-w-0 flex-1 flex-col bg-background",
-        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-2xl md:peer-data-[variant=inset]:shadow-sm",
+        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm",
         className
       )}
     />
@@ -981,7 +981,7 @@ function AISidebarMenuItem({
                 <motion.div
                   layoutId={menu.pillId}
                   transition={reduce ? { duration: 0 } : SPRING_LAYOUT}
-                  className="size-full rounded-xl bg-sidebar-accent/70"
+                  className="size-full rounded-md bg-sidebar-accent/70"
                 />
               ) : null}
             </motion.div>
@@ -1073,7 +1073,7 @@ function AISidebarItem({
           layoutId={context.layoutId}
           transition={context.reduce ? { duration: 0 } : SPRING_LAYOUT}
           data-slot="sidebar-item-active"
-          className="absolute inset-0 rounded-xl bg-sidebar-accent"
+          className="absolute inset-0 rounded-md bg-sidebar-accent"
         />
       ) : null}
       {icon ? (
@@ -1134,7 +1134,7 @@ function AISidebarItem({
   );
 
   const interactiveClassName = cn(
-    "relative flex min-h-9 w-full min-w-0 items-center gap-2.5 overflow-hidden rounded-xl px-3 text-left text-sm font-medium outline-none",
+    "relative flex min-h-9 w-full min-w-0 items-center gap-2.5 overflow-hidden rounded-md px-3 text-left text-sm font-medium outline-none",
     "text-muted-foreground transition-colors hover:text-sidebar-foreground",
     "focus-visible:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring",
     isActive && "text-sidebar-accent-foreground",
@@ -1920,7 +1920,7 @@ function ResourceRow({
       onDragOver={(event) => onDragOver(event, row)}
       onDrop={onDrop}
       className={cn(
-        "group/resource relative flex min-h-9 min-w-0 cursor-pointer items-center gap-2.5 rounded-xl pr-3 text-sm outline-none",
+        "group/resource relative flex min-h-9 min-w-0 cursor-pointer items-center gap-2.5 rounded-md pr-3 text-sm outline-none",
         "text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         "focus-visible:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-inset",
         "data-[menu-open=true]:bg-sidebar-accent data-[menu-open=true]:text-sidebar-accent-foreground",
@@ -2002,7 +2002,7 @@ function ResourceRow({
             sideOffset={8}
             finalFocus={false}
             data-slot="sidebar-tree-menu"
-            className="w-40 gap-0 rounded-xl p-1.5"
+            className="w-40 gap-0 rounded-lg p-1.5"
           >
             {menu}
           </PopoverContent>

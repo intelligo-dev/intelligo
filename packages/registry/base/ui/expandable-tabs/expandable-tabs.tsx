@@ -116,7 +116,7 @@ export function ExpandableTabs({
       <TabsPrimitive.List
         aria-label={ariaLabel}
         className={cn(
-          "inline-flex items-center gap-1 rounded-full border border-border bg-card p-1",
+          "inline-flex items-center gap-1 rounded-lg border border-border bg-card p-1",
           classNames?.list
         )}
       >
@@ -139,7 +139,7 @@ export function ExpandableTabs({
                 />
               }
               className={cn(
-                "relative isolate inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-full px-2.5 text-sm font-medium whitespace-nowrap outline-none",
+                "relative isolate inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-md px-2.5 text-sm font-medium whitespace-nowrap outline-none",
                 "text-muted-foreground transition-colors duration-150 hover:text-foreground data-active:text-foreground",
                 "focus-visible:ring-3 focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-50",
                 "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -152,7 +152,7 @@ export function ExpandableTabs({
                   layoutId={reduced ? undefined : pillId}
                   transition={reduced ? { duration: 0 } : SPRING_LAYOUT}
                   className={cn(
-                    "absolute inset-0 -z-10 rounded-full bg-accent",
+                    "absolute inset-0 -z-10 rounded-md bg-accent",
                     classNames?.pill
                   )}
                 />

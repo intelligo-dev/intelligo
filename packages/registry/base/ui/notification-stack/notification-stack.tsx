@@ -185,7 +185,7 @@ function NotificationStack({
       <div
         data-slot="notification-stack"
         className={cn(
-          "flex w-full items-center justify-center gap-2 rounded-xl bg-muted px-4 py-8 text-sm font-medium text-muted-foreground",
+          "flex w-full items-center justify-center gap-2 rounded-lg bg-muted px-4 py-8 text-sm font-medium text-muted-foreground",
           className
         )}
         {...props}

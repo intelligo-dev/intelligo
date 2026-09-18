@@ -288,7 +288,7 @@ function PromptInput({
       >
         <div
           data-slot="prompt-input-surface"
-          className="flex w-full flex-col rounded-2xl border border-border/80 bg-background p-2 transition-colors focus-within:border-foreground/25 has-[textarea:disabled]:opacity-60"
+          className="flex w-full flex-col rounded-xl border border-border/80 bg-background p-2 transition-colors focus-within:border-foreground/25 has-[textarea:disabled]:opacity-60"
         >
           {children}
         </div>
@@ -433,7 +433,7 @@ function PromptInputButton({
       type="button"
       variant={variant}
       className={cn(
-        "rounded-full text-muted-foreground hover:text-foreground",
+        "text-muted-foreground hover:text-foreground",
         iconOnly && "size-8",
         className
       )}
@@ -535,7 +535,7 @@ function PromptInputActionMenuContent({
   return (
     <DropdownMenuContent
       align={align}
-      className={cn("w-56 rounded-xl p-1.5", className)}
+      className={cn("w-56 rounded-lg p-1.5", className)}
       {...props}
     />
   );
@@ -592,7 +592,7 @@ function PromptInputSubmit({
       // While a reply is pending the button stops it; it never resubmits.
       type={pending ? "button" : "submit"}
       variant={variant}
-      className={cn("ml-auto size-8 rounded-full", className)}
+      className={cn("ml-auto size-8", className)}
       {...props}
     >
       {children ?? (
@@ -625,7 +625,7 @@ function PromptInputSelectTrigger({
   return (
     <SelectTrigger
       className={cn(
-        "h-8 max-w-52 rounded-xl border-none bg-transparent px-2 text-xs font-medium text-muted-foreground shadow-none transition-colors hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
+        "h-8 max-w-52 rounded-lg border-none bg-transparent px-2 text-xs font-medium text-muted-foreground shadow-none transition-colors hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
         className
       )}
       {...props}

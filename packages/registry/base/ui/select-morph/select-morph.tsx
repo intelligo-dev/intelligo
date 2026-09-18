@@ -90,7 +90,7 @@ function MorphSelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="morph-select-trigger"
       className={cn(
-        "flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-border bg-popover px-3.5 text-sm text-foreground outline-none select-none transition-[border-radius,border-color,box-shadow] duration-normal ease-standard hover:border-ring/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive data-popup-open:rounded-b-none data-popup-open:hover:border-border motion-reduce:transition-none",
+        "flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-border bg-popover px-3.5 text-sm text-foreground outline-none select-none transition-[border-radius,border-color,box-shadow] duration-normal ease-standard hover:border-ring/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive data-popup-open:rounded-b-none data-popup-open:hover:border-border motion-reduce:transition-none",
         className
       )}
       {...props}

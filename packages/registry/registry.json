@@ -66,7 +66,7 @@
           "chart-3": "oklch(0.439 0 0)",
           "chart-4": "oklch(0.371 0 0)",
           "chart-5": "oklch(0.269 0 0)",
-          "radius": "0.75rem",
+          "radius": "0.5rem",
           "sidebar": "oklch(0.975 0 0)",
           "sidebar-foreground": "oklch(0.15 0 0)",
           "sidebar-primary": "oklch(0.15 0 0)",
@@ -190,7 +190,7 @@
       "name": "button",
       "type": "registry:ui",
       "title": "Button",
-      "description": "The action primitive: a pill that presses in and settles back — six variants, eight sizes, composes through render.",
+      "description": "The action primitive: presses in and settles back — six variants, eight sizes, composes through render.",
       "dependencies": ["@base-ui/react", "class-variance-authority"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -384,7 +384,7 @@
       "name": "tabs",
       "type": "registry:ui",
       "title": "Tabs",
-      "description": "Switches between views with one indicator that glides from tab to tab — pill and line variants.",
+      "description": "Switches between views with one indicator that glides from tab to tab — raised and line variants.",
       "dependencies": ["@base-ui/react", "class-variance-authority", "motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [

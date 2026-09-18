@@ -368,7 +368,7 @@ export function FileUpload({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: reduced ? 0 : 0.16, ease: EASE_OUT }}
-                className="pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-2xl border-2 border-dashed border-ring bg-background/85 backdrop-blur-sm"
+                className="pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-xl border-2 border-dashed border-ring bg-background/85 backdrop-blur-sm"
               >
                 <motion.span
                   initial={reduced ? false : { y: 6, scale: 0.96 }}
@@ -411,7 +411,7 @@ export function FileUpload({
           whileTap={reduced || inactive ? undefined : { scale: 0.99 }}
           transition={SPRING_PRESS}
           className={cn(
-            "group relative flex w-full items-center gap-4 rounded-3xl border border-dashed border-border bg-background p-5 text-left outline-none",
+            "group relative flex w-full items-center gap-4 rounded-xl border border-dashed border-border bg-background p-5 text-left outline-none",
             "transition-colors duration-200 hover:border-input hover:bg-muted/40",
             "focus-visible:ring-3 focus-visible:ring-ring/40 data-dragging:border-ring data-dragging:bg-muted/60",
             "disabled:pointer-events-none disabled:opacity-50"
@@ -425,7 +425,7 @@ export function FileUpload({
                 : { y: dragging ? -3 : 0, scale: dragging ? 1.06 : 1 }
             }
             transition={{ duration: 0.2, ease: EASE_OUT }}
-            className="grid size-12 shrink-0 place-items-center rounded-2xl bg-muted text-foreground transition-colors duration-200 group-data-dragging:bg-primary group-data-dragging:text-primary-foreground"
+            className="grid size-12 shrink-0 place-items-center rounded-lg bg-muted text-foreground transition-colors duration-200 group-data-dragging:bg-primary group-data-dragging:text-primary-foreground"
           >
             <UploadIcon className="size-5" />
           </motion.span>
@@ -546,7 +546,7 @@ function FileUploadRow({
         reduced ? { duration: 0 } : { duration: 0.22, ease: EASE_OUT }
       }
       className={cn(
-        "rounded-2xl border bg-card p-3",
+        "rounded-xl border bg-card p-3",
         item.status === "error" ? "border-destructive/30" : "border-border"
       )}
     >
@@ -555,12 +555,12 @@ function FileUploadRow({
           <img
             src={item.previewUrl}
             alt=""
-            className="size-11 shrink-0 rounded-xl bg-muted object-cover"
+            className="size-11 shrink-0 rounded-md bg-muted object-cover"
           />
         ) : (
           <span
             aria-hidden
-            className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground"
+            className="grid size-11 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground"
           >
             <Icon className="size-5" />
           </span>

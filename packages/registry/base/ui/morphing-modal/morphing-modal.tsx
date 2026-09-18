@@ -78,7 +78,7 @@ function MorphingModal({
 
 export interface MorphingModalTriggerProps
   extends DialogPrimitive.Trigger.Props {
-  /** The trigger surface's corner radius, in px. Default 16. */
+  /** The trigger surface's corner radius, in px. Default 12. */
   radius?: number;
 }
 
@@ -87,7 +87,7 @@ export interface MorphingModalTriggerProps
  * the panel while open and its content fades, leaving the slot it holds.
  */
 function MorphingModalTrigger({
-  radius = 16,
+  radius = 12,
   className,
   children,
   ...props
@@ -134,7 +134,7 @@ export interface MorphingModalContentProps
   viewKey?: React.Key;
   /** "center" centres the panel; "bottom" anchors it to the viewport bottom. */
   placement?: "center" | "bottom";
-  /** Panel corner radius, in px. Default 24. */
+  /** Panel corner radius, in px. Default 12. */
   radius?: number;
   /** Render the close control in the panel's top-right corner. Default true. */
   showCloseButton?: boolean;
@@ -147,7 +147,7 @@ function MorphingModalContent({
   className,
   viewKey = "default",
   placement = "center",
-  radius = 24,
+  radius = 12,
   showCloseButton = true,
   labels,
   ...props

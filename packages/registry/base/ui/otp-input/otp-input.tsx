@@ -154,7 +154,7 @@ export function OTPInput({
                   data-filled={char !== "" || undefined}
                   data-focused={focused || undefined}
                   className={cn(
-                    "relative grid h-12 w-10 place-items-center overflow-hidden rounded-xl border bg-background text-xl font-semibold text-foreground tabular-nums transition-[border-color,box-shadow] duration-200",
+                    "relative grid h-12 w-10 place-items-center overflow-hidden rounded-lg border bg-background text-xl font-semibold text-foreground tabular-nums transition-[border-color,box-shadow] duration-200",
                     success
                       ? "border-success/60"
                       : error

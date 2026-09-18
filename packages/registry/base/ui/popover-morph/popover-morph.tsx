@@ -148,7 +148,7 @@ function MorphPopover({
 
 export interface MorphPopoverTriggerProps
   extends React.ComponentProps<typeof DialogPrimitive.Trigger> {
-  /** The trigger surface's corner radius, in px. Default 10. */
+  /** The trigger surface's corner radius, in px. Default 8. */
   radius?: number;
 }
 
@@ -158,7 +158,7 @@ export interface MorphPopoverTriggerProps
  * transparent one, since the surface draws the fill.
  */
 function MorphPopoverTrigger({
-  radius = 10,
+  radius = 8,
   className,
   children,
   ref,
@@ -219,7 +219,7 @@ export interface MorphPopoverContentProps
   align?: Align;
   /** Gap between trigger and panel, in px. Default 8. */
   sideOffset?: number;
-  /** Panel corner radius, in px. Default 16. */
+  /** Panel corner radius, in px. Default 8. */
   radius?: number;
 }
 
@@ -228,7 +228,7 @@ function MorphPopoverContent({
   side = "bottom",
   align = "end",
   sideOffset = 8,
-  radius = 16,
+  radius = 8,
   className,
   style,
   children,

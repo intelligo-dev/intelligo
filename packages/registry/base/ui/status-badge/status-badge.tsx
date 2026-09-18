@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * --success/--warning/--info/--destructive re-themes every badge.
  */
 const statusBadgeVariants = cva(
-  "inline-flex h-5 w-fit shrink-0 items-center gap-1.5 overflow-hidden rounded-4xl px-2 text-xs font-medium whitespace-nowrap [&>svg]:pointer-events-none [&>svg]:size-3 [&>svg]:shrink-0",
+  "inline-flex h-5 w-fit shrink-0 items-center gap-1.5 overflow-hidden rounded-full px-2 text-xs font-medium whitespace-nowrap [&>svg]:pointer-events-none [&>svg]:size-3 [&>svg]:shrink-0",
   {
     variants: {
       status: {
