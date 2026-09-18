@@ -1,0 +1,116 @@
+{
+  "items": {
+    "route-error": {
+      "title": "Route Error States",
+      "description": "The app's error surfaces: a shared RouteError component every error.tsx renders, message-based error classification, an (app) group boundary, a translated 404, and a dependency-free global-error. Error reporting goes through the lib/error-reporting.ts seam (a no-op until you bind a reporter), so no SDK enters the registry. Items that ship an error.tsx depend on this one - install it first."
+    },
+    "team-settings": {
+      "title": "Team Settings",
+      "description": "Workspace team management: invite members, change roles, remove members, and manage pending invitations, backed by the framework's team service."
+    },
+    "usage": {
+      "title": "Usage",
+      "description": "Workspace usage dashboard: current-period summary tiles, a period selector, and a table of recent AI execution records."
+    },
+    "invitation-accept": {
+      "title": "Invitation Accept",
+      "description": "Accept or decline a workspace invitation via the team service. Requires the team-settings item (provides lib/team.ts and the role badge); install it first."
+    },
+    "app-shell": {
+      "title": "App Shell",
+      "description": "Authenticated application shell: session and onboarding gate, workspace bootstrap, a sidebar that morphs into an icon rail with a gliding active pill, workspace switcher, configurable nav and user menu, and a page region that lifts each section in."
+    },
+    "settings-shell": {
+      "title": "Settings Shell",
+      "description": "The shared frame around every /settings page: layout with heading and width constraint, a configurable tab bar (lib/settings-nav.ts), and a /settings index that redirects to the first tab. Install alongside the settings items - without it they render unframed and plain /settings links 404."
+    },
+    "workspace-settings": {
+      "title": "Workspace Settings",
+      "description": "Workspace name/URL editing and owner-only deletion, backed by the framework's workspace service."
+    },
+    "auth-login": {
+      "title": "Auth: Login",
+      "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first."
+    },
+    "auth-signup": {
+      "title": "Auth: Signup",
+      "description": "Email/password and OAuth account creation. Requires the auth-login item (provides the shared AuthCard shell, SocialLoginButtons, and lib/auth-validation.ts schemas); install it first. Redirects to auth-email-verification's /verify-email route when the server requires email verification."
+    },
+    "auth-password-reset": {
+      "title": "Auth: Password Reset",
+      "description": "Forgot-password and reset-password pages, backed by the Better-Auth client SDK's requestPasswordReset/resetPassword actions. Requires the auth-login item (provides the shared AuthCard shell and lib/auth-validation.ts schemas); install it first."
+    },
+    "auth-email-verification": {
+      "title": "Auth: Email Verification",
+      "description": "Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action. Reads the ?error=/?email= search params Better-Auth's own /verify-email link handler redirects back with. Requires the auth-login item (provides the shared AuthCard shell); install it first."
+    },
+    "language-switcher": {
+      "title": "Language Switcher",
+      "description": "Locale dropdown over the locales i18n/routing.ts declares, labeled with each language's own name. Renders nothing in a single-locale deployment, so it is safe to mount unconditionally (e.g. in shellConfig.headerRight). Adding a locale to routing.ts plus a messages directory is the whole job."
+    },
+    "trial-banner": {
+      "title": "Trial Banner",
+      "description": "Dismissable trial-status strip for the app shell's bannerTop seam: days and credits remaining with an upgrade CTA, urgency-ramped visuals, dismiss-for-today, and a consumer config (lib/trial-banner-config.ts) for the CTA target and route suppression (hidden on /chat by default). Bind TrialBannerContainer as shellConfig.bannerTop."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Notification bell with an unread badge and dropdown, plus a full notifications page with mark-as-read and load-more, backed by the framework's notification records."
+    },
+    "pricing": {
+      "title": "Pricing",
+      "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on — install this item first."
+    },
+    "checkout": {
+      "title": "Checkout",
+      "description": "Checkout-success page that verifies the Stripe session directly through the framework's checkout service, covering the webhook-race window between the browser redirect and Stripe's webhook delivery."
+    },
+    "billing-settings": {
+      "title": "Billing Settings",
+      "description": "Workspace billing management: current plan, credit balance, credit bundle purchase, and the Stripe billing portal, shaped server-side by role (member/admin/owner). Requires the pricing item (provides lib/billing.ts and actions/billing.ts); install it first."
+    },
+    "feature-gating": {
+      "title": "Feature Gating",
+      "description": "The vocabulary for selling a plan: a server-side FeatureGate that renders gated content only to entitled workspaces, three densities of upgrade prompt (full, compact, inline), a quota warning that escalates as a limit approaches, and a preview paywall that blurs content instead of hiding it. Which features exist and which plan unlocks them is consumer config (lib/feature-catalog.ts). Install pricing or billing-settings for somewhere to send the user."
+    },
+    "payment-poll": {
+      "title": "QR Payment (poll)",
+      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY."
+    },
+    "profile-settings": {
+      "title": "Profile Settings",
+      "description": "User profile name editing, read-only email, and account deletion with typed confirmation, backed by the framework's profile service."
+    },
+    "onboarding": {
+      "title": "Onboarding",
+      "description": "A generic multi-step onboarding wizard driven by a consumer-owned steps config: text and single-select-card fields, a completion screen, skip, and back/next - backed by the framework's onboarding service (durable step progress, no vertical-specific UI)."
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "An AI-first workspace home: a hero and a real composer centred as one unit, starter chips that fill it, and a resume affordance for unfinished work — and nothing else, because history belongs to the sidebar and spend to /usage. Configurable through lib/dashboard-config.tsx (copy, starters, chat base path) and lib/dashboard-data.ts (what \"resume\" means). Pairs with the chat item for its /chat routes; install it first."
+    },
+    "artifacts": {
+      "title": "Artifacts",
+      "description": "Browse and manage AI-generated document artifacts: filterable list, full-content preview, copy-to-clipboard, and version delete, backed by the framework's document persistence service."
+    },
+    "privacy-settings": {
+      "title": "Privacy Settings",
+      "description": "GDPR-style data export, a read-only memory-audit trail, and per-category fact listing with delete, backed by the framework's identity service."
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "A ChatGPT-level AI chat surface: a streaming thread with edit, regenerate and response versions, attachments, a model picker, reasoning, sources, tool cards and human-in-the-loop approvals, agent activity for Mastra and eve turns, a canvas beside the chat for documents a tool streams, a sidebar with pinned and dated groups, share links and feedback — on a two-line Route Handler that binds @intelligo-dev/chat's transport (auth, rate limit, feature gate, persistence, the execution boundary) to consumer-owned config (lib/chat-server-config.ts). Every tool renders through one entry in lib/chat-renderers.tsx, inline and in the canvas. Ships with a deterministic stub model so a clean install streams with no API keys. The config imports lib/intelligo.ts (the composition root) and lib/plans.ts, which are provided by the `intelligo create` scaffold, not by any registry item - in a hand-rolled app, create both before installing (see the CLI's app-scaffold templates)."
+    },
+    "chat-panel": {
+      "title": "Chat Panel",
+      "description": "The chat as a side panel on any page: a sheet that opens the same thread the chat page runs, with the page's context on every turn. Requires the chat item."
+    },
+    "chat-widget": {
+      "title": "Chat Widget",
+      "description": "The floating assistant: a launcher in a corner of every page and a compact chat over it, configured in lib/chat-widget-config.tsx. Requires the chat item."
+    },
+    "chat-share": {
+      "title": "Chat Share",
+      "description": "A conversation its owner published, readable by anyone with the link at /share/[id]: the same transcript, read-only, minus reasoning, tool details and attachments. Requires the chat item."
+    }
+  }
+}

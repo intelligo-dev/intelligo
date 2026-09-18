@@ -11,7 +11,8 @@ A scaffolded app has `@intelligo-dev/cli` as a dev dependency; run it with `pnpm
 
 ```text
 intelligo <command>
-intelligo create <dir>      Scaffold a new application
+intelligo create [dir]      Scaffold an app, then install the registry pages you pick
+intelligo                   (--items a,b | --all, --yes, --no-install)
 intelligo doctor            Report configuration and migration-chain problems
 intelligo migrate           Apply the framework's migration chain to DATABASE_URL
 intelligo migrate --check   Compare the framework's migrations to a database
@@ -28,6 +29,13 @@ consumer's from the moment it lands, and the enduring relationship is the versio
 scaffold. So it generates through the same manifest machinery as
 `add`, which means the very first upgrade already knows which files
 you have since edited.
+
+In a terminal it asks for the project name when none is given, then
+which registry pages to install (`--items a,b` or `--all` answer that
+without asking). The pages are installed by the shadcn CLI the scaffold
+declares, after the dependencies — and only once you approve the exact
+commands, or pass `--yes`. `--no-install` stops after the scaffold and
+prints them instead.
 
 [source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/create.ts)
 

@@ -38,6 +38,7 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
+    "@clack/prompts": "^1.8.1",
     "pg": "8.18.0"
   },
   "devDependencies": {

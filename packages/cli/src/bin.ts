@@ -16,7 +16,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { addFeature, formatAddResult, readCatalogue } from "./commands/add.js";
-import { createApp, formatCreateResult } from "./commands/create.js";
 import { exitCodeFor, formatResults, runChecks } from "./commands/doctor.js";
 import {
   formatMigrateCheck,
@@ -67,7 +66,8 @@ function usage(): string {
   return [
     "intelligo <command>",
     "",
-    "  create <dir>      Scaffold a new application",
+    "  create [dir]      Scaffold an app, then install the registry pages you pick",
+    "                    (--items a,b | --all, --yes, --no-install)",
     "  doctor            Report configuration and migration-chain problems",
     "  migrate           Apply the framework's migration chain to DATABASE_URL",
     "  migrate --check   Compare the framework's migrations to a database",
@@ -162,23 +162,15 @@ async function main(): Promise<number> {
     case "migrate":
       return runMigrate(rest.includes("--check") ? "check" : "apply");
     case "create": {
-      const target = rest.find((a) => !a.startsWith("--"));
-      if (!target) {
-        console.error("Usage: intelligo create <directory>");
-        return 1;
-      }
-      const result = createApp({
-        target,
+      // Imported lazily so the prompts library loads only for the one
+      // command that converses.
+      const { parseCreateFlags, runCreate } =
+        await import("./commands/create-flow.js");
+      return runCreate(parseCreateFlags(rest), {
         templatesDir: TEMPLATES_DIR,
         frameworkVersion: FRAMEWORK_VERSION,
-        // `--link-workspace` is for scaffolding inside the Intelligo
-        // monorepo, where the packages are workspace members. The
-        // default is a version range, because that is what works
-        // everywhere else.
-        linkWorkspace: rest.includes("--link-workspace"),
+        interactive: Boolean(process.stdin.isTTY && process.stdout.isTTY),
       });
-      console.log(formatCreateResult(target, result));
-      return 0;
     }
     case "add": {
       const feature = rest.find((a) => !a.startsWith("--"));

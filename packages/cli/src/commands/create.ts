@@ -6,12 +6,24 @@
  * scaffold. So it generates through the same manifest machinery as
  * `add`, which means the very first upgrade already knows which files
  * you have since edited.
+ *
+ * In a terminal it asks for the project name when none is given, then
+ * which registry pages to install (`--items a,b` or `--all` answer that
+ * without asking). The pages are installed by the shadcn CLI the scaffold
+ * declares, after the dependencies — and only once you approve the exact
+ * commands, or pass `--yes`. `--no-install` stops after the scaffold and
+ * prints them instead.
  */
 
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 import { addFeature, formatAddResult, type AddResult } from "./add.js";
+import {
+  formatCommand,
+  type Command,
+  type PackageManager,
+} from "../registry-items.js";
 
 export type CreateOptions = {
   /** Directory to create the app in; created if absent. */
@@ -43,16 +55,25 @@ export function deriveNames(target: string): {
   return { appName: slug, appSlug: slug };
 }
 
-export function createApp(options: CreateOptions): AddResult {
-  const target = path.resolve(options.target);
+export function isOccupied(target: string): boolean {
+  const dir = path.resolve(target);
+  return existsSync(dir) && readdirSync(dir).length > 0;
+}
 
-  if (existsSync(target) && readdirSync(target).length > 0) {
-    // Scaffolding into an occupied directory is how people lose work.
+/** Scaffolding into an occupied directory is how people lose work. */
+export function assertNotOccupied(target: string): void {
+  if (isOccupied(target)) {
     throw new Error(
-      `${target} is not empty. Create the app in a new directory, or use ` +
+      `${path.resolve(target)} is not empty. Create the app in a new directory, or use ` +
         `\`intelligo add app-scaffold\` inside an existing one.`
     );
   }
+}
+
+export function createApp(options: CreateOptions): AddResult {
+  const target = path.resolve(options.target);
+
+  assertNotOccupied(target);
   mkdirSync(target, { recursive: true });
 
   const { appName, appSlug } = deriveNames(target);
@@ -71,15 +92,40 @@ export function createApp(options: CreateOptions): AddResult {
   });
 }
 
-export function formatCreateResult(target: string, r: AddResult): string {
+export type NextSteps = {
+  packageManager: PackageManager;
+  /** Whether `create` already installed the dependencies. */
+  installed: boolean;
+  /** Install commands the developer declined, or that did not get to run. */
+  pending?: Command[];
+};
+
+export function formatNextSteps(target: string, next: NextSteps): string {
+  const pm = next.packageManager;
+  return [
+    `cd ${path.relative(process.cwd(), path.resolve(target)) || "."}`,
+    "cp .env.example .env.local   # then fill it in",
+    ...(next.pending?.length
+      ? next.pending.map(formatCommand)
+      : next.installed
+        ? []
+        : [`${pm} install`]),
+    `${pm === "npm" ? "npm run" : pm} dev`,
+  ].join("\n");
+}
+
+export function formatCreateResult(
+  target: string,
+  r: AddResult,
+  next: NextSteps = { packageManager: "pnpm", installed: false }
+): string {
   return [
     formatAddResult(r),
     "",
     "Next:",
-    `  cd ${path.relative(process.cwd(), path.resolve(target)) || "."}`,
-    "  cp .env.example .env.local   # then fill it in",
-    "  pnpm install",
-    "  pnpm dev",
+    ...formatNextSteps(target, next)
+      .split("\n")
+      .map((line) => `  ${line}`),
     "",
     "`intelligo doctor` will tell you what is still missing.",
   ].join("\n");

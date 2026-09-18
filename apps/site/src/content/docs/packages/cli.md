@@ -16,7 +16,8 @@ pnpm add @intelligo-dev/cli@beta
 ## Commands
 
 ```bash
-pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app
+pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app, plus the pages you pick
+pnpm dlx @intelligo-dev/cli@beta create my-app --items chat,billing-settings --yes   # no questions
 intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance)
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate [--check]            # apply the framework chain

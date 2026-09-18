@@ -605,6 +605,27 @@ describe("registry", () => {
       ).toBe(readFileSync(path.join(REGISTRY_DIR, "requires.json"), "utf8"));
     });
 
+    it("is what `intelligo create` offers, title and description", () => {
+      // Derived by the same build as the copy above: every page item but
+      // the canary, as the picker shows it.
+      const offered: Record<string, { title?: string; description?: string }> =
+        {};
+      for (const item of registry.items) {
+        if (item.type !== "registry:block" || item.name === "smoke") continue;
+        offered[item.name] = {
+          title: item.title,
+          description: item.description,
+        };
+      }
+      expect(
+        readFileSync(
+          path.join(ROOT, "packages/cli/templates/registry-items.json"),
+          "utf8"
+        ),
+        "packages/cli/templates/registry-items.json is stale — run `pnpm --filter @intelligo-dev/cli build`"
+      ).toBe(JSON.stringify({ items: offered }, null, 2) + "\n");
+    });
+
     describe.each(registry.items)("item: $name", (item) => {
       const entry = requires.items[item.name]!;
 

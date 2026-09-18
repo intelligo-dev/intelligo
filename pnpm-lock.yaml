@@ -735,6 +735,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@clack/prompts':
+        specifier: ^1.8.1
+        version: 1.8.1
       pg:
         specifier: 8.18.0
         version: 8.18.0

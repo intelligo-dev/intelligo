@@ -14,9 +14,9 @@ label: Quickstart
 
 ```bash
 pnpm dlx @intelligo-dev/cli@beta create my-app
-cd my-app
-pnpm install
 ```
+
+`create` asks which pages you want — the shell, sign-in, the dashboard and the chat are ticked to start with — adds the pages they build on, and shows you the commands that install them: `pnpm install` (shadcn is one of the scaffold's dev dependencies), then `shadcn add` for the design-system base and your pages, in the order they need. Nothing runs until you approve. `--items chat,billing-settings` or `--all` answers the question up front, `--yes` approves the commands, and `--no-install` stops after the scaffold.
 
 `create` writes a Next.js 16 application with shadcn (base-nova), Tailwind 4 and next-intl already wired, plus the files that make it an Intelligo app:
 
@@ -54,16 +54,12 @@ pnpm db:migrate
 
 This runs `intelligo migrate` — the framework's migration chain, selected by content hash and applied in one transaction — and then `drizzle-kit migrate` for tables you add yourself. Don't provision with `drizzle-kit push`: a pushed database has the schema but no migration records, and the migrator refuses it rather than half-applying the chain.
 
-## Install the pages
+## Add pages later
 
-Pages arrive through the registry as source you own. Install the shell and the sign-in flow first:
+Pages arrive through the registry as source you own. Anything you did not pick at `create` installs with the shadcn CLI, from the `@intelligo` registry the scaffold's `components.json` already names:
 
 ```bash
-pnpm dlx shadcn@latest add https://intelligo.dev/r/route-error.json
-pnpm dlx shadcn@latest add https://intelligo.dev/r/app-shell.json
-pnpm dlx shadcn@latest add https://intelligo.dev/r/auth-login.json
-pnpm dlx shadcn@latest add https://intelligo.dev/r/auth-signup.json
-pnpm dlx shadcn@latest add https://intelligo.dev/r/chat.json
+pnpm exec shadcn add @intelligo/billing-settings
 ```
 
 Some blocks import files another block ships, so the order matters. [Installing blocks](/docs/registry) has the full order, and [/blocks](/blocks) shows every block live.
