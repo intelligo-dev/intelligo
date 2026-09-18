@@ -65,7 +65,7 @@ const RULES = [
   </nav>
 
   {REGISTRY_GROUPS.map((g) => (
-    <section id={`group-${g.toLowerCase()}`} class="xline scroll-mt-20">
+    <section id={`group-${g.toLowerCase()}`} class="xline">
       <div class="px-6 py-10 md:px-10 md:py-14">
         <div class="section-head">
           <span class="tag">{g.toLowerCase()}</span>
@@ -74,7 +74,7 @@ const RULES = [
         <ul class="mt-6 grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
           {REGISTRY_ITEMS.filter((i) => i.group === g).map((item) => (
             <li>
-              <a href={blockHref(item.name)} class="group flex h-full flex-col gap-2 bg-background p-4 no-underline transition-colors hover:bg-card">
+              <a href={blockHref(item.name)} class="group flex h-full flex-col gap-2 bg-background p-4 no-underline transition-colors hover:bg-accent">
                 <span class="mono text-[0.72rem] text-muted-foreground">{item.name}</span>
                 <span class="text-[1rem] font-semibold text-foreground">{item.title}</span>
                 <span class="text-[0.86rem] leading-snug text-foreground/70">{item.description}</span>

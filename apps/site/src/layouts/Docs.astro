@@ -6,6 +6,10 @@
  * page, so the theme toggle and the design system reach the docs
  * unchanged. Code blocks arrive framed from the markdown pipeline
  * (lib/markdown.mjs); the script below copies them and tracks the TOC.
+ *
+ * The right rail exists from `xl` up. Below it nothing in it is lost: the
+ * contents list opens from the bar under the nav, beside the page list,
+ * and the edit link and the way back up sit under the article.
  */
 import Base from "@/layouts/Base.astro";
 import Footer from "@/components/footer.astro";
@@ -50,11 +54,11 @@ const structuredData = [
 ];
 ---
 <Base title={`${title} — ${SITE.name} docs`} description={description} structuredData={structuredData}>
-  <Nav client:load current={path} />
-  <main class="rails-full">
+  <Nav client:load current={path} wide />
+  <main id="main" class="rails-full">
     <div class="grid grid-cols-1 border-t border-border lg:grid-cols-[248px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)_216px]">
       <aside class="hidden border-r border-border lg:block">
-        <nav aria-label="Docs" class="docs-scroll sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto px-5 pb-10 pt-8" data-docs-sidebar>
+        <nav aria-label="Docs" class="docs-scroll sticky top-14 max-h-[calc(100dvh-3.5rem)] overflow-y-auto px-5 pb-10 pt-8" data-docs-sidebar>
           {sidebar.map((s) => (
             <div class="mb-7 last:mb-0">
               <div class="docs-section-title">{s.title}</div>
@@ -75,19 +79,31 @@ const structuredData = [
       </aside>
 
       <div class="min-w-0">
-        <details class="docs-mobile-menu group sticky top-14 z-20 border-b border-border bg-background/90 backdrop-blur-md lg:hidden">
+        <details class="docs-mobile-menu group sticky top-14 z-sticky border-b border-border bg-background/90 backdrop-blur-md lg:hidden">
           <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-3">
             <span class="flex min-w-0 items-center gap-2 text-[0.85rem]">
               <span class="text-muted-foreground">{section}</span>
               <span class="text-muted-foreground" aria-hidden="true">/</span>
               <span class="truncate font-medium text-foreground">{current?.label ?? title}</span>
             </span>
-            <span class="mono flex shrink-0 items-center gap-1.5 text-[0.72rem] text-muted-foreground">
+            <span class="mono flex shrink-0 items-center gap-1.5 rounded-full border border-input px-2.5 py-1 text-[0.72rem] text-foreground">
               Menu
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="transition-transform duration-normal group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
             </span>
           </summary>
-          <nav aria-label="Docs" class="docs-scroll max-h-[70vh] overflow-y-auto border-t border-border px-6 pb-6 pt-4">
+          <nav aria-label="Docs" class="docs-scroll max-h-[70dvh] overflow-y-auto border-t border-border px-6 pb-6 pt-4" data-docs-menu>
+            {toc.length > 1 && (
+              <div class="mb-5">
+                <div class="docs-section-title">On this page</div>
+                <ul class="docs-rail">
+                  {toc.map((h) => (
+                    <li>
+                      <a href={`#${h.slug}`} data-toc={h.slug} data-menu-close class:list={["docs-link", h.depth === 3 && "pl-6"]}>{h.text}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {sidebar.map((s) => (
               <div class="mb-5 last:mb-0">
                 <div class="docs-section-title">{s.title}</div>
@@ -103,7 +119,7 @@ const structuredData = [
           </nav>
         </details>
 
-        <article class="px-6 pb-12 pt-10 md:px-12 md:pt-14">
+        <article class="px-6 pb-12 pt-10 md:px-10 md:pt-14">
           <header class="mb-10">
             <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-[0.8rem] text-muted-foreground">
               <a href="/docs" class="no-underline hover:text-foreground">Docs</a>
@@ -135,11 +151,18 @@ const structuredData = [
               </a>
             )}
           </nav>
+
+          <div class="mt-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-1 text-[0.85rem] xl:hidden">
+            {source && (
+              <a href={`${SITE.github}/edit/main/${source}`} class="py-2 text-muted-foreground no-underline hover:text-foreground">Edit this page ↗</a>
+            )}
+            <a href="#main" class="py-2 text-muted-foreground no-underline hover:text-foreground" data-docs-top>Back to top ↑</a>
+          </div>
         </article>
       </div>
 
       <aside class="hidden border-l border-border xl:block">
-        <div class="docs-scroll sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto px-5 pb-10 pt-8">
+        <div class="docs-scroll sticky top-14 max-h-[calc(100dvh-3.5rem)] overflow-y-auto px-5 pb-10 pt-8">
           {toc.length > 1 && (
             <nav aria-label="On this page" data-docs-toc>
               <div class="docs-section-title">On this page</div>
@@ -156,13 +179,13 @@ const structuredData = [
             {source && (
               <a href={`${SITE.github}/edit/main/${source}`} class="block text-muted-foreground no-underline hover:text-foreground">Edit this page ↗</a>
             )}
-            <a href="#top" class="block text-muted-foreground no-underline hover:text-foreground" data-docs-top>Back to top ↑</a>
+            <a href="#main" class="block text-muted-foreground no-underline hover:text-foreground" data-docs-top>Back to top ↑</a>
           </div>
         </div>
       </aside>
     </div>
-    <Footer />
   </main>
+  <div class="rails-full"><Footer /></div>
 </Base>
 
 <script>
@@ -180,7 +203,13 @@ const structuredData = [
         button.setAttribute("aria-label", "Copy code");
       }, 1600);
     } catch {
-      button.setAttribute("aria-label", "Copy failed");
+      // seen, not only announced: a failed copy must not look like a copy
+      button.dataset.failed = "";
+      button.setAttribute("aria-label", "Copy failed — select the code instead");
+      setTimeout(() => {
+        delete button.dataset.failed;
+        button.setAttribute("aria-label", "Copy code");
+      }, 2400);
     }
   });
 
@@ -190,6 +219,18 @@ const structuredData = [
   if (sidebar && active) {
     const top = active.offsetTop - sidebar.clientHeight / 3;
     if (top > 0) sidebar.scrollTop = top;
+  }
+
+  // A wide table scrolls in a wrapper a keyboard can reach; the table
+  // itself stays a table (see .table-scroll in global.css).
+  for (const table of document.querySelectorAll<HTMLTableElement>(".docs-prose table")) {
+    const wrap = document.createElement("div");
+    wrap.className = "table-scroll";
+    wrap.setAttribute("role", "region");
+    wrap.setAttribute("aria-label", "Table");
+    wrap.tabIndex = 0;
+    table.before(wrap);
+    wrap.append(table);
   }
 
   // A hover anchor on each h2/h3, so a section can be linked to.
@@ -202,11 +243,27 @@ const structuredData = [
     h.append(a);
   }
 
-  // Back to top: the page has no #top on every layout.
-  document.querySelector("[data-docs-top]")?.addEventListener("click", (event) => {
-    event.preventDefault();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  // The same, in the menu under the nav, each time it opens; and a link
+  // to a section on this page closes it, or it would cover the section.
+  const menu = document.querySelector<HTMLDetailsElement>(".docs-mobile-menu");
+  menu?.addEventListener("toggle", () => {
+    const list = menu.querySelector<HTMLElement>("[data-docs-menu]");
+    const here = list?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (menu.open && list && here) list.scrollTop = Math.max(0, here.offsetTop - list.clientHeight / 3);
   });
+  for (const a of document.querySelectorAll("[data-menu-close]")) {
+    a.addEventListener("click", () => menu?.removeAttribute("open"));
+  }
+
+  // Back to top: to the very top, not to where <main> starts under the
+  // nav — and without the glide for a reader who asked for less motion.
+  for (const top of document.querySelectorAll("[data-docs-top]")) {
+    top.addEventListener("click", (event) => {
+      event.preventDefault();
+      const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
+    });
+  }
 
   // The TOC marks the section being read: the last heading above the upper third.
   const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-toc]")];
@@ -226,7 +283,7 @@ const structuredData = [
       const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
       if (atEnd) current = headings[headings.length - 1]!;
       for (const a of links) {
-        if (a.dataset.toc === current.id) a.setAttribute("aria-current", "true");
+        if (a.dataset.toc === current.id) a.setAttribute("aria-current", "location");
         else a.removeAttribute("aria-current");
       }
     };

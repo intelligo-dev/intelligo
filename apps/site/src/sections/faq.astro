@@ -13,7 +13,7 @@ import { SITE } from "@/lib/site";
         </p>
       </div>
     </div>
-    <div class="reveal border-t border-border md:border-l md:border-t-0">
+    <div class="reveal border-t border-border md:border-l md:border-t-0 md:py-16">
       {FAQ.map((f, i) => (
         <details class:list={["q", i === 0 && "first:border-t-0"]} name="faq" open={i === 0}>
           <summary>{f.q}</summary>

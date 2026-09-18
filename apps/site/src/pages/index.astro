@@ -21,7 +21,7 @@ import Faq from "@/sections/faq.astro";
 ---
 <Base>
   <Nav client:load current="/" />
-  <main class="rails">
+  <main id="main" class="rails">
     <Hero />
     <Halves />
     <Film />
@@ -30,6 +30,6 @@ import Faq from "@/sections/faq.astro";
     <Proof />
     <Quickstart />
     <Faq />
-    <Footer />
   </main>
+  <div class="rails"><Footer /></div>
 </Base>

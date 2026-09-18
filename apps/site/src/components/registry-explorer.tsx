@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Showcase, SCENE_FOR_ITEM } from "@/showcase/scenes";
 import { BrowserFrame } from "@/components/browser-frame";
@@ -28,6 +28,7 @@ export function RegistryExplorer() {
   );
   const idx = REGISTRY_ITEMS.findIndex((i) => i.name === name);
   const chips = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion() ?? false;
   const cmd = `pnpm exec shadcn add https://intelligo.dev/r/${item.name}.json --yes`;
 
   // Arrow keys step through the items from the chip list only — never
@@ -71,10 +72,10 @@ export function RegistryExplorer() {
                     onClick={() => setName(i.name)}
                     aria-pressed={i.name === name}
                     className={cn(
-                      "mono rounded-md border px-2 py-1 text-[0.72rem] transition-colors",
+                      "mono min-h-8 rounded-md border px-2.5 text-[0.75rem] transition-colors",
                       i.name === name
-                        ? "border-foreground bg-muted text-foreground"
-                        : "border-border text-foreground/70 hover:border-foreground/15 hover:text-foreground"
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-input text-foreground/70 hover:border-foreground/40 hover:text-foreground"
                     )}
                   >
                     {i.name}
@@ -98,7 +99,7 @@ export function RegistryExplorer() {
                     key={d}
                     type="button"
                     onClick={() => setName(d)}
-                    className="ml-1 border border-border px-1 text-foreground/70 hover:text-foreground"
+                    className="ml-1 rounded-md border border-input px-1.5 py-1 text-foreground/70 hover:border-foreground/40 hover:text-foreground"
                   >
                     {d}
                   </button>
@@ -126,7 +127,7 @@ export function RegistryExplorer() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
+                transition={{ duration: reduce ? 0 : 0.18 }}
               >
                 <Showcase scene={SCENE_FOR_ITEM[item.name] ?? "dashboard"} />
               </motion.div>

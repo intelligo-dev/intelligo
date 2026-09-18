@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { RULES } from "@/lib/rules";
 
 /** Four rules. Break one and read the assertion the real test emits. */
 export function RuleToggles() {
   const [broken, setBroken] = useState<string | null>(null);
+  const reduce = useReducedMotion() ?? false;
 
   return (
     <div className="grid gap-1.5">
@@ -15,7 +16,7 @@ export function RuleToggles() {
           <div
             key={r.id}
             className={cn(
-              "border transition-colors",
+              "overflow-hidden rounded-md border transition-colors",
               on ? "border-destructive" : "border-border"
             )}
           >
@@ -27,7 +28,7 @@ export function RuleToggles() {
                 <div className="text-[0.84rem] text-foreground/70">
                   {r.body}
                 </div>
-                <div className="mono mt-0.5 truncate text-[0.66rem] text-muted-foreground">
+                <div className="mono mt-0.5 truncate text-[0.72rem] text-muted-foreground">
                   {r.file}
                 </div>
               </div>
@@ -36,10 +37,10 @@ export function RuleToggles() {
                 aria-pressed={on}
                 onClick={() => setBroken(on ? null : r.id)}
                 className={cn(
-                  "mono rounded-md border px-2.5 py-1 text-[0.72rem] transition-colors",
+                  "mono min-h-9 rounded-md border px-3 text-[0.75rem] transition-colors",
                   on
                     ? "border-destructive bg-destructive/10 text-destructive"
-                    : "border-foreground/15 text-foreground/70 hover:text-foreground"
+                    : "border-input text-foreground/70 hover:text-foreground"
                 )}
               >
                 {on ? "restore" : "break it"}
@@ -52,7 +53,7 @@ export function RuleToggles() {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.22 }}
+                  transition={{ duration: reduce ? 0 : 0.22 }}
                   className="overflow-hidden"
                 >
                   <div className="mono border-t border-border bg-muted px-4 py-3 text-[0.74rem] leading-relaxed">

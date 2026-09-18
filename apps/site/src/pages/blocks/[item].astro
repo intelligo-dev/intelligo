@@ -132,19 +132,19 @@ const messages = item.files.find((f) => f.target.startsWith("messages/"))?.targe
   </section>
 
   <nav aria-label="Other blocks" class="xline">
-    <div class="grid grid-cols-2">
+    <div class="grid grid-cols-1 sm:grid-cols-2">
       {prev ? (
-        <a href={blockHref(prev.name)} class="px-6 py-6 no-underline hover:bg-card md:px-10">
+        <a href={blockHref(prev.name)} class="px-6 py-6 no-underline hover:bg-accent md:px-10">
           <span class="mono block text-[0.68rem] text-muted-foreground">← previous</span>
           <span class="block text-[0.95rem] text-foreground">{prev.title}</span>
         </a>
-      ) : <a href="/blocks" class="px-6 py-6 no-underline hover:bg-card md:px-10"><span class="mono block text-[0.68rem] text-muted-foreground">← all blocks</span></a>}
+      ) : <a href="/blocks" class="px-6 py-6 no-underline hover:bg-accent md:px-10"><span class="mono block text-[0.68rem] text-muted-foreground">← all blocks</span></a>}
       {next ? (
-        <a href={blockHref(next.name)} class="border-l border-border px-6 py-6 text-right no-underline hover:bg-card md:px-10">
+        <a href={blockHref(next.name)} class="border-t border-border px-6 py-6 no-underline sm:border-l sm:border-t-0 sm:text-right hover:bg-accent md:px-10">
           <span class="mono block text-[0.68rem] text-muted-foreground">next →</span>
           <span class="block text-[0.95rem] text-foreground">{next.title}</span>
         </a>
-      ) : <a href="/blocks" class="border-l border-border px-6 py-6 text-right no-underline hover:bg-card md:px-10"><span class="mono block text-[0.68rem] text-muted-foreground">all blocks →</span></a>}
+      ) : <a href="/blocks" class="border-t border-border px-6 py-6 no-underline sm:border-l sm:border-t-0 sm:text-right hover:bg-accent md:px-10"><span class="mono block text-[0.68rem] text-muted-foreground">all blocks →</span></a>}
     </div>
   </nav>
   <Toaster client:idle position="bottom-right" richColors closeButton />

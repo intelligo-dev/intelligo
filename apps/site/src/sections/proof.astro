@@ -52,7 +52,7 @@ const OPEN: { icon: LucideIcon; title: string; body: string; href: string; cta: 
     <ul class="reveal mt-8 grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-3">
       {OPEN.map(({ icon: Icon, title, body, href, cta }) => (
         <li>
-          <a href={href} class="group flex h-full items-start gap-3 bg-background px-4 py-3.5 no-underline transition-colors hover:bg-card">
+          <a href={href} class="group flex h-full items-start gap-3 bg-background px-4 py-3.5 no-underline transition-colors hover:bg-accent">
             <Icon className="mt-0.5 size-4 shrink-0 text-foreground/70 transition-colors group-hover:text-foreground" strokeWidth={1.75} aria-hidden="true" />
             <span class="min-w-0">
               <span class="block text-[0.9rem] font-semibold text-foreground">{title}</span>

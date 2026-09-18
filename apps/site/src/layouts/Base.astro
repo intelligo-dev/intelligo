@@ -44,8 +44,7 @@ const jsonLd = JSON.stringify(
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fcfcfc" />
     <meta property="og:site_name" content="Intelligo" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -69,9 +68,16 @@ const jsonLd = JSON.stringify(
     <script is:inline>
       // Put `dark` on <html> before first paint so tokens and `dark:` agree,
       // and mark the document as scripted so reveal-on-scroll can hide
-      // content — without JS everything stays visible.
+      // content — without JS everything stays visible. The browser's own
+      // chrome follows the class too (the page's --background, either
+      // theme), whoever flips it: the OS, or the toggle in the nav.
       (function () {
         document.documentElement.classList.add("js");
+        var chrome = function () {
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.setAttribute("content", document.documentElement.classList.contains("dark") ? "#151515" : "#fcfcfc");
+        };
+        new MutationObserver(chrome).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
         try {
           var stored = localStorage.getItem("theme");
           var mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -91,6 +97,7 @@ const jsonLd = JSON.stringify(
     </script>
   </head>
   <body>
+    <a href="#main" class="skip-link">Skip to content</a>
     <slot />
     <script>
       // Scroll reveal: flip .reveal → .is-in once.

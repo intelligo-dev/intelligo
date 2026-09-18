@@ -1,5 +1,5 @@
 import * as React from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 interface CircuitNode {
@@ -55,6 +55,8 @@ function CircuitBoard({
   className,
   ...props
 }: CircuitBoardProps) {
+  // a reader who asked for less motion gets the board drawn once, not pulsing forever
+  const reduce = useReducedMotion() ?? false;
   // Theme-aware color defaults
   const [isDark, setIsDark] = React.useState(true);
 
@@ -282,7 +284,7 @@ function CircuitBoard({
                   animate={{ strokeDashoffset: -pathLength }}
                   transition={{
                     duration: pulseSpeed,
-                    repeat: Infinity,
+                    repeat: reduce ? 0 : Infinity,
                     ease: "linear",
                     delay: i * 0.3,
                   }}
@@ -304,7 +306,7 @@ function CircuitBoard({
                   animate={{ strokeDashoffset: pathLength }}
                   transition={{
                     duration: pulseSpeed,
-                    repeat: Infinity,
+                    repeat: reduce ? 0 : Infinity,
                     ease: "linear",
                     delay: i * 0.3 + pulseSpeed / 2,
                   }}
@@ -345,7 +347,7 @@ function CircuitBoard({
               }
               transition={
                 node.status === "processing"
-                  ? { duration: 1.5, repeat: Infinity }
+                  ? { duration: 1.5, repeat: reduce ? 0 : Infinity }
                   : {}
               }
             />
@@ -361,10 +363,11 @@ function CircuitBoard({
               <motion.div
                 className="absolute inset-0 rounded-lg"
                 style={{
-                  boxShadow: `0 0 20px ${statusColor}40, inset 0 0 10px ${statusColor}20`,
+                  // the status colour is an rgba()/var() string, so alpha is mixed in, not appended as hex
+                  boxShadow: `0 0 20px color-mix(in srgb, ${statusColor} 25%, transparent), inset 0 0 10px color-mix(in srgb, ${statusColor} 12%, transparent)`,
                 }}
                 animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                transition={{ duration: 2, repeat: reduce ? 0 : Infinity }}
               />
             )}
 

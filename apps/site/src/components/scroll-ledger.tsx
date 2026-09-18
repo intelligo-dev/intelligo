@@ -39,7 +39,8 @@ function LedgerLine({
   // each line reveals in its own slice of the first 75% of the scroll; the last 25% flips all to shipped
   const start = (index / total) * 0.72;
   const end = start + 0.06;
-  const opacity = useTransform(progress, [start, end], [0.12, 1]);
+  // dim, not gone: a line waiting its turn is still a line you can read
+  const opacity = useTransform(progress, [start, end], [0.35, 1]);
   const x = useTransform(progress, [start, end], [10, 0]);
   const shipped = useTransform(progress, [0.8, 0.9], [0, 1]);
   const checkOpacity = useTransform(shipped, [0, 1], [0, 1]);

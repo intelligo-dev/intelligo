@@ -2,14 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
-interface GitHubStarButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+/**
+ * A link to the repository that also says how many stars it has.
+ *
+ * A link, not a button that opens a window: it can be middle-clicked,
+ * copied and read as what it is. The count comes from GitHub's public
+ * API, which allows an address sixty calls an hour — so one answer is
+ * kept for an hour, and a reader going page to page asks once. With no
+ * answer the count is simply not shown; the link never depends on it.
+ */
+
+interface GitHubStarButtonProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   owner: string;
   repo: string;
   staticCount?: number;
   showCount?: boolean;
-  variant?: "default" | "outline";
 }
+
+const TTL_MS = 60 * 60 * 1000;
 
 function formatNumber(num: number): string {
   if (num >= 1000000) {
@@ -19,6 +31,17 @@ function formatNumber(num: number): string {
     return `${(num / 1000).toFixed(1)}K`;
   }
   return num.toString();
+}
+
+function readCached(key: string): number | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { count, at } = JSON.parse(raw) as { count: number; at: number };
+    return Date.now() - at < TTL_MS && Number.isFinite(count) ? count : null;
+  } catch {
+    return null;
+  }
 }
 
 function StarIcon({ className }: { className?: string }) {
@@ -39,82 +62,62 @@ export function GitHubStarButton({
   repo,
   staticCount,
   showCount = true,
-  variant = "default",
   className,
-  onClick,
   ...props
 }: GitHubStarButtonProps) {
   const [count, setCount] = useState<number | null>(staticCount ?? null);
-  const [loading, setLoading] = useState(staticCount === undefined);
-  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    if (staticCount !== undefined) return;
-
-    async function fetchCount() {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `https://api.github.com/repos/${owner}/${repo}`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setCount(data.stargazers_count);
-        }
-      } catch {
-        // Silently fail - count will remain null
-      } finally {
-        setLoading(false);
-      }
+    if (staticCount !== undefined || !showCount) return;
+    const key = `stars:${owner}/${repo}`;
+    const cached = readCached(key);
+    if (cached !== null) {
+      setCount(cached);
+      return;
     }
-
-    fetchCount();
-  }, [owner, repo, staticCount]);
-
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    window.open(`https://github.com/${owner}/${repo}`, "_blank");
-    onClick?.(e);
-  };
-
-  const baseStyles =
-    "inline-flex items-center gap-2 h-9 px-4 rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
-
-  const variantStyles = {
-    default:
-      "bg-foreground text-background hover:bg-foreground/90 active:scale-[0.98]",
-    outline:
-      "border border-border bg-background hover:bg-accent hover:border-foreground/20 active:scale-[0.98]",
-  };
+    let live = true;
+    fetch(`https://api.github.com/repos/${owner}/${repo}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { stargazers_count?: number } | null) => {
+        const n = data?.stargazers_count;
+        if (!live || typeof n !== "number") return;
+        setCount(n);
+        try {
+          localStorage.setItem(key, JSON.stringify({ count: n, at: Date.now() }));
+        } catch {}
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [owner, repo, staticCount, showCount]);
 
   return (
-    <button
+    <a
       data-slot="github-star-button"
-      type="button"
-      className={cn(baseStyles, variantStyles[variant], className)}
-      onClick={handleClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      href={`https://github.com/${owner}/${repo}`}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={
+        count !== null
+          ? `Star on GitHub, ${count} stars`
+          : "Star on GitHub"
+      }
+      className={cn(
+        buttonVariants({ variant: "outline" }),
+        "group/star h-9 gap-2 bg-background px-3.5 no-underline",
+        className
+      )}
       {...props}
     >
-      <StarIcon
-        className={cn(
-          "w-4 h-4 transition-transform duration-200",
-          isHovered && "scale-110"
-        )}
-      />
+      <StarIcon className="size-4 transition-transform duration-normal ease-standard group-hover/star:scale-110" />
       <span>Star</span>
-      {showCount && (
+      {showCount && count !== null && (
         <>
-          <span className="w-px h-4 bg-current opacity-20" />
-          {loading ? (
-            <span className="w-8 h-4 bg-current/20 rounded animate-pulse" />
-          ) : (
-            <span className="tabular-nums">
-              {count !== null ? formatNumber(count) : "—"}
-            </span>
-          )}
+          <span className="h-4 w-px bg-current opacity-20" aria-hidden="true" />
+          <span className="tabular-nums">{formatNumber(count)}</span>
         </>
       )}
-    </button>
+    </a>
   );
 }

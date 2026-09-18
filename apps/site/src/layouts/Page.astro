@@ -2,7 +2,8 @@
 /**
  * A secondary page (/blocks, /components, /architecture, /why): same
  * nav, a page header instead of the hero, and the full width — only the
- * homepage sits between the 1152px rails. Docs have their own layout.
+ * homepage sits between the 1152px rails, so here the nav and the
+ * footer run the full width with the page. Docs have their own layout.
  */
 import { buttonVariants } from "@/components/ui/button";
 import Base from "@/layouts/Base.astro";
@@ -21,8 +22,8 @@ const { path, tag, title, lede, description } = Astro.props;
 const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
 ---
 <Base title={pageTitle} description={description ?? lede ?? SITE.description}>
-  <Nav client:load current={path} />
-  <main class="rails-full">
+  <Nav client:load current={path} wide />
+  <main id="main" class="rails-full">
     <header class="xline">
       <div class="px-6 pb-10 pt-14 md:px-10 md:pb-12 md:pt-20">
         <div class="section-head">
@@ -34,7 +35,7 @@ const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
     </header>
     <slot />
     <section class="xline">
-      <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-10 md:px-10">
+      <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-10 md:px-10 md:py-14">
         <p class="text-[0.95rem] text-muted-foreground">Ready to try it? Three commands and the app runs against a stub model.</p>
         <div class="flex items-center gap-2">
           <a href={SITE.github} class={buttonVariants({ variant: "outline" })}>GitHub</a>
@@ -44,5 +45,5 @@ const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
       </div>
     </section>
   </main>
-  <div class="rails"><Footer /></div>
+  <div class="rails-full"><Footer /></div>
 </Base>
