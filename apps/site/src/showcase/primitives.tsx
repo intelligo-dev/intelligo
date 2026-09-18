@@ -1,7 +1,7 @@
 /**
- * One live demo per catalog entry, built only from the base-nova
- * components installed in `@/components/ui` — exactly what `shadcn add`
- * gives a consumer — composed the way blocks compose them.
+ * One live demo per primitive and composite, built from the components
+ * in `@showcase/components/ui` — exactly what `shadcn add` gives a
+ * consumer — composed the way blocks compose them.
  */
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -37,29 +37,33 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+} from "@showcase/components/ui/alert-dialog";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@showcase/components/ui/alert";
 import {
   Attachment,
   AttachmentContent,
   AttachmentDescription,
   AttachmentMedia,
   AttachmentTitle,
-} from "@/components/ui/attachment";
+} from "@showcase/components/ui/attachment";
 import {
   Avatar,
   AvatarBadge,
   AvatarFallback,
   AvatarGroup,
   AvatarGroupCount,
-} from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Bubble, BubbleContent } from "@/components/ui/bubble";
-import { Button } from "@/components/ui/button";
+} from "@showcase/components/ui/avatar";
+import { Badge } from "@showcase/components/ui/badge";
+import { Bubble, BubbleContent } from "@showcase/components/ui/bubble";
+import { Button } from "@showcase/components/ui/button";
 import {
   ButtonGroup,
   ButtonGroupSeparator,
-} from "@/components/ui/button-group";
+} from "@showcase/components/ui/button-group";
 import {
   Card,
   CardAction,
@@ -68,7 +72,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@showcase/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -78,7 +82,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@showcase/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -94,7 +98,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@showcase/components/ui/dropdown-menu";
 import {
   Empty,
   EmptyContent,
@@ -102,7 +106,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
+} from "@showcase/components/ui/empty";
 import {
   Field,
   FieldDescription,
@@ -111,15 +115,15 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSet,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "@showcase/components/ui/field";
+import { Input } from "@showcase/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
   InputGroupTextarea,
-} from "@/components/ui/input-group";
+} from "@showcase/components/ui/input-group";
 import {
   Item,
   ItemActions,
@@ -128,17 +132,21 @@ import {
   ItemGroup,
   ItemMedia,
   ItemTitle,
-} from "@/components/ui/item";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { Label } from "@/components/ui/label";
-import { Marker, MarkerContent, MarkerIcon } from "@/components/ui/marker";
+} from "@showcase/components/ui/item";
+import { Kbd, KbdGroup } from "@showcase/components/ui/kbd";
+import { Label } from "@showcase/components/ui/label";
+import {
+  Marker,
+  MarkerContent,
+  MarkerIcon,
+} from "@showcase/components/ui/marker";
 import {
   Message,
   MessageAvatar,
   MessageContent,
   MessageFooter,
   MessageHeader,
-} from "@/components/ui/message";
+} from "@showcase/components/ui/message";
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -146,7 +154,7 @@ import {
   MessageScrollerItem,
   MessageScrollerProvider,
   MessageScrollerViewport,
-} from "@/components/ui/message-scroller";
+} from "@showcase/components/ui/message-scroller";
 import {
   Popover,
   PopoverContent,
@@ -154,9 +162,9 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@showcase/components/ui/popover";
+import { Progress } from "@showcase/components/ui/progress";
+import { ScrollArea } from "@showcase/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -164,8 +172,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+} from "@showcase/components/ui/select";
+import { Separator } from "@showcase/components/ui/separator";
 import {
   Sheet,
   SheetClose,
@@ -175,7 +183,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
+} from "@showcase/components/ui/sheet";
 import {
   Sidebar,
   SidebarContent,
@@ -190,10 +198,10 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@showcase/components/ui/sidebar";
+import { Skeleton } from "@showcase/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
-import { Spinner } from "@/components/ui/spinner";
+import { Spinner } from "@showcase/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -202,15 +210,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+} from "@showcase/components/ui/table";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@showcase/components/ui/tabs";
+import { Textarea } from "@showcase/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@showcase/components/ui/tooltip";
 
 import type { ComponentName } from "@/lib/primitives";
 
@@ -1209,7 +1221,7 @@ function MarkerDemo() {
   );
 }
 
-const DEMOS: Record<ComponentName, () => ReactNode> = {
+export const PRIMITIVE_DEMOS: Record<ComponentName, () => ReactNode> = {
   alert: AlertDemo,
   "alert-dialog": AlertDialogDemo,
   avatar: AvatarDemo,
@@ -1246,14 +1258,3 @@ const DEMOS: Record<ComponentName, () => ReactNode> = {
   attachment: AttachmentDemo,
   marker: MarkerDemo,
 };
-
-export function PrimitiveDemo({ name }: { name: ComponentName }) {
-  const Demo = DEMOS[name];
-  return (
-    <TooltipProvider>
-      <div className="rounded-lg border bg-background p-5 text-foreground md:p-6">
-        <Demo />
-      </div>
-    </TooltipProvider>
-  );
-}

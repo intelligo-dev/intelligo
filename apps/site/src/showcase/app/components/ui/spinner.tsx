@@ -1,3 +1,8 @@
+/*
+ * The spinner: a faint ring with a bright arc running round it, in the
+ * current colour.
+ */
+
 import * as React from "react";
 
 import { cn } from "@showcase/lib/utils";

@@ -235,6 +235,15 @@ for (const f of readdirSync(primitives)) {
 }
 install(join(FRAMEWORK, "apps/app/lib/utils.ts"), "lib/utils.ts");
 
+// Every Intelligo component from its registry source, so /components shows
+// the ones no block installs into the reference app as well.
+for (const item of registry.items.filter((i) => i.type === "registry:ui")) {
+  for (const { path: relPath, target } of item.files ?? []) {
+    install(join(FRAMEWORK, "packages/registry", relPath), target);
+    installed++;
+  }
+}
+
 // Hand-written stubs and mocks, copied last so they win.
 const overrides = join(SITE, "src/showcase/overrides");
 if (existsSync(overrides)) cpSync(overrides, showcaseRoot, { recursive: true });

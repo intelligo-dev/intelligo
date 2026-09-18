@@ -424,7 +424,7 @@ function ImageGeneration({
             type="button"
             variant="ghost"
             onClick={onRetry}
-            className="mt-3 min-h-10 rounded-full px-3 text-foreground"
+            className="mt-3 min-h-10 px-3 text-foreground"
             render={
               <motion.button
                 whileTap={reduced ? undefined : { scale: 0.96 }}

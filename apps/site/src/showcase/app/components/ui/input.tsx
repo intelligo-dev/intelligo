@@ -1,3 +1,8 @@
+/*
+ * The input: a card-toned field whose border and soft ring ease in on
+ * focus.
+ */
+
 import * as React from "react";
 import { Input as InputPrimitive } from "@base-ui/react/input";
 

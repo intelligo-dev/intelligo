@@ -1,3 +1,7 @@
+/*
+ * The textarea: the input's field, grown to its content.
+ */
+
 import * as React from "react";
 
 import { cn } from "@showcase/lib/utils";

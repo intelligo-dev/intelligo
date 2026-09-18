@@ -108,14 +108,6 @@ const INSTALLED = {
 
 export type ComponentName = keyof typeof INSTALLED;
 
-export type CatalogEntry = {
-  name: ComponentName;
-  tier: Tier;
-  description: string;
-  /** Registry blocks that list this component in registryDependencies. */
-  usedBy: string[];
-};
-
 type RawItem = {
   name: string;
   type: string;
@@ -128,37 +120,21 @@ const blocks = rawItems.filter(
   (i) => i.type === "registry:block" && i.name !== "smoke"
 );
 
-/** Intelligo's own components (T3/T4); blocks name them `@intelligo/<name>`. */
-const INTELLIGO_UI = new Set(
-  rawItems.filter((i) => i.type === "registry:ui").map((i) => i.name)
+/** Intelligo's own components; blocks name them `@intelligo/<name>`. */
+const INTELLIGO_UI = new Map(
+  rawItems.filter((i) => i.type === "registry:ui").map((i) => [i.name, i])
 );
 
-export const CATALOG: CatalogEntry[] = (
-  Object.keys(INSTALLED) as ComponentName[]
-).map((name) => ({
-  name,
-  tier: INSTALLED[name][0],
-  description: INSTALLED[name][1],
-  usedBy: blocks
-    .filter((b) =>
-      [name, `@intelligo/${name}`].some((d) =>
-        b.registryDependencies?.includes(d)
-      )
-    )
-    .map((b) => b.name),
-}));
+/** Intelligo primitives the site itself does not install. */
+const T1_EXTRA = new Set([
+  "checkbox",
+  "radio-group",
+  "switch",
+  "collapsible",
+  "command",
+]);
 
-/** Intelligo's own components: T3 AI parts and T4 patterns (`@intelligo/<name>`). */
-export type IntelligoEntry = {
-  name: string;
-  title: string;
-  tier: "T3" | "T4";
-  group: string;
-  description: string;
-  usedBy: string[];
-};
-
-/** How the T3 parts are grouped on /components; an unlisted part lands in "More parts". */
+/** How Intelligo's own components are grouped on /components; an unlisted `ai-*` part lands in "More parts". */
 const AI_GROUPS: Record<string, string[]> = {
   Conversation: [
     "ai-message",
@@ -192,42 +168,109 @@ const AI_GROUPS: Record<string, string[]> = {
     "ai-motion",
   ],
 };
-const groupOf = (name: string, tier: "T3" | "T4") =>
-  tier === "T4"
-    ? "Patterns"
-    : (Object.entries(AI_GROUPS).find(([, names]) =>
-        names.includes(name)
-      )?.[0] ?? "More parts");
+const PATTERNS = new Set([
+  "page-header",
+  "stat-card",
+  "status-badge",
+  "copy-button",
+  "document-viewer",
+]);
 
-export const INTELLIGO: IntelligoEntry[] = rawItems
-  // T1/T2 items restyle a shadcn primitive and are catalogued with it above.
-  .filter(
-    (i) =>
-      i.type === "registry:ui" && !/\((T[12])[^)]*\)/.test(i.description ?? "")
-  )
-  .map((i) => {
-    const text = i.description ?? "";
-    const tier = text.match(/\((T[34])[^)]*\)/)?.[1] === "T3" ? "T3" : "T4";
-    return {
-      name: i.name,
-      title: i.title ?? i.name,
-      tier,
-      group: groupOf(i.name, tier),
-      description: text
-        .replace(/\s*\((T[34])[^)]*\)/g, "")
-        .replace(/\s+/g, " ")
-        .trim(),
-      usedBy: blocks
-        .filter((b) => b.registryDependencies?.includes(`@intelligo/${i.name}`))
-        .map((b) => b.name),
-    };
-  });
+export type ComponentEntry = {
+  name: string;
+  title: string;
+  tier: Tier;
+  group: string;
+  description: string;
+  /** Installed from intelligo.dev/r rather than shadcn's registry. */
+  intelligo: boolean;
+};
 
-export const INTELLIGO_GROUPS = [
+/** "AI Message Bubble" → "Message bubble", "alert-dialog" → "Alert dialog". */
+const readable = (s: string) =>
+  s
+    .replace(/^AI\s+/, "")
+    .replace(/-/g, " ")
+    .trim()
+    .split(/\s+/)
+    .map((w, i) =>
+      /^[A-Z]{2,}$/.test(w)
+        ? w
+        : i === 0
+          ? w[0]!.toUpperCase() + w.slice(1).toLowerCase()
+          : w.toLowerCase()
+    )
+    .join(" ");
+
+const entry = (
+  name: string,
+  tier: Tier,
+  group: string,
+  fallback = ""
+): ComponentEntry => {
+  const item = INTELLIGO_UI.get(name);
+  return {
+    name,
+    title: readable(item?.title ?? name),
+    tier,
+    group,
+    description: item?.description ?? fallback,
+    intelligo: !!item,
+  };
+};
+
+const own = [...INTELLIGO_UI.keys()].filter(
+  (n) => !(n in INSTALLED) && !T1_EXTRA.has(n)
+);
+
+const GROUP_ORDER = [
   ...Object.keys(AI_GROUPS),
   "More parts",
   "Patterns",
-].filter((g) => INTELLIGO.some((e) => e.group === g));
+  "Motion",
+  "Primitives",
+  "Composites",
+];
+
+/** Every component on /components, in page order. */
+export const COMPONENTS: ComponentEntry[] = [
+  ...own
+    .filter((n) => n.startsWith("ai-"))
+    .map((n) =>
+      entry(
+        n,
+        "T3",
+        Object.entries(AI_GROUPS).find(([, names]) => names.includes(n))?.[0] ??
+          "More parts"
+      )
+    ),
+  ...own.filter((n) => PATTERNS.has(n)).map((n) => entry(n, "T4", "Patterns")),
+  ...own
+    .filter((n) => !n.startsWith("ai-") && !PATTERNS.has(n))
+    .map((n) => entry(n, "T4", "Motion")),
+  ...(Object.keys(INSTALLED) as ComponentName[])
+    .filter((n) => INSTALLED[n][0] === "T1")
+    .map((n) => entry(n, "T1", "Primitives", INSTALLED[n][1])),
+  ...[...T1_EXTRA].map((n) => entry(n, "T1", "Primitives")),
+  ...(Object.keys(INSTALLED) as ComponentName[])
+    .filter((n) => INSTALLED[n][0] === "T2")
+    .map((n) => entry(n, "T2", "Composites", INSTALLED[n][1])),
+].sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
+
+/** The groups that have at least one component, in page order. */
+export const GROUPS = GROUP_ORDER.filter((g) =>
+  COMPONENTS.some((e) => e.group === g)
+);
+
+/** Intelligo's own AI parts, patterns and motion (T3/T4). */
+export const INTELLIGO = COMPONENTS.filter(
+  (e) => e.tier === "T3" || e.tier === "T4"
+);
+
+/** The shadcn tiers underneath (T1/T2). */
+export const CATALOG = COMPONENTS.filter(
+  (e) => e.tier === "T1" || e.tier === "T2"
+);
 
 /** Site-only marketing effects live beside the installed components and are not part of the system. */
 const SITE_EFFECTS = new Set(["circuit-board", "text-reveal"]);

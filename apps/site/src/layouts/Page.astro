@@ -19,15 +19,17 @@ interface Props {
   lede?: string;
   description?: string;
   noindex?: boolean;
+  /** Centre the header and the closing row in a 1280px column, for a page whose body sits in one. */
+  contained?: boolean;
 }
-const { path, tag, title, lede, description, noindex } = Astro.props;
+const { path, tag, title, lede, description, noindex, contained } = Astro.props;
 const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
 ---
 <Base title={pageTitle} description={description ?? lede ?? SITE.description} noindex={noindex}>
   <Nav client:load current={path} wide />
   <main id="main" class="rails-full">
     <header class="xline">
-      <div class="px-6 pb-10 pt-14 md:px-10 md:pb-12 md:pt-20">
+      <div class:list={["px-6 pb-10 pt-14 md:px-10 md:pb-12 md:pt-20", contained && "mx-auto max-w-7xl"]}>
         <div class="section-head">
           <span class="tag">{tag}</span>
           <h1 class="heading text-[clamp(1.9rem,3.4vw,3rem)] font-medium leading-[1.04] tracking-[-0.01em]" set:html={title} />
@@ -37,7 +39,7 @@ const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
     </header>
     <slot />
     <section class="xline">
-      <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-10 md:px-10 md:py-14">
+      <div class:list={["flex flex-wrap items-center justify-between gap-4 px-6 py-10 md:px-10 md:py-14", contained && "mx-auto max-w-7xl"]}>
         <p class="text-[0.95rem] text-muted-foreground">Ready to try it? Three commands and the app runs against a stub model.</p>
         <div class="flex items-center gap-2">
           <a href={SITE.github} class={cn(buttonVariants({ variant: "outline" }), "border-foreground/20")}>GitHub</a>

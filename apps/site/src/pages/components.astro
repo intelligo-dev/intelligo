@@ -1,20 +1,17 @@
 ---
 /**
  * The design system, in the order a reader cares about it:
- * Intelligo's own AI parts and patterns first, then the shadcn tiers
- * they sit on, then the token contract underneath. One sidebar across
- * all of it; every demo is the installed source, live.
+ * Intelligo's own AI parts and patterns first, then the primitives and
+ * composites they sit on, then the token contract underneath. One
+ * sidebar across all of it; every demo is the installed source, live.
  */
 import CopyLine from "@/components/copy-line.astro";
 import { installCommand } from "@/lib/install";
 import Page from "@/layouts/Page.astro";
-import { PrimitiveDemo } from "@/showcase/primitives";
-import { IntelligoDemo } from "@/showcase/intelligo-demos";
-import { CATALOG, INTELLIGO, INTELLIGO_GROUPS, TIERS, type ComponentName } from "@/lib/primitives";
-import { blockHref } from "@/lib/registry-items";
+import { ComponentDemo } from "@/showcase/intelligo-demos";
+import { CATALOG, COMPONENTS, GROUPS, INTELLIGO, TIERS, type ComponentEntry } from "@/lib/primitives";
 import { CONTRAST_PAIRS, DURATIONS, EASINGS, LAYERS, TOKENS } from "@/lib/design-tokens";
 import { countWord } from "@/lib/count-words";
-import { SITE } from "@/lib/site";
 
 const COLORS: [string, string[]][] = [
   ["Surface", ["background", "foreground", "card", "card-foreground", "popover", "popover-foreground"]],
@@ -24,7 +21,14 @@ const COLORS: [string, string[]][] = [
   ["Sidebar", ["sidebar", "sidebar-foreground", "sidebar-primary", "sidebar-primary-foreground", "sidebar-accent", "sidebar-accent-foreground", "sidebar-border", "sidebar-ring"]],
 ];
 const STATUS = ["destructive", "success", "warning", "info"];
-const RADII = ["sm", "md", "lg", "xl", "2xl"];
+/** Each step of the radius scale, with what it is for. */
+const RADII = [
+  ["sm", 0.6, "small insets"],
+  ["md", 0.8, "menu rows, nested"],
+  ["lg", 1, "controls, popups"],
+  ["xl", 1.4, "cards, dialogs"],
+] as const;
+const rem = parseFloat(TOKENS.light.radius);
 const FONTS = [
   ["--font-sans", "Geist", "font-sans", "Workspaces, credits and every page around your agent."],
   ["--font-mono", "Geist Mono", "font-mono", "pnpm exec shadcn add intelligo.dev/r/chat.json"],
@@ -33,55 +37,38 @@ const FONTS = [
 const idOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const Count = countWord(INTELLIGO.length);
 
-type Entry = { name: string; label: string; description: string; usedBy: string[]; intelligo: boolean };
-
-/** What a reader calls it: "AI Message Bubble" → "Message bubble", "alert-dialog" → "Alert dialog". */
-const readable = (s: string) => {
-  const words = s.replace(/^AI\s+/, "").replace(/-/g, " ").trim();
-  return words.charAt(0).toUpperCase() + words.slice(1).toLowerCase();
+const LEDES: Record<string, string> = {
+  Patterns: TIERS.T4.lede,
+  Motion: "Interaction patterns on the shared motion vocabulary: morphing popups, stacks, lists, uploads and hold-to-confirm.",
+  Primitives: "The interactive building blocks, on Base UI with shadcn's API kept. Blocks name them bare in registryDependencies.",
+  Composites: TIERS.T2.lede,
 };
-type Group = { id: string; tag: string; title: string; lede?: string; entries: Entry[] };
+const SECTIONS = GROUPS.map((g) => {
+  const entries = COMPONENTS.filter((e) => e.group === g);
+  const tier = entries[0]!.tier;
+  return { id: idOf(g), tag: `${tier} · ${TIERS[tier].title}`, title: g, lede: LEDES[g], entries };
+});
 
-const GROUPS: Group[] = [
-  ...INTELLIGO_GROUPS.map((g) => {
-    const entries = INTELLIGO.filter((e) => e.group === g);
-    const tier = entries[0]!.tier;
-    return {
-      id: idOf(g),
-      tag: `${tier} · ${TIERS[tier].title}`,
-      title: g,
-      lede: g === "Patterns" ? TIERS.T4.lede : undefined,
-      entries: entries.map((e) => ({ ...e, label: readable(e.title), intelligo: true })),
-    };
-  }),
-  ...(["T1", "T2"] as const).map((tier) => ({
-    id: tier.toLowerCase(),
-    tag: `${tier} · shadcn base-nova`,
-    title: TIERS[tier].title,
-    lede: TIERS[tier].lede,
-    entries: CATALOG.filter((c) => c.tier === tier).map((c) => ({ ...c, label: readable(c.name), intelligo: false })),
-  })),
-];
-
-const install = (e: Entry) => installCommand(e.name, { stock: !e.intelligo });
+const install = (e: ComponentEntry) => installCommand(e.name, { stock: !e.intelligo });
 ---
 <Page
   path="/components"
+  contained
   tag="components · the design system"
   title={`${Count} AI parts and patterns,<br />one design system.`}
-  lede={`Intelligo's own components — messages, reasoning, tool calls, approvals, citations, artifacts — on shadcn base-nova, Base UI and the intelligo token contract, beside the ${CATALOG.length} shadcn components every block also uses. Everything below is the installed source, live; switch the theme in the nav and it follows.`}
-  description={`The Intelligo design system: ${INTELLIGO.length} AI parts and patterns, ${CATALOG.length} base-nova components, the token contract and WCAG AA contrast — all rendered live.`}
+  lede={`Intelligo's own components — messages, reasoning, tool calls, approvals, citations, artifacts — on Base UI and the intelligo token contract, beside the ${CATALOG.length} primitives and composites every block also uses. Everything below is the installed source, live; switch the theme in the nav and it follows.`}
+  description={`The Intelligo design system: ${INTELLIGO.length} AI parts and patterns, ${CATALOG.length} primitives and composites, the token contract and WCAG AA contrast — all rendered live.`}
 >
   <section class="xline">
-    <div class="grid lg:grid-cols-[248px_minmax(0,1fr)]">
+    <div class="mx-auto grid max-w-7xl lg:grid-cols-[232px_minmax(0,1fr)] xl:border-x xl:border-border">
       <aside class="hidden border-r border-border lg:block">
         <nav aria-label="Components" class="docs-scroll sticky top-14 max-h-[calc(100dvh-3.5rem)] overflow-y-auto px-5 pb-10 pt-8" data-components-nav>
-          {GROUPS.map((g) => (
-            <div class="mb-7">
+          {SECTIONS.map((g) => (
+            <div class="mb-6">
               <a href={`#${g.id}`} class="docs-section-title block no-underline hover:text-foreground">{g.title}</a>
               <ul class="docs-rail">
                 {g.entries.map((e) => (
-                  <li><a href={`#${e.name}`} data-spy={e.name} data-label={e.label} class="docs-link truncate">{e.label}</a></li>
+                  <li><a href={`#${e.name}`} data-spy={e.name} data-label={e.title} class="docs-link truncate">{e.title}</a></li>
                 ))}
               </ul>
             </div>
@@ -99,20 +86,20 @@ const install = (e: Entry) => installCommand(e.name, { stock: !e.intelligo });
             <span class="flex min-w-0 items-center gap-2 text-[0.85rem]">
               <span class="text-muted-foreground">Components</span>
               <span class="text-muted-foreground" aria-hidden="true">/</span>
-              <span class="truncate font-medium text-foreground" data-spy-label>{GROUPS[0]!.entries[0]!.label}</span>
+              <span class="truncate font-medium text-foreground" data-spy-label>{SECTIONS[0]!.entries[0]!.title}</span>
             </span>
-            <span class="mono flex shrink-0 items-center gap-1.5 rounded-full border border-input px-2.5 py-1 text-[0.72rem] text-foreground">
+            <span class="mono flex shrink-0 items-center gap-1.5 rounded-md border border-input px-2.5 py-1 text-[0.72rem] text-foreground">
               Menu
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="transition-transform duration-normal group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
             </span>
           </summary>
           <nav aria-label="Components" class="docs-scroll max-h-[70dvh] overflow-y-auto border-t border-border px-6 pb-6 pt-4">
-            {GROUPS.map((g) => (
+            {SECTIONS.map((g) => (
               <div class="mb-5">
                 <div class="docs-section-title">{g.title}</div>
                 <ul class="docs-rail">
                   {g.entries.map((e) => (
-                    <li><a href={`#${e.name}`} data-spy={e.name} data-label={e.label} class="docs-link">{e.label}</a></li>
+                    <li><a href={`#${e.name}`} data-spy={e.name} data-label={e.title} class="docs-link">{e.title}</a></li>
                   ))}
                 </ul>
               </div>
@@ -124,44 +111,34 @@ const install = (e: Entry) => installCommand(e.name, { stock: !e.intelligo });
           </nav>
         </details>
 
-        {GROUPS.map((g, i) => (
-          <section id={g.id} class:list={["px-6 py-10 md:px-10 md:py-14", i > 0 && "border-t border-border"]}>
-            <div class="section-head">
-              <span class="tag">{g.tag}</span>
-              <h2 class="heading text-2xl font-medium">{g.title}</h2>
-              {g.lede && <p class="mt-1 text-sm text-muted-foreground">{g.lede}</p>}
-            </div>
-            <div class="mt-10 space-y-14">
+        {SECTIONS.map((g, i) => (
+          <section id={g.id} class:list={["scroll-mt-16 px-6 py-12 md:px-10", i > 0 && "border-t border-border"]}>
+            <header class="max-w-[65ch]">
+              <p class="tag">{g.tag}</p>
+              <h2 class="mt-1 text-xl font-semibold tracking-tight">{g.title}</h2>
+              {g.lede && <p class="mt-2 text-sm text-muted-foreground">{g.lede}</p>}
+            </header>
+            <div class="mt-10 space-y-12">
               {g.entries.map((e) => (
-                <article id={e.name} class="">
-                  <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <h3 class="heading text-[1.3rem] font-medium">{e.label}</h3>
-                    <span class="mono text-xs text-muted-foreground">
-                      {e.name} · {e.usedBy.length ? `used by ${e.usedBy.length} block${e.usedBy.length === 1 ? "" : "s"}` : "not yet used by a block"}
-                    </span>
-                  </div>
-                  <p class="mt-1 max-w-[70ch] text-sm text-foreground/70">{e.description}</p>
+                <article id={e.name} class="scroll-mt-20">
+                  <h3 class="text-base font-semibold">{e.title}</h3>
+                  {e.description && <p class="mt-1 max-w-[65ch] text-sm text-muted-foreground">{e.description}</p>}
                   <div class="mt-4">
-                    {e.intelligo ? <IntelligoDemo client:visible name={e.name} /> : <PrimitiveDemo client:visible name={e.name as ComponentName} />}
+                    <ComponentDemo client:visible name={e.name} />
                   </div>
-                  <div class="mt-3 flex flex-wrap items-center gap-1">
-                    <CopyLine cmd={install(e)} class="mr-2" />
-                    {e.usedBy.map((b) => (
-                      <a href={blockHref(b)} class="mono rounded-md border px-1.5 py-0.5 text-xs text-muted-foreground no-underline hover:text-foreground">{b}</a>
-                    ))}
-                  </div>
+                  <CopyLine cmd={install(e)} class="mt-3 w-fit" />
                 </article>
               ))}
             </div>
           </section>
         ))}
 
-        <section id="tokens" class=" border-t border-border px-6 py-10 md:px-10 md:py-14">
-      <div class="section-head">
-        <span class="tag">foundation · tokens</span>
-        <h2 class="heading text-2xl font-medium">The token contract.</h2>
-        <p class="mt-2 max-w-[60ch] text-sm text-muted-foreground">shadcn's official set, plus status, layer and motion tokens Intelligo adds and never renames. Read from <code class="mono">intelligo.dev/r/intelligo.json</code>.</p>
-      </div>
+        <section id="tokens" class="scroll-mt-16 border-t border-border px-6 py-12 md:px-10">
+      <header class="max-w-[65ch]">
+        <p class="tag">Foundation · tokens</p>
+        <h2 class="mt-1 text-xl font-semibold tracking-tight">The token contract</h2>
+        <p class="mt-2 text-sm text-muted-foreground">shadcn's official set, plus status, layer and motion tokens Intelligo adds and never renames. Read from <code class="mono">intelligo.dev/r/intelligo.json</code>.</p>
+      </header>
 
       <div class="mt-8 space-y-6">
         {COLORS.map(([group, tokens]) => (
@@ -198,12 +175,18 @@ const install = (e: Entry) => installCommand(e.name, { stock: !e.intelligo });
         <div class="min-w-0">
           <div class="tag mb-2">Radius · --radius: {TOKENS.light.radius}</div>
           <div class="flex flex-wrap gap-3">
-            {RADII.map((r) => (
-              <div class="text-center">
+            {RADII.map(([r, factor, use]) => (
+              <div>
                 <div class="size-16 border bg-muted" style={`border-radius: var(--radius-${r})`} />
-                <div class="mono mt-1 text-xs text-muted-foreground">{r}</div>
+                <div class="mono mt-1.5 text-xs">{r} · {+(rem * factor * 16).toFixed(1)}px</div>
+                <div class="text-xs text-muted-foreground">{use}</div>
               </div>
             ))}
+            <div>
+              <div class="h-8 w-16 border bg-muted rounded-full" />
+              <div class="mono mt-1.5 text-xs">full</div>
+              <div class="text-xs text-muted-foreground">chips, dots</div>
+            </div>
           </div>
         </div>
         <div class="min-w-0">

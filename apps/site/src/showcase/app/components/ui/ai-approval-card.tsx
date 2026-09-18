@@ -236,7 +236,7 @@ function QuestionOptions({
             })
           }
           className={cn(
-            "h-10 rounded-xl border-0 bg-background/70 px-3 text-sm focus-visible:bg-background",
+            "h-10 rounded-lg border-0 bg-background/70 px-3 text-sm focus-visible:bg-background",
             question.options?.length && "mt-1.5"
           )}
         />
@@ -398,7 +398,7 @@ function ApprovalCard({
       data-state={status}
       aria-busy={busy || undefined}
       className={cn(
-        "w-full overflow-hidden rounded-2xl bg-muted p-4 text-sm",
+        "w-full overflow-hidden rounded-xl bg-muted p-4 text-sm",
         className
       )}
       {...props}
@@ -460,7 +460,7 @@ function ApprovalCard({
                 size="icon-xs"
                 aria-label={dismissLabel}
                 onClick={onDismiss}
-                className="-mt-0.5 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+                className="-mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
               >
                 <XIcon className="size-4" />
               </Button>
@@ -516,7 +516,6 @@ function ApprovalCard({
                   aria-label={previousLabel}
                   disabled={busy || currentStep === 0}
                   onClick={() => setStep(currentStep - 1)}
-                  className="rounded-full"
                 >
                   <ArrowLeftIcon className="size-4" />
                 </Button>
@@ -532,7 +531,7 @@ function ApprovalCard({
                   disabled={busy || !isAnswered(currentAnswer)}
                   aria-busy={busy || undefined}
                   onClick={continueQuestion}
-                  className="ml-auto rounded-full"
+                  className="ml-auto"
                 >
                   {busy ? (
                     <Spinner className="size-4" />
@@ -557,7 +556,6 @@ function ApprovalCard({
                   disabled={busy}
                   aria-busy={busy || undefined}
                   onClick={onApprove}
-                  className="rounded-full"
                 >
                   {approveLabel}
                 </Button>
@@ -568,7 +566,6 @@ function ApprovalCard({
                     size="sm"
                     disabled={busy}
                     onClick={onRequestChanges}
-                    className="rounded-full"
                   >
                     {requestChangesLabel}
                   </Button>
@@ -580,7 +577,7 @@ function ApprovalCard({
                     size="sm"
                     disabled={busy}
                     onClick={onReject}
-                    className="rounded-full text-muted-foreground hover:text-destructive"
+                    className="text-muted-foreground hover:text-destructive"
                   >
                     {rejectLabel}
                   </Button>
