@@ -1,10 +1,9 @@
 /**
  * Migration-chain inspection tests.
  *
- * Every case here is a shape this repository actually produced: a
- * journal frozen 27 files behind the directory, two files sharing a
- * numeric prefix, and — the one that mattered — a chain that "applies
- * cleanly" while skipping most of itself.
+ * The drift shapes that matter: a journal behind the directory, two
+ * files sharing a numeric prefix, and a chain that "applies cleanly"
+ * while skipping most of itself.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";

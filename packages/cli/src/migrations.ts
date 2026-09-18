@@ -3,12 +3,9 @@
  *
  * Drizzle keeps two sources of truth: the `.sql` files on disk and
  * `meta/_journal.json`, which is what `drizzle-kit migrate` actually
- * reads. Nothing keeps them in step. In this repo the journal stopped
- * at entry 11 while 39 files accumulated, so `migrate` silently
- * applied a quarter of the chain and every environment was really
- * provisioned by `drizzle-kit push` from `schema.ts` instead — which
- * is how a migration shipped documenting a unique constraint on a
- * column no migration created.
+ * reads. Nothing keeps them in step: a file missing from the journal is
+ * silently skipped by `migrate`, while `drizzle-kit push` from
+ * `schema.ts` hides the gap.
  *
  * The drift is invisible until someone provisions a database from the
  * migrations, at which point it is a production incident rather than a

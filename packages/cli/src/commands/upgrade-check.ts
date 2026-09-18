@@ -1,10 +1,9 @@
 /**
  * `intelligo upgrade --check`
  *
- * Reports what a template upgrade would do, and does nothing. The
- * promise is that dependency upgrades never overwrite
- * consumer source, so the interesting output is not "these files
- * changed upstream" but "these changed upstream AND you have edited
+ * Reports what a template upgrade would do, and does nothing. Upgrades
+ * never overwrite consumer source, so the interesting output is not
+ * "these templates changed" but "these changed AND you have edited
  * them" — the set where the consumer has to make a decision.
  */
 
@@ -73,7 +72,7 @@ export function upgradeCheck(options: UpgradeCheckOptions): UpgradeReport {
 
       // Compare against the template as it would be written for THIS
       // app: the recorded hash is of substituted content, so the raw
-      // template never matched for any file carrying a placeholder.
+      // template never matches a file carrying a placeholder.
       const templateRel = targetToTemplate.get(file.path);
       let templateChanged = false;
       if (templateRel) {

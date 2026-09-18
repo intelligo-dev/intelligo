@@ -35,8 +35,8 @@ export type FeatureEntry = {
   /**
    * Placeholder substitutions the files were generated with
    * (`__APP_NAME__` → "acme"). Recorded so an upgrade check can hash the
-   * template *as it would be written for this app* — hashing the raw
-   * template made every substituted file look permanently outdated.
+   * template *as it would be written for this app*; the raw template
+   * would make every substituted file look permanently outdated.
    */
   variables?: Record<string, string>;
 };

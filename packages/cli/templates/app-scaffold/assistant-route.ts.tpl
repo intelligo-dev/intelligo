@@ -15,7 +15,7 @@ import { CAPABILITIES, composeIntelligo, executions } from "@/lib/intelligo";
 export const maxDuration = 60;
 
 async function callModel(prompt: string) {
-  // Replace this with your framework's call.
+  // Your AI framework's call goes here.
   const inputTokens = Math.max(1, Math.ceil(prompt.length / 4));
   return {
     text: `Echo: ${prompt}`,

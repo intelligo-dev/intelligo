@@ -4,7 +4,7 @@
  * The distinction that matters is between "behind" and "unmanaged":
  * a push-provisioned database has the schema but no migration records,
  * and telling its operator to run `migrate` — which would try to apply
- * all 39 — is worse advice than saying nothing.
+ * the whole chain — is worse advice than saying nothing.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";

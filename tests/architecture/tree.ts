@@ -9,14 +9,9 @@ export const APPS_DIR = path.join(ROOT, "apps");
 
 /**
  * Packages dissolved into the framework rather than kept as their own
- * package. They no longer exist anywhere, and no package, application
- * or registry item may declare or import one — a consumer would find
- * nothing on npm to resolve it to.
- *
- * `@intelligo-dev/chat` was on this list until its name was reused for
- * the headless chat transport: the UI that dissolved package's code
- * retired into the registry, and the package that exists now is the
- * part that was never UI.
+ * package. They exist nowhere, and no package, application or registry
+ * item may declare or import one — a consumer would find nothing on npm
+ * to resolve it to.
  */
 export const DISSOLVED_PACKAGES = [
   "@intelligo-dev/ai",
@@ -25,8 +20,8 @@ export const DISSOLVED_PACKAGES = [
 
 /**
  * Packages folded into a subpath of a package that already existed.
- * The code did not go away, it moved — so the rule that refuses the
- * old name says where.
+ * The code still exists, so the rule that refuses the old name says
+ * where.
  */
 export const FOLDED_PACKAGES: Readonly<Record<string, string>> = {
   "@intelligo-dev/money": "@intelligo-dev/core/money",
@@ -112,8 +107,8 @@ export function importSpecifiers(source: string): string[] {
   const patterns = [
     /(?:^|\n)\s*(?:import|export)\s[^"'`]*?from\s*["']([^"']+)["']/g,
     /(?:^|\n)\s*import\s*["']([^"']+)["']/g, // side-effect import
-    // Quoted AND backtick specifiers: a template-literal dynamic import
-    // slipped past a quote-only pattern once.
+    // Quoted AND backtick specifiers, so a template-literal dynamic
+    // import is caught too.
     /\bimport\s*\(\s*[`"']([^`"']+)[`"']\s*\)/g,
     /\brequire\s*\(\s*[`"']([^`"']+)[`"']\s*\)/g,
   ];

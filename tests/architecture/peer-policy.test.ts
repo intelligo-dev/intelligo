@@ -99,10 +99,10 @@ describe("peer dependency policy", () => {
   it.each(packages)(
     "$dir does not require a framework it never imports",
     ({ dir, manifest }) => {
-      // `next` was a mandatory peer of core and billing, neither of which
-      // imports it: every consumer — a queue worker, a cron runner, a
-      // Hono API that only wants core/db — was made to install Next, and
-      // a product on another framework was locked out for nothing.
+      // A mandatory `next` peer on a package that never imports it makes
+      // every consumer — a queue worker, a cron runner, a Hono API that
+      // only wants core/db — install Next, and locks out a product on
+      // another framework for nothing.
       const peersNext = "next" in (manifest.peerDependencies ?? {});
       if (!peersNext) return;
 
@@ -129,9 +129,6 @@ describe("the framework's one door to Next.js", () => {
   it("is the only package that imports next/*", () => {
     // Every other package has to be usable from a queue worker, a Hono
     // API, a test, or a product built on something that is not Next.
-    // `auth` used to import `next/headers` in five files, which made a
-    // package about authentication unusable outside a Next request —
-    // the reason `@intelligo-dev/next` exists.
     const ALLOWED = "packages/next/src/";
     const offenders: string[] = [];
 

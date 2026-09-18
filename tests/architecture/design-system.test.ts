@@ -2,14 +2,13 @@
  * The design system's rules, enforced on the source this
  * repository ships: registry items and the reference app.
  *
- * Today's tree predates the decision, so the source rules compare
- * against `design-system.baseline.json` — the violations that existed
- * when the rules landed. The baseline may only shrink: a new violation
- * fails, and so does a fixed one still listed, so every migration slice
- * records its progress. Regenerate after a fix with
+ * The source rules compare against `design-system.baseline.json`, the
+ * known violations. The baseline may only shrink: a new violation
+ * fails, and so does a fixed one still listed. Regenerate after a fix
+ * with
  * `UPDATE_DESIGN_SYSTEM_BASELINE=1 pnpm vitest run tests/architecture/design-system.test.ts`.
  *
- * The token rules for the `intelligo` base item are strict from day one.
+ * The token rules for the `intelligo` base item have no baseline.
  */
 
 import { describe, expect, it } from "vitest";
@@ -370,10 +369,9 @@ describe("the intelligo token contract", () => {
 // ── surfaces ──────────────────────────────────────────────────────────
 
 /**
- * Every surface that has moved to the design system uses base-nova and
- * carries the token contract verbatim — the values `shadcn add` writes
- * from the intelligo item, light in `:root` and dark in `.dark`. A
- * surface joins this list in the phase that migrates it.
+ * Every listed surface uses base-nova and carries the token contract
+ * verbatim — the values `shadcn add` writes from the intelligo item,
+ * light in `:root` and dark in `.dark`.
  */
 const SURFACES = [
   {

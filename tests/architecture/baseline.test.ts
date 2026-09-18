@@ -1,12 +1,9 @@
 /**
  * The framework's migrations describe schema, never a deployment.
  *
- * Before 1.0 the chain seeded rows every consumer inherited: one
- * product's document types, and a billing row in that product's
- * currency at its exchange rate, which `ensureBillingSettingsRow` then
- * refused to overwrite — so every deployment billed in tugrik until
- * someone noticed. The chain is now one baseline; these rules keep it
- * from growing the same habits back.
+ * A row a migration seeds is inherited by every consumer — and a
+ * billing row in one deployment's currency is one that
+ * `ensureBillingSettingsRow` then refuses to overwrite. So:
  *
  *   - A migration changes structure. It does not INSERT, UPDATE or
  *     DELETE rows; data a deployment needs comes from its composition

@@ -1,9 +1,8 @@
 /**
  * `intelligo create <name>` — a new application on the framework.
  *
- * This is onboarding, not the product
- * boundary: what it writes is the consumer's from the moment it lands,
- * and the enduring relationship is the versioned packages, not this
+ * This is onboarding, not the product boundary: what it writes is the
+ * consumer's from the moment it lands, and the enduring relationship is the versioned packages, not this
  * scaffold. So it generates through the same manifest machinery as
  * `add`, which means the very first upgrade already knows which files
  * you have since edited.
@@ -23,8 +22,7 @@ export type CreateOptions = {
    * Emit `workspace:*` for the @intelligo-dev/* dependencies instead of a
    * version range. Only meaningful when scaffolding inside this
    * monorepo — outside it, pnpm fails the install with "workspace
-   * protocol used outside a workspace", which is the first thing a new
-   * user would have seen.
+   * protocol used outside a workspace".
    */
   linkWorkspace?: boolean;
 };

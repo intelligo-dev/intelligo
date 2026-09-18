@@ -124,11 +124,9 @@ export type PendingMigration = {
  * The chain is applied by content hash — the same key `migrate --check`
  * compares — and not by drizzle's rule of "every entry whose journal
  * timestamp is greater than the last applied row's". That rule depends
- * on `when` values increasing monotonically, and this repository's do
- * not (entries 12–41 were hand-numbered below entry 11), so drizzle's
- * migrator silently skipped any later hand-numbered entry on a database
- * that had already been migrated while this command reported it applied.
- * Selecting by hash makes "pending" mean exactly what the check says.
+ * on `when` values increasing monotonically, which a hand-numbered
+ * journal does not guarantee: an entry numbered below an applied one is
+ * skipped silently while the check reports it pending. Selecting by hash makes "pending" mean exactly what the check says.
  */
 export function readPendingMigrations(
   migrationsDir: string,

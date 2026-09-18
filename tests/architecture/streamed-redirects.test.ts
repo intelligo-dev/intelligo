@@ -7,18 +7,16 @@
  * streamed redirect trips React #310 ("rendered more hooks than during
  * the previous render") in next/link's `useOptimistic` — the page falls
  * into the nearest error boundary instead of moving
- * (vercel/next.js#78396). The auth-login item shipped a loading.tsx for
- * the whole (auth) group beside a login page that redirects a signed-in
- * user, and the onboarding item did the same; both are gone. The
- * reference app installs every item, so it is the subject here.
+ * (vercel/next.js#78396). The reference app installs every item, so it
+ * is the subject here.
  *
  * The rule: a page.tsx that calls `redirect(` (next/navigation or
  * next-intl's) must not sit under a loading.tsx — its own segment's or
- * any ancestor's. Such a page redirects through
- * a client component (`router.replace` in an effect), moves the
- * decision into a layout above the boundary, or becomes a
- * `next.config.ts` redirect. Pages with no loading.tsx above them may keep the server
- * redirect: it is a real 307.
+ * any ancestor's. Such a page redirects through a client component
+ * (`router.replace` in an effect), moves the decision into a layout
+ * above the boundary, or becomes a `next.config.ts` redirect. Pages
+ * with no loading.tsx above them may keep the server redirect: it is a
+ * real 307.
  */
 
 import { describe, expect, it } from "vitest";

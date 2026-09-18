@@ -1,9 +1,6 @@
 /**
- * create tests.
- *
- * The scaffold is onboarding, not a boundary, so the
- * behaviours worth pinning are the ones that protect the developer:
- * it never writes into an occupied directory, and what it writes is
+ * The scaffold is onboarding, not a boundary, so the behaviours worth
+ * pinning are the ones that protect the developer: it never writes into an occupied directory, and what it writes is
  * recorded in the manifest from the first moment so the very first
  * upgrade already knows what they have edited.
  */
@@ -135,8 +132,7 @@ describe("createApp", () => {
 
   it("depends on published versions, not the workspace protocol", () => {
     // `workspace:*` outside a workspace fails the install with
-    // "workspace protocol used outside a workspace" — the first thing a
-    // new user would have hit on the path the README advertises.
+    // "workspace protocol used outside a workspace".
     const target = path.join(workdir, "acme");
     create(target);
 

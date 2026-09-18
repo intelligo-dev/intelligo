@@ -11,8 +11,6 @@
  *
  * The allowlist is the CURRENT accepted graph. Tightening it is done
  * by removing the edge here — never by adding edges to sneak past CI.
- * (`billing → ai` was the worked example; the cost math moved
- * to `executions` and the edge is gone.)
  */
 
 import { describe, expect, it } from "vitest";
@@ -87,12 +85,8 @@ const SOURCE_FILE = /\.(ts|tsx|mts|cts|js|jsx)$/;
 /**
  * Walk every source file in a package — not just `src/`.
  *
- * Scoping this to `src/` left scripts/ and root config files
- * unchecked, and that is exactly where the escapes were: a one-time
- * migration script in packages/core/scripts/ imported another
- * workspace's schema by relative path, stayed broken after that
- * workspace moved, and was invisible to both this test and `tsc`
- * (whose include is src-only).
+ * Scripts and root config files are where a relative-path escape
+ * hides, and `tsc` (whose include is src-only) never sees them.
  */
 const walkSources = (dir: string) =>
   walk(dir, (name) => SOURCE_FILE.test(name));
@@ -131,7 +125,7 @@ describe("package dependency direction", () => {
       `packages without an ALLOWED_DEPS entry (add one deliberately): ${missing.join(", ")}`
     ).toEqual([]);
 
-    // An entry for a package that no longer exists is a rule about
+    // An entry for a package that does not exist is a rule about
     // nothing, and the next package to take that name inherits its
     // edges unreviewed.
     const stale = Object.keys(ALLOWED_DEPS).filter(
@@ -255,12 +249,10 @@ describe("apps", () => {
 // ---------------------------------------------------------------------------
 
 /**
- * `agents`, `ai` and `chat` dissolved into `executions`,
- * `core`, `audit`, `jobs` and product source. They were never
- * published, and the directories are gone. The allowlist above already
- * refuses them as edges; this rule exists so that the reason survives
- * the allowlist — a package or app that reaches for one of these names
- * gets told they are dissolved, not merely "not allowlisted".
+ * Names that were never published and have no package (tree.ts). The
+ * allowlist above already refuses them as edges; this rule makes a
+ * package or app that reaches for one hear that it is dissolved, not
+ * merely "not allowlisted".
  */
 describe("nothing depends on the dissolved set", () => {
   const dissolved: readonly string[] = DISSOLVED_PACKAGES;
@@ -306,10 +298,9 @@ describe("nothing depends on the dissolved set", () => {
 // ---------------------------------------------------------------------------
 
 /**
- * `money`, `http` and `billing-core` folded into subpaths of
- * `core`, `next` and `billing`. Their npm names are deprecated. Unlike
- * the dissolved set, the code still exists — so an import of the old
- * name is told the new one, not merely that the package is gone.
+ * `money`, `http` and `billing-core` are subpaths of `core`, `next` and
+ * `billing`; their npm names are deprecated. Unlike the dissolved set
+ * the code exists, so an import of the old name is told the new one.
  */
 describe("nothing depends on the folded set", () => {
   const folded = Object.keys(FOLDED_PACKAGES);
@@ -360,11 +351,10 @@ describe("nothing depends on the folded set", () => {
 // ---------------------------------------------------------------------------
 
 /**
- * The folds above were safe because each moved module is a leaf: it can
- * be reached from a client bundle, an edge runtime or another package's
- * own leaf without dragging Drizzle, Stripe or `server-only` along.
- * That is a property of the files, not of the package boundary that
- * used to hold them — so it is asserted here, on the files.
+ * Each of these modules is a leaf: it can be reached from a client
+ * bundle, an edge runtime or another package's own leaf without
+ * dragging Drizzle, Stripe or `server-only` along. That is a property
+ * of the files, so it is asserted on the files.
  */
 describe("leaf subpaths", () => {
   const coreSrc = path.join(PACKAGES_DIR, "core/src");
@@ -406,9 +396,8 @@ describe("leaf subpaths", () => {
 
   describe("billing's pure subpaths", () => {
     // What a consumer may reach from a client bundle: plan types, the
-    // registries, the payment contract. billing-core's reason to exist
-    // was that these import neither Stripe nor server-only; the fold
-    // keeps the property by walking every relative import from each.
+    // registries, the payment contract. None may import Stripe or
+    // server-only, checked by walking every relative import from each.
     const billingSrc = path.join(PACKAGES_DIR, "billing/src");
     const PURE = ["plans", "plan-registry", "payment", "quota-types"];
     // core's own leaves are allowed because they are themselves

@@ -179,9 +179,8 @@ describe("upgradeCheck", () => {
 
   it("compares substituted templates against the substituted file, not the raw template", () => {
     // `create` writes files with placeholders replaced. Hashing the raw
-    // template on the upgrade side made every such file read as
-    // outdated forever, and conflict the moment the consumer edited the
-    // composition root they are told to own.
+    // template on the upgrade side would make every such file read as
+    // outdated forever, and conflict the moment the consumer edits it.
     writeTemplates("1.0.0", 'export const NAME = "__APP_NAME__";\n');
     addFeature("demo", {
       appRoot,

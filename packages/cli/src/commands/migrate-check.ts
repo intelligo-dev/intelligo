@@ -16,12 +16,11 @@
  * "unmanaged" is a different problem from "behind", and baselining is
  * the fix (see the migrations README).
  *
- * Before 1.0 the framework's chain was 48 migrations; it is now one
- * baseline. A database that ran the old chain holds those 48 hashes,
- * which `legacy-chain.json` (next to the journal) lists: they are
- * reported as `legacy`, not as unknown, and a database holding all of
- * them is `adoptable` — its schema is the baseline's, so `migrate`
- * records the baseline without running it.
+ * The framework's chain is one baseline. A database that ran the pre-1.0
+ * chain holds its hashes, which `legacy-chain.json` (next to the
+ * journal) lists: they are reported as `legacy`, not as unknown, and a
+ * database holding all of them is `adoptable` — its schema is the
+ * baseline's, so `migrate` records the baseline without running it.
  */
 
 import { createHash } from "node:crypto";

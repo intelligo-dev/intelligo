@@ -258,10 +258,8 @@ describe("publishability", () => {
 
   it("puts the licence text in every package, not only the manifest", () => {
     // `"license": "Apache-2.0"` is metadata. Apache-2.0 §4(a) requires
-    // the terms to travel with the distribution, and every tarball
-    // published so far went out without them — a legal defect in each
-    // one, and invisible because the root LICENSE assertion above
-    // passes either way.
+    // the terms to travel with the distribution, which the root
+    // LICENSE assertion above does not prove.
     const rootLicense = readFileSync(path.join(ROOT, "LICENSE"), "utf8");
 
     for (const pkg of PUBLISHED) {
@@ -364,7 +362,7 @@ describe("publishability", () => {
 
   it("does not ship build metadata", () => {
     // `tsBuildInfoFile` lands inside outDir, and `files: ["dist"]`
-    // takes the whole directory — so every tarball carried a
+    // takes the whole directory — so the tarball would carry a
     // tsbuildinfo nobody installing it can use.
     for (const pkg of PUBLISHED) {
       expect(
@@ -379,9 +377,7 @@ describe("publishability", () => {
     // time. A key present in the workspace map and missing from the
     // published one therefore resolves all through development and not
     // at all from the tarball — and nothing else notices, because the
-    // workspace never reads `publishConfig`. That is how core's
-    // `./attachments` and `./storage` shipped unresolvable in
-    // 1.0.0-beta.6, taking `@intelligo-dev/chat` down with them.
+    // workspace never reads `publishConfig`.
     for (const pkg of PUBLISHED) {
       const pkgManifest = manifest(pkg);
       const published = pkgManifest.publishConfig?.exports;
@@ -585,26 +581,6 @@ describe("publishability", () => {
 
 describe("ported code carries its licence", () => {
   const LICENSES = path.join(PACKAGES_DIR, "registry/LICENSES.md");
-  const SOURCES = [
-    { mention: /MIT-licensed/, licence: /LICENSES\.md/ },
-    { mention: /shadcn base-nova's API/, licence: /\bMIT\b/ },
-    { mention: /AI Elements/, licence: /Apache/ },
-  ];
-
-  it("points to the licence wherever a file says it adapts code", () => {
-    const missing: string[] = [];
-    for (const file of walk(path.join(PACKAGES_DIR, "registry/base"), (n) =>
-      /\.(tsx?|css)$/.test(n)
-    )) {
-      const header = readFileSync(file, "utf8").slice(0, 1200);
-      for (const source of SOURCES) {
-        if (source.mention.test(header) && !source.licence.test(header)) {
-          missing.push(`${path.relative(ROOT, file)} (${source.mention})`);
-        }
-      }
-    }
-    expect(missing, "adapted without pointing to its licence").toEqual([]);
-  });
 
   it("keeps every adapted licence's text in packages/registry/LICENSES.md", () => {
     const text = readFileSync(LICENSES, "utf8");

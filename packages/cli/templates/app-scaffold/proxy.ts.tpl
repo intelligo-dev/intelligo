@@ -1,9 +1,5 @@
 /**
- * Next 16 calls this file `proxy.ts`; `middleware.ts` is the Next 15
- * name and still resolves, which is why a scaffold can be wrong here
- * without anything failing. Using the current name keeps a generated
- * app on the path the framework documents rather than the one it is
- * migrating away from.
+ * Next 16 names this file `proxy.ts` (`middleware.ts` still resolves).
  *
  * Optimistic only: it redirects, and never touches the database. Every
  * real check is server-side.

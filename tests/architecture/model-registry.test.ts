@@ -2,20 +2,12 @@
  * Every model id written in this repository must be one the shipped
  * catalogue prices.
  *
- * The registry is open now — a product registers its own models from
- * its composition root, and `calculateCost` throws on an id it cannot
- * price rather than guessing. That moves the general version of this
- * rule to `intelligo doctor`, which can see a consumer's composition
- * root; what stays here is the rule for *this* repository, whose
- * composition roots register `DEFAULT_MODELS` and nothing else.
- *
- * It is still worth having. `openai/gpt-4o` and `openai/gpt-4o-mini`
- * were written in five places, including the model stored on every
- * conversation `createConversation` made — the id the chat page then
- * used for its quota estimate and for the turn itself. Under the old
- * silent fallback those ran on Gemini Flash and billed at Claude
- * rates; under the new one they throw at request time. A test is
- * cheaper than either.
+ * A product registers its own models from its composition root, and
+ * `calculateCost` throws on an id it cannot price rather than guessing;
+ * `intelligo doctor` checks a consumer's composition root. This is the
+ * rule for *this* repository, whose composition roots register
+ * `DEFAULT_MODELS` and nothing else — an unregistered literal here
+ * throws at request time.
  */
 
 import { describe, expect, it } from "vitest";
@@ -82,11 +74,9 @@ const MODEL_ID =
 const ALLOWED_UNREGISTERED = new Set<string>(["reference/echo-1"]);
 
 /**
- * Comments are stripped before scanning. Several of them name a
- * previously-broken id precisely in order to explain why it was
- * broken — including the chat page that already fixed this bug once —
- * and a rule that punishes documenting a defect gets the documentation
- * deleted rather than the defect.
+ * Comments are stripped before scanning: a comment may name a broken
+ * id to explain it, and a rule that punishes documenting a defect gets
+ * the documentation deleted rather than the defect.
  */
 function stripComments(text: string): string {
   return text
@@ -112,11 +102,9 @@ function walk(dir: string, out: string[] = []): string[] {
 
 describe("model registry", () => {
   it("parses the catalogue out of the source", () => {
-    // A silent empty set would make the assertion below vacuous, and
-    // this file parses rather than imports — which is exactly what
-    // happened when MODEL_CONFIGS became DEFAULT_MODELS: the old
-    // parser anchored on a name that no longer existed, matched
-    // nothing, and the rule would have kept passing while enforcing
+    // A silent empty set would make the assertion below vacuous. This
+    // file parses rather than imports, so a renamed catalogue would
+    // match nothing and the rule would keep passing while enforcing
     // nothing at all.
     const known = catalogueModelIds();
     expect(known.size).toBeGreaterThan(3);

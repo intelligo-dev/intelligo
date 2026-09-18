@@ -1,13 +1,12 @@
 /**
  * Your plans and feature gates.
  *
- * This file is yours. Intelligo's billing engine knows only the shape;
- * the names, prices, and limits are entirely your product's, and it
- * reads them through the registry your composition root populates
- *. `monthlyAllowance` is what the credit engine enforces:
- * an amount with its currency, which must be the one your composition
- * root declares to `ensureBillingSettingsRow`. `rolloverEnabled` in
- * `limits` is read directly too.
+ * The billing engine knows only the shape; the names, prices, and
+ * limits are yours, read through the registry your composition root
+ * populates. `monthlyAllowance` is what the credit engine enforces: an
+ * amount with its currency, which must be the one your composition root
+ * declares to `ensureBillingSettingsRow`. `rolloverEnabled` in `limits`
+ * is read directly too.
  */
 
 import { fromMajor } from "@intelligo-dev/core/money";

@@ -4,9 +4,7 @@
  * `db:push` builds tables straight from schema.ts, so a column added to
  * the schema without a migration is invisible in every environment
  * provisioned that way — and fatal in the first one built from the
- * chain. `sessions.active_organization_id` shipped like that: the
- * organization plugin wrote it on every sign-in, and a database
- * migrated by `intelligo migrate` refused the insert.
+ * chain.
  *
  * The check is textual on purpose — it needs no database and runs with
  * the rest of the architecture suite. It matches a column's SQL name

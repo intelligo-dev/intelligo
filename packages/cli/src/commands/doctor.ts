@@ -1,9 +1,6 @@
 /**
  * `intelligo doctor` — report the problems that are invisible until
  * they are an incident.
- *
- * The checks here were each chosen because something in this codebase
- * actually went wrong that way, not because they sounded thorough.
  */
 
 import path from "node:path";
@@ -92,8 +89,7 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
   const env = options.env ?? process.env;
   const results: CheckResult[] = [];
 
-  // 1. Migration chain — the journal/disk drift that made the .sql
-  //    files documentation rather than a provisioning mechanism.
+  // 1. Migration chain: drift between the journal and the .sql files.
   const migrationsDir = resolveMigrationsDir(root);
   if (!migrationsDir) {
     results.push({
@@ -138,8 +134,8 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
   );
 
   // 3. Billing product. The engine has no built-in default catalogue;
-  //    an unset product means every plan
-  //    lookup returns nothing and quotas silently read as zero.
+  //    an unset product means every plan lookup returns nothing and
+  //    quotas silently read as zero.
   results.push(
     env.INTELLIGO_BILLING_PRODUCT
       ? {

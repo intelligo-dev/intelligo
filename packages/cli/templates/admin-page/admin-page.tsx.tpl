@@ -1,5 +1,5 @@
 /**
- * The Intelligo operational console, mounted in your app.
+ * The operational console, mounted in your app.
  *
  * The screen itself ships from @intelligo-dev/admin so every deployment
  * shows the same operational truth — a fork could quietly stop showing

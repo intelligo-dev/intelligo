@@ -1,10 +1,9 @@
 /**
- * Registry structural and boundary rules (Phase 1 of the page/registry
- * migration — docs/intelligo-page-registry-migration-plan.md §3-4).
+ * Registry structural and boundary rules.
  *
  * The registry (`packages/registry/`, a private workspace) ships
- * shadcn-compatible page/component
- * source that becomes ordinary consumer-owned source once installed.
+ * shadcn-compatible page/component source that becomes ordinary
+ * consumer-owned source once installed.
  * Nothing in it may import a package this repository does not publish,
  * a dissolved package, or `@intelligo-dev/ui` (a duplicate runtime
  * dependency), and every file it ships must actually be wired into an
@@ -16,9 +15,7 @@
  * validates the same shape locally, by hand, without a network call
  * and without a `zod` dependency — `zod` is not resolvable from the
  * repo root under pnpm's strict node-linker (only packages that
- * declare it get a symlink), and this suite's HARD RULE is no
- * `pnpm install`. A hand-rolled structural check is the deviation;
- * see the migration plan/report for the full note.
+ * declare it get a symlink).
  */
 
 import { describe, expect, it } from "vitest";
@@ -92,8 +89,8 @@ function readBlocks(): RegistryJson {
 }
 
 /**
- * Everything that ships source: blocks, and the T3/T4 components
- * blocks compose. Import, dependency and orphan rules hold for both;
+ * Everything that ships source: blocks, and the components blocks
+ * compose. Import, dependency and orphan rules hold for both;
  * messages and requires.json are block rules.
  */
 function readSourceItems(): RegistryJson {
@@ -479,7 +476,7 @@ describe("registry", () => {
     // item, on purpose) — declared once in registry/requires.json.
     const SCAFFOLD_PROVIDED = new Set(readRequires().scaffold);
 
-    // Intelligo's own components (T3/T4), which blocks name as @intelligo/<name>.
+    // Registry components, which blocks name as @intelligo/<name>.
     const UI_ITEMS = new Set(
       readRegistry()
         .items.filter((item) => item.type === "registry:ui")
@@ -571,9 +568,8 @@ describe("registry", () => {
   });
 
   /**
-   * registry/requires.json is the machine-readable form of what the
-   * descriptions used to say in prose: which sibling items an item
-   * needs installed first, which scaffold files it imports, and which
+   * registry/requires.json says which sibling items an item needs
+   * installed first, which scaffold files it imports, and which
    * feature keys it gates on. CI derives the install order from it and
    * `intelligo doctor` checks an app against it, so it must be exactly
    * what the code does — neither a stale extra nor a missing edge.

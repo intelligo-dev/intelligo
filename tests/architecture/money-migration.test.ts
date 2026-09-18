@@ -1,18 +1,15 @@
 /**
- * Money says what it is of, and migration 0045 is what made
- * that true of the database as well as the types.
+ * Money says what it is of, in the database as well as the types.
  *
- * Two rules, because the old shape can come back two ways. A column
- * named for a currency — `charged_mnt`, `balance_mnt` — holds an amount
- * whose unit lives in its name, which is how one Gemini Flash turn came
- * to read as "$15" on the usage page and a $5 credit pack came to grant
- * 100,000 units of nothing in particular. An identifier named the same
- * way carries the habit into the API.
+ * Two rules. A column named for a currency — `charged_mnt`,
+ * `balance_mnt` — holds an amount whose unit lives in its name, so the
+ * amount is read in whatever currency the reader assumes. An identifier
+ * named the same way carries the habit into the API.
  *
  * `migration-drift.test.ts` cannot catch either: it asks whether every
- * declared column is *mentioned* in some migration, and a leftover
- * `chargedMnt` field is mentioned by 0045's own `DROP COLUMN` line. So
- * these are separate rules rather than an extension of that one.
+ * declared column is *mentioned* in some migration, and a `DROP COLUMN`
+ * line mentions the column it removed. So these are separate rules
+ * rather than an extension of that one.
  *
  * Scope is the published packages' source. `packages/registry` is
  * consumer-owned source a product edits, and the apps are generated
@@ -36,8 +33,8 @@ const SCHEMA_DIRS = [
 const snake = (s: string) => s.replace(/[A-Z]/g, (m) => "_" + m.toLowerCase());
 
 /**
- * Columns 0044 replaced. Each held an amount with no currency beside
- * it, or a conversion rate the deployment never named.
+ * Forbidden columns. Each held an amount with no currency beside it,
+ * or a conversion rate the deployment never named.
  */
 const SUPERSEDED = new Set([
   "usd_to_mnt_rate",
@@ -108,9 +105,8 @@ function packageSources(): string[] {
 }
 
 /**
- * Comments stripped: `core/money.ts` explains the names it replaced,
- * and a rule that cannot tell documentation from code would forbid
- * writing down why the rule exists.
+ * Comments stripped: a rule that cannot tell documentation from code
+ * would forbid writing down why the rule exists.
  */
 function withoutComments(source: string): string {
   return source
