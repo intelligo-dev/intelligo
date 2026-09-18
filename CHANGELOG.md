@@ -14,6 +14,67 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+The framework's schema becomes one baseline that describes structure and
+nothing else, and the interface moves the way its AI parts always did.
+
+### Breaking
+
+- **The migration chain is one baseline.** `@intelligo-dev/core` ships
+  `0000_baseline` in place of the 48 migrations that grew before 1.0, and
+  `0001_reconcile_chain_built_databases`. Nothing is seeded any more: no
+  document types, no billing row.
+  - **Upgrading a database that ran the old chain:** run
+    `intelligo migrate`. It recognises the old chain by its hashes
+    (`legacy-chain.json`), records the baseline as applied without
+    running it, and applies `0001`, which brings the few places where the
+    old chain and the schema disagreed into line (`conversations.metadata`
+    to jsonb, the invitation and finance-event foreign keys, three
+    indexes). A database that ran only part of the old chain is refused:
+    finish it with `1.0.0-beta.7` first.
+- **Tables the framework no longer owns** are gone from the schema and
+  from new databases: `competitions`, `competition_entries`,
+  `shared_reports`, `user_profiles`, `ee_audit_chain`, `image_tools`,
+  `image_generations`, `knowledge_articles`, `knowledge_documents`,
+  `knowledge_chunks`, `document_types`, `suggestions`, `referral_codes`,
+  `referrals`, `rag_documents` and `pending_extractions`, with the
+  `agents.product_type` and `documents.type_id` columns. No framework
+  code read them. An adopted database keeps them untouched; a product
+  that uses them declares them in its own schema and migrations.
+- **Billing is USD until a deployment says otherwise.** Schema defaults
+  and the fallbacks in `getBillingSettings` are USD at 1.0; the old
+  tugrik defaults are gone. `ensureBillingSettingsRow(config)` now
+  replaces the row the old chain seeded (MNT at 3450, 4×) with the
+  composition root's configuration; any other existing row is still
+  left alone.
+- The primitives animate with `motion/react` (ADR-0018): popover,
+  dropdown menu, select, tooltip, dialog, alert dialog and sheet keep a
+  controlled root internally, so their exit plays; installing one now
+  installs `@intelligo/ai-motion` and `motion`. The API is unchanged.
+- The `app-shell` item runs on `ai-sidebar` instead of the stock shadcn
+  sidebar, and the chat history follows. `shell-config` and
+  `nav-config` keep their shape.
+
+### Added
+
+- Registry items `popover-morph`, `select-morph`, `morphing-modal`,
+  `notification-stack`, `animated-list`, `otp-input`, `file-upload`,
+  `expandable-tabs` and `hold-action-button`.
+- The chat renders replies in `ai-streaming-response`, the working line
+  in `ai-reasoning-text`, running subagents with `ai-agent-progress`,
+  and ships `FileDiffCard` and `ImageGenerationCard` tool renderers.
+- Pages stagger in, the notification bell stacks unread notifications,
+  deleting a workspace is held rather than clicked, onboarding steps
+  slide.
+
+### Fixed
+
+- A scaffolded app loads Geist; every surface used to fall back to the
+  system face.
+- `resetMonthlyQuota` names the deployment's currency instead of relying
+  on a column default.
+
 ## [1.0.0-beta.7] — 2026-09-16
 
 The chat at ChatGPT level on one runtime seam, one design

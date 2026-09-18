@@ -51,7 +51,7 @@ d("execution lifecycle (integration)", () => {
     await client.query(`DELETE FROM executions WHERE workspace_id = $1`, [
       workspaceId,
     ]);
-    // audit_events is append-only (migration 0041); deleting the workspace
+    // audit_events is append-only; deleting the workspace
     // below nulls its rows' workspace_id instead.
     await client.query(`DELETE FROM organization WHERE id = $1`, [workspaceId]);
     await client.query(`DELETE FROM users WHERE id = $1`, [userId]);

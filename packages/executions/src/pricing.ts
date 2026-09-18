@@ -273,8 +273,8 @@ export function providerCost(
 
 /**
  * What a deployment bills in: its currency, what one USD costs in it
- * (micros, so `1_000_000` is a USD deployment and `3_450_000_000` is
- * 3450₮), and the margin over provider cost in basis points of a
+ * (micros, so `1_000_000` is a USD deployment and `920_000` a euro one
+ * at 0.92), and the margin over provider cost in basis points of a
  * multiplier — `40_000` is 4×.
  *
  * Read per request from `billing_settings`; there is no ambient rate,
@@ -290,7 +290,7 @@ export type BillingRate = {
  * `40_000` bp = 4× provider cost, the fallback margin when a
  * deployment's `billing_settings` row names none.
  *
- * INVARIANT — 65% gross margin floor (founder contract):
+ * INVARIANT — a 65% gross margin floor:
  *   gross_margin = 1 − 1/multiplier
  * Keeping gross_margin ≥ 0.65 means a multiplier ≥ 1/0.35 ≈ 2.857. At
  * 4× this yields 75%, leaving buffer above the floor for FX moves and

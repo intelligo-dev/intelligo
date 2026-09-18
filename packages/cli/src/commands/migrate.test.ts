@@ -77,6 +77,9 @@ describe("decideApply", () => {
     pending: ["0000_a", "0001_b"],
     unknown: [],
     unmanaged: true,
+    legacy: [],
+    legacyChainLength: 0,
+    adoptable: false,
     ...over,
   });
 
@@ -84,6 +87,7 @@ describe("decideApply", () => {
     expect(decideApply(check({}), false)).toEqual({
       action: "apply",
       pending: ["0000_a", "0001_b"],
+      adopted: [],
     });
   });
 
@@ -99,7 +103,7 @@ describe("decideApply", () => {
         check({ applied: ["0000_a"], pending: ["0001_b"], unmanaged: false }),
         true
       )
-    ).toEqual({ action: "apply", pending: ["0001_b"] });
+    ).toEqual({ action: "apply", pending: ["0001_b"], adopted: [] });
   });
 
   it("is a no-op when up to date", () => {
@@ -109,6 +113,33 @@ describe("decideApply", () => {
         true
       )
     ).toEqual({ action: "noop" });
+  });
+
+  it("adopts the baseline on a database that ran the whole pre-1.0 chain", () => {
+    expect(
+      decideApply(
+        check({
+          legacy: ["0000_old", "0001_old"],
+          legacyChainLength: 2,
+          adoptable: true,
+          unmanaged: false,
+        }),
+        true
+      )
+    ).toEqual({ action: "apply", adopted: ["0000_a"], pending: ["0001_b"] });
+  });
+
+  it("refuses a database that ran only part of the pre-1.0 chain", () => {
+    const d = decideApply(
+      check({
+        legacy: ["0000_old"],
+        legacyChainLength: 2,
+        unmanaged: false,
+      }),
+      true
+    );
+    expect(d.action).toBe("refuse");
+    if (d.action === "refuse") expect(d.reason).toContain("1 of the 2");
   });
 
   it("refuses a database that is ahead of this checkout", () => {
@@ -183,6 +214,35 @@ describe("applyMigrations", () => {
     // 0002_c's `when` (998) is below the applied rows' — drizzle's
     // timestamp rule would skip it; the hash rule does not.
     expect(received.map((m) => m.tag)).toEqual(["0002_c"]);
+  });
+
+  it("adopts the baseline on a database that ran the whole pre-1.0 chain", async () => {
+    chain(["0000_a", "0001_b"]);
+    const old = ["0000_old", "0001_old", "0002_old"];
+    writeFileSync(
+      path.join(dir, "legacy-chain.json"),
+      JSON.stringify({
+        entries: old.map((tag) => ({ tag, hash: hashMigration(sqlFor(tag)) })),
+      })
+    );
+    let received: PendingMigration[] = [];
+    const r = await applyMigrations({
+      migrationsDir: dir,
+      query: async (sql: string) => {
+        if (sql === SCHEMA_PROBE_SQL) return [{ rel: "users" }];
+        return old.map((tag) => ({ hash: hashMigration(sqlFor(tag)) }));
+      },
+      run: async (pending) => {
+        received = pending;
+      },
+    });
+    expect(r.action).toBe("apply");
+    // The baseline is recorded with nothing to run; what follows runs.
+    expect(received.map((m) => [m.tag, m.statements.length])).toEqual([
+      ["0000_a", 0],
+      ["0001_b", 2],
+    ]);
+    expect(formatApplyResult(r)).toContain("Adopted 0000_a");
   });
 
   it("does not run the migrator when nothing is pending", async () => {

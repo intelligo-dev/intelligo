@@ -7,6 +7,7 @@
  * DO NOT modify table or column names without consulting Better-Auth docs.
  */
 
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -20,36 +21,47 @@ import {
  * Users table - Core user identity
  * Managed by Better-Auth
  */
-export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  image: text("image"),
-  deletedAt: timestamp("deleted_at"), // Soft delete: null = active, timestamp = deleted
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  // Onboarding state (Phase 29, v0.5)
-  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
-  onboardingStep: text("onboarding_step"), // Current step if incomplete: "workspace" | "language" | "product"
-  // Language preference (Phase 29, v0.5)
-  preferredLanguage: text("preferred_language").notNull().default("en"), // "en" | "mn"
-  /**
-   * Platform role, NOT a workspace role — "platform-admin" or null.
-   * Workspace membership roles live on `member.role`; this one grants
-   * the operational console and is what Better-Auth's admin plugin
-   * checks before allowing impersonation.
-   *
-   * PLATFORM_ADMIN_EMAILS remains the bootstrap: requirePlatformAdmin
-   * promotes an allowlisted user into this column on first use, so the
-   * env var seeds the first admin and the row is the runtime truth.
-   */
-  role: text("role"),
-  /** Better-Auth admin plugin. Unused by the product; the plugin's schema expects them. */
-  banned: boolean("banned").notNull().default(false),
-  banReason: text("ban_reason"),
-  banExpires: timestamp("ban_expires"),
-});
+export const users = pgTable(
+  "users",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    image: text("image"),
+    deletedAt: timestamp("deleted_at"), // Soft delete: null = active, timestamp = deleted
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    // Onboarding state (Phase 29, v0.5)
+    onboardingCompleted: boolean("onboarding_completed")
+      .notNull()
+      .default(false),
+    onboardingStep: text("onboarding_step"), // Current step if incomplete: "workspace" | "language" | "product"
+    // Language preference (Phase 29, v0.5)
+    preferredLanguage: text("preferred_language").notNull().default("en"), // a locale the app ships, e.g. "en"
+    /**
+     * Platform role, NOT a workspace role — "platform-admin" or null.
+     * Workspace membership roles live on `member.role`; this one grants
+     * the operational console and is what Better-Auth's admin plugin
+     * checks before allowing impersonation.
+     *
+     * PLATFORM_ADMIN_EMAILS remains the bootstrap: requirePlatformAdmin
+     * promotes an allowlisted user into this column on first use, so the
+     * env var seeds the first admin and the row is the runtime truth.
+     */
+    role: text("role"),
+    /** Better-Auth admin plugin. Unused by the product; the plugin's schema expects them. */
+    banned: boolean("banned").notNull().default(false),
+    banReason: text("ban_reason"),
+    banExpires: timestamp("ban_expires"),
+  },
+  (table) => [
+    // Finding the platform admins: a handful of rows among many.
+    index("users_role_idx")
+      .on(table.role)
+      .where(sql`${table.role} IS NOT NULL`),
+  ]
+);
 
 /**
  * Sessions table - Active login sessions

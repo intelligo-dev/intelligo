@@ -274,76 +274,6 @@ export const userMemoryAudit = pgTable(
 );
 
 // ---------------------------------------------------------------------------
-// 5. pending_extractions — queue of conversations awaiting fact extraction
-// ---------------------------------------------------------------------------
-
-/**
- * Background-job queue for fact extraction. When a chat session ends
- * the chat handler enqueues the conversation id here; a consumer-owned
- * extraction worker polls and processes pending rows. Status starts as 'pending', flips to
- * 'processing' while the worker holds the row, then 'completed' or
- * 'failed' on exit. Failed rows track attempts so we can retry with
- * exponential backoff and a hard cap.
- *
- * Keeping the queue in Postgres rather than Inngest/QStash for now —
- * launch traffic is small enough that DB polling is sufficient.
- */
-
-export const EXTRACTION_STATUSES = [
-  "pending",
-  "processing",
-  "completed",
-  "failed",
-] as const;
-export type ExtractionStatus = (typeof EXTRACTION_STATUSES)[number];
-
-export const pendingExtractions = pgTable(
-  "pending_extractions",
-  {
-    id: text("id").primaryKey(),
-    conversationId: text("conversation_id").notNull(),
-    workspaceId: text("workspace_id")
-      .notNull()
-      .references(() => organization.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    productSlug: text("product_slug").notNull(),
-
-    status: text("status")
-      .$type<ExtractionStatus>()
-      .notNull()
-      .default("pending"),
-    attempts: integer("attempts").notNull().default(0),
-    maxAttempts: integer("max_attempts").notNull().default(3),
-
-    lastError: text("last_error"),
-    nextRetryAt: timestamp("next_retry_at"),
-
-    enqueuedAt: timestamp("enqueued_at").notNull().defaultNow(),
-    startedAt: timestamp("started_at"),
-    completedAt: timestamp("completed_at"),
-  },
-  (table) => [
-    index("pending_extractions_status_idx").on(table.status),
-    index("pending_extractions_workspace_idx").on(table.workspaceId),
-    uniqueIndex("pending_extractions_conversation_uniq").on(
-      table.conversationId
-    ),
-    // Composite index for listPendingExtractions + claimNextExtraction
-    // queries that filter by (status = 'pending' AND next_retry_at IS NULL / <= now).
-    // Without this, the OR clause forces a seq scan on status='pending' rows.
-    index("pending_extractions_status_retry_idx").on(
-      table.status,
-      table.nextRetryAt
-    ),
-    // 0033_pending_extractions_partial_idx.sql adds a partial index
-    // (workspace_id) WHERE status = 'pending' — used by claimNextExtraction
-    // and listPendingExtractions for per-workspace queue polling.
-  ]
-);
-
-// ---------------------------------------------------------------------------
 // Inferred types
 // ---------------------------------------------------------------------------
 
@@ -356,5 +286,3 @@ export type InsertUserProfileSnapshot =
   typeof userProfileSnapshots.$inferInsert;
 export type UserMemoryAuditRow = typeof userMemoryAudit.$inferSelect;
 export type InsertUserMemoryAudit = typeof userMemoryAudit.$inferInsert;
-export type PendingExtraction = typeof pendingExtractions.$inferSelect;
-export type InsertPendingExtraction = typeof pendingExtractions.$inferInsert;

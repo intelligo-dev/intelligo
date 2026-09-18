@@ -8,15 +8,15 @@
  * round-trip to Neon. The DB row is authoritative and can be
  * hot-updated without a code deploy.
  *
- * The row used to hold a USD→MNT rate and a ×100 margin with no
- * currency at all, which is why a USD deployment could not use it.
- * Migration 0045 dropped both.
+ * A deployment names its currency, rate and margin once, from its
+ * composition root, through `ensureBillingSettingsRow`; until it does,
+ * it bills in USD at cost × the default margin.
  */
 
 import { db } from "@intelligo-dev/core/db";
 import { billingSettings } from "@intelligo-dev/core/db/schema";
 import { currency } from "@intelligo-dev/core/money";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
   DEFAULT_MARGIN_BP,
   type BillingRate,
@@ -29,26 +29,31 @@ const MICROS_PER_UNIT = 1_000_000;
 
 let cached: { value: ResolvedBillingSettings; expiresAt: number } | null = null;
 
-/**
- * The rate the framework shipped with, before money started carrying
- * its own currency and a deployment had to name its own rate. It
- * survives the removal of
- * `DEFAULT_USD_TO_MNT_RATE` for one reason: an existing tugrik database
- * with no settings row must keep billing exactly as it did. Anything
- * else says so through `ensureBillingSettingsRow`.
- */
-const SHIPPED_MNT_RATE_MICROS = 3_450 * MICROS_PER_UNIT;
+/** One USD in USD. */
+const USD_RATE_MICROS = MICROS_PER_UNIT;
 
 /**
- * What a deployment gets before it configures anything: the tugrik
- * basis the framework shipped with. A USD deployment says so from its
+ * What a deployment gets before it configures anything: USD at cost
+ * times the default margin. Any other currency says so from the
  * composition root through `ensureBillingSettingsRow`.
  */
 const DEFAULTS: ResolvedBillingSettings = {
-  currency: currency("MNT"),
-  usdRateMicros: SHIPPED_MNT_RATE_MICROS,
+  currency: currency("USD"),
+  usdRateMicros: USD_RATE_MICROS,
   marginBp: DEFAULT_MARGIN_BP,
 };
+
+/**
+ * The row the framework's old migration chain seeded into every
+ * database (tugrik at 3450, 4×). Nobody chose it: a database that still
+ * holds exactly this row takes the composition root's configuration
+ * instead. Any other row was set on purpose and is left alone.
+ */
+const LEGACY_SEED = {
+  currency: "MNT",
+  usdRateMicros: 3_450_000_000,
+  marginBp: 40_000,
+} as const;
 
 /**
  * Get the current billing settings (currency, rate + margin).
@@ -73,8 +78,8 @@ export async function getBillingSettings(): Promise<ResolvedBillingSettings> {
     let value = DEFAULTS;
     if (row) {
       value = {
-        currency: currency(row.currency || "MNT"),
-        usdRateMicros: Number(row.usdRateMicros) || SHIPPED_MNT_RATE_MICROS,
+        currency: currency(row.currency || DEFAULTS.currency),
+        usdRateMicros: Number(row.usdRateMicros) || USD_RATE_MICROS,
         marginBp: row.marginBp || DEFAULT_MARGIN_BP,
       };
     }
@@ -84,9 +89,10 @@ export async function getBillingSettings(): Promise<ResolvedBillingSettings> {
   } catch (error) {
     // Never block billing on a transient outage — and never silently
     // change what a deployment bills in either. An expired reading of
-    // the real row is still right about the currency; DEFAULTS is
-    // tugrik, so on a USD deployment falling back to it would charge
-    // every turn at the wrong rate until the database came back.
+    // the real row is still right about the currency; DEFAULTS is USD,
+    // so on a deployment in any other currency falling back to it
+    // would charge every turn at the wrong rate until the database
+    // came back.
     console.error("[BillingSettings] DB read failed:", error);
     if (cached) return cached.value;
     return DEFAULTS;
@@ -105,14 +111,16 @@ export function invalidateBillingSettingsCache(): void {
  * Idempotent seeder — ensures a "default" row exists on first boot so
  * later UPDATE-from-admin can target it. Safe to call multiple times.
  *
- * A deployment that bills in anything but tugrik says so here, from its
- * composition root:
+ * A deployment says what it bills in here, from its composition root:
  *
  *   ensureBillingSettingsRow({
- *     currency: "USD",
- *     usdRateMicros: 1_000_000, // a USD deployment converts at 1.0
+ *     currency: "EUR",
+ *     usdRateMicros: 920_000, // one USD costs 0.92 EUR
  *     marginBp: DEFAULT_MARGIN_BP,
  *   });
+ *
+ * An existing row wins — an admin may have edited it — except the one
+ * the old migration chain seeded, which nobody chose (`LEGACY_SEED`).
  */
 export async function ensureBillingSettingsRow(config?: {
   currency: string;
@@ -136,4 +144,24 @@ export async function ensureBillingSettingsRow(config?: {
       marginBp: resolved.marginBp,
     })
     .onConflictDoNothing({ target: billingSettings.id });
+
+  if (!config) return;
+  const updated = await db
+    .update(billingSettings)
+    .set({
+      currency: resolved.currency,
+      usdRateMicros: resolved.usdRateMicros,
+      marginBp: resolved.marginBp,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(billingSettings.id, "default"),
+        eq(billingSettings.currency, LEGACY_SEED.currency),
+        eq(billingSettings.usdRateMicros, LEGACY_SEED.usdRateMicros),
+        eq(billingSettings.marginBp, LEGACY_SEED.marginBp)
+      )
+    )
+    .returning({ id: billingSettings.id });
+  if (updated.length > 0) invalidateBillingSettingsCache();
 }

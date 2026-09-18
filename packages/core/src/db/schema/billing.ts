@@ -91,7 +91,7 @@ export const creditBalances = pgTable("credit_balances", {
     .notNull()
     .default(0),
   /** What this ledger is denominated in; a write in another is refused. */
-  currency: text("currency").notNull().default("MNT"),
+  currency: text("currency").notNull().default("USD"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
@@ -105,11 +105,11 @@ export const creditBalances = pgTable("credit_balances", {
 export const billingSettings = pgTable("billing_settings", {
   id: text("id").primaryKey(),
   /** The deployment's billing currency — every ledger row is in this. */
-  currency: text("currency").notNull().default("MNT"),
+  currency: text("currency").notNull().default("USD"),
   /** What one USD costs in it, in micros: 1_000_000 is a USD deployment. */
   usdRateMicros: bigint("usd_rate_micros", { mode: "number" })
     .notNull()
-    .default(3_450_000_000),
+    .default(1_000_000),
   /** Margin over provider cost, in basis points of a multiplier: 40_000 = 4×. */
   marginBp: integer("margin_bp").notNull().default(40_000),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -189,7 +189,7 @@ export const creditReservations = pgTable(
     estimatedMicros: bigint("estimated_micros", { mode: "number" })
       .notNull()
       .default(0),
-    currency: text("currency").notNull().default("MNT"),
+    currency: text("currency").notNull().default("USD"),
     status: text("status").notNull().default("active"), // active | settled
     createdAt: timestamp("created_at").notNull().defaultNow(),
     expiresAt: timestamp("expires_at").notNull(),

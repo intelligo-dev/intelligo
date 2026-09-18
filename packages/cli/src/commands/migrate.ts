@@ -32,12 +32,18 @@ import path from "node:path";
 
 import {
   hashMigration,
+  isPartialLegacy,
   migrateCheck,
   type MigrateCheckResult,
 } from "./migrate-check.js";
 
 export type ApplyDecision =
-  | { action: "apply"; pending: string[] }
+  | {
+      action: "apply";
+      pending: string[];
+      /** Recorded as applied without running: the schema is already there. */
+      adopted: string[];
+    }
   | { action: "noop" }
   | { action: "refuse"; reason: string };
 
@@ -61,6 +67,26 @@ export function decideApply(
     };
   }
 
+  if (isPartialLegacy(check)) {
+    return {
+      action: "refuse",
+      reason:
+        `This database ran ${check.legacy.length} of the ` +
+        `${check.legacyChainLength} pre-1.0 migrations. Finish that chain ` +
+        `with @intelligo-dev/core 1.0.0-beta.7 (\`intelligo migrate\`) ` +
+        `before upgrading.`,
+    };
+  }
+
+  if (check.adoptable) {
+    const [baseline, ...rest] = check.pending;
+    return {
+      action: "apply",
+      adopted: baseline ? [baseline] : [],
+      pending: rest,
+    };
+  }
+
   if (check.unmanaged && schemaExists) {
     return {
       action: "refuse",
@@ -74,7 +100,7 @@ export function decideApply(
 
   if (check.pending.length === 0) return { action: "noop" };
 
-  return { action: "apply", pending: check.pending };
+  return { action: "apply", pending: check.pending, adopted: [] };
 }
 
 type QueryFn = (sql: string) => Promise<Array<Record<string, unknown>>>;
@@ -171,9 +197,16 @@ export async function applyMigrations(
 
   const decision = decideApply(check, schemaExists);
   if (decision.action === "apply") {
-    await options.run(
-      readPendingMigrations(options.migrationsDir, decision.pending)
-    );
+    // An adopted migration is recorded with no statements: its schema is
+    // already in the database.
+    const adopted = readPendingMigrations(
+      options.migrationsDir,
+      decision.adopted
+    ).map((m) => ({ ...m, statements: [] }));
+    await options.run([
+      ...adopted,
+      ...readPendingMigrations(options.migrationsDir, decision.pending),
+    ]);
   }
 
   return { ...decision, chainLength: check.chain.length };
@@ -187,6 +220,10 @@ export function formatApplyResult(r: ApplyMigrationsResult): string {
       return `✓ Nothing to apply (${r.chainLength}/${r.chainLength} applied)`;
     case "apply":
       return [
+        ...r.adopted.map(
+          (tag) =>
+            `✓ Adopted ${tag}: this database ran the pre-1.0 chain, so its schema is already there`
+        ),
         `✓ Applied ${r.pending.length} migration(s):`,
         ...r.pending.map((tag) => `    ${tag}`),
       ].join("\n");

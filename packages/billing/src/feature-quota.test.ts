@@ -202,7 +202,7 @@ vi.mock("drizzle-orm", () => ({
     if (col === "userId") mocks.setLastWhereUserId(val as string);
     return { op: "eq", col, val };
   }),
-  // A quota row is per (user, workspace) since migration 0046, so the
+  // A quota row is per (user, workspace), so the
   // module composes its predicates. The fake still keys off the `eq`
   // on `userId`, which `and` receives already evaluated.
   and: vi.fn((...conditions: unknown[]) => ({ op: "and", conditions })),
@@ -325,7 +325,7 @@ describe("checkFeatureQuota — free plan", () => {
     expect(mocks.mockInsert).toHaveBeenCalled();
     // The row has to carry who and where, or the next request reads a
     // quota that belongs to nobody — counters are per (user, workspace)
-    // since migration 0046.
+    // since 1.0.
     expect(mocks.mockInsertValues).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "new-user",

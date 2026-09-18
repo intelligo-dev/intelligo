@@ -1,0 +1,197 @@
+{
+  "$comment": "The framework's migration chain before the 1.0 baseline: every entry's tag and the sha256 of its .sql file, as drizzle recorded it in drizzle.__drizzle_migrations. `intelligo migrate` reads it to adopt a database that ran the whole old chain \u2014 it records 0000_baseline as applied without running it. The SQL itself is not shipped.",
+  "entries": [
+    {
+      "tag": "0000_sharp_night_nurse",
+      "hash": "095685bd97c0d51b9ec5413d866c84e1ff1f5a86c51a1228ec1a87d372f19899"
+    },
+    {
+      "tag": "0001_hesitant_vapor",
+      "hash": "403a33243ec4687a3c114a7d1b60e469988452fb54aea93d2e69c29839c86f04"
+    },
+    {
+      "tag": "0002_numerous_lady_vermin",
+      "hash": "90d931beaaea073d5a363318119449c957cde32282dd53e5bcd5ad488174f97a"
+    },
+    {
+      "tag": "0003_mighty_jean_grey",
+      "hash": "9d0128a08223a0a112ac8e197315e85eb86d9d7a92028577bc763a5dd9ac84ec"
+    },
+    {
+      "tag": "0004_cynical_grandmaster",
+      "hash": "53ca240bb183a4416bac27fe430019e36b5c63a8e592f33a8d058f986ad56d97"
+    },
+    {
+      "tag": "0005_careful_switch",
+      "hash": "b1bd2845c02008f37d49f4c89ab56f8584ec4c3a1f95f23291e836d21bec9465"
+    },
+    {
+      "tag": "0006_tense_blue_marvel",
+      "hash": "2bab2a70e4ce5fda000d595193800b07ff88a8492da95034c79e82da4b937755"
+    },
+    {
+      "tag": "0007_next_squadron_sinister",
+      "hash": "c071b97e8edd8b034ecda51764e40ca9e50b3719103f31acd098cfc2e9390b98"
+    },
+    {
+      "tag": "0008_powerful_scream",
+      "hash": "f88f2a55354442843293abf91069bf0f0a274e8426a954930cba06ed89c557c6"
+    },
+    {
+      "tag": "0009_sad_ink",
+      "hash": "c5b957dd7abf7dedbe13d2fb4a6c4f3ab5da26d3b8690f8e4f610c53b9366c85"
+    },
+    {
+      "tag": "0010_shocking_omega_flight",
+      "hash": "c82b4be9f37fbf4d65c0713231a05f162f87a2713df39956155ded4e228217f3"
+    },
+    {
+      "tag": "0011_ambiguous_otto_octavius",
+      "hash": "0688a1389e8eb66a645103ec3984e77859d91889359cb75eb36b1cd4a07052e5"
+    },
+    {
+      "tag": "0011_hnsw_vector_index",
+      "hash": "69663f644a3df6c644c5b8b2cd5edbf6045d8c6a319dc15fad35e413128ef243"
+    },
+    {
+      "tag": "0012_user_profiles",
+      "hash": "aec846995de9798d97524dbfc2bbfc65249cf8142f35c80746688d2ce1807fd5"
+    },
+    {
+      "tag": "0013_trending_seasonal_columns",
+      "hash": "895d018d85eee1dec5f24ef2c00b5f58de8d036577a8fefec87fef785605891c"
+    },
+    {
+      "tag": "0014_add_product_type_to_agents",
+      "hash": "9102dcc2b9671a78a1691ab6d35e92c1fc560032d2df86103ed597521db20419"
+    },
+    {
+      "tag": "0015_new_v1_tables",
+      "hash": "2c6a834de43d4d87c3e857440ede60a725f9f314a0521b9b5ff75e9b152dc04d"
+    },
+    {
+      "tag": "0016_document_types",
+      "hash": "f96cf97918fc694318b8b6f94d0c3d9ce55daa7e01048ec32cb9755bad786e76"
+    },
+    {
+      "tag": "0017_document_metadata",
+      "hash": "7da47750df213b13956bdcbb7573196b81d84bc6bdd0da3991d3510f2f9090af"
+    },
+    {
+      "tag": "0018_identity_graph",
+      "hash": "f32c53f18a9d9e5ca41cc7aed3960d6c114bb468f0abc3de5c69fa40ddc3811d"
+    },
+    {
+      "tag": "0019_db_driven_prompts",
+      "hash": "fc0ff0e6057e5142b0a4ef5efb39737d6757ad7cd4a744d594e655b3e61e5708"
+    },
+    {
+      "tag": "0020_pending_extractions",
+      "hash": "c811cb83038597a8d533bc759338fcd7e8515e3a0312e1860d9ab898f7f9ccdb"
+    },
+    {
+      "tag": "0021_rag_documents",
+      "hash": "0c72555507227726e03003536f059ceeb833644d1f10d8474b3599ab9a8b9636"
+    },
+    {
+      "tag": "0022_user_quotas_usage_jsonb",
+      "hash": "73664463ec2d4c7a998a8adb44925367bff4d9f6c46b49e28903b1960edd2084"
+    },
+    {
+      "tag": "0023_user_facts_user_scoped_unique",
+      "hash": "6f8f6a7e823a298e7a6fa9bc9a124abc557516bd442a637d91801eb87233c7ec"
+    },
+    {
+      "tag": "0024_user_memories_hnsw",
+      "hash": "cffca18b0e4f2081546ae8cd19d027b0fcb5372dc16e6536f2c759ad6e1d391e"
+    },
+    {
+      "tag": "0025_audit_trigger_errcode",
+      "hash": "eb45e223eabce2f692587967ce24ea31c152bd1ecf50dfe60b28c7a8fc6d3443"
+    },
+    {
+      "tag": "0026_user_profile_snapshots_composite_pk",
+      "hash": "09dc229039b2e48df073c9cd181e58aa2c210357e077413aecfa70dc482687ee"
+    },
+    {
+      "tag": "0027_billing_settings_mnt_columns",
+      "hash": "f21baf51c21bf23e2ddd13985f06cf1acefd2f5fb6bf4fbc4c925d49f62051ae"
+    },
+    {
+      "tag": "0028_trial_credits_normalized_email",
+      "hash": "17c557228ee81f27073a537b5b534abf4557a27e7755a367cba566b14c307235"
+    },
+    {
+      "tag": "0029_usage_records_conversation_idx",
+      "hash": "260c39df837b8f21feddd35ef2263f52bc3821f288466b15e80d95f20bfe1e72"
+    },
+    {
+      "tag": "0030_pending_extractions_composite_idx",
+      "hash": "d0e398772a42f6e5de6b3f2a5562b9d98c996e72489413f51a2bb244f4317dda"
+    },
+    {
+      "tag": "0031_rag_documents_hnsw",
+      "hash": "bc96dba2f49403281d1f27e6f8ac1f55f22d34a3e701af19be54e666f4b088b1"
+    },
+    {
+      "tag": "0032_rate_limit_unique_idx",
+      "hash": "c2995c76b96b69d8dc6e8a676fe7c45c2fc66d7ed17ce8a68914f8c756869399"
+    },
+    {
+      "tag": "0033_pending_extractions_partial_idx",
+      "hash": "b74373ba8076cc1f38c3805063023e8dc89de11f3d98502f818460354de18f39"
+    },
+    {
+      "tag": "0034_rate_limit_count",
+      "hash": "6263b9451b91500213a5559ad960f9186b2fee9d73eeb30a4b3209ae1d3366cc"
+    },
+    {
+      "tag": "0035_credit_reservations",
+      "hash": "fe95a71462bde8980924e77aff20e38cbee92b4bbae210c504c83015720b10ff"
+    },
+    {
+      "tag": "0036_executions_audit_jobs",
+      "hash": "8665606757ec96bbd48eaab2b2ebb1ee5b5a86d58ba73635b3229ff94c40e572"
+    },
+    {
+      "tag": "0037_rate_limit_minute_bucket",
+      "hash": "112683e434f07c4db20179ebaffdc52d6f21f644e0573b718b2ff060794db064"
+    },
+    {
+      "tag": "0038_user_quotas_generic_usage",
+      "hash": "658b6f64424522d955f2aa4d2ce1fe32b52f0e5adbdba14af75c1678389d7754"
+    },
+    {
+      "tag": "0039_platform_admin_impersonation",
+      "hash": "e9d67dae6b4e0c1149aadd9f29d23a48c93861cfd5d176d61ca3ade00d735617"
+    },
+    {
+      "tag": "0040_ee_audit_chain",
+      "hash": "16b01fa704f75e13fe85cee307a2dd287e3cbd93e77fd58ce0eb18cc32e178e6"
+    },
+    {
+      "tag": "0041_audit_events_append_only",
+      "hash": "963fc9a3c589713ad74e8eed1000e5259f920bba908720d7628f56ad2fb81c40"
+    },
+    {
+      "tag": "0042_sessions_active_organization_id",
+      "hash": "31b737d2d7ba48959f7daeff2a4a162ed141cb8bfc933a0e1dfd49528295849c"
+    },
+    {
+      "tag": "0043_attachments",
+      "hash": "922c9c29097b128bfbdf012398541440304f06cfcc9a4ce3a8a9d7adc9f8fab2"
+    },
+    {
+      "tag": "0044_money_micros",
+      "hash": "794d552ba21338553376a7d0cc926d07bfe493b51afad48bd647b962d38efe51"
+    },
+    {
+      "tag": "0045_drop_legacy_money_columns",
+      "hash": "f50cf0e58acc2993693ece80bb6ccf21f738f8c828aed3dcad7e88bc30bef40c"
+    },
+    {
+      "tag": "0046_user_quotas_per_workspace",
+      "hash": "96ddd49d5163edb23328b703fe15d7397a319e43aa104ae4184d1221096b5a63"
+    }
+  ]
+}

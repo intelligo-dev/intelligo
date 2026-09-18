@@ -1,28 +1,26 @@
 # Migrations
 
-`drizzle-kit migrate` applies the `.sql` files listed in
-`meta/_journal.json`, in journal order. Both halves have to agree, and
-for most of this repository's life they did not: the journal stopped at
-entry 11 while the directory grew to 39 files, so `migrate` silently
-applied a quarter of the chain and every environment was really
-provisioned by `drizzle-kit push` from `schema.ts`.
+The framework's schema is one migration, `0000_baseline.sql`, generated
+from the Drizzle schema (`src/db/schema/*` plus the audit, executions
+and jobs packages' `schema.ts`) with the pieces Drizzle cannot express
+added by hand: the `vector` extension, the HNSW index on memory
+embeddings, and the triggers that keep `audit_events` and
+`user_memory_audit` append-only. Later migrations follow it in
+`meta/_journal.json`.
 
-That is how `0032` shipped documenting a unique constraint on a
-`minute_bucket` column no migration ever created — the rate limiter's
-`ON CONFLICT` could not have resolved on a database built from these
-files. `0037` repairs it, and `intelligo doctor` now fails CI if the
-journal and the directory drift apart again.
+A migration here changes structure only. It never inserts or edits rows:
+what a deployment bills in, its plans and its agents come from its own
+composition root (`ensureBillingSettingsRow`, the plan registry).
+`tests/architecture/baseline.test.ts` enforces it.
 
 ## In a consumer application
 
 This directory ships inside the published package (it is in `files`,
 next to `dist`), and `intelligo migrate` applies it: it resolves the
-chain from `node_modules/@intelligo-dev/core/src/db/migrations`, runs
-drizzle's migrator over it in journal order, and records what it applied
-in the default `drizzle.__drizzle_migrations` table — the same table
-`intelligo migrate --check` reads. On a database that already has the
-framework's tables but no records (one provisioned with `db:push`) it
-refuses and points here; baseline first, below.
+chain from `node_modules/@intelligo-dev/core/src/db/migrations`, applies
+what is pending by content hash, and records it in drizzle's default
+`drizzle.__drizzle_migrations` table — the table
+`intelligo migrate --check` reads.
 
 The tables an application owns are a second chain, kept apart on
 purpose: drizzle-kit applies by timestamp, so a framework migration
@@ -46,29 +44,39 @@ only the consumer's tables.
 
 ## Adding a migration
 
-Prefer `pnpm --filter @intelligo-dev/core db:generate`, which writes both
-the `.sql` file and its journal entry. A hand-written file needs its
-tag added to `meta/_journal.json` by hand — `doctor` will tell you if
-you forget.
+Change the schema, then `pnpm --filter @intelligo-dev/core db:generate`,
+which writes the `.sql` file, its snapshot and its journal entry. A
+hand-written file (a trigger, a data-free `DO` block) needs its journal
+entry added by hand — `intelligo doctor` fails if the journal and the
+directory disagree.
 
-Note that `db:generate` diffs against `meta/NNNN_snapshot.json`, and
-snapshots exist only up to `0011`. Until the snapshots are rebuilt,
-generate produces a full-schema diff rather than an incremental one;
-hand-write the file and add the journal entry instead.
+## Databases from before 1.0
 
-## Baselining an existing database
+Before 1.0 the framework's schema was a chain of 48 migrations that had
+grown with the product it came from; some created tables the framework
+no longer owns. `legacy-chain.json` lists that chain's tags and content
+hashes — not its SQL. A database that ran the whole chain is **adopted**:
+`intelligo migrate` records `0000_baseline` as applied without running
+it, then applies `0001_reconcile_chain_built_databases`, which brings
+the few places where the old chain and the schema disagreed into line
+(a no-op on a database created from the baseline). Tables the old chain
+created that the framework no longer defines are left untouched; a
+product that still uses them keeps them in its own migrations.
 
-Because the journal previously listed only 12 of the 39 files, a
-database provisioned with `push` has the schema but no record of the
-migrations. Running `migrate` against it now would try to apply all 39.
-Most are `IF NOT EXISTS`-guarded, but not all.
+A database that ran only part of the old chain is refused: finish it
+with `@intelligo-dev/core@1.0.0-beta.7` first.
 
-Mark them as already applied before the first `migrate` on such a
-database:
+## Baselining a push-provisioned database
+
+A database provisioned with `drizzle-kit push` has the schema but no
+migration records, and `intelligo migrate` refuses it rather than
+applying the baseline to tables that already exist. Record the chain as
+applied before the first `migrate`, one row per journal entry, in
+journal order: `hash` is the sha256 of the `.sql` file's contents and
+`created_at` the entry's `when`.
 
 ```sql
--- One row per journal entry, in journal order. hash is the sha256 of
--- the .sql file contents; drizzle compares it on subsequent runs.
+CREATE SCHEMA IF NOT EXISTS drizzle;
 CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (
   id SERIAL PRIMARY KEY,
   hash text NOT NULL,
@@ -76,13 +84,12 @@ CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (
 );
 ```
 
-Generate the rows with the file hashes and the `when` values from the
-journal, then verify with `intelligo doctor` and a `migrate` run that
-reports nothing to apply. Do this on a restored copy first.
+Then verify with `intelligo migrate --check`. Do this on a restored copy
+first.
 
 ## Verifying the chain
 
-CI replays every file against an empty database on each run (see the
-`e2e` job) and then asserts the columns the running code depends on.
-That check is what proves these files are a provisioning mechanism
-rather than documentation.
+CI replays every file against an empty database on each run and then
+asserts the columns the running code depends on, and the database
+integration suites run against that replay — which is what proves these
+files are a provisioning mechanism rather than documentation.

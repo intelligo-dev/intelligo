@@ -22,7 +22,7 @@ const mocks = vi.hoisted(() => ({
 /**
  * The rows the mocked transaction sees, and what it wrote. Micros of
  * the billing currency: the whole-unit columns these used to mirror
- * are gone with migration 0045.
+ * are gone since 1.0.
  */
 const state = vi.hoisted(() => ({
   /** null = no monthly_usage row yet for this period. */

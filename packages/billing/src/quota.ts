@@ -113,7 +113,7 @@ async function readPools(workspaceId: string): Promise<Pools> {
 
   const planSlug = billing.plan?.slug ?? "free";
 
-  // Micros are the only denomination left: 0045 dropped the whole-unit
+  // Micros are the only denomination left: 1.0 dropped the whole-unit
   // columns, so there is no second copy to reconcile against.
   const pooled = (micros: number | null | undefined): Money =>
     money(Math.max(0, micros ?? 0), settings.currency);
@@ -246,7 +246,7 @@ export async function reserveQuota(
         workspaceId,
         requestId,
         estimatedMicros: decision.estimated?.amount ?? 0,
-        currency: decision.estimated?.currency ?? "MNT",
+        currency: decision.estimated?.currency ?? (await getBillingSettings()).currency,
         status: "active",
         expiresAt: new Date(Date.now() + RESERVATION_TTL_MS),
       });
@@ -708,6 +708,9 @@ export async function resetMonthlyQuota(workspaceId: string): Promise<void> {
       periodEnd,
       tokensUsed: 0,
       requestCount: 0,
+      // Named, not defaulted: the column default is the framework's,
+      // the currency is the deployment's.
+      currency: (await getBillingSettings()).currency,
     })
     .onConflictDoNothing({
       target: [monthlyUsage.workspaceId, monthlyUsage.periodStart],

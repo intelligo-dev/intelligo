@@ -61,7 +61,7 @@ export const usageRecords = pgTable(
     chargedMicros: bigint("charged_micros", { mode: "number" })
       .notNull()
       .default(0),
-    currency: text("currency").notNull().default("MNT"),
+    currency: text("currency").notNull().default("USD"),
     /** Request correlation id for log tracing */
     requestId: text("request_id"),
     /**
@@ -109,7 +109,7 @@ export const monthlyUsage = pgTable(
     allowanceUsedMicros: bigint("allowance_used_micros", { mode: "number" })
       .notNull()
       .default(0),
-    currency: text("currency").notNull().default("MNT"),
+    currency: text("currency").notNull().default("USD"),
     requestCount: integer("request_count").notNull().default(0),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -152,7 +152,7 @@ export const trialCredits = pgTable(
     remainingMicros: bigint("remaining_micros", { mode: "number" })
       .notNull()
       .default(0),
-    currency: text("currency").notNull().default("MNT"),
+    currency: text("currency").notNull().default("USD"),
     status: text("status").notNull().default("active"), // active|depleted|converted|expired
     provisionedAt: timestamp("provisioned_at").notNull().defaultNow(),
     trialEndDate: timestamp("trial_end_date"), // 14 days from provisioning
@@ -293,7 +293,7 @@ export const userQuotas = pgTable(
     // gave someone in a paid workspace and a free one a single shared
     // row: the last writer set `plan`, both read the other's limits,
     // and the per-action counters summed everything they did anywhere
-    // (migration 0046).
+    // (per workspace since 1.0).
     unique("user_quotas_user_workspace_unique").on(
       table.userId,
       table.workspaceId

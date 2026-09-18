@@ -38,9 +38,3 @@ export * from "./agents";
 // Four tables that back the cross-product memory system:
 // user_facts, user_memories, user_profile_snapshots, user_memory_audit.
 export * from "./identity";
-
-// RAG documents table (AI-ARCHITECTURE Phase H)
-// Single shared table that backs every collection in
-// @intelligo-dev/agents/rag. Per-collection wrappers live in the
-// product packages.
-export * from "./rag";

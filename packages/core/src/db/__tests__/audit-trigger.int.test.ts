@@ -9,7 +9,7 @@
  *     pnpm vitest run packages/core/src/db/__tests__/audit-trigger.int.test.ts
  *
  * Why an integration test here: the append-only guard is enforced by
- * a Postgres trigger (migration 0018 + errcode fix 0025), not by
+ * a Postgres trigger (in the baseline migration), not by
  * application code — a drizzle-mock-based test can't observe the
  * trigger at all. A future PR could silently drop the trigger in a
  * migration and every unit test would still pass; this test is the
@@ -104,7 +104,7 @@ d("user_memory_audit append-only trigger", () => {
   });
 });
 
-d("audit_events append-only trigger (migration 0041)", () => {
+d("audit_events append-only trigger", () => {
   const client = new Client({ connectionString: PG_URL });
   const suffix = Date.now();
   const rowId = `audit-events-it-${suffix}`;

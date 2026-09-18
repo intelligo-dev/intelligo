@@ -101,12 +101,9 @@ jobs:
       # which would see a renamed or removed column as absent from the
       # schema file and DROP it. That is what the freeze guards against.
       #
-      # Raised to 48 for 0043_attachments, 0044_money_micros,
-      # 0045_drop_legacy_money_columns and
-      # 0046_user_quotas_per_workspace. The unmanaged database the
-      # freeze was first written for holds no data, so the baseline it
-      # was waiting on costs nothing and protects nothing; the money
-      # slice ships rather than being reverted.
+      # 1.0 replaced the pre-1.0 chain with 0000_baseline and
+      # 0001_reconcile_chain_built_databases, which adopts a database
+      # that ran the old one (see the migrations README).
       #
       # Raising it again: confirm `intelligo migrate --check` reports
       # zero pending, then raise FROZEN_AT in the same commit as the
@@ -114,7 +111,7 @@ jobs:
       - name: The migration chain is frozen
         run: |
           set -euo pipefail
-          FROZEN_AT=48
+          FROZEN_AT=2
           entries=$(node -p "require('./packages/core/src/db/migrations/meta/_journal.json').entries.length")
           echo "journal has $entries entries, frozen at $FROZEN_AT"
           if [ "$entries" -gt "$FROZEN_AT" ]; then

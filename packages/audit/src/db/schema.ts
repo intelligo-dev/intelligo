@@ -20,9 +20,9 @@ export const auditEvents = pgTable(
   {
     id: text("id").primaryKey(),
     /**
-     * Null for platform-level events with no tenant — and, since
-     * migration 0041, for events whose workspace was since deleted:
-     * the trail outlives the tenant (set null, not cascade).
+     * Null for platform-level events with no tenant — and for events
+     * whose workspace was since deleted: the trail outlives the tenant
+     * (set null, not cascade).
      */
     workspaceId: text("workspace_id").references(() => organization.id, {
       onDelete: "set null",

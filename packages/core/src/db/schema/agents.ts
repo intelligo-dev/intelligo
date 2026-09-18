@@ -70,7 +70,6 @@ export const agents = pgTable("agents", {
     .$type<AgentSuggestion[]>(), // Quick-start suggestion prompts
   isSystem: boolean("is_system").notNull().default(true), // System agents can't be deleted by users
   featureKey: text("feature_key"), // Nullable: billing feature key (e.g., "support_assistant"). Used for feature gating lookups.
-  productType: text("product_type").notNull().default("chat"), // "chat" | "tools"
   color: text("color").notNull().default("bg-gray-500"), // Tailwind bg class for UI indicators (e.g., "bg-blue-500")
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
