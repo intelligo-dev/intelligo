@@ -458,7 +458,8 @@ details.q .a { padding: 0 1.25rem 1.1rem; color: var(--muted-foreground); font-s
 .docs-prose li > * + * { margin-top: 0.6em; }
 .docs-prose li::marker { color: var(--muted-foreground); }
 .docs-prose :not(pre) > code {
-  font-family: var(--font-mono); font-size: 0.84em; padding: 0.12em 0.38em; white-space: nowrap;
+  font-family: var(--font-mono); font-size: 0.84em; padding: 0.12em 0.38em; overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: color-mix(in oklab, var(--muted) 70%, transparent); color: var(--foreground);
 }
@@ -510,6 +511,18 @@ details.q .a { padding: 0 1.25rem 1.1rem; color: var(--muted-foreground); font-s
 .js .reveal.is-in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   .js .reveal { opacity: 1; transform: none; }
+}
+
+/* the hero's word reveal (ui/text-reveal): an animation, never a resting
+   state — the words are visible in the HTML, with or without a script */
+.word-rise {
+  animation: word-rise 0.9s var(--ease-standard) var(--word-delay, 0s) backwards;
+}
+@keyframes word-rise {
+  from { opacity: 0; transform: translateY(40%); filter: blur(var(--word-blur, 10px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .word-rise { animation: none; }
 }
 
 .cursor-blink { animation: blink 1.1s steps(1) infinite; }

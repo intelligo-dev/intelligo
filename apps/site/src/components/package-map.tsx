@@ -12,9 +12,19 @@ import { EDGES, PACKAGES } from "@/lib/packages";
  * laid out in three rows (your app / intelligo / postgres); edges are
  * the real import graph. Hover dims everything not connected to the
  * node; click opens its detail.
+ *
+ * The board is a 760px drawing. Scaled to a phone it is five-pixel
+ * labels on ten-pixel buttons, so below `md` the same packages are a
+ * plain list of the three layers, driving the same detail panel.
  */
 const W = 760;
 const H = 400;
+
+const LAYERS = [
+  ["app", "your application"],
+  ["intelligo", "intelligo packages"],
+  ["db", "postgresql"],
+] as const;
 
 const POS: Record<string, { x: number; y: number }> = {
   pages: { x: 150, y: 50 },
@@ -95,10 +105,11 @@ export function PackageMap() {
       from: e.from,
       to: e.to,
       animated: lit,
+      // --accent is a fill, a shade off the card: a lit trace drawn in it is no trace
       color: lit
-        ? "var(--accent)"
+        ? "var(--foreground)"
         : "color-mix(in srgb, color-mix(in oklab, var(--foreground) 15%, transparent) 70%, transparent)",
-      pulseColor: "var(--accent)",
+      pulseColor: "var(--foreground)",
     };
   });
 
@@ -108,9 +119,37 @@ export function PackageMap() {
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+      <div className="space-y-4 md:hidden">
+        {LAYERS.map(([layer, title]) => (
+          <div key={layer}>
+            <div className="tag mb-2">{title}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {PACKAGES.filter((p) => p.layer === layer).map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setSelected(p.id)}
+                  aria-pressed={selected === p.id}
+                  className={cn(
+                    "mono min-h-10 rounded-md border px-3 text-[0.8rem] transition-colors",
+                    selected === p.id
+                      ? "border-foreground bg-foreground text-background"
+                      : related.has(p.id)
+                        ? "border-foreground/30 bg-background text-foreground"
+                        : "border-border bg-background text-muted-foreground"
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div
         ref={wrapRef}
-        className="relative overflow-hidden border border-foreground/15 bg-card"
+        className="relative hidden overflow-hidden rounded-md border border-border bg-card md:block"
         style={{ height: H * scale + 2 }}
       >
         {/* layer labels */}
@@ -168,7 +207,7 @@ export function PackageMap() {
                     ? "border-foreground bg-muted text-foreground"
                     : isRelated
                       ? "border-foreground/15 bg-background text-foreground"
-                      : "border-border bg-background text-muted-foreground opacity-60",
+                      : "border-border bg-background text-muted-foreground",
                   p.layer === "db" && "rounded-full px-3"
                 )}
                 style={{ left: x, top: y }}

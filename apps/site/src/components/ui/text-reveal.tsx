@@ -1,22 +1,16 @@
-"use client";
-
 /*
  * Site effect. Words rise out of a blur one after another, once, on load.
- * After the MIT-licensed text reveal; a reader who
- * asked for less motion gets a plain fade.
+ * After the MIT-licensed text reveal.
+ *
+ * The motion is a CSS animation (`.word-rise` in global.css), not a
+ * script: the words are in the HTML at full opacity, so the headline is
+ * there before anything hydrates and with no JavaScript at all. A reader
+ * who asked for less motion gets the words as they are.
  */
 
-import { motion, useReducedMotion } from "motion/react";
+import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
-
-const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-const SPRING = {
-  type: "spring",
-  stiffness: 140,
-  damping: 26,
-  mass: 1.2,
-} as const;
 
 export function TextReveal({
   text,
@@ -34,37 +28,24 @@ export function TextReveal({
   /** Starting blur, in px. */
   blur?: number;
 }) {
-  const reduce = useReducedMotion();
   const words = text.match(/\S+\s*/g) ?? [];
   return (
     <span className={className}>
-      {words.map((word, i) => {
-        const d = delay + i * stagger;
-        return (
-          <motion.span
-            key={`${word}-${i}`}
-            initial={
-              reduce
-                ? { opacity: 0 }
-                : { opacity: 0, y: "40%", filter: `blur(${blur}px)` }
-            }
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={
-              reduce
-                ? { duration: 0.25, delay: d * 0.3 }
-                : {
-                    y: { ...SPRING, delay: d },
-                    opacity: { duration: 0.7, ease: EASE_OUT, delay: d },
-                    filter: { duration: 0.9, ease: EASE_OUT, delay: d },
-                  }
-            }
-            // whitespace-pre keeps each word's trailing space inside its inline-block
-            className={cn("inline-block whitespace-pre will-change-transform")}
-          >
-            {word}
-          </motion.span>
-        );
-      })}
+      {words.map((word, i) => (
+        <span
+          key={`${word}-${i}`}
+          style={
+            {
+              "--word-delay": `${(delay + i * stagger).toFixed(2)}s`,
+              "--word-blur": `${blur}px`,
+            } as CSSProperties
+          }
+          // whitespace-pre keeps each word's trailing space inside its inline-block
+          className={cn("word-rise inline-block whitespace-pre")}
+        >
+          {word}
+        </span>
+      ))}
     </span>
   );
 }

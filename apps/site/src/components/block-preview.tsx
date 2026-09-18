@@ -36,11 +36,14 @@ export function BlockPreview({
         className={cn("w-full", className)}
         messages={`messages/en/${name}.json`}
         bodyClassName={bodyClassName}
+        label={`Preview of the ${name} block`}
       >
         {mounted ? (
           <Showcase scene={scene} toaster={false} />
         ) : (
-          <div className="absolute inset-0 animate-pulse bg-muted" />
+          <div className="mono absolute inset-0 flex animate-pulse items-center justify-center bg-muted text-[0.72rem] text-muted-foreground">
+            Loading preview…
+          </div>
         )}
       </BrowserFrame>
     </TooltipProvider>

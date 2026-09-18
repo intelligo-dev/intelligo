@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   motion,
   useReducedMotion,
@@ -11,18 +11,24 @@ import { BLOCKERS } from "@/lib/blockers";
  * Forked from @componentry/sticky-scroll-cards: same pin-and-scale
  * mechanic, but text cards with a terminal evidence panel instead of
  * images, and no Lenis (native scrolling is fine for three cards).
+ *
+ * The pin is a desktop mechanic. On a phone a card is one column and
+ * taller than the box it is pinned in, so the next card would paint over
+ * its evidence; below `md` the three are an ordinary stack.
  */
 function Card({
   index,
   total,
   container,
   reduce,
+  pinned,
   card,
 }: {
   index: number;
   total: number;
   container: React.RefObject<HTMLDivElement | null>;
   reduce: boolean;
+  pinned: boolean;
   card: (typeof BLOCKERS)[number];
 }) {
   const { scrollYProgress } = useScroll({
@@ -40,12 +46,12 @@ function Card({
   return (
     // later cards must paint over earlier ones: explicit z-index, opaque surfaces
     <section
-      className="sticky top-20 flex h-[62vh] min-h-[420px] items-start justify-center"
-      style={{ zIndex: index + 1 }}
+      className="mb-4 flex items-start justify-center last:mb-0 md:sticky md:top-20 md:mb-0 md:h-[62vh] md:min-h-[420px]"
+      style={pinned ? { zIndex: index + 1 } : undefined}
     >
       <motion.article
-        style={{ scale, top: `${index * 24}px` }}
-        className="relative grid min-h-[300px] w-full origin-top gap-6 border border-foreground/15 bg-card p-6 md:grid-cols-[1.1fr_1fr] md:p-8"
+        style={pinned ? { scale, top: `${index * 24}px` } : undefined}
+        className="relative grid w-full origin-top gap-6 rounded-md border border-border bg-card p-6 md:min-h-[300px] md:grid-cols-[1.1fr_1fr] md:p-8"
       >
         <div>
           <span className="tag">[ {card.tag} ]</span>
@@ -56,7 +62,7 @@ function Card({
             {card.body}
           </p>
         </div>
-        <div className="mono self-end border border-border bg-muted p-3.5 text-[0.76rem] leading-relaxed">
+        <div className="mono self-end overflow-x-auto rounded-md border border-border bg-background p-3.5 text-[0.76rem] leading-relaxed">
           {card.evidence.map((l, i) => (
             <div
               key={i}
@@ -80,6 +86,14 @@ function Card({
 export function BlockerCards() {
   const container = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion() ?? false;
+  const [pinned, setPinned] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const read = () => setPinned(mq.matches);
+    read();
+    mq.addEventListener("change", read);
+    return () => mq.removeEventListener("change", read);
+  }, []);
   return (
     <div ref={container} className="relative">
       {BLOCKERS.map((b, i) => (
@@ -90,6 +104,7 @@ export function BlockerCards() {
           total={BLOCKERS.length}
           container={container}
           reduce={reduce}
+          pinned={pinned}
         />
       ))}
     </div>

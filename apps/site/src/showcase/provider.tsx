@@ -56,6 +56,16 @@ export function ShowcaseProvider({
 /**
  * A fixed-size canvas scaled to fit its container, so a full-width page
  * reads at frame size without touching the components' own layout.
+ *
+ * The scene is a picture of a page, not a page: it is `inert`, so the
+ * fake sign-in form is not in the tab order and a screen reader is not
+ * read an application that does nothing. It stays hidden until the first
+ * measurement, so it never paints at a guessed scale and then jumps.
+ *
+ * On a phone the components already lay themselves out for the real
+ * viewport (their breakpoints are media queries), so a 1180px canvas
+ * would be a mobile layout stretched wide and shrunk to a quarter. There
+ * the canvas is only a little wider than its box instead.
  */
 export function ScaledCanvas({
   width = 1120,
@@ -67,16 +77,25 @@ export function ScaledCanvas({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [box, setBox] = useState({ scale: 0.5, height: 660 });
+  const [box, setBox] = useState<{
+    width: number;
+    scale: number;
+    height: number;
+  } | null>(null);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const fit = () => {
       const { width: w, height: h } = el.getBoundingClientRect();
-      const scale = w / width || 0.5;
-      // The canvas is as wide as `width` and as tall as the box allows at
+      if (!w) return;
+      const design =
+        window.innerWidth < 768
+          ? Math.min(width, Math.max(Math.round(w * 1.3), 440))
+          : width;
+      const scale = w / design;
+      // The canvas is as wide as `design` and as tall as the box allows at
       // that scale, so a page fills the frame edge to edge.
-      setBox({ scale, height: Math.round(h / scale) });
+      setBox({ width: design, scale, height: Math.round(h / scale) });
     };
     fit();
     const ro = new ResizeObserver(fit);
@@ -86,8 +105,18 @@ export function ScaledCanvas({
   return (
     <div ref={ref} className={className ?? "absolute inset-0 overflow-hidden"}>
       <div
+        inert
+        aria-hidden="true"
         className="showcase-canvas absolute left-0 top-0 origin-top-left bg-background text-foreground"
-        style={{ width, height: box.height, transform: `scale(${box.scale})` }}
+        style={
+          box
+            ? {
+                width: box.width,
+                height: box.height,
+                transform: `scale(${box.scale})`,
+              }
+            : { width, visibility: "hidden" }
+        }
       >
         {children}
       </div>

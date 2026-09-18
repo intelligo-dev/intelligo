@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Showcase, SCENE_FOR_ITEM } from "@/showcase/scenes";
@@ -27,37 +27,38 @@ export function RegistryExplorer() {
     [name]
   );
   const idx = REGISTRY_ITEMS.findIndex((i) => i.name === name);
+  const chips = useRef<HTMLDivElement>(null);
   const cmd = `pnpm exec shadcn add https://intelligo.dev/r/${item.name}.json --yes`;
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLElement &&
-        e.target.closest("[data-explorer]")
-      ) {
-        if (e.key === "ArrowRight")
-          setName(REGISTRY_ITEMS[(idx + 1) % REGISTRY_ITEMS.length]!.name);
-        if (e.key === "ArrowLeft")
-          setName(
-            REGISTRY_ITEMS[
-              (idx - 1 + REGISTRY_ITEMS.length) % REGISTRY_ITEMS.length
-            ]!.name
-          );
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [idx]);
+  // Arrow keys step through the items from the chip list only — never
+  // from the window, where they belong to whatever else has focus.
+  const onChipKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const step = e.key === "ArrowRight" ? 1 : -1;
+    const next =
+      REGISTRY_ITEMS[
+        (idx + step + REGISTRY_ITEMS.length) % REGISTRY_ITEMS.length
+      ]!;
+    setName(next.name);
+    chips.current
+      ?.querySelector<HTMLButtonElement>(`[data-item="${next.name}"]`)
+      ?.focus();
+  };
 
   return (
     <TooltipProvider>
       <div
         data-explorer
         className="grid grid-cols-1 gap-5 lg:grid-cols-[280px_minmax(0,1fr)]"
-        tabIndex={0}
-        aria-label="Registry explorer. Use arrow keys to move between items."
       >
-        <div className="space-y-4">
+        <div
+          ref={chips}
+          role="group"
+          aria-label="Registry items. Arrow keys move between them."
+          onKeyDown={onChipKey}
+          className="space-y-4"
+        >
           {GROUPS.map((g) => (
             <div key={g}>
               <div className="tag mb-1.5">{g}</div>
@@ -66,6 +67,7 @@ export function RegistryExplorer() {
                   <button
                     key={i.name}
                     type="button"
+                    data-item={i.name}
                     onClick={() => setName(i.name)}
                     aria-pressed={i.name === name}
                     className={cn(
@@ -115,6 +117,7 @@ export function RegistryExplorer() {
             className="mt-2"
             messages={`messages/en/${item.name}.json`}
             bodyClassName="h-[300px]"
+            label={`Preview of the ${item.name} block`}
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.div

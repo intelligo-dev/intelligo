@@ -7,6 +7,7 @@ export function BrowserFrame({
   messages,
   className,
   bodyClassName,
+  label,
   children,
 }: {
   path?: string;
@@ -14,11 +15,16 @@ export function BrowserFrame({
   messages?: string;
   className?: string;
   bodyClassName?: string;
+  /** What the scene shows, for a reader who cannot see it. */
+  label?: string;
   children: ReactNode;
 }) {
   return (
-    <div className={cn("border border-foreground/15 bg-card", className)}>
-      <div className="flex h-7 items-center gap-1.5 border-b border-border px-3">
+    <figure
+      aria-label={label}
+      className={cn("m-0 border border-foreground/15 bg-card", className)}
+    >
+      <div aria-hidden="true" className="flex h-7 items-center gap-1.5 border-b border-border px-3">
         <span className="size-2 rounded-full bg-foreground/15" />
         <span className="size-2 rounded-full bg-foreground/15" />
         <span className="size-2 rounded-full bg-foreground/15" />
@@ -34,6 +40,6 @@ export function BrowserFrame({
       <div className={cn("relative overflow-hidden", bodyClassName)}>
         {children}
       </div>
-    </div>
+    </figure>
   );
 }
