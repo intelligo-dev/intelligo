@@ -4,7 +4,3 @@ Copyright 2026 Turtuvshin Byambaa and the Intelligo contributors
 This product is licensed under the Apache License, Version 2.0 (see
 LICENSE). The Intelligo name and logo are trademarks; see TRADEMARK.md
 in the source repository, https://github.com/intelligo-mn/framework.
-
-The page registry in the source repository adapts code from shadcn/ui
-(MIT), MIT-licensed work (MIT) and Vercel AI Elements (Apache-2.0); see
-THIRD_PARTY_NOTICES.md there.

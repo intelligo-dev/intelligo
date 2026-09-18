@@ -49,7 +49,7 @@ import { cn } from "@/lib/utils";
 // the external PromptInputProvider are not ported. Errors report a code and
 // every label is passed in, so nothing is English by default. File ids come
 // from crypto.randomUUID, not nanoid. Menu items act on click (Base UI).
-// The surface follows the MIT-licensed prompt input: one rounded field, the textarea growing with its content, a
+// The surface follows an MIT-licensed prompt input: one rounded field, the textarea growing with its content, a
 // bottom row of quiet controls and a round send button that morphs into
 // stop while a reply streams.
 

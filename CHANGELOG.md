@@ -371,7 +371,7 @@ IF EXISTS` would otherwise delete amounts nothing had copied.
   it, and it can fill the page. `CanvasKind` gains `icon`, `labelKey`,
   `preview`, `previewable` and `extension`; `chat-canvas-config` exports
   `extensionOf`, `languageOf` and `fileNameOf`.
-- Registry T3, ported from the MIT-licensed agents set onto Base UI and the token contract: `ai-motion` (easings,
+- Registry T3, ported from an MIT-licensed agents set onto Base UI and the token contract: `ai-motion` (easings,
   springs, `Disclosure`, `SwapText`), `ai-message`, `ai-message-bubble`,
   `ai-message-scroller` (reader-aware, preview rail), `ai-todo-list`,
   `ai-agent-activity`, `ai-streaming-response`, `ai-citations`,

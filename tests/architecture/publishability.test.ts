@@ -584,35 +584,34 @@ describe("publishability", () => {
 });
 
 describe("ported code carries its licence", () => {
+  const LICENSES = path.join(PACKAGES_DIR, "registry/LICENSES.md");
   const SOURCES = [
-    { mention: /upstream\.dev/, licence: /\bMIT\b/ },
+    { mention: /MIT-licensed/, licence: /LICENSES\.md/ },
     { mention: /shadcn base-nova's API/, licence: /\bMIT\b/ },
     { mention: /AI Elements/, licence: /Apache/ },
   ];
 
-  it("names the licence wherever a file says what it was adapted from", () => {
+  it("points to the licence wherever a file says it adapts code", () => {
     const missing: string[] = [];
     for (const file of walk(path.join(PACKAGES_DIR, "registry/base"), (n) =>
       /\.(tsx?|css)$/.test(n)
     )) {
       const header = readFileSync(file, "utf8").slice(0, 1200);
       for (const source of SOURCES) {
-        if (!source.mention.test(header)) continue;
-        if (!source.licence.test(header)) {
+        if (source.mention.test(header) && !source.licence.test(header)) {
           missing.push(`${path.relative(ROOT, file)} (${source.mention})`);
         }
       }
     }
-    expect(missing, "adapted without its licence in the header").toEqual([]);
+    expect(missing, "adapted without pointing to its licence").toEqual([]);
   });
 
-  it("lists every adapted source in THIRD_PARTY_NOTICES.md", () => {
-    const notices = readFileSync(
-      path.join(ROOT, "THIRD_PARTY_NOTICES.md"),
-      "utf8"
-    );
-    for (const name of ["shadcn/ui", "MIT-licensed work", "Vercel AI Elements"]) {
-      expect(notices).toContain(`## ${name}`);
-    }
+  it("keeps every adapted licence's text in packages/registry/LICENSES.md", () => {
+    const text = readFileSync(LICENSES, "utf8");
+    expect(text).toContain("## shadcn/ui");
+    expect(text).toContain("## MIT-licensed components");
+    expect(text).toContain("## Vercel AI Elements");
+    expect(text).toContain("Permission is hereby granted, free of charge");
+    expect(text).toContain("Apache License, Version 2.0");
   });
 });
