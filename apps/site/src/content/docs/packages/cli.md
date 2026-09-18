@@ -1,6 +1,6 @@
 ---
 title: "@intelligo-dev/cli"
-description: "The Intelligo CLI: create, add, doctor and migrate."
+description: "The Intelligo CLI: create, add, doctor, migrate and upgrade."
 order: 11
 label: "cli"
 ---
@@ -27,8 +27,8 @@ intelligo upgrade --check              # what a template upgrade would change
 ## Why `migrate` is not `drizzle-kit migrate`
 
 Drizzle applies migrations in journal-timestamp order and skips anything
-numbered out of sequence. This chain has one such entry, so a migration
-published after it would never run and nothing would say so. `intelligo
+numbered out of sequence, so a migration published behind the last applied
+timestamp would never run and nothing would say so. `intelligo
 migrate` selects pending work by content hash, applies it in one transaction,
 and records it in the same table drizzle uses so both tools agree afterwards.
 

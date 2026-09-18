@@ -60,7 +60,7 @@ A registration that silently does not happen looks exactly like one that did. So
 
 ## Ports over dependencies
 
-Packages never reach sideways. `@intelligo-dev/auth` does not import billing; `@intelligo-dev/executions` imports nothing. Instead a service takes **ports** — functions it calls — and the composition root binds them:
+Packages never reach sideways. `@intelligo-dev/auth` does not import billing; `@intelligo-dev/executions` does not either, and its `/pricing` subpath imports nothing at all. Instead a service takes **ports** — functions it calls — and the composition root binds them:
 
 <!-- snippet: packages/cli/templates/app-scaffold/intelligo.ts.tpl#executions -->
 

@@ -21,4 +21,4 @@ Every package is published at the same version, by one release commit. `intellig
 | [jobs](/docs/packages/jobs) | A Postgres-backed job queue. No Redis. |
 | [admin](/docs/packages/admin) | The operational console: cross-tenant queries, health probes and impersonation. |
 | [mastra](/docs/packages/mastra) | An optional bridge from a native Mastra agent to the execution boundary. |
-| [cli](/docs/packages/cli) | The Intelligo CLI: create, add, doctor and migrate. |
+| [cli](/docs/packages/cli) | The Intelligo CLI: create, add, doctor, migrate and upgrade. |

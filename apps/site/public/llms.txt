@@ -36,11 +36,11 @@
 - [@intelligo-dev/jobs](https://intelligo.dev/docs/packages/jobs): A Postgres-backed job queue. No Redis.
 - [@intelligo-dev/admin](https://intelligo.dev/docs/packages/admin): The operational console: cross-tenant queries, health probes and impersonation.
 - [@intelligo-dev/mastra](https://intelligo.dev/docs/packages/mastra): An optional bridge from a native Mastra agent to the execution boundary.
-- [@intelligo-dev/cli](https://intelligo.dev/docs/packages/cli): The Intelligo CLI: create, add, doctor and migrate.
+- [@intelligo-dev/cli](https://intelligo.dev/docs/packages/cli): The Intelligo CLI: create, add, doctor, migrate and upgrade.
 
 ## CLI
 
-- [CLI](https://intelligo.dev/docs/cli): The Intelligo CLI: create, add, doctor and migrate. Every section below is the command's own source documentation.
+- [CLI](https://intelligo.dev/docs/cli): The Intelligo CLI: create, add, doctor, migrate and upgrade. Every section below is the command's own source documentation.
 
 ## Guides
 

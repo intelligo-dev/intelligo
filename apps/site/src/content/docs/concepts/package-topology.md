@@ -14,7 +14,7 @@ Shared pure-TypeScript modules are **subpaths**, not packages. That is why money
 
 ## Imports point one way
 
-`core` imports no other framework package. `auth` never imports `billing`, and `executions` imports nothing: services meet through ports bound in your [composition root](/docs/concepts/composition-root). Only `next` imports `next/*`, so every other package runs from a worker, a test or a non-Next server. The dependency-direction test fails the build otherwise; [/architecture](/architecture) draws the real graph.
+`core` imports no other framework package. `auth` never imports `billing`, and `executions` reaches only `core` and `audit`: services meet through ports bound in your [composition root](/docs/concepts/composition-root). Only `next` imports `next/*`, so every other package runs from a worker, a test or a non-Next server. The dependency-direction test fails the build otherwise; [/architecture](/architecture) draws the real graph.
 
 ## No product vocabulary
 

@@ -256,8 +256,15 @@ function cliPage(root) {
   if (!usageBlock)
     throw new Error("docs: could not find usage() in packages/cli/src/bin.ts");
   const usage = [...usageBlock[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)]
-    .map((m) => m[1].replace(/^ {2}/, "intelligo ").replace(/\\"/g, '"'))
-    .filter((l) => l.startsWith("intelligo "))
+    .map((m) => m[1].replace(/\\"/g, '"'))
+    .filter((l) => l !== "")
+    // A command line gains the binary's name; the line continuing it
+    // keeps its column under the description.
+    .map((l) =>
+      l.replace(/^ {2}(?=(\S)?)/, (_, word) =>
+        word ? "intelligo " : " ".repeat("intelligo ".length)
+      )
+    )
     .join("\n");
 
   const catalogue = JSON.parse(

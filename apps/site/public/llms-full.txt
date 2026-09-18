@@ -218,7 +218,7 @@ A registration that silently does not happen looks exactly like one that did. So
 
 ## Ports over dependencies
 
-Packages never reach sideways. `@intelligo-dev/auth` does not import billing; `@intelligo-dev/executions` imports nothing. Instead a service takes **ports** — functions it calls — and the composition root binds them:
+Packages never reach sideways. `@intelligo-dev/auth` does not import billing; `@intelligo-dev/executions` does not either, and its `/pricing` subpath imports nothing at all. Instead a service takes **ports** — functions it calls — and the composition root binds them:
 
 <!-- snippet: packages/cli/templates/app-scaffold/intelligo.ts.tpl#executions -->
 
@@ -377,7 +377,7 @@ Shared pure-TypeScript modules are **subpaths**, not packages. That is why money
 
 ## Imports point one way
 
-`core` imports no other framework package. `auth` never imports `billing`, and `executions` imports nothing: services meet through ports bound in your [composition root](/docs/concepts/composition-root). Only `next` imports `next/*`, so every other package runs from a worker, a test or a non-Next server. The dependency-direction test fails the build otherwise; [/architecture](/architecture) draws the real graph.
+`core` imports no other framework package. `auth` never imports `billing`, and `executions` reaches only `core` and `audit`: services meet through ports bound in your [composition root](/docs/concepts/composition-root). Only `next` imports `next/*`, so every other package runs from a worker, a test or a non-Next server. The dependency-direction test fails the build otherwise; [/architecture](/architecture) draws the real graph.
 
 ## No product vocabulary
 
@@ -1085,7 +1085,7 @@ Every package is published at the same version, by one release commit. `intellig
 | [jobs](/docs/packages/jobs) | A Postgres-backed job queue. No Redis. |
 | [admin](/docs/packages/admin) | The operational console: cross-tenant queries, health probes and impersonation. |
 | [mastra](/docs/packages/mastra) | An optional bridge from a native Mastra agent to the execution boundary. |
-| [cli](/docs/packages/cli) | The Intelligo CLI: create, add, doctor and migrate. |
+| [cli](/docs/packages/cli) | The Intelligo CLI: create, add, doctor, migrate and upgrade. |
 
 ---
 
@@ -1576,8 +1576,8 @@ intelligo upgrade --check              # what a template upgrade would change
 ## Why `migrate` is not `drizzle-kit migrate`
 
 Drizzle applies migrations in journal-timestamp order and skips anything
-numbered out of sequence. This chain has one such entry, so a migration
-published after it would never run and nothing would say so. `intelligo
+numbered out of sequence, so a migration published behind the last applied
+timestamp would never run and nothing would say so. `intelligo
 migrate` selects pending work by content hash, applies it in one transaction,
 and records it in the same table drizzle uses so both tools agree afterwards.
 
@@ -1605,7 +1605,7 @@ A scaffolded app has `@intelligo-dev/cli` as a dev dependency; run it with `pnpm
 ```text
 intelligo <command>
 intelligo create [dir]      Scaffold an app, then install the registry pages you pick
-intelligo                   (--items a,b | --all, --yes, --no-install)
+                            (--items a,b | --all, --yes, --no-install)
 intelligo doctor            Report configuration and migration-chain problems
 intelligo migrate           Apply the framework's migration chain to DATABASE_URL
 intelligo migrate --check   Compare the framework's migrations to a database

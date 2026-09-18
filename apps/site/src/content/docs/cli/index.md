@@ -1,6 +1,6 @@
 ---
 title: "CLI"
-description: "The Intelligo CLI: create, add, doctor and migrate. Every section below is the command's own source documentation."
+description: "The Intelligo CLI: create, add, doctor, migrate and upgrade. Every section below is the command's own source documentation."
 order: 0
 label: "Commands"
 ---
@@ -12,7 +12,7 @@ A scaffolded app has `@intelligo-dev/cli` as a dev dependency; run it with `pnpm
 ```text
 intelligo <command>
 intelligo create [dir]      Scaffold an app, then install the registry pages you pick
-intelligo                   (--items a,b | --all, --yes, --no-install)
+                            (--items a,b | --all, --yes, --no-install)
 intelligo doctor            Report configuration and migration-chain problems
 intelligo migrate           Apply the framework's migration chain to DATABASE_URL
 intelligo migrate --check   Compare the framework's migrations to a database
