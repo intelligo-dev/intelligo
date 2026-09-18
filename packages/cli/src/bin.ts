@@ -35,6 +35,7 @@ import {
   upgradeCheckExitCode,
 } from "./commands/upgrade-check.js";
 
+import { loadAppEnv } from "./env-files.js";
 import { MIGRATION_LOCATIONS, resolveMigrationsDir } from "./migrations-dir.js";
 
 /**
@@ -145,6 +146,12 @@ async function runMigrate(mode: "check" | "apply"): Promise<number> {
 
 async function main(): Promise<number> {
   const [, , command = "help", ...rest] = process.argv;
+
+  // The commands that read the app's configuration see what the app
+  // itself would: its .env.local and .env, under anything the shell set.
+  if (command === "doctor" || command === "migrate" || command === "upgrade") {
+    loadAppEnv(process.cwd());
+  }
 
   switch (command) {
     case "doctor": {

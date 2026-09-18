@@ -75,6 +75,10 @@
         "target": "app/[locale]/layout.tsx"
       },
       {
+        "template": "app-scaffold/page.tsx.tpl",
+        "target": "app/[locale]/page.tsx"
+      },
+      {
         "template": "app-scaffold/theme-provider.tsx.tpl",
         "target": "components/shell/theme-provider.tsx"
       },
