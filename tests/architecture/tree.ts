@@ -46,6 +46,10 @@ export const IGNORED_DIRS = new Set([
   // repository twice, the second time with deliberately broken source.
   ".stryker-tmp",
   "reports",
+  // Remotion's bundle and rendered output (apps/film), gitignored; the
+  // minified bundle trips the credential patterns.
+  "build",
+  "out",
 ]);
 
 /** Sub-directories of `dir` that carry a package.json. */
