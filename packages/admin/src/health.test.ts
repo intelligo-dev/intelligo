@@ -1,11 +1,7 @@
 /**
- * Integration health.
- *
- * The properties worth pinning: a probe that throws must not take the
- * page down with it, an overdue job backlog must read as `down` rather
- * than `degraded` (it means no worker is running), unsettled
- * executions must be visible because they are held credit, and the
- * in-memory payment mock must read as `down` in production.
+ * A probe that throws must not take the page down, an overdue job backlog
+ * reads as `down` rather than `degraded` (no worker is running), and
+ * unsettled executions are visible because they are held credit.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -93,9 +89,8 @@ describe("getIntegrationHealth", () => {
   it("reports the built-in integrations", async () => {
     const rows = await getIntegrationHealth();
 
-    // Built-ins are only the parts Intelligo owns outright. Payment,
-    // mail and model providers are the product's, registered by its
-    // composition root — admin may not even import billing.
+    // Payment, mail and model providers are the product's, registered by
+    // its composition root; admin may not import billing.
     expect(rows.map((r) => r.key).sort()).toEqual([
       "database",
       "jobs",

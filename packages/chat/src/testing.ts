@@ -1,15 +1,8 @@
 /**
- * A deterministic language model, for a chat that has no API key yet.
- *
- * A fresh install streams end to end — a real `createUIMessageStream`
- * response, token by token — before any provider is configured, and the
- * transport's own tests run against the same thing. Built on the AI
- * SDK's own testing surface (`ai/test`), so it is a real
- * `LanguageModel` as far as `streamText` is concerned.
- *
- * `modelId` is a parameter, never a literal: the execution boundary
- * bills whatever id the transport settles with, and the id has to be
- * one `@intelligo-dev/executions/pricing` knows.
+ * A deterministic language model (from `ai/test`) that streams end to end
+ * before any provider is configured; the transport's own tests use it too.
+ * `modelId` is a parameter, never a literal: the boundary bills whatever id
+ * the transport settles with, so it must be registered in the pricing table.
  */
 
 import type { LanguageModel } from "ai";

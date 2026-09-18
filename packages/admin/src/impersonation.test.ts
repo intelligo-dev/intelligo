@@ -1,6 +1,4 @@
 /**
- * Impersonation.
- *
  * The properties that make it safe to have at all: nothing happens
  * before the audit event is durable, a reason is mandatory, ending is
  * recorded as well as starting, and the check cannot be skipped by

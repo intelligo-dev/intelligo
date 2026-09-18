@@ -1,6 +1,4 @@
 /**
- * Admin authorization tests.
- *
  * Two contracts matter here, and they are deliberately opposite:
  *
  *  - reading must not be blocked by a failed audit write (a support
@@ -43,8 +41,7 @@ beforeEach(() => {
 
 describe("requireAdmin", () => {
   it("gates on the platform admin check, not a workspace role", async () => {
-    // Workspace `owner` is per-tenant and every self-serve signup has
-    // one, which is how platform-wide analytics leaked before.
+    // Workspace `owner` is per-tenant and every self-serve signup has one.
     await requireAdmin("admin.overview.viewed");
 
     expect(mocks.requirePlatformAdmin).toHaveBeenCalledTimes(1);

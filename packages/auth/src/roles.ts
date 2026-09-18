@@ -1,9 +1,6 @@
 /**
- * The platform role.
- *
- * Deliberately a separate module from helpers.ts and server.ts: both
- * need the constant, and server.ts (the Better-Auth instance) cannot
- * import helpers.ts, which imports server.ts.
+ * Its own module because server.ts and helpers.ts both need it, and
+ * server.ts cannot import helpers.ts, which imports server.ts.
  */
 
 /**

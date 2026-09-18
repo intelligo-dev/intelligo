@@ -1,16 +1,6 @@
 /**
- * Server-Side Auth Helpers
- *
- * Utilities for server components and server actions to check authentication.
- * These helpers use Better-Auth's session API with Next.js headers.
- *
- * Usage in server actions (TECH-10 pattern):
- * ```typescript
- * export async function myServerAction() {
- *   const { user } = await requireAuth();
- *   // ... proceed with authenticated user
- * }
- * ```
+ * Session and workspace guards for server components, Server Actions and
+ * route handlers. Headers come from `@intelligo-dev/core/request-context`.
  */
 
 import { getRequestHeaders } from "@intelligo-dev/core/request-context";
@@ -22,16 +12,13 @@ import { eq } from "drizzle-orm";
 import type { Session, User } from "better-auth/types";
 import { PLATFORM_ADMIN_ROLE } from "./roles";
 
-/** Valid Better-Auth workspace roles. Used to type-check allowedRoles in requireRole(). */
+/** Better-Auth workspace roles, as accepted by `requireRole()`. */
 export type WorkspaceRole = "owner" | "admin" | "member";
 
 const log = createLogger("Auth");
 
 /**
- * Get current auth session from request headers.
- *
- * Returns session and user if authenticated, null otherwise.
- * Use this in server components that handle both authenticated and unauthenticated states.
+ * The current session and user, or null when unauthenticated.
  */
 export async function getAuthSession(): Promise<{
   session: Session;
@@ -52,12 +39,9 @@ export async function getAuthSession(): Promise<{
 }
 
 /**
- * Require authentication.
+ * The current session and user.
  *
- * Throws "Unauthorized" error if no valid session.
- * Use this in server actions to enforce authentication (TECH-10 pattern).
- *
- * @throws Error with "Unauthorized" message if not authenticated
+ * @throws Error("Unauthorized") when there is no valid session.
  */
 export async function requireAuth(): Promise<{
   session: Session;
@@ -73,10 +57,8 @@ export async function requireAuth(): Promise<{
 }
 
 /**
- * Get workspace context by organization ID.
- * Use this when you know the org ID (e.g., just after creating/activating a workspace).
- *
- * @param organizationId - The organization ID to get context for
+ * Workspace context for a given organization id, e.g. just after creating
+ * or activating one. Null when unauthenticated or not a member.
  */
 export async function getWorkspaceContextById(organizationId: string): Promise<{
   session: Session;
@@ -92,7 +74,6 @@ export async function getWorkspaceContextById(organizationId: string): Promise<{
 
   log.debug("getWorkspaceContextById: fetching org");
 
-  // Get organization by ID directly (not from session)
   const org = await auth.api.getFullOrganization({
     headers: await getRequestHeaders(),
     query: { organizationId },
@@ -103,7 +84,6 @@ export async function getWorkspaceContextById(organizationId: string): Promise<{
     return null;
   }
 
-  // Find user's membership
   const membership = org.members?.find(
     (m: any) => m.userId === authResult.user.id
   );
@@ -130,11 +110,8 @@ export async function getWorkspaceContextById(organizationId: string): Promise<{
 }
 
 /**
- * Get workspace context from the active organization in session.
- * Returns null if no active organization set.
- *
- * Use this in server components that need workspace context but can handle
- * the absence of an active workspace (e.g., workspace switcher UI).
+ * Workspace context from the session's active organization, falling back to
+ * the user's first workspace. Null when the user has none.
  */
 export async function getWorkspaceContext(): Promise<{
   session: Session;
@@ -150,11 +127,9 @@ export async function getWorkspaceContext(): Promise<{
 
   log.debug("getWorkspaceContext: session found");
 
-  // Get active organization from session. Better-Auth throws FORBIDDEN
-  // when the session's active organization no longer admits this user
-  // (removed member) and clears the session's pointer; treat that as
-  // "no active workspace" so the fallback below runs instead of the
-  // provider error escaping as an unexplained failure.
+  // Better-Auth throws FORBIDDEN when the active organization no longer
+  // admits this user (removed member) and clears the pointer; treat that
+  // as "no active workspace" so the fallback below runs.
   let activeOrg = await auth.api
     .getFullOrganization({ headers: await getRequestHeaders() })
     .catch((error: unknown) => {
@@ -166,7 +141,6 @@ export async function getWorkspaceContext(): Promise<{
 
   log.debug("getWorkspaceContext: active org", { hasOrg: !!activeOrg });
 
-  // Fallback: If no active org in session, auto-select first available workspace
   if (!activeOrg) {
     log.debug("getWorkspaceContext: no active org, checking workspaces");
     const orgs: any = await auth.api.listOrganizations({
@@ -177,7 +151,6 @@ export async function getWorkspaceContext(): Promise<{
       log.debug("getWorkspaceContext: found workspaces", {
         count: String(orgs.length),
       });
-      // Fetch full organization details for the first workspace
       activeOrg = await auth.api.getFullOrganization({
         headers: await getRequestHeaders(),
         query: { organizationId: orgs[0].id },
@@ -190,7 +163,6 @@ export async function getWorkspaceContext(): Promise<{
     return null;
   }
 
-  // Find user's membership in the active org
   const activeMember = activeOrg.members.find(
     (m: any) => m.userId === authResult.user.id
   );
@@ -221,13 +193,10 @@ export async function getWorkspaceContext(): Promise<{
 }
 
 /**
- * Require workspace context. Use in server actions that need workspace scope (TECH-10).
- * Throws if not authenticated OR no active workspace selected.
+ * Workspace context for workspace-scoped operations.
  *
- * Use this in server actions that operate on workspace-scoped resources
- * (conversations, knowledge bases, usage logs, etc.).
- *
- * @throws Error with "No active workspace" message if no workspace selected
+ * @throws Error("Unauthorized") when unauthenticated, Error("No active
+ *   workspace") when the user has none.
  */
 export async function requireWorkspace(): Promise<{
   session: Session;
@@ -243,13 +212,10 @@ export async function requireWorkspace(): Promise<{
 }
 
 /**
- * Require specific role in active workspace.
- * Use for admin/owner-only server actions (TEAM-08).
+ * Workspace context when the member holds one of `allowedRoles`, e.g.
+ * `requireRole(["owner", "admin"])`.
  *
- * Example: requireRole(["owner", "admin"]) for workspace settings actions.
- *
- * @param allowedRoles - Array of role names that are permitted
- * @throws Error with "Insufficient permissions" message if user lacks required role
+ * @throws Error("Insufficient permissions") when the member lacks the role.
  */
 export async function requireRole(allowedRoles: WorkspaceRole[]): Promise<{
   session: Session;
@@ -270,21 +236,12 @@ export async function requireRole(allowedRoles: WorkspaceRole[]): Promise<{
 }
 
 /**
- * Require PLATFORM admin — distinct from workspace roles.
+ * Require a PLATFORM admin, distinct from workspace roles: workspace
+ * `owner` is per-tenant, so platform surfaces must never be gated on it.
  *
- * Workspace `owner` is a per-tenant role: any user who creates a
- * workspace owns it. Platform-level surfaces (cross-workspace
- * analytics, the operational console, impersonation) must never be
- * gated on it.
- *
- * The authority is `users.role`. PLATFORM_ADMIN_EMAILS is the
- * bootstrap: an allowlisted user is promoted into the column the first
- * time they pass through here, so a fresh deployment has a way in and
- * every later check — including Better-Auth's admin plugin, which can
- * only read the row — agrees with this one. Two gates that can
- * disagree is how the cross-tenant analytics leak happened in the
- * first place.
- *
+ * The authority is `users.role`. PLATFORM_ADMIN_EMAILS is the bootstrap:
+ * an allowlisted user is promoted into the column on first use, so every
+ * later check, Better-Auth's admin plugin included, reads the same row.
  * Closed by default: no allowlist and no role means no admin.
  *
  * @throws Error("Insufficient permissions") when the user is not a

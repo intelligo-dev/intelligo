@@ -1,12 +1,4 @@
-/**
- * Profile Validation Schemas
- *
- * Zod schemas for user profile updates, shared by the profile service
- * and its transports.
- *
- * (Ported from the first product's `lib/validations/profile.ts` —
- * same semantics: optional name, optional-and-nullable image URL.)
- */
+/** Profile update input, shared by the profile service and its transports. */
 
 import { z } from "zod";
 

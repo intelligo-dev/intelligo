@@ -1,12 +1,6 @@
 /**
- * Profile service unit tests.
- *
  * Mocks `../helpers` (requireAuth), `../server` (auth.api.updateUser),
- * and `@intelligo-dev/core/db` (the soft-delete + session-wipe queries) —
- * the same seam `../team/service.test.ts` and `../workspace/service.test.ts`
- * mock one directory over. Focused on the auth gate, input validation,
- * the soft-delete + session-invalidation sequence, and the
- * fire-and-forget `onAccountDeleted` port.
+ * and `@intelligo-dev/core/db` (the soft-delete + session-wipe queries).
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -96,10 +90,6 @@ beforeEach(() => {
   mocks.deleteWhereMock.mockResolvedValue(undefined);
 });
 
-// ---------------------------------------------------------------------------
-// getProfile
-// ---------------------------------------------------------------------------
-
 describe("getProfile", () => {
   it("returns the caller's profile", async () => {
     const service = createProfileService();
@@ -140,10 +130,6 @@ describe("getProfile", () => {
     });
   });
 });
-
-// ---------------------------------------------------------------------------
-// updateProfile
-// ---------------------------------------------------------------------------
 
 describe("updateProfile", () => {
   it("calls auth.api.updateUser with only the provided fields", async () => {
@@ -211,10 +197,6 @@ describe("updateProfile", () => {
     expect(mocks.updateUser).not.toHaveBeenCalled();
   });
 });
-
-// ---------------------------------------------------------------------------
-// deleteAccount
-// ---------------------------------------------------------------------------
 
 describe("deleteAccount", () => {
   it("soft-deletes the user and invalidates every session", async () => {

@@ -1,12 +1,8 @@
 import type { HealthStatus, IntegrationHealth } from "../health";
 
 /**
- * Integration health.
- *
- * Ordered worst-first, because during an incident the thing you need is
- * at the bottom of an alphabetical list. Each row carries the sentence
- * that says what to do, and the numbers behind it — a status word on
- * its own sends the reader to the logs anyway.
+ * Integration health, ordered worst-first. Each row carries the sentence
+ * that says what to do and the numbers behind it.
  */
 
 export type IntegrationHealthViewProps = {

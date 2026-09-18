@@ -1,10 +1,6 @@
 /**
- * Stream a document into the chat canvas from inside a tool.
- *
- * The old chat package needed five hand-written data parts to open a
- * document in the side panel — kind, id, title, clear, N deltas, finish
- * — and every tool that wanted a canvas copied the sequence. This is
- * that sequence as three calls over one `data-chat-artifact` part:
+ * Stream a document into the chat canvas from inside a tool, as three
+ * calls over one `data-chat-artifact` part:
  *
  *     const doc = createArtifactWriter(turn, { kind: "text", title });
  *     for (const chunk of chunks) doc.append(chunk);

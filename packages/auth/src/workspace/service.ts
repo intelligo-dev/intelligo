@@ -1,67 +1,9 @@
 /**
- * Workspace management service — the durable business rules behind
- * workspace listing, creation, switching, editing and deletion,
- * lifted out of the first product's workspace actions (page/registry
- * migration, `workspace-settings` family, roadmap item 8).
- *
- * Mirrors `createTeamService(ports)` (./../team/service.ts) one
- * directory over: a factory over optional ports, so this package's
- * allowlisted dependency (`@intelligo-dev/core` only — see
- * tests/architecture/dependency-direction.test.ts) never grows to
- * include billing. A consumer binds that in at its composition root:
- *
- *   const workspaceService = createWorkspaceService({
- *     checkWorkspaceLimit: ...,   // adapts @intelligo-dev/billing's checkPlanLimit
- *   });
- *
- * Authorization (`requireAuth`/`requireWorkspace`/`requireRole`) lives
- * INSIDE each method, not at the transport. Every recognized failure
- * throws `WorkspaceServiceError` with a stable `code` — no
- * revalidatePath/Sentry/next-intl/toast here; that shaping is the
- * transport's job (a Server Action, a route handler).
- *
- * ---------------------------------------------------------------------
- * Why `checkWorkspaceLimit` takes a `userId`, not a `workspaceId`
- * ---------------------------------------------------------------------
- * `createWorkspace` has no workspace to check the plan of yet — it is
- * the thing being created. The product's original action worked around this
- * by reading the caller's *existing* workspaces and using the first
- * one's id to look up a plan via `@intelligo-dev/billing`'s
- * `checkPlanLimit(workspaceId, "workspaces", currentCount)`, i.e. it
- * borrowed an arbitrary existing workspace's subscription as a stand-in
- * for "the caller's plan". That borrowing is a binding-layer concern,
- * not a service-layer one: this service only knows the caller's
- * `userId` and how many workspaces they already have. The composition
- * root's binding (`checkWorkspaceLimit`) is where a consumer decides
- * how to resolve "this user's plan" — by reading their first workspace
- * the same way the first product did, or by a real per-user plan lookup if one
- * exists.
- *
- * ---------------------------------------------------------------------
- * The two Better-Auth pitfalls (already solved in ../team/service.ts —
- * copied here rather than re-derived)
- * ---------------------------------------------------------------------
- * 1. Method-name mismatch: the typed `orgApi` wrapper (../org-api.ts)
- *    exists precisely because `auth.api`'s organization-plugin methods
- *    are keyed by their own camelCase *server* id, which does not
- *    always match the HTTP path or the client SDK name. This service
- *    uses `orgApi["/organization/list"]` and
- *    `orgApi["/organization/set-active"]` for the two calls the
- *    wrapper covers, and calls `auth.api.{createOrganization,
- *    updateOrganization, deleteOrganization, getFullOrganization}`
- *    directly for the base organization CRUD surface, which is not
- *    part of `orgApi`'s typed table (the same approach
- *    `../team/service.ts` takes for `getFullOrganization`). The product's
- *    original `actions/workspace.ts` already called these four by
- *    their correct `auth.api` names directly (it never went through a
- *    path-keyed cast), so there is no method-name bug to fix here.
- * 2. `sessions.activeOrganizationId` exists and persists switches, but
- *    a bare `auth.api.getFullOrganization({ headers })` resolves to
- *    *no* organization whenever the session has none set (see
- *    `../team/service.ts`'s module comment). This service's
- *    `getActiveWorkspace` therefore resolves the caller's workspace via
- *    `requireWorkspace()` first (which has its own explicit-id
- *    fallback) and passes that id explicitly to `getFullOrganization`.
+ * Workspace listing, creation, switching, editing and deletion. Each method
+ * authorizes itself and throws `WorkspaceServiceError`; the plan limit
+ * arrives as the `checkWorkspaceLimit` port bound at the composition root.
+ * `getFullOrganization` always gets an explicit `organizationId`, because a
+ * bare call resolves to nothing when the session has no active organization.
  */
 
 import { getRequestHeaders } from "@intelligo-dev/core/request-context";
@@ -92,12 +34,10 @@ export interface WorkspaceRecord {
 
 export type WorkspaceServicePorts = {
   /**
-   * Plan-defined workspace cap for the caller. No port ⇒ unlimited (no
-   * gate applied) — matches "no billing dependency without one bound
-   * explicitly". Not consulted when the caller has zero
-   * existing workspaces (their first workspace is always allowed) —
-   * see the module doc comment for why the port is keyed by `userId`
-   * rather than `workspaceId`.
+   * Plan-defined workspace cap for the caller. No port ⇒ unlimited. Not
+   * consulted for the caller's first workspace. Keyed by `userId` because
+   * the workspace being created has no plan yet; how "this user's plan" is
+   * resolved is the binding's decision.
    */
   checkWorkspaceLimit?: (
     userId: string,
@@ -184,9 +124,7 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
     }
   }
 
-  /**
-   * List all workspaces for the current user.
-   */
+  /** Every workspace the current user belongs to. */
   async function listWorkspaces(): Promise<OrgListItem[]> {
     await callRequireAuth();
     const hdrs = await getRequestHeaders();
@@ -261,9 +199,7 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
     return org;
   }
 
-  /**
-   * Switch the caller's active workspace.
-   */
+  /** Switch the caller's active workspace. */
   async function switchWorkspace(organizationId: string): Promise<void> {
     await callRequireAuth();
 
@@ -281,9 +217,7 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
     );
   }
 
-  /**
-   * Update workspace settings (name/slug/logo). Owner/admin only.
-   */
+  /** Update workspace settings (name/slug/logo). Owner/admin only. */
   async function updateWorkspace(
     input: UpdateWorkspaceInput
   ): Promise<WorkspaceRecord> {
@@ -342,10 +276,9 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
   }
 
   /**
-   * Get the caller's active workspace, fully resolved. Unlike
-   * the original action (see the module doc comment), this resolves the
-   * workspace id explicitly via `requireWorkspace()` rather than
-   * relying on a non-existent `sessions.activeOrganizationId` fallback.
+   * The caller's active workspace, fully resolved. The id comes from
+   * `requireWorkspace()`, which falls back to the first workspace when the
+   * session has none active.
    */
   async function getActiveWorkspace(): Promise<WorkspaceRecord> {
     const { workspace } = await callRequireWorkspace();

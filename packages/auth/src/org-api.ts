@@ -1,62 +1,10 @@
 /**
- * Typed wrapper for Better-Auth organization plugin endpoints.
- *
- * The plugin endpoints (`/organization/...`) are added at runtime by
- * Better-Auth's organization plugin and are not present on the inferred
- * `auth.api` type. Without a wrapper, consumers had to reach for
- * `as any as Record<...>` casts or `@ts-expect-error` comments — both
- * lose all type information.
- *
- * This module declares the explicit input/output shapes for every
- * organization endpoint the team service calls and exposes them under
- * the plugin's HTTP path names (`/organization/invite-member`, etc.),
- * which is the vocabulary the rest of this package's `team/` module
- * uses.
- *
- * (Ported from the first product's Better-Auth type wrapper when the
- * team-settings backend moved into the framework — packages/auth owns
- * the org-api contract now.)
- *
- * IMPORTANT — found while wiring the real-DB integration test for this
- * move: the product's original module built `orgApi` as
- * `auth.api as unknown as OrgApi`, i.e. a bare type-cast that assumes
- * `auth.api` is keyed by these HTTP path strings. It is not. Better-Auth's
- * organization plugin (`better-auth@1.6.30`,
- * `plugins/organization/organization.mjs`) exposes each endpoint on
- * `auth.api` under its own camelCase *server* id, which does not always
- * match the path or the *client* SDK name documented alongside it:
- *
- *   path                                  | auth.api key (server) | authClient.organization.* (client)
- *   /organization/invite-member           | createInvitation       | inviteMember
- *   /organization/get-invitation          | getInvitation          | getInvitation
- *   /organization/accept-invitation       | acceptInvitation       | acceptInvitation
- *   /organization/reject-invitation       | rejectInvitation       | rejectInvitation
- *   /organization/cancel-invitation       | cancelInvitation       | cancelInvitation
- *   /organization/remove-member           | removeMember           | removeMember
- *   /organization/update-member-role      | updateMemberRole       | updateMemberRole
- *   /organization/leave                   | leaveOrganization      | leave
- *   /organization/list                    | listOrganizations      | list
- *   /organization/set-active              | setActiveOrganization  | setActive
- *   /organization/list-user-invitations   | listUserInvitations    | listUserInvitations
- *
- * A bare `auth.api as unknown as OrgApi` cast type-checks (TypeScript
- * cannot see through the cast) but throws `TypeError: ... is not a
- * function` at runtime for every call whose row above differs in the
- * first two columns — i.e. invite-member, leave, list, and set-active
- * unconditionally, since their server ids aren't just a casing change
- * of the path. This was invisible in the product's test suite because
- * `actions/__tests__/team.test.ts` mocks `@/types/better-auth` (the
- * whole `orgApi` object) rather than exercising the cast against a
- * real `auth.api`, and only surfaced once this package's
- * `service.integration.test.ts` called the real thing. It was a live
- * bug in the product's shipped team-management actions, not a
- * hypothetical.
- *
- * `orgApi` below is therefore a real object, not a cast: each path key
- * forwards to the correctly-named `auth.api` method. The `OrgApi`
- * type and every call site elsewhere in this package (`team/service.ts`
- * and its tests) are unaffected — they only ever see the path-keyed
- * shape.
+ * Typed access to Better-Auth's organization-plugin endpoints, which the
+ * inferred `auth.api` type does not include. Keys are the plugin's HTTP
+ * paths; each forwards to the plugin's server id, which is not always the
+ * path in camelCase (`/organization/invite-member` is `createInvitation`,
+ * `/organization/list` is `listOrganizations`), so a blanket cast of
+ * `auth.api` would type-check and then throw "is not a function".
  */
 
 import { auth } from "./server";
@@ -160,14 +108,9 @@ export interface OrgApi {
 }
 
 /**
- * `auth.api`'s organization-plugin methods are typed loosely by
- * Better-Auth (broad `Record<string, unknown>`-ish body/query types
- * driven by its own zod schemas) — each is cast to its specific
- * `OrgApi` member signature at the point of use below, which is the
- * same trust boundary the rest of this codebase already accepts for
- * these calls (see the module doc comment above for why a *blanket*
- * cast is not safe: it hides the wrong key entirely, whereas casting
- * per-member here only relaxes the parameter/return types).
+ * Better-Auth types these methods loosely; each is cast to its `OrgApi`
+ * member signature below, which relaxes only parameter and return types,
+ * never which method a key names.
  */
 const api = auth.api as unknown as Record<
   string,

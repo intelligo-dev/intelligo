@@ -1,18 +1,8 @@
 /**
- * The parts vocabulary a chat UI, a tool and a runtime binding share.
- *
- * The AI SDK's own parts come first: `text`, `reasoning`, `tool-*` and
- * `dynamic-tool` (with their approval states), `source-url`,
- * `source-document`, `file` and `step-start` are rendered as they
- * arrive, whatever produced them — `streamText`, a Mastra agent
- * through `@mastra/ai-sdk`, or an eve session through a consumer's
- * `streamTurn` binding. A `data-chat-*` part exists only where the SDK
- * has nothing: a deferred title, a live status line, a task plan, a
- * subagent, a document streaming into the canvas, a question or an
- * authorization a runtime paused on.
- *
- * Type-only: this module imports nothing at runtime, so
- * `@intelligo-dev/chat/client` stays free of the server handler.
+ * The parts vocabulary a chat UI, a tool and a runtime binding share. The
+ * AI SDK's own parts render as they arrive; a `data-chat-*` part exists only
+ * where the SDK has nothing (a deferred title, a status line, a task plan, a
+ * subagent, a canvas document, a question, an authorization). Type-only.
  */
 
 import type { DataUIPart, UIMessage, UIMessageChunk } from "ai";

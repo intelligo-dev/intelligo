@@ -1,11 +1,7 @@
 /**
- * The edge guard must stay database-free and driver-agnostic.
- *
- * These tests exist because the previous edge module instantiated
- * Better-Auth against the Neon HTTP driver, which returned HTTP 500 for
- * every request when the database was not Neon. Nothing caught it: the
- * module had no tests, and the failure was masked in development by a
- * NODE_ENV bypass.
+ * The edge guard must stay database-free and driver-agnostic: a
+ * database-backed check fails in the Edge Runtime on any Postgres reached
+ * without an HTTP driver.
  */
 
 import { describe, expect, it } from "vitest";

@@ -1,17 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// vi.mock factories run BEFORE the file's static imports execute, so
-// they cannot reference any top-level `const` you might be tempted to
-// declare above them — Vitest's transformer hoists vi.mock to the very
-// top of the module, and the closure would see undefined.
-//
-// The fix is `vi.hoisted`: its callback is also hoisted, so the spies
-// it returns are alive at the moment vi.mock factories evaluate. Any
-// shared mock that vi.mock references must be born inside vi.hoisted.
-//
-// Don't try to "fix" this by inlining vi.fn() inside each vi.mock
-// factory either — that gives every test a fresh spy and breaks the
-// `expect(getSessionMock).toHaveBeenCalled()` assertions below.
+// vi.mock is hoisted above the static imports, so any shared spy its
+// factories reference must be created inside vi.hoisted. Inlining vi.fn()
+// in each factory would give every test a fresh spy and break the
+// `toHaveBeenCalled()` assertions below.
 const {
   headersMock,
   getSessionMock,
@@ -312,9 +304,8 @@ describe("requireRole", () => {
 });
 
 describe("requirePlatformAdmin", () => {
-  // Platform admin is deliberately NOT the workspace `owner` role —
-  // any user who creates a workspace owns it, so gating cross-workspace
-  // surfaces on it granted every user platform-wide analytics.
+  // Platform admin is deliberately NOT the workspace `owner` role: any
+  // user who creates a workspace owns it.
   beforeEach(() => {
     vi.unstubAllEnvs();
     updateSetMock.mockReset();

@@ -1,25 +1,8 @@
 /**
- * @intelligo-dev/mastra — the thin bridge between a native Mastra agent and
- * the Intelligo execution boundary.
- *
- * What this package deliberately is NOT: a wrapper. There is no
- * IntelligoAgent, no re-declared tool or workflow type, no normalized
- * result. Mastra's own types flow through untouched, and removing this
- * package costs you the accounting, not the AI.
- *
- * What it does is one repetitive, easy-to-get-wrong thing: open an
- * execution, run the agent, settle usage from whatever shape the
- * provider reported, and make sure a thrown error still releases the
- * hold. Written by hand at every call site, the failure mode is a
- * missing `run.fail()` in a catch block and a credit hold that only
- * expires ten minutes later.
- *
- * `@mastra/core` is an OPTIONAL PEER DEPENDENCY. Nothing here imports
- * it — the agent arrives as an argument, described by the narrowest
- * structural type that makes the call work. That keeps the package
- * installable without Mastra, usable with any Mastra version whose
- * agents expose `generate`/`stream`, and equally usable with an AI SDK
- * or Eve call that happens to fit the same shape.
+ * Runs a native agent call inside an execution: opens it, settles usage from
+ * whatever shape the provider reported, and releases the credit hold when the
+ * run throws. Mastra's types pass through untouched; `@mastra/core` is an
+ * optional peer and is never imported — the agent is typed structurally.
  */
 
 import type { Executions } from "@intelligo-dev/executions";

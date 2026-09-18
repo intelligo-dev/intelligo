@@ -3,18 +3,10 @@ import { formatMoney } from "@intelligo-dev/core/money";
 import type { PlatformOverview, WorkspaceRow } from "../queries";
 
 /**
- * The platform overview screen.
- *
- * Shipped by the package rather than generated into the consumer,
- * unlike product pages: the *customer-facing* surface stays
- * with the consumer, but the admin console is framework-owned
- * precisely so every deployment shows the same operational truth. A
- * product that forked this screen could quietly stop showing itself
- * unsettled executions.
- *
- * Presentation is intentionally minimal and unstyled — the consumer
- * wraps it in their own chrome, and the host app's design tokens apply if
- * they are in scope.
+ * The platform overview screen. Shipped by the package, not generated into
+ * the consumer, so every deployment shows the same operational numbers
+ * (unsettled executions included). Unstyled: the consumer wraps it in its
+ * own chrome.
  */
 
 export type UnsettledExecution = {

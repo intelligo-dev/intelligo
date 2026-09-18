@@ -1,18 +1,7 @@
 /**
- * Onboarding validation schema.
- *
- * A single generic step-id validator — see the module doc comment on
- * `./service.ts` for why this is a bare, bounded string rather than a
- * product-specific enum. The first product's original
- * `lib/validations/onboarding.ts` pinned this to
- * `z.enum(["role", "profile", "complete"])`, its own 3-step wizard
- * shape. The `users.onboarding_step` column itself is untyped `text`,
- * so that enum was a product-level constraint bolted onto a generic
- * column, not something this shared contract should require. A
- * consumer defines its own step ids (typically the `id` field of a
- * steps-config array it owns) and passes them straight through;
- * A consumer keeps its own enum-shaped schema at the transport layer
- * if it wants stricter validation than "non-empty, bounded string".
+ * A step id is a non-empty, bounded string, not an enum: step ids are the
+ * consumer's (the `id`s of its own steps config). A consumer wanting
+ * stricter validation keeps its own schema at the transport layer.
  */
 
 import { z } from "zod";

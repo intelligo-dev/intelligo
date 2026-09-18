@@ -1,12 +1,8 @@
 /**
- * What a chat client needs to know about the transport, and nothing a
- * client bundle must not carry.
- *
- * This file imports nothing at runtime (`./parts` is types and one
- * type guard). A UI item reads the error codes, the quota-state shape,
- * the parts vocabulary and `parseChatError` from
- * `@intelligo-dev/chat/client` without pulling the server handler — or
- * Drizzle, Stripe and the auth server behind it — into the browser.
+ * What a chat client needs to know about the transport. Imports nothing at
+ * runtime (`./parts` is types and one type guard), so the UI never pulls
+ * the server handler, or Drizzle, Stripe and the auth server behind it,
+ * into the browser.
  */
 
 /** Stable codes the transport answers with. The status is fixed per code. */
@@ -39,10 +35,9 @@ export type ChatErrorBody = {
 };
 
 /**
- * What the chat page opened with — a server-rendered estimate of the
+ * What the chat page opened with: a server-rendered estimate of the
  * caller's credit, so the page can say "you are out" before a message
- * is spent on finding out. Amounts are credits, the unit the balance
- * and the estimate are both in, not money.
+ * is spent on finding out. Amounts are micros of the billing currency.
  */
 export type ChatQuotaState = {
   /** False when the next turn would be refused. */
@@ -51,9 +46,9 @@ export type ChatQuotaState = {
   reason: string | null;
   /** Typed refusal, for a UI that wants to distinguish them. */
   code: string | null;
-  /** Credits left across every pool. */
+  /** Balance left across every pool. */
   remaining: number;
-  /** Worst-case credits one turn could cost. */
+  /** Worst-case cost of one turn. */
   estimated: number;
   /** Where "upgrade" and "top up" should go. */
   upgradeHref: string;

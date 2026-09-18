@@ -1,37 +1,15 @@
 /**
- * Team service integration tests — real Postgres, real Better-Auth.
+ * Real Postgres, real Better-Auth; runs only when DATABASE_URL is set. The
+ * one mock is `getRequestHeaders()`, pointed at the `Headers` of whichever
+ * user is making the call, since vitest has no request to bind.
  *
- * Runs only when DATABASE_URL is set (`describe.skipIf`), same
- * convention as packages/core/src/db/__tests__/audit-trigger.int.test.ts.
- * Everything is real EXCEPT the request-context accessor:
- * `@intelligo-dev/core/request-context`'s `getRequestHeaders()` reads whatever source
- * the composition root bound, and under vitest there is no request to
- * bind one to. It is shimmed here to return whichever `Headers` object
- * the current test step points it at — the ONLY thing mocked. `../server` (the real `auth` instance),
- * `../helpers` (requireAuth/requireWorkspace/requireRole), `../org-api`
- * (the real orgApi adapter — see its module doc comment for a bug this
- * test surfaced), and the database are all real.
+ * Fixtures are created through `auth.api.*` with `new Headers({ cookie })`.
+ * `emailVerified` is set directly in the database: there is no test inbox,
+ * and the invitation endpoints require a verified email.
  *
- * Bootstrapping: Better-Auth's server API (`auth.api.*`) can be called
- * directly with a `headers: new Headers({ cookie })` — no HTTP server
- * needed — which is how every fixture user/org below is created.
- * `emailVerified` is flipped directly in the database after sign-up
- * (there is no test inbox to read a real verification link from; the
- * org plugin's invitation endpoints require a verified session email
- * — `EMAIL_VERIFICATION_REQUIRED_FOR_INVITATION` — so this is required
- * scaffolding, not a shortcut around what is under test).
- *
- * Run:
- *   pnpm vitest run packages/auth/src/team/service.integration.test.ts
- *
- * (DATABASE_URL must point at a Postgres with Better-Auth's
- * user/session/account/verification/organization/member/invitation
- * tables and the pgvector extension — `pnpm db:push` from the repo
- * root. Tests create their own users/orgs with timestamp-suffixed
- * emails/slugs and delete the organizations they create in `afterAll`;
- * fixture users are left behind, matching audit-trigger.int.test.ts's
- * precedent — Better-Auth's server API has no user-delete endpoint
- * wired here.)
+ * Needs a database prepared with `pnpm db:push`. Organizations created here
+ * are deleted in `afterAll`; fixture users are left behind (no user-delete
+ * endpoint is wired).
  */
 
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
@@ -44,10 +22,8 @@ const d = DATABASE_URL ? describe : describe.skip;
 // Better-Auth calls per test) comfortably exceed vitest's 5s default.
 vi.setConfig({ testTimeout: 30_000, hookTimeout: 30_000 });
 
-// The mocked `headers()` reads this ref, which each test/helper points
-// at the `Headers` for whichever user is "making the call" — the
-// service reads it fresh on every call, exactly like a real per-request
-// `headers()` would for a real incoming request.
+// The mocked request context reads this ref, pointed at the `Headers` of
+// whichever user is "making the call"; the service reads it on every call.
 const currentHeaders = { value: new Headers() as Headers };
 
 vi.mock("@intelligo-dev/core/request-context", () => ({
@@ -59,13 +35,8 @@ function asUser(cookie: string) {
 }
 
 d("team service — real DB integration", () => {
-  // Dynamic imports: module-load-time env (DATABASE_URL) must be read
-  // AFTER vi.stubEnv/vi.resetModules, per repo convention (AGENTS.md).
-  // Here DATABASE_URL is already set in the process environment before
-  // vitest starts, but the vi.mock("next/headers") above still must
-  // execute before `./service` (and transitively `../server`) is
-  // imported, so every import below is dynamic and deferred to
-  // beforeAll.
+  // Dynamic imports, so the mock above is in place before `./service`
+  // (and transitively `../server`) is imported.
   let db: typeof import("@intelligo-dev/core/db").db;
   let users: typeof import("@intelligo-dev/core/db/schema").users;
   let auth: typeof import("../server").auth;
@@ -123,12 +94,10 @@ d("team service — real DB integration", () => {
     ({ isTeamServiceError } = await import("./errors"));
   });
 
-  // -------------------------------------------------------------------
   // Full lifecycle: invite -> pending listed -> accept -> member listed,
   // duplicate prevention, acceptance idempotency, role change, removal.
   // Deliberately one ordered sequence (each `it` depends on the last),
   // like the invitation lifecycle it exercises.
-  // -------------------------------------------------------------------
   describe("invitation lifecycle", () => {
     const service = () => createTeamService();
     let owner: Fixture;
@@ -247,9 +216,6 @@ d("team service — real DB integration", () => {
     });
   });
 
-  // -------------------------------------------------------------------
-  // Last-owner protection
-  // -------------------------------------------------------------------
   describe("leaveWorkspace — sole owner", () => {
     it("blocks the sole owner from leaving", async () => {
       const owner = await signUpVerified(
@@ -273,10 +239,8 @@ d("team service — real DB integration", () => {
     });
   });
 
-  // -------------------------------------------------------------------
   // Workspace scoping — an invitation in workspace B must not be
   // visible from workspace A.
-  // -------------------------------------------------------------------
   describe("workspace scoping", () => {
     it("workspace B's invitation is invisible from workspace A", async () => {
       const ownerA = await signUpVerified(
@@ -323,10 +287,7 @@ d("team service — real DB integration", () => {
           body: { organizationId },
         });
       } catch {
-        // Best-effort cleanup only — a failure here must not fail the
-        // test run. Fixture users are left behind regardless (no
-        // user-delete call is wired here), matching
-        // audit-trigger.int.test.ts's precedent.
+        // Best-effort cleanup: a failure here must not fail the run.
       }
     }
   });

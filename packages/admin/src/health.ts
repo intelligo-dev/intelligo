@@ -1,24 +1,10 @@
 import "server-only";
 
 /**
- * Integration health.
- *
- * The console's job here is to answer one question during an incident:
- * which moving part is broken? So each check reports a status, a single
- * actionable line, and the numbers behind it — not a green dot.
- *
- * Intelligo ships the checks for the things it owns and can read
- * without asking anyone: the database, the job queue, and execution
- * settlement. Everything else is the product's — which payment
- * processor, which mail provider, which model provider — so those
- * arrive through `registerIntegrationProbe` from the composition root
- *. A framework package guessing at which env vars a product
- * needs is how it ends up knowing the product's vocabulary, and the
- * dependency-direction test refuses the import that would let it.
- *
- * Every check is wrapped: a probe that throws becomes a `down` row, not
- * a 500 on the page a support engineer opened *because* something is
- * down.
+ * Integration health: each check reports a status, one actionable line and
+ * the numbers behind it. Built-in checks cover the database, job queue and
+ * execution settlement; payment, mail and model providers are the product's
+ * and arrive through `registerIntegrationProbe` from the composition root.
  */
 
 import { db } from "@intelligo-dev/core/db";

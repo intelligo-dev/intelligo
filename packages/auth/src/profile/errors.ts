@@ -1,13 +1,6 @@
 /**
- * Profile service error type.
- *
- * The profile service (./service.ts) throws this for every failure it
- * recognizes rather than returning an ad-hoc `{ success, error }`
- * envelope — that shaping is a transport concern (a Server Action, a
- * route handler) and belongs one layer up, alongside
- * revalidatePath/Sentry/toast/i18n, none of which this package may
- * depend on. Mirrors `TeamServiceError`/`WorkspaceServiceError`
- * (../team/errors.ts, ../workspace/errors.ts).
+ * Thrown for every failure the profile service recognizes. Shaping it for a UI
+ * (a `{ success, error }` envelope, i18n, revalidation) is the transport's job.
  */
 
 /**
@@ -37,14 +30,11 @@ export class ProfileServiceError extends Error {
     this.code = code;
     this.meta = options?.meta;
     if (options?.cause !== undefined) {
-      // ES2020 target predates the standard `cause` constructor option;
-      // assign it directly so `instanceof Error` consumers (and Node's
-      // own error inspection) still see it.
+      // The ES2020 target predates the `cause` constructor option.
       (this as { cause?: unknown }).cause = options.cause;
     }
 
-    // Restore prototype chain (extending built-ins across some
-    // transpilation targets loses `instanceof`).
+    // Extending built-ins loses `instanceof` on some transpilation targets.
     Object.setPrototypeOf(this, ProfileServiceError.prototype);
   }
 }

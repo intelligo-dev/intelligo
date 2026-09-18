@@ -1,11 +1,6 @@
 /**
- * ensureUserWorkspace.
- *
- * The authenticated layout calls this on every render. It used to set
- * the first-listed workspace active unconditionally, which undid every
- * switch the moment the layout re-rendered. The property that matters:
- * a valid active workspace is kept; only a missing or stale one is
- * replaced.
+ * The authenticated layout calls this on every render, so a valid active
+ * workspace must be kept; only a missing or stale one is replaced.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";

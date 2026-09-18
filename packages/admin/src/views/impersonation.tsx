@@ -1,13 +1,7 @@
 /**
- * The impersonation control.
- *
- * A plain form on purpose. The reason field is `required` and the
- * submit label says what will happen, because the two mistakes worth
- * designing against are a click made without thinking and an access
- * nobody can explain later.
- *
- * The action is the consumer's — @intelligo-dev/admin never imports app
- * code — so the page passes it in.
+ * The impersonation control. The reason is required and the submit label
+ * says what will happen, against a thoughtless click and an access nobody
+ * can explain later. The server action is the consumer's, passed in.
  */
 
 export type ImpersonationPanelProps = {

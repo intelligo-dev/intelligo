@@ -1,6 +1,4 @@
 /**
- * Mastra bridge tests.
- *
  * The bridge exists to make the easy-to-forget parts unforgettable: a
  * refusal must be impossible to mistake for an empty result, a thrown
  * run must still release the hold, and usage must be read from

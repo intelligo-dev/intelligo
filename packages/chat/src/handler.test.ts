@@ -3,8 +3,7 @@
  *
  * Every refusal is a typed JSON body with a fixed status; a turn that
  * streams settles exactly once and persists the user's message as
- * well as the reply — the route this package replaced silently
- * dropped the user turn.
+ * well as the reply.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -17,10 +16,6 @@ import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
 import { createChatHandler } from "./handler";
 import type { ChatServerConfig } from "./config";
 import { createStubLanguageModel } from "./testing";
-
-// ---------------------------------------------------------------------------
-// Fakes
-// ---------------------------------------------------------------------------
 
 const mocks = vi.hoisted(() => ({
   requireWorkspace: vi.fn(),
@@ -277,10 +272,6 @@ beforeEach(() => {
 
 afterEach(() => vi.clearAllMocks());
 
-// ---------------------------------------------------------------------------
-// Refusals
-// ---------------------------------------------------------------------------
-
 describe("POST refusals", () => {
   it("answers 400 to a body that is not a chat turn", async () => {
     const { POST } = createChatHandler(baseConfig(fakeExecutions().executions));
@@ -438,10 +429,6 @@ describe("POST refusals", () => {
     expect((await (await POST(turn())).json()).error).toBe("mn:featureGated");
   });
 });
-
-// ---------------------------------------------------------------------------
-// A turn that streams
-// ---------------------------------------------------------------------------
 
 describe("POST streaming", () => {
   it("creates the row, streams, settles once and persists both turns", async () => {
@@ -808,8 +795,6 @@ describe("POST streaming", () => {
   });
 
   it("carries every field of the one-agent shorthand, not just four", async () => {
-    // These were reachable only by writing a whole `resolveAgent`
-    // before the shorthand was derived from `ResolvedAgent`.
     const fake = fakeExecutions();
     const { POST } = createChatHandler(
       baseConfig(fake.executions, {
@@ -861,10 +846,6 @@ describe("POST streaming", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// DELETE
-// ---------------------------------------------------------------------------
-
 describe("DELETE", () => {
   function del(id: string | null) {
     return new Request(`http://app.test/api/chat${id ? `?id=${id}` : ""}`, {
@@ -905,10 +886,6 @@ describe("DELETE", () => {
     expect((await DELETE(del(CONVERSATION_ID))).status).toBe(401);
   });
 });
-
-// ---------------------------------------------------------------------------
-// The runtime seam, the model gate, CORS, resumption, approvals, files
-// ---------------------------------------------------------------------------
 
 function uiChunks(chunks: unknown[]): ReadableStream<never> {
   return new ReadableStream({

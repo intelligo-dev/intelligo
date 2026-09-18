@@ -1,15 +1,7 @@
 /**
- * @intelligo-dev/admin — the Intelligo-owned operational console.
- *
- * Framework-owned because it manages Intelligo's concepts, not any
- * product's customer experience. It is mounted by the
- * consumer application under a reserved namespace and must never
- * become the host for a product dashboard.
- *
- * Exports are headless: query functions and an authorization gate.
- * Screens are the consumer's, generated from templates like any other
- * page, so a product can brand its own admin without forking this
- * package.
+ * The operational console over the framework's own concepts (workspaces,
+ * credits, executions, audit, jobs), never a product dashboard. Exports are
+ * headless: queries, health checks, impersonation and the authorization gate.
  */
 
 export {

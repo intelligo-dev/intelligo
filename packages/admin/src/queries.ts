@@ -1,13 +1,9 @@
 import "server-only";
 
 /**
- * Admin read models.
- *
- * Cross-tenant by design — that is what makes them admin queries and
- * why every caller must pass through `requireAdmin` first. They read
- * through the owning packages' own APIs where those exist
- * (`@intelligo-dev/executions`, `@intelligo-dev/audit`) so the console does
- * not become a second, drifting definition of what an execution is.
+ * Admin read models. Cross-tenant by design, so every caller must pass
+ * through `requireAdmin` first. They read through the owning packages' APIs
+ * where those exist, so the console never redefines what an execution is.
  */
 
 import { db } from "@intelligo-dev/core/db";
@@ -59,7 +55,7 @@ export async function getPlatformOverview(): Promise<PlatformOverview> {
       .groupBy(executions.status, executions.currency),
   ]);
 
-  // A status arrives once per currency now; the counts fold together.
+  // A status arrives once per currency; the counts fold together.
   const byStatus = new Map<string, { n: number }>();
   for (const r of statusRows) {
     byStatus.set(r.status, {

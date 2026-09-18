@@ -1,55 +1,9 @@
 /**
- * Onboarding service — the durable business rules behind a user's
- * first-run onboarding flow, lifted out of the first product's
- * onboarding actions (page/registry migration, `onboarding` family,
- * roadmap item 11).
- *
- * Unlike `../team/service.ts` and `../workspace/service.ts`, this
- * service has no Better-Auth organization-plugin calls to make — it
- * reads and writes exactly two columns on `@intelligo-dev/core`'s `users`
- * table (`onboardingCompleted`, `onboardingStep`) directly via Drizzle.
- *
- * No ports: `complete()` and `skip()` only flip those two columns and
- * return the resulting state — they do NOT provision trial credits or
- * perform any other first-workspace bootstrapping. The product's
- * original `completeOnboarding()` action did that inline, but the work
- * belongs to the consumer's own
- * `onWorkspaceCreated` binding instead — see `../workspace-init.ts`'s
- * `onWorkspaceCreated` port and the `app-shell` registry item's
- * `lib/workspace-bootstrap.ts`, which already runs once per new
- * workspace. Duplicating it here would either double-provision (it
- * would fire again on every onboarding completion, not just the first
- * workspace) or force this package to depend on `@intelligo-dev/billing`,
- * which the allowlist in
- * `tests/architecture/dependency-direction.test.ts` forbids.
- *
- * ---------------------------------------------------------------------
- * Why `setStep` takes a bare `string`, not an enum
- * ---------------------------------------------------------------------
- * See the doc comment on `./schemas.ts`'s `setStepSchema`. Short
- * version: the `onboarding_step` column is untyped `text`, and a
- * framework-owned service can't know a consumer's step ids in advance
- * — a different product may have two steps, or six. This module
- * accepts any non-empty string up to 64 characters and persists it
- * verbatim.
- *
- * ---------------------------------------------------------------------
- * Why `skip()` has the same durable effect as `complete()`
- * ---------------------------------------------------------------------
- * The `users` table has no separate "skipped" column, so there is
- * nothing else to persist. The product's original `skipOnboarding()` action
- * logged an analytics event and then delegated to `completeOnboarding()`
- * unchanged; this service mirrors that shape as two distinct methods
- * (rather than collapsing `skip` into an alias) so a transport can
- * still log/tag the skip differently before or after calling it —
- * that shaping, like everything else transport-level, does not belong
- * in this service.
- *
- * Authorization (`requireAuth`) lives INSIDE each method, not at the
- * transport. Every recognized failure throws `OnboardingServiceError`
- * with a stable `code` — no revalidatePath/Sentry/next-intl/toast here;
- * that shaping is the transport's job (a Server Action, a route
- * handler).
+ * The caller's first-run onboarding state: two columns on `users`
+ * (`onboardingCompleted`, `onboardingStep`). Completing onboarding has no
+ * trial or credit side effects; first-workspace bootstrapping runs once per
+ * workspace through `ensureUserWorkspace`'s `onWorkspaceCreated`. Each method
+ * authorizes itself and throws `OnboardingServiceError`.
  */
 
 import { eq } from "drizzle-orm";
@@ -87,9 +41,7 @@ export function createOnboardingService() {
     }
   }
 
-  /**
-   * Get the caller's current onboarding state.
-   */
+  /** The caller's current onboarding state. */
   async function getState(): Promise<OnboardingState> {
     const { user } = await callRequireAuth();
 
@@ -113,9 +65,8 @@ export function createOnboardingService() {
   }
 
   /**
-   * Set the caller's current onboarding step. A product defines its
-   * own step ids (see the module doc comment); this only validates
-   * that `step` is a non-empty, bounded string and persists it
+   * Set the caller's current step. Step ids are the product's; this only
+   * checks for a non-empty string of at most 64 characters and persists it
    * verbatim. Does not touch `onboardingCompleted`.
    */
   async function setStep(step: string): Promise<OnboardingState> {
@@ -139,10 +90,7 @@ export function createOnboardingService() {
     return { completed: false, currentStep: parsed.data };
   }
 
-  /**
-   * Mark onboarding complete and clear the step. No trial/referral
-   * side effects — see the module doc comment.
-   */
+  /** Mark onboarding complete and clear the step. */
   async function complete(): Promise<OnboardingState> {
     const { user } = await callRequireAuth();
 
@@ -159,9 +107,8 @@ export function createOnboardingService() {
   }
 
   /**
-   * Skip onboarding. Same durable effect as `complete()` — see the
-   * module doc comment for why this is its own method rather than an
-   * alias.
+   * Skip onboarding. Same durable effect as `complete()` (there is no
+   * "skipped" column); a separate method so a transport can tell them apart.
    */
   async function skip(): Promise<OnboardingState> {
     return complete();

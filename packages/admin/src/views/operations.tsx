@@ -2,12 +2,8 @@ import type { AuditEvent } from "@intelligo-dev/audit";
 import type { Job } from "@intelligo-dev/jobs";
 
 /**
- * Failed jobs and recent audit events.
- *
- * Separate from the platform overview because they answer a different
- * question: the overview says whether the system is healthy, this says
- * what happened and who did it. A support engineer opening a ticket
- * needs the second one.
+ * Failed jobs and recent audit events: what happened and who did it, where
+ * the platform overview says whether the system is healthy.
  */
 
 export type OperationsViewProps = {

@@ -1,29 +1,11 @@
 /**
- * What an application tells the chat transport, and what it is told back.
- *
- * Two things are required — the execution boundary and a way to run
- * the model — because those are the two things a framework must never
- * guess. Everything else has a default that gives
- * a clean install a working chat with no API keys: one agent, one
- * prompt, no tools, a window of forty messages, a truncated first line
- * as the title.
- *
- * Each optional field is a seam a real product needed and used to fork
- * the route to get: an agent resolved per conversation from a table, a
- * history pruned and summarised before the model sees it, image
- * attachments, reasoning streamed to the client, a model-written
- * title, telemetry on every turn, a model picker, a runtime that is not
- * `streamText`. None of them carry product vocabulary; all of them
- * close over the caller's tenancy so the model never has to be told
- * which workspace it is in.
- *
- * `streamTurn` is the one runtime seam. It replaces the model call and
- * nothing else: auth, the rate limit, the feature gate, admission,
- * persistence and settlement stay the transport's. What it returns is
- * the AI SDK's own UI message chunks — a Mastra agent produces them
- * through `@mastra/ai-sdk`, an eve session through a mapper the
- * consumer installs from the registry — so the framework carries no
- * helper for any AI framework.
+ * What an application tells the chat transport. Two things are required,
+ * the execution boundary and a way to run the model; everything else has a
+ * default that gives a clean install a working chat with no API keys.
+ * Optional seams close over the caller's tenancy, so the model is never told
+ * which workspace it is in. `streamTurn` replaces the model call and nothing
+ * else: auth, rate limit, gate, admission, persistence and settlement stay
+ * the transport's.
  */
 
 import type {

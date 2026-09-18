@@ -1,16 +1,6 @@
 /**
- * Onboarding service unit tests.
- *
  * Mocks `../helpers` (requireAuth) and `@intelligo-dev/core/db`'s
- * select/update chain — the same seam
- * `the product application/actions/__tests__/onboarding.test.ts` mocked for the
- * server action this service replaces. Focused on state reads, step
- * validation, complete/skip's shared effect, and
- * OnboardingServiceError codes.
- *
- * index.ts's exports for this module are not wired up yet (see the
- * migration task), so this test imports `./service` and `./errors`
- * directly rather than through the package root.
+ * select/update chain.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -83,10 +73,6 @@ beforeEach(() => {
   mocks.update.mockReturnValue({ set: mocks.updateSet });
 });
 
-// ---------------------------------------------------------------------------
-// getState
-// ---------------------------------------------------------------------------
-
 describe("getState", () => {
   it("returns the caller's onboarding state", async () => {
     mocks.selectLimit.mockResolvedValue([
@@ -120,10 +106,6 @@ describe("getState", () => {
     expect(mocks.select).not.toHaveBeenCalled();
   });
 });
-
-// ---------------------------------------------------------------------------
-// setStep
-// ---------------------------------------------------------------------------
 
 describe("setStep", () => {
   it("persists an arbitrary, product-defined step id", async () => {
@@ -179,10 +161,6 @@ describe("setStep", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// complete
-// ---------------------------------------------------------------------------
-
 describe("complete", () => {
   it("marks onboarding complete and clears the step", async () => {
     const service = createOnboardingService();
@@ -209,10 +187,6 @@ describe("complete", () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 });
-
-// ---------------------------------------------------------------------------
-// skip
-// ---------------------------------------------------------------------------
 
 describe("skip", () => {
   it("has the same durable effect as complete", async () => {

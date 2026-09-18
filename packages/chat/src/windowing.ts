@@ -1,8 +1,7 @@
 /**
  * Conversation windowing: what the model is shown of a long history.
  *
- * `UIMessage`-shaped on purpose — this is the AI SDK's transcript, not
- * persistence.
+ * Works on `UIMessage`s, the AI SDK's transcript, not stored rows.
  * The default `prepareMessages` applies it; an application that wants
  * to summarise what was pruned does so in its own `prepareMessages`,
  * with its own model, and hands the summary back as `system`.

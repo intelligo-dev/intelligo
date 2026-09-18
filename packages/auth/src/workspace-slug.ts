@@ -10,11 +10,8 @@
  *
  * A slug derived from the user makes `organization.slug`'s unique index
  * the arbiter: the first caller wins, every other one gets
- * `ORGANIZATION_ALREADY_EXISTS` and adopts the winner's workspace. The
- * previous `Date.now().toString(36)` suffix differed per attempt, so
- * the constraint never fired and each racer created a workspace of its
- * own — three signups' worth of "Welcome to your workspace" for one
- * person.
+ * `ORGANIZATION_ALREADY_EXISTS` and adopts the winner's workspace. A
+ * per-attempt suffix would let each racer create a workspace of its own.
  *
  * Only the automatic personal workspace is named this way; a workspace
  * someone creates by hand names itself.

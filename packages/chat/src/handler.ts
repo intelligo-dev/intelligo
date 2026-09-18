@@ -6,17 +6,12 @@
  *   prepareMessages → executions.begin() → streamText | streamTurn →
  *   settle → persist.
  *
- * Framework-agnostic on the request side: Web `Request` in, `Response`
- * out. A Next.js route file is two lines
- * (`export const { POST, DELETE } = createChatHandler(config)`), and a
- * Hono app or a test calls the same functions. The request's headers
- * reach `requireWorkspace()` through `core/request-context`, bound
- * once by the composition root — never through `next/*` here.
+ * Web `Request` in, `Response` out; request headers reach
+ * `requireWorkspace()` through `core/request-context`, never `next/*`.
  *
  * Entitlement is decided at `executions.begin()`, after the agent and
- * model are resolved, so the hold matches what will actually run
- *. Everything before it is cheaper and answers
- * without opening an execution.
+ * model are resolved, so the hold matches what will actually run.
+ * Everything before it is cheaper and answers without opening an execution.
  *
  * Every terminal path settles exactly once: `complete()` is
  * compare-and-swap in the boundary, so whichever of finish, abort or
@@ -97,10 +92,6 @@ const log = createLogger("Chat");
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
-
-// ---------------------------------------------------------------------------
-// Defaults
-// ---------------------------------------------------------------------------
 
 const DEFAULT_FEATURE_KEY = "chat";
 const DEFAULT_CAPABILITY = "chat.message";
@@ -220,10 +211,6 @@ function storedAttachmentIds(
   }
   return [...ids];
 }
-
-// ---------------------------------------------------------------------------
-// createChatHandler
-// ---------------------------------------------------------------------------
 
 export type ChatHandler = {
   POST: (request: Request) => Promise<Response>;
@@ -447,9 +434,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     }
   }
 
-  // -------------------------------------------------------------------------
-  // POST — stream a reply
-  // -------------------------------------------------------------------------
+  // POST: stream a reply.
 
   async function POST(request: Request): Promise<Response> {
     await config.onRequest?.();
@@ -867,10 +852,10 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
                 tools,
                 stopWhen,
                 // `activeTools`, not `experimental_activeTools`: the
-                // SDK dropped the prefix in 7.0, and the old key lands
-                // in `streamText`'s rest parameter — accepted by the
-                // compiler inside a conditional spread, and silently
-                // ignored at runtime, so the agent ran with every tool.
+                // prefixed key lands in `streamText`'s rest parameter,
+                // accepted by the compiler inside a conditional spread
+                // and ignored at runtime, so the agent would run with
+                // every tool.
                 ...(agent.activeTools
                   ? { activeTools: agent.activeTools as ActiveTools<ToolSet> }
                   : {}),
@@ -989,9 +974,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     return createUIMessageStreamResponse({ stream, headers: limitHeaders });
   }
 
-  // -------------------------------------------------------------------------
-  // DELETE — remove a conversation
-  // -------------------------------------------------------------------------
+  // DELETE: remove a conversation.
 
   async function DELETE(request: Request): Promise<Response> {
     await config.onRequest?.();
@@ -1064,9 +1047,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     return Response.json({ success: true }, { headers: cors });
   }
 
-  // -------------------------------------------------------------------------
-  // GET — stream resumption; OPTIONS — CORS preflight
-  // -------------------------------------------------------------------------
+  // GET: stream resumption. OPTIONS: CORS preflight.
 
   /**
    * `useChat().resumeStream()` asks here whether a turn is still in

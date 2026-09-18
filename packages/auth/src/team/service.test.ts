@@ -1,12 +1,7 @@
 /**
- * Team service unit tests.
- *
  * Mocks `../helpers` (requireAuth/requireWorkspace/requireRole),
  * `../server` (auth.api.getFullOrganization/getSession), and
- * `../org-api` (orgApi) — the same seam the product's former
- * actions/__tests__/team.test.ts mocked, just one layer down. Focused
- * on role gating, the limit port, the sole-owner-leave guard, the
- * accept pre/post-check, and TeamServiceError codes.
+ * `../org-api` (orgApi).
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -111,10 +106,6 @@ beforeEach(() => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// listMembers / listInvitations
-// ---------------------------------------------------------------------------
-
 describe("listMembers + listInvitations", () => {
   it("returns members from the active org", async () => {
     mocks.getFullOrganization.mockResolvedValue({
@@ -148,10 +139,6 @@ describe("listMembers + listInvitations", () => {
     });
   });
 });
-
-// ---------------------------------------------------------------------------
-// inviteMember
-// ---------------------------------------------------------------------------
 
 describe("inviteMember", () => {
   it("requires owner/admin", async () => {
@@ -250,9 +237,8 @@ describe("inviteMember", () => {
     await expect(
       service.inviteMember({ email: "new@test.com", role: "member" })
     ).resolves.toBeTruthy();
-    // Nothing to assert on directly — the point is this does not throw
-    // and calls no email port. A real composition root leaves this
-    // port unbound for exactly this reason; see the module doc comment.
+    // Nothing to assert on directly: this does not throw and calls no
+    // email port, because the org plugin's own hook sends the email.
   });
 
   it("calls sendInvitationEmail when the port IS explicitly bound (opt-in, for a consumer that disables the org-plugin hook)", async () => {
@@ -303,10 +289,6 @@ describe("inviteMember", () => {
     expect(err.code).toBe("provider_error");
   });
 });
-
-// ---------------------------------------------------------------------------
-// acceptInvitation
-// ---------------------------------------------------------------------------
 
 describe("acceptInvitation", () => {
   it("accepts and notifies via the port, fire-and-forget", async () => {
@@ -406,10 +388,6 @@ describe("acceptInvitation", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// rejectInvitation + cancelInvitation
-// ---------------------------------------------------------------------------
-
 describe("rejectInvitation + cancelInvitation", () => {
   it("rejectInvitation happy path", async () => {
     const service = createTeamService();
@@ -444,10 +422,6 @@ describe("rejectInvitation + cancelInvitation", () => {
     expect(err.code).toBe("forbidden");
   });
 });
-
-// ---------------------------------------------------------------------------
-// removeMember + updateMemberRole
-// ---------------------------------------------------------------------------
 
 describe("removeMember + updateMemberRole", () => {
   it("removeMember requires owner/admin", async () => {
@@ -495,10 +469,6 @@ describe("removeMember + updateMemberRole", () => {
     expect(err.code).toBe("invalid_input");
   });
 });
-
-// ---------------------------------------------------------------------------
-// leaveWorkspace
-// ---------------------------------------------------------------------------
 
 describe("leaveWorkspace", () => {
   it("blocks the sole owner from leaving", async () => {
@@ -554,10 +524,6 @@ describe("leaveWorkspace", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// transferOwnership
-// ---------------------------------------------------------------------------
-
 describe("transferOwnership", () => {
   it("requires owner and promotes the target", async () => {
     const service = createTeamService();
@@ -584,10 +550,6 @@ describe("transferOwnership", () => {
     expect(err.code).toBe("forbidden");
   });
 });
-
-// ---------------------------------------------------------------------------
-// getUserInvitations
-// ---------------------------------------------------------------------------
 
 describe("getUserInvitations", () => {
   it("returns the list from the org plugin", async () => {

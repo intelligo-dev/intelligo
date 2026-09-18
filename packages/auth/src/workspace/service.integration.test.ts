@@ -1,18 +1,7 @@
 /**
- * Workspace service integration tests — real Postgres, real Better-Auth.
- *
- * Runs only when DATABASE_URL is set (`describe.skipIf`), mirroring
- * `../team/service.integration.test.ts`'s bootstrap exactly (see that
- * file's module doc comment for the full rationale — the only mocked
- * piece is `@intelligo-dev/core/request-context`'s request-context accessor; `../server`,
- * `../helpers`, `../org-api`, and the database are all real).
- *
- * Run:
- *   pnpm vitest run packages/auth/src/workspace/service.integration.test.ts
- *
- * (DATABASE_URL must point at a Postgres with Better-Auth's
- * user/session/account/verification/organization/member tables and the
- * pgvector extension — `pnpm db:push` from the repo root.)
+ * Real Postgres, real Better-Auth; runs only when DATABASE_URL is set. The
+ * bootstrap is `../team/service.integration.test.ts`'s: only the request
+ * context is mocked. Needs a database prepared with `pnpm db:push`.
  */
 
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
@@ -78,11 +67,8 @@ d("workspace service — real DB integration", () => {
     ({ isWorkspaceServiceError } = await import("./errors"));
   });
 
-  // -------------------------------------------------------------------
   // Create -> auto-activate -> list -> read back -> update -> delete
-  // (switches to the remaining workspace). One ordered sequence, like
-  // the team service's invitation lifecycle.
-  // -------------------------------------------------------------------
+  // (switches to the remaining workspace). One ordered sequence.
   describe("lifecycle", () => {
     const service = () => createWorkspaceService();
     let owner: Fixture;
@@ -95,9 +81,8 @@ d("workspace service — real DB integration", () => {
         "Workspace Owner IT"
       );
 
-      // A user's very first workspace is created directly through
-      // Better-Auth (mirrors a product's signup-time bootstrap)
-      // so the lifecycle below always has two workspaces to work with.
+      // Created up front so the lifecycle below always has two
+      // workspaces to work with.
       asUser(owner.cookie);
       const firstOrg = await service().createWorkspace({
         name: "IT First Workspace",
@@ -171,9 +156,6 @@ d("workspace service — real DB integration", () => {
     });
   });
 
-  // -------------------------------------------------------------------
-  // Role gates against a real member (not owner/admin).
-  // -------------------------------------------------------------------
   describe("role gates", () => {
     it("updateWorkspace and deleteWorkspace are forbidden for a plain member", async () => {
       const owner = await signUpVerified(
@@ -220,9 +202,6 @@ d("workspace service — real DB integration", () => {
     });
   });
 
-  // -------------------------------------------------------------------
-  // checkWorkspaceLimit port, against real workspace counts.
-  // -------------------------------------------------------------------
   describe("checkWorkspaceLimit port", () => {
     it("blocks a second workspace when the bound port disallows", async () => {
       const owner = await signUpVerified(
@@ -263,10 +242,7 @@ d("workspace service — real DB integration", () => {
           body: { organizationId },
         });
       } catch {
-        // Best-effort cleanup only — a failure here must not fail the
-        // test run. Fixture users are left behind regardless (no
-        // user-delete call is wired here), matching
-        // ../team/service.integration.test.ts's precedent.
+        // Best-effort cleanup: a failure here must not fail the run.
       }
     }
   });

@@ -1,19 +1,7 @@
-/**
- * Workspace Validation Schemas
- *
- * Zod schemas for workspace create/update inputs, shared by the
- * workspace service and its transports.
- *
- * (Ported from the first product's workspace validation module —
- * same semantics.)
- */
+/** Workspace inputs, shared by the workspace service and its transports. */
 
 import { z } from "zod";
 
-/**
- * Create Workspace Schema
- * Name + optional slug for new workspaces
- */
 export const createWorkspaceSchema = z.object({
   name: z
     .string()
@@ -27,15 +15,11 @@ export const createWorkspaceSchema = z.object({
       /^[a-z0-9-]+$/,
       "Slug can only contain lowercase letters, numbers, and hyphens"
     )
-    .optional(), // Auto-generated from name if not provided
+    .optional(), // Generated from the name when omitted.
 });
 
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;
 
-/**
- * Update Workspace Schema
- * Optional name, slug, and logo for workspace settings
- */
 export const updateWorkspaceSchema = z.object({
   name: z
     .string()

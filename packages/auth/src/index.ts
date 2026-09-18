@@ -1,8 +1,5 @@
 /**
- * Better-Auth Server Exports
- *
- * Server-side authentication utilities.
- * For client-side auth, use @intelligo-dev/auth/client
+ * Server-side auth. Client components use `@intelligo-dev/auth/client`.
  */
 
 export { auth } from "./server";
@@ -24,10 +21,8 @@ export {
   type ImpersonatedSession,
 } from "./impersonation";
 
-// Re-export common types from Better-Auth
 export type { Session, User } from "better-auth/types";
 
-// Typed Better-Auth organization plugin wrapper
 export {
   orgApi,
   type OrgApi,
@@ -38,7 +33,6 @@ export {
   type OrgMember,
 } from "./org-api";
 
-// Team management service (page/registry migration, section C1)
 export {
   createTeamService,
   type TeamService,
@@ -57,7 +51,6 @@ export {
   type UpdateRoleInput,
 } from "./team/schemas";
 
-// Workspace management service (page/registry migration, workspace-settings family)
 export {
   createWorkspaceService,
   type WorkspaceService,
@@ -77,7 +70,6 @@ export {
   type UpdateWorkspaceInput,
 } from "./workspace/schemas";
 
-// Profile management service (page/registry migration, profile-settings family)
 export {
   createProfileService,
   type ProfileService,
@@ -95,7 +87,6 @@ export {
   type UpdateProfileInput,
 } from "./profile/schemas";
 
-// Onboarding service (page/registry migration, `onboarding` family)
 export {
   createOnboardingService,
   type OnboardingService,

@@ -1,19 +1,9 @@
 import "server-only";
 
 /**
- * Admin authorization.
- *
- * The console manages Intelligo's own concepts — workspaces,
- * entitlements, credits, executions, audit, jobs — not any product's
- * customer experience. So its gate is deliberately NOT a
- * workspace role: `owner` is per-tenant, and every self-serve signup
- * owns their own workspace. Gating cross-tenant views on it is how the
- * platform-wide analytics leak in `getAdminStats` happened.
- *
- * Every entry point here goes through `requirePlatformAdmin`, and the
- * fact that a person reached the console at all is itself auditable —
- * a support engineer looking at a customer's ledger is an event
- * someone may later need to explain.
+ * The console's gate is the platform admin role, never a workspace role:
+ * `owner` is per-tenant and every self-serve signup owns a workspace, so it
+ * cannot guard cross-tenant views. Every entry point is audited.
  */
 
 import { requirePlatformAdmin } from "@intelligo-dev/auth";

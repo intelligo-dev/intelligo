@@ -1,13 +1,8 @@
 /**
- * Workspace service unit tests.
- *
  * Mocks `../helpers` (requireAuth/requireWorkspace/requireRole),
  * `../server` (auth.api.createOrganization/updateOrganization/
  * deleteOrganization/getFullOrganization), and `../org-api` (orgApi's
- * `/organization/list` and `/organization/set-active`) — the same seam
- * `../team/service.test.ts` mocks, one directory over. Focused on role
- * gating, the limit port, slug generation, delete-switches-workspace,
- * and WorkspaceServiceError codes.
+ * `/organization/list` and `/organization/set-active`).
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -115,10 +110,6 @@ beforeEach(() => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// listWorkspaces
-// ---------------------------------------------------------------------------
-
 describe("listWorkspaces", () => {
   it("returns the caller's workspaces", async () => {
     mocks.orgApi["/organization/list"].mockResolvedValue([
@@ -147,10 +138,6 @@ describe("listWorkspaces", () => {
     expect(err.code).toBe("forbidden");
   });
 });
-
-// ---------------------------------------------------------------------------
-// createWorkspace
-// ---------------------------------------------------------------------------
 
 describe("createWorkspace", () => {
   it("auto-generates a unique slug from the name when none is given", async () => {
@@ -286,10 +273,6 @@ describe("createWorkspace", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// switchWorkspace
-// ---------------------------------------------------------------------------
-
 describe("switchWorkspace", () => {
   it("sets the active organization", async () => {
     const service = createWorkspaceService();
@@ -320,10 +303,6 @@ describe("switchWorkspace", () => {
     expect(err.code).toBe("forbidden");
   });
 });
-
-// ---------------------------------------------------------------------------
-// updateWorkspace
-// ---------------------------------------------------------------------------
 
 describe("updateWorkspace", () => {
   it("requires owner/admin", async () => {
@@ -384,10 +363,6 @@ describe("updateWorkspace", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// deleteWorkspace
-// ---------------------------------------------------------------------------
-
 describe("deleteWorkspace", () => {
   it("requires owner", async () => {
     const service = createWorkspaceService();
@@ -443,10 +418,6 @@ describe("deleteWorkspace", () => {
     expect(err.code).toBe("provider_error");
   });
 });
-
-// ---------------------------------------------------------------------------
-// getActiveWorkspace
-// ---------------------------------------------------------------------------
 
 describe("getActiveWorkspace", () => {
   it("resolves the workspace via requireWorkspace with an explicit organizationId", async () => {

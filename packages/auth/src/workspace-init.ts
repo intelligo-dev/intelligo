@@ -1,20 +1,7 @@
 /**
- * Workspace Initialization
- *
- * Ensures every authenticated user has at least one workspace.
- * Called from the (app) layout to guarantee workspace exists.
- * Idempotent - safe to call on every page load.
- *
- * Pattern: "Belt-and-suspenders" approach consistent with Phase 9.
- * Better-Auth doesn't provide a reliable hook for post-signup workspace creation,
- * so we check + create on every authenticated page load.
- *
- * Dependency Inversion (Phase 42, PKG-01 preparation):
- * Post-creation logic (e.g., trial provisioning) is injected via callback,
- * so this module has ZERO billing imports. The actual billing call lives
- * in the consumer application's authenticated layout, which already
- * imports billing.
- * This breaks the auth → billing circular dependency before Phase 43 extraction.
+ * Ensures every authenticated user has a workspace; called from the
+ * authenticated layout on every render. Post-creation work (trial
+ * provisioning) arrives as a callback, so auth never imports billing.
  */
 
 import { auth } from "./server";
@@ -25,21 +12,17 @@ import { personalWorkspaceSlug } from "./workspace-slug";
 const log = createLogger("WorkspaceInit");
 
 /**
- * Ensure user has at least one workspace (WORK-01).
+ * Ensure the user has at least one workspace.
  *
  * If the session already has a valid active workspace, returns it
  * untouched; otherwise sets the first workspace as active. If none
- * exist, creates a personal workspace — this serves as a fallback in case the
- * user.create hook (server.ts databaseHooks) hasn't completed yet, and
- * also handles users created via non-Better-Auth flows (e.g. admin panel).
- *
- * Idempotent - safe to call repeatedly. Returns quickly if workspace exists.
+ * exist, creates a personal workspace, in case the user.create hook has not
+ * completed yet or the user was created outside Better-Auth. Idempotent.
  *
  * @param user - Authenticated user from session
  * @param headers - Request headers (required for Better-Auth API)
  * @param options.onWorkspaceCreated - Optional callback invoked after a new workspace is created.
- *   Receives workspaceId and email. Failure does NOT block workspace creation (same fire-and-forget
- *   behavior as the previous inline trial provisioning call).
+ *   Receives workspaceId and email. Fire-and-forget: a failure is logged, never thrown.
  * @returns The organization ID that was set as active (useful for immediate access before session updates)
  */
 export async function ensureUserWorkspace(
@@ -54,7 +37,6 @@ export async function ensureUserWorkspace(
 ): Promise<string> {
   log.info("Starting workspace check", { email: user.email });
 
-  // Check if user has any organizations
   const orgs = await auth.api.listOrganizations({
     headers,
   });
@@ -62,10 +44,8 @@ export async function ensureUserWorkspace(
   log.info("Found organizations", { count: orgs?.length ?? 0 });
 
   if (orgs && orgs.length > 0 && orgs[0]) {
-    // The session already names a workspace the user switched to, and
-    // they are still a member of it: keep it. Resetting to orgs[0] on
-    // every authenticated render — which is what this did — undid every
-    // switch as soon as the layout re-rendered.
+    // Keep a workspace the user switched to while they are still a
+    // member; resetting to orgs[0] would undo every switch on re-render.
     const current = await auth.api.getSession({ headers });
     const active = (
       current?.session as { activeOrganizationId?: string | null } | undefined
@@ -91,14 +71,10 @@ export async function ensureUserWorkspace(
     return orgs[0].id;
   }
 
-  // TR-DB03 fix: No organizations found — the user.create hook may not have
-  // completed yet, or user was created via a non-Better-Auth flow.
-  // Create the workspace here as a fallback rather than throwing.
-  // Idempotent: the unique constraint on organization.slug prevents duplicates
-  // if both this fallback and the hook fire for the same signup — which
-  // holds only because `personalWorkspaceSlug` is derived from the user
-  // and not from the clock. Concurrent callers therefore collide on the
-  // index and take the adopt-the-winner path below.
+  // No workspace yet: create one. The unique index on organization.slug
+  // prevents duplicates when the hook or a concurrent request also creates
+  // it, because `personalWorkspaceSlug` is derived from the user; the loser
+  // takes the adopt-the-winner path below.
   log.warn("No workspace found, creating one (hook may still fire)", {
     email: user.email,
   });
@@ -119,9 +95,8 @@ export async function ensureUserWorkspace(
     workspaceId = result.id;
     log.info("Created fallback workspace", { workspaceId });
   } catch (error) {
-    // If creation failed because the unique constraint was hit (hook already
-    // created), the error message contains the duplicate key info.
-    // List orgs again — if one now exists, use it.
+    // A concurrent creator may have won the unique index; if a workspace
+    // now exists, use it.
     const orgsAfter = await auth.api.listOrganizations({ headers });
     if (orgsAfter && orgsAfter.length > 0 && orgsAfter[0]) {
       log.info("Workspace created concurrently by hook, using it");
@@ -131,20 +106,15 @@ export async function ensureUserWorkspace(
       });
       return orgsAfter[0].id;
     }
-    // Genuine failure
     log.error("Failed to create fallback workspace", {
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
   }
 
-  // Point the session at what we just created. The caller gets the id
-  // back and can render from it, but every later request that resolves a
-  // workspace from the session alone would find none — which is why the
-  // first authenticated render used to fail and a refresh fixed it: the
-  // refresh took the branch above, which does write the pointer. Failing
-  // here is not fatal (the workspace exists, and the next request sets
-  // it), so it is logged rather than thrown.
+  // Point the session at the new workspace, or later requests that resolve
+  // one from the session alone find none. Not fatal (the next request sets
+  // it), so a failure is logged rather than thrown.
   try {
     await auth.api.setActiveOrganization({
       headers,
@@ -157,7 +127,6 @@ export async function ensureUserWorkspace(
     });
   }
 
-  // Fire the optional callback (trial credits, referral tracking, etc.)
   if (options?.onWorkspaceCreated) {
     options
       .onWorkspaceCreated({ workspaceId, email: user.email })

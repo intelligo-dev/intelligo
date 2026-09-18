@@ -1,12 +1,7 @@
 /**
- * What the chat page knows about the caller's credit before they type.
- *
- * The transport already refuses a turn it cannot fund — admission runs
- * inside `executions.begin()` and answers 402. That is the correct
- * enforcement point and the wrong place to *tell someone*: by then
- * they have written a message and watched it fail. This is the read
- * that lets the page say so first. An estimate, never a reservation:
- * rendering a page cannot consume credit.
+ * What the chat page knows about the caller's credit before they type, so
+ * it can say so before a turn is refused with 402. An estimate, never a
+ * reservation: rendering a page cannot consume credit.
  */
 
 import { requireWorkspace } from "@intelligo-dev/auth";
@@ -39,9 +34,7 @@ export async function getChatQuotaState(options: {
       allowed: quota.allowed,
       reason: quota.reason ?? null,
       code: quota.code ?? null,
-      // Micros of the deployment's billing currency: the banner shows a
-      // formatted amount, and the pair used to be whole tugrik however
-      // the deployment actually billed.
+      // Micros of the deployment's billing currency.
       remaining: quota.remaining?.amount ?? 0,
       estimated: quota.estimated?.amount ?? 0,
       upgradeHref: options.upgradeHref,

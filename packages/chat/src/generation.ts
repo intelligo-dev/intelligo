@@ -1,22 +1,9 @@
 /**
- * The generation settings a product may hand to the model, and the ones
- * it may not.
- *
- * The transport owns the turn's envelope — auth, the gate, admission,
- * settlement, persistence — and the product owns the AI call.
- * Between those two sits one small set of `streamText` options that
- * decide how the model samples: temperature, a token ceiling, a tool
- * choice, a seed. None of them changes what settlement reads back, and
- * none of them was reachable: a product that wanted `temperature` had to
- * take `streamTurn`, replace the whole model call, and produce its own
- * usage promise — an expensive trade for one number.
- *
- * `ChatGenerationOptions` is that set, written out by hand. It is
- * deliberately NOT `Omit<Parameters<typeof streamText>[0], forbidden>`:
- * a denylist over someone else's type fails open, so every option the
- * SDK adds in a future release would be admitted silently and the
- * guarantee below would have to be re-derived at every `ai` bump. An
- * allowlist is a proof; a denylist is a promise.
+ * The `streamText` options a product may set per turn: how the model
+ * samples (temperature, a token ceiling, a tool choice, a seed), none of
+ * which changes what settlement reads back. Written out as an allowlist
+ * rather than an `Omit<>` over the SDK's type, so an option a later SDK adds
+ * is not admitted silently.
  *
  * What the transport keeps, and why each one is not negotiable:
  *
@@ -45,17 +32,9 @@
  *                   bill. `ResolvedAgent.stopWhen` appends to it.
  *   `_internal`     the SDK's own test seam, not a product knob.
  *
- * The list grows one field at a time, by amendment, with a test — never
- * by widening the type to whatever the SDK happens to accept.
- *
- * Two mechanisms enforce this, because the type alone does not: a
- * consumer who writes `generation: { ... } as ChatGenerationOptions`
- * over an object carrying `abortSignal` would punch straight through
- * it. So `pickGenerationOptions` copies only the names in
- * `GENERATION_KEYS` at runtime, and the handler spreads the result
- * *first* in the `streamText` literal, so the transport's own keys are
- * written after it and win. Type, picker, key order: three independent
- * reasons the same thing cannot happen.
+ * Enforced three ways, because a cast defeats the type: the type itself,
+ * `pickGenerationOptions` copying only `GENERATION_KEYS` at runtime, and the
+ * handler spreading the result *first* so the transport's own keys win.
  */
 
 import type {

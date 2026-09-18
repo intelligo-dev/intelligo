@@ -1,75 +1,11 @@
 /**
- * Team management service — the durable business rules behind
- * workspace membership and invitations, lifted out of the first
- * product's team actions (first slice of the page/registry migration,
- * section C1).
+ * Workspace membership and invitations. Each method authorizes itself and
+ * throws `TeamServiceError`; billing, email and notifications arrive as ports
+ * bound at the composition root.
  *
- * Mirrors `createExecutions(ports)` (packages/executions/src/lifecycle.ts):
- * a factory over optional ports, so this package's allowlisted
- * dependency (`@intelligo-dev/core` only — see
- * tests/architecture/dependency-direction.test.ts) never grows to
- * include billing, email, or notifications. A consumer binds those in
- * at its composition root:
- *
- *   const teamService = createTeamService({
- *     checkMemberLimit: checkTeamMemberLimit,       // @intelligo-dev/billing
- *     sendInvitationEmail: ...,                     // see note below
- *     notifyMemberJoined: triggerTeamMemberJoinedNotification, // @intelligo-dev/core/notifications
- *   });
- *
- * Authorization (`requireAuth`/`requireWorkspace`/`requireRole`) lives
- * INSIDE each method, not at the transport. Every recognized failure
- * throws `TeamServiceError` with a stable `code` — no
- * revalidatePath/Sentry/next-intl/toast here; that shaping is the
- * transport's job (a Server Action, a route handler).
- *
- * ---------------------------------------------------------------------
- * Invitation-email duplication (investigated for this extraction)
- * ---------------------------------------------------------------------
- * `packages/auth/src/server.ts` configures the Better-Auth organization
- * plugin's own `sendInvitationEmail` hook (EMAIL-06). Reading the
- * installed org plugin (`better-auth@1.6.30`,
- * `plugins/organization/routes/crud-invites.mjs`): every successful
- * `/organization/invite-member` call — both the "new invitation" path
- * and the "resend" path — unconditionally does
- * `if (ctx.context.orgOptions.sendInvitationEmail) await
- * runInBackgroundOrAwait(orgOptions.sendInvitationEmail(...))` once the
- * invitation row is created. Because `server.ts` always sets that
- * option, the hook fires on every `inviteMember()` call this service
- * makes — there is no code path where it does not.
- *
- * The product's original `actions/team.ts` ALSO called
- * `@intelligo-dev/core/email`'s `sendInvitationEmail` directly after the
- * same `/organization/invite-member` call. That means **two** emails
- * go out per invitation today. This is a live duplication bug, not a
- * hypothetical.
- *
- * Decision: `inviteMember` below does NOT call `ports.sendInvitationEmail`
- * by default — the org-plugin hook already covers it, so exactly one
- * email fires per invitation as long as `server.ts`'s hook stays wired.
- * The port is kept (and tested) for a consumer that disables or
- * replaces that hook (e.g. a fork of `server.ts`, or a future
- * environment where the org plugin's hook is intentionally left unset)
- * — pass `sendInvitationEmail` and this service will use it. Bumping
- * both at once will resume the duplication; do not turn the port back
- * on without also removing the hook in `server.ts`.
- *
- * ---------------------------------------------------------------------
- * Active-organization resolution (found the same way, via the
- * integration test's real DB)
- * ---------------------------------------------------------------------
- * Better-Auth's organization plugin resolves "the caller's active
- * workspace" from `session.activeOrganizationId` when a call omits an
- * explicit `organizationId`. That column exists
- * (`packages/core/src/db/schema/auth.ts`) and persists switches, but a
- * bare `auth.api.getFullOrganization({ headers })` still resolves to
- * *no* organization whenever the session has none set — a fresh user,
- * a user removed from their active workspace — and the original code
- * relied on it. This service therefore never depends on session state:
- * every `getFullOrganization` call below passes an explicit
- * `organizationId` sourced from `requireWorkspace`/`requireRole`'s
- * resolved `workspace.id` (or, in `acceptInvitation`, the invitation's
- * own `organizationId`).
+ * Every `getFullOrganization` call passes an explicit `organizationId`: the
+ * session's active organization is unset for a fresh user or one removed
+ * from their active workspace, and a bare call then resolves to nothing.
  */
 
 import { getRequestHeaders } from "@intelligo-dev/core/request-context";
@@ -85,20 +21,15 @@ import { TeamServiceError, isTeamServiceError } from "./errors";
 const log = createLogger("TeamService");
 
 export type TeamServicePorts = {
-  /**
-   * Plan-defined member cap for a workspace. No port ⇒ unlimited (no
-   * gate applied) — matches "no billing dependency without one bound
-   * explicitly".
-   */
+  /** Plan-defined member cap for a workspace. No port ⇒ unlimited. */
   checkMemberLimit?: (
     workspaceId: string,
     currentCount: number
   ) => Promise<{ allowed: boolean; limit: number }>;
   /**
-   * Send the invitation email. Kept for a consumer that disables the
-   * Better-Auth org-plugin `sendInvitationEmail` hook — see the module
-   * doc comment above. `inviteMember` does not call this port unless
-   * it is explicitly bound.
+   * Send the invitation email. Bind it only when the org plugin's own
+   * `sendInvitationEmail` hook in `server.ts` is disabled: that hook fires
+   * on every invite, and binding both sends two emails.
    */
   sendInvitationEmail?: (input: {
     to: string;
@@ -107,13 +38,7 @@ export type TeamServicePorts = {
     invitationId: string;
     role: string;
   }) => Promise<void>;
-  /**
-   * Notify the workspace owner that a new member joined. `memberEmail`
-   * is included alongside the ports.md-listed fields because
-   * `triggerTeamMemberJoinedNotification` (a consumer's binding) uses it
-   * to compose the notification message — dropping it would silently
-   * degrade the message text.
-   */
+  /** Notify the workspace owner that a new member joined. */
   notifyMemberJoined?: (input: {
     workspaceId: string;
     workspaceName: string;
@@ -193,9 +118,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     }
   }
 
-  /**
-   * List members of the caller's active workspace.
-   */
+  /** Members of the caller's active workspace. */
   async function listMembers(): Promise<OrgMember[]> {
     const { workspace } = await callRequireWorkspace();
     const hdrs = await getRequestHeaders();
@@ -210,9 +133,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     return (org?.members ?? []) as OrgMember[];
   }
 
-  /**
-   * List pending invitations for the caller's active workspace.
-   */
+  /** Pending invitations for the caller's active workspace. */
   async function listInvitations(): Promise<OrgInvitation[]> {
     const { workspace } = await callRequireWorkspace();
     const hdrs = await getRequestHeaders();
@@ -228,11 +149,8 @@ export function createTeamService(ports: TeamServicePorts = {}) {
   }
 
   /**
-   * Invite a member by email. Owner/admin only (TEAM-01).
-   *
-   * The member-limit port, when bound, gates the invite before it is
-   * created. Exactly one invitation email is sent — see the module doc
-   * comment on the email-duplication finding.
+   * Invite a member by email. Owner/admin only. The member-limit port,
+   * when bound, gates the invite before it is created.
    */
   async function inviteMember(input: {
     email: string;
@@ -242,7 +160,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     const validated = parseInput(inviteMemberSchema, input);
     const hdrs = await getRequestHeaders();
 
-    // Check team member limit (FLAG-05), via port only.
+    // Member limit, via port only.
     if (ports.checkMemberLimit) {
       const org = await callOrgApi("getFullOrganization", () =>
         auth.api.getFullOrganization({
@@ -269,9 +187,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
 
     // Better-Auth's own duplicate-pending-invite guard
     // (USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION) runs inside this
-    // call and surfaces as a provider_error if tripped — the original
-    // action never added a second check on top of it, so neither does
-    // this service.
+    // call and surfaces as a provider_error.
     const result = await callOrgApi("invite-member", () =>
       orgApi["/organization/invite-member"]({
         headers: hdrs,
@@ -304,16 +220,13 @@ export function createTeamService(ports: TeamServicePorts = {}) {
   }
 
   /**
-   * Accept invitation (TEAM-03).
+   * Accept an invitation.
    *
-   * Defence-in-depth against stolen-invitationId attacks: we (a)
-   * require the caller to be authenticated, (b) verify the
-   * invitationId is in the caller's pending list before forwarding it
-   * to Better-Auth, and (c) confirm the user is actually a member of
-   * the resulting org after the call. Better-Auth's accept-invitation
-   * endpoint already checks the email match, but layering these guards
-   * means a future upstream regression can't silently grant
-   * cross-tenant access.
+   * Defence in depth against a stolen invitation id: the caller must be
+   * authenticated, the id must be in the caller's pending list, and the
+   * caller must be a member of the organization afterwards. Better-Auth
+   * already checks the email match; these guards keep a regression there
+   * from granting cross-tenant access.
    */
   async function acceptInvitation(invitationId: string): Promise<void> {
     const { user } = await callRequireAuth();
@@ -371,19 +284,9 @@ export function createTeamService(ports: TeamServicePorts = {}) {
       );
     }
 
-    // Notify the workspace owner (fire-and-forget, non-blocking —
-    // invitation acceptance has already succeeded above).
-    //
-    // Reuses `targetOrg` from the post-check above (scoped to
-    // `matched.organizationId`, the org the caller just joined) rather
-    // than re-fetching "the active org" the way the original
-    // action did: Better-Auth's org plugin needs a
-    // `sessions.activeOrganizationId` column to resolve an org from
-    // headers alone, and this repo's Drizzle schema for `sessions`
-    // does not define one, so a bare `getFullOrganization({ headers })`
-    // call resolves to no organization at all — this notify lookup
-    // would silently no-op every time. `targetOrg` sidesteps that by
-    // asking for the org we already know the answer for.
+    // Notify the owner, fire-and-forget: acceptance has already succeeded.
+    // Uses `targetOrg`, the organization just joined, rather than resolving
+    // one from the session.
     if (ports.notifyMemberJoined) {
       try {
         const session = await auth.api.getSession({ headers: hdrs });
@@ -413,13 +316,13 @@ export function createTeamService(ports: TeamServicePorts = {}) {
         log.error("Notification lookup failed", {
           error: errorMessage(notifError),
         });
-        // Non-blocking — invitation acceptance still succeeds.
+        // Acceptance still succeeds.
       }
     }
   }
 
   /**
-   * Reject/decline invitation (TEAM-04).
+   * Decline an invitation.
    *
    * Same caller-side guard as acceptInvitation: require auth and
    * verify the invitationId is in the caller's pending list before
@@ -451,9 +354,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     );
   }
 
-  /**
-   * Cancel a pending invitation. Owner/admin only.
-   */
+  /** Cancel a pending invitation. Owner/admin only. */
   async function cancelInvitation(invitationId: string): Promise<void> {
     await callRequireRole(["owner", "admin"]);
     const hdrs = await getRequestHeaders();
@@ -466,9 +367,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     );
   }
 
-  /**
-   * Remove a member from workspace. Owner/admin only (TEAM-06).
-   */
+  /** Remove a member from the workspace. Owner/admin only. */
   async function removeMember(memberId: string): Promise<void> {
     const { workspace } = await callRequireRole(["owner", "admin"]);
     const hdrs = await getRequestHeaders();
@@ -481,9 +380,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     );
   }
 
-  /**
-   * Update member role. Owner/admin only (TEAM-05, TEAM-08).
-   */
+  /** Change a member's role. Owner/admin only. */
   async function updateMemberRole(input: {
     memberId: string;
     role: "admin" | "member";
@@ -505,7 +402,7 @@ export function createTeamService(ports: TeamServicePorts = {}) {
   }
 
   /**
-   * Leave workspace (TEAM-09). Sole owner cannot leave — must transfer
+   * Leave the workspace. The sole owner cannot leave without transferring
    * ownership first.
    */
   async function leaveWorkspace(): Promise<void> {
@@ -550,16 +447,13 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     }
   }
 
-  /**
-   * Transfer workspace ownership to another member. Owner only (TEAM-07).
-   */
+  /** Transfer workspace ownership to another member. Owner only. */
   async function transferOwnership(targetMemberId: string): Promise<void> {
     const { workspace } = await callRequireRole(["owner"]);
     const hdrs = await getRequestHeaders();
 
-    // Promote target to owner. Note: Better-Auth may handle demotion of
-    // the previous owner automatically. If not, the old owner remains
-    // as co-owner, which is acceptable (ported behavior).
+    // Promotes the target to owner. If Better-Auth does not demote the
+    // previous owner, they stay a co-owner.
     await callOrgApi("update-member-role", () =>
       orgApi["/organization/update-member-role"]({
         headers: hdrs,
@@ -573,10 +467,9 @@ export function createTeamService(ports: TeamServicePorts = {}) {
   }
 
   /**
-   * Get the caller's own pending invitations (for the invitation
-   * accept page). No explicit requireAuth here — Better-Auth's
-   * list-user-invitations endpoint reads the session off `headers`
-   * itself; ported as-is from the original action.
+   * The caller's own pending invitations, for the accept page. No
+   * `requireAuth`: Better-Auth's list-user-invitations endpoint reads the
+   * session off `headers` itself.
    */
   async function getUserInvitations(): Promise<OrgInvitation[]> {
     const hdrs = await getRequestHeaders();
