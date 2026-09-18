@@ -46,6 +46,8 @@ import {
   invitation,
 } from "@intelligo-dev/core/db/schema";
 import {
+  ConsoleProvider,
+  getEmailProvider,
   sendVerifyEmail,
   sendPasswordResetEmail,
   sendWelcomeEmail,
@@ -96,10 +98,11 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    // Only enforce email verification when a real email provider is configured
-    // or in production — otherwise dev users (no RESEND_API_KEY) cannot log in.
-    requireEmailVerification:
-      process.env.NODE_ENV === "production" || !!process.env.RESEND_API_KEY,
+    // Verification is required exactly when a verification email can be
+    // sent. Without a provider the link only reaches the server console,
+    // so requiring it would lock every new account out — in production
+    // as much as in development. `validateEnv` warns about that case.
+    requireEmailVerification: !(getEmailProvider() instanceof ConsoleProvider),
     // Password reset email hook (EMAIL-05)
     sendResetPassword: async ({ user, url }) => {
       sendPasswordResetEmail({

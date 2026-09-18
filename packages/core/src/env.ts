@@ -130,6 +130,11 @@ export function validateEnv(): {
 
   // Production safety checks
   if (process.env.NODE_ENV === "production") {
+    if (!process.env.RESEND_API_KEY && !process.env.LOOPS_API_KEY) {
+      warnings.push(
+        "No email provider (RESEND_API_KEY or LOOPS_API_KEY) — sign-ups are not email-verified and emails only reach the server console"
+      );
+    }
     if (process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_")) {
       warnings.push(
         "STRIPE_SECRET_KEY is a test key in production environment"
