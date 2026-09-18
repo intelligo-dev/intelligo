@@ -1,15 +1,11 @@
 /**
- * @intelligo-dev/audit database schema.
- *
  * One append-only table recording who did what to which resource.
- * Owned by this package; scanned by drizzle-kit alongside
- * the core schema directory (see packages/core/drizzle.config.ts) so
- * the migration history stays unified in one database.
+ * Scanned by drizzle-kit alongside the core schema directory (see
+ * packages/core/drizzle.config.ts) so the migration history stays
+ * unified in one database.
  *
  * Distinct from `user_memory_audit` in core/identity, which records
- * mutations to a user's memory graph and predates this table. That one
- * folds in here once the memory subsystem's ownership is settled
- * (see docs/inventory/export-classification.md).
+ * mutations to a user's memory graph.
  */
 
 import { pgTable, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";

@@ -1,17 +1,9 @@
 /**
  * Plan configuration shapes — generic across products.
  *
- * This file holds SHAPES ONLY. Prices, marketing copy, and
- * product-specific limits are domain IP and live in the vertical that
- * owns them; they reach the billing engine through
+ * Shapes only. Prices, marketing copy and product-specific limits live
+ * in the vertical that owns them and reach the billing engine through
  * plan-registry.ts, which the composition root populates.
- *
- * Until Phase 3 this file also carried the first product's catalogue —
- * its price points, its feature copy, and a legacy limits interface
- * naming its actions. That was a second, silently diverging source of
- * truth (this copy had `monthlyCreditMnt`, which drives the actual
- * quota; the product copy did not) sitting inside a package destined
- * to be published.
  */
 
 import type { Money } from "@intelligo-dev/core/money";
@@ -44,8 +36,7 @@ export interface PlanConfig {
   aiModelLabel: string; // How this plan names its model tier, in the product's own words
   /**
    * What this plan grants each period, in the deployment's billing
-   * currency. Replaced `limits.monthlyCreditMnt`, which said a number
-   * without saying what of.
+   * currency.
    */
   monthlyAllowance?: Money;
   limits: PlanLimits;
@@ -62,8 +53,7 @@ export interface PlanConfig {
 export type PlanSlug = "free" | "standard" | "pro";
 
 // Re-exports from the plan-registry so other billing modules can
-// import everything from "./plans" without knowing the registry
-// exists. The registry is populated by product packages at bootstrap.
+// import everything from "./plans".
 export {
   registerProductPlans,
   registerProductFeatures,
@@ -102,10 +92,8 @@ import { getProductPlans } from "./plan-registry";
  * Resolve a product's plan configs through the registry.
  *
  * Returns {} when the product has registered nothing. There is no
- * built-in fallback catalogue any more — a silent fallback is how the
- * two copies came to diverge, and a caller reading {} fails visibly
- * instead of quietly billing against stale numbers. The composition
- * root registers before the first request.
+ * fallback catalogue: a caller reading {} fails visibly instead of
+ * quietly billing against stale numbers.
  */
 export function getPlanConfigs(
   productSlug: string

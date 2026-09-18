@@ -1,16 +1,10 @@
 /**
  * Feature-based quota enforcement.
  *
- * Counts one row per user in `user_quotas` and increments a per-action
- * counter atomically, so a check is O(1) rather than a SUM over usage
- * records. Limits come from the plan catalogue the product registered;
- * this module knows no action names of its own.
- *
- * Until migration 0038 the table also carried three product-specific
- * integer columns which this module read in preference to the generic
- * map, and a hardcoded slug→column table to reach them. Both are gone:
- * counters live only in the `usage` JSONB map, keyed by whatever action
- * slugs the vertical uses.
+ * One row per user in `user_quotas` holds a `usage` JSONB map of
+ * per-action counters, incremented atomically, so a check is O(1)
+ * rather than a SUM over usage records. Limits come from the plan
+ * catalogue the product registered; this module knows no action names.
  */
 
 import { db } from "@intelligo-dev/core/db";
@@ -34,9 +28,7 @@ export interface FeatureQuotaResult {
   percentage: number;
   /**
    * True once usage crosses 80%. The sentence that says so is the
-   * consumer's: this package has `remaining` and `percentage` but not
-   * the product's voice, and composing copy here shipped one
-   * deployment's language to every other one.
+   * consumer's, in the product's own voice.
    */
   nearingLimit: boolean;
   /** Registered by the product through `registerUpgradeMessages()`. */
@@ -47,11 +39,9 @@ export interface FeatureQuotaResult {
  * Resolve the limit for a (plan, action) pair through the registry.
  *
  * The limit field is normally the action slug itself; a product whose
- * plan limits were named before its actions were (the first product
- * capped `chat` with `chatMessages`) declares the remap via
- * registerActionLimitKeys.
- * An action with no limit configured resolves to 0 — refused, not
- * silently unlimited.
+ * limit names differ (`chat` capped by `chatMessages`) declares the
+ * remap via registerActionLimitKeys. An action with no limit configured
+ * resolves to 0 — refused, not silently unlimited.
  */
 function getActionLimit(
   plan: string,
@@ -139,8 +129,7 @@ export async function checkFeatureQuota(
   // Stryker disable next-line ConditionalExpression,EqualityOperator: equivalent — a limit of zero or less never reaches this value: -1 returned above, and the exceeded branch below reports 100 of its own.
   const percentage = limit > 0 ? Math.round((used / limit) * 100) : 0;
 
-  // Exceeded — pull the upgrade copy from the product registry, which
-  // the composition root filled through registerUpgradeMessages().
+  // Exceeded — pull the upgrade copy from the product registry.
   if (used >= limit) {
     return {
       allowed: false,
@@ -195,14 +184,7 @@ export async function recordFeatureUsage(
     );
 }
 
-/**
- * Quota stats for a set of actions, for dashboard display.
- *
- * Takes the action slugs from the caller. It used to return a fixed
- * `{ chat, assessment, report }` shape, which meant a public package's
- * return type enumerated one vertical's features and no other product
- * could use the function at all.
- */
+/** Quota stats for the given action slugs, for dashboard display. */
 export async function getUserQuotaStats(
   userId: string,
   workspaceId: string,

@@ -1,14 +1,10 @@
 /**
  * Product plan registry.
  *
- * Wave 4 of the architecture decoupling moved the actual plan data
- * (Free / Standard / Pro) out of @intelligo-dev/billing and into the
- * product that owns it. The registry here is the runtime hand-off
- * point: a product calls `registerProductPlans()` from its composition
- * root, and the billing engine reads through the registry instead of
- * through a hardcoded constant. There is no fallback catalogue: a
- * product that registers nothing gets no plans, and `intelligo doctor`
- * says so.
+ * A product calls `registerProductPlans()` from its composition root,
+ * and the billing engine reads plans through here. There is no fallback
+ * catalogue: a product that registers nothing gets no plans, and
+ * `intelligo doctor` says so.
  *
  * No DB read here on purpose: this is the in-process registry that
  * gates feature-quota.ts and the dashboard. The `plans` table in
@@ -55,10 +51,7 @@ export function clearProductPlans(): void {
 
 /**
  * Per-product, per-plan, per-action upgrade copy. Each product provides
- * its own strings in its own language. The eventual target is a
- * translation layer keyed by product+action — the registry here is the
- * intermediate step: copy still lives in product code, but the billing
- * engine no longer hardcodes one product's strings.
+ * its own strings in its own language.
  */
 export type UpgradeMessageMap = Record<string, Record<string, string>>;
 
@@ -115,13 +108,9 @@ const productFeatures =
   createRegistry<ProductFeatureMatrix>("billing/features");
 
 /**
- * Register which plans grant which features.
- *
- * Feature names are product vocabulary — `detailed_assessment`,
- * `scholarship_international` — so the matrix belongs to the vertical,
- * exactly like the plan catalogue. It lived in @intelligo-dev/billing as a
- * hardcoded constant until Phase 3, which put one product's whole
- * feature list inside a package headed for publication.
+ * Register which plans grant which features. Feature names are product
+ * vocabulary, so the matrix belongs to the vertical, like the plan
+ * catalogue.
  */
 export function registerProductFeatures(
   productSlug: string,
@@ -151,11 +140,8 @@ const defaultProduct = createRegistryRef<string | undefined>(
 
 /**
  * Tell the billing engine which product's catalogue it bills against.
- * Called by the composition root.
- *
- * There is deliberately no built-in default: a `?? "<product>"` inside
- * the engine is how the first product's slug kept reappearing in a
- * package that is supposed to know nothing about it.
+ * Called by the composition root. There is deliberately no built-in
+ * default.
  */
 export function setDefaultProductSlug(slug: string): void {
   defaultProduct.set(slug);
@@ -220,15 +206,10 @@ const productActionLimitKeys = createRegistry<ActionLimitKeyMap>(
 
 /**
  * Declare which plan-limit field caps which action, for the cases
- * where the two names differ.
+ * where the two names differ (`chat` capped by `chatMessages`).
  *
  * Most products should name the limit after the action and skip this
  * entirely — `getActionLimitKey` falls through to the action slug.
- * The first product needed it because its limits predate the action
- * slugs (`chat` is capped by `chatMessages`), and that remap was
- * hardcoded in @intelligo-dev/billing: three product slugs sitting in
- * the quota engine of a package that is supposed to know nothing about
- * the vertical.
  */
 export function registerActionLimitKeys(
   productSlug: string,
@@ -251,22 +232,15 @@ export function clearActionLimitKeys(): void {
 // ---------------------------------------------------------------------------
 
 /**
- * What a new workspace gets before it pays anything.
- *
- * This was `TRIAL_CONFIG` in @intelligo-dev/billing — "100,000 tokens,
- * 5,000₮, 14 days" hardcoded in a package headed for publication
- *. Those three numbers are the vertical's first-impression
- * offer, written on its pricing page; they are not engine policy, and
- * a second product on the same framework will not want them.
+ * What a new workspace gets before it pays anything: the vertical's
+ * offer, registered by the product rather than engine policy.
  */
 export type TrialConfig = {
   /** Token grant, for display. */
   initialCredits: number;
   /**
    * The grant that actually funds execution, in the deployment's
-   * billing currency. Replaced a bare number of "minor currency
-   * units", which stated an amount without stating what of. `null`
-   * when a product registers no trial.
+   * billing currency. `null` when a product registers no trial.
    */
   grant: Money | null;
   durationDays: number;
@@ -287,8 +261,8 @@ export type TrialConfig = {
 export const NO_TRIAL: TrialConfig = {
   initialCredits: 0,
   // No grant rather than a zero one: a zero amount would still have to
-  // name a currency, and inventing one for a deployment that offers no
-  // trial is the habit money-as-micros exists to end.
+  // name a currency, and a deployment that offers no trial has none to
+  // name.
   grant: null,
   durationDays: 0,
   warningThreshold: 0.2,
@@ -327,14 +301,7 @@ const productTeamLimits = createRegistry<TeamMemberLimitMap>(
   "billing/team-limits"
 );
 
-/**
- * How many people a plan may have in one workspace.
- *
- * Hardcoded as `TEAM_MEMBER_LIMITS = { free: 1, standard: 1, pro: 1 }`
- * in @intelligo-dev/billing until now — per-plan packaging in the engine,
- * and self-contradicting at that, since a plan sold as a team plan
- * capped at one seat.
- */
+/** How many people a plan may have in one workspace. */
 export function registerTeamMemberLimits(
   productSlug: string,
   limits: TeamMemberLimitMap
@@ -369,8 +336,7 @@ export function clearTeamMemberLimits(): void {
 export type RateLimitMap = Record<string, number>;
 
 /**
- * What an unregistered plan gets: the same allowance the old
- * hardcoded table gave `free`.
+ * What an unregistered plan gets.
  *
  * Unlike the trial and the seat count, this one cannot fail closed to
  * zero — that would refuse every request in a deployment that simply
@@ -381,15 +347,7 @@ export const DEFAULT_REQUESTS_PER_MINUTE = 10;
 
 const productRateLimits = createRegistry<RateLimitMap>("billing/rate-limits");
 
-/**
- * Per-plan request ceilings.
- *
- * Was `RATE_LIMITS = { free: 10, pro: 60, enterprise: 300 }` in
- * @intelligo-dev/billing. Two of those three names were one product's
- * plans and the third, `enterprise`, was not a plan at all — `PlanSlug` is
- * `free | standard | pro`, so the 300/min tier was unreachable and
- * `standard` silently fell through to the free ceiling.
- */
+/** Per-plan request ceilings. */
 export function registerRateLimits(
   productSlug: string,
   limits: RateLimitMap

@@ -1,10 +1,7 @@
 /**
- * @intelligo-dev/jobs database schema.
- *
  * A DB-backed job queue — the default adapter behind the job contract.
  * No Redis, no external broker: Postgres `FOR UPDATE SKIP LOCKED` is
- * sufficient at this scale and keeps self-hosting to one dependency
- * (the same reasoning as the rate limiter).
+ * sufficient at this scale and keeps self-hosting to one dependency.
  *
  * Scanned by drizzle-kit alongside the core schema directory — see
  * packages/core/drizzle.config.ts.

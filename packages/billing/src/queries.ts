@@ -1,10 +1,7 @@
 /**
- * Billing Query Helpers
- *
- * Workspace-scoped billing queries for subscriptions, credits, and plan limit enforcement.
- * All queries filter by workspaceId to ensure proper multi-tenant data isolation.
- *
- * Pattern: Server-side only, used by server actions and webhooks.
+ * Workspace-scoped billing queries for subscriptions, credits, and plan
+ * limit enforcement. All queries filter by workspaceId for tenant
+ * isolation.
  */
 
 // Billing mode: every workspace starts on "subscription"; buying credits
@@ -19,10 +16,7 @@ import {
 import { eq } from "drizzle-orm";
 import { getStripe } from "./stripe";
 
-/**
- * Plan limits type matching PROJECT.md plan specifications
- * -1 = unlimited
- */
+/** Plan limits; -1 = unlimited. */
 export type QueryPlanLimits = {
   tokens: number;
   conversations: number;
@@ -101,7 +95,6 @@ export async function getWorkspaceBilling(workspaceId: string) {
 
   // If no subscription exists, return virtual free subscription
   if (!subscriptionData) {
-    // Find free plan
     const freePlan = await db
       .select()
       .from(plans)
@@ -131,13 +124,11 @@ export async function getWorkspaceBilling(workspaceId: string) {
  * Used during workspace initialization
  */
 export async function ensureFreeSubscription(workspaceId: string) {
-  // Check if subscription already exists
   const existing = await getWorkspaceSubscription(workspaceId);
   if (existing) {
     return existing.subscription;
   }
 
-  // Find free plan ID
   const freePlan = await db
     .select()
     .from(plans)
@@ -150,7 +141,6 @@ export async function ensureFreeSubscription(workspaceId: string) {
     );
   }
 
-  // Create free subscription
   const newSubscription = await db
     .insert(subscriptions)
     .values({
@@ -166,10 +156,10 @@ export async function ensureFreeSubscription(workspaceId: string) {
 }
 
 /**
- * Get or create Stripe customer for workspace
- * Returns existing customerId or creates new Stripe customer and stores ID
+ * Get or create the workspace's Stripe customer, storing its id.
  *
- * @param preferredLanguage - User's preferred language for Stripe invoices/receipts (I18N-12)
+ * @param preferredLanguage - Locale for Stripe invoices, receipts and
+ * payment UI
  */
 export async function getOrCreateStripeCustomer(
   workspaceId: string,
@@ -179,16 +169,13 @@ export async function getOrCreateStripeCustomer(
 ): Promise<string> {
   const subscriptionData = await getWorkspaceSubscription(workspaceId);
 
-  // If subscription has customerId, return it
   if (subscriptionData?.subscription?.stripeCustomerId) {
     return subscriptionData.subscription.stripeCustomerId;
   }
 
-  // I18N-12: Set Stripe customer locale preference for invoices, receipts, and payment UI
-  // This ensures Stripe-generated emails and checkout pages display in user's language
+  // Stripe-generated emails and checkout pages use the customer's locale.
   const stripeLocale = preferredLanguage === "mn" ? "mn" : "en";
 
-  // Create Stripe customer
   const stripe = getStripe();
   const customer = await stripe.customers.create({
     email,
@@ -199,7 +186,6 @@ export async function getOrCreateStripeCustomer(
     preferred_locales: [stripeLocale],
   });
 
-  // Ensure subscription exists
   const subscription =
     subscriptionData?.subscription ??
     (await ensureFreeSubscription(workspaceId));
@@ -208,7 +194,6 @@ export async function getOrCreateStripeCustomer(
     throw new Error("Failed to create subscription for workspace");
   }
 
-  // Update subscription with customerId
   await db
     .update(subscriptions)
     .set({
@@ -221,8 +206,7 @@ export async function getOrCreateStripeCustomer(
 }
 
 /**
- * Check if workspace usage is within plan limits
- * Used to enforce plan restrictions (BILL-13)
+ * Check whether workspace usage is within plan limits.
  *
  * @returns { allowed: boolean, limit: number, current: number, message?: string }
  */
@@ -242,7 +226,6 @@ export async function checkPlanLimit(
     throw new Error("No plan found for workspace");
   }
 
-  // Parse plan limits JSON
   const limits = JSON.parse(billing.plan.limits) as QueryPlanLimits;
   const limit = limits[limitKey] ?? 0;
 
@@ -255,7 +238,6 @@ export async function checkPlanLimit(
     };
   }
 
-  // Check if over limit
   if (currentUsage >= limit) {
     return {
       allowed: false,
@@ -265,7 +247,6 @@ export async function checkPlanLimit(
     };
   }
 
-  // Under limit
   return {
     allowed: true,
     limit,

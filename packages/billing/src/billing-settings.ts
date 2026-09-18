@@ -1,12 +1,9 @@
 /**
- * Billing Settings Helper
- *
  * Reads the singleton billing_settings row that says what a deployment
  * bills in: its currency, what one USD costs in it (micros), and the
  * margin over provider cost (basis points of a multiplier). Cached
- * in-process for 60 seconds so every chat request doesn't issue a
- * round-trip to Neon. The DB row is authoritative and can be
- * hot-updated without a code deploy.
+ * in-process for 60 seconds; the DB row is authoritative and can be
+ * hot-updated without a deploy.
  *
  * A deployment names its currency, rate and margin once, from its
  * composition root, through `ensureBillingSettingsRow`; until it does,
@@ -44,10 +41,10 @@ const DEFAULTS: ResolvedBillingSettings = {
 };
 
 /**
- * The row the framework's old migration chain seeded into every
- * database (tugrik at 3450, 4×). Nobody chose it: a database that still
- * holds exactly this row takes the composition root's configuration
- * instead. Any other row was set on purpose and is left alone.
+ * The row earlier migrations seeded into every database (tugrik at
+ * 3450, 4×). Nobody chose it: a database that still holds exactly this
+ * row takes the composition root's configuration instead. Any other row
+ * was set on purpose and is left alone.
  */
 const LEGACY_SEED = {
   currency: "MNT",
@@ -119,8 +116,8 @@ export function invalidateBillingSettingsCache(): void {
  *     marginBp: DEFAULT_MARGIN_BP,
  *   });
  *
- * An existing row wins — an admin may have edited it — except the one
- * the old migration chain seeded, which nobody chose (`LEGACY_SEED`).
+ * An existing row wins — an admin may have edited it — except the
+ * legacy seed (`LEGACY_SEED`), which nobody chose.
  */
 export async function ensureBillingSettingsRow(config?: {
   currency: string;

@@ -3,9 +3,9 @@
  *
  * `ensureBillingSettingsRow` writes the composition root's currency,
  * rate and margin on first boot and leaves an existing row alone — an
- * admin may have edited it. The one exception is the row the pre-1.0
- * migration chain seeded into every database (tugrik at 3450, 4×):
- * nobody chose it, so a configured deployment replaces it.
+ * admin may have edited it. The one exception is the legacy seed row
+ * (tugrik at 3450, 4×): nobody chose it, so a configured deployment
+ * replaces it.
  *
  * Runs against a real database when TEST_PG_URL is set (CI points it at
  * the replayed chain).

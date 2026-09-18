@@ -1,9 +1,3 @@
-/**
- * Quota Types and Constants
- *
- * Shared types for the quota enforcement system.
- */
-
 import type { Money } from "@intelligo-dev/core/money";
 
 export const GRACE_OVERAGE_PERCENTAGE = 0.05;

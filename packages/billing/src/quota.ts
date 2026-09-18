@@ -1,22 +1,11 @@
 /**
- * Quota Enforcement Engine
- *
- * Core quota enforcement module that checks token limits before AI requests
- * and records consumption atomically after completion.
- *
- * Functions:
- * - checkQuota: Validate subscription/credit limits before AI request
- * - recordTokenUsage: Atomically record usage + increment counter + deduct credits
- * - resetMonthlyQuota: Create fresh period entry on subscription renewal
- * - getUsageSummary: Breakdown by model, agent, and daily for dashboard
- * - getQuotaThresholds: 80%/100% threshold flags for notification triggers
+ * Quota enforcement engine: checks limits before AI requests and records
+ * consumption atomically after completion.
  *
  * Race condition safety:
  * - All writes use SQL-level atomic operations (ON CONFLICT DO UPDATE with sql``)
  * - Credit deduction uses SQL arithmetic (not JS read-modify-write)
  * - Transaction wraps insert + upsert + deduction for all-or-nothing semantics
- *
- * Pattern: Server-side only, used by AI route handlers and server actions.
  */
 
 import { db } from "@intelligo-dev/core/db";
@@ -73,7 +62,7 @@ import {
 } from "./quota-usage";
 
 // ---------------------------------------------------------------------------
-// checkQuota (QUOTA-03, QUOTA-04)
+// Admission
 // ---------------------------------------------------------------------------
 
 /**
@@ -89,11 +78,7 @@ import {
 type Pools = {
   planSlug: string;
   trialActive: boolean;
-  /**
-   * The pools, in the deployment's own currency. A number that does not
-   * say what it is of is how a tugrik ledger came to be shown with a
-   * dollar sign.
-   */
+  /** The pools, in the deployment's own currency. */
   allowance: Money;
   used: Money;
   planRemaining: Money;
@@ -113,8 +98,6 @@ async function readPools(workspaceId: string): Promise<Pools> {
 
   const planSlug = billing.plan?.slug ?? "free";
 
-  // Micros are the only denomination left: 1.0 dropped the whole-unit
-  // columns, so there is no second copy to reconcile against.
   const pooled = (micros: number | null | undefined): Money =>
     money(Math.max(0, micros ?? 0), settings.currency);
 
@@ -184,12 +167,10 @@ export async function estimateQuota(
  * Atomic admission: decide, and hold the worst-case cost, in one step.
  *
  * Cost-based enforcement: the plan grants a monthly allowance, top-ups
- * land in `credit_balances.balance_mnt`, and a trial is a separate
- * grant used last. The request is refused when the remaining total is
- * below the worst-case cost of one turn on the chosen model, so a
- * single expensive turn cannot push a workspace into the red. (Worst
- * case at current constants: ~343₮ for Gemini Flash, ~2 319₮ for
- * Claude or any unregistered id.)
+ * land in `credit_balances`, and a trial is a separate grant used last.
+ * The request is refused when the remaining total is below the
+ * worst-case cost of one turn on the chosen model, so a single
+ * expensive turn cannot push a workspace into the red.
  *
  * The decision runs in a transaction serialized per workspace by
  * `pg_advisory_xact_lock`. Balances are read only after the lock is
@@ -246,7 +227,8 @@ export async function reserveQuota(
         workspaceId,
         requestId,
         estimatedMicros: decision.estimated?.amount ?? 0,
-        currency: decision.estimated?.currency ?? (await getBillingSettings()).currency,
+        currency:
+          decision.estimated?.currency ?? (await getBillingSettings()).currency,
         status: "active",
         expiresAt: new Date(Date.now() + RESERVATION_TTL_MS),
       });
@@ -264,8 +246,7 @@ export async function reserveQuota(
 /**
  * @deprecated One name for two behaviours: with `requestId` this is
  * `reserveQuota` (atomic admission), without it `estimateQuota` (a
- * read-only estimate that must never gate a run). Call the one you
- * mean; this wrapper stays for one release.
+ * read-only estimate that must never gate a run). Call the one you mean.
  */
 export async function checkQuota(
   workspaceId: string,
@@ -293,10 +274,9 @@ function decideQuota(
     const reserved = money(reservedMicros, pools.rate.currency);
 
     // A model with no registered price cannot be estimated, and
-    // admission must not invent a ceiling — guessing one is how a turn
-    // ran on the cheapest model and billed at the most expensive.
-    // Refuse with a code the transport can turn into a 402 that says
-    // why, rather than letting the throw become a 500.
+    // admission must not invent a ceiling. Refuse with a code the
+    // transport can turn into a 402 that says why, rather than letting
+    // the throw become a 500.
     let estimated: Money;
     try {
       estimated = estimateWorstCaseCharge(modelId, pools.rate);
@@ -339,10 +319,9 @@ function decideQuota(
       graceActive: false,
     };
 
-    // Plan + top-up first; trial is fallback only. The comparisons are
-    // between amounts now, not between whole tugrik standing in for
-    // them — the pools, the ceiling and the outstanding reservations
-    // are all in the deployment's own currency.
+    // Plan + top-up first; trial is fallback only. The pools, the
+    // ceiling and the outstanding reservations are all in the
+    // deployment's own currency.
     const nonTrial = subtract(
       add(pools.planRemaining, pools.topupBalance),
       reserved
@@ -366,8 +345,7 @@ function decideQuota(
       ? {
           allowed: false,
           code: "insufficient_credits",
-          // Both amounts name their own currency: a deployment that
-          // bills in dollars was being told it was short of tugrik.
+          // Both amounts name their own currency.
           reason: `Insufficient credits for this request (need ~${formatMoney(estimated, "en-US")}, have ${formatMoney(remaining, "en-US")}). Top up to continue.`,
           usingTrialCredits: false,
           ...base,
@@ -428,7 +406,7 @@ export async function releaseReservation(requestId: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// recordTokenUsage (QUOTA-05)
+// recordTokenUsage
 // ---------------------------------------------------------------------------
 
 /**
@@ -550,12 +528,9 @@ export async function recordTokenUsage(
       .for("update")
       .limit(1);
 
-    // The split is arithmetic on the amounts themselves now. It used to
-    // be decided in whole tugrik and the typed values derived from it by
-    // ratio, which meant the money followed a number that had already
-    // rounded. The allowance takes the lesser of the charge and what is
-    // left of it; whatever remains goes to exactly one of trial or
-    // top-up, never both. Taking the remainder by subtraction keeps
+    // The allowance takes the lesser of the charge and what is left of
+    // it; whatever remains goes to exactly one of trial or top-up, never
+    // both. Taking the remainder by subtraction keeps
     // `charged === plan + topup + trial` exact.
     const allowanceUsed = money(
       Number(periodRows[0]?.allowanceUsedMicros ?? 0),
@@ -684,7 +659,7 @@ export async function findSettlementByRequestId(
 }
 
 // ---------------------------------------------------------------------------
-// resetMonthlyQuota (QUOTA-06)
+// resetMonthlyQuota
 // ---------------------------------------------------------------------------
 
 /**
@@ -718,7 +693,7 @@ export async function resetMonthlyQuota(workspaceId: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// getUsageSummary (QUOTA-07)
+// getUsageSummary
 // ---------------------------------------------------------------------------
 
 /**
@@ -822,15 +797,12 @@ export async function getUsageSummary(
 }
 
 // ---------------------------------------------------------------------------
-// getQuotaThresholds (QUOTA-08, QUOTA-09)
+// getQuotaThresholds
 // ---------------------------------------------------------------------------
 
 /**
- * Get quota threshold flags for notification triggering.
- *
- * Returns the current usage percentage and boolean flags for 80% and 100% thresholds.
- * Phase 14 will use these to send email notifications; for now, expose the data
- * so the dashboard can display warning badges.
+ * Get quota threshold flags for notification triggering: the current
+ * usage percentage and flags for the 80% and 100% thresholds.
  */
 export async function getQuotaThresholds(workspaceId: string) {
   const monthly = await getCurrentMonthlyUsage(workspaceId);
@@ -850,9 +822,8 @@ export async function getQuotaThresholds(workspaceId: string) {
     criticalThreshold: percentage >= 100,
     /**
      * The amounts behind the percentage, in micros of the deployment's
-     * billing currency. Returned so a caller that needs them — the
-     * quota email — reads them from the one place that computes them
-     * rather than repeating the arithmetic against columns of its own.
+     * billing currency, so callers (the quota email) read them from the
+     * one place that computes them.
      */
     usedMicros: used,
     limitMicros: allowance.amount,

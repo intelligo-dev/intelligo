@@ -45,8 +45,7 @@ import {
 } from "./plan-registry";
 
 // The feature matrix is product-owned and registered by the
-// composition root — there is no built-in matrix to fall
-// through to any more, so the test registers what it asserts on.
+// composition root, so the test registers what it asserts on.
 setDefaultProductSlug("acme");
 registerProductFeatures("acme", {
   advisor: ["free", "standard", "pro"],

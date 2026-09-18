@@ -1,9 +1,7 @@
 /**
- * rate-limit.ts tests — pins the per-plan counting contract.
- *
- * Regression guard for B-05b: the DO NOTHING variant admitted exactly
- * one request per minute bucket on every plan. The counter upsert must
- * admit `limit` requests per bucket and reject from `limit + 1` on.
+ * rate-limit.ts tests — pins the per-plan counting contract: the
+ * counter upsert must admit `limit` requests per bucket and reject from
+ * `limit + 1` on.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -90,9 +88,7 @@ describe("checkRateLimit", () => {
     expect(arg.set.count).toBeDefined();
   });
 
-  // The plan names and numbers are the registry's now, not this
-  // package's — the ceilings below are registered per test rather
-  // than read off a constant that named one product's plans.
+  // Plan ceilings are registered per test; the package names no plans.
   it.each([
     ["free", 10],
     ["standard", 60],
@@ -198,13 +194,7 @@ describe("cleanupRateLimitEntries", () => {
   });
 });
 
-/**
- * Per-plan ceilings come from the registry now.
- *
- * They were a constant in this package naming one product's plans plus an
- * `enterprise` tier that is not in `PlanSlug`, so the 300/min row was
- * unreachable and `standard` quietly got the free ceiling.
- */
+/** Per-plan ceilings come from the registry. */
 describe("registered per-plan ceilings", () => {
   beforeEach(() => {
     clearRateLimits();

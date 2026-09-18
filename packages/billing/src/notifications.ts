@@ -1,15 +1,9 @@
 /**
- * Notification Trigger System
- *
  * Checks quota and trial thresholds after each token recording and
- * sends real email and in-app notifications via notification trigger functions.
+ * sends email and in-app notifications. The notification_history table
+ * prevents duplicate notifications per period.
  *
- * The notification_history table prevents duplicate notifications per period.
- *
- * Functions:
- * - checkNotificationTriggers: Detect thresholds and trigger notifications
- *
- * Pattern: Fire-and-forget after recordTokenUsage (non-blocking).
+ * Called fire-and-forget after recordTokenUsage.
  */
 
 import { db } from "@intelligo-dev/core/db";
@@ -75,34 +69,24 @@ async function getWorkspaceOwner(workspaceId: string): Promise<{
   };
 }
 
-// ---------------------------------------------------------------------------
-// checkNotificationTriggers (QUOTA-08, QUOTA-09, TRIAL-04, TRIAL-05)
-// ---------------------------------------------------------------------------
-
 /**
  * Check all notification thresholds and record triggered notifications.
  *
- * Detects four threshold types:
- * - quota_warning_80: Monthly quota at 80% (QUOTA-08)
- * - quota_warning_100: Monthly quota at 100% (QUOTA-09)
- * - trial_warning_20: Trial credits at 20% remaining (TRIAL-04)
- * - trial_depleted: Trial credits fully used (TRIAL-05)
+ * Detects four threshold types: quota_warning_80, quota_warning_100,
+ * trial_warning_20 (20% of trial credits remaining) and trial_depleted.
+ * A unique constraint on (workspaceId, type, periodKey) with
+ * onConflictDoNothing makes each one fire once per period.
  *
- * Uses notification_history with unique constraint (workspaceId, type, periodKey)
- * to prevent duplicate notifications. onConflictDoNothing ensures idempotency.
- *
- * Returns the list of newly triggered notifications (empty if all already sent).
+ * Returns the newly triggered notifications (empty if all already sent).
  */
 export async function checkNotificationTriggers(
   workspaceId: string
 ): Promise<QuotaNotification[]> {
   const notifications: QuotaNotification[] = [];
 
-  // Check subscription quota thresholds (QUOTA-08, QUOTA-09). The
-  // percentage and the amounts behind it come from there, rather than
-  // being derived a second time here: this file used to recompute the
-  // same figure in whole tugrik from columns of its own, which is two
-  // answers to one question waiting to disagree.
+  // Subscription quota thresholds. The percentage and the amounts behind
+  // it come from getQuotaThresholds rather than being derived a second
+  // time here.
   const thresholds = await getQuotaThresholds(workspaceId);
   if (thresholds.criticalThreshold) {
     notifications.push({
@@ -121,7 +105,7 @@ export async function checkNotificationTriggers(
     });
   }
 
-  // Check trial credit thresholds (TRIAL-04, TRIAL-05)
+  // Trial credit thresholds
   const trial = await getTrialStatus(workspaceId);
   if (trial.status === "depleted") {
     notifications.push({
@@ -174,7 +158,6 @@ export async function checkNotificationTriggers(
             notification.type === "quota_warning_80" ||
             notification.type === "quota_warning_100"
           ) {
-            // QUOTA notifications -> triggerQuotaNotification
             triggerQuotaNotification({
               userId: owner.userId,
               userEmail: owner.email,
@@ -194,7 +177,6 @@ export async function checkNotificationTriggers(
             notification.type === "trial_warning_20" ||
             notification.type === "trial_depleted"
           ) {
-            // TRIAL notifications -> triggerTrialNotification
             triggerTrialNotification({
               userId: owner.userId,
               userEmail: owner.email,

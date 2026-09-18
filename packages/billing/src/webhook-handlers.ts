@@ -31,7 +31,7 @@ import {
 const log = createLogger("Webhook");
 
 // ---------------------------------------------------------------------------
-// WEB-01: Handle checkout.session.completed
+// checkout.session.completed
 // ---------------------------------------------------------------------------
 
 /**
@@ -141,7 +141,7 @@ export async function handleCheckoutCompleted(
     const checkoutSessionId = session.id;
     const purchaseId = session.metadata?.purchaseId as string | undefined;
 
-    // Try lookup by purchaseId first (new flow), fallback to session ID (legacy)
+    // Look up by purchaseId, falling back to the session ID
     let purchase = purchaseId
       ? await db
           .select()
@@ -186,19 +186,18 @@ export async function handleCheckoutCompleted(
         .where(eq(creditPurchases.id, purchase.id));
     }
 
-    // Credit the balance admission reads and settlement debits. The
-    // purchase row says what was granted and in which currency. The
-    // legacy `balance` column was not the balance; writing there made
-    // purchases invisible to enforcement. Arithmetic SQL so a replay
-    // cannot double-credit.
+    // Credit the balance admission reads and settlement debits (not the
+    // legacy `balance` column, which enforcement never reads). The
+    // purchase row says what was granted and in which currency.
+    // Arithmetic SQL so a replay cannot double-credit.
     const settings = await getBillingSettings();
     const grantedCurrency = purchase.grantedCurrency ?? settings.currency;
     const grantedMicros = purchase.grantedMicros ?? 0;
 
     if (grantedCurrency !== settings.currency) {
-      // Crediting one currency into a ledger denominated in another is
-      // how a $5 pack became 100,000 of something else. Leave the
-      // purchase pending for an operator rather than guess a rate.
+      // Never credit one currency into a ledger denominated in another.
+      // Leave the purchase pending for an operator rather than guess a
+      // rate.
       log.error("Credit purchase currency does not match the ledger", {
         workspaceId,
         purchaseId: purchase.id,
@@ -245,7 +244,7 @@ export async function handleCheckoutCompleted(
 }
 
 // ---------------------------------------------------------------------------
-// WEB-02: Handle invoice.paid
+// invoice.paid
 // ---------------------------------------------------------------------------
 
 /**
@@ -302,7 +301,7 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice) {
 }
 
 // ---------------------------------------------------------------------------
-// WEB-03: Handle invoice.payment_failed
+// invoice.payment_failed
 // ---------------------------------------------------------------------------
 
 /**
@@ -355,7 +354,7 @@ export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 }
 
 // ---------------------------------------------------------------------------
-// WEB-04: Handle customer.subscription.updated
+// customer.subscription.updated
 // ---------------------------------------------------------------------------
 
 /**
@@ -415,7 +414,7 @@ export async function handleSubscriptionUpdated(
 }
 
 // ---------------------------------------------------------------------------
-// WEB-05: Handle customer.subscription.deleted
+// customer.subscription.deleted
 // ---------------------------------------------------------------------------
 
 /**

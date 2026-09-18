@@ -1,11 +1,8 @@
 /**
- * Feature Checking Engine
- *
- * v0.4: Real subscription lookup + DB-backed feature flag runtime toggleability.
- * getWorkspacePlan() queries subscriptions table and respects trial status.
- * hasFeature() checks feature_flags table for runtime overrides before falling back to the registered feature matrix.
- *
- * IMPORTANT: DB query with graceful degradation - falls back to constants on error.
+ * Feature checking: resolves a workspace's plan from its subscription
+ * (or active trial) and checks the `feature_flags` table for runtime
+ * overrides before falling back to the registered feature matrix.
+ * Every DB read degrades gracefully to the registered defaults.
  */
 
 import { db } from "@intelligo-dev/core/db";
@@ -22,15 +19,8 @@ import {
 
 /**
  * Which plans grant which feature, for the product this deployment
- * bills against.
- *
- * The matrix itself is product vocabulary and lives in the vertical
- *; the composition root registers it. Until Phase 3 the
- * first product's complete list — four feature keys in its own
- * vocabulary — was a hardcoded constant in this file, inside a package
- * headed for publication. The
- * plan catalogue had already been moved out for the same reason; this
- * is the sibling leak that survived it.
+ * bills against. The matrix is product vocabulary; the composition root
+ * registers it.
  *
  * Returns {} when nothing is registered, which denies every feature —
  * the safe direction for an access-control default.
@@ -44,46 +34,38 @@ function featureMatrix(productSlug?: string): ProductFeatureMatrix {
 export type FeatureKey = string;
 
 /**
- * Get workspace plan
- *
- * v0.4: Returns actual subscription plan slug from database.
- * Queries subscriptions table for real plan data.
- * Grants "pro" to workspaces with active trial.
- * Falls back to "free" if no subscription and no trial.
+ * The workspace's plan slug: its subscription's plan, "pro" during an
+ * active trial, "free" otherwise (and on error).
  */
 export async function getWorkspacePlan(workspaceId: string): Promise<string> {
   try {
-    // Check for real subscription first
     const subscriptionData = await getWorkspaceSubscription(workspaceId);
     if (subscriptionData?.plan?.slug) {
       return subscriptionData.plan.slug;
     }
 
-    // Check for active trial (grants Pro access)
+    // An active trial grants Pro access.
     const hasTrial = await hasActiveTrial(workspaceId);
     if (hasTrial) {
       return "pro";
     }
 
-    // Default fallback: free plan
     return "free";
   } catch (error) {
     console.error(
       "[getWorkspacePlan] Failed to query subscription data:",
       error
     );
-    // Safe default on error
     return "free";
   }
 }
 
 /**
- * In-process feature-lookup cache. Every /api/chat turn calls hasFeature
- * at least once (see conversation-loader.ts tier resolution); without a
- * cache that's a subscription + feature_flags round-trip per message. A
- * 60-second TTL is safe because the inputs (plan, kill switch, enabled
- * plan list) only change on a billing webhook or admin toggle — both of
- * which call invalidateFeatureCache to bust stale entries.
+ * In-process feature-lookup cache. Every chat turn calls hasFeature at
+ * least once; without a cache that is a subscription + feature_flags
+ * round-trip per message. A 60-second TTL is safe because the inputs
+ * only change on a billing webhook or admin toggle, both of which call
+ * invalidateFeatureCache.
  */
 const FEATURE_CACHE_TTL_MS = 60 * 1000;
 const featureCache = new Map<string, { value: boolean; expiresAt: number }>();
@@ -110,23 +92,13 @@ export function invalidateFeatureCache(workspaceId?: string): void {
 }
 
 /**
- * Check if workspace has access to a feature
+ * Whether the workspace's plan grants a feature.
  *
- * FLAG-01: Server-side feature checking
- * FLAG-03: Queries feature_flags table for runtime overrides before falling back to the registered matrix
- *
- * v0.4: DB-backed with graceful degradation.
- * If DB query fails, falls back to the registered feature matrix.
- * If DB record exists:
- *   - isActive=false blocks the feature globally (kill switch)
- *   - enabledPlans JSON array determines access
- * If no DB record exists, uses the registered feature matrix
- *
- * Results are cached in-process for 60 seconds (see invalidateFeatureCache).
- *
- * @param workspaceId - Workspace ID to check
- * @param feature - Feature name (as registered by the product)
- * @returns true if workspace's plan includes the feature
+ * A `feature_flags` row overrides the registered matrix: `isActive=false`
+ * blocks the feature globally (kill switch), otherwise its
+ * `enabledPlans` JSON array decides. With no row, or on a DB error, the
+ * registered matrix decides. Results are cached in-process for 60
+ * seconds (see invalidateFeatureCache).
  */
 export async function hasFeature(
   workspaceId: string,
@@ -151,7 +123,6 @@ async function computeHasFeature(
   const plan = await getWorkspacePlan(workspaceId);
 
   try {
-    // FIRST: Check feature_flags table for runtime override
     const dbFlagResult = await db
       .select()
       .from(featureFlags)
@@ -166,7 +137,6 @@ async function computeHasFeature(
         return false;
       }
 
-      // Parse enabledPlans JSON array
       try {
         const enabledPlans = JSON.parse(dbFlag.enabledPlans) as string[];
         return enabledPlans.includes(plan);
@@ -188,7 +158,7 @@ async function computeHasFeature(
       `[hasFeature] DB query failed for feature "${feature}", falling back to the registered matrix:`,
       error
     );
-    // Graceful degradation: use constant on DB error
+    // Graceful degradation: use the registered matrix on DB error
     const allowed = featureMatrix()[feature];
     if (!allowed) return false;
     return allowed.includes(plan);
@@ -196,13 +166,10 @@ async function computeHasFeature(
 }
 
 /**
- * Require feature access or throw
+ * Require feature access or throw, for server actions that gate on a
+ * feature.
  *
- * Convenience wrapper for server actions that need to gate on features.
- *
- * @param workspaceId - Workspace ID to check
- * @param feature - Feature name (as registered by the product)
- * @throws Error if feature is not available for workspace's plan
+ * @throws Error if the feature is not available on the workspace's plan
  */
 export async function requireFeature(
   workspaceId: string,
@@ -217,13 +184,8 @@ export async function requireFeature(
 }
 
 /**
- * Check team member limit for workspace plan
- *
- * FLAG-05: Team member limits per plan
- *
- * @param workspaceId - Workspace ID to check
- * @param currentMemberCount - Current number of members
- * @returns Object with allowed flag, limit, and current count
+ * Check the workspace plan's team member limit against the current
+ * member count.
  */
 export async function checkTeamMemberLimit(
   workspaceId: string,

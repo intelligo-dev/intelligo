@@ -1,6 +1,6 @@
 /**
- * Read models over the executions table — for the product's usage UI
- * and, in Phase 5, the Intelligo admin console.
+ * Read models over the executions table, for the product's usage UI
+ * and the admin console.
  */
 
 import { db } from "@intelligo-dev/core/db";
@@ -32,11 +32,7 @@ function chargedByCurrency(
 }
 
 export type ListExecutionsOptions = {
-  /**
-   * Required. An omitted workspace used to apply no filter at all, so
-   * the default reading of the executions table — in the package whose
-   * whole job is the tenant boundary — was every tenant's rows.
-   */
+  /** Required: every query is scoped to one tenant. */
   workspaceId: string;
   userId?: string;
   capability?: string;
@@ -101,7 +97,7 @@ export async function summarizeExecutions(
     )
     .groupBy(executions.status, executions.currency);
 
-  // A status can now arrive as several rows — one per currency — so the
+  // A status can arrive as several rows — one per currency — so the
   // per-status view folds them back together.
   const byStatus: Record<
     string,
@@ -149,10 +145,8 @@ export async function summarizeExecutions(
  * chart should draw as zero and a table should leave empty.
  *
  * `date` is a `YYYY-MM-DD` string in `timeZone`, which defaults to UTC.
- * A reader in +08:00 filed their 00:36 turn on the 16th; bucketing it
- * in UTC files it on the 15th and ends their month a day early, which
- * is what the usage page did. Pass the reader's own zone and the series
- * matches the days they lived through.
+ * Pass the reader's own zone: bucketing a +08:00 reader's 00:36 turn in
+ * UTC files it on the previous day.
  */
 export async function summarizeExecutionsByDay(
   workspaceId: string,

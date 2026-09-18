@@ -1,21 +1,15 @@
 /**
- * @intelligo-dev/executions database schema.
- *
  * One row per AI execution: who ran what capability, whether it was
- * admitted, how it ended, and what it cost. This is the narrow SaaS
- * boundary the execution record keeps — it deliberately records
- * nothing about agents, tools, workflows, or messages, which stay native to the
- * chosen AI framework.
+ * admitted, how it ended, and what it cost. It deliberately records
+ * nothing about agents, tools, workflows, or messages, which stay
+ * native to the chosen AI framework.
  *
- * Relationship to the existing usage tables:
- *   - `usage_records` is the per-request usage/cost detail. It IS the
- *     "usage_events"/"cost_events" of the target structure under its
- *     current name; it gains an `execution_id` FK here rather than
- *     being duplicated. The rename happens with the package split.
- *   - `monthly_usage` stays the O(1) rollup.
- *   - `credit_reservations` (owned by credits/billing today) holds the
- *     admission hold; `executions.request_id` is the correlation key
- *     between the two.
+ * Related tables:
+ *   - `usage_records` is the per-request usage/cost detail, linked by
+ *     `execution_id`.
+ *   - `monthly_usage` is the O(1) rollup.
+ *   - `credit_reservations` holds the admission hold;
+ *     `executions.request_id` is the correlation key between the two.
  *
  * Scanned by drizzle-kit alongside the core schema directory — see
  * packages/core/drizzle.config.ts.
@@ -44,8 +38,8 @@ export const executions = pgTable(
     }),
     /**
      * What the caller asked for, in the product's own vocabulary:
-     * "support.reply", "chat.message". Opaque to Intelligo —
-     * used for entitlement decisions, grouping, and admin filtering.
+     * "support.reply", "chat.message". Opaque to the framework — used for
+     * entitlement decisions, grouping, and admin filtering.
      */
     capability: text("capability").notNull(),
     /**

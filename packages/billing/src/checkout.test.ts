@@ -1,30 +1,24 @@
 /**
- * checkout.ts tests — Stripe/db are mocked per the package's existing
- * convention (see features.test.ts, webhook route tests): a hoisted
- * mock bag, `vi.mock` for each external module, chained
- * select/from/where/limit builders returning canned rows.
+ * checkout.ts tests. Stripe and db are mocked: a hoisted mock bag,
+ * `vi.mock` for each external module, chained select/from/where/limit
+ * builders returning canned rows.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  // Stripe client
   checkoutSessionsCreate: vi.fn(),
   checkoutSessionsRetrieve: vi.fn(),
   billingPortalSessionsCreate: vi.fn(),
   getStripe: vi.fn(),
 
-  // ./plans
   getPlanBySlug: vi.fn(),
 
-  // ./queries
   getOrCreateStripeCustomer: vi.fn(),
   getWorkspaceBilling: vi.fn(),
 
-  // ./billing-settings — what the deployment bills in.
   getBillingSettings: vi.fn(),
 
-  // db
   selectLimit: vi.fn(),
   selectWhere: vi.fn(),
   selectFrom: vi.fn(),
@@ -236,8 +230,7 @@ describe("createCreditCheckout", () => {
       expect.objectContaining({
         workspaceId: "ws_1",
         // What the buyer pays and what the workspace receives, each
-        // naming its own currency — the pair that replaced a price in
-        // cents beside a bare count of "credits".
+        // naming its own currency.
         priceMinor: 101, // Math.round(1.01 * 100)
         priceCurrency: "USD",
         grantedMicros: 100_000_000_000,
@@ -278,9 +271,7 @@ describe("createCreditCheckout", () => {
       bundle: {
         id: "pack-5",
         name: "Credit pack",
-        // ₮100,000 of credit, sold for $5. One number could never have
-        // said both, which is how a pack granted 100,000 of whatever
-        // the rate row happened to mean.
+        // ₮100,000 of credit, sold for $5: two amounts, two currencies.
         grant: { amount: 100_000_000_000, currency: "MNT" },
         price: { amount: 5_000_000, currency: "USD" },
       },
@@ -467,8 +458,7 @@ describe("getBillingOverview", () => {
         cancelAtPeriodEnd: false,
         stripeCustomerId: "cus_123",
       },
-      // An amount that names its own currency, not a bare count of
-      // "credits" the page then rendered with whatever symbol it chose.
+      // An amount that names its own currency.
       creditBalance: { amount: 4_200_000_000, currency: "MNT" },
       billingMode: "subscription",
     });

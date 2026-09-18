@@ -1,20 +1,8 @@
 /**
- * Trial Credits System
- *
- * Manages trial credit provisioning, status tracking, deduction, and conversion.
- * Each new workspace receives 100K trial tokens to reduce signup friction.
- *
- * Functions:
- * - provisionTrialCredits: Grant 100K tokens to new workspace (idempotent)
- * - getTrialStatus: Query trial state with remaining/used/percentage
- * - deductTrialCredits: Atomically decrement trial balance
- * - convertTrialToPaid: Mark trial as converted when workspace upgrades
- * - checkTrialAbuse: Limit trials per email (3) and per IP (5)
- *
- * Trial credits are separate from purchased credits (credit_balances).
- * They act as a fallback when plan quota is exceeded or credit balance is zero.
- *
- * Pattern: Server-side only, called by quota engine and workspace creation flow.
+ * Trial credits: provisioning, status, deduction, conversion and
+ * expiry. Trial credits are separate from purchased credits
+ * (credit_balances) and act as a fallback when plan quota is exceeded
+ * or the credit balance is zero.
  */
 
 import { db } from "@intelligo-dev/core/db";
@@ -44,15 +32,13 @@ export { normalizeEmailForAbuseCheck };
 export { deductTrialCredits };
 
 // ---------------------------------------------------------------------------
-// provisionTrialCredits (TRIAL-01)
+// provisionTrialCredits
 // ---------------------------------------------------------------------------
 
 /**
- * Provision trial credits for a new workspace.
- *
- * Inserts a trial_credits row with 100K tokens. Uses onConflictDoNothing
- * so a second call is a no-op (idempotent). Returns the trial record,
- * or null if already provisioned.
+ * Provision the registered trial grant for a new workspace. Uses
+ * onConflictDoNothing so a second call is a no-op; returns the trial
+ * record, or null if already provisioned or no trial is registered.
  */
 export async function provisionTrialCredits(params: {
   workspaceId: string;
@@ -69,9 +55,9 @@ export async function provisionTrialCredits(params: {
   const trialEndDate = new Date();
   trialEndDate.setDate(trialEndDate.getDate() + config.durationDays);
 
-  // The grant names its own currency now. Refuse one the deployment
-  // does not bill in rather than crediting an amount of something
-  // else — the same rule the credit-pack webhook enforces.
+  // Refuse a grant in a currency the deployment does not bill in rather
+  // than crediting an amount of something else — the same rule the
+  // credit-pack webhook enforces.
   const grant = config.grant;
   const settings = await getBillingSettings();
   if (grant.currency !== settings.currency) {
@@ -106,14 +92,14 @@ export async function provisionTrialCredits(params: {
 }
 
 // ---------------------------------------------------------------------------
-// getTrialStatus (TRIAL-03)
+// getTrialStatus
 // ---------------------------------------------------------------------------
 
 /**
  * Get the trial status for a workspace.
  *
  * Returns full trial state including remaining credits, percentage,
- * and whether the warning threshold has been triggered (TRIAL-04).
+ * and whether the warning threshold has been triggered.
  * If no trial record exists, returns a "none" status with zeros.
  */
 export async function getTrialStatus(
@@ -178,14 +164,12 @@ export async function getTrialStatus(
 }
 
 // ---------------------------------------------------------------------------
-// getActiveTrialGrant (TRIAL-05)
+// getActiveTrialGrant
 // ---------------------------------------------------------------------------
 
 /**
  * What is left of the trial grant, for the quota engine's decision
- * about whether trial fallback is available. Named for the grant
- * rather than for a currency: it was `hasActiveTrialMnt`, which
- * answered in whole tugrik whatever the deployment billed in.
+ * about whether trial fallback is available.
  */
 export async function getActiveTrialGrant(workspaceId: string): Promise<{
   active: boolean;
@@ -226,7 +210,7 @@ export async function getActiveTrialGrant(workspaceId: string): Promise<{
 }
 
 // ---------------------------------------------------------------------------
-// convertTrialToPaid (TRIAL-06)
+// convertTrialToPaid
 // ---------------------------------------------------------------------------
 
 /**
@@ -252,14 +236,14 @@ export async function convertTrialToPaid(workspaceId: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// checkTrialAbuse (TRIAL-07)
+// checkTrialAbuse
 // ---------------------------------------------------------------------------
 
 // Re-exports from trial-abuse
 export { checkTrialAbuse };
 
 // ---------------------------------------------------------------------------
-// hasActiveTrial (TRIAL-08)
+// hasActiveTrial
 // ---------------------------------------------------------------------------
 
 /**
@@ -304,7 +288,7 @@ async function getWorkspaceOwner(workspaceId: string): Promise<{
 }
 
 // ---------------------------------------------------------------------------
-// processTrialExpirations (TRIAL-09)
+// processTrialExpirations
 // ---------------------------------------------------------------------------
 
 /**

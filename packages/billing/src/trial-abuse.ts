@@ -1,9 +1,3 @@
-/**
- * Trial Abuse Detection
- *
- * Functions for detecting and preventing trial abuse via email and IP tracking.
- */
-
 import { db } from "@intelligo-dev/core/db";
 import { trialCredits } from "@intelligo-dev/core/db/schema";
 import { eq, sql } from "drizzle-orm";

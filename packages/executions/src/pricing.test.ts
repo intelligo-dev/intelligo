@@ -1,11 +1,6 @@
 /**
- * Model registry and cost accounting.
- *
- * Moved here with the code. No provider SDK mocks: the
- * point of splitting the registry out of `@intelligo-dev/ai` is that
- * pricing needs nothing from a provider client, and a test file that
- * still had to stub three of them would say the split had not
- * happened.
+ * Model registry and cost accounting. No provider SDK mocks: pricing
+ * needs nothing from a provider client.
  */
 
 import { beforeEach, describe, it, expect } from "vitest";
@@ -54,8 +49,8 @@ describe("the registry is open", () => {
   });
 
   it("takes a model the framework has never heard of", () => {
-    // The whole point: a product on Bedrock, Groq, a self-hosted model
-    // — or simply a newer Claude — used to need a pull request here.
+    // The registry is open: a product adds Bedrock, Groq, a self-hosted
+    // model or a newer Claude itself.
     registerModels([
       {
         id: "bedrock/llama-4-70b",
@@ -269,10 +264,7 @@ describe("providerCost", () => {
 
   it("names the id and the way out", () => {
     // A price the framework does not have is a configuration error, and
-    // the error has to say which id and what to call. The behaviour this
-    // replaced warned and billed at the worst-case Claude rate while the
-    // resolver fell back to Flash — the cheapest model, billed as the
-    // dearest, with a console warning as the only symptom.
+    // the error has to say which id and what to call.
     expect.assertions(3);
     try {
       providerCost("unknown/model", 1, 1);
@@ -292,8 +284,8 @@ describe("estimateWorstCaseCharge", () => {
   };
 
   it("refuses to estimate a model it cannot price", () => {
-    // Admission must not invent a ceiling: guessing one is how the old
-    // code billed Gemini turns at Claude rates.
+    // Admission must not invent a ceiling: a guessed one bills a turn
+    // at another model's rate.
     expect(() => estimateWorstCaseCharge("unknown/model", USD_RATE)).toThrow(
       UnknownModelError
     );
@@ -323,7 +315,7 @@ describe("chargeFor", () => {
     usdRateMicros: 3_450_000_000,
     marginBp: DEFAULT_MARGIN_BP,
   };
-  // The turn from the browser walkthrough: 1,447 tokens on Flash.
+  // A 1,447-token turn on Flash.
   const TURN = { input: 1_100, output: 347 };
 
   it("charges a USD deployment a fraction of a cent for one turn", () => {
@@ -337,7 +329,7 @@ describe("chargeFor", () => {
     expect(cost.amount).toBe(1_198);
     expect(charged.currency).toBe("USD");
     expect(toMajor(charged)).toBeCloseTo(0.004792, 6);
-    // The bug this replaces: the usage page read this turn as "$15".
+    // A fraction of a cent, not whole dollars.
     expect(toMajor(charged)).toBeLessThan(0.01);
   });
 
@@ -349,9 +341,7 @@ describe("chargeFor", () => {
       MNT
     );
     expect(charged.currency).toBe("MNT");
-    // $0.001198 × 4 × 3450 ≈ 16.5₮. The whole-tugrik path this replaces
-    // ceilinged the same figure to 17₮; the difference is the rounding
-    // it had to do and this does not.
+    // $0.001198 × 4 × 3450 ≈ 16.5₮, kept exact rather than rounded up to 17₮.
     expect(toMajor(charged)).toBeCloseTo(16.53, 1);
     expect(toMajor(cost)).toBeCloseTo(0.001198, 6);
   });
@@ -384,7 +374,7 @@ describe("DEFAULT_MARGIN_BP — 65% gross margin invariant", () => {
   });
 
   it("yields ≥65% gross margin (1 − 1/multiplier)", () => {
-    // Founder contract: every paid plan clears ≥65% gross margin
+    // Invariant: every paid plan clears ≥65% gross margin
     // whichever model the reader picks. A charge is always provider
     // cost × multiplier, so the multiplier is the only knob protecting
     // the floor, and dropping below 1/0.35 ≈ 2.857 breaks it silently.

@@ -1,28 +1,17 @@
 /**
- * Database-Backed Rate Limiting (QUOTA-10)
+ * Database-backed rate limiting.
  *
  * Fixed-window (per-minute bucket) rate limiting using the
  * rate_limit_entries table. One row per (workspace, endpoint, minute
  * bucket); each request upserts the row and atomically increments its
  * counter, so N concurrent requests observe counts 1..N and exactly
- * `limit` of them are admitted.
+ * `limit` of them are admitted. Per-plan ceilings come from the plan
+ * registry (`getRateLimit`).
  *
- * Per-plan rate limits:
- * - Free: 10 requests/minute
- * - Pro: 60 requests/minute
- * - Enterprise: 300 requests/minute
- *
- * Design choices:
- * - Database-backed (no Redis) per architecture decision — sufficient for <10K users
- * - `INSERT ... ON CONFLICT DO UPDATE SET count = count + 1 RETURNING count`
- *   is race-condition-safe: the returned count is this request's position
- *   in the bucket. (The previous DO NOTHING variant admitted only ONE
- *   request per minute regardless of plan — the computed limit was never
- *   consulted.)
- * - Old buckets are removed by the cleanup cron route (see
- *   cleanupRateLimitEntries).
- *
- * Pattern: Server-side only, used by AI request middleware.
+ * `INSERT ... ON CONFLICT DO UPDATE SET count = count + 1 RETURNING count`
+ * is race-safe: the returned count is this request's position in the
+ * bucket. Old buckets are removed by the cleanup cron
+ * (cleanupRateLimitEntries).
  */
 
 import { db } from "@intelligo-dev/core/db";
@@ -34,14 +23,7 @@ import { getRateLimit } from "./plan-registry";
 // Rate Limit Configuration
 // ---------------------------------------------------------------------------
 
-/**
- * Per-plan ceilings moved to the plan registry: they were
- * `{ free: 10, pro: 60, enterprise: 300 }` here, two of one product's plan names
- * plus an `enterprise` tier that is not in `PlanSlug` at all — so the
- * 300/min row was unreachable and `standard` fell through to the free
- * ceiling. `getRateLimit` is the replacement; an unregistered plan
- * gets `DEFAULT_REQUESTS_PER_MINUTE`.
- */
+/** An unregistered plan gets `DEFAULT_REQUESTS_PER_MINUTE`. */
 export { DEFAULT_REQUESTS_PER_MINUTE } from "./plan-registry";
 
 // ---------------------------------------------------------------------------

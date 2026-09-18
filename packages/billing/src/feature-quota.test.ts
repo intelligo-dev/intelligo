@@ -13,11 +13,9 @@
 
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 
-// Wave 4 of the architecture decoupling moved the upgrade copy out
-// of feature-quota.ts and into a registry that the product's
-// composition root fills at boot. Tests don't run the bootstrap, so
-// they register a catalogue of their own here, shaped like the first
-// product's.
+// The upgrade copy comes from a registry the composition root fills at
+// boot. Tests don't run the bootstrap, so they register a catalogue of
+// their own here.
 beforeAll(async () => {
   const {
     registerProductPlans,
@@ -27,15 +25,13 @@ beforeAll(async () => {
     setDefaultProductSlug,
   } = await import("./plan-registry");
 
-  // The engine has no built-in default product any more — the
-  // composition root sets it, and so must a test.
+  // The engine has no default product: the composition root sets it,
+  // and so must a test.
   setDefaultProductSlug("acme");
 
-  // Phase 3 removed the built-in catalogue from the plan registry, so
-  // there is no implicit fallback any more: a product that registers
-  // nothing gets no limits. Registering here is the same thing the
-  // composition root does at boot, and it keeps this fixture the only
-  // place the numbers live for these tests.
+  // There is no implicit catalogue: a product that registers nothing
+  // gets no limits. Registering here is what the composition root does
+  // at boot.
   const limits = {
     free: { chatMessages: 30, assessments: 1, reports: 1 },
     standard: { chatMessages: 500, assessments: 3, reports: 5 },
@@ -95,8 +91,8 @@ beforeAll(async () => {
     assessment: "assessments",
     report: "reports",
   });
-  // This product's plan limits are named before its action slugs, so
-  // the remap has to be registered too.
+  // This product's plan limits are named differently from its action
+  // slugs, so the remap has to be registered too.
   // `invoice_scan` below deliberately registers nothing, which is the
   // path a product that names its limits after its actions takes.
   registerActionLimitKeys("acme", {
@@ -324,8 +320,7 @@ describe("checkFeatureQuota — free plan", () => {
 
     expect(mocks.mockInsert).toHaveBeenCalled();
     // The row has to carry who and where, or the next request reads a
-    // quota that belongs to nobody — counters are per (user, workspace)
-    // since 1.0.
+    // quota that belongs to nobody — counters are per (user, workspace).
     expect(mocks.mockInsertValues).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "new-user",
@@ -633,8 +628,8 @@ describe("getUserQuotaStats", () => {
   });
 
   it("reports an action the product added without a schema change", async () => {
-    // The point of the JSONB cutover: a vertical adds a counter by
-    // naming it, not by migrating a public package's table.
+    // A vertical adds a counter by naming it, not by migrating a
+    // public package's table.
     mocks.setRow({
       userId: "u2",
       plan: "standard",

@@ -1,7 +1,6 @@
 /**
- * Billing Module
- *
- * Exports Stripe client, plan configuration, webhook handlers, and billing utilities.
+ * @intelligo-dev/billing: Stripe client, plan configuration, webhook
+ * handlers, quota and credit engines, and billing utilities.
  */
 
 export { getStripe } from "./stripe";
@@ -32,7 +31,7 @@ export {
   handleSubscriptionDeleted,
 } from "./webhook-handlers";
 
-// Billing query helpers (Phase 11-03)
+// Billing query helpers
 export {
   getWorkspaceSubscription,
   getWorkspaceCreditBalance,
@@ -52,7 +51,7 @@ export {
 } from "./billing-settings";
 export type { ResolvedBillingSettings } from "./billing-settings";
 
-// Quota enforcement engine (Phase 12-01)
+// Quota enforcement engine
 export {
   checkQuota,
   estimateQuota,
@@ -76,7 +75,7 @@ export type {
   UsageSummary,
 } from "./quota";
 
-// Trial credits system (Phase 12-02)
+// Trial credits
 export {
   provisionTrialCredits,
   getTrialStatus,
@@ -90,11 +89,11 @@ export {
 } from "./trial";
 export type { TrialStatus, TrialConfig } from "./trial";
 
-// Notification triggers (Phase 12-04)
+// Notification triggers
 export { checkNotificationTriggers } from "./notifications";
 export type { QuotaNotification } from "./notifications";
 
-// Rate limiting (Phase 12-03)
+// Rate limiting
 export {
   checkRateLimit,
   cleanupRateLimitEntries,
@@ -102,13 +101,13 @@ export {
 } from "./rate-limit";
 export type { RateLimitResult } from "./rate-limit";
 
-// Billing email triggers (Phase 14-05)
+// Billing email triggers
 export {
   handleSubscriptionConfirmedEmail,
   handlePaymentFailedEmail,
 } from "./email-triggers";
 
-// Feature checking engine (Phase 15-01)
+// Feature checking
 export {
   hasFeature,
   requireFeature,
@@ -139,10 +138,8 @@ export type {
   PaymentCheckResult,
 } from "./payment";
 
-// Checkout & billing overview service (pricing/checkout/billing-settings
-// registry items) — Stripe checkout/portal session creation and the
-// role-shaped billing read. Transports call requireWorkspace/requireRole
-// first and pass resolved ids/role in; see checkout.ts's module doc.
+// Checkout & billing overview service. Transports call
+// requireWorkspace/requireRole first and pass resolved ids/role in.
 export {
   BillingServiceError,
   isBillingServiceError,

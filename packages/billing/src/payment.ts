@@ -2,18 +2,9 @@
  * Payment provider contract and registry.
  *
  * The interface and an in-memory mock live here; real providers are
- * registered by the application's composition root and, if
- * they are market-specific, live in a private package.
- *
- * Until Phase 3 this file also carried QPay and SocialPay
- * implementations. Both threw on every method, so a public package
- * named two Mongolian payment rails and shipped nothing that worked;
- * `PAYMENT_MODE=qpay` in production would have failed every payment.
- * Removing them changes no behaviour — an unregistered mode now fails
- * with a message that says which providers exist.
- *
- * PAYMENT_MODE selects among registered providers; "mock" is the
- * default and is refused in production.
+ * registered by the application's composition root. PAYMENT_MODE
+ * selects among registered providers; "mock" is the default and is
+ * refused in production.
  */
 
 import { createRegistry } from "@intelligo-dev/core/registry";
@@ -95,10 +86,7 @@ export const mockPaymentProvider: PaymentProvider = {
   },
 };
 
-/**
- * Simulate payment completion (dev only)
- * Call this to mock a successful payment
- */
+/** Simulate a successful payment (dev only). */
 export function mockCompletePayment(invoiceId: string): boolean {
   const payment = mockPayments.get(invoiceId);
   if (!payment || payment.status !== "pending") return false;
@@ -106,9 +94,7 @@ export function mockCompletePayment(invoiceId: string): boolean {
   return true;
 }
 
-/**
- * Get mock payment data (dev only)
- */
+/** Get mock payment data (dev only). */
 export function getMockPayment(invoiceId: string) {
   return mockPayments.get(invoiceId) ?? null;
 }
@@ -116,22 +102,15 @@ export function getMockPayment(invoiceId: string) {
 // ─── Provider Registry ───
 
 /**
- * Starts empty on purpose.
- *
- * It used to be seeded with `["mock", mockPaymentProvider]` at module
- * scope, which is import-side-effect registration wearing a
- * different hat: importing this file registered a provider, so a
- * deployment that wired nothing still resolved one, and
- * `registerPaymentProvider` had no caller anywhere in the repository
- * without that being visible. An empty registry makes the composition
- * root the only way a provider exists.
+ * Starts empty on purpose: the composition root is the only way a
+ * provider exists, so a deployment that wired nothing cannot silently
+ * resolve one.
  */
 const providers = createRegistry<PaymentProvider>("billing/payment-providers");
 
 /**
  * Register a payment provider under the name PAYMENT_MODE will select.
- * Called from the composition root; a market-specific implementation
- * belongs in a private package.
+ * Called from the composition root.
  */
 export function registerPaymentProvider(
   mode: string,

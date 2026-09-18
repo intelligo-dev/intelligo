@@ -1,40 +1,16 @@
 /**
  * Model registry and execution cost accounting.
  *
- * This lives in `executions` rather than beside the provider clients
- * because it is not AI code: it is what an execution costs. The
- * boundary records actor, workspace, capability, usage and cost
- *, and the price of a token is the last of those.
- *
- * Still a leaf: no database, no provider SDK. Its one import is
+ * A leaf: no database, no provider SDK. Its one import is
  * `@intelligo-dev/core/registry`, which is itself dependency-free, so
- * `@intelligo-dev/executions/pricing` remains something a client bundle
- * can read a display name or a price from without pulling in Drizzle.
+ * `@intelligo-dev/executions/pricing` is something a client bundle can
+ * read a display name or a price from without pulling in Drizzle.
  *
- * ## The registry is open
- *
- * It used to be a closed `as const` object of six models, with
- * `ModelId = keyof typeof`. A product that wanted Bedrock, Groq,
- * Mistral, a self-hosted model — or simply a newer Claude — could not
- * add one without a pull request to the framework, and an architecture
- * test enforced that. For a framework meant to underpin ten products
- * from one cost basis, the list cannot be the framework's to close.
- *
- * `registerModels(DEFAULT_MODELS)` from the composition root gets the
- * old behaviour back in one line. Nothing self-registers: an import
- * that populates a registry is the side effect the framework bans, and
- * it is also how a deployment ends up billing against a catalogue it
- * never chose.
- *
- * ## An unregistered id throws
- *
- * The old `calculateCost` warned and priced an unknown id at the
- * worst-case Claude rate, while the model resolver warned and fell
- * back to Gemini Flash. So the call ran on the cheapest model and
- * billed for the most expensive one, and the only symptom was a
- * console warning on a server nobody reads. Whatever that is, it is
- * not pricing. An id with no price now throws, at the point where the
- * price is needed, naming the id and what to do about it.
+ * The registry is open: a product registers any model it runs, and
+ * `registerModels(DEFAULT_MODELS)` from the composition root registers
+ * the shipped catalogue. Nothing self-registers. An id with no price
+ * throws at the point where the price is needed, naming the id, rather
+ * than billing at a guessed rate.
  */
 
 import {
@@ -68,20 +44,13 @@ export type ModelPricing = {
   costPerMOutputTokens: number;
   /**
    * The ceiling on streamed output used for worst-case pre-request
-   * estimation. Was a separate `MODEL_OUTPUT_BUDGET` map, which is one
-   * more list that could disagree with this one.
+   * estimation.
    */
   maxOutputTokens: number;
   capabilities: ModelCapabilities;
 };
 
-/**
- * A model id is now any string, because the registry is open.
- *
- * Kept as a named type for the call sites that read better with it.
- * `Record<ModelId, T>` no longer means anything — which is a useful
- * compile error in the places that used to enumerate the catalogue.
- */
+/** A provider-prefixed model id; any string, because the registry is open. */
 export type ModelId = string;
 
 export class UnknownModelError extends Error {

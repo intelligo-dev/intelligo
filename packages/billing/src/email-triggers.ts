@@ -1,26 +1,17 @@
 /**
- * Billing Email Triggers
- *
- * Functions designed to be called from Phase 11's Stripe webhook handler.
- * Each function is self-contained: imports from email and notification modules
- * and handles everything needed for the email + notification workflow.
- *
- * Integration points:
- * - handleSubscriptionConfirmedEmail: call from checkout.session.completed
- *   or customer.subscription.created webhook event
- * - handlePaymentFailedEmail: call from invoice.payment_failed webhook event
+ * Billing emails, called from the Stripe webhook handlers:
+ * - handleSubscriptionConfirmedEmail: checkout.session.completed or
+ *   customer.subscription.created
+ * - handlePaymentFailedEmail: invoice.payment_failed
  */
 
 import { sendSubscriptionConfirmedEmail } from "@intelligo-dev/core/email";
 import { triggerPaymentFailedNotification } from "@intelligo-dev/core/notifications";
 
 /**
- * Called by the Stripe webhook handler when a subscription is confirmed.
- *
- * Phase 11 webhook handler should call this in the `checkout.session.completed`
- * or `customer.subscription.created` event handler.
- *
- * Sends a subscription confirmation email (EMAIL-12).
+ * Send the subscription confirmation email. Called from the webhook
+ * handler for `checkout.session.completed` or
+ * `customer.subscription.created`.
  */
 export async function handleSubscriptionConfirmedEmail(params: {
   userEmail: string;
@@ -43,15 +34,10 @@ export async function handleSubscriptionConfirmedEmail(params: {
 }
 
 /**
- * Called by the Stripe webhook handler when a payment fails.
+ * Called from the webhook handler for `invoice.payment_failed`.
  *
- * Phase 11 webhook handler should call this in the `invoice.payment_failed`
- * event handler.
- *
- * This creates BOTH an in-app notification AND sends an email (EMAIL-11).
- * The triggerPaymentFailedNotification handles both channels internally:
- * it creates the in-app notification (awaited) and sends the email
- * (fire-and-forget).
+ * Creates an in-app notification (awaited) and sends an email
+ * (fire-and-forget), both through triggerPaymentFailedNotification.
  */
 export async function handlePaymentFailedEmail(params: {
   userId: string;

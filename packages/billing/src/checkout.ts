@@ -1,20 +1,12 @@
 /**
- * Checkout & billing overview service.
+ * Checkout & billing overview service: Stripe checkout/portal session
+ * creation, the pending credit-purchase row, and the role-shaped billing
+ * overview read.
  *
- * The durable Stripe/checkout rules lifted out of the first product's
- * `actions/billing.ts` (the app-level Server Actions file). This
- * module owns Stripe checkout/portal session creation, the pending
- * credit-purchase row, and the role-shaped billing overview read —
- * everything a transport (a Server Action, a route handler) used to
- * inline directly.
- *
- * These functions take resolved `workspaceId`/`userId`/`role` values.
- * They do not — and, per the dependency-direction allowlist
- * (`billing → core, executions`), cannot — call
- * `requireWorkspace`/`requireRole` themselves. Every transport that
- * calls into this module MUST perform that check first and pass in
- * the ids/role it resolved; this module trusts its caller on identity
- * and authorization exactly like `@intelligo-dev/executions`' ports do.
+ * These functions take resolved `workspaceId`/`userId`/`role` values and
+ * never call `requireWorkspace`/`requireRole` (billing cannot depend on
+ * auth). Every transport MUST perform that check first; this module
+ * trusts its caller on identity and authorization.
  */
 
 import { z } from "zod";
@@ -151,9 +143,7 @@ export async function createSubscriptionCheckout(
   );
 
   // The `plans` table carries one row per registered plan slug, keyed
-  // `plan_${slug}` — deriving the id the same way here keeps
-  // subscription checkout generic across products instead of
-  // hardcoding the three plan slugs the original action did.
+  // `plan_${slug}`.
   const planId = `plan_${planSlug}`;
 
   const stripe = getStripe();
@@ -185,10 +175,8 @@ export async function createSubscriptionCheckout(
 
 /**
  * A one-time credit bundle offered for purchase. Bundles are product
- * packaging — this module does not
- * own a bundle catalogue or a registry for one. The caller (a
- * consumer's bound `lib/billing.ts`) passes the bundle it wants sold,
- * resolved from its own config; this schema only validates the shape.
+ * packaging: the caller passes the bundle it wants sold, resolved from
+ * its own config; this schema only validates the shape.
  */
 const moneySchema = z.object({
   /** Micros — millionths of one major unit. */
@@ -201,11 +189,8 @@ const moneySchema = z.object({
  * charged, in the currency the payment provider takes, and `grant` is
  * what the workspace receives, in the deployment's billing currency.
  *
- * The older shape named one number for both — `credits: 100_000` sold
- * for `priceUsd: 5` credited 100,000 of a unit nobody had named, worth
- * ₮100,000 or $100,000 depending on a rate row. It is still accepted
- * and read as whole units of the billing currency, which is what the
- * ledger actually did with it.
+ * The deprecated single-number shape (`credits` + `priceUsd`) is still
+ * accepted; `credits` is read as whole units of the billing currency.
  */
 export const creditBundleSchema = z.union([
   z.object({
@@ -239,8 +224,7 @@ export type CreateCreditCheckoutInput = z.infer<typeof creditCheckoutSchema>;
 /**
  * Create a Stripe one-time-payment checkout session for a credit
  * bundle, recording a `pending` `creditPurchases` row first so the
- * webhook has something to match against (mirrors the original
- * `createCreditPurchaseSession` action).
+ * webhook has something to match against.
  */
 export async function createCreditCheckout(
   input: CreateCreditCheckoutInput
@@ -397,12 +381,9 @@ export type GetCheckoutSessionInput = z.infer<typeof checkoutSessionReadSchema>;
  * Read a completed-or-in-flight Stripe checkout session and shape it
  * for the checkout-success page.
  *
- * Stripe's webhook can arrive 15-20% slower than the browser redirect
- * to `/checkout/success` — querying Stripe directly here (rather than
- * trusting the local `subscriptions` row) is how the success page
- * shows the correct plan immediately regardless of webhook timing.
- * This is exactly the rationale the original page carried inline;
- * it now lives here so no page component talks to Stripe directly.
+ * The webhook can arrive after the browser redirect to
+ * `/checkout/success`, so this queries Stripe directly rather than
+ * trusting the local `subscriptions` row.
  */
 export async function getCheckoutSession(
   input: GetCheckoutSessionInput
@@ -497,9 +478,7 @@ export type BillingOverviewOwner = {
   } | null;
   /**
    * The top-up balance, in the deployment's billing currency. `null`
-   * when the workspace has no ledger row to denominate. It was a bare
-   * number of whole tugrik, which the billing page rendered as a count
-   * of "credits" whatever the deployment actually billed in.
+   * when the workspace has no ledger row to denominate.
    */
   creditBalance: Money | null;
   billingMode: "subscription" | "credit";
@@ -516,12 +495,10 @@ const billingOverviewSchema = z.object({
 export type GetBillingOverviewInput = z.infer<typeof billingOverviewSchema>;
 
 /**
- * Role-shaped billing read, moved server-side out of the original
- * `settings/billing/page.tsx` three-way branch: `member` gets a
- * status-only view, `admin` gets a read-only plan name, `owner` gets
- * the full subscription/credit-balance detail. The caller resolves
- * `role` from `requireWorkspace()`'s membership — this module never
- * reads a role for itself.
+ * Role-shaped billing read: `member` gets a status-only view, `admin`
+ * a read-only plan name, `owner` the full subscription/credit-balance
+ * detail. The caller resolves `role` from `requireWorkspace()`'s
+ * membership — this module never reads a role for itself.
  */
 export async function getBillingOverview(
   input: GetBillingOverviewInput

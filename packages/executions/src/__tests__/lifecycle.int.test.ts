@@ -3,11 +3,7 @@
  *
  * Every other test of this package mocks `@intelligo-dev/core/db`,
  * `@intelligo-dev/audit`, and drizzle, so they verify the control flow and
- * nothing about the SQL. The verification audit named this precisely:
- * the boundary had never once run begin→complete against a real
- * Postgres, a real audit table, or a real conditional UPDATE.
- *
- * That matters because the correctness of this package rests on a
+ * nothing about the SQL. The correctness of this package rests on a
  * compare-and-swap — `UPDATE ... WHERE status = 'running'` — whose
  * whole point is what the database does with concurrent writers. A
  * mock returning `[{id}]` proves nothing about it.

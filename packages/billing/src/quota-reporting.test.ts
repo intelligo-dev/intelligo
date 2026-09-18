@@ -1,27 +1,18 @@
 /**
- * The half of quota.ts nobody was testing.
+ * quota.ts reporting and reservation lifecycle:
+ * `cleanupExpiredReservations`, `releaseReservation`,
+ * `findSettlementByRequestId`, `resetMonthlyQuota`, `getUsageSummary`
+ * and `getQuotaThresholds`.
  *
- * Mutation testing put `quota.ts` in scope and reported 83 mutants with
- * *no coverage at all* — not weak assertions, but six exported
- * functions no test had ever executed: the reservation lifecycle
- * (`cleanupExpiredReservations`, `releaseReservation`), the settlement
- * lookup (`findSettlementByRequestId`), the renewal reset
- * (`resetMonthlyQuota`) and the two reporting reads (`getUsageSummary`,
- * `getQuotaThresholds`).
- *
- * `findSettlementByRequestId` is the one that mattered most: it answers
+ * `findSettlementByRequestId` matters most: it answers
  * `executions.reconcile()`'s question for a row stuck in `settling` —
  * was this request already charged? — and it has three outcomes, one of
  * which is an empty object rather than null. Getting that wrong either
- * charges a workspace twice or drops a charge, and nothing was watching.
+ * charges a workspace twice or drops a charge.
  *
- * Its own file rather than more cases in `quota.test.ts`: that suite and
- * `quota-settlement.test.ts` each mock `@intelligo-dev/core/db` with a
- * fake shaped to the one function they cover — a transaction-only fake
- * in one, a `select().for().limit()` chain in the other. These six need
- * `delete().where().returning()`, a bare `update().set().where()` and
- * grouped selects, and bolting those onto either file means reshaping a
- * mock that currently pins settlement behaviour.
+ * Its own file because these need `delete().where().returning()`, a
+ * bare `update().set().where()` and grouped selects, which the db fakes
+ * in `quota.test.ts` and `quota-settlement.test.ts` are not shaped for.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -253,9 +244,8 @@ describe("findSettlementByRequestId", () => {
   it("distinguishes a charged row with no currency from no row at all", async () => {
     // The difference is not cosmetic: `{}` is truthy and null is not,
     // so a caller asking "was this charged?" gets yes here and no
-    // above. A row that predates the currency column was still a
-    // charge, and returning null for it would charge the workspace a
-    // second time.
+    // above. A row without a currency was still a charge, and returning
+    // null for it would charge the workspace a second time.
     state.selectRows = [[{ chargedMicros: 500_000_000, currency: null }]];
     const found = await findSettlementByRequestId("ws-1", "req-1");
     expect(found).not.toBeNull();
@@ -347,8 +337,7 @@ describe("getUsageSummary", () => {
   });
 
   it("reports no percentage for a plan with no message limit", async () => {
-    // Dividing by the limit is how a plan with none showed Infinity on
-    // the usage page.
+    // Dividing by a zero limit would show Infinity on the usage page.
     mocks.getPlanMessageLimit.mockReturnValue(0);
     mocks.getCurrentMonthlyUsage.mockResolvedValue({
       tokensUsed: 10,

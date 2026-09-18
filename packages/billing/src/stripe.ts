@@ -1,13 +1,9 @@
 import Stripe from "stripe";
 
 /**
- * Stripe Client
- *
- * Lazy initialization pattern — Stripe client created on first use.
- * This allows the app to boot without STRIPE_SECRET_KEY for local dev.
- * Billing features will gracefully degrade if Stripe isn't configured.
- *
- * Pattern matches OAuth conditional pattern from Phase 9 (AUTH-03).
+ * Stripe client, created lazily on first use so the app can boot
+ * without STRIPE_SECRET_KEY in local dev; billing features degrade
+ * gracefully when Stripe isn't configured.
  */
 
 let _stripe: Stripe | null = null;

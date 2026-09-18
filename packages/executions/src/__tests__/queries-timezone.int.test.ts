@@ -1,23 +1,22 @@
 /**
  * Per-day bucketing against a real database.
  *
- * This is a SQL test, and it has to be: the expression that buckets a
- * day is built in TypeScript but evaluated by Postgres, and both ways
- * it broke were invisible to a mock.
+ * The expression that buckets a day is built in TypeScript but
+ * evaluated by Postgres, and both of its pitfalls are invisible to a
+ * mock.
  *
- * The first was arithmetic. `started_at` is a naive `timestamp` holding
- * a UTC instant, so `started_at AT TIME ZONE $zone` does not convert it
- * — it *declares* it to already be in that zone, which is a different
- * moment. Only the pair, `AT TIME ZONE 'UTC' AT TIME ZONE $zone`, reads
- * the stored instant as wall time where the reader sits.
+ * Arithmetic: `started_at` is a naive `timestamp` holding a UTC instant,
+ * so `started_at AT TIME ZONE $zone` does not convert it — it *declares*
+ * it to already be in that zone, which is a different moment. Only the
+ * pair, `AT TIME ZONE 'UTC' AT TIME ZONE $zone`, reads the stored
+ * instant as wall time where the reader sits.
  *
- * The second was grouping. Drizzle inlines a `sql` fragment once per
- * clause, so a bound zone became three different placeholders and
- * Postgres stopped recognising the grouped expression as the selected
- * one — "must appear in the GROUP BY clause". It threw for every
- * caller, and the usage page rendered "Usage unavailable". A literal
- * zone matched textually and hid it, which is why the query is grouped
- * by ordinal now, and why this test runs the real statement.
+ * Grouping: Drizzle inlines a `sql` fragment once per clause, so a bound
+ * zone becomes three different placeholders and Postgres no longer
+ * recognises the grouped expression as the selected one ("must appear in
+ * the GROUP BY clause"). A literal zone matches textually and hides
+ * this, which is why the query groups by ordinal and this test runs the
+ * real statement.
  *
  * The three rows are chosen so UTC and New York disagree about *every*
  * one of them: a regression cannot pass by landing on a day both zones

@@ -13,8 +13,8 @@
  *   WHERE processed_at IS NULL` claim, so two concurrent deliveries of
  *   one event run the handlers once. A failed run releases the claim.
  * - **Fail loudly.** A handler error returns 500. Stripe retries on
- *   non-2xx; answering 202 to an error (the earlier pattern) told
- *   Stripe the event was handled and silently dropped it.
+ *   non-2xx; answering 2xx to an error would tell Stripe the event was
+ *   handled and silently drop it.
  * - A bad or missing signature is 400 — that is Stripe's own contract,
  *   and it reveals nothing a caller without the secret did not know.
  *

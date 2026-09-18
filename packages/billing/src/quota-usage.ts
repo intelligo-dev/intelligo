@@ -1,7 +1,3 @@
-/**
- * Usage tracking helpers for quota enforcement.
- */
-
 import { db } from "@intelligo-dev/core/db";
 import { monthlyUsage } from "@intelligo-dev/core/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -24,10 +20,8 @@ export function getCurrentPeriodEnd(): Date {
  * Returns { tokensUsed, allowanceUsedMicros, requestCount } or zero
  * defaults if no row exists.
  *
- * Note: FOR UPDATE lock removed. The grace period (which required lock protection)
- * was removed — worst-case per-request cost (~138K MNT) exceeds any realistic grace
- * buffer when plan allowance is only 2K MNT. Concurrent requests are handled by
- * SQL-level atomic arithmetic in recordTokenUsage (sql`` template, not JS read-modify-write).
+ * Reads without FOR UPDATE: concurrent requests are handled by SQL-level
+ * atomic arithmetic in recordTokenUsage, not a JS read-modify-write.
  */
 export async function getCurrentMonthlyUsage(workspaceId: string) {
   const periodStart = getCurrentPeriodStart();

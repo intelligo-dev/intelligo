@@ -192,11 +192,9 @@ export function createExecutions(ports: ExecutionPorts = {}) {
           result.usage?.totalTokens ?? inputTokens + outputTokens;
         const model = result.model ?? input.model;
 
-        // Claim the right to settle BEFORE spending money. The CAS used
-        // to happen after settleUsage, so a second complete() — or a
-        // complete() racing a fail() — charged the workspace again and
-        // then quietly discovered it had lost the race. Status and
-        // audit were idempotent; the deduction was not.
+        // Claim the right to settle BEFORE spending money, so a second
+        // complete() — or a complete() racing a fail() — cannot charge the
+        // workspace again.
         // The usage is written with the claim, before any money moves,
         // so a crash after this point leaves enough on the row for
         // reconcile() to finish the job.

@@ -24,10 +24,8 @@ import { Client } from "pg";
 import { money } from "@intelligo-dev/core/money";
 
 /**
- * Whole tugrik as micros. Every amount below the migration is micros
- * now, and the figures this test reasons about — a 2,000₮ allowance, a
- * 50,000₮ top-up — read as themselves through here rather than as nine
- * zeroes that have to be counted.
+ * Whole tugrik as micros, so the figures below — a 2,000₮ allowance, a
+ * 50,000₮ top-up — read as themselves rather than as nine zeroes.
  */
 const mnt = (whole: number) => whole * 1_000_000;
 
@@ -94,10 +92,7 @@ d("money path (integration)", () => {
    *
    * node-postgres binds a JS `Date` as *local* wall clock instead, so on
    * a machine east of UTC the two write different keys for the same
-   * instant. Seeding through `pg` put the row at `2026-09-01 00:00:00`
-   * while the engine's drizzle query looked for `2026-08-31 16:00:00`,
-   * `getCurrentMonthlyUsage` found nothing, and every assertion here
-   * failed as though the allowance were untouched.
+   * instant and the engine's drizzle queries find nothing.
    */
   const naive = (date: Date) =>
     date.toISOString().slice(0, 19).replace("T", " ");
@@ -150,9 +145,8 @@ d("money path (integration)", () => {
     // Written directly rather than through `ensureBillingSettingsRow`,
     // which is `onConflictDoNothing` and so cannot correct a row that
     // already exists. Every figure below is tugrik, and a deployment
-    // billing in anything else now yields a zero allowance rather than
-    // a silent conversion — so a test that inherited whatever currency
-    // the database happened to hold would fail for the wrong reason.
+    // billing in anything else yields a zero allowance rather than a
+    // silent conversion.
     const { ensureBillingSettingsRow, invalidateBillingSettingsCache } =
       await import("../billing-settings");
     await ensureBillingSettingsRow();
@@ -299,8 +293,7 @@ d("money path (integration)", () => {
     // 1₮ of allowance left and a funded top-up: any charge must take
     // that 1₮ from the allowance and the rest from the balance — not
     // the full amount from both. (1, not a larger number: the charge
-    // depends on the FX/margin row, and a guess about it is how this
-    // test failed the first time.)
+    // depends on the FX/margin row, and the test must not guess it.)
     await setAllowanceUsed(mnt(FREE_ALLOWANCE - 1));
     await setBalance(mnt(50_000));
 

@@ -2,8 +2,8 @@
  * @intelligo-dev/jobs — job contract plus a Postgres-backed default adapter.
  *
  * The contract is what consumers code against; the adapter is what runs
- * when nobody supplies a better one. Swapping in a real queue later
- * means implementing `JobQueue`, not rewriting call sites.
+ * when nobody supplies another. Swapping in a different queue means
+ * implementing `JobQueue`, not rewriting call sites.
  *
  * Claiming uses `FOR UPDATE SKIP LOCKED`, so several workers (Vercel
  * cron invocations, a long-running process, a local script) can drain

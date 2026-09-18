@@ -1,9 +1,8 @@
 /**
- * quota.ts tests — admission + credit reservation (B-06).
+ * quota.ts tests — admission + credit reservation.
  *
- * checkQuota used to be a pure read while the debit happened minutes
- * later in recordTokenUsage, so N concurrent requests could all pass
- * against the same balance. These tests pin the reservation contract:
+ * Without a reservation, N concurrent requests could all pass against
+ * the same balance. These tests pin the reservation contract:
  * admission with a requestId subtracts active reservations and inserts
  * its own inside one serialized transaction; settlement flips the
  * reservation to settled.

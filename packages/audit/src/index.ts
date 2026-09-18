@@ -4,7 +4,7 @@
  * Emitting is deliberately failure-tolerant: an audit write must never
  * break the operation being audited. `recordAuditEvent` swallows and
  * logs; callers that need the guarantee (impersonation, destructive
- * support actions — Phase 5) use `recordAuditEventOrThrow`.
+ * support actions) use `recordAuditEventOrThrow`.
  */
 
 import { db } from "@intelligo-dev/core/db";
@@ -17,19 +17,14 @@ import { auditEvents } from "./db/schema";
 const log = createLogger("Audit");
 
 // ---------------------------------------------------------------------------
-// Sinks — the open-core seam
+// Sinks
 // ---------------------------------------------------------------------------
 
 /**
- * Called after an event is durably recorded.
- *
- * This is an extension point, not a plugin system: sinks are
- * registered by the composition root, never by being imported
- *. What it exists for is the governance work that does not
- * belong in a permissively-licensed package — tamper-evidence,
- * retention policy, shipping the trail to a customer's SIEM — so that
- * a closed module can add it without this package knowing it exists,
- * and without anyone forking this file.
+ * Called after an event is durably recorded. Sinks are registered by
+ * the composition root, never by being imported; they exist for
+ * governance work outside this package — tamper-evidence, retention
+ * policy, shipping the trail to a SIEM.
  *
  * A sink runs after the write, so it cannot corrupt or delay the audit
  * row itself, and its failures are isolated: an exporter with an
@@ -170,7 +165,7 @@ export type QueryAuditEventsOptions = {
   limit?: number;
 };
 
-/** Most-recent-first query for the admin console (Phase 5). */
+/** Most-recent-first query for the admin console. */
 export async function queryAuditEvents(options: QueryAuditEventsOptions = {}) {
   const filters = [
     options.workspaceId

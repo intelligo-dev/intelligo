@@ -1,10 +1,8 @@
 /**
- * Execution lifecycle tests.
- *
- * Pins the contract the rest of Phase 2 builds on: entitlement gates
- * admission, terminal transitions happen exactly once, settlement
- * failures leave the row unsettled rather than claiming success, and
- * every transition emits an audit event.
+ * Execution lifecycle tests: entitlement gates admission, terminal
+ * transitions happen exactly once, settlement failures leave the row
+ * unsettled rather than claiming success, and every transition emits
+ * an audit event.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -242,7 +240,7 @@ describe("complete", () => {
 
   it("records a typed charge in micros, with the currency it is in", async () => {
     // What a USD deployment charges for one turn: a fraction of a cent,
-    // which the whole-unit column could only round to nothing or to $1.
+    // which whole units could only round to nothing or to $1.
     const settleUsage = vi
       .fn()
       .mockResolvedValue({ charged: money(4_792, "USD") });
@@ -299,9 +297,8 @@ describe("complete", () => {
   });
 
   it("does not charge twice when complete() is called twice", async () => {
-    // The money, not just the audit trail. settleUsage used to run
-    // before the compare-and-swap, so a second call deducted again and
-    // only then discovered it had lost the race.
+    // The money, not just the audit trail: settlement runs only after
+    // the compare-and-swap, so a second call must not deduct again.
     const settleUsage = vi
       .fn()
       .mockResolvedValue({ charged: money(100, "MNT") });
