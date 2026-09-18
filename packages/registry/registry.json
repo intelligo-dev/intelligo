@@ -1017,6 +1017,145 @@
       ]
     },
     {
+      "name": "popover-morph",
+      "type": "registry:ui",
+      "title": "Popover Morph",
+      "description": "A non-modal popover whose trigger surface grows into the panel through a shared layout and folds back on close (T4).",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
+      "files": [
+        {
+          "path": "base/ui/popover-morph/popover-morph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/popover-morph.tsx"
+        }
+      ]
+    },
+    {
+      "name": "select-morph",
+      "type": "registry:ui",
+      "title": "Select Morph",
+      "description": "A select whose trigger continues into its list: the list unclips down from the trigger's edge as one surface while its options stagger in (T4).",
+      "dependencies": ["@base-ui/react", "motion", "lucide-react"],
+      "registryDependencies": ["@intelligo/ai-motion"],
+      "files": [
+        {
+          "path": "base/ui/select-morph/select-morph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/select-morph.tsx"
+        }
+      ]
+    },
+    {
+      "name": "morphing-modal",
+      "type": "registry:ui",
+      "title": "Morphing Modal",
+      "description": "A card or button that grows into a centred or bottom dialog through a shared layout, cross-fading between views while the panel resizes (T4).",
+      "dependencies": ["@base-ui/react", "motion", "lucide-react"],
+      "registryDependencies": ["@intelligo/ai-motion", "@intelligo/button"],
+      "files": [
+        {
+          "path": "base/ui/morphing-modal/morphing-modal.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/morphing-modal.tsx"
+        }
+      ]
+    },
+    {
+      "name": "notification-stack",
+      "type": "registry:ui",
+      "title": "Notification Stack",
+      "description": "Notifications fanned into a stack — the newest in front, the rest peeking out scaled back — that springs apart into a list of openable, dismissable cards on hover or click (T4).",
+      "dependencies": ["@base-ui/react", "motion", "lucide-react"],
+      "registryDependencies": ["@intelligo/ai-motion", "@intelligo/button"],
+      "files": [
+        {
+          "path": "base/ui/notification-stack/notification-stack.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/notification-stack.tsx"
+        }
+      ]
+    },
+    {
+      "name": "animated-list",
+      "type": "registry:ui",
+      "title": "Animated List",
+      "description": "A list container that staggers its rows in on mount, rows that rise in, fall out and glide on reorder (ul, ol, div or tbody/tr), and a block that reveals once as it scrolls into view (T4).",
+      "dependencies": ["motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
+      "files": [
+        {
+          "path": "base/ui/animated-list/animated-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/animated-list.tsx"
+        }
+      ]
+    },
+    {
+      "name": "otp-input",
+      "type": "registry:ui",
+      "title": "OTP Input",
+      "description": "A one-time-code input on Base UI's OTP Field whose characters roll into their slots under a blinking caret, shaking on a rejected code and drawing a check on an accepted one (T4).",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
+      "files": [
+        {
+          "path": "base/ui/otp-input/otp-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/otp-input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "file-upload",
+      "type": "registry:ui",
+      "title": "File Upload",
+      "description": "A controlled file upload — a drop zone with a queue of rows that slide in, fill a progress bar and settle on done or error, or a compact chat-composer wrapper with a drop overlay and chips (T4).",
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": [
+        "@intelligo/ai-motion",
+        "@intelligo/button",
+        "@intelligo/spinner"
+      ],
+      "files": [
+        {
+          "path": "base/ui/file-upload/file-upload.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/file-upload.tsx"
+        }
+      ]
+    },
+    {
+      "name": "expandable-tabs",
+      "type": "registry:ui",
+      "title": "Expandable Tabs",
+      "description": "A bar of icon tabs on Base UI's Tabs where the active tab widens to unfurl its label, the pill glides to it and its panel rises in (T4).",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
+      "files": [
+        {
+          "path": "base/ui/expandable-tabs/expandable-tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/expandable-tabs.tsx"
+        }
+      ]
+    },
+    {
+      "name": "hold-action-button",
+      "type": "registry:ui",
+      "title": "Hold Action Button",
+      "description": "A press-and-hold confirmation for a destructive action, by pointer or held Space/Enter, whose fill sweeps across while held and drains on an early release (T4).",
+      "dependencies": ["motion"],
+      "registryDependencies": ["@intelligo/ai-motion", "@intelligo/button"],
+      "files": [
+        {
+          "path": "base/ui/hold-action-button/hold-action-button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/hold-action-button.tsx"
+        }
+      ]
+    },
+    {
       "name": "smoke",
       "type": "registry:block",
       "title": "Registry Smoke Test",
