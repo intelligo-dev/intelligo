@@ -107,6 +107,11 @@
         "$TURBO_ROOT$/packages/registry/requires.json"
       ],
       "outputs": ["dist/**"]
+    },
+    "film#build": {
+      "dependsOn": [],
+      "inputs": ["src/**", "public/**", "package.json", "remotion.config.ts"],
+      "outputs": ["build/**"]
     }
   }
 }

@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "title": "Dashboard"
+  },
+  "hero": {
+    "title": "What can I help with?",
+    "subtitle": "Ask a question, draft something, or pick up where you left off. Every turn is metered against your plan.",
+    "resume": "Continue where you left off"
+  },
+  "starters": {
+    "first": "Explain what this workspace can do",
+    "second": "Draft a short update for my team",
+    "third": "Summarize the key points of an idea"
+  },
+  "promptBar": {
+    "placeholder": "Ask anything…",
+    "send": "Send",
+    "voiceStart": "Start voice input",
+    "voiceStop": "Stop voice input"
+  },
+  "promptBar": {
+    "placeholder": "Ask anything…",
+    "send": "Send",
+    "voiceStart": "Start voice input",
+    "voiceStop": "Stop voice input"
+  }
+}
