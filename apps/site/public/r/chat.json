@@ -95,7 +95,7 @@
     },
     {
       "path": "base/chat/conversation-loading.tsx",
-      "content": "import { Skeleton } from \"@/components/ui/skeleton\";\n\nexport default function ConversationLoading() {\n  return (\n    <div className=\"flex h-full flex-col\">\n      <div className=\"flex-1 space-y-6 px-4 py-6\">\n        <div className=\"mx-auto flex max-w-3xl flex-col gap-6\">\n          <Skeleton className=\"ml-auto h-10 w-2/3 rounded-2xl\" />\n          <Skeleton className=\"h-24 w-3/4 rounded-lg\" />\n          <Skeleton className=\"ml-auto h-10 w-1/2 rounded-2xl\" />\n        </div>\n      </div>\n    </div>\n  );\n}\n",
+      "content": "import { Skeleton } from \"@/components/ui/skeleton\";\n\nexport default function ConversationLoading() {\n  return (\n    <div className=\"flex h-full flex-col\">\n      <div className=\"flex-1 space-y-6 px-4 py-6\">\n        <div className=\"mx-auto flex max-w-3xl flex-col gap-6\">\n          <Skeleton className=\"ml-auto h-10 w-2/3 rounded-xl\" />\n          <Skeleton className=\"h-24 w-3/4 rounded-lg\" />\n          <Skeleton className=\"ml-auto h-10 w-1/2 rounded-xl\" />\n        </div>\n      </div>\n    </div>\n  );\n}\n",
       "type": "registry:page",
       "target": "app/[locale]/(app)/chat/[id]/loading.tsx"
     },

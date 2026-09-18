@@ -22,7 +22,10 @@ import { OnboardingWizard } from "@showcase/components/onboarding/onboarding-wiz
 import { InvitationActions } from "@showcase/components/invitation/invitation-actions";
 import { AppSidebar } from "@showcase/components/shell/app-sidebar";
 import { ShellHeader } from "@showcase/components/shell/shell-header";
-import { SidebarInset, SidebarProvider } from "@showcase/components/ui/sidebar";
+import {
+  AISidebarInset,
+  AISidebarProvider,
+} from "@showcase/components/ui/ai-sidebar";
 import { DashboardHero } from "@showcase/components/dashboard/dashboard-hero";
 import { PromptBar } from "@showcase/components/dashboard/prompt-bar";
 import { SettingsTabs } from "@showcase/components/settings/settings-tabs";
@@ -172,14 +175,14 @@ function AppFrame({
   banner?: ReactNode;
 }) {
   return (
-    <SidebarProvider defaultOpen className="h-full min-h-0">
+    <AISidebarProvider defaultOpen className="h-full min-h-0 overflow-hidden">
       <AppSidebar workspace={WORKSPACE} workspaces={WORKSPACES} user={USER} />
-      <SidebarInset className="min-h-0 overflow-hidden">
+      <AISidebarInset className="min-h-0 overflow-hidden">
         {banner}
         <ShellHeader />
         <div className="flex-1 overflow-auto p-6">{children}</div>
-      </SidebarInset>
-    </SidebarProvider>
+      </AISidebarInset>
+    </AISidebarProvider>
   );
 }
 
