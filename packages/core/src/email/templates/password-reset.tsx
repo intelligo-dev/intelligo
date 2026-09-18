@@ -2,12 +2,6 @@ import { Button, Text } from "@react-email/components";
 import * as React from "react";
 import { BaseLayout } from "./base-layout";
 
-// ---------------------------------------------------------------------------
-// Password Reset Template (EMAIL-05)
-// ---------------------------------------------------------------------------
-// Sent when a user requests a password reset.
-// ---------------------------------------------------------------------------
-
 export interface PasswordResetEmailProps {
   userName: string;
   resetUrl: string;
@@ -40,10 +34,6 @@ export function PasswordResetEmail({
     </BaseLayout>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Inline Styles
-// ---------------------------------------------------------------------------
 
 const headingStyle: React.CSSProperties = {
   color: "#18181b",

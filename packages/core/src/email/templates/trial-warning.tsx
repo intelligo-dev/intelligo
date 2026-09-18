@@ -2,12 +2,7 @@ import { Button, Text } from "@react-email/components";
 import * as React from "react";
 import { BaseLayout } from "./base-layout";
 
-// ---------------------------------------------------------------------------
-// Trial Warning Template (EMAIL-07 at 20%, EMAIL-08 when depleted)
-// ---------------------------------------------------------------------------
-// Sent when a workspace's trial credits are running low or fully depleted.
-// Uses isDepleted flag to toggle between warning and depleted variants.
-// ---------------------------------------------------------------------------
+// `isDepleted` switches between the low-credit and depleted variants.
 
 export interface TrialWarningEmailProps {
   workspaceName: string;
@@ -70,10 +65,6 @@ export function TrialWarningEmail({
     </BaseLayout>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Inline Styles
-// ---------------------------------------------------------------------------
 
 const headingStyle: React.CSSProperties = {
   color: "#18181b",

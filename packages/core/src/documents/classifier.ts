@@ -1,15 +1,7 @@
 /**
- * Document title classifier registry.
- *
- * Vertical product packages register their title patterns here; the
- * document persistence API (./service.ts) uses the same registry to
- * derive agent labels and the "report" filter. Kept in its own module
- * so client-safe code and tests can load it without dragging in the
- * server-only persistence chain (db) — its one import, ../registry, is
- * itself dependency-free for the same reason.
- *
- * Ported from @intelligo-dev/agents/documents/classifier —
- * unchanged.
+ * Document title classifier. Products register their title patterns here;
+ * the documents service uses them to derive agent labels and the "report"
+ * filter. Kept free of the db import so client code and tests can load it.
  */
 
 import { createRegistry } from "../registry";
@@ -25,11 +17,10 @@ export type DocumentPatternEntry = {
 };
 
 /**
- * Keyed by product slug rather than appended, so a composition root
- * that runs twice — or two copies of it, which is the case this
- * registry now survives — replaces the entry instead of matching the
- * same patterns twice. Insertion order is preserved, so first-match
- * classification is unchanged.
+ * Keyed by product slug rather than appended, so a composition root that
+ * runs twice (or two copies of it) replaces the entry instead of matching
+ * the same patterns twice. Insertion order decides first-match
+ * classification.
  */
 const registry = createRegistry<DocumentPatternEntry>("core/document-patterns");
 

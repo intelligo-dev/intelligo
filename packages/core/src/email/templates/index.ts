@@ -1,10 +1,3 @@
-// ---------------------------------------------------------------------------
-// Email Templates — Barrel Export
-// ---------------------------------------------------------------------------
-// All React Email templates with Intelligo branding. Each template wraps
-// content in BaseLayout for consistent styling.
-// ---------------------------------------------------------------------------
-
 export { BaseLayout, type BaseLayoutProps } from "./base-layout";
 export { WelcomeEmail, type WelcomeEmailProps } from "./welcome";
 export { VerifyEmailEmail, type VerifyEmailEmailProps } from "./verify-email";

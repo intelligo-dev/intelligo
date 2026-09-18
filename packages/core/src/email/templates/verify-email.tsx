@@ -2,13 +2,6 @@ import { Button, Text } from "@react-email/components";
 import * as React from "react";
 import { BaseLayout } from "./base-layout";
 
-// ---------------------------------------------------------------------------
-// Verify Email Template (EMAIL-04)
-// ---------------------------------------------------------------------------
-// Sent when a user needs to verify their email address after signup or
-// email change.
-// ---------------------------------------------------------------------------
-
 export interface VerifyEmailEmailProps {
   userName: string;
   verificationUrl: string;
@@ -41,10 +34,6 @@ export function VerifyEmailEmail({
     </BaseLayout>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Inline Styles
-// ---------------------------------------------------------------------------
 
 const headingStyle: React.CSSProperties = {
   color: "#18181b",

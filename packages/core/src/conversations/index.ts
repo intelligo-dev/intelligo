@@ -1,13 +1,3 @@
-/**
- * Conversations Module
- *
- * Conversation/message lifecycle: create, list, read, rename, delete,
- * message append/window reads, vote state. See ./service.ts for the
- * full module doc comment, including what stayed product-side.
- *
- * Use via subpath import: @intelligo-dev/core/conversations
- */
-
 export {
   createConversation,
   getConversation,

@@ -1,11 +1,7 @@
 /**
- * Driver selection.
- *
- * The rule is small but the wrong answer is total: Neon's HTTP driver
- * cannot run a transaction, and admission and settlement are
- * transactions. These pin that a Neon URL never gets it, that an
- * explicit override wins, and that an unknown override is refused
- * rather than silently defaulted.
+ * Neon's HTTP driver cannot run a transaction, and admission and settlement
+ * are transactions: a Neon URL must never get it, an explicit override wins,
+ * and an unknown override is refused rather than silently defaulted.
  */
 
 import { describe, it, expect } from "vitest";

@@ -1,11 +1,6 @@
 /**
- * Usage Tracking Database Schema
- *
- * Tables for tracking per-request token consumption and aggregated monthly usage.
- * Used by the quota enforcement engine to check limits before AI requests
- * and record consumption atomically after completion.
- *
- * Pattern: snake_case columns in PostgreSQL, camelCase TypeScript API (via Drizzle mapping)
+ * Token consumption per request and aggregated per period, which the quota
+ * engine checks before AI requests and records into after them.
  */
 
 import {
@@ -22,11 +17,8 @@ import {
 import { organization, users } from "./auth";
 
 /**
- * Usage Records table - Per-request token tracking (QUOTA-05)
- *
- * Every AI request creates one record with input/output/total tokens,
- * the model used, and the agent that handled it. This provides the
- * detailed breakdown for per-model and per-agent reporting (QUOTA-07).
+ * One row per AI request: tokens, model and agent, for per-model and
+ * per-agent reporting.
  */
 export const usageRecords = pgTable(
   "usage_records",
@@ -45,9 +37,8 @@ export const usageRecords = pgTable(
     outputTokens: integer("output_tokens").notNull().default(0),
     totalTokens: integer("total_tokens").notNull().default(0),
     /**
-     * What the provider charged, in USD micros. Integer on purpose:
-     * the `real` column this replaces accumulated sub-cent error over
-     * many records, which is why nothing may do arithmetic in floats.
+     * What the provider charged, in USD micros. Integer on purpose: float
+     * arithmetic accumulates sub-cent error over many records.
      */
     providerCostMicros: bigint("provider_cost_micros", { mode: "number" })
       .notNull()
@@ -89,11 +80,8 @@ export const usageRecords = pgTable(
 );
 
 /**
- * Monthly Usage table - Aggregated monthly totals for fast quota checks
- *
- * Instead of SUM(totalTokens) on every request, we increment a counter atomically.
- * One row per workspace per billing period. The usage_records table provides
- * the detailed breakdown for reporting; this table provides O(1) quota checks.
+ * One row per workspace per billing period, incremented atomically, so a
+ * quota check is O(1) instead of a SUM over usage_records.
  */
 export const monthlyUsage = pgTable(
   "monthly_usage",
@@ -123,16 +111,10 @@ export const monthlyUsage = pgTable(
 );
 
 /**
- * Trial Credits table - One-time trial credit allocation per workspace (TRIAL-01)
- *
- * Each new workspace receives 100K trial tokens on creation.
- * The unique constraint on workspace_id enforces one trial per workspace (TRIAL-07).
- * Trial credits are separate from purchased credits (credit_balances).
- * They act as a fallback when plan quota is exceeded or credit balance is zero.
- *
- * Status flow: active → depleted (credits hit 0) or active → converted (paid plan)
+ * One-time trial grant, one per workspace (unique constraint). Separate from
+ * purchased credits; used when the plan quota is exceeded or the credit
+ * balance is zero. Status: active → depleted, converted or expired.
  */
-// Run drizzle-kit push to apply index
 export const trialCredits = pgTable(
   "trial_credits",
   {
@@ -161,10 +143,8 @@ export const trialCredits = pgTable(
     createdByIp: text("created_by_ip"),
     createdByEmail: text("created_by_email"),
     /**
-     * Canonical form of createdByEmail used by the per-email abuse
-     * check. Stored alongside the raw value so `SELECT count(*)`
-     * can use an index instead of a full-table scan + JS filter.
-     * See packages/billing/src/trial.ts:normalizeEmailForAbuseCheck.
+     * Canonical form of createdByEmail for the per-email abuse check,
+     * stored so the count can use an index instead of a full-table scan.
      */
     normalizedEmail: text("normalized_email"),
   },
@@ -175,20 +155,10 @@ export const trialCredits = pgTable(
 );
 
 /**
- * Rate Limit Entries table - Sliding window rate limiting (QUOTA-10)
- *
- * One row per (workspace, endpoint, minute bucket), with a counter.
- * Each request upserts the row and atomically increments `count`, so N
- * concurrent requests observe 1..N and exactly `limit` are admitted.
- *
- * An earlier version used ON CONFLICT DO NOTHING, which admitted
- * exactly ONE request per minute on every plan — the per-plan limit was
- * never consulted. See packages/billing/src/rate-limit.ts.
- *
- * Old buckets are deleted by the billing-maintenance cron.
- *
- * Database-backed rate limiting is the correct choice for <10K users
- * (no Redis dependency, per architecture decisions).
+ * One row per (workspace, endpoint, minute bucket). Each request upserts the
+ * row and atomically increments `count`, so N concurrent requests observe
+ * 1..N and exactly `limit` are admitted. Old buckets are deleted by the
+ * billing-maintenance job.
  */
 export const rateLimitEntries = pgTable(
   "rate_limit_entries",
@@ -219,15 +189,9 @@ export const rateLimitEntries = pgTable(
 );
 
 /**
- * Notification History table - Tracks sent notifications for deduplication
- *
- * Records each notification sent (quota warnings, trial alerts) with a
- * period-based deduplication key. The unique constraint on
- * (workspaceId, type, periodKey) prevents sending the same notification
- * twice in the same billing period.
- *
- * Phase 14 will update the channel from "console" to "email" and use
- * Resend for actual delivery. For now, notifications are logged to console.
+ * Sent quota and trial notifications. The unique constraint on
+ * (workspaceId, type, periodKey) keeps one notification from being sent
+ * twice in a billing period.
  */
 export const notificationHistory = pgTable(
   "notification_history",
@@ -239,7 +203,7 @@ export const notificationHistory = pgTable(
     type: text("type").notNull(), // "quota_warning_80", "quota_warning_100", "trial_warning_20", "trial_depleted"
     periodKey: text("period_key").notNull(), // "2026-02" for monthly, "trial" for one-time
     sentAt: timestamp("sent_at").notNull().defaultNow(),
-    channel: text("channel").notNull().default("console"), // "console" now, "email" in Phase 14
+    channel: text("channel").notNull().default("console"), // "console" | "email"
     metadata: text("metadata"), // JSON string for additional context
   },
   (table) => [
@@ -253,11 +217,9 @@ export const notificationHistory = pgTable(
 );
 
 /**
- * User Quotas table — per-user, per-action usage counters.
- *
- * One row per user (not per period — one-time payment model). Counters
- * live in the `usage` JSONB map and increment atomically in SQL, so a
- * quota check is O(1) with no SUM over usage_records.
+ * Per-user, per-action usage counters, one row per user and workspace (not
+ * per period). Counters live in the `usage` JSONB map and increment
+ * atomically in SQL, so a quota check is O(1).
  */
 export const userQuotas = pgTable(
   "user_quotas",
@@ -271,15 +233,9 @@ export const userQuotas = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     plan: text("plan").notNull().default("free"), // free | standard | pro
     /**
-     * Per-action counter map, keyed by the product's own action slugs
-     * (`usage["chat"] = 42`). This is the only counter storage.
-     *
-     * Three product-specific integer columns — chat_messages_used,
-     * assessments_used, reports_used — used to sit beside it, written
-     * by every product and read in preference to this map. Migration
-     * 0038 backfilled them into the map and dropped them: a public
-     * schema naming one vertical's actions meant no other vertical
-     * could add a counter without a migration to Intelligo.
+     * Per-action counters keyed by the product's own action slugs
+     * (`usage["chat"] = 42`), so a product adds a counter without a
+     * migration.
      */
     usage: jsonb("usage").notNull().default({}),
     totalCostUsd: real("total_cost_usd").notNull().default(0),
@@ -289,11 +245,8 @@ export const userQuotas = pgTable(
   (table) => [
     index("user_quotas_user_id_idx").on(table.userId),
     index("user_quotas_workspace_id_idx").on(table.workspaceId),
-    // One row per (user, workspace). `user_id` alone was UNIQUE, which
-    // gave someone in a paid workspace and a free one a single shared
-    // row: the last writer set `plan`, both read the other's limits,
-    // and the per-action counters summed everything they did anywhere
-    // (per workspace since 1.0).
+    // Unique per (user, workspace), not per user: a user in a paid and a
+    // free workspace must not share one plan and one set of counters.
     unique("user_quotas_user_workspace_unique").on(
       table.userId,
       table.workspaceId
@@ -301,7 +254,6 @@ export const userQuotas = pgTable(
   ]
 );
 
-// Export inferred types for TypeScript usage
 export type UserQuota = typeof userQuotas.$inferSelect;
 export type InsertUserQuota = typeof userQuotas.$inferInsert;
 export type UsageRecord = typeof usageRecords.$inferSelect;

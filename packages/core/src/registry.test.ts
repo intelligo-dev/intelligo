@@ -15,8 +15,8 @@ describe("createRegistry", () => {
     const a = createRegistry<number>(k);
     a.set("x", 1);
 
-    // The point of the whole file: a second caller — in production a
-    // second *copy of the module* — sees the first one's writes.
+    // A second caller — in production a second copy of the module — sees
+    // the first one's writes.
     expect(createRegistry<number>(k).get("x")).toBe(1);
     expect(createRegistry<number>(k)).toBe(a);
   });
@@ -114,9 +114,8 @@ describe("createRegistryRef", () => {
   });
 
   it("reads back the initial value it was created with", () => {
-    // Without this the ref could store nothing until someone calls
-    // `set`, and every reader before the composition root would see
-    // undefined — which is the "No billing product configured" bug.
+    // Without this every reader before the composition root would see
+    // undefined instead of the initial value.
     expect(createRegistryRef(key(), "initial").get()).toBe("initial");
   });
 

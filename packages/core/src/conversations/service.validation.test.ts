@@ -1,12 +1,7 @@
 /**
- * Validation-only unit tests for the conversations service.
- *
- * These exercise checks that run BEFORE any database call — `db` is a
- * lazily-initialized proxy (see ../db/client.ts) that throws only on
- * first actual query, so a test that never reaches the query can
- * safely import the real service without DATABASE_URL or mocking.
- * Everything past validation (ownership scoping, actual persistence)
- * is covered by service.integration.test.ts against a real database.
+ * Checks that run before any database call. `db` is a lazy proxy that throws
+ * only on its first query, so these import the real service without
+ * DATABASE_URL; persistence is covered by service.integration.test.ts.
  */
 
 import { describe, it, expect } from "vitest";

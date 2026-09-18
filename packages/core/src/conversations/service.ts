@@ -1,38 +1,14 @@
 /**
- * Conversation & Message Persistence Service — Server-only
+ * Server-only persistence for conversations, messages and votes.
  *
- * Persistence-only: conversation lifecycle (create, list, read,
- * rename, delete), message append/window reads, and vote state.
- * Ported from the product application's conversation server actions
- * and chat-route persistence helper — the tables
- * (`conversations`, `messages`, `votes`) always lived in
- * @intelligo-dev/core's schema, only the service layer sat in the product
- * application.
+ * Title generation, windowing and summarization, agent validation and model
+ * selection belong to the product; this module takes an already-resolved
+ * agentId and modelId.
  *
- * What did NOT come with it (stays product-side, native AI code):
- *   - LLM title generation (`generateTitleFromUserMessage` ran a
- *     Mastra agent inside an execution boundary — that's product
- *     logic over the execution boundary, not persistence).
- *   - Conversation windowing/summarization
- *     (applyConversationWindow, summarizeOldMessages) and the
- *     `conversationSummary` metadata write they produce.
- *   - The product's assessment-state read/write helpers — a
- *     product-specific shape living under `conversations.metadata`.
- *   - Agent id validation (the product's own agent slugs) and
- *     default model selection — product decides both; this module
- *     accepts an already-resolved agentId/modelId.
- *
- * Callers pass a resolved actor (workspaceId, userId) rather than this
- * module resolving one itself — @intelligo-dev/core cannot depend on
- * @intelligo-dev/auth (see tests/architecture/dependency-direction.test.ts).
- * Every query still filters by workspaceId AND userId internally
- * (conversations are USER-PRIVATE within a workspace); the actor is
- * never trusted to have done that itself.
- *
- * Failure is reported by throwing `ConversationServiceError` rather
- * than returning a `{ success, error }` envelope — see ./errors.ts.
- *
- * This module is SERVER-ONLY. Do not import from client components.
+ * Callers pass a resolved actor (workspaceId, userId); core cannot depend on
+ * `@intelligo-dev/auth`. Conversations are user-private within a workspace,
+ * so every query filters by both ids — the caller is never trusted to have
+ * done it. Failures throw `ConversationServiceError`.
  */
 
 import { and, asc, desc, eq, gt, inArray, lt, sql } from "drizzle-orm";
@@ -47,16 +23,11 @@ import type {
   Vote,
 } from "./types";
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
 /**
- * Verify conversation ownership (workspaceId + userId) and return the
- * row. Throws ConversationServiceError("not_found") otherwise — a
- * conversation owned by someone else in the same workspace is
- * indistinguishable from a conversation that doesn't exist, which is
- * the point: the id alone should never reveal existence across users.
+ * Returns the conversation if the actor owns it. Throws
+ * ConversationServiceError("not_found") otherwise — another user's
+ * conversation is indistinguishable from a missing one, so an id never
+ * reveals existence across users.
  */
 async function verifyConversation(
   actor: ConversationActor,
@@ -81,17 +52,9 @@ async function verifyConversation(
   return conversation;
 }
 
-// ---------------------------------------------------------------------------
-// Conversation lifecycle
-// ---------------------------------------------------------------------------
-
 /**
- * Create a new conversation.
- *
- * `agentId` and `modelId` are opaque to this module — the product
- * decides which agents exist and which model backs a new conversation
- * (see the module doc comment). `id` defaults to a fresh UUID when
- * omitted.
+ * Creates a conversation. `agentId` and `modelId` are opaque to this
+ * module; `id` defaults to a fresh UUID.
  */
 export async function createConversation(
   actor: ConversationActor,
@@ -257,10 +220,8 @@ export async function renameConversation(
 }
 
 /**
- * Merge a patch into the conversation's `metadata` bag. Shallow: each
- * top-level key in `patch` replaces the stored one, every other key
- * stays. A runtime's session cursor, a summary of pruned history, a
- * pin — anything the row should remember that is not a column.
+ * Shallow-merges a patch into the conversation's `metadata`: each top-level
+ * key in `patch` replaces the stored one, every other key stays.
  */
 export async function updateConversationMetadata(
   actor: ConversationActor,
@@ -382,10 +343,6 @@ export async function deleteAllConversations(
   return { deletedCount: deleted.length };
 }
 
-// ---------------------------------------------------------------------------
-// Messages
-// ---------------------------------------------------------------------------
-
 /** Get all messages for a conversation, ordered oldest-first. */
 export async function getMessages(
   actor: ConversationActor,
@@ -401,12 +358,9 @@ export async function getMessages(
 }
 
 /**
- * Save a batch of messages. Every message's `conversationId` must
- * belong to a conversation the actor owns — this is a directly
- * reachable persistence entry point (through a Server Action or
- * route), not a background job with its own scope check, so a
- * workspace-only guard here would let any member insert content into
- * a colleague's private conversation. Bumps `updatedAt` on the
+ * Saves a batch of messages. Every `conversationId` must belong to a
+ * conversation the actor owns — a workspace-only guard would let any member
+ * write into a colleague's private conversation. Bumps `updatedAt` on the
  * touched conversations.
  */
 export async function saveMessages(
@@ -461,21 +415,13 @@ export async function saveMessages(
 }
 
 /**
- * Upsert streamed messages after completion — transport-adjacent
- * batched upsert, ported from the chat route's post-stream
- * persistence step. No actor param: by the time a caller reaches this
- * (mid- or post-stream, inside an already-authorized request) the
- * conversation's ownership was already verified once (typically via
- * `getConversation`/`getMessages` at the top of the request); this
- * function's job is the idempotent write, not a second ownership
- * check per message.
+ * Idempotently upserts streamed messages. Takes no actor: the caller
+ * verified ownership once at the top of the already-authorized request.
  *
- * Uses a single multi-row `INSERT ... ON CONFLICT (id) DO UPDATE` so
- * an N-message tool loop pays one round-trip instead of 2N. The
- * `WHERE` clause on the DO UPDATE keeps the write scoped to
- * `conversationId` even if a message id collided across
- * conversations (defended against, not expected under normal id
- * generation).
+ * One multi-row `INSERT ... ON CONFLICT (id) DO UPDATE`, so an N-message
+ * tool loop pays one round-trip. The `WHERE` on the update keeps the write
+ * scoped to `conversationId` even if a message id collided across
+ * conversations.
  */
 export async function upsertMessages(
   conversationId: string,
@@ -578,10 +524,6 @@ export async function deleteTrailingMessages(
 
   return { deletedCount: deleted.length };
 }
-
-// ---------------------------------------------------------------------------
-// Votes
-// ---------------------------------------------------------------------------
 
 /** Vote on a message (upvote or downvote). */
 export async function voteMessage(

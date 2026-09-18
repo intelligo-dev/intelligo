@@ -1,13 +1,3 @@
-/**
- * Documents Module
- *
- * Document lifecycle: save, list, read, delete versions, plus
- * ownership and workspace/user access checks. See ./service.ts for
- * the full module doc comment.
- *
- * Use via subpath import: @intelligo-dev/core/documents
- */
-
 export {
   getUserDocuments,
   getDocument,

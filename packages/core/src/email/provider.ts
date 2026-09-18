@@ -1,16 +1,9 @@
 import { Resend } from "resend";
 
-// ---------------------------------------------------------------------------
-// Email Provider Abstraction
-// ---------------------------------------------------------------------------
-// The framework never hard-codes a single email service. Selection happens at
-// runtime via EMAIL_PROVIDER / API-key auto-detection. First-class providers:
-//   1. ResendProvider  – HTML-capable: sends the rendered React Email HTML
-//   2. LoopsProvider   – template-based: sends via Loops transactional API
-//                        using a per-template id mapping (Loops does not
-//                        accept raw HTML)
-//   3. ConsoleProvider – development fallback when no API keys are set
-// ---------------------------------------------------------------------------
+// The provider is chosen at runtime from EMAIL_PROVIDER or the API keys set:
+//   - ResendProvider sends the rendered React Email HTML.
+//   - LoopsProvider sends by template id (Loops accepts no raw HTML).
+//   - ConsoleProvider is the development fallback when no key is set.
 
 /**
  * Provider-neutral template descriptor attached to every framework email.
@@ -34,9 +27,6 @@ export interface EmailSendParams {
   template?: EmailTemplateRef;
 }
 
-/**
- * Common interface every email provider must implement.
- */
 export interface EmailProvider {
   send(params: EmailSendParams): Promise<{ id: string }>;
 }
@@ -47,10 +37,6 @@ function statusError(message: string, statusCode: number): Error {
   err.statusCode = statusCode;
   return err;
 }
-
-// ---------------------------------------------------------------------------
-// ResendProvider
-// ---------------------------------------------------------------------------
 
 export class ResendProvider implements EmailProvider {
   private client: Resend;
@@ -69,7 +55,6 @@ export class ResendProvider implements EmailProvider {
     });
 
     if (error) {
-      // Resend returns an error object rather than throwing
       const err = new Error(error.message) as Error & { statusCode?: number };
       // Resend error names map to HTTP status categories
       if (
@@ -85,9 +70,6 @@ export class ResendProvider implements EmailProvider {
   }
 }
 
-// ---------------------------------------------------------------------------
-// LoopsProvider
-// ---------------------------------------------------------------------------
 // Loops transactional emails are designed in the Loops dashboard and sent by
 // template id — the API accepts no raw HTML and exactly one recipient per
 // call. Template keys resolve to ids through (in order):
@@ -96,7 +78,6 @@ export class ResendProvider implements EmailProvider {
 //      e.g. "verify-email" → LOOPS_TRANSACTIONAL_ID_VERIFY_EMAIL)
 // `from`/`replyTo` are ignored — the sender is configured per template in
 // Loops itself.
-// ---------------------------------------------------------------------------
 
 const LOOPS_API_URL = "https://app.loops.so/api/v1/transactional";
 
@@ -141,8 +122,8 @@ export class LoopsProvider implements EmailProvider {
 
     const recipients = Array.isArray(params.to) ? params.to : [params.to];
 
-    // Loops accepts a single recipient per request — fan out sequentially so
-    // a failure surfaces with normal retry semantics in send.ts.
+    // Loops accepts one recipient per request. Sequential, so a failure
+    // surfaces with normal retry semantics in send.ts.
     for (const email of recipients) {
       const response = await fetch(LOOPS_API_URL, {
         method: "POST",
@@ -180,10 +161,6 @@ export class LoopsProvider implements EmailProvider {
   }
 }
 
-// ---------------------------------------------------------------------------
-// ConsoleProvider (development fallback)
-// ---------------------------------------------------------------------------
-
 export class ConsoleProvider implements EmailProvider {
   async send(params: EmailSendParams): Promise<{ id: string }> {
     const recipient = Array.isArray(params.to)
@@ -198,10 +175,6 @@ export class ConsoleProvider implements EmailProvider {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Factory – singleton provider instance
-// ---------------------------------------------------------------------------
-
 export type EmailProviderName = "resend" | "loops" | "console";
 
 let cachedProvider: EmailProvider | null = null;
@@ -212,7 +185,7 @@ export function resetEmailProviderCache(): void {
 }
 
 /**
- * Returns the email provider based on environment variables.
+ * The email provider for this environment, cached after the first call.
  *
  * Priority:
  *   1. EMAIL_PROVIDER env var → explicit selection (with API key validation)
@@ -221,9 +194,6 @@ export function resetEmailProviderCache(): void {
  *   3. LOOPS_API_KEY  → LoopsProvider (auto-detect; needs
  *      LOOPS_TRANSACTIONAL_ID_* mappings for the templates you use)
  *   4. (none)         → ConsoleProvider
- *
- * The provider instance is cached (singleton) so a new client is NOT created
- * on every call.
  */
 export function getEmailProvider(): EmailProvider {
   if (cachedProvider) {
@@ -243,7 +213,7 @@ export function getEmailProvider(): EmailProvider {
     );
   }
 
-  // Auto-detect from available API keys (backwards compatible)
+  // Auto-detect from the API keys set
   const resendKey = process.env.RESEND_API_KEY;
   if (resendKey) {
     console.log("[Email] Using Resend provider");

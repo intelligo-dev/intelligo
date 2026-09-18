@@ -2,17 +2,9 @@ import { render } from "@react-email/components";
 import type React from "react";
 import { getEmailProvider, type EmailTemplateRef } from "./provider";
 
-// ---------------------------------------------------------------------------
-// Send Email Utility
-// ---------------------------------------------------------------------------
-// Wraps the provider abstraction with:
-//   - Default `from` address from EMAIL_FROM env var
-//   - Retry logic: 3 attempts with exponential backoff (1s, 2s, 4s)
-//   - Error containment: NEVER throws – always returns a result object
-//     (TECH-08 graceful degradation)
-//   - Smart retry: only retries on 5xx / network errors, NOT on 4xx
-//   - React Email support: accepts { react } to render components to HTML
-// ---------------------------------------------------------------------------
+// Wraps the provider with a default `from` (EMAIL_FROM), React Email
+// rendering, and up to 3 attempts with exponential backoff (1s, 2s, 4s) on
+// 5xx, 429 and network errors. Never throws; returns a result object.
 
 export interface SendEmailParams {
   to: string | string[];
@@ -59,7 +51,6 @@ function isClientError(error: unknown): boolean {
   if (error && typeof error === "object") {
     const err = error as Record<string, unknown>;
 
-    // Check for explicit statusCode (set by ResendProvider / LoopsProvider).
     // 429 is excluded: rate limits are transient and worth retrying.
     if (typeof err.statusCode === "number") {
       return (
@@ -67,7 +58,6 @@ function isClientError(error: unknown): boolean {
       );
     }
 
-    // Check for status property (some HTTP libraries)
     if (typeof err.status === "number") {
       return err.status >= 400 && err.status < 500 && err.status !== 429;
     }
@@ -91,15 +81,9 @@ function delay(ms: number): Promise<void> {
 }
 
 /**
- * Send an email through the configured provider with retry logic.
- *
- * Accepts either raw HTML via `{ html }` or a React Email component via
- * `{ react }`. When a React element is provided, it is rendered to HTML
- * using `@react-email/components`'s `render()` before sending.
- *
- * This function NEVER throws. All errors are caught and returned as
- * `{ success: false, error: "..." }`. This prevents email failures
- * from crashing the application (TECH-08).
+ * Sends an email through the configured provider, retrying transient
+ * failures. Takes raw HTML via `{ html }` or a React Email element via
+ * `{ react }`. Never throws: failures return `{ success: false, error }`.
  */
 export async function sendEmail(
   params: SendEmailParams | SendEmailWithComponentParams
@@ -115,7 +99,6 @@ export async function sendEmail(
       ? params.to.join(", ")
       : params.to;
 
-    // Resolve HTML content: either use provided html or render React component
     let html: string;
     if ("react" in params) {
       try {
@@ -150,7 +133,6 @@ export async function sendEmail(
         lastError = error;
         const message = error instanceof Error ? error.message : String(error);
 
-        // Do NOT retry client errors (4xx) – they will always fail
         if (isClientError(error)) {
           console.error(
             `[Email] Send failed for ${recipient} (client error, not retrying): ${message}`
@@ -162,14 +144,12 @@ export async function sendEmail(
           `[Email] Send attempt ${attempt}/${MAX_ATTEMPTS} failed for ${recipient}: ${message}`
         );
 
-        // Wait before next attempt (exponential backoff: 1s, 2s, 4s)
         if (attempt < MAX_ATTEMPTS) {
           await delay(BASE_DELAY_MS * Math.pow(2, attempt - 1));
         }
       }
     }
 
-    // All attempts exhausted
     const finalMessage =
       lastError instanceof Error ? lastError.message : String(lastError);
     console.error(

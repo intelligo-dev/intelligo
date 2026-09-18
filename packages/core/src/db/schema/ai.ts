@@ -1,10 +1,6 @@
 /**
- * AI Database Schema
- *
- * Tables for AI conversations, messages, attachments, votes and documents
- * (artifact versions) — the chat persistence every product shares.
- *
- * Pattern: snake_case columns in PostgreSQL, camelCase TypeScript API (via Drizzle mapping)
+ * Chat persistence every product shares: conversations, messages,
+ * attachments, votes and documents (artifact versions).
  */
 
 import {
@@ -21,23 +17,16 @@ import {
 import { organization, users } from "./auth";
 
 /**
- * Generic conversation metadata bag.
- *
- * A product that needs to attach typed state to a conversation
- * puts it under `productContext` and owns the shape in its own
- * package.
+ * A product that attaches typed state to a conversation puts it under
+ * `productContext` and owns the shape.
  */
 export type ConversationMetadata = {
-  conversationSummary?: string; // LLM-generated summary of pruned messages (WIND-02)
+  conversationSummary?: string; // LLM-generated summary of pruned messages
   productContext?: Record<string, unknown>;
-  // Extensible for other products
   [key: string]: unknown;
 };
 
-/**
- * Conversations table - Chat sessions per workspace/user
- * Each conversation tracks a single chat session with a specific agent
- */
+/** One chat session between a user and an agent, within a workspace. */
 export const conversations = pgTable(
   "conversations",
   {
@@ -49,10 +38,10 @@ export const conversations = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     agentId: text("agent_id").notNull(), // the product's agent slug
-    title: text("title"), // Nullable, auto-generated from first message in Phase 19
+    title: text("title"), // Nullable until the product sets one
     modelId: text("model_id"), // e.g., "openai/gpt-4o"
     visibility: text("visibility").notNull().default("private"), // "private" | "public"
-    metadata: jsonb("metadata"), // Assessment state and product-specific metadata
+    metadata: jsonb("metadata"), // ConversationMetadata
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -70,10 +59,6 @@ export const conversations = pgTable(
   ]
 );
 
-/**
- * Messages table - Individual messages within conversations
- * Stores user and assistant messages with tool invocations
- */
 export const messages = pgTable(
   "messages",
   {
@@ -82,7 +67,7 @@ export const messages = pgTable(
       .notNull()
       .references(() => conversations.id, { onDelete: "cascade" }),
     role: text("role").notNull(), // "user" | "assistant" | "system" | "tool"
-    content: text("content"), // Backward compat - nullable now
+    content: text("content"), // Nullable; `parts` holds the message
     parts: text("parts").notNull(), // JSON array of AI SDK UIMessagePart objects
     attachments: text("attachments"), // JSON array of file attachment metadata
     toolInvocations: text("tool_invocations"), // JSON string of tool calls/results (AI SDK format)
@@ -99,8 +84,8 @@ export const messages = pgTable(
 );
 
 /**
- * Attachments table - Files a user put into a conversation
- * The object lives behind the storage port under `storage_key`; the
+ * Files a user put into a conversation. The object lives behind the
+ * storage port under `storage_key`; the
  * row is what makes a URL safe to hand out (tenancy, type, size).
  * `conversation_id` is set once the turn that carried the file is
  * persisted; a row that never gets one is an orphan to sweep.
@@ -132,10 +117,7 @@ export const attachments = pgTable(
   ]
 );
 
-/**
- * Votes table - Message upvote/downvote tracking
- * Composite primary key on chatId + messageId for one vote per message
- */
+/** One vote per message (composite key on chat and message). */
 export const votes = pgTable(
   "votes",
   {
@@ -154,9 +136,8 @@ export const votes = pgTable(
 );
 
 /**
- * Documents table - Artifact version history
- * Composite primary key on id + createdAt for version tracking
- * Used for AI-generated documents (code, text, sheets) with revision history
+ * AI-generated documents with version history: each save is a new row,
+ * keyed on id + createdAt.
  */
 export const documents = pgTable(
   "documents",
@@ -181,7 +162,6 @@ export const documents = pgTable(
   ]
 );
 
-// Export inferred types for TypeScript usage
 export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = typeof conversations.$inferInsert;
 export type Message = typeof messages.$inferSelect;

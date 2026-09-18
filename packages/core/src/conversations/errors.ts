@@ -1,12 +1,6 @@
 /**
- * Conversation service error type.
- *
- * Mirrors `./documents/errors.ts` and `@intelligo-dev/auth`'s
- * `WorkspaceServiceError` exactly: the conversations service
- * (./service.ts) throws this for every failure it recognizes rather
- * than returning an ad-hoc `{ success, error }` envelope. Shaping to a
- * transport-facing envelope (plus Sentry/logging/revalidatePath) is
- * the caller's job, one layer up.
+ * Thrown by the conversations service for every failure it recognizes.
+ * Shaping it into a transport envelope is the caller's job.
  */
 
 /**
@@ -25,9 +19,8 @@ export type ConversationServiceErrorCode =
 
 export class ConversationServiceError extends Error {
   readonly code: ConversationServiceErrorCode;
-  // ES2020 target predates the standard `Error.cause` field; declared
-  // explicitly so `err.cause` type-checks for callers (the assignment
-  // below still happens, this only adds the declaration).
+  // The ES2020 target predates `Error.cause`; declared so `err.cause`
+  // type-checks for callers.
   readonly cause?: unknown;
 
   constructor(

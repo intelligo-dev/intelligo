@@ -1,12 +1,3 @@
-/**
- * Agents Database Schema
- *
- * Table for AI agent configuration stored in database instead of TypeScript files.
- * Enables dynamic agent management without code deployment.
- *
- * Pattern: snake_case columns in PostgreSQL, camelCase TypeScript API (via Drizzle mapping)
- */
-
 import {
   pgTable,
   text,
@@ -17,46 +8,33 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * Localized text, keyed by locale tag: `{ en: "…", de: "…" }`.
- *
- * Open by construction. It was a closed `{ en, mn }` pair, which made
- * a framework table require one product's second language on every
- * agent name, description and prompt — and left a third language no
- * way in that was not a schema change.
+ * Localized text, keyed by locale tag: `{ en: "…", de: "…" }`. Open, so
+ * adding a language is not a schema change.
  */
 export type LocalizedText = Record<string, string>;
 
-/**
- * Suggestion type for agent quick-start prompts on the dashboard
- */
+/** A quick-start prompt shown for an agent. */
 export type AgentSuggestion = {
   id: string;
   label: LocalizedText;
   prompt: LocalizedText;
 };
 
-/**
- * Forward-compatible per-agent model routing config. Today we only use
- * `primary`; later phases will layer task-aware selection (cheap vs
- * deep) and fallbacks here without another schema change.
- */
+/** Per-agent model routing. Only `primary` is read. */
 export type AgentModelConfig = {
   primary: string;
   fallback?: string;
   routing?: Record<string, string>;
 };
 
-/**
- * Agents table - AI agent configuration per product
- * Each agent represents a product with its own system prompt, tools, and model config
- */
+/** AI agent configuration: system prompt, tools and model per agent. */
 export const agents = pgTable("agents", {
   id: text("id").primaryKey(), // Slug, e.g. "support-assistant"
   name: jsonb("name").notNull().$type<LocalizedText>(), // { en: "Support Assistant", … }
   description: jsonb("description").notNull().$type<LocalizedText>(), // { en: "…", … }
-  systemPromptKey: text("system_prompt_key").notNull(), // Legacy translation namespace key — kept for backfill, no longer read at runtime (see systemPrompt below).
-  systemPrompt: jsonb("system_prompt").$type<LocalizedText | null>(), // Localized prompt text. Source of truth for agent instructions.
-  modelConfig: jsonb("model_config").$type<AgentModelConfig | null>(), // Phase C: forward-compatible routing config; today only `primary` is read.
+  systemPromptKey: text("system_prompt_key").notNull(), // Translation namespace key; not read at runtime (systemPrompt is).
+  systemPrompt: jsonb("system_prompt").$type<LocalizedText | null>(), // Source of truth for agent instructions.
+  modelConfig: jsonb("model_config").$type<AgentModelConfig | null>(), // Only `primary` is read.
   icon: text("icon").notNull(), // Icon identifier (e.g., "briefcase", "map-pin")
   defaultModel: text("default_model").notNull(), // AI model ID (e.g., "openai/gpt-4o") — fallback when modelConfig is null.
   maxSteps: integer("max_steps").notNull(), // ToolLoopAgent max iterations
@@ -75,6 +53,5 @@ export const agents = pgTable("agents", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Export inferred types for TypeScript usage
 export type Agent = typeof agents.$inferSelect;
 export type InsertAgent = typeof agents.$inferInsert;

@@ -1,12 +1,7 @@
 /**
- * Conversations service integration tests — real Postgres.
- *
- * Runs only when DATABASE_URL is set (mirrors
- * packages/auth/src/workspace/service.integration.test.ts and
- * packages/core/src/db/__tests__/audit-trigger.int.test.ts). @intelligo-dev/core
- * has no dependency on @intelligo-dev/auth (see
- * tests/architecture/dependency-direction.test.ts), so fixtures are
- * inserted with a raw `pg` client rather than Better-Auth's sign-up API.
+ * Against a real Postgres; runs only when DATABASE_URL is set. Core does not
+ * depend on @intelligo-dev/auth, so fixtures are inserted with a raw `pg`
+ * client.
  *
  * Run:
  *   DATABASE_URL=postgres://intelligo:intelligo@localhost:5432/intelligo \

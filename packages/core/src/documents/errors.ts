@@ -1,14 +1,6 @@
 /**
- * Document service error type.
- *
- * Mirrors `@intelligo-dev/auth`'s `WorkspaceServiceError` exactly (see that
- * file's doc comment for the full rationale): the documents service
- * (./service.ts) throws this for every failure it recognizes rather
- * than returning an ad-hoc `{ success, error }` envelope — that
- * shaping is a transport concern (a Server Action, a route handler)
- * and belongs one layer up, alongside revalidatePath/Sentry/i18n, none
- * of which this package may depend on (core's dependency allowlist is
- * empty — see tests/architecture/dependency-direction.test.ts).
+ * Thrown by the documents service for every failure it recognizes. Shaping
+ * it into a transport envelope is the caller's job.
  */
 
 /**
@@ -26,9 +18,8 @@ export type DocumentServiceErrorCode =
 
 export class DocumentServiceError extends Error {
   readonly code: DocumentServiceErrorCode;
-  // ES2020 target predates the standard `Error.cause` field; declared
-  // explicitly so `err.cause` type-checks for callers (the assignment
-  // below still happens, this only adds the declaration).
+  // The ES2020 target predates `Error.cause`; declared so `err.cause`
+  // type-checks for callers.
   readonly cause?: unknown;
 
   constructor(

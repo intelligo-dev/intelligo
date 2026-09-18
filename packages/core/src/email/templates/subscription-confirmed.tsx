@@ -2,12 +2,6 @@ import { Button, Text } from "@react-email/components";
 import * as React from "react";
 import { BaseLayout } from "./base-layout";
 
-// ---------------------------------------------------------------------------
-// Subscription Confirmed Template (EMAIL-12)
-// ---------------------------------------------------------------------------
-// Sent when a workspace successfully subscribes to a paid plan.
-// ---------------------------------------------------------------------------
-
 export interface SubscriptionConfirmedEmailProps {
   workspaceName: string;
   planName: string;
@@ -51,10 +45,6 @@ export function SubscriptionConfirmedEmail({
     </BaseLayout>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Inline Styles
-// ---------------------------------------------------------------------------
 
 const headingStyle: React.CSSProperties = {
   color: "#18181b",

@@ -1,20 +1,6 @@
 /**
- * Notification Trigger Functions
- *
- * These functions create BOTH in-app notifications (via createNotification)
- * AND send emails (via email senders). They are the integration points that
- * connect application events to the notification + email infrastructure.
- *
- * Design:
- * - In-app notifications are awaited (fast DB inserts)
- * - Email sends are fire-and-forget (non-blocking, errors logged)
- * - These do NOT handle deduplication -- that's handled by notification_history
- *   table from Phase 12's checkNotificationTriggers()
- *
- * Usage:
- * - Quota/trial triggers are called by Phase 12 notification system
- * - Payment failed trigger is called by billing email triggers
- * - Team member joined trigger is called by server actions
+ * Each trigger creates an in-app notification (awaited) and sends an email
+ * (fire-and-forget, errors logged). Deduplication is the caller's job.
  */
 
 import { createNotification } from "./index";
@@ -24,14 +10,6 @@ import {
   sendPaymentFailedEmail,
 } from "../email/senders";
 
-// ---------------------------------------------------------------------------
-// Quota Notifications (QUOTA-08, QUOTA-09)
-// ---------------------------------------------------------------------------
-
-/**
- * Trigger a quota warning or exceeded notification.
- * Creates an in-app notification and sends an email.
- */
 export async function triggerQuotaNotification(params: {
   userId: string;
   userEmail: string;
@@ -44,7 +22,6 @@ export async function triggerQuotaNotification(params: {
 }): Promise<void> {
   const upgradeUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/billing`;
 
-  // Create in-app notification (awaited -- fast DB insert)
   await createNotification({
     userId: params.userId,
     workspaceId: params.workspaceId,
@@ -61,7 +38,6 @@ export async function triggerQuotaNotification(params: {
     },
   });
 
-  // Send email (fire-and-forget -- non-blocking)
   sendQuotaWarningEmail({
     to: params.userEmail,
     workspaceName: params.workspaceName,
@@ -75,14 +51,6 @@ export async function triggerQuotaNotification(params: {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Trial Notifications (TRIAL-04, TRIAL-05)
-// ---------------------------------------------------------------------------
-
-/**
- * Trigger a trial credits warning or depleted notification.
- * Creates an in-app notification and sends an email.
- */
 export async function triggerTrialNotification(params: {
   userId: string;
   userEmail: string;
@@ -95,7 +63,6 @@ export async function triggerTrialNotification(params: {
 }): Promise<void> {
   const upgradeUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/billing`;
 
-  // Create in-app notification (awaited -- fast DB insert)
   await createNotification({
     userId: params.userId,
     workspaceId: params.workspaceId,
@@ -114,7 +81,6 @@ export async function triggerTrialNotification(params: {
     },
   });
 
-  // Send email (fire-and-forget -- non-blocking)
   sendTrialWarningEmail({
     to: params.userEmail,
     workspaceName: params.workspaceName,
@@ -128,14 +94,6 @@ export async function triggerTrialNotification(params: {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Payment Failed Notification
-// ---------------------------------------------------------------------------
-
-/**
- * Trigger a payment failed notification.
- * Creates an in-app notification and sends an email.
- */
 export async function triggerPaymentFailedNotification(params: {
   userId: string;
   userEmail: string;
@@ -145,7 +103,6 @@ export async function triggerPaymentFailedNotification(params: {
 }): Promise<void> {
   const updatePaymentUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/billing`;
 
-  // Create in-app notification (awaited -- fast DB insert)
   await createNotification({
     userId: params.userId,
     workspaceId: params.workspaceId,
@@ -158,7 +115,6 @@ export async function triggerPaymentFailedNotification(params: {
     },
   });
 
-  // Send email (fire-and-forget -- non-blocking)
   sendPaymentFailedEmail({
     to: params.userEmail,
     workspaceName: params.workspaceName,
@@ -169,21 +125,13 @@ export async function triggerPaymentFailedNotification(params: {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Team Member Joined Notification
-// ---------------------------------------------------------------------------
-
-/**
- * Trigger a team member joined notification.
- * Creates an in-app notification ONLY (no email for this event).
- */
+/** In-app only: this event sends no email. */
 export async function triggerTeamMemberJoinedNotification(params: {
   userId: string;
   workspaceId: string;
   memberName: string;
   memberEmail: string;
 }): Promise<void> {
-  // Create in-app notification only (no email for team member joined events)
   await createNotification({
     userId: params.userId,
     workspaceId: params.workspaceId,

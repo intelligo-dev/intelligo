@@ -1,13 +1,3 @@
-/**
- * Notification Type Definitions (NOTIF-07)
- *
- * Types covering all notification events:
- * - Quota/usage warnings (80%, 100%)
- * - Trial credit alerts (20% remaining, depleted)
- * - Payment events (failed, confirmed)
- * - Team events (member joined, invitation)
- */
-
 export type NotificationType =
   | "quota_warning_80"
   | "quota_warning_100"

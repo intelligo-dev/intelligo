@@ -1,8 +1,5 @@
 /**
- * Attachments service integration tests — real Postgres.
- *
- * Runs only when DATABASE_URL is set (mirrors
- * packages/core/src/documents/service.integration.test.ts).
+ * Against a real Postgres; runs only when DATABASE_URL is set.
  *
  * Run:
  *   DATABASE_URL=postgres://intelligo:intelligo@localhost:5432/intelligo \

@@ -1,19 +1,9 @@
 /**
- * Integration test for the user_memory_audit append-only trigger.
- *
- * Runs only when TEST_PG_URL is set so CI (which doesn't provision a
- * Postgres) skips cleanly. Point it at the local docker-compose
- * Postgres to run it against a real DB:
+ * The user_memory_audit append-only guard is a Postgres trigger, which no
+ * mocked test can observe. Runs only when TEST_PG_URL is set:
  *
  *   TEST_PG_URL=postgres://postgres:postgres@localhost:5445/intelligo \
  *     pnpm vitest run packages/core/src/db/__tests__/audit-trigger.int.test.ts
- *
- * Why an integration test here: the append-only guard is enforced by
- * a Postgres trigger (in the baseline migration), not by
- * application code — a drizzle-mock-based test can't observe the
- * trigger at all. A future PR could silently drop the trigger in a
- * migration and every unit test would still pass; this test is the
- * only regression tripwire.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
@@ -31,11 +21,8 @@ d("user_memory_audit append-only trigger", () => {
   beforeAll(async () => {
     await client.connect();
 
-    // Create our own user and workspace rather than borrowing whatever
-    // the database happens to contain. The previous version required a
-    // seeded database and therefore failed against the empty, freshly
-    // migrated one CI runs it on — a test that depends on ambient data
-    // is a test that only runs somewhere.
+    // Own fixtures, so the test runs against an empty, freshly migrated
+    // database.
     const suffix = Date.now();
     userId = `audit-it-user-${suffix}`;
     workspaceId = `audit-it-ws-${suffix}`;

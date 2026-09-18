@@ -1,16 +1,7 @@
 /**
- * Identity service integration tests — real Postgres.
- *
- * Runs only when DATABASE_URL is set (mirrors
- * ../documents/service.integration.test.ts and
- * ../conversations/service.integration.test.ts). @intelligo-dev/core has
- * no dependency on @intelligo-dev/auth (see
- * tests/architecture/dependency-direction.test.ts), so fixtures are
- * inserted with a raw `pg` client rather than Better-Auth's sign-up
- * API. The service has no fact-creation entry point of its own (facts
- * are written by the extraction/synthesis path, which stays
- * agents-side per the module doc comment), so fact fixtures are seeded
- * directly too.
+ * Against a real Postgres; runs only when DATABASE_URL is set. Core does not
+ * depend on @intelligo-dev/auth, and the service has no fact-creation entry
+ * point, so users, workspaces and facts are inserted with a raw `pg` client.
  *
  * Run:
  *   DATABASE_URL=postgres://intelligo:intelligo@localhost:5432/intelligo \

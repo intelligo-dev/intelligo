@@ -11,23 +11,15 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 
-// ---------------------------------------------------------------------------
-// Base Email Layout — Intelligo Branding
-// ---------------------------------------------------------------------------
-// All email templates wrap their content in this layout for consistent
-// branding: violet header, white content area, muted footer.
-//
-// Uses inline styles exclusively — email clients do not reliably support
-// CSS classes. Colors are explicit values (not CSS variables) so they work
-// in both light and dark email clients.
-// ---------------------------------------------------------------------------
+// Inline styles only: email clients do not reliably support CSS classes.
+// Colors are literal values, not CSS variables, so they survive dark-mode
+// email clients.
 
 export interface BaseLayoutProps {
   preview: string;
   children: React.ReactNode;
 }
 
-// Color palette
 const colors = {
   background: "#f4f4f5", // zinc-100
   container: "#ffffff",
@@ -46,19 +38,16 @@ export function BaseLayout({ preview, children }: BaseLayoutProps) {
       <Preview>{preview}</Preview>
       <Body style={bodyStyle}>
         <Container style={containerStyle}>
-          {/* Header */}
           <Section style={headerStyle}>
             <Text style={logoStyle}>Intelligo</Text>
           </Section>
 
           <Hr style={hrStyle} />
 
-          {/* Content */}
           <Section style={contentStyle}>{children}</Section>
 
           <Hr style={hrStyle} />
 
-          {/* Footer */}
           <Section style={footerStyle}>
             <Text style={footerTextStyle}>Intelligo AI Platform</Text>
             <Text style={footerMutedStyle}>
@@ -75,10 +64,6 @@ export function BaseLayout({ preview, children }: BaseLayoutProps) {
     </Html>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Inline Styles
-// ---------------------------------------------------------------------------
 
 const bodyStyle: React.CSSProperties = {
   backgroundColor: colors.background,

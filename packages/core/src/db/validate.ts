@@ -1,9 +1,3 @@
-/**
- * Database Connection Validation
- *
- * Validates that the database is connected and tables exist before allowing the app to start.
- */
-
 import { db } from "./client";
 import { sql } from "drizzle-orm";
 
@@ -13,15 +7,11 @@ export interface DatabaseValidationResult {
   error?: string;
 }
 
-/**
- * Check if database connection is valid and tables exist
- */
+/** Checks that the database answers and the four auth tables exist. */
 export async function validateDatabaseConnection(): Promise<DatabaseValidationResult> {
   try {
-    // Test database connection
     await db.execute(sql`SELECT 1`);
 
-    // Check if auth tables exist
     const result = await db.execute(sql`
       SELECT COUNT(*) as table_count
       FROM information_schema.tables
@@ -48,9 +38,7 @@ export async function validateDatabaseConnection(): Promise<DatabaseValidationRe
   }
 }
 
-/**
- * Validate database or throw error (for startup validation)
- */
+/** Startup check: throws with setup instructions when validation fails. */
 export async function requireDatabaseConnection(): Promise<void> {
   const result = await validateDatabaseConnection();
 

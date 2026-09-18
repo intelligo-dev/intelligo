@@ -99,8 +99,7 @@ describe("arithmetic", () => {
   });
 
   it("refuses to mix currencies", () => {
-    // This is the whole point of carrying the currency: the credit pack
-    // that granted 100,000 of one unit for $1.01 of another type-checked.
+    // The point of carrying the currency: two units are never summed.
     const usd = fromMajor(1.01, "USD");
     const mnt = fromMajor(100_000, "MNT");
     expect(() => add(usd, mnt)).toThrow(/Cannot add USD and MNT/);
@@ -228,9 +227,8 @@ function thrown(run: () => unknown): MoneyError {
 }
 
 describe("the errors themselves", () => {
-  // A framework's error is an API: a caller branches on `code`, and a
-  // developer at 2am reads `message`. Both are pinned here, because
-  // both are what a misuse of this module actually looks like.
+  // A caller branches on `code` and a developer reads `message`, so both
+  // are pinned.
 
   it("carries one catchable name", () => {
     expect(thrown(() => currency("nope")).name).toBe("MoneyError");

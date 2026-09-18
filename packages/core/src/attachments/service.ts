@@ -1,19 +1,12 @@
 /**
- * Attachment rows — the file a user put into a conversation.
+ * Server-only rows for the files users put into conversations. The bytes
+ * live behind the storage port; this table records who uploaded a file,
+ * its workspace, type, size and, once the turn is persisted, conversation.
  *
- * The bytes live behind the storage port (`../storage`); this table is
- * what makes a URL safe to hand out: who uploaded it, which workspace
- * it belongs to, what it is, how big it is, and — once the turn that
- * carried it is persisted — which conversation it belongs to.
- *
- * Every read and write is scoped to the workspace *and* the uploader.
- * Conversations are user-private, so an attachment is too:
- * the ids reach this module from the request body, and a workspace-only
- * scope let any member trade a colleague's attachment id for a signed
- * URL to their private upload. `deleteAttachment` always filtered both;
- * the reads now agree with it.
- *
- * SERVER-ONLY.
+ * Every read and write is scoped to the workspace and the uploader: the ids
+ * arrive in the request body, and conversations are user-private, so a
+ * workspace-only scope would let a member trade a colleague's attachment id
+ * for a signed URL to it.
  */
 
 import { and, eq, inArray, isNull, lt } from "drizzle-orm";

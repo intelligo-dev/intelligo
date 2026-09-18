@@ -2,12 +2,6 @@ import { Button, Text } from "@react-email/components";
 import * as React from "react";
 import { BaseLayout } from "./base-layout";
 
-// ---------------------------------------------------------------------------
-// Payment Failed Template (EMAIL-11)
-// ---------------------------------------------------------------------------
-// Sent when Stripe payment fails for a workspace subscription.
-// ---------------------------------------------------------------------------
-
 export interface PaymentFailedEmailProps {
   workspaceName: string;
   amount: string;
@@ -44,10 +38,6 @@ export function PaymentFailedEmail({
     </BaseLayout>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Inline Styles
-// ---------------------------------------------------------------------------
 
 const headingStyle: React.CSSProperties = {
   color: "#18181b",

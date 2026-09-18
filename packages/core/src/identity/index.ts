@@ -1,14 +1,6 @@
 /**
- * Identity Module
- *
- * Privacy-facing reads and mutations over the user identity graph:
- * fact listing/deletion, full-identity export, and the memory-audit
- * trail. See ./service.ts for the full module doc comment, including
- * what stayed agents-side (profile re-synthesis) and why the
- * memory-audit writer lives in this module rather than in
- * `@intelligo-dev/audit`.
- *
- * Use via subpath import: @intelligo-dev/core/identity
+ * Privacy-facing reads and mutations over the user identity graph: fact
+ * listing and deletion, full-identity export, and the memory-audit trail.
  */
 
 export {

@@ -1,10 +1,6 @@
 /**
- * Better-Auth Database Schema
- *
- * These tables are managed by Better-Auth. Column names and structure must
- * match Better-Auth's expectations for the Drizzle adapter to work correctly.
- *
- * DO NOT modify table or column names without consulting Better-Auth docs.
+ * Better-Auth's tables. Table and column names must match what its Drizzle
+ * adapter expects.
  */
 
 import { sql } from "drizzle-orm";
@@ -17,10 +13,6 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-/**
- * Users table - Core user identity
- * Managed by Better-Auth
- */
 export const users = pgTable(
   "users",
   {
@@ -32,25 +24,18 @@ export const users = pgTable(
     deletedAt: timestamp("deleted_at"), // Soft delete: null = active, timestamp = deleted
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
-    // Onboarding state (Phase 29, v0.5)
     onboardingCompleted: boolean("onboarding_completed")
       .notNull()
       .default(false),
     onboardingStep: text("onboarding_step"), // Current step if incomplete: "workspace" | "language" | "product"
-    // Language preference (Phase 29, v0.5)
     preferredLanguage: text("preferred_language").notNull().default("en"), // a locale the app ships, e.g. "en"
     /**
-     * Platform role, NOT a workspace role — "platform-admin" or null.
-     * Workspace membership roles live on `member.role`; this one grants
-     * the operational console and is what Better-Auth's admin plugin
-     * checks before allowing impersonation.
-     *
-     * PLATFORM_ADMIN_EMAILS remains the bootstrap: requirePlatformAdmin
-     * promotes an allowlisted user into this column on first use, so the
-     * env var seeds the first admin and the row is the runtime truth.
+     * Platform role, not a workspace role — "platform-admin" or null. Grants
+     * the operational console and impersonation. PLATFORM_ADMIN_EMAILS seeds
+     * it: requirePlatformAdmin promotes an allowlisted user on first use.
      */
     role: text("role"),
-    /** Better-Auth admin plugin. Unused by the product; the plugin's schema expects them. */
+    /** Required by Better-Auth's admin plugin schema; unused otherwise. */
     banned: boolean("banned").notNull().default(false),
     banReason: text("ban_reason"),
     banExpires: timestamp("ban_expires"),
@@ -63,10 +48,6 @@ export const users = pgTable(
   ]
 );
 
-/**
- * Sessions table - Active login sessions
- * Managed by Better-Auth
- */
 export const sessions = pgTable(
   "sessions",
   {
@@ -79,17 +60,14 @@ export const sessions = pgTable(
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     /**
-     * Set on a session created by an admin acting as this user. Its
-     * presence is what makes impersonation visible after the fact —
-     * both in the audit trail and on the session itself.
+     * Set on a session created by an admin acting as this user, so
+     * impersonation stays visible on the session and in the audit trail.
      */
     impersonatedBy: text("impersonated_by"),
     /**
-     * Better-Auth's organization plugin stores the session's active
-     * organization here. Without this column the plugin's set-active
-     * writes are silently dropped, so workspace switching never
-     * persists and every "active workspace" read falls back to the
-     * user's first membership.
+     * The organization plugin's active workspace. Without this column its
+     * set-active writes are silently dropped and workspace switching never
+     * persists.
      */
     activeOrganizationId: text("active_organization_id"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -98,10 +76,7 @@ export const sessions = pgTable(
   (table) => [index("sessions_user_id_idx").on(table.userId)]
 );
 
-/**
- * Accounts table - OAuth provider connections + password storage
- * Managed by Better-Auth
- */
+/** OAuth provider connections and password credentials. */
 export const accounts = pgTable(
   "accounts",
   {
@@ -124,10 +99,7 @@ export const accounts = pgTable(
   (table) => [index("accounts_user_id_idx").on(table.userId)]
 );
 
-/**
- * Verifications table - Email verification tokens and password reset tokens
- * Managed by Better-Auth
- */
+/** Email verification and password reset tokens. */
 export const verifications = pgTable("verifications", {
   id: text("id").primaryKey(),
   identifier: text("identifier").notNull(),
@@ -137,10 +109,7 @@ export const verifications = pgTable("verifications", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-/**
- * Organization table - Workspaces for multi-tenancy
- * Managed by Better-Auth organization plugin (Phase 10)
- */
+/** Workspaces, managed by Better-Auth's organization plugin. */
 export const organization = pgTable("organization", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -151,10 +120,6 @@ export const organization = pgTable("organization", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-/**
- * Member table - Organization/Workspace memberships
- * Managed by Better-Auth organization plugin (Phase 10)
- */
 export const member = pgTable(
   "member",
   {
@@ -179,10 +144,6 @@ export const member = pgTable(
   ]
 );
 
-/**
- * Invitation table - Pending workspace invitations
- * Managed by Better-Auth organization plugin (Phase 10)
- */
 export const invitation = pgTable(
   "invitation",
   {
@@ -206,7 +167,6 @@ export const invitation = pgTable(
   ]
 );
 
-// Export inferred types for TypeScript usage
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Session = typeof sessions.$inferSelect;

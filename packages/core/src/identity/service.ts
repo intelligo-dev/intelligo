@@ -1,45 +1,13 @@
 /**
- * Identity Service — Server-only
+ * Server-only reads and mutations over the user identity graph: fact
+ * listing and deletion, a full data export, and the memory-audit trail.
  *
- * Privacy-facing reads and mutations over the user identity graph:
- * fact listing/deletion, a full-identity data export, and the
- * memory-audit trail that records every mutation to a user's facts,
- * memories, and synthesized profile snapshot. Ported from the first
- * product's `actions/identity.ts` (see `../documents/service.ts` and
- * `../conversations/service.ts` for the same move): the tables
- * (`user_facts`, `user_memories`,
- * `user_profile_snapshots`, `user_memory_audit`) always lived in
- * `@intelligo-dev/core`'s schema (`../db/schema/identity.ts`, documented
- * there as "a platform-level memory primitive — separate from any
- * single product"); only the service layer sat in the product
- * application.
+ * `deleteFact` does not touch the cached profile snapshot; profile synthesis
+ * is the product's AI code, so a caller that owns it re-triggers it.
  *
- * What did NOT come with it (stays product/agents-side):
- *   - `updateMyFactImportance` and the `synthesizeProfile()` re-trigger
- *     the product's `deleteMyFact` ran after deleting — synthesis is
- *     the product's AI code, and this package cannot depend
- *     on it. `deleteFact` below does not touch the cached snapshot; a
- *     caller that also owns a synthesis engine re-triggers it after
- *     calling this.
- *
- * Callers pass a resolved actor (workspaceId, userId) rather than this
- * module resolving one itself — `@intelligo-dev/core` cannot depend on
- * `@intelligo-dev/auth` (see tests/architecture/dependency-direction.test.ts).
- * Every query filters by workspaceId AND userId internally; the actor
- * is never trusted to have done that itself.
- *
- * Every mutation writes a `user_memory_audit` row via the internal
- * `recordMemoryAudit` (./audit.ts). See that file's doc comment for
- * why the writer lives here rather than in `@intelligo-dev/audit`, which
- * is where the module's intended destination is — the allowlist only
- * grants audit -> core, never core -> audit
- * (tests/architecture/dependency-direction.test.ts), so
- * `@intelligo-dev/audit` exports the event *contract* only.
- *
- * Failure is reported by throwing `IdentityServiceError` rather than
- * returning a `{ success, error }` envelope — see ./errors.ts.
- *
- * This module is SERVER-ONLY. Do not import from client components.
+ * Callers pass a resolved actor (workspaceId, userId); core cannot depend on
+ * `@intelligo-dev/auth`. Every query filters by both ids. Every mutation
+ * writes a `user_memory_audit` row. Failures throw `IdentityServiceError`.
  */
 
 import { and, desc, eq } from "drizzle-orm";
@@ -55,17 +23,10 @@ import { recordMemoryAudit } from "./audit";
 import { IdentityServiceError } from "./errors";
 import type { IdentityActor, IdentityExport } from "./types";
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
 /**
- * Verify fact ownership and return the row. Throws
- * IdentityServiceError("not_found") for both a missing fact and one
- * owned by a different user/workspace — a fact belonging to someone
- * else should be indistinguishable from one that doesn't exist at all
- * (same reasoning as `../conversations/service.ts`'s
- * `verifyConversation`).
+ * Returns the fact if the actor owns it. Throws
+ * IdentityServiceError("not_found") otherwise — another user's fact is
+ * indistinguishable from a missing one.
  */
 async function verifyFact(
   actor: IdentityActor,
@@ -87,10 +48,6 @@ async function verifyFact(
 
   return fact;
 }
-
-// ---------------------------------------------------------------------------
-// Reads
-// ---------------------------------------------------------------------------
 
 /** List the actor's facts, most important and most confident first. */
 export async function listFacts(actor: IdentityActor): Promise<UserFact[]> {
@@ -138,15 +95,10 @@ export async function getAuditTrail(
     .limit(limit);
 }
 
-// ---------------------------------------------------------------------------
-// Mutations
-// ---------------------------------------------------------------------------
-
 /**
  * Delete a fact and record the deletion in the audit trail. Throws
  * `invalid_input` for an empty id and `not_found` for anything outside
- * the actor's scope (see `verifyFact`). Does NOT re-trigger profile
- * synthesis — see the module doc comment.
+ * the actor's scope. Does not re-trigger profile synthesis.
  */
 export async function deleteFact(
   actor: IdentityActor,
@@ -173,15 +125,10 @@ export async function deleteFact(
   });
 }
 
-// ---------------------------------------------------------------------------
-// Export — full identity dump for GDPR / "download my data"
-// ---------------------------------------------------------------------------
-
 /**
- * Aggregate the actor's full identity graph — facts, memories, latest
- * profile snapshot, and full audit trail — for a data-export flow.
- * Records its own audit row (action "export"): the export operation
- * audits itself, same as the implementation it was ported from.
+ * The actor's full identity graph — facts, memories, latest profile
+ * snapshot and audit trail — for a "download my data" flow. Records its own
+ * audit row (action "export").
  */
 export async function exportIdentity(
   actor: IdentityActor

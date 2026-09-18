@@ -1,29 +1,15 @@
 /**
- * User Identity Graph Schema (AI-ARCHITECTURE Phase B)
+ * The user identity graph: a user's facts, episodic memories and audit
+ * trail, synthesized into one profile snapshot an agent session reads in
+ * one query.
  *
- * Platform-level memory primitive — separate from any single product. The
- * four tables below turn a user's scattered signals (facts, episodic
- * memories, audit trails) into a single synthesized profile snapshot that
- * every agent session hydrates from in one DB read.
- *
- * Why four tables instead of a JSON blob:
- *  1. `user_facts` is the structured source of truth — queryable by
- *     category and weightable by confidence / importance.
- *  2. `user_memories` is the unstructured narrative surface — pgvector
- *     search for episodic recall during long-running conversations.
- *  3. `user_profile_snapshots` is the cached synthesis layer — voice
- *     agents can't afford to rebuild the profile at the top of every
- *     turn (<500ms budget), so we pre-render to this table and refresh
- *     on trigger events (session close, fact threshold, daily cron).
- *  4. `user_memory_audit` is the trust layer — every write is logged
- *     so the "My Memory" settings page can show provenance per fact.
- *
- * See docs/AI-ARCHITECTURE.md §2 for the full design.
- *
- * Migration: src/db/migrations/0018_identity_graph.sql creates all four
- * tables, their indexes, and the append-only triggers on
- * user_memory_audit. Apply via `pnpm --filter @intelligo-dev/core db:push`
- * before any code path calls into @intelligo-dev/agents/memory.
+ *  - `user_facts`: the structured source of truth, queryable by category
+ *    and weighted by confidence and importance.
+ *  - `user_memories`: unstructured episodic recall via pgvector search.
+ *  - `user_profile_snapshots`: the cached synthesis, since voice agents
+ *    cannot rebuild the profile inside a turn's latency budget.
+ *  - `user_memory_audit`: append-only log of every write, so a user can see
+ *    where each fact came from.
  */
 
 import {
@@ -40,14 +26,9 @@ import {
 import { vector } from "drizzle-orm/pg-core/columns/vector_extension/vector";
 import { organization, users } from "./auth";
 
-// ---------------------------------------------------------------------------
-// 1. user_facts — structured, evidence-backed facts
-// ---------------------------------------------------------------------------
-
 /**
- * Discriminated category for a fact. Used as a filter axis when querying
- * facts for synthesis or display. Keep this list tight — adding a new
- * category should be a product decision, not a free-form string.
+ * A fact's category, the filter axis for synthesis and display. A closed
+ * list on purpose: a new category is a decision, not a free-form string.
  */
 export const USER_FACT_CATEGORIES = [
   "interest",
@@ -109,9 +90,8 @@ export const userFacts = pgTable(
     index("user_facts_user_idx").on(table.userId),
     index("user_facts_workspace_idx").on(table.workspaceId),
     index("user_facts_category_idx").on(table.workspaceId, table.category),
-    // Uniqueness is scoped to (user, workspace, category, key) — a shared
-    // workspace (e.g. a family or classroom org) can hold the same fact
-    // key for multiple members without collision.
+    // Scoped to (user, workspace, category, key) so members of a shared
+    // workspace can hold the same fact key without collision.
     uniqueIndex("user_facts_user_workspace_category_key_uniq").on(
       table.userId,
       table.workspaceId,
@@ -120,10 +100,6 @@ export const userFacts = pgTable(
     ),
   ]
 );
-
-// ---------------------------------------------------------------------------
-// 2. user_memories — episodic, semantic recall via pgvector
-// ---------------------------------------------------------------------------
 
 export const USER_MEMORY_KINDS = [
   "conversation_summary",
@@ -166,14 +142,10 @@ export const userMemories = pgTable(
     index("user_memories_user_idx").on(table.userId),
     index("user_memories_workspace_idx").on(table.workspaceId),
     index("user_memories_kind_idx").on(table.workspaceId, table.kind),
-    // pgvector IVFFlat / HNSW index is added in the migration SQL because
-    // drizzle-orm doesn't expose the syntax natively.
+    // The pgvector index is created in migration SQL: drizzle-orm cannot
+    // express it.
   ]
 );
-
-// ---------------------------------------------------------------------------
-// 3. user_profile_snapshots — synthesized, fast-read cache
-// ---------------------------------------------------------------------------
 
 export const SYNTHESIS_TRIGGER_REASONS = [
   "fact_threshold",
@@ -209,19 +181,13 @@ export const userProfileSnapshots = pgTable(
     nextSynthesisAt: timestamp("next_synthesis_at"),
     triggerReason: text("trigger_reason").$type<SynthesisTriggerReason>(),
   },
-  // Composite PK: a user can have one snapshot per workspace. Scoping
-  // by workspace matters the moment a user belongs to more than one
-  // org — e.g. a student in both their family workspace and a
-  // classroom workspace should get two distinct synthesized profiles.
+  // One snapshot per user per workspace: a user in two workspaces gets two
+  // distinct profiles.
   (table) => [
     primaryKey({ columns: [table.userId, table.workspaceId] }),
     index("user_profile_snapshots_workspace_idx").on(table.workspaceId),
   ]
 );
-
-// ---------------------------------------------------------------------------
-// 4. user_memory_audit — privacy + trust audit trail
-// ---------------------------------------------------------------------------
 
 export const AUDIT_TARGET_KINDS = ["fact", "memory", "snapshot"] as const;
 export type AuditTargetKind = (typeof AUDIT_TARGET_KINDS)[number];
@@ -272,10 +238,6 @@ export const userMemoryAudit = pgTable(
     index("user_memory_audit_target_idx").on(table.targetKind, table.targetId),
   ]
 );
-
-// ---------------------------------------------------------------------------
-// Inferred types
-// ---------------------------------------------------------------------------
 
 export type UserFact = typeof userFacts.$inferSelect;
 export type InsertUserFact = typeof userFacts.$inferInsert;

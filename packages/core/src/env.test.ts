@@ -3,7 +3,6 @@ import { validateEnv, assertEnv } from "./env";
 
 describe("validateEnv", () => {
   beforeEach(() => {
-    // Stub all required env vars
     vi.stubEnv("DATABASE_URL", "postgresql://test");
     vi.stubEnv(
       "BETTER_AUTH_SECRET",
@@ -57,9 +56,8 @@ describe("validateEnv", () => {
   });
 
   it("returns warnings for missing optional vars", () => {
-    // Explicitly clear the optional var: CI sets a dummy OPENAI_API_KEY
-    // for the Next.js build, and reading ambient env made this the one
-    // test that passed locally and failed there.
+    // Cleared explicitly: CI sets a dummy OPENAI_API_KEY for the Next.js
+    // build.
     vi.stubEnv("OPENAI_API_KEY", "");
 
     const result = validateEnv();

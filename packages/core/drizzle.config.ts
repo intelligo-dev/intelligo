@@ -1,24 +1,16 @@
 import { defineConfig } from "drizzle-kit";
 import { config } from "dotenv";
 
-// Environment for the drizzle-kit CLI. A published @intelligo-dev/core
-// cannot assume the consumer's layout, so the default is the repository
-// root and anything else is INTELLIGO_ENV_FILE. This workspace sets it
-// in the root package.json's db:* scripts — keeping the product
-// application's path out of a package headed for publication.
+// A published package cannot assume the consumer's layout, so the env file
+// defaults to the repository root and anything else is INTELLIGO_ENV_FILE.
 const envPath = process.env.INTELLIGO_ENV_FILE ?? "../../.env";
 config({ path: `${envPath}.local` });
 config({ path: envPath });
 
 /**
- * Schema files drizzle-kit scans.
- *
- * Core owns the migration history for the whole database, so packages
- * that own tables contribute their schema files here. Anything outside
- * `packages/` — a vertical's own tables, a consumer's product tables —
- * comes from INTELLIGO_EXTRA_SCHEMA (colon-separated). Defaulting it to
- * a path would mean a public package naming a private one, and would
- * also be wrong for every consumer but this repository.
+ * Core owns the migration history for the whole database, so packages that
+ * own tables contribute their schema files here. A consumer's own tables come
+ * from INTELLIGO_EXTRA_SCHEMA (colon-separated paths).
  */
 const extraSchema = (process.env.INTELLIGO_EXTRA_SCHEMA ?? "")
   .split(":")
@@ -37,7 +29,6 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-  // Map TypeScript camelCase fields to PostgreSQL snake_case columns
-  // while keeping the TypeScript API camelCase (covers DB-03, TECH-01)
+  // camelCase fields in TypeScript, snake_case columns in PostgreSQL.
   casing: "snake_case",
 });

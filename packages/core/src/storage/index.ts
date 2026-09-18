@@ -1,26 +1,14 @@
 /**
- * Where files live.
- *
- * The framework stores attachment rows and hands out URLs; it does not
- * own a bucket. An application binds one adapter from its composition
- * root — S3, R2, Vercel Blob, a disk in development — and the chat
- * upload route, the attachment route and a product's own document
- * tools all reach it through `getStorageAdapter()`:
+ * Where files live. The framework stores attachment rows and hands out URLs;
+ * the application binds one adapter (S3, R2, Vercel Blob, disk) from its
+ * composition root:
  *
  *     import { setStorageAdapter } from "@intelligo-dev/core/storage";
- *     setStorageAdapter(createS3Storage({ bucket, region }));   // the app's own lib/storage.ts
+ *     setStorageAdapter(createS3Storage({ bucket, region }));   // the app's lib/storage.ts
  *
- * Held in the cross-instance registry like every other framework
- * binding (`./registry`), so a bundler that duplicates this module
- * still gives the route the adapter the root bound. Nothing
- * self-registers: an unbound adapter throws where a file is needed,
- * naming the line that fixes it, rather than silently writing to a
- * temp dir that a second instance cannot read.
- *
- * Keys are the framework's: `ws/<workspaceId>/att/<id>` for chat
- * attachments, so tenancy is in the key as well as in the row and a
- * signed URL for one workspace's file can never be minted from
- * another's row.
+ * An unbound adapter throws where a file is needed. Keys carry the tenant —
+ * `ws/<workspaceId>/att/<id>` — so a signed URL for one workspace's file can
+ * never be minted from another's row.
  */
 
 import { createRegistryRef } from "../registry";
@@ -130,11 +118,8 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 /**
- * Files in memory, "signed" as data URLs.
- *
- * For tests and for a reference app that has no bucket: an upload
- * round-trips end to end, a model provider can read the data URL, and
- * nothing survives a restart — which is the point of a fake.
+ * Files in memory, "signed" as data URLs, for tests and apps without a
+ * bucket. Nothing survives a restart.
  */
 export function createMemoryStorage(): StorageAdapter & {
   readonly objects: Map<string, { bytes: Uint8Array; contentType: string }>;

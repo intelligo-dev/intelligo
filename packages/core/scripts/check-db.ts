@@ -1,6 +1,5 @@
 /**
- * Database Connection Check Script
- * Tests database connection, checks tables, and reports status
+ * Checks the database connection and that the auth tables exist.
  */
 
 import { config } from "dotenv";
@@ -10,16 +9,15 @@ import { dirname } from "path";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 
-// A published @intelligo-dev/core cannot assume where the consumer keeps
-// its env file, so the default is the repository root and anything
-// else is INTELLIGO_ENV_FILE.
+// A published package cannot assume where the consumer keeps its env file,
+// so the default is the repository root and anything else is
+// INTELLIGO_ENV_FILE.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const envPath =
   process.env.INTELLIGO_ENV_FILE ?? resolve(__dirname, "../../../.env");
 config({ path: envPath });
 
-// Create db connection after env is loaded
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
   console.error(`❌ DATABASE_URL not found in ${envPath}`);
@@ -32,20 +30,17 @@ const db = drizzle(sql);
 
 async function checkDatabase() {
   console.log("Testing database connection...");
-  console.log("DATABASE_URL:", DATABASE_URL?.replace(/:[^:@]+@/, ":***@")); // Hide password
+  console.log("DATABASE_URL:", DATABASE_URL?.replace(/:[^:@]+@/, ":***@"));
 
   try {
-    // Test connection
     console.log("\n1. Testing connection...");
     await sql`SELECT 1 as test`;
     console.log("✓ Connection successful");
 
-    // Check current database
     console.log("\n2. Checking database...");
     const dbResult = await sql`SELECT current_database()`;
     console.log("✓ Current database:", dbResult[0]?.current_database);
 
-    // Check if tables exist
     console.log("\n3. Checking auth tables...");
     const tables = await sql`
       SELECT table_name
@@ -73,7 +68,6 @@ async function checkDatabase() {
     } else {
       console.log("\n✓ All auth tables exist!");
 
-      // Check user count
       const userCount = await sql`SELECT COUNT(*) as count FROM users`;
       const count = userCount[0]?.count || 0;
       console.log(`✓ Users in database: ${count}`);

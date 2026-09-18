@@ -2,12 +2,6 @@ import { Button, Section, Text } from "@react-email/components";
 import * as React from "react";
 import { BaseLayout } from "./base-layout";
 
-// ---------------------------------------------------------------------------
-// Workspace Invitation Template (EMAIL-06)
-// ---------------------------------------------------------------------------
-// Sent when a workspace owner/admin invites someone to join.
-// ---------------------------------------------------------------------------
-
 export interface WorkspaceInvitationEmailProps {
   inviterName: string;
   workspaceName: string;
@@ -55,10 +49,6 @@ export function WorkspaceInvitationEmail({
     </BaseLayout>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Inline Styles
-// ---------------------------------------------------------------------------
 
 const headingStyle: React.CSSProperties = {
   color: "#18181b",

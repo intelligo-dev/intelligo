@@ -2,12 +2,7 @@ import { Button, Text } from "@react-email/components";
 import * as React from "react";
 import { BaseLayout } from "./base-layout";
 
-// ---------------------------------------------------------------------------
-// Quota Warning Template (EMAIL-09 at 80%, EMAIL-10 at 100%)
-// ---------------------------------------------------------------------------
-// Sent when a workspace approaches or exceeds its monthly token quota.
-// Uses isExceeded flag to toggle between warning and exceeded variants.
-// ---------------------------------------------------------------------------
+// `isExceeded` switches between the 80% warning and the exceeded variant.
 
 export interface QuotaWarningEmailProps {
   workspaceName: string;
@@ -76,10 +71,6 @@ export function QuotaWarningEmail({
     </BaseLayout>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Inline Styles
-// ---------------------------------------------------------------------------
 
 const headingStyle: React.CSSProperties = {
   color: "#18181b",

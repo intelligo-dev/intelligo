@@ -2,12 +2,6 @@ import { Button, Text } from "@react-email/components";
 import * as React from "react";
 import { BaseLayout } from "./base-layout";
 
-// ---------------------------------------------------------------------------
-// Welcome Email (EMAIL-03)
-// ---------------------------------------------------------------------------
-// Sent when a user signs up for an Intelligo account.
-// ---------------------------------------------------------------------------
-
 export interface WelcomeEmailProps {
   userName: string;
   dashboardUrl: string;
@@ -35,10 +29,6 @@ export function WelcomeEmail({ userName, dashboardUrl }: WelcomeEmailProps) {
     </BaseLayout>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Inline Styles
-// ---------------------------------------------------------------------------
 
 const headingStyle: React.CSSProperties = {
   color: "#18181b",

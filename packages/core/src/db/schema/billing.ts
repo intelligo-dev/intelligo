@@ -1,10 +1,6 @@
 /**
- * Billing Database Schema
- *
- * Tables for managing subscriptions, plans, credits, and finance events.
- * Used by Stripe integration for subscription and credit-based billing.
- *
- * Pattern: snake_case columns in PostgreSQL, camelCase TypeScript API (via Drizzle mapping)
+ * Plans, subscriptions, credit ledgers, purchases and Stripe events.
+ * Amounts in the credit ledgers are micros of their currency.
  */
 
 import {
@@ -19,10 +15,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { organization } from "./auth";
 
-/**
- * Plans table - DB-configured pricing plans per product
- * Allows dynamic plan changes without code deployment
- */
+/** Pricing plans per product, editable without a deploy. */
 export const plans = pgTable("plans", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -40,10 +33,7 @@ export const plans = pgTable("plans", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-/**
- * Subscriptions table - Workspace subscription state
- * Each workspace has one active subscription (unique constraint)
- */
+/** One subscription per workspace (unique constraint). */
 export const subscriptions = pgTable(
   "subscriptions",
   {
@@ -70,10 +60,7 @@ export const subscriptions = pgTable(
   ]
 );
 
-/**
- * Credit balances table - Credit mode balance tracking
- * Each workspace has one credit balance record (unique constraint on workspaceId)
- */
+/** One credit balance per workspace (unique constraint). */
 export const creditBalances = pgTable("credit_balances", {
   id: text("id").primaryKey(),
   workspaceId: text("workspace_id")
@@ -96,11 +83,8 @@ export const creditBalances = pgTable("credit_balances", {
 });
 
 /**
- * Billing Settings — singleton table holding the live FX rate and
- * margin multiplier. Read once per request (cached 60s in-process) so
- * model price changes and FX moves can be deployed without a code push.
- *
- * Convention: exactly one row with id = "default".
+ * Singleton (id = "default") holding the FX rate and margin, so they change
+ * without a deploy. Read per request, cached 60s in-process.
  */
 export const billingSettings = pgTable("billing_settings", {
   id: text("id").primaryKey(),
@@ -115,10 +99,7 @@ export const billingSettings = pgTable("billing_settings", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-/**
- * Credit purchases table - One-time credit purchases
- * Tracks all credit purchase transactions
- */
+/** One-time credit purchases. */
 export const creditPurchases = pgTable(
   "credit_purchases",
   {
@@ -132,8 +113,7 @@ export const creditPurchases = pgTable(
     /**
      * What the workspace was granted, in micros of `grantedCurrency`.
      * Separate from the price on purpose: a pack sold for $5 grants an
-     * amount of the billing currency, and conflating the two is how
-     * 100,000 of one unit came to be sold for $5 of another.
+     * amount of the billing currency, which is a different unit.
      */
     grantedMicros: bigint("granted_micros", { mode: "number" }),
     grantedCurrency: text("granted_currency"),
@@ -145,10 +125,7 @@ export const creditPurchases = pgTable(
   (table) => [index("credit_purchases_workspace_id_idx").on(table.workspaceId)]
 );
 
-/**
- * Finance events table - Audit trail for all Stripe events
- * Ensures idempotent webhook processing and financial audit trail
- */
+/** Every Stripe event, for idempotent webhook processing and audit. */
 export const financeEvents = pgTable("finance_events", {
   id: text("id").primaryKey(),
   workspaceId: text("workspace_id").references(() => organization.id, {
@@ -165,16 +142,12 @@ export const financeEvents = pgTable("finance_events", {
 });
 
 /**
- * Credit reservations table — closes the checkQuota → recordTokenUsage
- * TOCTOU window (B-06). Admission inserts a reservation for the
- * worst-case MNT estimate inside the same transaction that sums the
- * other active reservations, so N concurrent requests can't all be
- * admitted against the same balance. recordTokenUsage settles the
- * reservation; abandoned reservations expire via expires_at and are
- * ignored by the sum (cleanup cron deletes them).
- *
- * This is the seed of the Phase 2 `credit_reservations` table from the
- * v2 architecture plan.
+ * Closes the admission → settlement race. Admission inserts a reservation
+ * for the worst-case estimate inside the same transaction that sums the
+ * other active reservations, so concurrent requests cannot all be admitted
+ * against the same balance. Settlement closes the reservation; abandoned
+ * ones expire via `expires_at`, are ignored by the sum, and are deleted by
+ * a cleanup job.
  */
 export const creditReservations = pgTable(
   "credit_reservations",
@@ -183,7 +156,7 @@ export const creditReservations = pgTable(
     workspaceId: text("workspace_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
-    /** Correlates admission with settlement — future execution id. */
+    /** Correlates admission with settlement. */
     requestId: text("request_id").notNull().unique(),
     /** The hold, in micros of `currency`. */
     estimatedMicros: bigint("estimated_micros", { mode: "number" })
@@ -204,7 +177,6 @@ export const creditReservations = pgTable(
   ]
 );
 
-// Export inferred types for TypeScript usage
 export type Plan = typeof plans.$inferSelect;
 export type InsertPlan = typeof plans.$inferInsert;
 export type Subscription = typeof subscriptions.$inferSelect;

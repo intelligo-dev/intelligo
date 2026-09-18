@@ -1,10 +1,6 @@
 /**
- * Attachments Module
- *
- * Rows for the files users put into conversations; the bytes live
- * behind `@intelligo-dev/core/storage`.
- *
- * Use via subpath import: @intelligo-dev/core/attachments
+ * Rows for the files users put into conversations; the bytes live behind
+ * `@intelligo-dev/core/storage`.
  */
 
 export {

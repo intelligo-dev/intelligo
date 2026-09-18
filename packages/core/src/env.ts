@@ -1,12 +1,7 @@
 /**
- * Environment Variable Validation
- *
- * Validates required environment variables at startup.
- * Fail-fast approach: missing critical env vars throw immediately
- * rather than failing at runtime when the feature is first used.
- *
- * Usage: Import and call validateEnv() in app layout or middleware.
- * Note: Some vars are optional for local dev (STRIPE_*, RESEND_API_KEY).
+ * Startup validation of environment variables: a missing required variable
+ * throws immediately instead of when its feature is first used. Some are
+ * optional in development (STRIPE_*, RESEND_API_KEY).
  */
 
 type EnvVar = {
@@ -71,10 +66,8 @@ const ENV_VARS: EnvVar[] = [
     required: false,
     description: "Explicit email provider selection (resend | loops | console)",
   },
-  // Cron endpoints (e.g. /api/cron/trial-expiry) gate on a Bearer
-  // header equal to CRON_SECRET. The secret is optional in dev so
-  // local cron testing isn't blocked, but production MUST set it
-  // and the value must be at least 32 chars to resist guessing.
+  // Cron endpoints gate on a Bearer header equal to CRON_SECRET. Optional
+  // in development; production should set at least 32 characters.
   {
     name: "CRON_SECRET",
     required: false,
@@ -93,9 +86,8 @@ export function validateEnv(): {
 
   for (const envVar of ENV_VARS) {
     let value = process.env[envVar.name];
-    // One canonical name for the auth secret. Better-Auth itself reads
-    // BETTER_AUTH_SECRET then AUTH_SECRET; the CLI's doctor, the
-    // scaffold and this validator agree on the former.
+    // Better-Auth reads BETTER_AUTH_SECRET then AUTH_SECRET; the CLI, the
+    // scaffold and this validator use the former.
     if (
       envVar.name === "BETTER_AUTH_SECRET" &&
       !value &&
@@ -141,10 +133,8 @@ export function validateEnv(): {
       );
     }
     if (!process.env.CRON_SECRET || process.env.CRON_SECRET.length < 32) {
-      // A warning, not an error: the framework ships no cron route of
-      // its own, so a deployment without one has nothing to protect.
-      // The maintenance route (`intelligo add maintenance`) refuses to
-      // serve without it.
+      // A warning, not an error: the framework ships no cron route of its
+      // own, and the maintenance route refuses to serve without it.
       warnings.push(
         "CRON_SECRET unset or shorter than 32 chars — required by any /api/cron/* route you mount"
       );
@@ -155,8 +145,8 @@ export function validateEnv(): {
 }
 
 /**
- * Log validation results. Call during app initialization.
- * Throws on missing required vars; logs warnings for optional vars.
+ * Call during app initialization. Throws on missing required variables;
+ * logs warnings for optional ones.
  */
 export function assertEnv(): void {
   const { valid, errors, warnings } = validateEnv();

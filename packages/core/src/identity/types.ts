@@ -1,7 +1,3 @@
-/**
- * Shared types for the identity service.
- */
-
 import type {
   UserFact,
   UserMemory,

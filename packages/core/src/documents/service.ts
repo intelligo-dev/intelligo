@@ -1,24 +1,9 @@
 /**
- * Document Persistence Service — Server-only
+ * Server-only persistence for AI-generated documents.
  *
- * Core CRUD operations for AI-generated document artifacts with
- * workspace + user isolation, over the `documents` table in
- * @intelligo-dev/core's schema.
- *
- * Callers pass a resolved actor (workspaceId, userId) rather than this
- * module resolving one itself — @intelligo-dev/core cannot depend on
- * @intelligo-dev/auth (see tests/architecture/dependency-direction.test.ts),
- * so `requireWorkspace()` moved to the caller. Every query still
- * filters by workspaceId AND userId internally; the actor is never
- * trusted to have done that itself.
- *
- * Failure is reported by throwing `DocumentServiceError` (a small,
- * typed code set) rather than returning a `{ success, error }`
- * envelope — that shaping, plus any error-reporting side effect
- * (Sentry, logging), is a transport concern the caller applies at the
- * Server Action / route boundary.
- *
- * This module is SERVER-ONLY. Do not import from client components.
+ * Callers pass a resolved actor (workspaceId, userId); core cannot depend on
+ * `@intelligo-dev/auth`. Every query filters by both ids — the caller is
+ * never trusted to have done it. Failures throw `DocumentServiceError`.
  */
 
 import { and, desc, eq, gt } from "drizzle-orm";
@@ -60,13 +45,8 @@ function toListItem(doc: DocumentRow): DocumentListItem {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Query Operations
-// ---------------------------------------------------------------------------
-
 /**
- * Get all documents for the actor. Ordered by most recently created
- * first. Uses DISTINCT ON to get the latest version of each document.
+ * The latest version of each of the actor's documents, newest first.
  */
 export async function getUserDocuments(
   actor: DocumentActor,
@@ -97,7 +77,7 @@ export async function getUserDocuments(
 }
 
 /**
- * Get a single document by id, scoped to the actor.
+ * The latest version of one document, scoped to the actor.
  * Throws DocumentServiceError("not_found") if no such document exists.
  */
 export async function getDocument(
@@ -149,12 +129,8 @@ export async function getDocumentVersions(
   return rows.map(toListItem);
 }
 
-// ---------------------------------------------------------------------------
-// Mutation Operations
-// ---------------------------------------------------------------------------
-
 /**
- * Save (create new version of) a document.
+ * Saves a document as a new version.
  * Throws DocumentServiceError("forbidden") if a document with this id
  * already exists in the workspace under a different user.
  */
@@ -193,10 +169,8 @@ export async function saveDocument(
     }
   }
 
-  // Every save writes a new *version* row, so a link the first version
-  // carried would be dropped by an edit that does not resend it —
-  // editing a document in the canvas would quietly unlink it from the
-  // conversation that wrote it. Carry the known one forward instead.
+  // Every save writes a new version row, so an edit that does not resend
+  // the conversation link would drop it. Carry the known one forward.
   const conversationId =
     params.conversationId ??
     existingDocs.map((doc) => conversationIdOf(doc.metadata)).find(Boolean) ??
@@ -222,10 +196,6 @@ export async function saveDocument(
 
   return toListItem(newDocument);
 }
-
-// ---------------------------------------------------------------------------
-// Delete Operations
-// ---------------------------------------------------------------------------
 
 const MAX_DELETE_WINDOW_DAYS = 30;
 

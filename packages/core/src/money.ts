@@ -1,33 +1,15 @@
 /**
- * Money, in one unit, with the currency attached.
+ * Money, in one unit, with the currency attached. Imports nothing:
+ * `@intelligo-dev/executions/pricing` is a zero-import leaf that client
+ * bundles reach, and it needs these types.
  *
- * The framework used to denominate every amount in one deployment's
- * currency: `balance_mnt`, `chargedMnt`, `estimatedMnt`, a
- * `DEFAULT_USD_TO_MNT_RATE` constant, and a `formatPrice` that returned
- * a tugrik glyph — in the public port types of a package meant to
- * underpin products that do not sell in tugrik. This module is the
- * replacement. It imports nothing, and must keep importing nothing:
- * `@intelligo-dev/executions/pricing` is a deliberate zero-import leaf
- * that client bundles reach, and it needs these types without dragging
- * the rest of core behind them. `core/registry` holds the same line for
- * the same reason.
+ * **Micros, not minor units.** A chat turn on a cheap model costs a
+ * fraction of a cent; rounding it to whole cents overcharges by more than a
+ * third on every request.
  *
- * Two decisions worth stating, because both look arbitrary and neither
- * is.
- *
- * **Micros, not minor units.** A typical chat turn on a cheap model
- * costs about $0.0019 of provider time, which is 0.74 cents once the
- * margin is applied. Rounding that to whole cents overcharges by more
- * than a third on every request. Six decimal places was in fact what
- * the old `× 3450` tugrik scaling bought — this keeps the precision and
- * drops the pretence that the number is a currency.
- *
- * **Currency on the amount, not in a global.** The bug this is built
- * against was a credit pack whose grant was authored in tokens and
- * spent as ledger units: 100,000 of one unit sold for $1.01 of another.
- * Nothing in the type system objected, because the number was a
- * `number`. Here the currency travels with the amount and `add` refuses
- * to mix two.
+ * **Currency on the amount, not in a global.** A bare `number` lets one
+ * unit be sold as another; here the currency travels with the amount and
+ * `add` refuses to mix two.
  */
 
 declare const isoTag: unique symbol;
@@ -58,12 +40,9 @@ export class MoneyError extends Error {
 const MICROS_PER_UNIT = 1_000_000;
 
 /**
- * Currencies whose minor unit is not the usual hundredth.
- *
- * Only the exceptions are listed; everything else is 2. Getting this
- * wrong is not cosmetic — it is the difference between charging ¥1,000
- * and ¥100,000, because Stripe takes zero-decimal currencies in whole
- * units and every other one in hundredths.
+ * Currencies whose minor unit is not the usual hundredth; everything else
+ * is 2. Getting this wrong charges ¥100,000 instead of ¥1,000, because
+ * Stripe takes zero-decimal currencies in whole units.
  */
 const MINOR_EXPONENT: Readonly<Record<string, 0 | 2 | 3>> = {
   BIF: 0,
@@ -95,12 +74,9 @@ const MINOR_EXPONENT: Readonly<Record<string, 0 | 2 | 3>> = {
 };
 
 /**
- * Validate and normalise an ISO-4217 code.
- *
- * Shape only — a real registry would go stale, and a deployment
- * selling in a code this file has never heard of should not be blocked
- * by a list. `minorExponent` is where an unknown code takes its
- * conservative default.
+ * Validates and normalises an ISO-4217 code. Shape only: a list would go
+ * stale and block a deployment selling in a code it does not know.
+ * `minorExponent` gives an unknown code its default.
  */
 export function currency(code: string): CurrencyCode {
   const upper = code.toUpperCase();
@@ -114,11 +90,8 @@ export function currency(code: string): CurrencyCode {
 }
 
 /**
- * An integer count of micros.
- *
- * The upper bound is `Number.MAX_SAFE_INTEGER`, which at six decimal
- * places is about 9 billion major units — far above any real balance,
- * and low enough to catch a value that arrived in the wrong unit.
+ * An integer count of micros, up to `Number.MAX_SAFE_INTEGER` (about 9
+ * billion major units) — low enough to catch a value in the wrong unit.
  */
 export function micros(value: number): Micros {
   if (!Number.isInteger(value)) {
@@ -278,11 +251,8 @@ export function displayFractionDigits(value: Money): number {
 }
 
 /**
- * Format for a human, in their locale.
- *
- * `Intl` owns the symbol, its position, the grouping separator and the
- * decimal separator — none of which belong in framework source. This
- * is the function that replaces a `₮${n.toLocaleString()}` template.
+ * Formats for a human, in their locale. `Intl` owns the symbol, its
+ * position and the separators.
  */
 export function formatMoney(
   value: Money,

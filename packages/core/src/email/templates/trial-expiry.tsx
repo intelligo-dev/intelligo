@@ -2,12 +2,7 @@ import { Button, Text } from "@react-email/components";
 import * as React from "react";
 import { BaseLayout } from "./base-layout";
 
-// ---------------------------------------------------------------------------
-// Trial Expiry Template (EMAIL-13 - reminder at 3 days before expiry)
-// ---------------------------------------------------------------------------
-// Sent when a workspace's trial is expiring soon (3 days) or has expired.
-// Uses daysRemaining to toggle between reminder and expiry variants.
-// ---------------------------------------------------------------------------
+// `daysRemaining` switches between the reminder and expired variants.
 
 export interface TrialExpiryEmailProps {
   workspaceName: string;
@@ -104,10 +99,6 @@ export function TrialExpiryEmail({
     </BaseLayout>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Inline Styles
-// ---------------------------------------------------------------------------
 
 const headingStyle: React.CSSProperties = {
   color: "#18181b",

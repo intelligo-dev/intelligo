@@ -1,23 +1,12 @@
 /**
- * Email Sender Functions
+ * Typed wrappers that render a React Email template and send it. They never
+ * throw; each returns a SendEmailResult.
  *
- * High-level convenience wrappers that compose sendEmail() with React Email
- * templates. Each function accepts typed params and returns SendEmailResult.
- *
- * These are the primary API for sending branded emails throughout the app:
- * - Auth emails: welcome, verify, password reset (wired into Better-Auth)
- * - Team emails: workspace invitation (replaces Phase 10 console.log)
- * - Billing emails: quota warning, trial warning, payment failed, subscription confirmed
- *
- * All functions return Promise<SendEmailResult> and NEVER throw (TECH-08).
- *
- * Every sender attaches a stable `template` key + flat variables so
- * template-based providers (Loops) can send the same email from a
- * provider-side template. HTML-capable providers (Resend) ignore it.
- * Loops mapping: LOOPS_TRANSACTIONAL_ID_<KEY> (e.g. "verify-email" →
- * LOOPS_TRANSACTIONAL_ID_VERIFY_EMAIL). Boolean variants use distinct keys
- * (quota-warning / quota-exceeded, trial-warning / trial-depleted) because
- * template providers branch per template, not per variable.
+ * Every sender attaches a stable `template` key and flat variables so
+ * template-based providers (Loops) can send the same email; HTML providers
+ * ignore it. Boolean variants use distinct keys (quota-warning /
+ * quota-exceeded, trial-warning / trial-depleted) because template providers
+ * branch per template, not per variable.
  */
 
 import * as React from "react";
@@ -34,11 +23,6 @@ import {
   SubscriptionConfirmedEmail,
 } from "./templates";
 
-// ---------------------------------------------------------------------------
-// Auth Emails
-// ---------------------------------------------------------------------------
-
-/** Send welcome email after signup (EMAIL-03) */
 export async function sendWelcomeEmail(params: {
   to: string;
   userName: string;
@@ -61,7 +45,6 @@ export async function sendWelcomeEmail(params: {
   });
 }
 
-/** Send email verification link (EMAIL-04) */
 export async function sendVerifyEmail(params: {
   to: string;
   userName: string;
@@ -84,7 +67,6 @@ export async function sendVerifyEmail(params: {
   });
 }
 
-/** Send password reset link (EMAIL-05) */
 export async function sendPasswordResetEmail(params: {
   to: string;
   userName: string;
@@ -107,11 +89,6 @@ export async function sendPasswordResetEmail(params: {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Team Emails
-// ---------------------------------------------------------------------------
-
-/** Send workspace invitation email (EMAIL-06) */
 export async function sendInvitationEmail(params: {
   to: string;
   inviterName: string;
@@ -143,11 +120,7 @@ export async function sendInvitationEmail(params: {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Billing / Usage Emails
-// ---------------------------------------------------------------------------
-
-/** Send quota warning or exceeded email (EMAIL-09 / EMAIL-10) */
+/** Send quota warning or exceeded email. */
 export async function sendQuotaWarningEmail(params: {
   to: string;
   workspaceName: string;
@@ -183,7 +156,7 @@ export async function sendQuotaWarningEmail(params: {
   });
 }
 
-/** Send trial warning or depleted email (EMAIL-07 / EMAIL-08) */
+/** Send trial warning or depleted email. */
 export async function sendTrialWarningEmail(params: {
   to: string;
   workspaceName: string;
@@ -219,7 +192,6 @@ export async function sendTrialWarningEmail(params: {
   });
 }
 
-/** Send payment failed email (EMAIL-11) */
 export async function sendPaymentFailedEmail(params: {
   to: string;
   workspaceName: string;
@@ -245,7 +217,6 @@ export async function sendPaymentFailedEmail(params: {
   });
 }
 
-/** Send subscription confirmed email (EMAIL-12) */
 export async function sendSubscriptionConfirmedEmail(params: {
   to: string;
   workspaceName: string;
@@ -274,7 +245,6 @@ export async function sendSubscriptionConfirmedEmail(params: {
   });
 }
 
-/** Send trial expiry reminder email (EMAIL-13) */
 export async function sendTrialExpiryEmail(params: {
   to: string;
   workspaceName: string;

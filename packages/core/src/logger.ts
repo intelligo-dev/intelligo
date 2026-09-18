@@ -1,13 +1,7 @@
 /**
- * Structured Logger with PII Redaction (Pino-backed)
+ * Structured pino logger. Emails and ids are redacted in production and
+ * passed through in development; credential fields are always redacted.
  *
- * A structured logger that:
- * - Uses pino for high-performance JSON logging in production
- * - Redacts PII in production (emails, workspace IDs, UUIDs)
- * - Passes through unredacted in development for debugging
- * - Maintains the same API as the previous custom logger
- *
- * Usage:
  * ```typescript
  * import { createLogger } from "@intelligo-dev/core/logger";
  * const log = createLogger("MyModule");
@@ -44,14 +38,9 @@ function redactId(id: string): string {
 }
 
 /**
- * Field name fragments whose values are always replaced with [REDACTED]
- * regardless of environment. These cover credentials and secrets — never
- * appropriate to log even in development. Email/id redaction is a
- * separate concern (production-only PII protection).
- *
- * Exported so a consumer's Sentry PII scrubber
- * shares the same field list — a secret name added here is stripped
- * from both the log stream and the Sentry event in one move.
+ * Field name fragments whose values are always replaced with [REDACTED], in
+ * every environment. Exported so an error reporter's scrubber can share the
+ * list.
  */
 export const CREDENTIAL_KEY_FRAGMENTS = [
   "password",
@@ -80,16 +69,13 @@ export function isCredentialKey(key: string): boolean {
 function redactData(data: Record<string, unknown>): Record<string, unknown> {
   const redacted: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data)) {
-    // Always-redacted fields: credentials, tokens, secrets — these
-    // never appear in logs, even in dev. Catches accidental
-    // log.info("login attempt", { password: ... }) drift.
     if (isCredentialKey(key)) {
       redacted[key] = "[REDACTED]";
       continue;
     }
 
-    // PII redaction (email/id) is production-only so dev debugging
-    // still works against real values.
+    // Email and id redaction is production-only, so development logs show
+    // real values.
     if (!isProduction) {
       redacted[key] = value;
       continue;
@@ -113,7 +99,6 @@ function redactData(data: Record<string, unknown>): Record<string, unknown> {
   return redacted;
 }
 
-/** Base pino instance */
 const baseLogger = pino({
   level: isProduction ? "info" : "debug",
   formatters: {
@@ -169,8 +154,8 @@ export function createLogger(context: string): Logger {
 }
 
 /**
- * Create a logger that writes to a custom pino destination.
- * Used for testing — allows capturing log output in a writable stream.
+ * A logger writing to a custom pino destination, for capturing output in
+ * tests.
  * @internal
  */
 export function _createLoggerWithStream(
@@ -190,7 +175,6 @@ export function _createLoggerWithStream(
     stream
   );
   const instance = new Logger(context);
-  // Override the internal pino child with one writing to custom stream
   (instance as any).pino = customBase.child({ module: context });
   return instance;
 }

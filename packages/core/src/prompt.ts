@@ -1,22 +1,14 @@
 /**
  * Prompt-injection sanitisation for user-authored text that reaches a
- * system prompt.
+ * system prompt (a stored summary, a profile field, a quoted web page).
+ * Strips role markers, override phrases and obfuscated separators, and
+ * reports which patterns it saw so a transport can log the attempt.
  *
- * A stored conversation summary, a profile field a student typed, a
- * tool result quoting a web page — each is text the model will read as
- * instructions if it is concatenated into the system prompt as-is.
- * This strips role markers, override phrases and obfuscated separators
- * before that concatenation, and reports which patterns it saw so a
- * transport can log the attempt.
- *
- * Dependency-free on purpose: it is reached from the chat transport's
- * `prepareMessages` seam, from tools, and from any package that
- * assembles a prompt, none of which should pull anything else in for
- * it. Routed here from the product's runtime package it started in.
+ * Dependency-free, so any package that assembles a prompt can use it.
  *
  * Returns an empty string when more than half of the original was
- * injection patterns: that is a hostile payload, and feeding the
- * remaining fragments to the model is worse than dropping it.
+ * injection patterns: feeding the remaining fragments to the model is
+ * worse than dropping them.
  */
 
 const ZERO_WIDTH_CHARS =

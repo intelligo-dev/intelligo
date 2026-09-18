@@ -1,30 +1,18 @@
 /**
- * Database Client
+ * One Drizzle handle, two drivers: `pg` (node-postgres) for ordinary
+ * Postgres URLs, and `neon-serverless` (Neon's WebSocket driver) for Neon
+ * URLs.
  *
- * One Drizzle handle, two drivers:
+ * Neon's HTTP driver is deliberately not an option: it has no session, so
+ * `db.transaction()` throws, and quota admission (`pg_advisory_xact_lock` +
+ * reservation insert) and usage settlement are transactions.
  *
- * - `pg` (node-postgres) for any ordinary Postgres URL.
- * - `neon-serverless` — Neon's WebSocket driver — for Neon URLs.
+ * `INTELLIGO_DB_DRIVER=pg | neon-serverless` forces a driver, for a
+ * Neon-compatible proxy or a self-hosted Postgres whose hostname happens to
+ * match.
  *
- * Neon's HTTP driver (`drizzle-orm/neon-http`) is deliberately not an
- * option. It is one round-trip per statement with no session, so
- * `db.transaction()` throws "No transactions support in neon-http
- * driver" — and quota admission (`pg_advisory_xact_lock` + reservation
- * insert) and usage settlement are transactions. A Neon deployment on
- * the HTTP driver refused every metered request. The WebSocket driver
- * keeps a real session, so transactions and advisory locks behave as
- * they do on node-postgres.
- *
- * The driver is chosen from the URL (`neon.tech` host or an `@ep-`
- * endpoint id) and can be forced with `INTELLIGO_DB_DRIVER=pg |
- * neon-serverless` — for a Neon-compatible proxy, or a self-hosted
- * Postgres whose hostname happens to match.
- *
- * The client is initialized lazily on first method access so that
- * `next build` can statically collect API route metadata without
- * having DATABASE_URL available. The throw still happens at runtime
- * for any request that actually touches the DB, so a missing env in
- * production surfaces loudly on the first query.
+ * The client is created on first access so `next build` can collect route
+ * metadata without DATABASE_URL; a missing URL throws on the first query.
  */
 
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-serverless";
