@@ -32,10 +32,7 @@ import {
   getProductPlans,
 } from "@intelligo-dev/billing/plans";
 
-export {
-  CREDIT_BUNDLES,
-  getCreditBundle,
-} from "./billing-config";
+export { CREDIT_BUNDLES, getCreditBundle } from "./billing-config";
 
 /** The registered plan catalogue for this deployment's product. */
 export function getPlans(): Partial<Record<string, PlanConfig>> {

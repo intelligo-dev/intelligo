@@ -1322,7 +1322,8 @@
         "@intelligo/button",
         "@intelligo/page-header",
         "@intelligo/stat-card",
-        "@intelligo/status-badge"
+        "@intelligo/status-badge",
+        "@intelligo/animated-list"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1562,7 +1563,8 @@
         "@intelligo/input",
         "label",
         "skeleton",
-        "@intelligo/page-header"
+        "@intelligo/page-header",
+        "@intelligo/hold-action-button"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1856,7 +1858,10 @@
         "scroll-area",
         "separator",
         "skeleton",
-        "@intelligo/page-header"
+        "@intelligo/page-header",
+        "@intelligo/ai-motion",
+        "@intelligo/animated-list",
+        "@intelligo/notification-stack"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1922,7 +1927,8 @@
         "badge",
         "@intelligo/button",
         "card",
-        "skeleton"
+        "skeleton",
+        "@intelligo/animated-list"
       ],
       "dependencies": [
         "@intelligo-dev/core",
@@ -2043,7 +2049,8 @@
         "card",
         "skeleton",
         "@intelligo/page-header",
-        "@intelligo/stat-card"
+        "@intelligo/stat-card",
+        "@intelligo/animated-list"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -2254,13 +2261,15 @@
       "registryDependencies": [
         "@intelligo/button",
         "@intelligo/input",
-        "label"
+        "label",
+        "@intelligo/ai-motion"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
         "lucide-react",
         "server-only",
-        "next-intl"
+        "next-intl",
+        "motion"
       ],
       "files": [
         {
@@ -2390,7 +2399,8 @@
         "skeleton",
         "@intelligo/spinner",
         "@intelligo/page-header",
-        "@intelligo/document-viewer"
+        "@intelligo/document-viewer",
+        "@intelligo/animated-list"
       ],
       "dependencies": [
         "@intelligo-dev/auth",

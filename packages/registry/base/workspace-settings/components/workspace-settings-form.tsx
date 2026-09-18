@@ -4,7 +4,7 @@
  * Workspace settings form — name/slug editor plus an owner-only danger
  * zone. Owners and admins can edit; a plain member sees a read-only
  * form. Only an owner sees the delete-workspace control, gated behind
- * a confirmation dialog.
+ * a confirmation dialog whose button is held, not clicked.
  */
 
 import { useEffect, useState, useTransition, type FormEvent } from "react";
@@ -32,6 +32,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { HoldActionButton } from "@/components/ui/hold-action-button";
 
 interface WorkspaceSettingsFormProps {
   workspace: {
@@ -188,15 +189,22 @@ export function WorkspaceSettingsForm({
                   >
                     {t("dangerZone.cancel")}
                   </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={handleDelete}
+                  {/* Held, not clicked: a workspace goes with everything in it. */}
+                  <HoldActionButton
+                    size="default"
+                    onConfirm={handleDelete}
                     disabled={isDeleting}
+                    labels={{
+                      holding: t("dangerZone.holding"),
+                      complete: t("dangerZone.confirmPending"),
+                      description: t("dangerZone.holdDescription"),
+                      confirmed: t("dangerZone.confirmPending"),
+                    }}
                   >
                     {isDeleting
                       ? t("dangerZone.confirmPending")
                       : t("dangerZone.confirm")}
-                  </Button>
+                  </HoldActionButton>
                 </DialogFooter>
               </DialogContent>
             </Dialog>

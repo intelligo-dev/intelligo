@@ -22,5 +22,13 @@
     "loadUnreadCount": "Failed to load unread count",
     "markRead": "Failed to mark notification as read",
     "markAllRead": "Failed to mark all notifications as read"
+  },
+  "stack": {
+    "expand": "Show all",
+    "collapse": "Show less",
+    "empty": "You're all caught up",
+    "dismiss": "Mark as read",
+    "list": "{count, plural, one {# new notification} other {# new notifications}}",
+    "unread": "Unread"
   }
 }

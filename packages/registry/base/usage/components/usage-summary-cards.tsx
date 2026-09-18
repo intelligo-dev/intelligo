@@ -15,6 +15,7 @@ import {
   StatCardValue,
 } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { AnimatedList, AnimatedListItem } from "@/components/ui/animated-list";
 
 import {
   getUsagePeriodSummary,
@@ -85,58 +86,71 @@ export function UsageSummaryCards({
         </TabsList>
       </Tabs>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard aria-busy={isPending}>
-          <StatCardHeader>
-            <StatCardLabel>{t("summaryCards.tokensUsed")}</StatCardLabel>
-            <StatCardValue>{format.number(summary.tokensUsed)}</StatCardValue>
-          </StatCardHeader>
-        </StatCard>
+      <AnimatedList
+        as="div"
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <AnimatedListItem as="div" className="grid">
+          <StatCard aria-busy={isPending}>
+            <StatCardHeader>
+              <StatCardLabel>{t("summaryCards.tokensUsed")}</StatCardLabel>
+              <StatCardValue>{format.number(summary.tokensUsed)}</StatCardValue>
+            </StatCardHeader>
+          </StatCard>
+        </AnimatedListItem>
 
-        <StatCard aria-busy={isPending}>
-          <StatCardHeader>
-            <StatCardLabel>{t("summaryCards.chargedAmount")}</StatCardLabel>
-            <StatCardValue>
-              {/* The amount names its own currency, and shows enough
-                  decimals to be worth reading: a month of cheap turns
-                  is a few cents, not "$0". */}
-              {summary.charged ? formatMoney(format, summary.charged) : "—"}
-            </StatCardValue>
-          </StatCardHeader>
-        </StatCard>
+        <AnimatedListItem as="div" className="grid">
+          <StatCard aria-busy={isPending}>
+            <StatCardHeader>
+              <StatCardLabel>{t("summaryCards.chargedAmount")}</StatCardLabel>
+              <StatCardValue>
+                {/* The amount names its own currency, and shows enough
+                    decimals to be worth reading: a month of cheap turns
+                    is a few cents, not "$0". */}
+                {summary.charged ? formatMoney(format, summary.charged) : "—"}
+              </StatCardValue>
+            </StatCardHeader>
+          </StatCard>
+        </AnimatedListItem>
 
-        <StatCard aria-busy={isPending}>
-          <StatCardHeader>
-            <StatCardLabel>{t("summaryCards.requests")}</StatCardLabel>
-            <StatCardValue>{format.number(summary.requestCount)}</StatCardValue>
-          </StatCardHeader>
-        </StatCard>
+        <AnimatedListItem as="div" className="grid">
+          <StatCard aria-busy={isPending}>
+            <StatCardHeader>
+              <StatCardLabel>{t("summaryCards.requests")}</StatCardLabel>
+              <StatCardValue>
+                {format.number(summary.requestCount)}
+              </StatCardValue>
+            </StatCardHeader>
+          </StatCard>
+        </AnimatedListItem>
 
-        <StatCard>
-          <StatCardHeader>
-            <StatCardLabel>{t("summaryCards.planQuota")}</StatCardLabel>
-            <StatCardAction>
-              <StatusBadge status={quotaBadge.status}>
-                {quotaBadge.label}
-              </StatusBadge>
-            </StatCardAction>
-          </StatCardHeader>
-          <CardContent className="space-y-2">
-            <Progress value={Math.min(quota.percentage, 100)} />
-            <p className="text-xs text-muted-foreground">
-              {billingMode === "credit"
-                ? t("summaryCards.quotaAllowanceCredit", {
-                    percentage: quota.percentage,
-                    planName: plan.name,
-                  })
-                : t("summaryCards.quotaAllowance", {
-                    percentage: quota.percentage,
-                    planName: plan.name,
-                  })}
-            </p>
-          </CardContent>
-        </StatCard>
-      </div>
+        <AnimatedListItem as="div" className="grid">
+          <StatCard>
+            <StatCardHeader>
+              <StatCardLabel>{t("summaryCards.planQuota")}</StatCardLabel>
+              <StatCardAction>
+                <StatusBadge status={quotaBadge.status}>
+                  {quotaBadge.label}
+                </StatusBadge>
+              </StatCardAction>
+            </StatCardHeader>
+            <CardContent className="space-y-2">
+              <Progress value={Math.min(quota.percentage, 100)} />
+              <p className="text-xs text-muted-foreground">
+                {billingMode === "credit"
+                  ? t("summaryCards.quotaAllowanceCredit", {
+                      percentage: quota.percentage,
+                      planName: plan.name,
+                    })
+                  : t("summaryCards.quotaAllowance", {
+                      percentage: quota.percentage,
+                      planName: plan.name,
+                    })}
+              </p>
+            </CardContent>
+          </StatCard>
+        </AnimatedListItem>
+      </AnimatedList>
 
       {trial.hasTrialCredits && trial.status === "active" ? (
         <Card>
