@@ -12,7 +12,7 @@ import { EASE_OUT, SPRING_LAYOUT } from "@ui/components/ui/ai-motion";
 import { cn } from "@ui/lib/utils";
 
 /* ----------------------------------------------------------------------------
- * Gesture hooks (upstream lib/hooks). A click carries no pointerType, and a
+ * Gesture hooks (from the ported source). A click carries no pointerType, and a
  * finger cannot hover, so the rail needs to know which input is behind
  * each activation and when a pinned preview should let go.
  * ------------------------------------------------------------------------- */
@@ -123,7 +123,7 @@ function useDismiss(
 }
 
 /* ----------------------------------------------------------------------------
- * PreviewRail (upstream components/motion/preview-rail): a column of ticks,
+ * PreviewRail: a column of ticks,
  * one per section, that grow towards the pointer and show a preview card
  * for the one under it.
  * ------------------------------------------------------------------------- */

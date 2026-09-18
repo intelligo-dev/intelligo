@@ -16,7 +16,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { cn } from "@ui/lib/utils";
 
-/** upstream's sweep: muted text with a foreground highlight passing through. */
+/** The sweep: muted text with a foreground highlight passing through. */
 const SHIMMER_GRADIENT =
   "linear-gradient(110deg, var(--muted-foreground) 30%, var(--foreground) 50%, var(--muted-foreground) 70%)";
 
