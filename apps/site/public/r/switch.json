@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "switch",
   "title": "Switch",
-  "description": "An on/off control with a weighted thumb that squeezes while pressed (T1).",
+  "description": "An on/off control with a weighted thumb that squeezes while pressed.",
   "dependencies": [
     "@base-ui/react",
     "motion"

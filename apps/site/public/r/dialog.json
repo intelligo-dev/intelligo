@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "dialog",
   "title": "Dialog",
-  "description": "A modal window over a blurred backdrop that springs up into place (T1).",
+  "description": "A modal window over a blurred backdrop that springs up into place.",
   "dependencies": [
     "@base-ui/react",
     "lucide-react",

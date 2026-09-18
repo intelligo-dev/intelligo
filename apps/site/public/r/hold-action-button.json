@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "hold-action-button",
   "title": "Hold Action Button",
-  "description": "A press-and-hold confirmation for a destructive action, by pointer or held Space/Enter, whose fill sweeps across while held and drains on an early release (T4).",
+  "description": "A press-and-hold confirmation for a destructive action, by pointer or held Space/Enter, whose fill sweeps across while held and drains on an early release.",
   "dependencies": [
     "motion"
   ],

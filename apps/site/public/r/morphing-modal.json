@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "morphing-modal",
   "title": "Morphing Modal",
-  "description": "A card or button that grows into a centred or bottom dialog through a shared layout, cross-fading between views while the panel resizes (T4).",
+  "description": "A card or button that grows into a centred or bottom dialog through a shared layout, cross-fading between views while the panel resizes.",
   "dependencies": [
     "@base-ui/react",
     "motion",

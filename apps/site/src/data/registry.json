@@ -190,7 +190,7 @@
       "name": "button",
       "type": "registry:ui",
       "title": "Button",
-      "description": "The action primitive: a pill that presses in and settles back — six variants, eight sizes, composes through render (T1).",
+      "description": "The action primitive: a pill that presses in and settles back — six variants, eight sizes, composes through render.",
       "dependencies": ["@base-ui/react", "class-variance-authority"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -205,7 +205,7 @@
       "name": "checkbox",
       "type": "registry:ui",
       "title": "Checkbox",
-      "description": "A checkbox whose check draws itself in, with an indeterminate state (T1).",
+      "description": "A checkbox whose check draws itself in, with an indeterminate state.",
       "dependencies": ["@base-ui/react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -220,7 +220,7 @@
       "name": "radio-group",
       "type": "registry:ui",
       "title": "Radio Group",
-      "description": "One choice from a set; the dot springs out from the centre (T1).",
+      "description": "One choice from a set; the dot springs out from the centre.",
       "dependencies": ["@base-ui/react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -235,7 +235,7 @@
       "name": "switch",
       "type": "registry:ui",
       "title": "Switch",
-      "description": "An on/off control with a weighted thumb that squeezes while pressed (T1).",
+      "description": "An on/off control with a weighted thumb that squeezes while pressed.",
       "dependencies": ["@base-ui/react", "motion"],
       "registryDependencies": [],
       "files": [
@@ -250,7 +250,7 @@
       "name": "input",
       "type": "registry:ui",
       "title": "Input",
-      "description": "A single-line text field whose border and soft ring ease in on focus (T1).",
+      "description": "A single-line text field whose border and soft ring ease in on focus.",
       "dependencies": ["@base-ui/react"],
       "registryDependencies": [],
       "files": [
@@ -265,7 +265,7 @@
       "name": "textarea",
       "type": "registry:ui",
       "title": "Textarea",
-      "description": "A multi-line text field that grows with its content (T1).",
+      "description": "A multi-line text field that grows with its content.",
       "registryDependencies": [],
       "files": [
         {
@@ -279,7 +279,7 @@
       "name": "tooltip",
       "type": "registry:ui",
       "title": "Tooltip",
-      "description": "A short hint on hover or focus that grows out of its trigger; neighbours open instantly (T1).",
+      "description": "A short hint on hover or focus that grows out of its trigger; neighbours open instantly.",
       "dependencies": ["@base-ui/react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -294,7 +294,7 @@
       "name": "popover",
       "type": "registry:ui",
       "title": "Popover",
-      "description": "Floating content in a rounded panel that scales out of its trigger (T1).",
+      "description": "Floating content in a rounded panel that scales out of its trigger.",
       "dependencies": ["@base-ui/react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -309,7 +309,7 @@
       "name": "dropdown-menu",
       "type": "registry:ui",
       "title": "Dropdown Menu",
-      "description": "Actions, checkboxes and radio groups with submenus, in a panel that scales out of its trigger (T1).",
+      "description": "Actions, checkboxes and radio groups with submenus, in a panel that scales out of its trigger.",
       "dependencies": ["@base-ui/react", "lucide-react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -324,7 +324,7 @@
       "name": "select",
       "type": "registry:ui",
       "title": "Select",
-      "description": "A picker for one value from a list, on the input's field and the menu's panel (T1).",
+      "description": "A picker for one value from a list, on the input's field and the menu's panel.",
       "dependencies": ["@base-ui/react", "lucide-react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -339,7 +339,7 @@
       "name": "dialog",
       "type": "registry:ui",
       "title": "Dialog",
-      "description": "A modal window over a blurred backdrop that springs up into place (T1).",
+      "description": "A modal window over a blurred backdrop that springs up into place.",
       "dependencies": ["@base-ui/react", "lucide-react", "motion"],
       "registryDependencies": ["@intelligo/button", "@intelligo/ai-motion"],
       "files": [
@@ -354,7 +354,7 @@
       "name": "alert-dialog",
       "type": "registry:ui",
       "title": "Alert Dialog",
-      "description": "A modal that confirms a destructive or irreversible action, with the dialog's backdrop and spring (T1).",
+      "description": "A modal that confirms a destructive or irreversible action, with the dialog's backdrop and spring.",
       "dependencies": ["@base-ui/react", "motion"],
       "registryDependencies": ["@intelligo/button", "@intelligo/ai-motion"],
       "files": [
@@ -369,7 +369,7 @@
       "name": "sheet",
       "type": "registry:ui",
       "title": "Sheet",
-      "description": "A panel that slides in from any edge on the drawer curve (T1).",
+      "description": "A panel that slides in from any edge on the drawer curve.",
       "dependencies": ["@base-ui/react", "lucide-react", "motion"],
       "registryDependencies": ["@intelligo/button", "@intelligo/ai-motion"],
       "files": [
@@ -384,7 +384,7 @@
       "name": "tabs",
       "type": "registry:ui",
       "title": "Tabs",
-      "description": "Switches between views with one indicator that glides from tab to tab — pill and line variants (T1).",
+      "description": "Switches between views with one indicator that glides from tab to tab — pill and line variants.",
       "dependencies": ["@base-ui/react", "class-variance-authority", "motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -399,7 +399,7 @@
       "name": "collapsible",
       "type": "registry:ui",
       "title": "Collapsible",
-      "description": "Content that eases open and closed from its measured height (T1).",
+      "description": "Content that eases open and closed from its measured height.",
       "dependencies": ["@base-ui/react"],
       "registryDependencies": [],
       "files": [
@@ -414,7 +414,7 @@
       "name": "progress",
       "type": "registry:ui",
       "title": "Progress",
-      "description": "A rounded bar whose fill glides to each new value (T1).",
+      "description": "A rounded bar whose fill glides to each new value.",
       "dependencies": ["@base-ui/react"],
       "registryDependencies": [],
       "files": [
@@ -429,7 +429,7 @@
       "name": "spinner",
       "type": "registry:ui",
       "title": "Spinner",
-      "description": "Pending state: a faint ring with a running arc. Pair with disabled and aria-busy (T2).",
+      "description": "Pending state: a faint ring with a running arc. Pair with disabled and aria-busy.",
       "registryDependencies": [],
       "files": [
         {
@@ -443,7 +443,7 @@
       "name": "attachment",
       "type": "registry:ui",
       "title": "Attachment",
-      "description": "A file attached to a message or a prompt (T2).",
+      "description": "A file attached to a message or a prompt.",
       "dependencies": ["@base-ui/react", "class-variance-authority"],
       "registryDependencies": ["@intelligo/button"],
       "files": [
@@ -458,7 +458,7 @@
       "name": "input-group",
       "type": "registry:ui",
       "title": "Input Group",
-      "description": "An input or textarea with inline addons, buttons and text (T2).",
+      "description": "An input or textarea with inline addons, buttons and text.",
       "dependencies": ["class-variance-authority"],
       "registryDependencies": [
         "@intelligo/button",
@@ -477,7 +477,7 @@
       "name": "command",
       "type": "registry:ui",
       "title": "Command",
-      "description": "A searchable list of actions, inline or in a dialog (T1).",
+      "description": "A searchable list of actions, inline or in a dialog.",
       "dependencies": ["cmdk", "lucide-react"],
       "registryDependencies": ["@intelligo/dialog", "@intelligo/input-group"],
       "files": [
@@ -492,7 +492,7 @@
       "name": "sidebar",
       "type": "registry:ui",
       "title": "Sidebar",
-      "description": "The app sidebar — collapsible to icons, keyboard-toggled, a sheet on mobile (T1).",
+      "description": "The app sidebar — collapsible to icons, keyboard-toggled, a sheet on mobile.",
       "dependencies": [
         "@base-ui/react",
         "class-variance-authority",
@@ -518,7 +518,7 @@
       "name": "page-header",
       "type": "registry:ui",
       "title": "Page Header",
-      "description": "The one page title every Intelligo page renders: heading, description and actions (T4).",
+      "description": "The one page title every Intelligo page renders: heading, description and actions.",
       "files": [
         {
           "path": "base/ui/page-header/page-header.tsx",
@@ -531,7 +531,7 @@
       "name": "stat-card",
       "type": "registry:ui",
       "title": "Stat Card",
-      "description": "A metric on a card — label, value, an action such as a status badge, and a footer (T4).",
+      "description": "A metric on a card — label, value, an action such as a status badge, and a footer.",
       "registryDependencies": ["card"],
       "files": [
         {
@@ -545,7 +545,7 @@
       "name": "status-badge",
       "type": "registry:ui",
       "title": "Status Badge",
-      "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour (T4).",
+      "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour.",
       "dependencies": ["class-variance-authority"],
       "files": [
         {
@@ -559,7 +559,7 @@
       "name": "copy-button",
       "type": "registry:ui",
       "title": "Copy Button",
-      "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own (T4).",
+      "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own.",
       "dependencies": ["lucide-react"],
       "registryDependencies": ["@intelligo/button"],
       "files": [
@@ -574,7 +574,7 @@
       "name": "ai-code-block",
       "type": "registry:ui",
       "title": "AI Code Block",
-      "description": "Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark (T3).",
+      "description": "Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark.",
       "dependencies": ["shiki", "lucide-react"],
       "registryDependencies": ["@intelligo/copy-button", "@intelligo/spinner"],
       "files": [
@@ -589,7 +589,7 @@
       "name": "ai-reasoning",
       "type": "registry:ui",
       "title": "AI Reasoning",
-      "description": "Streamed reasoning, collapsible, with the time it took (T3; ported from Vercel AI Elements).",
+      "description": "Streamed reasoning, collapsible, with the time it took.",
       "dependencies": ["lucide-react", "streamdown"],
       "registryDependencies": ["@intelligo/collapsible"],
       "files": [
@@ -604,7 +604,7 @@
       "name": "ai-suggestion",
       "type": "registry:ui",
       "title": "AI Suggestion",
-      "description": "Conversation starters and follow-ups in a scrollable row (T3; ported from Vercel AI Elements).",
+      "description": "Conversation starters and follow-ups in a scrollable row.",
       "registryDependencies": ["@intelligo/button", "scroll-area"],
       "files": [
         {
@@ -618,7 +618,7 @@
       "name": "ai-artifact",
       "type": "registry:ui",
       "title": "AI Artifact",
-      "description": "A generated document's frame: header, actions and content (T3; ported from Vercel AI Elements).",
+      "description": "A generated document's frame: header, actions and content.",
       "dependencies": ["lucide-react"],
       "registryDependencies": ["@intelligo/button", "@intelligo/tooltip"],
       "files": [
@@ -633,7 +633,7 @@
       "name": "ai-prompt-input",
       "type": "registry:ui",
       "title": "AI Prompt Input",
-      "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply (T3; ported from Vercel AI Elements).",
+      "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply.",
       "dependencies": ["ai@^7.0.103", "lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/attachment",
@@ -655,7 +655,7 @@
       "name": "ai-branch",
       "type": "registry:ui",
       "title": "AI Branch",
-      "description": "A pager over the versions of a reply or an edited message — previous, next, `2 / 3` (T3).",
+      "description": "A pager over the versions of a reply or an edited message — previous, next, `2 / 3`.",
       "dependencies": ["lucide-react"],
       "registryDependencies": ["@intelligo/button"],
       "files": [
@@ -670,7 +670,7 @@
       "name": "ai-speech-input",
       "type": "registry:ui",
       "title": "AI Speech Input",
-      "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent (T3).",
+      "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent.",
       "dependencies": ["lucide-react"],
       "registryDependencies": ["@intelligo/button"],
       "files": [
@@ -685,7 +685,7 @@
       "name": "ai-composer-menu",
       "type": "registry:ui",
       "title": "AI Composer Menu",
-      "description": "The picker a composer opens for slash commands and @ mentions, anchored above the textarea (T3).",
+      "description": "The picker a composer opens for slash commands and @ mentions, anchored above the textarea.",
       "dependencies": [],
       "registryDependencies": ["@intelligo/command"],
       "files": [
@@ -715,7 +715,7 @@
       "name": "ai-shimmer-text",
       "type": "registry:ui",
       "title": "AI Shimmer Text",
-      "description": "A status line that reads as alive while the agent works; a token gradient sweeps the text and the words swap with motion, honouring reduced motion (T3).",
+      "description": "A status line that reads as alive while the agent works; a token gradient sweeps the text and the words swap with motion, honouring reduced motion.",
       "dependencies": ["motion"],
       "registryDependencies": [],
       "files": [
@@ -730,7 +730,7 @@
       "name": "ai-agent-activity",
       "type": "registry:ui",
       "title": "AI Agent Activity",
-      "description": "One adaptive stream of what the agent is doing: reasoning text, plan steps, web searches with results, tool calls and structured traces, gliding while it works and folding into a summary when done (T3).",
+      "description": "One adaptive stream of what the agent is doing: reasoning text, plan steps, web searches with results, tool calls and structured traces, gliding while it works and folding into a summary when done.",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-motion",
@@ -748,7 +748,7 @@
       "name": "ai-approval-card",
       "type": "registry:ui",
       "title": "AI Approval Card",
-      "description": "A decision surface: approve, reject or request changes, or step through single-choice, multiple-choice and freeform questions and submit the answers (T3).",
+      "description": "A decision surface: approve, reject or request changes, or step through single-choice, multiple-choice and freeform questions and submit the answers.",
       "dependencies": ["lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/ai-motion",
@@ -770,7 +770,7 @@
       "name": "ai-file-diff",
       "type": "registry:ui",
       "title": "AI File Diff",
-      "description": "A file the agent is changing: the path with live added and removed counts, opening onto a unified diff whose highlighted rows arrive while the change streams (T3).",
+      "description": "A file the agent is changing: the path with live added and removed counts, opening onto a unified diff whose highlighted rows arrive while the change streams.",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-code-block",
@@ -790,7 +790,7 @@
       "name": "ai-message-bubble",
       "type": "registry:ui",
       "title": "AI Message Bubble",
-      "description": "The speech bubble inside a message row: six surface variants that pop into place, grouped bubbles and a collapsible long body (T3).",
+      "description": "The speech bubble inside a message row: six surface variants that pop into place, grouped bubbles and a collapsible long body.",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": ["@intelligo/ai-motion", "@intelligo/ai-message"],
       "files": [
@@ -805,7 +805,7 @@
       "name": "ai-message-scroller",
       "type": "registry:ui",
       "title": "AI Message Scroller",
-      "description": "The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages (T3).",
+      "description": "The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages.",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -820,7 +820,7 @@
       "name": "ai-message",
       "type": "registry:ui",
       "title": "AI Message",
-      "description": "One turn of a conversation: the row with its side, optional avatar, content column, header, footer, a centred marker and the typing indicator (T3).",
+      "description": "One turn of a conversation: the row with its side, optional avatar, content column, header, footer, a centred marker and the typing indicator.",
       "dependencies": ["motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -835,7 +835,7 @@
       "name": "ai-todo-list",
       "type": "registry:ui",
       "title": "AI Todo List",
-      "description": "The agent's to-do list: a collapsible plan whose status marks morph between pending, in progress, completed and cancelled, with a rolling completion count (T3).",
+      "description": "The agent's to-do list: a collapsible plan whose status marks morph between pending, in progress, completed and cancelled, with a rolling completion count.",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -850,7 +850,7 @@
       "name": "ai-tool-approval",
       "type": "registry:ui",
       "title": "AI Tool Approval",
-      "description": "A permission card for a tool call: name, parameters behind a disclosure, allow once / always allow / deny, and the outcome as a status (T3).",
+      "description": "A permission card for a tool call: name, parameters behind a disclosure, allow once / always allow / deny, and the outcome as a status.",
       "dependencies": ["lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/ai-code-block",
@@ -871,7 +871,7 @@
       "name": "ai-tool-result",
       "type": "registry:ui",
       "title": "AI Tool Result",
-      "description": "The result of a tool the agent ran: a summary line that opens onto highlighted output, status rolling from running to done, copy and run-again actions (T3).",
+      "description": "The result of a tool the agent ran: a summary line that opens onto highlighted output, status rolling from running to done, copy and run-again actions.",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-code-block",
@@ -891,7 +891,7 @@
       "name": "ai-agent-progress",
       "type": "registry:ui",
       "title": "AI Agent Progress",
-      "description": "A long-running step: a pulsing grid beside the verb and an elapsed-time counter (T3).",
+      "description": "A long-running step: a pulsing grid beside the verb and an elapsed-time counter.",
       "dependencies": ["motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -906,7 +906,7 @@
       "name": "ai-citations",
       "type": "registry:ui",
       "title": "AI Citations",
-      "description": "The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list (T3).",
+      "description": "The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list.",
       "dependencies": ["lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/ai-motion",
@@ -925,7 +925,7 @@
       "name": "ai-image-generation",
       "type": "registry:ui",
       "title": "AI Image Generation",
-      "description": "An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes (T3).",
+      "description": "An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes.",
       "dependencies": ["lucide-react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion", "@intelligo/button"],
       "files": [
@@ -940,7 +940,7 @@
       "name": "ai-reasoning-text",
       "type": "registry:ui",
       "title": "AI Reasoning Text",
-      "description": "What the agent is doing while it reasons: phrases cycle with a cascade, swap or scramble behind an ASCII loader (T3).",
+      "description": "What the agent is doing while it reasons: phrases cycle with a cascade, swap or scramble behind an ASCII loader.",
       "dependencies": ["motion"],
       "registryDependencies": [
         "@intelligo/ai-motion",
@@ -958,7 +958,7 @@
       "name": "ai-streaming-response",
       "type": "registry:ui",
       "title": "AI Streaming Response",
-      "description": "An assistant reply as it streams and once it lands: content, copy, retry and feedback actions, and a sources disclosure (T3).",
+      "description": "An assistant reply as it streams and once it lands: content, copy, retry and feedback actions, and a sources disclosure.",
       "dependencies": ["lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/ai-citations",
@@ -977,7 +977,7 @@
       "name": "ai-sidebar",
       "type": "registry:ui",
       "title": "AI Sidebar",
-      "description": "The AI product's sidebar: a shell that morphs between a panel and an icon rail with tooltips, slides in as a sheet on mobile, holds menus with a gliding hover and active pill and staggered submenus, and a resource tree of folders, projects, conversations, files and bookmarks with keyboard and drag-and-drop moves, rename and a row menu (T3).",
+      "description": "The AI product's sidebar: a shell that morphs between a panel and an icon rail with tooltips, slides in as a sheet on mobile, holds menus with a gliding hover and active pill and staggered submenus, and a resource tree of folders, projects, conversations, files and bookmarks with keyboard and drag-and-drop moves, rename and a row menu.",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-motion",
@@ -997,7 +997,7 @@
       "name": "document-viewer",
       "type": "registry:ui",
       "title": "Document Viewer",
-      "description": "How a saved document reads when nobody is editing it: markdown with maths and diagrams, highlighted code, a sheet's rows, an image, and a sandboxed HTML preview — plus the title-to-language and kind-glyph helpers the chat canvas and the artifacts library share (T4).",
+      "description": "How a saved document reads when nobody is editing it: markdown with maths and diagrams, highlighted code, a sheet's rows, an image, and a sandboxed HTML preview — plus the title-to-language and kind-glyph helpers the chat canvas and the artifacts library share.",
       "dependencies": [
         "streamdown",
         "@streamdown/code",
@@ -1020,7 +1020,7 @@
       "name": "popover-morph",
       "type": "registry:ui",
       "title": "Popover Morph",
-      "description": "A non-modal popover whose trigger surface grows into the panel through a shared layout and folds back on close (T4).",
+      "description": "A non-modal popover whose trigger surface grows into the panel through a shared layout and folds back on close.",
       "dependencies": ["@base-ui/react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -1035,7 +1035,7 @@
       "name": "select-morph",
       "type": "registry:ui",
       "title": "Select Morph",
-      "description": "A select whose trigger continues into its list: the list unclips down from the trigger's edge as one surface while its options stagger in (T4).",
+      "description": "A select whose trigger continues into its list: the list unclips down from the trigger's edge as one surface while its options stagger in.",
       "dependencies": ["@base-ui/react", "motion", "lucide-react"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -1050,7 +1050,7 @@
       "name": "morphing-modal",
       "type": "registry:ui",
       "title": "Morphing Modal",
-      "description": "A card or button that grows into a centred or bottom dialog through a shared layout, cross-fading between views while the panel resizes (T4).",
+      "description": "A card or button that grows into a centred or bottom dialog through a shared layout, cross-fading between views while the panel resizes.",
       "dependencies": ["@base-ui/react", "motion", "lucide-react"],
       "registryDependencies": ["@intelligo/ai-motion", "@intelligo/button"],
       "files": [
@@ -1065,7 +1065,7 @@
       "name": "notification-stack",
       "type": "registry:ui",
       "title": "Notification Stack",
-      "description": "Notifications fanned into a stack — the newest in front, the rest peeking out scaled back — that springs apart into a list of openable, dismissable cards on hover or click (T4).",
+      "description": "Notifications fanned into a stack — the newest in front, the rest peeking out scaled back — that springs apart into a list of openable, dismissable cards on hover or click.",
       "dependencies": ["@base-ui/react", "motion", "lucide-react"],
       "registryDependencies": ["@intelligo/ai-motion", "@intelligo/button"],
       "files": [
@@ -1080,7 +1080,7 @@
       "name": "animated-list",
       "type": "registry:ui",
       "title": "Animated List",
-      "description": "A list container that staggers its rows in on mount, rows that rise in, fall out and glide on reorder (ul, ol, div or tbody/tr), and a block that reveals once as it scrolls into view (T4).",
+      "description": "A list container that staggers its rows in on mount, rows that rise in, fall out and glide on reorder (ul, ol, div or tbody/tr), and a block that reveals once as it scrolls into view.",
       "dependencies": ["motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -1095,7 +1095,7 @@
       "name": "otp-input",
       "type": "registry:ui",
       "title": "OTP Input",
-      "description": "A one-time-code input on Base UI's OTP Field whose characters roll into their slots under a blinking caret, shaking on a rejected code and drawing a check on an accepted one (T4).",
+      "description": "A one-time-code input on Base UI's OTP Field whose characters roll into their slots under a blinking caret, shaking on a rejected code and drawing a check on an accepted one.",
       "dependencies": ["@base-ui/react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -1110,7 +1110,7 @@
       "name": "file-upload",
       "type": "registry:ui",
       "title": "File Upload",
-      "description": "A controlled file upload — a drop zone with a queue of rows that slide in, fill a progress bar and settle on done or error, or a compact chat-composer wrapper with a drop overlay and chips (T4).",
+      "description": "A controlled file upload — a drop zone with a queue of rows that slide in, fill a progress bar and settle on done or error, or a compact chat-composer wrapper with a drop overlay and chips.",
       "dependencies": ["motion", "lucide-react"],
       "registryDependencies": [
         "@intelligo/ai-motion",
@@ -1129,7 +1129,7 @@
       "name": "expandable-tabs",
       "type": "registry:ui",
       "title": "Expandable Tabs",
-      "description": "A bar of icon tabs on Base UI's Tabs where the active tab widens to unfurl its label, the pill glides to it and its panel rises in (T4).",
+      "description": "A bar of icon tabs on Base UI's Tabs where the active tab widens to unfurl its label, the pill glides to it and its panel rises in.",
       "dependencies": ["@base-ui/react", "motion"],
       "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
@@ -1144,7 +1144,7 @@
       "name": "hold-action-button",
       "type": "registry:ui",
       "title": "Hold Action Button",
-      "description": "A press-and-hold confirmation for a destructive action, by pointer or held Space/Enter, whose fill sweeps across while held and drains on an early release (T4).",
+      "description": "A press-and-hold confirmation for a destructive action, by pointer or held Space/Enter, whose fill sweeps across while held and drains on an early release.",
       "dependencies": ["motion"],
       "registryDependencies": ["@intelligo/ai-motion", "@intelligo/button"],
       "files": [

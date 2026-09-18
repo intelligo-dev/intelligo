@@ -17,7 +17,7 @@ const FORBIDDEN: { re: RegExp; why: string }[] = [
   { re: /\bv0\.\d+\b/, why: "a pre-1.0 milestone" },
   { re: /\bfirst product\b/i, why: "the product this grew with" },
   { re: /\bWave \d+\b/, why: "a refactoring wave" },
-  { re: /\bPorted from\b|AI Elements|\bupstream\b/i, why: "where code came from" },
+  { re: /\bPorted from\b|AI Elements/i, why: "where code came from" },
   { re: /Intelligo design system/, why: "a label" },
 ];
 

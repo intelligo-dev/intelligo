@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "sheet",
   "title": "Sheet",
-  "description": "A panel that slides in from any edge on the drawer curve (T1).",
+  "description": "A panel that slides in from any edge on the drawer curve.",
   "dependencies": [
     "@base-ui/react",
     "lucide-react",

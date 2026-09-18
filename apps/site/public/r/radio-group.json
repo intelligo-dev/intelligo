@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "radio-group",
   "title": "Radio Group",
-  "description": "One choice from a set; the dot springs out from the centre (T1).",
+  "description": "One choice from a set; the dot springs out from the centre.",
   "dependencies": [
     "@base-ui/react",
     "motion"

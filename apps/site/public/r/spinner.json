@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "spinner",
   "title": "Spinner",
-  "description": "Pending state: a faint ring with a running arc. Pair with disabled and aria-busy (T2).",
+  "description": "Pending state: a faint ring with a running arc. Pair with disabled and aria-busy.",
   "registryDependencies": [],
   "files": [
     {

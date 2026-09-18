@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-image-generation",
   "title": "AI Image Generation",
-  "description": "An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes (T3).",
+  "description": "An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes.",
   "dependencies": [
     "lucide-react",
     "motion"

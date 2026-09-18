@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "checkbox",
   "title": "Checkbox",
-  "description": "A checkbox whose check draws itself in, with an indeterminate state (T1).",
+  "description": "A checkbox whose check draws itself in, with an indeterminate state.",
   "dependencies": [
     "@base-ui/react",
     "motion"

@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "popover-morph",
   "title": "Popover Morph",
-  "description": "A non-modal popover whose trigger surface grows into the panel through a shared layout and folds back on close (T4).",
+  "description": "A non-modal popover whose trigger surface grows into the panel through a shared layout and folds back on close.",
   "dependencies": [
     "@base-ui/react",
     "motion"

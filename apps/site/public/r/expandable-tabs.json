@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "expandable-tabs",
   "title": "Expandable Tabs",
-  "description": "A bar of icon tabs on Base UI's Tabs where the active tab widens to unfurl its label, the pill glides to it and its panel rises in (T4).",
+  "description": "A bar of icon tabs on Base UI's Tabs where the active tab widens to unfurl its label, the pill glides to it and its panel rises in.",
   "dependencies": [
     "@base-ui/react",
     "motion"

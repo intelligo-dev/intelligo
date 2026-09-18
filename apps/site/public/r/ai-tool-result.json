@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-tool-result",
   "title": "AI Tool Result",
-  "description": "The result of a tool the agent ran: a summary line that opens onto highlighted output, status rolling from running to done, copy and run-again actions (T3).",
+  "description": "The result of a tool the agent ran: a summary line that opens onto highlighted output, status rolling from running to done, copy and run-again actions.",
   "dependencies": [
     "motion",
     "lucide-react"

@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "progress",
   "title": "Progress",
-  "description": "A rounded bar whose fill glides to each new value (T1).",
+  "description": "A rounded bar whose fill glides to each new value.",
   "dependencies": [
     "@base-ui/react"
   ],

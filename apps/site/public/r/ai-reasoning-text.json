@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-reasoning-text",
   "title": "AI Reasoning Text",
-  "description": "What the agent is doing while it reasons: phrases cycle with a cascade, swap or scramble behind an ASCII loader (T3).",
+  "description": "What the agent is doing while it reasons: phrases cycle with a cascade, swap or scramble behind an ASCII loader.",
   "dependencies": [
     "motion"
   ],

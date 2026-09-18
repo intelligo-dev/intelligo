@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "status-badge",
   "title": "Status Badge",
-  "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour (T4).",
+  "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour.",
   "dependencies": [
     "class-variance-authority"
   ],

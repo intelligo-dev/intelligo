@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-file-diff",
   "title": "AI File Diff",
-  "description": "A file the agent is changing: the path with live added and removed counts, opening onto a unified diff whose highlighted rows arrive while the change streams (T3).",
+  "description": "A file the agent is changing: the path with live added and removed counts, opening onto a unified diff whose highlighted rows arrive while the change streams.",
   "dependencies": [
     "motion",
     "lucide-react"

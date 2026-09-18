@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "textarea",
   "title": "Textarea",
-  "description": "A multi-line text field that grows with its content (T1).",
+  "description": "A multi-line text field that grows with its content.",
   "registryDependencies": [],
   "files": [
     {

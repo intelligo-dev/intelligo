@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "command",
   "title": "Command",
-  "description": "A searchable list of actions, inline or in a dialog (T1).",
+  "description": "A searchable list of actions, inline or in a dialog.",
   "dependencies": [
     "cmdk",
     "lucide-react"

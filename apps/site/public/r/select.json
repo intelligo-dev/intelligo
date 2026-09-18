@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "select",
   "title": "Select",
-  "description": "A picker for one value from a list, on the input's field and the menu's panel (T1).",
+  "description": "A picker for one value from a list, on the input's field and the menu's panel.",
   "dependencies": [
     "@base-ui/react",
     "lucide-react",

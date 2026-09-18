@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-citations",
   "title": "AI Citations",
-  "description": "The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list (T3).",
+  "description": "The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list.",
   "dependencies": [
     "lucide-react",
     "motion"

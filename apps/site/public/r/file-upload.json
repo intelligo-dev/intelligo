@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "file-upload",
   "title": "File Upload",
-  "description": "A controlled file upload — a drop zone with a queue of rows that slide in, fill a progress bar and settle on done or error, or a compact chat-composer wrapper with a drop overlay and chips (T4).",
+  "description": "A controlled file upload — a drop zone with a queue of rows that slide in, fill a progress bar and settle on done or error, or a compact chat-composer wrapper with a drop overlay and chips.",
   "dependencies": [
     "motion",
     "lucide-react"

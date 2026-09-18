@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "copy-button",
   "title": "Copy Button",
-  "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own (T4).",
+  "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own.",
   "dependencies": [
     "lucide-react"
   ],

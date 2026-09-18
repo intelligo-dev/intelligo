@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "alert-dialog",
   "title": "Alert Dialog",
-  "description": "A modal that confirms a destructive or irreversible action, with the dialog's backdrop and spring (T1).",
+  "description": "A modal that confirms a destructive or irreversible action, with the dialog's backdrop and spring.",
   "dependencies": [
     "@base-ui/react",
     "motion"

@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-shimmer-text",
   "title": "AI Shimmer Text",
-  "description": "A status line that reads as alive while the agent works; a token gradient sweeps the text and the words swap with motion, honouring reduced motion (T3).",
+  "description": "A status line that reads as alive while the agent works; a token gradient sweeps the text and the words swap with motion, honouring reduced motion.",
   "dependencies": [
     "motion"
   ],

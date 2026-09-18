@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "select-morph",
   "title": "Select Morph",
-  "description": "A select whose trigger continues into its list: the list unclips down from the trigger's edge as one surface while its options stagger in (T4).",
+  "description": "A select whose trigger continues into its list: the list unclips down from the trigger's edge as one surface while its options stagger in.",
   "dependencies": [
     "@base-ui/react",
     "motion",

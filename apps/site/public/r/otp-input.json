@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "otp-input",
   "title": "OTP Input",
-  "description": "A one-time-code input on Base UI's OTP Field whose characters roll into their slots under a blinking caret, shaking on a rejected code and drawing a check on an accepted one (T4).",
+  "description": "A one-time-code input on Base UI's OTP Field whose characters roll into their slots under a blinking caret, shaking on a rejected code and drawing a check on an accepted one.",
   "dependencies": [
     "@base-ui/react",
     "motion"

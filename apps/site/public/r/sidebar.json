@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "sidebar",
   "title": "Sidebar",
-  "description": "The app sidebar — collapsible to icons, keyboard-toggled, a sheet on mobile (T1).",
+  "description": "The app sidebar — collapsible to icons, keyboard-toggled, a sheet on mobile.",
   "dependencies": [
     "@base-ui/react",
     "class-variance-authority",

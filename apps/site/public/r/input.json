@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "input",
   "title": "Input",
-  "description": "A single-line text field whose border and soft ring ease in on focus (T1).",
+  "description": "A single-line text field whose border and soft ring ease in on focus.",
   "dependencies": [
     "@base-ui/react"
   ],

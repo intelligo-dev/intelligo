@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "tooltip",
   "title": "Tooltip",
-  "description": "A short hint on hover or focus that grows out of its trigger; neighbours open instantly (T1).",
+  "description": "A short hint on hover or focus that grows out of its trigger; neighbours open instantly.",
   "dependencies": [
     "@base-ui/react",
     "motion"

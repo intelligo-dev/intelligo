@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-code-block",
   "title": "AI Code Block",
-  "description": "Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark (T3).",
+  "description": "Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark.",
   "dependencies": [
     "shiki",
     "lucide-react"

@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "notification-stack",
   "title": "Notification Stack",
-  "description": "Notifications fanned into a stack — the newest in front, the rest peeking out scaled back — that springs apart into a list of openable, dismissable cards on hover or click (T4).",
+  "description": "Notifications fanned into a stack — the newest in front, the rest peeking out scaled back — that springs apart into a list of openable, dismissable cards on hover or click.",
   "dependencies": [
     "@base-ui/react",
     "motion",

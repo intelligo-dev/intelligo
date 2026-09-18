@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "page-header",
   "title": "Page Header",
-  "description": "The one page title every Intelligo page renders: heading, description and actions (T4).",
+  "description": "The one page title every Intelligo page renders: heading, description and actions.",
   "files": [
     {
       "path": "base/ui/page-header/page-header.tsx",

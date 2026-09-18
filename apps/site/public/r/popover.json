@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "popover",
   "title": "Popover",
-  "description": "Floating content in a rounded panel that scales out of its trigger (T1).",
+  "description": "Floating content in a rounded panel that scales out of its trigger.",
   "dependencies": [
     "@base-ui/react",
     "motion"

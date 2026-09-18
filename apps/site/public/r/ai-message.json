@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-message",
   "title": "AI Message",
-  "description": "One turn of a conversation: the row with its side, optional avatar, content column, header, footer, a centred marker and the typing indicator (T3).",
+  "description": "One turn of a conversation: the row with its side, optional avatar, content column, header, footer, a centred marker and the typing indicator.",
   "dependencies": [
     "motion"
   ],

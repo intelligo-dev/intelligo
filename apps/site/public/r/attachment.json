@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "attachment",
   "title": "Attachment",
-  "description": "A file attached to a message or a prompt (T2).",
+  "description": "A file attached to a message or a prompt.",
   "dependencies": [
     "@base-ui/react",
     "class-variance-authority"

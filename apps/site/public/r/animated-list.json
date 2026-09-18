@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "animated-list",
   "title": "Animated List",
-  "description": "A list container that staggers its rows in on mount, rows that rise in, fall out and glide on reorder (ul, ol, div or tbody/tr), and a block that reveals once as it scrolls into view (T4).",
+  "description": "A list container that staggers its rows in on mount, rows that rise in, fall out and glide on reorder (ul, ol, div or tbody/tr), and a block that reveals once as it scrolls into view.",
   "dependencies": [
     "motion"
   ],

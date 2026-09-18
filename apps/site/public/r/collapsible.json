@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "collapsible",
   "title": "Collapsible",
-  "description": "Content that eases open and closed from its measured height (T1).",
+  "description": "Content that eases open and closed from its measured height.",
   "dependencies": [
     "@base-ui/react"
   ],

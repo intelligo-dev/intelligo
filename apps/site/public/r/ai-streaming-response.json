@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "ai-streaming-response",
   "title": "AI Streaming Response",
-  "description": "An assistant reply as it streams and once it lands: content, copy, retry and feedback actions, and a sources disclosure (T3).",
+  "description": "An assistant reply as it streams and once it lands: content, copy, retry and feedback actions, and a sources disclosure.",
   "dependencies": [
     "lucide-react",
     "motion"
