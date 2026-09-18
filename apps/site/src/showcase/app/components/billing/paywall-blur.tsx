@@ -5,12 +5,6 @@
  * without giving it away. The children render blurred, inert and
  * unselectable behind an overlay with the upgrade CTA.
  *
- * Use it where the value is visible at a glance — a generated report,
- * an analysis, a long answer — and a plain "upgrade to see this" would
- * be asking the user to buy something they cannot picture. Where the
- * content is not self-evidently valuable, `UpgradePrompt` is honest
- * and this is a tease.
- *
  * The blur is presentation, not protection: the content is in the DOM.
  * Anything that must not reach an unentitled browser belongs behind
  * `FeatureGate` on the server instead.

@@ -1,9 +1,6 @@
 "use client";
 
-/**
- * Monthly/yearly billing interval switch. Purely presentational —
- * the selected interval lives in the parent's state.
- */
+/** Monthly/yearly switch; the selected interval is the parent's state. */
 
 import { useTranslations } from "use-intl";
 
@@ -18,10 +15,7 @@ export function IntervalToggle({ interval, onChange }: IntervalToggleProps) {
   const t = useTranslations("pricing");
 
   return (
-    // Sized to its two words, not to the page: `flex-1` buttons in a
-    // full-width row stretched "Monthly" and "Yearly" across the whole
-    // content column, which read as two large tabs rather than as one
-    // small switch. The parent centres it.
+    // Sized to its two words, not to the page; the parent centres it.
     <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-muted p-1">
       <Button
         type="button"

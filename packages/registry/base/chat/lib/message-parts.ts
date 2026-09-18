@@ -99,8 +99,6 @@ export function isSettledToolState(state: string | undefined): boolean {
   return SETTLED_TOOL_STATES.has(state ?? "");
 }
 
-/* ------------------------------------------------------------------------- */
-
 export type SourceItem = {
   url?: string;
   title?: string;

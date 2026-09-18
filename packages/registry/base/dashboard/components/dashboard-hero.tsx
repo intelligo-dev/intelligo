@@ -2,17 +2,7 @@
 
 /**
  * What this workspace is for, and a way back into unfinished work.
- *
- * Deliberately short: the hero's job is to name the surface and then
- * get out of the way of the composer directly beneath it. Starters
- * belong to the composer (`prompt-bar.tsx`), because they are ways of
- * filling it rather than a separate menu of features — keeping them
- * here put three cards between the question and the box that answers
- * it.
- *
- * Not a stat wall: plan, spend and token counts are real but secondary,
- * and they live in the strip at the foot of the page. A person opening
- * the app wants to do the thing, not read a meter.
+ * Starters belong to the composer (`prompt-bar.tsx`), not here.
  */
 
 import { ArrowRight, Sparkles } from "lucide-react";
@@ -63,7 +53,7 @@ export function DashboardHero({ resume }: DashboardHeroProps) {
           onClick={() => router.push(resume.href)}
           // `max-w-full` and a truncating label: a resumed conversation
           // is titled from its first message, which on a phone is wider
-          // than the screen and wrapped the pill into a block.
+          // than the screen.
           className="mt-5 inline-flex max-w-full items-center gap-1.5 rounded-full bg-accent/60 px-3.5 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
         >
           <span

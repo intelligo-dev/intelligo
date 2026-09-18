@@ -1,19 +1,11 @@
 "use server";
 
 /**
- * Notification server actions — thin wrappers over
- * `@intelligo-dev/core/notifications`: parse nothing (no user input beyond an
- * id), authenticate with `requireAuth()`, call the core CRUD functions,
- * reshape rows for the client, and revalidate this item's own page.
+ * Notification actions over `@intelligo-dev/core/notifications`.
  *
- * User-scoped, not workspace-scoped: `requireAuth()` only, deliberately
- * not `requireWorkspace()`. Notifications span every workspace a user
- * belongs to and are shown in one cross-workspace list.
- *
- * Fallback error strings (used only when the thrown value isn't an
- * `Error`) come from this item's `notifications` message namespace via
- * `getTranslations` (`next-intl/server`), not hardcoded English — see
- * `messages/en.json`'s `errors` key.
+ * User-scoped, not workspace-scoped: `requireAuth()`, not
+ * `requireWorkspace()`, because notifications span every workspace a user
+ * belongs to and are shown in one list.
  */
 
 import { revalidatePath } from "next/cache";
@@ -28,10 +20,6 @@ import {
   markAllAsRead,
 } from "@intelligo-dev/core/notifications";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 export type ActionResult<T> =
   { success: true; data: T } | { success: false; error: string };
 
@@ -44,36 +32,20 @@ export type NotificationData = {
   /** ISO string — Dates don't cross the server action boundary as-is. */
   createdAt: string;
   /**
-   * Optional deep link for this notification.
-   *
-   * The `notifications` table (`packages/core/src/db/schema/notifications.ts`)
-   * has no dedicated link column, and none of the built-in trigger functions
-   * in `@intelligo-dev/core/notifications/triggers` set one today. `metadata` is
-   * free-form (`Record<string, unknown>` on `CreateNotificationParams`), so
-   * this reads an optional `metadata.href` string when a product's own
-   * `createNotification()`/trigger call chooses to include one — e.g.
-   * `metadata: { href: "/billing" }`. `null` when absent, which is the
-   * common case today.
+   * Optional deep link, read from `metadata.href`: pass
+   * `metadata: { href: "/billing" }` to `createNotification()`. The table
+   * has no link column, and the built-in triggers set none. `null` when
+   * absent.
    */
   href: string | null;
 };
 
-// A page size the caller can grow ("Load more") and a hard ceiling —
-// `getNotifications`/`getUnreadNotifications` in `@intelligo-dev/core` take a
-// plain `limit`, not an offset or cursor, so there is no true page-based
-// pagination to forward. See `notification-list.tsx` for how "Load more"
-// is built on top of that: it re-fetches with a larger limit rather than
-// fetching a distinct next page.
+// The core reads take a `limit`, not an offset or cursor, so "Load more"
+// re-fetches with a larger limit, up to the ceiling.
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
-// The page this item installs to — kept in one place so both mutations
-// revalidate the same route.
 const NOTIFICATIONS_PATH = "/notifications";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 type CoreNotification = Awaited<
   ReturnType<typeof coreGetNotifications>
@@ -101,10 +73,6 @@ function toNotificationData(row: CoreNotification): NotificationData {
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
-
-// ---------------------------------------------------------------------------
-// Reads
-// ---------------------------------------------------------------------------
 
 /**
  * All notifications (read and unread) for the current user, newest first.
@@ -161,14 +129,9 @@ export async function getUnreadCount(): Promise<ActionResult<number>> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Writes
-// ---------------------------------------------------------------------------
-
 /**
- * Mark one notification as read. `markAsRead` in `@intelligo-dev/core` scopes
- * the update to `(notificationId, userId)`, so this can't touch another
- * user's notification.
+ * Marks one notification as read. The update is scoped to
+ * `(notificationId, userId)`, so it cannot touch another user's.
  */
 export async function markNotificationRead(
   notificationId: string

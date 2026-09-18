@@ -19,11 +19,7 @@ import { IntervalToggle } from "./interval-toggle";
 import { PlanCard } from "./plan-card";
 
 interface PricingContentProps {
-  /**
-   * The registered plan catalogue, resolved server-side by the page
-   * (through `@/lib/billing`'s `getPlans`) and handed down as data —
-   * this client component never reads the plan registry itself.
-   */
+  /** The plan catalogue, resolved by the page through `getPlans`. */
   plans: Partial<Record<string, PlanConfig>>;
   currentPlanSlug: string;
   canCheckout: boolean;
@@ -71,11 +67,9 @@ export function PricingContent({
         </div>
       ) : null}
 
-      {/* Centred wrap rather than a three-column grid: the catalogue is
-          a product-registered map of any size, and a fixed
-          three columns left two plans hanging against the left edge
-          with a hole where the third would be. Each card takes a fixed
-          width so two, three or five of them stay the same size. */}
+      {/* Centred wrap rather than a grid: the catalogue can hold any
+          number of plans, and fixed-width cards stay the same size
+          whether there are two or five. */}
       <AnimatedList as="div" className="flex flex-wrap justify-center gap-6">
         {planEntries.map((plan) => (
           <AnimatedListItem as="div" key={plan.slug} className="w-full sm:w-80">
@@ -84,11 +78,8 @@ export function PricingContent({
               currentPlanSlug={currentPlanSlug}
               interval={interval}
               canCheckout={canCheckout}
-              // No plan is singled out as "recommended" here: guessing a
-              // tier name or position would reintroduce the
-              // vertical-specific assumption this item avoids. A
-              // deployment that wants a highlighted plan sets
-              // `isRecommended` in its own copy of this file.
+              // No plan is highlighted by default; set `isRecommended`
+              // for the one you want to single out.
             />
           </AnimatedListItem>
         ))}

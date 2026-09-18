@@ -1,15 +1,9 @@
 "use client";
 
 /**
- * Workspace switcher — lists the caller's workspaces (server-fetched by
- * the layout, passed down as props) and activates one via Better-Auth's
- * organization plugin.
- *
- * No create-workspace dialog: creating a workspace needs a name/slug
- * form, a pending state, and error handling of its own — enough surface
- * that it deserves its own component once a product wants self-serve
- * multi-workspace creation, not something to bundle in sight-unseen.
- * Wire one up against `authClient.organization.create` when you need it.
+ * Lists the caller's workspaces (fetched by the layout) and activates one
+ * through Better-Auth's organization plugin. It has no create-workspace
+ * action; build one on `authClient.organization.create` if you need it.
  */
 
 import * as React from "react";

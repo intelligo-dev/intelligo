@@ -1,7 +1,6 @@
 /**
- * Dashboard skeleton — mirrors the page's layout (a centred hero block,
- * the composer, a row of starter chips) so first paint doesn't jump when
- * the real content arrives.
+ * Mirrors the page's layout (hero, composer, starter chips) so first
+ * paint doesn't jump when the real content arrives.
  */
 
 import { Skeleton } from "@/components/ui/skeleton";

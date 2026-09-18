@@ -1,8 +1,8 @@
 /*
- * The button: a pill that presses in and
- * settles back, over Base UI's Button so `render` keeps working for links
- * and triggers. shadcn base-nova's API (MIT). Motion is CSS on the `--ease-*` and
- * `--duration-*` tokens, which the base collapses under reduced motion.
+ * The button: a pill that presses in and settles back, over Base UI's
+ * Button so `render` keeps working for links and triggers. Motion is CSS
+ * on the `--ease-*` and `--duration-*` tokens, which the base collapses
+ * under reduced motion.
  */
 
 import { Button as ButtonPrimitive } from "@base-ui/react/button";

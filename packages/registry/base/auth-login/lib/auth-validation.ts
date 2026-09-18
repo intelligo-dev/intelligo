@@ -3,10 +3,8 @@
  *
  * Ships with `auth-login`; `auth-signup` and `auth-password-reset` import
  * it from `@/lib/auth-validation` once installed (see those items'
- * descriptions for the cross-item dependency). Mirrors the semantics of
- * the first product's `lib/validations/auth.ts` (password strength rule included) —
- * plain zod, no `@intelligo-dev/*` imports, so it works identically before
- * and after the request reaches the Better-Auth client SDK.
+ * descriptions for the cross-item dependency). Plain zod, no
+ * `@intelligo-dev/*` imports.
  *
  * Validation copy is user-facing, so these schemas do not carry literal
  * English strings — they carry stable error CODES (plain identifiers, not

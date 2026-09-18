@@ -253,7 +253,7 @@ export function hasToolCard(toolName: string): boolean {
   return typeof entry === "function" || Boolean(entry.component);
 }
 
-/** Kept for cards written against the earlier seam. */
+/** The component a tool's call renders with. */
 export function getToolRenderer(
   toolName: string
 ): ComponentType<ToolRendererProps> {

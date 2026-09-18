@@ -513,57 +513,28 @@ Installed components are used verbatim. What a deployment varies lives in these 
 
 Exports `onWorkspaceCreated`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/workspace-bootstrap.ts)
 
-Workspace bootstrap — composition-root binding for the app shell's one
-extension point: what happens the first time `ensureUserWorkspace`
-(`@intelligo-dev/auth`) has to create a workspace for a user, instead of
-finding an existing one.
-
-`@intelligo-dev/auth` must not import `@intelligo-dev/billing` — a product's
-trial/referral/welcome-bonus rules are a business decision, not a
-framework one, and importing them directly would recreate the very
-auth → billing cycle `ensureUserWorkspace`'s callback parameter exists
-to avoid. So the layout injects this callback instead of the package
-importing anything. That binding happens here, in a file
-the composition root owns and calls explicitly — never as an import
-side effect.
-
-Ships provisioning nothing: a fresh install has no trial or referral
-program to wire up. Bind whatever your product actually wants to
-happen on first workspace creation — the commented example below
-shows the shape once `@intelligo-dev/billing` is installed.
+Runs once, when `ensureUserWorkspace` creates a user's first workspace:
+the place for trial credits, referral bonuses or any other one-time
+provisioning. It lives here so `@intelligo-dev/auth` never imports
+billing.
 
 ### `lib/shell-config.tsx`
 
 Exports `ShellConfig`, `shellConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/shell-config.tsx)
 
-Shell composition config — the consumer-owned extension point for
-everything a vertical wants to add around the authenticated app
-shell without editing `layout.tsx` or `components/shell/*`
-(composition through a config a consumer owns, never a component
-edit; mirrors the `chat` item's `lib/chat-config.tsx`).
+What your product adds around the app shell, without editing
+`layout.tsx` or `components/shell/*`. Every slot is optional and takes
+a component with no props; one that needs data fetches it itself.
 
-Every seam is optional — a fresh install ships this file with an
-empty `shellConfig`, so the shell renders nothing extra beyond its
-baseline UI:
+ - `bannerTop`: above the page content on every authenticated page
+   (a trial banner, an incident notice).
+ - `headerRight`: the right end of the header (a notification bell,
+   a language switcher).
+ - `sidebarContent`: the sidebar under the navigation (conversation
+   history). May be an async server component; it refreshes with the
+   page. Hiding itself when the sidebar collapses is its own call.
 
- - `bannerTop`: a component `layout.tsx` renders inside
-   `SidebarInset`, above `main` — e.g. a trial-status banner, an
-   incident notice, or a plan-upgrade nudge that every authenticated
-   page should see. It takes no props; a product binding one that
-   needs data of its own (session, workspace, trial status) fetches
-   it itself, the same way the first product's `TrialBanner` did
-   before this seam existed. Default: nothing extra.
- - `headerRight`: a component at the right end of the shell header —
-   a notification bell, a language switcher.
- - `sidebarContent`: a component rendered in the sidebar under the
-   navigation — the place a chat product keeps its conversation
-   history (`ChatHistory` from the `chat` item). It may be an async
-   server component; it refreshes with the page. Hidden when the
-   sidebar collapses to icons is the component's own call.
-
-Edit this file directly to point at your product's own components —
-this is consumer-owned source, not a package import. Example, once
-you have a product-specific banner component:
+For example:
 
 ```ts
 import { TrialBanner } from "@/components/trial/trial-banner";
@@ -577,29 +548,13 @@ export const shellConfig: ShellConfig = {
 
 Exports `navItems`, `accountItems`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/nav-config.ts)
 
-Sidebar nav config — consumer-owned, imported directly by the client
-`AppSidebar` (never passed through a Server Component: icons are
-React components, which cannot cross the server->client boundary).
+Shell navigation. Imported directly by client components, never passed
+from a Server Component: icons are components and cannot cross the
+server/client boundary.
 
-Two lists, because the shell has two places to put a link.
-`navItems` is the sidebar proper: the surfaces a person came here to
-work in. `accountItems` is the user menu at the foot of the sidebar:
-what the account costs and what plan it is on — things you go and
-look at, not things you work in.
-
-`titleKey`s point into the `app-shell` namespace
-(`messages/<locale>/app-shell.json`) — add your own keys there when
-you add routes.
-
-Deliberately in neither list: a Notifications row, because the
-header's bell already opens that surface, and a Settings row,
-because the user menu's Profile and Workspace settings entries both
-land inside `/settings`. Team, workspace, profile, privacy and
-billing settings are reached through the settings tab bar rather
-than as rows of their own.
-
-Installing a subset? Delete the entries whose routes you didn't
-install — a nav entry pointing at a missing route is a 404.
+`navItems` fills the sidebar; `accountItems` fills the user menu.
+`titleKey`s are keys in `messages/<locale>/app-shell.json`. Remove the
+entries whose routes you did not install; they would 404.
 
 ## [trial-banner](/blocks/trial-banner)
 
@@ -623,23 +578,13 @@ costs the most. Empty the list to show it everywhere.
 
 Exports `CURRENCY`, `CREDIT_BUNDLES`, `getCreditBundle`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/pricing/lib/billing-config.ts)
 
-Client-safe billing configuration for this deployment.
+Client-safe billing configuration, kept apart from the `server-only`
+`lib/billing.ts` so client components can read it without pulling
+Stripe into the browser bundle. A bundle is validated server-side by
+`createCreditCheckout`.
 
-Split from `lib/billing.ts` (which is `server-only`) so client
-components — the credit-bundle cards, for example — can read the
-packaging without pulling the plan registry or Stripe into the
-browser bundle. Validation of a bundle happens server-side when the
-checkout action passes it to `createCreditCheckout`.
-
-`CREDIT_BUNDLES` is the one-time credit packaging this deployment sells — product
-config, not framework policy. Edit or empty the list to match what
-you actually sell.
-
-No user-facing copy owned by this item lives in this file. The
-`name` field on each bundle is deployment config rendered verbatim
-by `credit-bundles.tsx` (`billing-settings` item) — it is not routed
-through `messages/en.json`; localize it here if this
-deployment needs bundle names in more than one language.
+`CREDIT_BUNDLES` is the one-time credit packs you sell; edit or empty
+it. A bundle's `name` is rendered verbatim, not translated.
 
 ## [feature-gating](/blocks/feature-gating)
 
@@ -655,8 +600,7 @@ which is where a plan change actually happens; point it at
 `/pricing` if your product prefers the comparison first.
 
 `warnAtPercent` / `urgentAtPercent`: when `QuotaWarning` starts
-showing, and when it escalates. Below the first, it renders nothing —
-a user who is fine should not be told about a limit.
+showing, and when it escalates. Below the first, it renders nothing.
 
 ## [payment-poll](/blocks/payment-poll)
 
@@ -682,33 +626,20 @@ cut off mid-payment.
 
 Exports `OnboardingFieldType`, `OnboardingSelectOption`, `OnboardingField`, `OnboardingStepConfig`, `OnboardingCompleteConfig`, `OnboardingAnswers`, `OnboardingConfig`, `onboardingConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/onboarding/lib/onboarding-steps.ts)
 
-Onboarding steps config — the consumer-owned shape of your product's
-onboarding wizard. Everything a product might want to change lives
-here: the steps, their fields, the completion screen, and the hook
-that makes a step's answers durable.
+The onboarding wizard: its steps, their fields, the completion screen
+and `onStepSubmit`.
 
-All copy is referenced by message key, never by literal string —
-`titleKey`, `labelKey`, `ctaLabelKey` and friends are fully-qualified
-keys resolved through a namespace-less `useTranslations()` (the same
-contract as `chatConfig.starters` and `navItems[].titleKey`). The
-defaults point into this item's own `onboarding` namespace, so
-translating the shipped wizard means adding
-`messages/<locale>/onboarding.json`, not editing this file; a step
-you add can point at any namespace you own.
+Copy is referenced by fully-qualified message key (`titleKey`,
+`labelKey`, `ctaLabelKey`…), resolved through a namespace-less
+`useTranslations()`; a step you add can point at any namespace.
 
-The framework only persists step *progression* — which step id the
-caller is on (`@intelligo-dev/auth`'s `createOnboardingService`) — via
-`actions/onboarding.ts`. It knows nothing about your fields. Field
-answers become durable through `onStepSubmit`, which runs
-server-side every time the wizard advances past a step. The shipped
-default writes the `displayName` answer to the caller's profile, so
-a name typed into the wizard actually shows up in the shell instead
-of being silently discarded; extend it for your own domain tables.
+The framework persists only which step the caller is on. Field
+answers are kept only if `onStepSubmit` saves them; it runs
+server-side each time the wizard advances past a step, and by default
+writes `displayName` to the profile.
 
-This file is imported by the `"use client"` wizard as well as by the
-server action, so it must stay client-safe: persistence goes through
-a server action (a serializable reference), never through a service
-imported here directly.
+The client wizard imports this file too, so it must stay client-safe:
+persist through a server action, never a service imported here.
 
 ## [dashboard](/blocks/dashboard)
 
@@ -720,12 +651,9 @@ Dashboard configuration — consumer-owned, imported by client
 components (so, like `nav-config.ts`, it may hold React/Lucide
 component values that must never cross the RSC boundary as props).
 
-The shipped defaults render a complete, honest AI-first home with no
-editing: a hero from this item's own messages, a composer that opens
-a new conversation, starter chips that fill it, a resume affordance
-for unfinished work, and a quiet strip of recent conversations and
-plan state at the foot. Every part is replaceable here rather than in
-a component:
+The defaults render a hero from this item's own messages, a composer
+that opens a new conversation, and starter chips that fill it. Every
+part is replaceable here rather than in a component:
 
  - `hero`: icon plus fully-qualified message keys for the title and
    subtitle. Point them at your product's namespace to say what this
@@ -738,40 +666,19 @@ a component:
    surface lives elsewhere, and note that the whole composer
    affordance only makes sense with a chat surface installed.
 
-There are no `shortcuts` or `showPlanSummary` seams. The links the
-first held (artifacts, usage, team) are all in the shell's
-navigation, and the billing strip the second hid was spend and plan
-state on a page nobody opens to read a meter — `/usage` and
-`/pricing` own that, one click away.
-
 ## [artifacts](/blocks/artifacts)
 
 ### `lib/document-patterns.ts`
 
 Exports `registerDefaultDocumentPatterns`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/artifacts/lib/document-patterns.ts)
 
-Document title-pattern registration — composition-root extension
-point for the `artifacts` item.
+Title patterns that map a document to an agent label (shown on its
+card) and to the "Reports" tab. With none registered, every document
+gets the generic "AI Assistant" label.
 
-`@intelligo-dev/core/documents` keeps a small classifier registry
-(`registerDocumentPatterns`) that maps a document's title to a human
-agent label (rendered on every artifact card) and to the "Reports"
-filter tab (`isProductDocument`, used by `@/actions/documents`).
-Registration is never an import side effect, so populating that
-registry happens once, at startup, from an explicit composition root
-your app owns — never by importing this file for its side effects,
-and never from a request-scoped file (a Server Action, a page) where
-it could run more than once and push duplicate entries onto the same
-in-memory registry.
-
-Ships no registrations by default: a fresh install has no product to
-label, and the classifier already falls back to a generic "AI
-Assistant" label with no registrations at all. Call the function
-below exactly once, from your composition root, after adding your own
-product's title patterns (uncomment and adjust the example call). If
-your app already has a composition root (e.g. the pattern
-`@/lib/ensure-composed` guards against), call it from
-there, guarded the same way every other registration is.
+Call this exactly once, from your composition root: calling it from a
+request-scoped file (an action, a page) would push duplicate entries
+onto the same in-memory registry.
 
 ## [chat](/blocks/chat)
 
@@ -861,9 +768,8 @@ blank.
 Exports `ChatHeaderRightProps`, `ChatAgentIdentity`, `ChatAttachmentsConfig`, `ChatCommand`, `ChatMention`, `ChatMentionsConfig`, `ChatConfig`, `chatConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-config.tsx)
 
 Chat composition config — the consumer-owned extension point for
-everything a vertical wants to add to the chat surface without
-editing an installed component (composition through a
-config a consumer owns, never a component edit).
+everything a product adds to the chat surface without editing an
+installed component.
 
 Every seam is optional — a fresh install ships this file with an
 empty `chatConfig`, so the chat surface renders its baseline UI:
@@ -1713,9 +1619,8 @@ intelligo upgrade --check   Show what a template upgrade would change
 
 A new application on the framework.
 
-This is onboarding, not the product
-boundary: what it writes is the consumer's from the moment it lands,
-and the enduring relationship is the versioned packages, not this
+This is onboarding, not the product boundary: what it writes is the
+consumer's from the moment it lands, and the enduring relationship is the versioned packages, not this
 scaffold. So it generates through the same manifest machinery as
 `add`, which means the very first upgrade already knows which files
 you have since edited.
@@ -1743,9 +1648,6 @@ their own, and refuse to overwrite the latter.
 
 Report the problems that are invisible until
 they are an incident.
-
-The checks here were each chosen because something in this codebase
-actually went wrong that way, not because they sounded thorough.
 
 [source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/doctor.ts)
 
@@ -1797,21 +1699,19 @@ schema but no rows there at all, which this reports distinctly:
 "unmanaged" is a different problem from "behind", and baselining is
 the fix (see the migrations README).
 
-Before 1.0 the framework's chain was 48 migrations; it is now one
-baseline. A database that ran the old chain holds those 48 hashes,
-which `legacy-chain.json` (next to the journal) lists: they are
-reported as `legacy`, not as unknown, and a database holding all of
-them is `adoptable` — its schema is the baseline's, so `migrate`
-records the baseline without running it.
+The framework's chain is one baseline. A database that ran the pre-1.0
+chain holds its hashes, which `legacy-chain.json` (next to the
+journal) lists: they are reported as `legacy`, not as unknown, and a
+database holding all of them is `adoptable` — its schema is the
+baseline's, so `migrate` records the baseline without running it.
 
 [source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/migrate-check.ts)
 
 ## upgrade --check
 
-Reports what a template upgrade would do, and does nothing. The
-promise is that dependency upgrades never overwrite
-consumer source, so the interesting output is not "these files
-changed upstream" but "these changed upstream AND you have edited
+Reports what a template upgrade would do, and does nothing. Upgrades
+never overwrite consumer source, so the interesting output is not
+"these templates changed" but "these changed AND you have edited
 them" — the set where the consumer has to make a decision.
 
 [source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/upgrade-check.ts)

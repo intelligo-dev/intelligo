@@ -1,9 +1,9 @@
 "use client";
 
 /*
- * Tabs: one indicator that glides from tab
- * to tab — a raised pill, or an underline for the line variant — over
- * Base UI's Tabs and its measured indicator. shadcn base-nova's API (MIT).
+ * Tabs: one indicator that glides from tab to tab — a raised pill, or an
+ * underline for the line variant — over Base UI's Tabs and its measured
+ * indicator.
  */
 
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";

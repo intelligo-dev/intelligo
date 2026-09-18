@@ -5,20 +5,10 @@
  * CTA whose state depends on whether it's the workspace's current
  * plan, the free plan, or something the caller can afford to buy.
  *
- * The plan catalogue is an arbitrary, product-registered map
- * (see `@/lib/billing`'s `getPlans`), so this card does not assume an
- * upgrade/downgrade ordering the way a fixed 3-tier catalogue could.
- * Every non-current, non-free plan gets the same "switch to this
- * plan" checkout button; a deployment with a strict tier order can add
- * that distinction back in its own copy of this file.
- *
- * `plan.name`, `plan.description`, and `plan.features` come from the
- * product-registered plan catalogue, not from this item's copy — they
- * are deployment DATA and
- * are rendered verbatim rather than routed through `messages/en.json`.
- * Only this card's own chrome (badges, buttons) is translated.
- * Marked `"use client"` because it is always rendered from
- * `pricing-content.tsx`'s client tree.
+ * The catalogue has no tier order, so every non-current, non-free plan
+ * gets the same "switch to this plan" button. `plan.name`, `description`
+ * and `features` are catalogue data rendered verbatim; only the card's
+ * own badges and buttons are translated.
  */
 
 import { Check } from "lucide-react";

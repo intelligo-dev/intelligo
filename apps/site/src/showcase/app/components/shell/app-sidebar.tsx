@@ -1,21 +1,9 @@
 "use client";
 
 /**
- * App sidebar — nav as configuration. Pass `items` to override the
- * default nav entirely; the default only covers the routes the other
- * "registry" items in this catalogue install, so most consumers will
- * want to replace it once they add their own pages.
- *
- * Nav item titles are message keys, not literal strings:
- * `NavItem.titleKey` points into this item's `app-shell` namespace (e.g.
- * `"sidebar.nav.dashboard"` resolves `messages/en/app-shell.json`'s
- * `sidebar.nav.dashboard`), and this component resolves it via
- * `t(item.titleKey)`. A consumer overriding `items` supplies its own
- * keys backed by its own messages — never hardcoded titles here.
- *
- * The sidebar collapses to an icon rail on desktop (⌘/Ctrl-B, or the
- * header's trigger) and slides in as a sheet on mobile; the active row's
- * pill glides between items as the route changes.
+ * The shell's sidebar. `items` replaces the nav from `@/lib/nav-config`
+ * entirely. It collapses to an icon rail on desktop (⌘/Ctrl-B, or the
+ * header's trigger) and slides in as a sheet on mobile.
  */
 
 import * as React from "react";
@@ -40,11 +28,8 @@ import { navItems as configuredNavItems } from "@showcase/lib/nav-config";
 
 export interface NavItem {
   /**
-   * Key into the `app-shell` namespace's `sidebar.nav` messages (e.g.
-   * `"sidebar.nav.dashboard"`), resolved inside this component via
-   * `t(item.titleKey)`. Nav config carries keys, not literal strings, so
-   * a consumer overriding `items` still gets translated titles by
-   * pointing at its own message keys instead of hardcoding copy here.
+   * A message key in the `app-shell` namespace (e.g.
+   * `"sidebar.nav.dashboard"`), not a literal title.
    */
   titleKey: string;
   href: string;

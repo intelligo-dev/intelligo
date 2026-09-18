@@ -1,27 +1,11 @@
 /**
- * Sidebar nav config — consumer-owned, imported directly by the client
- * `AppSidebar` (never passed through a Server Component: icons are
- * React components, which cannot cross the server->client boundary).
+ * Shell navigation. Imported directly by client components, never passed
+ * from a Server Component: icons are components and cannot cross the
+ * server/client boundary.
  *
- * Two lists, because the shell has two places to put a link.
- * `navItems` is the sidebar proper: the surfaces a person came here to
- * work in. `accountItems` is the user menu at the foot of the sidebar:
- * what the account costs and what plan it is on — things you go and
- * look at, not things you work in.
- *
- * `titleKey`s point into the `app-shell` namespace
- * (`messages/<locale>/app-shell.json`) — add your own keys there when
- * you add routes.
- *
- * Deliberately in neither list: a Notifications row, because the
- * header's bell already opens that surface, and a Settings row,
- * because the user menu's Profile and Workspace settings entries both
- * land inside `/settings`. Team, workspace, profile, privacy and
- * billing settings are reached through the settings tab bar rather
- * than as rows of their own.
- *
- * Installing a subset? Delete the entries whose routes you didn't
- * install — a nav entry pointing at a missing route is a 404.
+ * `navItems` fills the sidebar; `accountItems` fills the user menu.
+ * `titleKey`s are keys in `messages/<locale>/app-shell.json`. Remove the
+ * entries whose routes you did not install; they would 404.
  */
 
 import {

@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Error boundary for the notifications page. Renders the shared `RouteError` from the
- * `route-error` item — install it alongside this one.
+ * Error boundary for the notifications page. Renders `RouteError` from
+ * the `route-error` item, which must be installed too.
  */
 
 import { RouteError } from "@/components/shared/route-error";

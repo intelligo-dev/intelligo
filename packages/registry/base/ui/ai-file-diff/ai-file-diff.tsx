@@ -1,9 +1,12 @@
 "use client";
 
 /*
- * A file the agent is changing —
- * the path with live added/removed counts, opening onto a unified diff
- * whose rows arrive one by one while the change streams. import * as React from "react";
+ * A file the agent is changing — the path with live added/removed counts,
+ * opening onto a unified diff whose rows arrive one by one while the
+ * change streams. Rows are highlighted through the shared shiki tokens.
+ */
+
+import * as React from "react";
 import {
   CheckIcon,
   ChevronDownIcon,

@@ -1,11 +1,10 @@
 "use client";
 
 /*
- * The speech bubble inside a
- * message row: a surface that pops into place, a content layer that
- * fades in after it, grouped bubbles and a collapsible long body.
- * Alignment follows the surrounding `Message` unless
- * overridden.
+ * The speech bubble inside a message row: a surface that pops into place,
+ * a content layer that fades in after it, grouped bubbles and a
+ * collapsible long body.
+ * Alignment follows the surrounding `Message` unless overridden.
  */
 
 import * as React from "react";

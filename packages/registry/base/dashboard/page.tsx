@@ -1,18 +1,5 @@
 /**
- * Workspace dashboard — an AI-first home, not a metrics console.
- *
- * One thing to do, centred: the hero names the surface, the composer
- * answers it, and starter chips fill the composer. Nothing else.
- *
- * It got here by subtraction. The page used to carry a shortcuts row
- * (the shell's own navigation, rendered twice), a list of recent
- * conversations (the sidebar's history, rendered twice) and a plan and
- * usage strip. None of it was what a person opened the app to do, and
- * on a real workspace the recent list repeated itself — two
- * conversations that begin with the same message are two identical
- * rows. Spend lives on `/usage`, plans on `/pricing`, history in the
- * sidebar; each is one click away and none of it competes with the
- * composer here.
+ * Workspace dashboard: a hero, a composer and starter chips.
  *
  * Everything configurable lives in two consumer-owned seams:
  * `@/lib/dashboard-config` (hero copy, starters, chat base path) and
@@ -24,16 +11,9 @@
  * the first turn. Without a chat surface installed, set `chatBasePath`
  * or drop those affordances.
  *
- * Workspace resolution: `requireWorkspace()` is called directly and
- * allowed to throw. The `app-shell` item's layout already guarantees an
- * active workspace before any `(app)` route renders, so a failure here
- * means something is genuinely wrong (a revoked session mid-request),
- * not an empty state — and this item ships an `error.tsx` for exactly
- * that.
- *
- * No `actions.ts`: every read is a plain server-side call with no
- * client-triggered refetch (contrast the `usage` item, whose period
- * selector needs one).
+ * `requireWorkspace()` is allowed to throw: the `app-shell` layout
+ * already guarantees an active workspace, so a failure here (a revoked
+ * session mid-request) belongs to `error.tsx`, not an empty state.
  */
 
 import type { Metadata } from "next";

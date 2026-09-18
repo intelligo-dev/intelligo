@@ -1,8 +1,7 @@
 "use client";
 
 /*
- * The checkbox: the box fills and the check
- * draws itself in, over Base UI's Checkbox. shadcn base-nova's API (MIT).
+ * The checkbox: the box fills and the check draws itself in.
  */
 
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";

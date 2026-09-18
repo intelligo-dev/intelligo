@@ -1,11 +1,13 @@
 "use client";
 
 /*
- * The sources an answer leans
- * on: an inline pill naming the site a claim came from, with a preview
- * on hover; favicon stacks; a sources button that opens the full list
- * in a sheet; and the older numbered marker and collapsible list.
- * import * as React from "react";
+ * The sources an answer leans on: an inline pill naming the site a claim
+ * came from, with a preview on hover; favicon stacks; a sources button
+ * that opens the full list in a sheet; and the older numbered marker and
+ * collapsible list.
+ */
+
+import * as React from "react";
 import {
   BookOpenTextIcon,
   ChevronDownIcon,

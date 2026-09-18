@@ -4,8 +4,7 @@
  * Trial banner — a dismissable strip above the app shell's content
  * showing days and credits remaining, with an upgrade CTA.
  *
- * Urgency ramps the visual weight with plain shadcn tokens (no product
- * palette): normal (>3 days) sits on `primary`, warning (≤3 days) on
+ * Urgency ramps the visual weight with semantic tokens: normal (>3 days) sits on `primary`, warning (≤3 days) on
  * `foreground`/`muted`, urgent (≤1 day) on `destructive`. Dismissing
  * hides the banner for the rest of the day (localStorage; per-browser,
  * deliberately not server state — a nudge, not a notification).

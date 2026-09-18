@@ -1,6 +1,5 @@
 /*
  * Site effect. Words rise out of a blur one after another, once, on load.
- * After the MIT-licensed text reveal.
  *
  * The motion is a CSS animation (`.word-rise` in global.css), not a
  * script: the words are in the HTML at full opacity, so the headline is

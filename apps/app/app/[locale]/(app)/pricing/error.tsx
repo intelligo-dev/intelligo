@@ -1,10 +1,6 @@
 "use client";
 
-/**
- * Client error boundary for the pricing route. Self-contained per the
- * repo-wide registry standard: no shared app-internal error component,
- * no error-reporting SDK.
- */
+/** Error boundary for the pricing route. */
 
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";

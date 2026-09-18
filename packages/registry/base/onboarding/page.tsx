@@ -1,12 +1,6 @@
 /**
- * Onboarding page — server component.
- *
- * Loads the caller's onboarding state directly via `@/lib/onboarding`
- * (same pattern as `team-settings`/`workspace-settings`: state reads
- * happen in the page, not through a server action) and renders the
- * wizard, resuming at the caller's persisted step if there is one. A
- * caller who has already completed onboarding is redirected to the
- * completion screen's CTA target rather than shown the wizard again.
+ * Renders the wizard at the caller's persisted step. A caller who has
+ * completed onboarding is redirected to the completion screen's target.
  */
 
 // Session reads make this page inherently per-request; declaring it

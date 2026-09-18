@@ -6,7 +6,7 @@
  *   ⌘/Ctrl+K   new chat
  *   Esc        stop a reply that is streaming
  *
- * Enter / Shift+Enter live in the composer (the T3 prompt input), and
+ * Enter / Shift+Enter live in the composer, and
  * ArrowUp-to-edit-the-last-message is the composer's too, because it
  * only means that when the composer is empty and focused.
  *

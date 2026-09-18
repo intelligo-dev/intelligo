@@ -5,11 +5,8 @@ import { useTranslations } from "use-intl";
 import { Badge } from "@showcase/components/ui/badge";
 
 /**
- * A role is a label, not a status: the owner's badge was the solid
- * primary fill, which in a table of members reads as an alert rather
- * than as one row's role. The word carries the distinction — identity
- * never rests on colour alone — so the badges stay
- * quiet and differ by their text.
+ * A role is a label, not a status: the badges stay quiet and differ by
+ * their text rather than by colour.
  */
 const VARIANT_BY_ROLE: Record<string, "default" | "secondary" | "outline"> = {
   owner: "secondary",

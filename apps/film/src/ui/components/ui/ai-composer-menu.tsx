@@ -1,12 +1,12 @@
 "use client";
 
 /*
- * The picker a composer opens
- * for `/` commands and `@` mentions: a Command list that sits above the
- * textarea, filtered by what was typed after the trigger. Presentation
- * only — the trigger detection lives with the composer. Positioned in
- * flow (absolute, above its `relative` parent) rather than in a popup,
- * so focus never leaves the textarea while the reader keeps typing.
+ * The picker a composer opens for `/` commands and `@` mentions: a Command
+ * list that sits above the textarea, filtered by what was typed after the
+ * trigger. Presentation only — the trigger detection lives with the
+ * composer. Positioned in flow (absolute, above its `relative` parent)
+ * rather than in a popup, so focus never leaves the textarea while the
+ * reader keeps typing.
  */
 
 import * as React from "react";

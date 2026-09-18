@@ -1,6 +1,5 @@
 /*
- * The textarea: the input's field, grown to
- * its content. shadcn base-nova's API (MIT).
+ * The textarea: the input's field, grown to its content.
  */
 
 import * as React from "react";

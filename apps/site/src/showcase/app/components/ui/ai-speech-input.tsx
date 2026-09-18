@@ -1,10 +1,9 @@
 "use client";
 
 /*
- * Voice into the composer on the
- * browser's own speech recognition. Renders nothing where the API is
- * absent (Firefox, some WebViews): a button that cannot work is worse
- * than no button.
+ * Voice into the composer on the browser's own speech recognition. Renders
+ * nothing where the API is absent (Firefox, some WebViews): a button that
+ * cannot work is worse than no button.
  */
 
 import * as React from "react";

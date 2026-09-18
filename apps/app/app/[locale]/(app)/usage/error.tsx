@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Error boundary for the usage page. Renders the shared `RouteError` from the
- * `route-error` item — install it alongside this one.
+ * Renders the shared `RouteError` from the `route-error` item — install
+ * it alongside this one.
  */
 
 import { RouteError } from "@/components/shared/route-error";

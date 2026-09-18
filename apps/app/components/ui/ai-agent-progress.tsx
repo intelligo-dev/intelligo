@@ -1,9 +1,11 @@
 "use client";
 
 /*
- * A long-running step: a 3×3
- * grid pulses in sequence beside the verb and an elapsed-time counter.
- * import * as React from "react";
+ * A long-running step: a 3×3 grid pulses in sequence beside the verb and
+ * an elapsed-time counter.
+ */
+
+import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { EASE_IN_OUT } from "@/components/ui/ai-motion";

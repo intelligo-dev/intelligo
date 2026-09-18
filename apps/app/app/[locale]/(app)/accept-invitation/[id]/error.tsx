@@ -1,14 +1,5 @@
 "use client";
 
-/**
- * Client error boundary for the invitation-accept route.
- *
- * Self-contained: registry items ship consumer-owned, translated copy
- * with no dependency beyond `@/components/ui/*`, so this
- * does not reach for an app-internal shared error component or an
- * error reporting SDK.
- */
-
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 

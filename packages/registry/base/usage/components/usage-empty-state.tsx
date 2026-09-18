@@ -6,11 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 /**
- * Empty state for the usage surface — deliberately a way forward, not
- * just an absence. A workspace with no usage has never run a turn, so
- * the useful thing to offer is the chat surface that would produce
- * one; a product without a chat surface points `ctaHref` somewhere its
- * own work starts.
+ * Empty state for the usage surface, linking to the chat surface. A
+ * product without one points `ctaHref` where its own work starts.
  */
 export async function UsageEmptyState({
   title,

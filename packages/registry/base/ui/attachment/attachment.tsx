@@ -1,9 +1,3 @@
-/*
- * Intelligo design system. The attachment: a file attached to a message or a prompt.
- * shadcn base-nova (MIT), owned here so it composes Intelligo's
- * primitives rather than reinstalling shadcn's over them.
- */
-
 import * as React from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";

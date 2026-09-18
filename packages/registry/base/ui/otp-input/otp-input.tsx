@@ -1,10 +1,13 @@
 "use client";
 
 /*
- * A one-time-code input: a row of slots whose
- * characters roll in as they land, a blinking caret on the focused slot, a
- * shake when the code is rejected and a drawn check when it is accepted.
- * import * as React from "react";
+ * A one-time-code input: a row of slots whose characters roll in as they
+ * land, a blinking caret on the focused slot, a shake when the code is
+ * rejected and a drawn check when it is accepted. Typing, paste, autofill,
+ * arrow keys and the per-slot inputs come from Base UI's OTP Field.
+ */
+
+import * as React from "react";
 import { OTPField } from "@base-ui/react/otp-field";
 import {
   AnimatePresence,

@@ -1,10 +1,8 @@
 "use client";
 
 /*
- * The tooltip: a light surface that grows
- * out of its trigger and blurs in, over Base UI's Tooltip — whose provider
- * opens neighbouring tooltips instantly once one has shown. shadcn
- * base-nova's API (MIT).
+ * The tooltip: a light surface that grows out of its trigger and blurs in;
+ * once one has shown, the provider opens neighbouring tooltips instantly.
  */
 
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";

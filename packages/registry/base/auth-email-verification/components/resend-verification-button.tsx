@@ -1,17 +1,11 @@
 "use client";
 
 /**
- * Client-side control for resending a verification email. Calls the
- * Better-Auth client SDK's `sendVerificationEmail` action directly — no
- * raw `fetch("/api/auth/*")`.
- *
- * The endpoint requires an `email` in the request body and works
- * whether or not the visitor has a session (Better-Auth answers with a
- * constant-time "if this email exists…" response either way, so it
- * never leaks whether an address is registered). When the page already
- * knows the address — passed in via `email`, e.g. from the signup
- * redirect's `?email=` search param — this renders just the button;
- * otherwise it asks for the address first.
+ * Resends a verification email through Better-Auth's
+ * `sendVerificationEmail`. The endpoint works with or without a session
+ * and answers the same whether or not the address is registered. When
+ * `email` is passed (e.g. from the signup redirect's `?email=`) this
+ * renders just the button; otherwise it asks for the address first.
  */
 
 import { useState } from "react";

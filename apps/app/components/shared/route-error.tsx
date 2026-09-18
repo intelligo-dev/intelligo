@@ -4,11 +4,8 @@
  * Shared route-level error boundary UI.
  *
  * Every `error.tsx` in the catalogue renders this, so a route segment
- * needs a ten-line wrapper instead of its own copy of the same layout,
- * reporting call, console log, and error classification. Items that
- * ship an `error.tsx` depend on this component the way `dashboard`
- * depends on `team-settings`' `lib/team.ts` — install `route-error`
- * first.
+ * needs only a short wrapper. Items that ship an `error.tsx` depend on
+ * it — install `route-error` first.
  *
  * Error reporting goes through the `reportRouteError` seam
  * (`@/lib/error-reporting`), which is a no-op until you bind a

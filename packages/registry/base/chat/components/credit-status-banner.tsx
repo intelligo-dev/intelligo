@@ -13,12 +13,7 @@
  *     what is left. A warning nobody asked for beats a refusal nobody
  *     expected.
  *
- * Copy lives in this item's `chat` namespace, not in props. The
- * product-side version of this component took a `CreditBannerStrings`
- * object with English defaults, because it lived in a package and a
- * package cannot reach next-intl — which also meant its defaults
- * hardcoded a currency symbol and a language. An item has no such
- * problem.
+ * Copy lives in this item's `chat` namespace, not in props.
  *
  * Amounts are credits, not money. That is the unit the balance and the
  * estimate are both in; rendering it as currency would need an

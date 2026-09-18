@@ -3,9 +3,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * The one page title every Intelligo page renders:
- * a heading, an optional description, and actions that wrap under the
- * heading on narrow screens.
+ * The one page title every page renders: a heading, an optional
+ * description, and actions that wrap under the heading on narrow screens.
  */
 function PageHeader({ className, ...props }: React.ComponentProps<"header">) {
   return (

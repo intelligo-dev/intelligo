@@ -1,17 +1,13 @@
 "use client";
 
 /**
- * Notification bell — icon button with an unread-count badge that opens
- * a popover dropdown of recent notifications. This is exported for a
- * consumer to mount wherever their shell puts header/sidebar actions;
- * it is not auto-mounted by any other registry item (the app-shell item
- * stays decoupled from this one).
+ * Bell with an unread badge that opens a dropdown of recent
+ * notifications. Nothing mounts it for you: put it in the shell, e.g.
+ * through `shellConfig.headerRight`.
  *
- * Self-sufficient by default: with no props it fetches its own initial
- * data on mount via `useNotifications`. Pass `initialCount`/
- * `initialNotifications` from a server component up the tree (e.g. the
- * shell's layout) for a faster first paint — the hook then skips its
- * own mount-time fetch and starts from those values.
+ * With no props it fetches on mount. Pass `initialCount` and
+ * `initialNotifications` from a server component for a faster first
+ * paint; it then skips that fetch.
  */
 
 import { useState } from "react";

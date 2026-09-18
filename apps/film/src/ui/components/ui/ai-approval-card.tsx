@@ -1,10 +1,12 @@
 "use client";
 
 /*
- * A decision surface the agent
- * hands to the user: approve / reject / request changes, or a short run
- * of questions (single choice, multiple choice, freeform) answered one
- * step at a time and submitted together. import * as React from "react";
+ * A decision surface the agent hands to the user: approve / reject /
+ * request changes, or a short run of questions (single choice, multiple
+ * choice, freeform) answered one step at a time and submitted together.
+ */
+
+import * as React from "react";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,

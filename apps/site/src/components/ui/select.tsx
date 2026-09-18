@@ -1,9 +1,8 @@
 "use client";
 
 /*
- * The select: the input's field as a trigger
- * and the menu's panel as its list, over Base UI's Select. shadcn base-
- * nova's API (MIT).
+ * The select: the input's field as a trigger and the menu's panel as its
+ * list.
  */
 
 import * as React from "react";

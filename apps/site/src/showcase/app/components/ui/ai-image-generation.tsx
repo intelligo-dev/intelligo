@@ -1,10 +1,13 @@
 "use client";
 
 /*
- * An image the agent is making:
- * the frame is reserved up front, a dither field breathes over it while
- * it is queued and generating, and the media sharpens into place as it
- * refines and completes — no layout shift at any step. import * as React from "react";
+ * An image the agent is making: the frame is reserved up front, a dither
+ * field breathes over it while it is queued and generating, and the media
+ * sharpens into place as it refines and completes — no layout shift at any
+ * step.
+ */
+
+import * as React from "react";
 import { CheckIcon, CircleAlertIcon, RotateCcwIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The composer, on the T3 prompt input: an autosizing
+ * The composer, on `ai-prompt-input`: an autosizing
  * textarea that sends on Enter, attachments by "+" / paste / drop when
  * `chatConfig.attachments` allows them, a model picker when the page
  * offers more than one, and a submit that becomes stop while a reply

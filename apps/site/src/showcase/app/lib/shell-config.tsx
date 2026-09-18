@@ -1,32 +1,17 @@
 /**
- * Shell composition config — the consumer-owned extension point for
- * everything a vertical wants to add around the authenticated app
- * shell without editing `layout.tsx` or `components/shell/*`
- * (composition through a config a consumer owns, never a component
- * edit; mirrors the `chat` item's `lib/chat-config.tsx`).
+ * What your product adds around the app shell, without editing
+ * `layout.tsx` or `components/shell/*`. Every slot is optional and takes
+ * a component with no props; one that needs data fetches it itself.
  *
- * Every seam is optional — a fresh install ships this file with an
- * empty `shellConfig`, so the shell renders nothing extra beyond its
- * baseline UI:
+ *  - `bannerTop`: above the page content on every authenticated page
+ *    (a trial banner, an incident notice).
+ *  - `headerRight`: the right end of the header (a notification bell,
+ *    a language switcher).
+ *  - `sidebarContent`: the sidebar under the navigation (conversation
+ *    history). May be an async server component; it refreshes with the
+ *    page. Hiding itself when the sidebar collapses is its own call.
  *
- *  - `bannerTop`: a component `layout.tsx` renders inside
- *    `SidebarInset`, above `main` — e.g. a trial-status banner, an
- *    incident notice, or a plan-upgrade nudge that every authenticated
- *    page should see. It takes no props; a product binding one that
- *    needs data of its own (session, workspace, trial status) fetches
- *    it itself, the same way the first product's `TrialBanner` did
- *    before this seam existed. Default: nothing extra.
- *  - `headerRight`: a component at the right end of the shell header —
- *    a notification bell, a language switcher.
- *  - `sidebarContent`: a component rendered in the sidebar under the
- *    navigation — the place a chat product keeps its conversation
- *    history (`ChatHistory` from the `chat` item). It may be an async
- *    server component; it refreshes with the page. Hidden when the
- *    sidebar collapses to icons is the component's own call.
- *
- * Edit this file directly to point at your product's own components —
- * this is consumer-owned source, not a package import. Example, once
- * you have a product-specific banner component:
+ * For example:
  *
  *   import { TrialBanner } from "@showcase/components/trial/trial-banner";
  *
@@ -52,8 +37,4 @@ export interface ShellConfig {
   sidebarContent?: ComponentType;
 }
 
-/**
- * Default shell configuration — a fresh install has no product banner
- * to add above the page content.
- */
 export const shellConfig: ShellConfig = {};

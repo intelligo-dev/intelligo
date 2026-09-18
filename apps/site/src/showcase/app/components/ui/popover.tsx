@@ -1,8 +1,7 @@
 "use client";
 
 /*
- * The popover: a rounded panel that scales
- * out of its trigger, over Base UI's Popover. shadcn base-nova's API (MIT). The panel
+ * The popover: a rounded panel that scales out of its trigger. The panel
  * springs open with motion; the root is kept controlled so the exit plays.
  */
 

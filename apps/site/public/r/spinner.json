@@ -7,7 +7,7 @@
   "files": [
     {
       "path": "base/ui/spinner/spinner.tsx",
-      "content": "/*\n * The spinner: a faint ring with a bright arc\n * running round it, in the current colour. shadcn base-nova's API (MIT).\n */\n\nimport * as React from \"react\";\n\nimport { cn } from \"@/lib/utils\";\n\nfunction Spinner({ className, ...props }: React.ComponentProps<\"svg\">) {\n  return (\n    <svg\n      data-slot=\"spinner\"\n      role=\"status\"\n      aria-label=\"Loading\"\n      viewBox=\"0 0 24 24\"\n      fill=\"none\"\n      stroke=\"currentColor\"\n      strokeWidth={2.5}\n      strokeLinecap=\"round\"\n      className={cn(\"size-4 animate-spin\", className)}\n      {...props}\n    >\n      <circle cx=\"12\" cy=\"12\" r=\"9\" className=\"opacity-20\" />\n      <path d=\"M21 12a9 9 0 0 0-9-9\" />\n    </svg>\n  );\n}\n\nexport { Spinner };\n",
+      "content": "/*\n * The spinner: a faint ring with a bright arc running round it, in the\n * current colour.\n */\n\nimport * as React from \"react\";\n\nimport { cn } from \"@/lib/utils\";\n\nfunction Spinner({ className, ...props }: React.ComponentProps<\"svg\">) {\n  return (\n    <svg\n      data-slot=\"spinner\"\n      role=\"status\"\n      aria-label=\"Loading\"\n      viewBox=\"0 0 24 24\"\n      fill=\"none\"\n      stroke=\"currentColor\"\n      strokeWidth={2.5}\n      strokeLinecap=\"round\"\n      className={cn(\"size-4 animate-spin\", className)}\n      {...props}\n    >\n      <circle cx=\"12\" cy=\"12\" r=\"9\" className=\"opacity-20\" />\n      <path d=\"M21 12a9 9 0 0 0-9-9\" />\n    </svg>\n  );\n}\n\nexport { Spinner };\n",
       "type": "registry:ui",
       "target": "components/ui/spinner.tsx"
     }

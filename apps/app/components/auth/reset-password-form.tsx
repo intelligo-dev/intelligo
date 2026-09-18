@@ -1,13 +1,11 @@
 "use client";
 
 /**
- * Password reset completion form — reached by clicking the emailed
- * link. Better-Auth's own `/reset-password/:token` redirect appends
+ * Password reset completion form, reached from the emailed link.
+ * Better-Auth's `/reset-password/:token` redirect appends
  * `?token=<value>` on a valid token or `?error=INVALID_TOKEN` /
- * `?error=TOKEN_EXPIRED` on an invalid/expired one, so both states are
- * read from search params rather than assumed. Calls the Better-Auth
- * client SDK's `resetPassword` action directly — no raw
- * `fetch("/api/auth/*")`.
+ * `?error=TOKEN_EXPIRED` otherwise, so both states are read from the
+ * search params.
  */
 
 import { useState } from "react";

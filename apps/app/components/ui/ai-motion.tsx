@@ -1,10 +1,13 @@
 "use client";
 
 /*
- * Intelligo design system. The motion vocabulary every tier shares:
- * easing curves, spring presets, a transform-only disclosure, a text
- * swap, the popup and backdrop presets the primitives open with, the
- * button's press, and list staggers. import * as React from "react";
+ * The motion vocabulary the components share: easing curves, spring
+ * presets, a transform-only disclosure, a text swap, the popup and backdrop
+ * presets the primitives open with, the button's press, and list staggers.
+ * Every animation here is gated on `prefers-reduced-motion`.
+ */
+
+import * as React from "react";
 import {
   AnimatePresence,
   motion,

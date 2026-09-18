@@ -16,11 +16,7 @@ import type { UsageRecord } from "@/actions/usage";
 
 import { UsageEmptyState } from "./usage-empty-state";
 
-/**
- * A table of runs is a list, not a set of alerts: the status reads as a
- * quiet dot and a word, and only a failure is allowed to carry colour
- * that pulls the eye.
- */
+/** Status is a muted dot and a word; only a failure carries colour. */
 const STATUS_VARIANT: Record<
   UsageRecord["status"],
   "success" | "warning" | "destructive" | "neutral"

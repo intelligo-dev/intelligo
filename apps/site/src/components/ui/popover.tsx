@@ -1,8 +1,7 @@
 "use client";
 
 /*
- * The popover: a rounded panel that scales
- * out of its trigger, over Base UI's Popover. shadcn base-nova's API (MIT).
+ * The popover: a rounded panel that scales out of its trigger.
  */
 
 import * as React from "react";

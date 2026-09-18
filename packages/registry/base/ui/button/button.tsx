@@ -1,11 +1,10 @@
 /*
- * The button: a pill that presses in and
- * settles back, over Base UI's Button so `render` keeps working for links
- * and triggers. shadcn base-nova's API (MIT). The press is a spring (`Press` from
- * ai-motion, a client component) with an optional ripple; a button given
- * its own `render` — a link, a trigger's element — keeps the CSS press.
- * This module stays free of "use client" so a server component can import
- * `buttonVariants`.
+ * The button: a pill that presses in and settles back, over Base UI's
+ * Button so `render` keeps working for links and triggers. The press is a
+ * spring (`Press` from ai-motion, a client component) with an optional
+ * ripple; a button given its own `render` — a link, a trigger's element —
+ * keeps the CSS press. This module stays free of "use client" so a server
+ * component can import `buttonVariants`.
  */
 
 import { Button as ButtonPrimitive } from "@base-ui/react/button";

@@ -4,13 +4,9 @@
  * QR-and-poll payment: issue an invoice, show a code the user scans in
  * their banking app, wait for the provider to confirm.
  *
- * Four states, and all four are reachable: preparing the invoice,
- * waiting for payment, paid, and failed. The waiting state is the one
- * that matters — it has to stay honest for as long as a person takes
- * to open another app, find the right account, and confirm, without
- * either spinning forever or giving up while they are mid-payment.
- * So polling stops at `timeoutMs` with a "still waiting?" message and
- * a retry, rather than silently going quiet.
+ * Four states: preparing the invoice, waiting for payment, paid, and
+ * failed. Polling stops at `timeoutMs` with a "still waiting?" message
+ * and a retry, rather than spinning forever.
  *
  * Provider work happens server-side through `@/actions/payment` (see
  * `@/lib/local-payment`): the browser never sees provider credentials,

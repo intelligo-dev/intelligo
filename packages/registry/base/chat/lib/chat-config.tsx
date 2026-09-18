@@ -1,8 +1,7 @@
 /**
  * Chat composition config — the consumer-owned extension point for
- * everything a vertical wants to add to the chat surface without
- * editing an installed component (composition through a
- * config a consumer owns, never a component edit).
+ * everything a product adds to the chat surface without editing an
+ * installed component.
  *
  * Every seam is optional — a fresh install ships this file with an
  * empty `chatConfig`, so the chat surface renders its baseline UI:

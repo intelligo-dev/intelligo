@@ -14,8 +14,7 @@
  * in one place.
  *
  * A feature missing from this map still gates correctly; it just falls
- * back to generic copy, which is the right failure mode for a feature
- * key added in a hurry.
+ * back to generic copy.
  */
 
 export interface FeatureDescriptor {

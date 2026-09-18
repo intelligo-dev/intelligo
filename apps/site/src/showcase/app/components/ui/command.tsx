@@ -1,9 +1,7 @@
 "use client";
 
 /*
- * Intelligo design system. The command palette: a searchable list of actions, in the dialog.
- * shadcn base-nova (MIT), owned here so it composes Intelligo's
- * primitives rather than reinstalling shadcn's over them.
+ * The command palette: a searchable list of actions, in the dialog.
  */
 
 import * as React from "react";

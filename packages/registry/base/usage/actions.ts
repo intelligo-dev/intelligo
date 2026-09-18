@@ -1,19 +1,12 @@
 "use server";
 
 /**
- * Usage actions — thin reads over the execution boundary and the
- * billing package's entitlement/trial reads.
+ * Usage actions — thin reads over `@intelligo-dev/executions` (token and
+ * charge aggregation) and `@intelligo-dev/billing` (quota, trial, plan).
+ * They authenticate the caller and reshape the result for the page.
  *
- * No business math lives here: `summarizeExecutions`/`listExecutions`
- * (`@intelligo-dev/executions`) own the token/charge aggregation, and
- * `getQuotaThresholds`/`getTrialStatus`/`getWorkspaceBilling`
- * (`@intelligo-dev/billing`) own quota, trial, and plan state. This file
- * only authenticates the caller, calls those, and reshapes the result
- * for the page and its components.
- *
- * Error fallbacks are translated (`getTranslations("usage")`)
- * and always generic — a thrown `Error#message` is never surfaced to
- * the UI, since it can carry internals (SQL, hostnames).
+ * Error fallbacks are translated and always generic — a thrown
+ * `Error#message` can carry internals (SQL, hostnames).
  */
 
 import { getTranslations } from "next-intl/server";
@@ -42,8 +35,7 @@ export type UsagePeriodSummary = {
   tokensUsed: number;
   /**
    * What the period charged, in micros with its currency. Null when
-   * nothing was charged — or when the rows predate migration 0044 and
-   * have no currency to name.
+   * nothing was charged, or when the rows carry no currency.
    */
   charged: MoneyLike | null;
   requestCount: number;
@@ -160,12 +152,8 @@ function offsetMs(date: Date, timeZone: string): number {
 /**
  * The instant a calendar day begins in `timeZone`.
  *
- * Takes the day, not another instant: an earlier version took an
- * instant, read its calendar day in the zone, and then chased its own
- * output — for a UTC month start it settled a day late, which is how
- * the usage page came to render nothing at all. The offset is applied
- * twice because the first correction can land on the other side of a
- * DST change, where the offset differs.
+ * The offset is applied twice because the first correction can land on
+ * the other side of a DST change, where the offset differs.
  */
 function startOfDay(day: CalendarDay, timeZone: string): Date {
   const naive = Date.UTC(day.year, day.month - 1, day.day);
@@ -188,7 +176,7 @@ function addDays(day: CalendarDay, count: number): CalendarDay {
 
 /**
  * Windows are computed in the reader's zone, because the per-day read
- * model now buckets there too (`summarizeExecutionsByDay`). Mixing the
+ * model buckets there too (`summarizeExecutionsByDay`). Mixing the
  * two — a local month boundary against UTC buckets — silently produces
  * a leading or trailing day that belongs to the wrong period, and the
  * size of the error depends on where the reader is sitting.

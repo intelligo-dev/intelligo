@@ -1,17 +1,9 @@
 "use client";
 
 /**
- * The modal that appears when a metered action is refused mid-flow —
- * the moment a user tries to do the thing and can't.
- *
- * Distinct from `QuotaWarning`, which is ambient and appears *before*
- * the limit: this one interrupts, so it has to say what ran out, what
- * upgrading changes, and offer a way out that isn't upgrading. The
- * dismiss control is deliberate; a paywall with no exit is a trap.
- *
- * Plans come from the catalogue your composition root registered, so
- * the offer stays correct when pricing changes — no plan names or
- * prices are written into this component.
+ * The modal shown when a metered action is refused mid-flow (unlike
+ * `QuotaWarning`, which appears before the limit). It says what ran
+ * out, offers the plans passed in, and can always be dismissed.
  */
 
 import { ArrowRight, Sparkles } from "lucide-react";

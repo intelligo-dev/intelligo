@@ -2,11 +2,8 @@
 
 /**
  * A single notification row: type icon, unread dot, title/message,
- * relative timestamp. Clicking an unread row marks it read. When the
- * notification carries a `href` (see `NotificationData.href` in
- * `@/actions/notifications`), the row is a link that navigates there in
- * addition to marking itself read; otherwise it's a plain button that
- * only marks-read.
+ * relative timestamp. Clicking an unread row marks it read; a row with
+ * an `href` is also a link there.
  */
 
 import { useEffect, useState } from "react";
@@ -50,10 +47,8 @@ export function RelativeTime({ iso }: { iso: string }) {
 }
 
 /**
- * Icon + color for a notification `type`. These match the built-in
- * types in `@intelligo-dev/core/notifications` (`NotificationType`); an
- * unrecognized type — e.g. a product's own custom type — falls back to
- * a plain bell rather than failing.
+ * Icon and colour for a built-in notification `type`; any other type
+ * falls back to a plain bell.
  */
 export function notificationIcon(type: string): {
   Icon: LucideIcon;

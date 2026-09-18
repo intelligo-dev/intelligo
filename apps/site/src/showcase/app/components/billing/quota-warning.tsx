@@ -4,8 +4,7 @@
  * Approaching-the-limit banner for a metered action.
  *
  * Renders nothing below the warning threshold, muted between it and
- * the urgent one, destructive above — so a user who is fine never sees
- * it, and a user who is nearly out cannot miss it. Thresholds live in
+ * the urgent one, destructive above. Thresholds live in
  * `@/lib/feature-gating-config`.
  *
  * The copy is this item's own, computed from `remaining`, rather than

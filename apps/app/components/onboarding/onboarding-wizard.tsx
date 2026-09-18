@@ -1,23 +1,13 @@
 "use client";
 
 /**
- * Onboarding wizard — orchestrates the steps defined in
- * `@/lib/onboarding-steps.ts`: progress indicator, back/next/skip,
- * and the completion screen. Delegates a single step's field rendering
- * to `./onboarding-step.tsx`.
+ * Runs the steps from `@/lib/onboarding-steps`: progress, back/next/skip
+ * and the completion screen.
  *
- * Resume behavior: `initialStepId` (the caller's persisted
- * `onboardingStep`, read server-side in `page.tsx`) is matched against
- * `onboardingConfig.steps` to pick a starting index. Reaching the
- * completion screen does not persist a step id of its own — it isn't
- * one of the product's own step ids, and there's nothing left to
- * "resume into" once the caller has answered every step; a caller who
- * abandons on the completion screen simply resumes at the last
- * answered step next time.
- *
- * Focus management: the card advances its `tabIndex={-1}` focus on
- * every step change, so screen readers announce the new step the same
- * way a route change would.
+ * It resumes at `initialStepId`, the persisted step. The completion
+ * screen persists no step id, so a caller who leaves there resumes at
+ * the last answered step. Focus moves to the card on every step change
+ * so screen readers announce the new step.
  */
 
 import { useRef, useState, useTransition } from "react";
@@ -88,9 +78,7 @@ export function OnboardingWizard({ initialStepId }: OnboardingWizardProps) {
     startTransition(async () => {
       const nextIndex = stepIndex + 1;
       const nextStep = steps[nextIndex];
-      // Only persist a step id while the caller is still moving between
-      // the product's own steps — see the module doc comment for why
-      // the completion screen doesn't get one.
+      // The completion screen is not a step and persists no step id.
       const result = nextStep
         ? await advanceStep(nextStep.id, answers)
         : { success: true as const, data: undefined };

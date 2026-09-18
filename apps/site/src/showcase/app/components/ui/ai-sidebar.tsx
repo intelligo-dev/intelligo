@@ -1,14 +1,16 @@
 "use client";
 
 /*
- * The AI product's sidebar: a
- * shell that morphs between a full panel and an icon rail on desktop
- * and slides in as a sheet on mobile; navigation menus with a shared
- * hover pill, an active-item glide and staggered submenus; and a
- * resource tree — folders, projects, conversations, files, bookmarks —
- * with roving focus, drag-and-drop and keyboard moves, inline rename
- * and a row menu. In the rail every item explains itself with a
- * tooltip. import * as React from "react";
+ * The AI product's sidebar: a shell that morphs between a full panel and
+ * an icon rail on desktop and slides in as a sheet on mobile; navigation
+ * menus with a shared hover pill, an active-item glide and staggered
+ * submenus; and a resource tree — folders, projects, conversations, files,
+ * bookmarks — with roving focus, drag-and-drop and keyboard moves, inline
+ * rename and a row menu. In the rail every item explains itself with a
+ * tooltip.
+ */
+
+import * as React from "react";
 import {
   AnimatePresence,
   motion,

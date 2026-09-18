@@ -1,8 +1,7 @@
 "use client";
 
 /*
- * The radio group: the dot springs out from
- * the centre, over Base UI's RadioGroup. shadcn base-nova's API (MIT).
+ * The radio group: the dot springs out from the centre.
  */
 
 import { Radio as RadioPrimitive } from "@base-ui/react/radio";

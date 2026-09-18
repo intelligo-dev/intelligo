@@ -3,12 +3,9 @@
  * workspace is entitled to `feature`, and an upgrade prompt when it
  * isn't.
  *
- * Server component on purpose — the check is `hasFeature` from
- * `@intelligo-dev/billing`, and running it on the server means the gated
- * content is never sent to a browser that isn't allowed to see it.
- * A client-side gate is a hint; this is the real thing. (It is still
- * not authorization: the action or route behind the feature must check
- * for itself. This decides what to *render*.)
+ * A server component so gated content never reaches a browser that is
+ * not entitled to it. It is still not authorization: the action or
+ * route behind the feature must check for itself.
  *
  * What a locked feature is called, and which plan unlocks it, comes
  * from `@/lib/feature-catalog` — consumer-owned, because features are

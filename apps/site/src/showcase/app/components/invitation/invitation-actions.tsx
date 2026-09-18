@@ -1,9 +1,5 @@
 "use client";
 
-/**
- * Accept/decline buttons for the invitation-accept page.
- */
-
 import { useState } from "react";
 import { useTranslations } from "use-intl";
 import { toast } from "sonner";

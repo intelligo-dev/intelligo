@@ -1,10 +1,12 @@
 "use client";
 
 /*
- * The agent's to-do list: a
- * collapsible plan whose status marks morph between pending, in
- * progress, completed and cancelled, with a rolling completion count in
- * the header. import * as React from "react";
+ * The agent's to-do list: a collapsible plan whose status marks morph
+ * between pending, in progress, completed and cancelled, with a rolling
+ * completion count in the header.
+ */
+
+import * as React from "react";
 import { ChevronDownIcon, ListTodoIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 

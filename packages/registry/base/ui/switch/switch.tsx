@@ -1,9 +1,8 @@
 "use client";
 
 /*
- * The switch: a weighted thumb that glides
- * across and squeezes while pressed, over Base UI's Switch. shadcn
- * base-nova's API (MIT).
+ * The switch: a weighted thumb that glides across and squeezes while
+ * pressed.
  */
 
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch";

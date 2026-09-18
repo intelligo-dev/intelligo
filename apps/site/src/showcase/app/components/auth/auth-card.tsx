@@ -1,5 +1,5 @@
 /**
- * Shared auth page shell — de-branded on purpose.
+ * Shared auth page shell, unbranded.
  *
  * Ships with `auth-login`; `auth-signup`, `auth-password-reset`, and
  * `auth-email-verification` all import it from `@/components/auth/auth-card`

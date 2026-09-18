@@ -1,20 +1,9 @@
 "use server";
 
 /**
- * Billing server actions — thin transport over `@intelligo-dev/billing`'s
- * checkout service: authorize with `@intelligo-dev/auth`, resolve this
- * deployment's product slug and credit bundles from `@/lib/billing`,
- * call the service, and map any `BillingServiceError` to a friendly,
- * translated message. No checkout/Stripe logic here — that lives in
- * the service.
- *
- * Shared with the `billing-settings` item, which imports this file
- * rather than shipping its own copy (install `pricing` first).
- *
- * All user-facing error text is resolved via `getTranslations("pricing")`
- * — the `BillingServiceError.code` → message map below
- * becomes a code → translation-key map instead of a code → English
- * string map.
+ * Checkout server actions over `@intelligo-dev/billing`'s checkout service:
+ * authorize, call the service, and map a `BillingServiceError` code to a
+ * translated message. The `billing-settings` item imports this file too.
  */
 
 import { headers } from "next/headers";

@@ -1,7 +1,10 @@
 "use client";
 
 /*
- * 
+ * The chat composer: one rounded field, the textarea growing with its
+ * content, a bottom row of quiet controls and a round send button that
+ * morphs into stop while a reply streams. Errors report a code and every
+ * label is passed in, so nothing is English by default.
  */
 
 import * as React from "react";
@@ -42,16 +45,6 @@ import {
 } from "@showcase/components/ui/select";
 import { Spinner } from "@showcase/components/ui/spinner";
 import { cn } from "@showcase/lib/utils";
-
-// Changes: the composer surface only — form, textarea, attachments, action
-// menu, selects and submit. Attachments preview with shadcn's Attachment
-// instead of a HoverCard; the speech button, the command-based pickers and
-// the external PromptInputProvider are not ported. Errors report a code and
-// every label is passed in, so nothing is English by default. File ids come
-// from crypto.randomUUID, not nanoid. Menu items act on click (Base UI).
-// The surface follows an MIT-licensed prompt input: one rounded field, the textarea growing with its content, a
-// bottom row of quiet controls and a round send button that morphs into
-// stop while a reply streams.
 
 type AttachmentFile = FileUIPart & { id: string };
 

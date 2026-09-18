@@ -6,9 +6,8 @@
  * `@mastra/ai-sdk` streams a workflow, an agent network and a nested
  * agent as `data-workflow`, `data-workflow-step`, `data-network`,
  * `data-tool-agent` and `data-tool-agent-step` parts, each a snapshot
- * reconciled by id. They arrive here untouched (no helper
- * over the framework) and render as steps on the T3 chain-of-thought
- * part. The shapes are read defensively — Mastra's payloads carry
+ * reconciled by id. They arrive here untouched and render as steps on
+ * `ai-agent-activity`. The shapes are read defensively — Mastra's payloads carry
  * more than what is shown, and a field that is missing costs a label,
  * not a render.
  */

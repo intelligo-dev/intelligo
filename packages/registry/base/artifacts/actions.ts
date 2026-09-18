@@ -1,40 +1,16 @@
 "use server";
 
 /**
- * Artifact (document) server actions — thin transport over
- * `@intelligo-dev/core/documents`: resolve the caller's actor via
- * `requireWorkspace()`, call the core documents service, map any
- * `DocumentServiceError` to a friendly message, and reshape the result
- * for the page and its components. No business rules here — those live
- * in `@intelligo-dev/core/documents`.
+ * Artifact library actions over `@intelligo-dev/core/documents`: resolve
+ * the caller with `requireWorkspace()`, call the service, map a
+ * `DocumentServiceError` to a translated message.
  *
- * Only `getUserDocuments` and `deleteDocumentVersions` are wired here:
- * this item is a read/browse artifact library page, not the artifact
- * editor. `saveDocument` is called from wherever your product's AI tool
- * calls create/update an artifact mid-conversation (the `chat` item),
- * not from this page. `getDocument` (single-item fetch) isn't needed
- * either — the list already carries each artifact's full content.
- *
- * `deleteDocumentVersions(actor, id, timestamp)` deletes every version
- * created strictly *after* `timestamp`, bounded to the last 30 days —
- * it's a revert primitive (undo edits back to a checkpoint), not a
- * generic "delete this artifact forever" call, and the service exposes
- * no way to look up an artifact's *earliest* version. `deleteLatestVersion`
- * below uses it the only way this page's data supports honestly: delete
- * the single version this page already has, by passing a timestamp one
- * millisecond before it. When that version is the artifact's only one,
- * the artifact disappears; when older versions exist, the artifact
- * reverts to the previous one instead of disappearing —
- * `components/document-actions.tsx`'s confirm dialog says so.
- *
- * Product-specific document title patterns (for custom agent labels and
- * the "report" filter) register through `@intelligo-dev/core/documents`'s
- * `registerDocumentPatterns` — see `@/lib/document-patterns.ts`, this
- * item's composition-root extension point. Nothing in this file calls
- * it: registration is never an import side effect, so that
- * registration happens once, at startup, from an explicit composition
- * root — never from a request-scoped file like this one, and never as
- * an import side effect.
+ * Deleting uses `deleteDocumentVersions(actor, id, timestamp)`, which
+ * removes every version created strictly after `timestamp`, within the
+ * last 30 days. It is a revert, not a hard delete: `deleteLatestVersion`
+ * passes one millisecond before the version this page shows, so an
+ * artifact with older versions reverts to the previous one, and one
+ * with a single version disappears.
  */
 
 import { getTranslations } from "next-intl/server";
@@ -86,10 +62,8 @@ function friendlyError(t: Translator, error: unknown): string {
 }
 
 /**
- * Every artifact the caller owns in the active workspace, most recently
- * created first. Filtering (by kind, or by the "report" flag) happens
- * client-side in `document-list.tsx` — this always returns the full
- * set.
+ * Every artifact the caller owns in the active workspace, newest first.
+ * Filtering happens client-side.
  */
 export async function listDocuments(): Promise<
   ActionResult<ArtifactListItem[]>
@@ -117,10 +91,9 @@ export async function listDocuments(): Promise<
 }
 
 /**
- * Deletes the version of the artifact this page already has. See the
- * module doc comment above for exactly what that does and doesn't
- * guarantee. `latestCreatedAt` must be that version's own `createdAt`
- * (ISO string), as returned by `listDocuments`.
+ * Deletes the version of the artifact this page shows (see the module
+ * comment). `latestCreatedAt` is that version's `createdAt` as an ISO
+ * string, as `listDocuments` returns it.
  */
 export async function deleteLatestVersion(
   id: string,

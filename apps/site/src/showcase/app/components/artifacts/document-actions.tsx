@@ -1,12 +1,10 @@
 "use client";
 
 /**
- * DocumentActions — per-artifact action cluster: copy full content to
- * the clipboard, and delete (with a confirm dialog whose copy matches
- * what `deleteLatestVersion` (`@/actions/documents`) actually does — see
- * that file's module doc comment for the underlying semantics: this can
- * revert an artifact to an earlier saved version rather than remove it
- * outright, and it refuses artifacts older than 30 days).
+ * Per-artifact actions: copy, download, and delete. Delete reverts to an
+ * earlier saved version when one exists rather than removing the
+ * artifact, and refuses artifacts older than 30 days; the confirm dialog
+ * says so.
  */
 
 import { useState, useTransition } from "react";

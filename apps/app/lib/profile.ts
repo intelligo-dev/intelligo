@@ -1,16 +1,11 @@
 import "server-only";
 
 /**
- * Profile service binding — the composition-root wiring for the
- * profile-settings item. Binds a plain-English account-deletion
- * confirmation email via `@intelligo-dev/core/email`'s `sendEmail` into the
- * framework-owned profile service (`@intelligo-dev/auth`).
- *
- * `sendEmail` never throws (it swallows provider errors into its own
- * result object) and the service itself already treats
- * `onAccountDeleted` as fire-and-forget, so no extra error handling is
- * needed here. Replace the copy below with your own template, or drop
- * the `onAccountDeleted` binding entirely to send no email at all.
+ * Binds the profile service (`@intelligo-dev/auth`) with an
+ * account-deletion confirmation email sent through `sendEmail`
+ * (`@intelligo-dev/core/email`). `sendEmail` never throws and the
+ * service treats `onAccountDeleted` as fire-and-forget, so no error
+ * handling is needed. Drop the binding to send no email.
  */
 
 import { getTranslations } from "next-intl/server";

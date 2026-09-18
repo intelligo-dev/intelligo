@@ -1,9 +1,12 @@
 "use client";
 
 /*
- * A permission card: the tool an
- * agent wants to run, its parameters behind a disclosure, and allow once /
- * always allow / deny, with the outcome shown as a status. import * as React from "react";
+ * A permission card: the tool an agent wants to run, its parameters behind
+ * a disclosure, and allow once / always allow / deny, with the outcome
+ * shown as a status.
+ */
+
+import * as React from "react";
 import {
   CheckIcon,
   ChevronDownIcon,

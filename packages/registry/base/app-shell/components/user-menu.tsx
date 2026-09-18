@@ -1,25 +1,13 @@
 "use client";
 
 /**
- * User menu — avatar dropdown with profile/settings links, an optional
- * theme toggle, and sign out.
+ * Avatar dropdown: account pages (`accountItems` from `@/lib/nav-config`),
+ * settings, a theme submenu and sign out.
  *
- * The theme submenu is guarded, not required: `next-themes`'s
- * `useTheme()` degrades to a no-op setter when no `ThemeProvider` is
- * mounted, so this menu renders fine either way — wrap the root layout
- * in a `ThemeProvider` to make it actually switch themes. The `mounted`
- * check avoids a hydration mismatch between the server render (no theme
- * yet) and the client's resolved theme.
- *
- * The account pages — usage, pricing, whatever a product adds — come
- * from `accountItems` in `@/lib/nav-config`, the same consumer-owned
- * file the sidebar reads. They live here rather than in the sidebar
- * because they are things you go and look at, not things you work in,
- * and a row for each one pushed the product's own surfaces down the
- * list.
- *
- * No notifications entry: the header's bell already opens that
- * surface, and the `notifications` item ships it.
+ * The theme submenu only switches themes once a `ThemeProvider` is
+ * mounted; without one `useTheme()` is a no-op. The `mounted` check
+ * avoids a hydration mismatch between the server render (no theme) and
+ * the client's resolved theme.
  */
 
 import * as React from "react";

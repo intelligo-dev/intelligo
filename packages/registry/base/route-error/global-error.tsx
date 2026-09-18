@@ -4,12 +4,10 @@
  * Last-resort boundary: a failure in the root layout itself, which
  * replaces the whole document.
  *
- * Deliberately static English and inline styles — this renders *above*
+ * Static English and inline styles: this renders above
  * `NextIntlClientProvider` and outside the `[locale]` segment, so there
- * is no translator and no guarantee the stylesheet loaded. That is the
- * one documented exception to the i18n-native rule; every other
- * error surface in the catalogue is translated. Keep it dependency-free
- * for the same reason: whatever broke may be one of the dependencies.
+ * is no translator and no guarantee the stylesheet loaded. Keep it
+ * dependency-free — whatever broke may be one of the dependencies.
  *
  * Reporting still goes through the `reportRouteError` seam, so a
  * global crash reaches the same reporter as every other boundary.

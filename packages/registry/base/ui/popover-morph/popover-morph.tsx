@@ -1,9 +1,11 @@
 "use client";
 
 /*
- * A popover whose trigger becomes its panel:
- * the trigger's surface and the panel share a layoutId, so opening grows
- * the one surface out of the trigger and closing folds it back in. Behaviour is Base UI's non-modal Dialog rather than its Popover: the
+ * A popover whose trigger becomes its panel: the trigger's surface and the
+ * panel share a layoutId, so opening grows the one surface out of the
+ * trigger and closing folds it back in.
+ *
+ * Behaviour is Base UI's non-modal Dialog rather than its Popover: the
  * Popover's Positioner owns the popup's geometry and settles it after
  * mount, which fights a shared-layout morph measuring the same box. A
  * non-modal Dialog keeps what a popover needs — Escape and outside-press

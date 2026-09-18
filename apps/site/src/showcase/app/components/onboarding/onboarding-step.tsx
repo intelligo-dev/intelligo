@@ -1,11 +1,9 @@
 "use client";
 
 /**
- * Renders a single onboarding step's fields, driven entirely by the
- * step's config (`@/lib/onboarding-steps.ts`) — two generic field
- * types (a text input, a single-select card group) cover the common
- * cases; a product that needs more composes its own step component and
- * points `onboarding-wizard.tsx` at it instead of this one.
+ * Renders one step's fields from its config in `@/lib/onboarding-steps`:
+ * a text input or a single-select card group. For other field types,
+ * write your own step component and render it from the wizard.
  */
 
 import { useId } from "react";
@@ -48,9 +46,8 @@ export function OnboardingStep({
   isSubmitting,
 }: OnboardingStepProps) {
   const t = useTranslations("onboarding");
-  // Namespace-less: step/field copy keys are fully qualified so a
-  // product's own steps can point at its own namespace (see
-  // `@/lib/onboarding-steps`).
+  // Namespace-less: step and field keys are fully qualified, so a step
+  // can point at any namespace.
   const tAny = useTranslations();
   const headingId = useId();
   const canProceed = isStepComplete(step, answers);

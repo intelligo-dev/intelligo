@@ -1,12 +1,10 @@
 "use client";
 
 /**
- * Email-only form that starts the password reset flow. Calls the
- * Better-Auth client SDK's `requestPasswordReset` action directly — no
- * raw `fetch("/api/auth/*")`. `redirectTo` is where Better-Auth sends the
- * visitor after they click the emailed link: `/reset-password?token=...`
- * on a valid token, `/reset-password?error=INVALID_TOKEN` on an
- * expired/invalid one.
+ * Email-only form that starts the password reset flow through
+ * Better-Auth's `requestPasswordReset`. `redirectTo` is where the
+ * emailed link lands: `/reset-password?token=...` on a valid token,
+ * `/reset-password?error=INVALID_TOKEN` on an expired or invalid one.
  */
 
 import { useState } from "react";

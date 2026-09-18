@@ -1,6 +1,4 @@
 /**
- * Privacy settings page — server component.
- *
  * Three cards: a GDPR-style data export, a per-category listing of the
  * caller's own facts with per-fact delete, and a read-only audit trail
  * of every mutation to their identity graph. Everything reads through

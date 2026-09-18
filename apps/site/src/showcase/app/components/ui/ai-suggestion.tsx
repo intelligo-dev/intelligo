@@ -1,16 +1,10 @@
 "use client";
 
-/*
- * 
- */
-
 import * as React from "react";
 
 import { Button } from "@showcase/components/ui/button";
 import { ScrollArea, ScrollBar } from "@showcase/components/ui/scroll-area";
 import { cn } from "@showcase/lib/utils";
-
-// Changes: base-nova Button and ScrollArea; no cursor override.
 
 function Suggestions({
   className,

@@ -1,10 +1,12 @@
 "use client";
 
 /*
- * The line that says what the
- * agent is doing while it reasons: phrases cycle with a cascade, a swap
- * or a scramble, each shimmering, behind a terminal-style ASCII loader.
- * import * as React from "react";
+ * The line that says what the agent is doing while it reasons: phrases
+ * cycle with a cascade, a swap or a scramble, each shimmering, behind a
+ * terminal-style ASCII loader.
+ */
+
+import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { EASE_OUT, SPRING_SWAP } from "@/components/ui/ai-motion";

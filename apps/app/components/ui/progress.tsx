@@ -1,8 +1,7 @@
 "use client";
 
 /*
- * Progress: a rounded track whose fill
- * glides to each new value. shadcn base-nova's API (MIT).
+ * Progress: a rounded track whose fill glides to each new value.
  */
 
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress";

@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * Client error boundary for the checkout success route. Self-contained
- * per the repo-wide registry standard: no shared app-internal error
- * component, no error-reporting SDK.
- */
-
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 

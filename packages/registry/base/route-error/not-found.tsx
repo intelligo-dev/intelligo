@@ -1,7 +1,4 @@
-/**
- * 404 page for the `[locale]` segment — a server component, since
- * there is nothing dynamic about "this route doesn't exist".
- */
+/** 404 page for the `[locale]` segment. */
 
 import { getTranslations } from "next-intl/server";
 

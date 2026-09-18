@@ -1,9 +1,8 @@
 "use client";
 
 /*
- * One turn of a conversation:
- * the row, its optional avatar, the content column, header, footer, a
- * centred marker and the typing indicator. The
+ * One turn of a conversation: the row, its optional avatar, the content
+ * column, header, footer, a centred marker and the typing indicator. The
  * bubble (`ai-message-bubble`) reads which side the row sits on through
  * `MessageSideContext`.
  */

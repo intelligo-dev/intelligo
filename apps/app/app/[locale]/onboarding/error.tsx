@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * Error boundary for the onboarding wizard (renders outside the app shell). Renders the shared `RouteError` from the
- * `route-error` item — install it alongside this one.
+ * Error boundary for the onboarding wizard, which renders outside the app
+ * shell. Renders `RouteError` from the `route-error` item, which must be
+ * installed too.
  */
 
 import { RouteError } from "@/components/shared/route-error";

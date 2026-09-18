@@ -1,16 +1,10 @@
 "use server";
 
 /**
- * Invitation accept/decline server actions.
- *
- * Thin transport over `@intelligo-dev/auth`'s team service, bound with
- * this consumer's ports at `@/lib/team` (installed by the
- * `team-settings` registry item — see its module doc for the exact
- * port bindings). All authorization, invitation-ownership checks, and
- * post-accept membership verification live in the service; this file
- * only calls it, maps a thrown `TeamServiceError` to a friendly
- * message, and revalidates the paths that show invitation/membership
- * state.
+ * Thin transport over the team service bound at `@/lib/team` (installed
+ * by the `team-settings` item). Authorization, invitation ownership and
+ * membership checks live in the service; this file maps a thrown
+ * `TeamServiceError` to a message and revalidates.
  */
 
 import { revalidatePath } from "next/cache";

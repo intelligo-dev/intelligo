@@ -1,10 +1,13 @@
 "use client";
 
 /*
- * The scrolling transcript: a
- * viewport that keeps streamed output pinned to the live edge while the
- * reader stays near it, lets go the moment they scroll up, and can grow
- * a compact preview rail for jumping between message rows. import * as React from "react";
+ * The scrolling transcript: a viewport that keeps streamed output pinned
+ * to the live edge while the reader stays near it, lets go the moment they
+ * scroll up, and can grow a compact preview rail for jumping between
+ * message rows.
+ */
+
+import * as React from "react";
 import { ArrowDownIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
@@ -12,8 +15,7 @@ import { EASE_OUT, SPRING_LAYOUT } from "@ui/components/ui/ai-motion";
 import { cn } from "@ui/lib/utils";
 
 /* ----------------------------------------------------------------------------
- * Gesture hooks (from the ported source). A click carries no pointerType, and a
- * finger cannot hover, so the rail needs to know which input is behind
+ * Gesture hooks. A click carries no pointerType, and a finger cannot hover, so the rail needs to know which input is behind
  * each activation and when a pinned preview should let go.
  * ------------------------------------------------------------------------- */
 

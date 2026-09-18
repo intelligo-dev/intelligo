@@ -6,11 +6,6 @@
  * from `@intelligo-dev/auth`, call the service, map any
  * `WorkspaceServiceError` to a friendly message, and revalidate the
  * page. No business rules here — those live in the service.
- *
- * Only the two actions this page uses. `listWorkspaces`,
- * `createWorkspace`, `switchWorkspace`, and `getActiveWorkspace` belong
- * to the broader workspace-switcher/creation surface (the `app-shell`
- * item), not workspace settings.
  */
 
 import { revalidatePath } from "next/cache";

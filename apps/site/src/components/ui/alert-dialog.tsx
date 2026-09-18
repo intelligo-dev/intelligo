@@ -1,9 +1,8 @@
 "use client";
 
 /*
- * The alert dialog: the dialog's backdrop and
- * spring, for a decision the reader must make, over Base UI's AlertDialog.
- * shadcn base-nova's API (MIT).
+ * The alert dialog: the dialog's backdrop and spring, for a decision the
+ * reader must make.
  */
 
 import * as React from "react";

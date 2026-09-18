@@ -1,9 +1,8 @@
 "use client";
 
 /*
- * The dialog: a blurred backdrop and a panel
- * that springs up from slightly smaller, over Base UI's Dialog. shadcn
- * base-nova's API (MIT). Backdrop and panel animate with motion; the root is kept
+ * The dialog: a blurred backdrop and a panel that springs up from slightly
+ * smaller. Backdrop and panel animate with motion; the root is kept
  * controlled so the exit plays.
  */
 

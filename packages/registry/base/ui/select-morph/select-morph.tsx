@@ -1,10 +1,13 @@
 "use client";
 
 /*
- * A select whose trigger grows into its list:
- * the list opens flush under the trigger, the trigger's lower corners
- * square off to meet it, and the list unclips downward as one continuous
- * surface while its options stagger in. import * as React from "react";
+ * A select whose trigger grows into its list: the list opens flush under
+ * the trigger, the trigger's lower corners square off to meet it, and the
+ * list unclips downward as one continuous surface while its options
+ * stagger in.
+ */
+
+import * as React from "react";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";

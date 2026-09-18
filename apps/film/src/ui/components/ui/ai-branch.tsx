@@ -1,10 +1,9 @@
 "use client";
 
 /*
- * The shape follows Vercel AI
- * Elements' Branch, rethought for a thread that owns which version is
- * on screen: this is a pager over versions the thread keeps, not a
- * component that clones its children per branch.
+ * For a thread that owns which version is on screen: this is a pager over
+ * versions the thread keeps, not a component that clones its children per
+ * branch.
  */
 
 import * as React from "react";

@@ -32,5 +32,5 @@ export function reportRouteError(
   _error: Error & { digest?: string },
   _context: RouteErrorContext
 ): void {
-  // No-op by default. See the doc comment above.
+  // No-op until you bind a reporter.
 }

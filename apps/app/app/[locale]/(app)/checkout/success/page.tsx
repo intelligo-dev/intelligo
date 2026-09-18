@@ -22,16 +22,11 @@ interface CheckoutSuccessPageProps {
 }
 
 /**
- * Checkout success page.
- *
- * Verifies the session by querying Stripe directly through
- * `getCheckoutSession` (`@intelligo-dev/billing`) rather than trusting the
- * workspace's local subscription row. Stripe's webhook can arrive
- * 15-20% slower than the browser's redirect to this page; reading the
- * checkout session itself is what makes this page show the right plan
- * immediately regardless of webhook timing. No Stripe call happens in
- * this component — that's the whole point of routing through the
- * service instead of `getStripe()` directly.
+ * Verifies the checkout through `getCheckoutSession`
+ * (`@intelligo-dev/billing`) rather than the workspace's local
+ * subscription row: Stripe's webhook can land after the browser's
+ * redirect here, and reading the checkout session shows the right plan
+ * regardless of webhook timing.
  */
 export default async function CheckoutSuccessPage({
   searchParams,

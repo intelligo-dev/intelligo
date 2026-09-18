@@ -1,10 +1,12 @@
 "use client";
 
 /*
- * An assistant reply as it
- * streams and once it lands: the rendered content, then the completion
- * actions (copy, regenerate, feedback) and a compact sources disclosure.
- * import * as React from "react";
+ * An assistant reply as it streams and once it lands: the rendered
+ * content, then the completion actions (copy, regenerate, feedback) and a
+ * compact sources disclosure.
+ */
+
+import * as React from "react";
 import {
   CheckIcon,
   ChevronDownIcon,

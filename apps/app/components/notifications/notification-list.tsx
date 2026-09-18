@@ -1,24 +1,15 @@
 "use client";
 
 /**
- * Notification list — a "Notifications" header (with "Mark all read" when
- * anything is unread), the rows, and an empty state. Used in two places
- * with two different data-ownership models:
+ * The notification rows, a header with "Mark all read", and an empty
+ * state. Two modes:
  *
- * - The bell dropdown (`variant="compact"`) is driven by the polling
- *   `useNotifications` hook, which also owns the unread badge count.
- *   Pass `onMarkRead`/`onMarkAllRead` from the hook so this list's
- *   mark-read clicks stay in sync with that count — this is "controlled"
- *   mode.
- * - The full page (`variant="full"`, the default) has no external count
- *   to keep in sync, so when `onMarkRead`/`onMarkAllRead` are omitted
- *   this list manages its own optimistic state and calls the
- *   `@/actions/notifications` server actions directly — "uncontrolled"
- *   mode, the same pattern `MemberList`/`PendingInvitations` use in the
- *   team-settings item. Uncontrolled mode also owns "Load more": the
- *   underlying `getNotifications` core function takes a `limit`, not an
- *   offset or cursor, so "Load more" re-fetches with a larger limit
- *   rather than fetching a distinct next page (capped at 100).
+ * - Controlled (the bell, `variant="compact"`): pass `onMarkRead` and
+ *   `onMarkAllRead` from `useNotifications` so clicks keep its unread
+ *   count in sync.
+ * - Uncontrolled (the page, `variant="full"`): omit them and the list
+ *   keeps its own optimistic state, calls the server actions itself and
+ *   owns "Load more", which re-fetches with a larger limit (up to 100).
  */
 
 import { useState, useTransition, type ReactNode } from "react";
@@ -133,12 +124,9 @@ export function NotificationList({
 
   return (
     <div className="flex flex-col">
-      {/* The heading belongs to whoever has no other one. In the bell
-          dropdown this list is the whole surface, so it names itself;
-          on the notifications page the page's own header already says
-          "Notifications" one line above, and repeating it there read
-          as a bug. The row disappears entirely when it would hold
-          neither a title nor the mark-all action. */}
+      {/* The title shows only in the bell dropdown; the page has its
+          own. The row is dropped when it would hold neither the title
+          nor the mark-all action. */}
       {(variant === "compact" || hasUnread) && (
         <>
           <div
@@ -208,10 +196,9 @@ export function NotificationList({
           />
         </div>
       ) : variant === "compact" ? (
-        // `flex flex-col`: the viewport's `size-full` height is a
-        // percentage, which resolves to `auto` against a capped-but-
-        // indefinite root — the rows would spill past the cap instead
-        // of scrolling under it.
+        // `flex flex-col`: the viewport's percentage height resolves to
+        // `auto` against a capped root, and the rows would spill past
+        // the cap instead of scrolling.
         <ScrollArea className="flex max-h-100 flex-col">
           <AnimatedList as="div" className="flex flex-col">
             {rows}

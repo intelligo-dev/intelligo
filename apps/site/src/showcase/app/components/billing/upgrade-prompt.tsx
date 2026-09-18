@@ -4,13 +4,8 @@
  * What a closed `FeatureGate` renders: the feature's name, the plan
  * that unlocks it, and one way forward.
  *
- * Two densities. `full` fills the space a page section would have
- * occupied — right when the gate replaces the whole surface. `compact`
- * is for a card or a panel where something else on the page is still
- * usable.
- *
- * Naming the user's current plan is deliberate: "upgrade to Pro" is
- * advice, "you're on Free, upgrade to Pro" is an explanation.
+ * `full` fills a page section, for a gate that replaces the whole
+ * surface; `compact` fits a card or panel.
  */
 
 import { ArrowUpRight, Lock } from "lucide-react";

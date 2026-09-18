@@ -23,9 +23,8 @@ intelligo upgrade --check   Show what a template upgrade would change
 
 A new application on the framework.
 
-This is onboarding, not the product
-boundary: what it writes is the consumer's from the moment it lands,
-and the enduring relationship is the versioned packages, not this
+This is onboarding, not the product boundary: what it writes is the
+consumer's from the moment it lands, and the enduring relationship is the versioned packages, not this
 scaffold. So it generates through the same manifest machinery as
 `add`, which means the very first upgrade already knows which files
 you have since edited.
@@ -53,9 +52,6 @@ their own, and refuse to overwrite the latter.
 
 Report the problems that are invisible until
 they are an incident.
-
-The checks here were each chosen because something in this codebase
-actually went wrong that way, not because they sounded thorough.
 
 [source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/doctor.ts)
 
@@ -107,21 +103,19 @@ schema but no rows there at all, which this reports distinctly:
 "unmanaged" is a different problem from "behind", and baselining is
 the fix (see the migrations README).
 
-Before 1.0 the framework's chain was 48 migrations; it is now one
-baseline. A database that ran the old chain holds those 48 hashes,
-which `legacy-chain.json` (next to the journal) lists: they are
-reported as `legacy`, not as unknown, and a database holding all of
-them is `adoptable` — its schema is the baseline's, so `migrate`
-records the baseline without running it.
+The framework's chain is one baseline. A database that ran the pre-1.0
+chain holds its hashes, which `legacy-chain.json` (next to the
+journal) lists: they are reported as `legacy`, not as unknown, and a
+database holding all of them is `adoptable` — its schema is the
+baseline's, so `migrate` records the baseline without running it.
 
 [source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/migrate-check.ts)
 
 ## upgrade --check
 
-Reports what a template upgrade would do, and does nothing. The
-promise is that dependency upgrades never overwrite
-consumer source, so the interesting output is not "these files
-changed upstream" but "these changed upstream AND you have edited
+Reports what a template upgrade would do, and does nothing. Upgrades
+never overwrite consumer source, so the interesting output is not
+"these templates changed" but "these changed AND you have edited
 them" — the set where the consumer has to make a decision.
 
 [source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/upgrade-check.ts)

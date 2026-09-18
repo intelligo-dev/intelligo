@@ -1,9 +1,8 @@
 /*
- * The Intelligo design system: shadcn base-nova tokens with the
- * intelligo additions — status, layers, motion — exactly what
- * `shadcn add https://intelligo.dev/r/intelligo.json` writes. This file is
- * yours: re-value the tokens to re-theme every installed page. Keep the
- * names; registry items depend on them.
+ * Design tokens: shadcn base-nova plus status, layers and motion — what
+ * `shadcn add https://intelligo.dev/r/intelligo.json` writes. Re-value
+ * the tokens to re-theme every installed page; keep the names, registry
+ * items depend on them.
  */
 @import "tailwindcss";
 @import "tw-animate-css";

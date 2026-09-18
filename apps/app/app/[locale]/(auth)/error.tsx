@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * Error boundary for the auth route group (renders outside the app shell). Renders the shared `RouteError` from the
- * `route-error` item — install it alongside this one.
+ * Error boundary for the auth route group, which renders outside the
+ * app shell. Renders the shared `RouteError` from the `route-error`
+ * item — install it alongside this one.
  */
 
 import { RouteError } from "@/components/shared/route-error";

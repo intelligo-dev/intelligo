@@ -3,16 +3,12 @@
  * all (`/nonsense`, or `/xx/dashboard` for a locale you don't ship).
  *
  * The translated `app/[locale]/not-found.tsx` only covers `notFound()`
- * raised *inside* a locale segment; without this file, an unmatched URL
- * falls through to Next's own unstyled black-and-white 404, which is
- * the one page in a polished app that looks like a framework default.
+ * raised inside a locale segment; without this file, an unmatched URL
+ * falls through to Next's unstyled default 404.
  *
- * Static English and inline styles for the same reason `global-error`
- * uses them: this renders outside `[locale]`, so there is no locale to
- * read and no `NextIntlClientProvider` above it. That is the documented
- * exception to the i18n-native rule — every 404 reachable *within* a
- * locale is translated. If your product only ever serves one language, replace
- * the strings here with that language's.
+ * Static English and inline styles: this renders outside `[locale]`,
+ * so there is no locale to read and no `NextIntlClientProvider` above
+ * it. A single-language product can replace the strings with its own.
  */
 
 export default function RootNotFound() {

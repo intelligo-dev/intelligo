@@ -1,9 +1,8 @@
 "use client";
 
 /*
- * The alert dialog: the dialog's backdrop and
- * spring, for a decision the reader must make, over Base UI's AlertDialog.
- * shadcn base-nova's API (MIT). Backdrop and panel animate with motion; the root is
+ * The alert dialog: the dialog's backdrop and spring, for a decision the
+ * reader must make. Backdrop and panel animate with motion; the root is
  * kept controlled so the exit plays.
  */
 

@@ -1,16 +1,11 @@
 "use client";
 
 /**
- * `useNotifications` — client-side state for the notification bell:
- * unread count + recent list, refreshed by polling every 60s, paused
- * while the caller says a dropdown showing the data is open (mirrors
- * the first product's `NotificationBell`). Mutations are optimistic: the local
- * state updates immediately, the server action runs alongside it.
+ * The bell's unread count and recent list, polled every 60s and paused
+ * while `paused` is true. Mutations are optimistic.
  *
- * Pass `initialCount`/`initialNotifications` when a server component up
- * the tree already fetched them (fast first paint, no fetch-on-mount).
- * Omit both and the hook fetches for itself on mount — this is what
- * lets `NotificationBell` be dropped into a shell with zero props.
+ * Pass `initialCount`/`initialNotifications` when a server component
+ * already fetched them; omit both and the hook fetches on mount.
  */
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";

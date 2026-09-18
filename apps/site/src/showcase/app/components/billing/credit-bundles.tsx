@@ -1,26 +1,18 @@
 "use client";
 
 /**
- * Displays this deployment's credit bundles (`@/lib/billing`'s
- * `CREDIT_BUNDLES`, installed by the `pricing` item) for one-time
- * purchase.
+ * This deployment's credit bundles (`CREDIT_BUNDLES` from `@/lib/billing`,
+ * installed by the `pricing` item) for one-time purchase.
  *
- * `bundle.name` is deployment config from `CREDIT_BUNDLES`
- * (`lib/billing-config.ts`), not copy owned by this item — it is
- * rendered verbatim rather than routed through `messages/en.json`
- *; localize it in that config file if this deployment
- * needs bundle names in more than one language.
+ * `bundle.name` is deployment config (`lib/billing-config.ts`), not this
+ * item's copy, so it renders verbatim; localize it in that file.
  *
- * A bundle carries two amounts and each is formatted in its own
- * currency: `price` is what the buyer pays the payment provider, and
- * `grant` is what lands in the ledger. They are not the same money —
- * a pack can cost $5 and grant ₮100,000 — and the version of this card
- * that formatted one number with the ledger's `CURRENCY` printed a
- * $1.01 pack as "₮1": right glyph, wrong money, rounded to nothing.
+ * Each of a bundle's two amounts is formatted in its own currency:
+ * `price` is what the buyer pays the payment provider, `grant` is what
+ * lands in the ledger. A pack can cost $5 and grant ₮100,000.
  *
- * A bundle still written in the older `{ credits, priceUsd }` shape is
- * read the way the ledger read it: whole units of `CURRENCY`, priced
- * in dollars.
+ * A bundle in the legacy `{ credits, priceUsd }` shape is read as whole
+ * units of `CURRENCY`, priced in dollars.
  */
 
 import { useState } from "react";
@@ -59,11 +51,7 @@ function priceOf(bundle: Bundle): Amount {
 }
 
 interface CreditBundlesProps {
-  /**
-   * The top-up balance, in the ledger's own currency. It was a bare
-   * number the page pluralised as "N credits", whatever the deployment
-   * actually billed in.
-   */
+  /** The top-up balance, in the ledger's own currency. */
   currentBalance?: Amount | null;
 }
 

@@ -1,27 +1,17 @@
 "use client";
 
 /**
- * The composer, and the ways of filling it.
- *
- * It sits directly under the hero rather than pinned to the foot of the
- * page: the question and the box that answers it belong together, and
- * with the composer stuck to the bottom the eye had to cross an empty
- * page to get from one to the other.
- *
- * It composes the same primitives the `chat` item's composer does, so
- * the home page behaves like the surface it hands off to: Enter sends
- * and Shift+Enter breaks a line (IME-safe), the textarea grows with its
- * content, and dictation appends to the draft.
+ * The composer, and the starter chips that fill it. Uses the same
+ * primitives as the `chat` item's composer: Enter sends, Shift+Enter
+ * breaks a line (IME-safe), dictation appends to the draft.
  *
  * Both affordances — the composer and the starter cards — mint a
  * client-side UUID and navigate to `${chatBasePath}/${id}?query=…`; the
  * chat panel sends that as the first turn. Nothing is written here, so
  * an abandoned prompt leaves no empty conversation behind.
  *
- * No attachments, deliberately: the handoff to the chat surface is a
- * URL, which carries text and nothing else, so a file picked here would
- * be dropped by the navigation that follows. Attachments belong to the
- * conversation, one navigation later.
+ * No attachments: the handoff to the chat surface is a URL, which
+ * carries text only, so a file picked here would be dropped.
  */
 
 import { useState } from "react";
@@ -93,8 +83,6 @@ export function PromptBar() {
       </PromptInput>
 
       {starters.length > 0 ? (
-        // Chips, not cards: under the composer these are one more way to
-        // fill it, and at card weight they competed with it for the eye.
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           {starters.map((starter, index) => (
             <button

@@ -25,9 +25,8 @@
  *
  * Nothing here is framework code and nothing imports eve: the wire
  * protocol is HTTP + NDJSON (`/eve/v1/session`, `/stream`, `/cancel`),
- * read defensively. The event → chunk table is `mapEveEvent`; the
- * tests in `packages/registry/tests/chat-eve.test.ts` pin it. Both
- * are yours to extend when eve grows an event.
+ * read defensively. The event → chunk table is `mapEveEvent`; extend
+ * it when eve grows an event.
  */
 
 import type { FileUIPart, UIMessage, UIMessageChunk } from "ai";
@@ -628,7 +627,7 @@ async function* ndjson(
     try {
       yield JSON.parse(tail) as EveEvent;
     } catch {
-      // ignore
+      // A torn tail is not an event.
     }
   }
 }

@@ -29,21 +29,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * Billing settings page — server component.
+ * Reads the caller's role from `requireWorkspace()` and the role-shaped
+ * billing state from `getBillingOverview` (`@intelligo-dev/billing`).
+ * `member` and `admin` get a read-only summary; `owner` gets the full
+ * plan/credit/payment-method view.
  *
- * Reads the caller's role from `requireWorkspace()` and the
- * role-shaped billing state from `getBillingOverview` (`@intelligo-dev/billing`
- * — moved server-side out of what used to be a client component's own
- * three-way branch). `member` and `admin` get a read-only summary;
- * `owner` gets the full plan/credit/payment-method view.
- *
- * `overview.subscription.status` is left untranslated and rendered
- * verbatim: `@intelligo-dev/billing` types it as a plain `string` mirrored
- * from Stripe's own (larger-than-documented) subscription status
- * vocabulary, not a closed enum, so keying a translation off it risks
- * a missing-message error for any status this deployment hasn't
- * localized. Revisit this once the package narrows that type to a
- * closed union.
+ * `overview.subscription.status` renders verbatim, untranslated: it is a
+ * plain `string` mirrored from Stripe's open-ended status vocabulary, so
+ * keying a translation off it risks a missing-message error.
  */
 export default async function BillingSettingsPage() {
   const t = await getTranslations("billing-settings");
@@ -130,9 +123,6 @@ export default async function BillingSettingsPage() {
             <StatCardHeader>
               <StatCardLabel>{t("owner.creditBalanceLabel")}</StatCardLabel>
               <StatCardValue>
-                {/* An amount that names its own currency — it used to
-                    be a bare number followed by the word "credits",
-                    whatever the deployment actually billed in. */}
                 {overview.creditBalance
                   ? formatMoney(format, overview.creditBalance)
                   : "—"}

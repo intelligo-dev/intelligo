@@ -1,11 +1,13 @@
 "use client";
 
 /*
- * Notifications fanned into a stack: the newest
- * card in front, the next ones peeking out below it, scaled back. Hovering
- * or clicking the stack springs the cards apart into a list; each card then
- * opens and dismisses on its own. Fits a notification popover's width.
- * import * as React from "react";
+ * Notifications fanned into a stack: the newest card in front, the next
+ * ones peeking out below it, scaled back. Hovering or clicking the stack
+ * springs the cards apart into a list; each card then opens and dismisses
+ * on its own. Fits a notification popover's width.
+ */
+
+import * as React from "react";
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { BellOffIcon, ChevronDownIcon, XIcon } from "lucide-react";
 import {

@@ -1,8 +1,7 @@
 import "server-only";
 
 /**
- * Dashboard data seam — consumer-owned, read by the dashboard page on
- * the server.
+ * Dashboard data seam — consumer-owned, read on the server.
  *
  * `getResume` answers "what was this person in the middle of?" The
  * default is the most recently updated conversation, which is right for

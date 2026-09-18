@@ -1,9 +1,8 @@
 "use client";
 
 /*
- * The collapsible: the panel's height eases
- * open and closed from Base UI's measured height instead of snapping.
- * shadcn base-nova's API (MIT).
+ * The collapsible: the panel's height eases open and closed from Base UI's
+ * measured height instead of snapping.
  */
 
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";

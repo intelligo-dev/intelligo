@@ -1,12 +1,7 @@
 /**
- * Onboarding layout — minimal, centered, no sidebar or nav.
- *
- * Installs at `app/onboarding/*`, a sibling of `(app)`, not a route
- * inside it — see the `app-shell` item's `layout.tsx` doc comment for
- * why: the authenticated shell's onboarding-completion redirect never
- * wraps this route, so it can never redirect into itself. If your
- * product nests onboarding under `(app)` instead, add a route check
- * before that redirect fires.
+ * Centred layout with no sidebar. It sits beside `(app)`, not inside it,
+ * so the shell's redirect to onboarding never wraps this route. If you
+ * move it under `(app)`, skip that redirect on this route.
  */
 
 import type { ReactNode } from "react";

@@ -1,6 +1,6 @@
 /*
- * The spinner: a faint ring with a bright arc
- * running round it, in the current colour. shadcn base-nova's API (MIT).
+ * The spinner: a faint ring with a bright arc running round it, in the
+ * current colour.
  */
 
 import * as React from "react";

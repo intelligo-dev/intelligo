@@ -1,12 +1,7 @@
 /**
- * Notifications page — server component. Loads the current user's full
- * notification history (newest first, capped at 20 initially) and hands
- * it to `NotificationList` in uncontrolled "full" mode, which owns
- * mark-read/mark-all-read/"Load more" from there via the server actions
- * in `@/actions/notifications`.
- *
- * User-scoped, not workspace-scoped — see `@/actions/notifications` for
- * why (notifications span every workspace the user belongs to).
+ * The user's notifications across every workspace, newest first (20 at
+ * first), in an uncontrolled `NotificationList` that handles mark-read
+ * and "Load more" itself.
  */
 
 import type { Metadata } from "next";

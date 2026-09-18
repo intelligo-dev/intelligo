@@ -1,28 +1,10 @@
 "use client";
 
 /**
- * How a saved document reads when nobody is editing it.
- *
- * A document shows up in two places — beside the chat that wrote it,
- * and in the artifacts library — and it should read identically in
- * both. It did not: each surface had grown its own copy of the
- * extension table and the kind switch, and the copies had drifted.
- * The library's table had lost `htm` and `svg`, so an HTML page saved
- * as `page.htm` highlighted as plain text there and as HTML in the
- * chat; its `languageOf` split on "." and took the last piece, so a
- * title with no extension ("Notes") looked itself up as a language;
- * and the two surfaces rendered markdown through different plugin
- * sets, so the same document grew and lost its maths depending on
- * which page you opened it from.
- *
- * So the rendering lives here once, and the two items compose it. What
- * belongs here is everything that is true of a document regardless of
- * who is looking at it: how its title names a language, how it is
- * drawn, which glyph stands for its kind. What deliberately does not:
- * editing (the chat's lazy editors), and the words for a kind — the
- * canvas calls a text document "Document" and the library's filter
- * calls it "Text", which is the right word in each place, so each item
- * keeps its own messages.
+ * How a saved document reads when nobody is editing it. The chat's canvas
+ * and the artifacts library both compose it, so a document reads the same
+ * in both: how its title names a language, how it is drawn, which glyph
+ * stands for its kind. Editing and the words for a kind stay with each item.
  */
 
 import type { ComponentProps } from "react";
@@ -118,9 +100,8 @@ export function documentKindIcon(kind: string): LucideIcon {
 
 /**
  * What a download of this kind is called when the title carries no
- * extension of its own. One table, because both surfaces offer a
- * download and an extension that disagrees between them is the same
- * drift this module exists to end.
+ * extension of its own. One table, so both surfaces offer a download
+ * under the same extension.
  */
 const KIND_EXTENSIONS: Record<string, string> = {
   text: "md",

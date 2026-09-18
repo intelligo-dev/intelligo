@@ -2,8 +2,8 @@
 
 /**
  * The canvas — a document beside the chat: the one a tool is streaming
- * right now, or one a card reopened. The frame is the T3 artifact
- * part; the body is the kind's own component from
+ * right now, or one a card reopened. The frame is `ai-artifact`;
+ * the body is the kind's own component from
  * `lib/chat-canvas-config.tsx`; versions come from the documents
  * table, and an edit saves as a new version.
  *

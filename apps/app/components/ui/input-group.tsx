@@ -1,9 +1,8 @@
 "use client";
 
 /*
- * Intelligo design system. The input group: an input or textarea with inline addons, buttons and text, on the input's field.
- * shadcn base-nova (MIT), owned here so it composes Intelligo's
- * primitives rather than reinstalling shadcn's over them.
+ * The input group: an input or textarea with inline addons, buttons and
+ * text, on the input's field.
  */
 
 import * as React from "react";

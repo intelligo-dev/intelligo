@@ -1,10 +1,7 @@
 "use client";
 
 /**
- * Locale switcher — a dropdown over the locales your `i18n/routing.ts`
- * declares. The registry's items are i18n-native but nothing
- * else in the catalogue lets the user actually change language; this
- * closes that gap.
+ * A dropdown over the locales your `i18n/routing.ts` declares.
  *
  * Zero config: locales come from `routing.locales`, and each option is
  * labeled with the language's own name (endonym) via

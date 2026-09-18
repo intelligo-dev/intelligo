@@ -51,11 +51,7 @@ export interface OnboardingField {
 }
 
 export interface OnboardingStepConfig {
-  /**
-   * Persisted verbatim via the onboarding service's `setStep` — keep it
-   * short (validated server-side at up to 64 characters) and unique
-   * across `steps`.
-   */
+  /** Persisted verbatim; at most 64 characters, unique across `steps`. */
   id: string;
   titleKey: string;
   descriptionKey?: string;
@@ -77,10 +73,8 @@ export interface OnboardingConfig {
   steps: OnboardingStepConfig[];
   complete: OnboardingCompleteConfig;
   /**
-   * Runs server-side (called from `actions/onboarding.ts`) whenever the
-   * wizard advances past `stepId`, with that step's field answers.
-   * This hook, not the framework's onboarding service, is where field
-   * answers become durable.
+   * Runs server-side whenever the wizard advances past `stepId`, with
+   * that step's answers. The only place answers are saved.
    */
   onStepSubmit?: (
     stepId: string,

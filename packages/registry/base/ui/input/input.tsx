@@ -1,7 +1,6 @@
 /*
- * The input: a card-toned field whose border
- * and soft ring ease in on focus, over Base UI's Input. shadcn base-nova's
- * API (MIT).
+ * The input: a card-toned field whose border and soft ring ease in on
+ * focus.
  */
 
 import * as React from "react";

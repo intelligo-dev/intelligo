@@ -1,11 +1,13 @@
 "use client";
 
 /*
- * A card or button that opens into a dialog:
- * the trigger's surface and the panel share a layoutId, so the panel grows
- * out of the trigger to the centre (or the bottom) of the screen and
- * folds back on close; swapping `viewKey` cross-fades the content while
- * the panel resizes around it. import * as React from "react";
+ * A card or button that opens into a dialog: the trigger's surface and the
+ * panel share a layoutId, so the panel grows out of the trigger to the
+ * centre (or the bottom) of the screen and folds back on close; swapping
+ * `viewKey` cross-fades the content while the panel resizes around it.
+ */
+
+import * as React from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";

@@ -1,12 +1,9 @@
 "use server";
 
 /**
- * Onboarding server actions — thin transport over the bound onboarding
- * service (`@/lib/onboarding`): call the service, map any
- * `OnboardingServiceError` to a friendly message, and revalidate. No
- * business rules here — those live in the service. State reads happen
- * directly in `page.tsx` via `@/lib/onboarding`, not through an action
- * — same pattern as `team-settings`/`workspace-settings`.
+ * Onboarding actions over the service in `@/lib/onboarding`: call it, map
+ * an `OnboardingServiceError` to a translated message, revalidate. The
+ * page reads state from the service directly.
  */
 
 import { revalidatePath } from "next/cache";
@@ -37,10 +34,8 @@ async function friendlyError(error: unknown): Promise<string> {
 }
 
 /**
- * Advance (or move back) to `stepId`. Runs the consumer's
- * `onStepSubmit` hook (see `lib/onboarding-steps.ts`) with the
- * step-being-left's answers before persisting the new step id, so a
- * product can turn field answers into durable data of its own.
+ * Moves to `stepId`. First runs `onStepSubmit` from
+ * `lib/onboarding-steps.ts` with the answers of the step being left.
  */
 export async function advanceStep(
   stepId: string,
@@ -78,15 +73,12 @@ export async function skipOnboarding(): Promise<OnboardingActionResult> {
 }
 
 /**
- * Persists a display name typed into the wizard.
+ * Saves a display name typed into the wizard.
  *
- * A server action rather than a call inside `lib/onboarding-steps.ts`,
- * because that config is also imported by the `"use client"` wizard
- * (for the steps and completion copy) — reaching into a server-only
- * service from there would drag `next/headers` into the client bundle.
- * A server action reference is serializable, so the client never sees
- * this implementation. That is the same shape any product-specific
- * persistence should take in `onStepSubmit`.
+ * A server action because `lib/onboarding-steps.ts` is also imported by
+ * the client wizard, and calling a server-only service from there would
+ * pull `next/headers` into the client bundle. Any persistence you add in
+ * `onStepSubmit` should take the same shape.
  */
 export async function saveDisplayName(
   name: string

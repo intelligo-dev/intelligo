@@ -1,10 +1,9 @@
 "use client";
 
 /*
- * The dropdown menu: a rounded panel that
- * scales out of its trigger, rows that tint as the highlight moves, over
- * Base UI's Menu. shadcn base-nova's API (MIT). The panel springs open with motion; the
- * root is kept controlled so the exit plays.
+ * The dropdown menu: a rounded panel that scales out of its trigger, rows
+ * that tint as the highlight moves. The panel springs open with motion;
+ * the root is kept controlled so the exit plays.
  */
 
 import * as React from "react";

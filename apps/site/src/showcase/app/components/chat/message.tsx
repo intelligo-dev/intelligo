@@ -1,10 +1,9 @@
 "use client";
 
 /**
- * Renders one `UIMessage`'s parts on the design system's conversation
- * components: shadcn's Message and Bubble for the turn, the
- * T3 parts for the agent's activity, sources and tools, and the seams
- * in `@/lib/chat-renderers` for tool calls and data parts. Text renders
+ * Renders one `UIMessage`'s parts: Message and Bubble for the turn, the
+ * `ai-*` components for the agent's activity, sources and tools, and the
+ * seams in `@/lib/chat-renderers` for tool calls and data parts. Text renders
  * with `streamdown`, the markdown-while-streaming renderer, because
  * replies are routinely lists, code and headings arriving a token at a
  * time.

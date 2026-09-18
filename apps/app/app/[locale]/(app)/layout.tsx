@@ -1,38 +1,15 @@
 import { getLocale } from "next-intl/server";
 /**
- * Authenticated app shell — the layout for every route under `(app)`.
+ * The layout for every route under `(app)`. Checks, in order:
  *
- * Checks, in order:
- *
- * 1. Session required. `getAuthSession()` is a belt-and-suspenders check
- *    (defense in depth alongside middleware, which only reads the
- *    session cookie and redirects — see the "optimistic middleware,
- *    authoritative server" convention). No session → `/login`.
- *
- * 2. Onboarding required. Reads `users.onboardingCompleted` directly via
- *    `@intelligo-dev/core/db` — no dedicated `@intelligo-dev/auth` helper exists
- *    for this yet, and a single-row, two-column lookup is cheap enough
- *    to keep inline here rather than invent a package API for one call
- *    site. Incomplete → `/onboarding`.
- *
- *    The first product's version of this layout read an `x-pathname`
- *    header (set by custom middleware) to skip this check while
- *    already on the onboarding route, to avoid a redirect loop. That
- *    dependency is dropped here on purpose: the `onboarding` registry
- *    item installs at `app/onboarding/*`, a sibling of `(app)`, not a
- *    route inside it — so this layout never wraps the onboarding flow
- *    and can never redirect into itself. If your product nests
- *    onboarding under `(app)` instead, reintroduce a route check (a
- *    pathname header, or simpler, a route-group check) before this
- *    redirect fires.
- *
- * 3. Active workspace required. `ensureUserWorkspace` (`@intelligo-dev/auth`)
- *    creates one if none exists. First-workspace provisioning (trial
- *    credits, referral bonuses, anything else your product wants to do
- *    exactly once) is bound through `@/lib/workspace-bootstrap` — never
- *    imported directly here (explicit composition-root wiring, not an
- *    import side effect; it also keeps this file, and
- *    `@intelligo-dev/auth`, free of a hard dependency on billing).
+ * 1. A session, checked here because middleware only reads the cookie.
+ *    None → `/login`.
+ * 2. Completed onboarding. Incomplete → `/onboarding`. The onboarding
+ *    route is a sibling of `(app)`, so this cannot redirect into itself;
+ *    if you nest onboarding under `(app)`, skip this check on that route.
+ * 3. An active workspace. `ensureUserWorkspace` creates one if none
+ *    exists and calls `onWorkspaceCreated` from
+ *    `@/lib/workspace-bootstrap` for first-workspace provisioning.
  */
 
 import { eq } from "drizzle-orm";

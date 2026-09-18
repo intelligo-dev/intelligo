@@ -1,29 +1,14 @@
 "use client";
 
 /**
- * DocumentList — the artifact library: a grid of what the agents wrote,
- * and a reader for any one of them.
+ * The artifact library: a grid of document cards and a reader dialog.
+ * Documents render through `@/components/ui/document-viewer`, as in the
+ * chat canvas.
  *
- * A card leads with the document itself — the first lines of the text
- * or the image — because a library of titles alone makes you open
- * things to find out what they are. Everything else on the card is
- * secondary to that: the glyph, the kind, when it was written.
- *
- * How a document is drawn is shared with the chat canvas
- * (`@/components/ui/document-viewer`), so an artifact reads the same
- * here as it does beside the conversation that wrote it.
- *
- * Filtering: the "Reports" tab is `doc.isReport`, computed server-side
- * in `@/actions/documents` from `@intelligo-dev/core/documents`'s
- * classifier registry — not a hardcoded title match — and the kind tabs
- * are derived from the `kind` values actually present, so a product
- * that saves a custom kind gets a working tab for it with no change
- * here.
- *
- * Delete is optimistic-local: `document-actions.tsx` calls the server
- * action itself, and this component only drops the item from its own
- * state on success (the same uncontrolled-list pattern the
- * `notifications` and `team-settings` items use).
+ * The "Reports" tab filters on `doc.isReport`, computed server-side from
+ * the patterns in `@/lib/document-patterns`; the kind tabs come from the
+ * kinds present, so a custom kind gets its own tab. A deleted item is
+ * dropped from local state once the server action succeeds.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -60,11 +45,9 @@ function head(text: string): string {
 }
 
 /**
- * Alpha-only, and an inline style rather than a class: the design
- * system's arbitrary-value rule keeps gradients out of class names,
- * and the chat's artifact card writes its mask the same way. The
- * direction is the opposite of the chat's, because a card here shows a
- * document's opening lines while the chat shows its newest ones.
+ * An inline style rather than a class, because the design system keeps
+ * gradients out of class names. It fades the bottom: a card shows a
+ * document's opening lines.
  */
 const PREVIEW_MASK = "linear-gradient(to bottom, black 60%, transparent)";
 
@@ -321,12 +304,9 @@ export function DocumentList({ documents }: DocumentListProps) {
         onOpenChange={(open) => !open && setSelectedId(null)}
       >
         {selected && (
-          /* `sm:` matters: DialogContent's own base classes end with
-             `sm:max-w-sm`, and tailwind-merge keeps an unprefixed
-             `max-w-5xl` beside it as a different variant group, so the
-             responsive rule wins at every width above 640px. A reader
-             asking for `max-w-5xl` rendered at 384px — which is also
-             why the old `max-w-2xl` never took effect. */
+          /* `sm:` matters: DialogContent's base classes include
+             `sm:max-w-sm`, which tailwind-merge does not replace with an
+             unprefixed `max-w-*`, so that would win above 640px. */
           <DialogContent className="flex max-h-[80vh] w-full flex-col sm:max-w-5xl">
             <DialogHeader>
               <div className="flex items-start gap-3 pr-8">
@@ -397,13 +377,11 @@ export function DocumentList({ documents }: DocumentListProps) {
               </div>
             </DialogHeader>
 
-            {/* `flex flex-col` is what makes this scroll. ScrollArea's
-                viewport fills its root with `size-full`, and a percentage
-                height against a flex item that was *shrunk* to fit
-                resolves to `auto`: the viewport grew to the document's
-                full height and a long document ran past the dialog
-                instead of scrolling inside it. A flex parent sizes the
-                viewport by layout rather than by percentage. */}
+            {/* `flex flex-col` is what makes this scroll: ScrollArea's
+                viewport is `size-full`, and a percentage height against
+                a shrunk flex item resolves to `auto`, so a long document
+                would run past the dialog. A flex parent sizes it by
+                layout instead. */}
             <ScrollArea className="mt-2 flex min-h-0 flex-1 flex-col">
               {selected.content ? (
                 canPreview && view === "preview" ? (

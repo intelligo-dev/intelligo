@@ -1,9 +1,12 @@
 "use client";
 
 /*
- * A bar of icon tabs where the active tab
- * widens to show its label: the label unfurls, the pill glides to it and
- * its panel rises in. import * as React from "react";
+ * A bar of icon tabs where the active tab widens to show its label: the
+ * label unfurls, the pill glides to it and its panel rises in. Tablist
+ * semantics, roving focus and arrow keys come from Base UI's Tabs.
+ */
+
+import * as React from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { motion, useReducedMotion } from "motion/react";
 

@@ -1,14 +1,12 @@
 "use client";
 
 /*
- * A status line that reads as
- * alive while the agent works — the words swap with a small motion,
- * and a gradient sweeps over the text. The sweep rides the theme's
- * `shimmer` utility (keyframe, text clipping and the reduced-motion
- * reset all live there); this file only chooses the gradient and the
- * pace. Respects
- * `prefers-reduced-motion`: the swap becomes a plain replace and the
- * utility drops the sweep.
+ * A status line that reads as alive while the agent works — the words swap
+ * with a small motion, and a gradient sweeps over the text. The sweep
+ * rides the theme's `shimmer` utility (keyframe, text clipping and the
+ * reduced-motion reset all live there); this file only chooses the
+ * gradient and the pace. Respects `prefers-reduced-motion`: the swap
+ * becomes a plain replace and the utility drops the sweep.
  */
 
 import * as React from "react";

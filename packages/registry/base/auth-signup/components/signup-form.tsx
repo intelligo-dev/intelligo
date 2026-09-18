@@ -1,18 +1,14 @@
 "use client";
 
 /**
- * Name + email + password + confirm registration form. Calls the
- * Better-Auth client SDK (`@intelligo-dev/auth/client`) directly — no raw
- * `fetch("/api/auth/*")`.
+ * Registration form over `@intelligo-dev/auth/client`.
  *
- * Post-signup routing depends on whether the server has email
- * verification turned on (`emailAndPassword.requireEmailVerification`
- * in `@intelligo-dev/auth`'s server config). When it's on, `signUp.email()`
- * creates the user but returns `token: null` — no session — instead of
- * signing them in, so this form sends the visitor to `/verify-email`
- * with their address instead of the dashboard. When it's off (or the
- * address is exempt), a session comes back immediately and the form
- * goes straight to the dashboard.
+ * Where it goes next depends on the server's
+ * `emailAndPassword.requireEmailVerification`. When it is on,
+ * `signUp.email()` creates the user but returns `token: null` (no
+ * session), so the form sends the visitor to `/verify-email` with their
+ * address. When it is off, or the address is exempt, a session comes
+ * back and the form goes straight to the dashboard.
  */
 
 import { useState } from "react";

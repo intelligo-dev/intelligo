@@ -1,9 +1,5 @@
 "use client";
 
-/*
- * 
- */
-
 import * as React from "react";
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
 import { Streamdown } from "streamdown";
@@ -14,11 +10,6 @@ import {
   CollapsibleTrigger,
 } from "@showcase/components/ui/collapsible";
 import { cn } from "@showcase/lib/utils";
-
-// Changes: open state is plain React state (upstream imported a Radix hook);
-// the "thinking" line uses shadcn's shimmer utility instead of motion, and
-// its text is passed in; ReasoningContent no longer forwards its props to
-// Streamdown.
 
 const AUTO_CLOSE_DELAY = 1000;
 

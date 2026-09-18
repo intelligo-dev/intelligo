@@ -1,34 +1,16 @@
 "use client";
 
 /**
- * Tokens used per day across the current period.
+ * Tokens used per day across the current period, as a single-series
+ * area chart in hand-drawn SVG (no chart dependency). A product that
+ * needs real analytics should replace this file with a library.
  *
- * One series over time, so: an area chart in a single hue, no legend
- * (the heading names the series), and a recessive grid. Not a bar per
- * day — thirty bars encode the same thing while making the shape of a
- * month harder to read than a filled line does.
+ * The SVG stretches (`preserveAspectRatio="none"`), so anything that
+ * must keep its proportions — tick labels, point markers, hit targets —
+ * is an HTML overlay positioned in percentages using the same scale as
+ * the path, and every stroke carries `vectorEffect`.
  *
- * Hand-drawn SVG rather than a charting library. A registry item is
- * source a consumer owns, and one small chart is not worth committing
- * every installer to a chart dependency, its version, and its own
- * theming story. The trade is that this is deliberately one chart type,
- * not a chart toolkit: a product that grows a real analytics surface
- * should install the library it wants and replace this file.
- *
- * Two things follow from the SVG stretching (`preserveAspectRatio` is
- * `none`, so the shape fills whatever width it is given): anything that
- * must keep its proportions — a tick label, a point marker, a hit
- * target — is an HTML overlay positioned in percentages, not an SVG
- * child, and every stroke carries `vectorEffect`. The scale the overlay
- * uses is the same fraction the path is drawn with, so they line up at
- * any width.
- *
- * Colour comes from `--primary`, so it follows the app's theme in both
- * light and dark rather than carrying its own palette. Identity is
- * never colour-alone here — there is one series, it is named in the
- * heading, every point is reachable by keyboard, and every value is
- * also in the table underneath (visually hidden, but present for
- * screen readers and for copy-paste).
+ * Every value is also in a visually hidden table for screen readers.
  */
 
 import { useId, useState } from "react";
@@ -48,16 +30,10 @@ interface UsageChartProps {
 /**
  * `YYYY-MM-DD` as an instant that formats back to that same day.
  *
- * The series is already bucketed in the reader's zone, so a label only
- * has to print the day it already names — projecting it through a zone
- * a second time is what shifts it. Parsed as UTC and formatted as UTC
- * (see `shortDate`), the label is a pure function of the string.
- *
- * It must be, because this renders on both sides: building a
- * machine-local midnight instead made the server and the browser
- * disagree whenever they sat in different zones — a server in +08:00
- * printed "Aug 31" where the reader's browser printed "Sep 1", which
- * React reports as a hydration mismatch.
+ * The series is already bucketed in the reader's zone, so it is parsed
+ * and formatted as UTC (see `shortDate`): the label is a pure function
+ * of the string, and server and browser in different zones render the
+ * same day instead of a hydration mismatch.
  */
 function dateOf(iso: string): Date {
   const [year, month, day] = iso.split("-").map(Number);

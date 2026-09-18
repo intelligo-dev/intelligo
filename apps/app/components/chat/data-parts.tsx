@@ -174,7 +174,7 @@ export function ChatArtifactCard({
 /**
  * A question the run paused on — eve's `ask_question`, or a product's
  * own. The answer goes back as the next user turn, so the runtime sees
- * it the way it sees any reply. shadcn's Questionnaire gives the
+ * it the way it sees any reply. The Questionnaire gives the
  * choices their keyboard shortcuts and the single/multiple semantics.
  */
 export function ChatQuestionCard({

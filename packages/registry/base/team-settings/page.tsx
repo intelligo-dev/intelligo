@@ -1,6 +1,4 @@
 /**
- * Team settings page — server component.
- *
  * Loads the caller's workspace membership, then renders an invite
  * form (owner/admin only), the member list, and pending invitations.
  * A "member" role gets a read-only view: no invite form, no pending

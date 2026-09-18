@@ -1,10 +1,13 @@
 "use client";
 
 /*
- * The result of a tool the agent
- * ran — a one-line summary that opens onto the output, with the status
- * rolling from running to done, a copy and a run-again action, and the
- * viewport following the output while it streams. import * as React from "react";
+ * The result of a tool the agent ran — a one-line summary that opens onto
+ * the output, with the status rolling from running to done, a copy and a
+ * run-again action, and the viewport following the output while it
+ * streams.
+ */
+
+import * as React from "react";
 import {
   BanIcon,
   BracesIcon,

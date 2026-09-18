@@ -1,10 +1,13 @@
 "use client";
 
 /*
- * A press-and-hold confirmation for a
- * destructive action: a fill sweeps across the button for as long as it is
- * held and the action fires when it is full; releasing early drains it and
- * nothing happens. Holding Space or Enter works the same way. import * as React from "react";
+ * A press-and-hold confirmation for a destructive action: a fill sweeps
+ * across the button for as long as it is held and the action fires when it
+ * is full; releasing early drains it and nothing happens. Holding Space or
+ * Enter works the same way.
+ */
+
+import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { EASE_OUT } from "@/components/ui/ai-motion";

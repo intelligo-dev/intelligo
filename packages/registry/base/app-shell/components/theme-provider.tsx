@@ -1,14 +1,9 @@
 "use client";
 
 /**
- * Theme provider — the mount that makes the user-menu's Light/Dark/
- * System submenu actually do something.
- *
- * The user menu (`user-menu.tsx`) drives `next-themes`' `useTheme()`,
- * which is inert until a `<ThemeProvider>` is mounted above it. This
- * item can't ship the root layout (that file is scaffold/consumer
- * territory — it owns fonts, providers, and `<html>` attributes), so
- * mounting is one manual step, done once:
+ * The user menu's Light/Dark/System submenu drives `next-themes`, which
+ * is inert until this provider is mounted above it. The root layout is
+ * yours, so mounting it is one manual step:
  *
  *   // app/[locale]/layout.tsx
  *   import { ThemeProvider } from "@/components/shell/theme-provider";
@@ -18,12 +13,11 @@
  *     </body>
  *   </html>
  *
- * (`suppressHydrationWarning` on `<html>` is next-themes' documented
- * requirement — the class attribute is set before hydration.)
+ * `suppressHydrationWarning` is required: next-themes sets the class
+ * attribute before hydration.
  *
- * Defaults: class-attribute strategy (Tailwind's `.dark` tokens),
- * system preference honored, no transition flash on switch. Override
- * per deployment by passing props through this wrapper.
+ * Defaults: class strategy (Tailwind's `.dark` tokens), system preference
+ * honoured, no transition on switch. Props pass through to override them.
  */
 
 import { ThemeProvider as NextThemesProvider } from "next-themes";

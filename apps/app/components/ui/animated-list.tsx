@@ -1,10 +1,12 @@
 "use client";
 
 /*
- * Lists that arrive: a container that staggers
- * its rows in on mount, rows that rise in, fall out under AnimatePresence
- * and glide when reordered, and a block that reveals once as it scrolls into
- * view. import * as React from "react";
+ * Lists that arrive: a container that staggers its rows in on mount, rows
+ * that rise in, fall out under AnimatePresence and glide when reordered,
+ * and a block that reveals once as it scrolls into view.
+ */
+
+import * as React from "react";
 import {
   motion,
   useInView,

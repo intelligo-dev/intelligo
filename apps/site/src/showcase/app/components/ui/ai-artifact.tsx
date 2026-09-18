@@ -1,9 +1,5 @@
 "use client";
 
-/*
- * 
- */
-
 import * as React from "react";
 import { type LucideIcon, XIcon } from "lucide-react";
 
@@ -14,9 +10,6 @@ import {
   TooltipTrigger,
 } from "@showcase/components/ui/tooltip";
 import { cn } from "@showcase/lib/utils";
-
-// Changes: base-nova Button sizes instead of size overrides; the tooltip
-// composes through render; close and action labels are required props.
 
 function Artifact({ className, ...props }: React.ComponentProps<"div">) {
   return (

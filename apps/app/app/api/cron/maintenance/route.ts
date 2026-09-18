@@ -1,5 +1,5 @@
 /**
- * Maintenance route — the loop the framework's comments assume exists.
+ * Maintenance route: the periodic work the framework relies on.
  *
  * Mount a scheduler at GET /api/cron/maintenance with
  * `Authorization: Bearer $CRON_SECRET` every few minutes. On Vercel,

@@ -23,20 +23,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * Artifacts page — server component.
+ * Every artifact the user created in the active workspace, fetched once;
+ * filtering and the preview dialog are client-side.
  *
- * Lists every artifact (AI-generated document — report, code, text,
- * sheet, image, or a product's own custom kind) this user has created
- * in the active workspace, backed by `@intelligo-dev/core/documents`
- *. Filtering by type and the content-preview dialog are
- * client-side (`components/artifacts/document-list.tsx`); this page
- * only fetches the full, unfiltered set once.
- *
- * `dynamic = "force-dynamic"`: `listDocuments()` reads request-scoped
- * session and workspace state (`requireWorkspace()`, inside
- * `@/actions/documents`), so this page can only ever render per-request
- * — declaring that stops Next from attempting a static prerender that
- * would always fail at build time.
+ * `force-dynamic` because `listDocuments()` reads the session, so a
+ * static prerender would fail at build time.
  */
 export const dynamic = "force-dynamic";
 

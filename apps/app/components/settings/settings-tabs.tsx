@@ -1,11 +1,8 @@
 "use client";
 
 /**
- * Client-side settings tab bar.
- *
- * Its own component so the parent `settings/layout.tsx` can stay a
- * server component — only the active-tab highlighting (which needs
- * `usePathname`) runs on the client.
+ * Client-side settings tab bar, split out so `settings/layout.tsx` can
+ * stay a server component.
  *
  * Tabs come from `@/lib/settings-nav` (consumer config, shipped by this
  * item). Each tab's `titleKey` is a fully-qualified message key

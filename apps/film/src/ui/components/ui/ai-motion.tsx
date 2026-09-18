@@ -1,9 +1,12 @@
 "use client";
 
 /*
- * The motion vocabulary the AI
- * parts share: easing curves, spring presets, a transform-only
- * disclosure and a text swap. import * as React from "react";
+ * The motion vocabulary the AI parts share: easing curves, spring presets,
+ * a transform-only disclosure and a text swap. Every animation here is
+ * gated on `prefers-reduced-motion`.
+ */
+
+import * as React from "react";
 import {
   AnimatePresence,
   motion,

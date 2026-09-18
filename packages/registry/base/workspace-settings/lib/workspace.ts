@@ -1,18 +1,14 @@
 import "server-only";
 
 /**
- * Workspace service binding — the composition-root wiring for the
- * workspace-settings item. Binds the plan-defined workspace limit
- * (`@intelligo-dev/billing`'s `checkPlanLimit`) into the framework-owned
- * workspace service (`@intelligo-dev/auth`).
+ * Binds the plan's workspace limit (`checkPlanLimit`,
+ * `@intelligo-dev/billing`) into the workspace service
+ * (`@intelligo-dev/auth`).
  *
  * `checkPlanLimit` is keyed by `workspaceId`, but the service's
- * `checkWorkspaceLimit` port is keyed by `userId` — a new workspace
- * has no id of its own yet to check a plan against (see
- * `createWorkspaceService`'s module doc comment for the full
- * rationale). This binding resolves a representative workspace for
- * the user (their oldest membership) and checks that workspace's plan,
- * the same stand-in the first product's original action used.
+ * `checkWorkspaceLimit` port is keyed by `userId`: a new workspace has
+ * no id to check a plan against yet. This binding checks the plan of
+ * the user's oldest workspace instead.
  */
 
 import { eq } from "drizzle-orm";

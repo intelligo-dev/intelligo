@@ -4,17 +4,12 @@
  * Profile settings form — name editor, read-only email, and an
  * account-deletion danger zone.
  *
- * The delete dialog requires typing DELETE to confirm (judgment call,
- * page-migration-manifest.md profile-settings row: account deletion is
- * a higher-stakes, irreversible action than workspace deletion — which
- * `workspace-settings` gates with a plain confirm dialog — so this item
- * adds a typed confirmation on top, the common SaaS pattern).
+ * The delete dialog requires typing DELETE to confirm: deleting an
+ * account is irreversible and takes every workspace membership with it.
  *
- * `DELETE_CONFIRMATION` is a stable, non-translated confirmation token
- *: the user always
- * types the literal string "DELETE" regardless of locale, so the
- * sentence around it is translated but the token itself is not a
- * message key.
+ * `DELETE_CONFIRMATION` is not translated: the user types the literal
+ * "DELETE" in every locale, and only the sentence around it is a
+ * message.
  */
 
 import { useState, useTransition, type FormEvent } from "react";

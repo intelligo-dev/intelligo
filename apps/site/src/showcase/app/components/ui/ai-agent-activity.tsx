@@ -1,11 +1,14 @@
 "use client";
 
 /*
- * One adaptive stream of what
- * the agent is doing: reasoning text, plan steps, web searches with
- * their results, tool calls and structured traces. While the run is
- * working the newest rows glide up under a fade; once complete the
- * stream folds into a one-line summary that opens on demand. import * as React from "react";
+ * One adaptive stream of what the agent is doing: reasoning text, plan
+ * steps, web searches with their results, tool calls and structured
+ * traces. While the run is working the newest rows glide up under a fade;
+ * once complete the stream folds into a one-line summary that opens on
+ * demand.
+ */
+
+import * as React from "react";
 import {
   CheckIcon,
   ChevronDownIcon,

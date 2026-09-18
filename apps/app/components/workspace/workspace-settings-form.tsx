@@ -135,10 +135,7 @@ export function WorkspaceSettingsForm({
                 maxLength={50}
                 pattern="[a-z0-9-]+"
               />
-              {/* The address this slug actually produces, following
-                  what is typed rather than what is saved. The old
-                  helper echoed the stored slug back, which told the
-                  reader nothing the field above it did not. */}
+              {/* The address the typed slug produces, not the saved one. */}
               <p className="text-xs text-muted-foreground">
                 {origin}/{slug}
               </p>

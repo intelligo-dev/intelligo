@@ -1,11 +1,14 @@
 "use client";
 
 /*
- * File upload: a drop zone that lifts under a
- * dragged file and a queue of rows that slide in, fill a progress bar,
- * settle on done or error and fold away on remove — or, compact, a chat
- * composer wrapper with a drop overlay and a row of chips. The list is
- * controlled; the component validates what arrives and reports it. import * as React from "react";
+ * File upload: a drop zone that lifts under a dragged file and a queue of
+ * rows that slide in, fill a progress bar, settle on done or error and
+ * fold away on remove — or, compact, a chat composer wrapper with a drop
+ * overlay and a row of chips. The list is controlled; the component
+ * validates what arrives and reports it.
+ */
+
+import * as React from "react";
 import {
   AlertCircleIcon,
   CheckCircle2Icon,

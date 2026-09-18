@@ -1,13 +1,10 @@
 import "server-only";
 
 /**
- * Profile service instance for onboarding's own persistence.
- *
- * Its own binding rather than the `profile-settings` item's
- * `lib/profile.ts`: the only method used here is `updateProfile`,
- * which takes no ports, so onboarding does not have to depend on that
- * item being installed just to save a display name. If you install
- * both and want one instance, re-export it from here.
+ * A profile service for saving the display name, bound here so
+ * onboarding does not depend on the `profile-settings` item.
+ * `updateProfile` needs no ports. With both items installed you can
+ * re-export one instance.
  */
 
 import { createProfileService } from "@intelligo-dev/auth";

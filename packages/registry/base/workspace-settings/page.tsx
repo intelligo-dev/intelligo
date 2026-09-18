@@ -1,9 +1,6 @@
 /**
- * Workspace settings page — server component.
- *
- * Loads the caller's workspace, then renders the name/slug editor and
- * (owner-only) danger zone. A "member" role gets a read-only view of
- * the same form (editing is disabled inline in the component).
+ * A `member` gets a read-only view of the same form; only an owner sees
+ * the danger zone.
  */
 
 import { getTranslations } from "next-intl/server";

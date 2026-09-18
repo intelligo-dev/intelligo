@@ -1,9 +1,8 @@
 "use client";
 
 /*
- * The sheet: a panel that slides in from an
- * edge on the drawer curve over a blurred backdrop, over Base UI's Dialog.
- * shadcn base-nova's API (MIT).
+ * The sheet: a panel that slides in from an edge on the drawer curve over
+ * a blurred backdrop.
  */
 
 import * as React from "react";

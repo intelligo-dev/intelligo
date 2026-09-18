@@ -1,16 +1,9 @@
 /**
- * Minimal shell top bar. Its one required job is exposing
- * `AISidebarTrigger`: on mobile the sidebar renders as an off-canvas
- * sheet, and without a trigger somewhere there is no way to open it.
- *
- * Pass `children` to add page-specific breadcrumbs or actions without
- * editing this file — e.g. `<ShellHeader><Breadcrumb ... /></ShellHeader>`
- * from a page that wants one. A page that doesn't need a header slot
- * can ignore this entirely and render `<ShellHeader />` as-is.
- *
- * The empty `shell-header-slot` is where a page puts its own bar — the
- * chat's conversation title and actions portal into it — so a page
- * does not stack a second header under this one.
+ * Shell top bar. It must render `AISidebarTrigger`: on mobile the sidebar
+ * is an off-canvas sheet with no other way to open it. `children` adds
+ * breadcrumbs or actions. A page portals its own bar into the empty
+ * `shell-header-slot` (the chat's title and actions do) rather than
+ * stacking a second header under this one.
  */
 
 import type { ReactNode } from "react";
