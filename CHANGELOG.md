@@ -14,7 +14,7 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
-## [Unreleased]
+## [1.0.0-beta.8] — 2026-09-18
 
 The framework's schema becomes one baseline that describes structure and
 nothing else, and the interface moves the way its AI parts always did.
@@ -70,10 +70,25 @@ nothing else, and the interface moves the way its AI parts always did.
 
 ### Fixed
 
+- `intelligo migrate`, `doctor` and `upgrade` read the app's `.env.local`
+  and `.env`, so the quickstart's `pnpm db:migrate` works as written.
+- A scaffolded app has a root page: signed in to the dashboard,
+  otherwise to login.
+- Email verification is required exactly when an email provider is
+  configured; production without one warns instead of locking every
+  new account out.
 - A scaffolded app loads Geist; every surface used to fall back to the
   system face.
 - `resetMonthlyQuota` names the deployment's currency instead of relying
   on a column default.
+
+### Changed
+
+- Comments say what the code does, or why; history, tracker ids and
+  provenance are gone from the source, and the licences of adapted
+  registry code live in `packages/registry/LICENSES.md`.
+- Install commands name `@beta`; `engines` is `node >=22.14`; the stripe
+  peer range includes 22.
 
 ## [1.0.0-beta.7] — 2026-09-16
 
