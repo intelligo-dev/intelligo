@@ -32,7 +32,7 @@
     },
     "app-shell": {
       "marker": "app/[locale]/(app)/layout.tsx",
-      "files": ["i18n/navigation"]
+      "files": ["i18n/navigation", "lib/utils"]
     },
     "settings-shell": {
       "marker": "app/[locale]/(app)/settings/layout.tsx",

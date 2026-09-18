@@ -1434,12 +1434,13 @@
       "name": "app-shell",
       "type": "registry:block",
       "title": "App Shell",
-      "description": "Authenticated application shell: session and onboarding gate, workspace bootstrap, and a collapsible sidebar with workspace switcher, configurable nav, and user menu.",
+      "description": "Authenticated application shell: session and onboarding gate, workspace bootstrap, a sidebar that morphs into an icon rail with a gliding active pill, workspace switcher, configurable nav and user menu, and a page region that lifts each section in.",
       "registryDependencies": [
         "avatar",
         "@intelligo/dropdown-menu",
         "separator",
-        "@intelligo/sidebar"
+        "@intelligo/ai-sidebar",
+        "@intelligo/ai-motion"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1447,6 +1448,7 @@
         "next-themes",
         "drizzle-orm",
         "lucide-react",
+        "motion",
         "server-only",
         "next-intl"
       ],
@@ -1480,6 +1482,11 @@
           "path": "base/app-shell/components/theme-provider.tsx",
           "type": "registry:component",
           "target": "components/shell/theme-provider.tsx"
+        },
+        {
+          "path": "base/app-shell/components/page-transition.tsx",
+          "type": "registry:component",
+          "target": "components/shell/page-transition.tsx"
         },
         {
           "path": "base/app-shell/components/time-zone-cookie.tsx",
@@ -2516,7 +2523,6 @@
         "@intelligo/input",
         "item",
         "@intelligo/sheet",
-        "@intelligo/sidebar",
         "skeleton",
         "@intelligo/spinner",
         "@intelligo/textarea",
@@ -2541,7 +2547,9 @@
         "@intelligo/ai-tool-result",
         "@intelligo/copy-button",
         "@intelligo/document-viewer",
-        "@intelligo/status-badge"
+        "@intelligo/status-badge",
+        "@intelligo/ai-motion",
+        "@intelligo/ai-sidebar"
       ],
       "dependencies": [
         "ai@^7.0.103",
@@ -2574,7 +2582,8 @@
         "@codemirror/theme-one-dark",
         "react-data-grid@7.0.0-beta.61",
         "papaparse",
-        "@types/papaparse"
+        "@types/papaparse",
+        "motion"
       ],
       "files": [
         {

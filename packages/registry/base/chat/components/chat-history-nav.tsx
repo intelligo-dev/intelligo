@@ -5,7 +5,8 @@
  * grouped by recency with pinned on top, filterable, and every row with
  * rename, pin and delete (with a few seconds to change your mind). The
  * row for the conversation on screen is highlighted from the URL, and
- * the group hides when the sidebar collapses to icons.
+ * the group hides when the sidebar collapses to icons. A deleted row
+ * folds away and comes back on undo; a new one slides in.
  *
  * Keyboard: F2 renames the focused row, Delete deletes it.
  *
@@ -23,27 +24,27 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { AnimatePresence, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { listItem } from "@/components/ui/ai-motion";
+import {
+  AISidebarItem,
+  AISidebarMenu,
+  AISidebarMenuItem,
+  AISidebarSection,
+  useAISidebar,
+  useAISidebarPanel,
+} from "@/components/ui/ai-sidebar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  SidebarGroup,
-  SidebarGroupAction,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarInput,
-  SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar";
+import { Input } from "@/components/ui/input";
 import {
   deleteConversation,
   renameConversation,
@@ -85,7 +86,9 @@ export function ChatHistoryNav({
   const t = useTranslations("chat");
   const router = useRouter();
   const pathname = usePathname();
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useAISidebar();
+  const { collapsed } = useAISidebarPanel();
+  const reduced = useReducedMotion() ?? false;
   const activeId = pathname?.match(/^\/chat\/([^/]+)/)?.[1] ?? null;
 
   const [query, setQuery] = useState("");
@@ -211,24 +214,32 @@ export function ChatHistoryNav({
     });
   }
 
+  // In the icon rail there is no room for titles; the nav rows stay.
+  if (collapsed) return null;
+
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>{t("sidebar.label")}</SidebarGroupLabel>
-      <SidebarGroupAction
-        render={<Link href="/chat" onClick={closeOnMobile} />}
-        aria-label={t("sidebar.newChat")}
-        title={t("sidebar.newChat")}
-      >
-        <PlusIcon />
-      </SidebarGroupAction>
-      <SidebarGroupContent className="flex flex-col gap-1">
+    <AISidebarSection
+      label={t("sidebar.label")}
+      action={
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          aria-label={t("sidebar.newChat")}
+          title={t("sidebar.newChat")}
+          render={<Link href="/chat" onClick={closeOnMobile} />}
+        >
+          <PlusIcon />
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-1">
         {rows.length >= SEARCH_FROM ? (
-          <SidebarInput
+          <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t("sidebar.searchPlaceholder")}
             aria-label={t("sidebar.searchPlaceholder")}
-            className="mb-1"
+            className="mb-1 h-8 bg-background"
           />
         ) : null}
 
@@ -245,101 +256,116 @@ export function ChatHistoryNav({
                 <p className="px-2 pt-2 pb-1 text-xs text-muted-foreground">
                   {t(`sidebar.groups.${bucket}`)}
                 </p>
-                <SidebarMenu>
-                  {items.map((conversation) => {
-                    const label =
-                      conversation.title ?? t("header.historyUntitled");
-                    if (renamingId === conversation.id) {
-                      return (
-                        <SidebarMenuItem key={conversation.id}>
-                          <SidebarInput
-                            autoFocus
-                            value={draft}
-                            onChange={(event) => setDraft(event.target.value)}
-                            onBlur={() => commitRename(conversation.id)}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter") {
-                                event.preventDefault();
-                                commitRename(conversation.id);
-                              }
-                              if (event.key === "Escape") setRenamingId(null);
-                            }}
-                            aria-label={t("sidebar.rename")}
-                          />
-                        </SidebarMenuItem>
-                      );
-                    }
-                    return (
-                      <SidebarMenuItem key={conversation.id}>
-                        <SidebarMenuButton
-                          isActive={conversation.id === activeId}
-                          render={
-                            <Link
-                              href={`/chat/${conversation.id}`}
-                              title={label}
-                              onClick={closeOnMobile}
+                <AISidebarMenu>
+                  <AnimatePresence initial={false}>
+                    {items.map((conversation) => {
+                      const label =
+                        conversation.title ?? t("header.historyUntitled");
+                      const motionProps = reduced
+                        ? {}
+                        : {
+                            variants: listItem,
+                            initial: "hidden",
+                            animate: "shown",
+                            exit: "exit",
+                          };
+                      if (renamingId === conversation.id) {
+                        return (
+                          <AISidebarMenuItem
+                            key={conversation.id}
+                            {...motionProps}
+                          >
+                            <Input
+                              autoFocus
+                              value={draft}
+                              onChange={(event) => setDraft(event.target.value)}
+                              onBlur={() => commitRename(conversation.id)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") {
+                                  event.preventDefault();
+                                  commitRename(conversation.id);
+                                }
+                                if (event.key === "Escape") setRenamingId(null);
+                              }}
+                              aria-label={t("sidebar.rename")}
+                              className="h-8 bg-background"
                             />
-                          }
-                          onKeyDown={(event) => {
-                            if (event.key === "F2") {
-                              event.preventDefault();
-                              startRename(conversation);
-                            } else if (event.key === "Delete") {
-                              event.preventDefault();
-                              remove(conversation.id);
-                            }
-                          }}
+                          </AISidebarMenuItem>
+                        );
+                      }
+                      return (
+                        <AISidebarMenuItem
+                          key={conversation.id}
+                          {...motionProps}
                         >
-                          <span className="truncate">{label}</span>
-                        </SidebarMenuButton>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            render={
-                              <SidebarMenuAction
-                                showOnHover
-                                aria-label={t("sidebar.menu")}
-                              />
+                          <AISidebarItem
+                            isActive={conversation.id === activeId}
+                            title={label}
+                            render={<Link href={`/chat/${conversation.id}`} />}
+                            onKeyDown={(event) => {
+                              if (event.key === "F2") {
+                                event.preventDefault();
+                                startRename(conversation);
+                              } else if (event.key === "Delete") {
+                                event.preventDefault();
+                                remove(conversation.id);
+                              }
+                            }}
+                            action={
+                              <DropdownMenu>
+                                <DropdownMenuTrigger
+                                  render={
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-xs"
+                                      aria-label={t("sidebar.menu")}
+                                    />
+                                  }
+                                >
+                                  <MoreHorizontalIcon />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent side="right" align="start">
+                                  <DropdownMenuItem
+                                    onClick={() => togglePin(conversation)}
+                                  >
+                                    {conversation.pinned ? (
+                                      <PinOffIcon />
+                                    ) : (
+                                      <PinIcon />
+                                    )}
+                                    {conversation.pinned
+                                      ? t("sidebar.unpin")
+                                      : t("sidebar.pin")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => startRename(conversation)}
+                                  >
+                                    <PencilIcon />
+                                    {t("sidebar.rename")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    onClick={() => remove(conversation.id)}
+                                  >
+                                    <Trash2Icon />
+                                    {t("sidebar.delete")}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             }
                           >
-                            <MoreHorizontalIcon />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent side="right" align="start">
-                            <DropdownMenuItem
-                              onClick={() => togglePin(conversation)}
-                            >
-                              {conversation.pinned ? (
-                                <PinOffIcon />
-                              ) : (
-                                <PinIcon />
-                              )}
-                              {conversation.pinned
-                                ? t("sidebar.unpin")
-                                : t("sidebar.pin")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => startRename(conversation)}
-                            >
-                              <PencilIcon />
-                              {t("sidebar.rename")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onClick={() => remove(conversation.id)}
-                            >
-                              <Trash2Icon />
-                              {t("sidebar.delete")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
+                            {label}
+                          </AISidebarItem>
+                        </AISidebarMenuItem>
+                      );
+                    })}
+                  </AnimatePresence>
+                </AISidebarMenu>
               </div>
             );
           })
         )}
-      </SidebarGroupContent>
-    </SidebarGroup>
+      </div>
+    </AISidebarSection>
   );
 }

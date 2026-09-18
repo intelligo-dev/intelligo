@@ -224,6 +224,7 @@ function useAISidebar() {
   return context;
 }
 
+/** The nearest sidebar panel: whether it is collapsed to the rail, and its side. */
 function useSidebarPanel() {
   const context = React.useContext(PanelContext);
   if (!context) {
@@ -829,10 +830,13 @@ function AISidebarFooter({
 export interface AISidebarSectionProps extends React.ComponentProps<"div"> {
   /** A small caps heading; it fades out in the rail. */
   label?: React.ReactNode;
+  /** A control at the end of the heading — "new", "add" — hidden in the rail. */
+  action?: React.ReactNode;
 }
 
 function AISidebarSection({
   label,
+  action,
   children,
   className,
   ...props
@@ -850,11 +854,19 @@ function AISidebarSection({
           aria-hidden={collapsed}
           data-slot="sidebar-section-label"
           className={cn(
-            "mb-1 h-7 overflow-hidden px-2 text-xs font-medium tracking-widest text-muted-foreground uppercase transition-opacity",
+            "mb-1 flex h-7 items-center justify-between gap-2 overflow-hidden px-2 text-xs font-medium tracking-widest text-muted-foreground uppercase transition-opacity",
             collapsed ? "opacity-0" : "opacity-100"
           )}
         >
-          {label}
+          <span className="min-w-0 truncate">{label}</span>
+          {action && !collapsed ? (
+            <span
+              data-slot="sidebar-section-action"
+              className="flex shrink-0 items-center normal-case tracking-normal"
+            >
+              {action}
+            </span>
+          ) : null}
         </div>
       ) : null}
       <div data-slot="sidebar-section-content" className="w-full min-w-0">
@@ -944,7 +956,7 @@ function AISidebarMenuItem({
         menu?.setHoveredId(id);
         onMouseEnter?.(event);
       }}
-      className={cn("relative", className)}
+      className={cn("group/sidebar-menu-item relative", className)}
     >
       {menu ? (
         <AnimatePresence>
@@ -990,6 +1002,16 @@ export interface AISidebarItemProps {
   onSelect?: () => void;
   /** What the rail tooltip says; defaults to the label when it is a string. */
   tooltip?: string;
+  /**
+   * The element to render instead of the default `a`/`button` — a router
+   * link, say `<Link href="/chat" />`. Its own props and handlers are
+   * merged with the item's.
+   */
+  render?: React.ReactElement;
+  /** A control at the row's end — a menu trigger — shown on hover and focus. */
+  action?: React.ReactNode;
+  onKeyDown?: React.KeyboardEventHandler<HTMLElement>;
+  title?: string;
   className?: string;
 }
 
@@ -1006,10 +1028,15 @@ function AISidebarItem({
   rel,
   onSelect,
   tooltip,
+  render,
+  action,
+  onKeyDown,
+  title,
   className,
 }: AISidebarItemProps) {
   const context = useAISidebar();
   const panel = useSidebarPanel();
+  const showAction = Boolean(action) && !panel.collapsed;
   const textLabel = typeof children === "string" ? children : undefined;
   const tip = tooltip ?? textLabel;
 
@@ -1105,10 +1132,13 @@ function AISidebarItem({
     "focus-visible:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring",
     isActive && "text-sidebar-accent-foreground",
     disabled && "cursor-not-allowed opacity-40",
+    showAction && "pr-9",
     className
   );
 
-  const element = href ? (
+  const element = render ? (
+    render
+  ) : href ? (
     <motion.a
       href={href}
       target={target}
@@ -1141,17 +1171,49 @@ function AISidebarItem({
     />
   );
 
+  // A custom element gets the item's props through Base UI's merge; the
+  // default ones carry them already.
+  const merged = render
+    ? {
+        "aria-current": isActive ? ("page" as const) : undefined,
+        "aria-expanded": expanded,
+        "aria-disabled": disabled || undefined,
+        "aria-label": panel.collapsed ? tip : undefined,
+        "data-slot": "sidebar-item",
+        "data-active": isActive || undefined,
+        onClick: select,
+        className: interactiveClassName,
+      }
+    : {};
+
   // The rail shows only the icon; the tooltip carries the label there.
   return (
-    <Tooltip disabled={!panel.collapsed || !tip}>
-      <TooltipTrigger render={element}>{content}</TooltipTrigger>
-      <TooltipContent
-        side={panel.side === "right" ? "left" : "right"}
-        sideOffset={8}
-      >
-        {tip}
-      </TooltipContent>
-    </Tooltip>
+    <>
+      <Tooltip disabled={!panel.collapsed || !tip}>
+        <TooltipTrigger
+          render={element}
+          onKeyDown={onKeyDown}
+          title={title}
+          {...merged}
+        >
+          {content}
+        </TooltipTrigger>
+        <TooltipContent
+          side={panel.side === "right" ? "left" : "right"}
+          sideOffset={8}
+        >
+          {tip}
+        </TooltipContent>
+      </Tooltip>
+      {showAction ? (
+        <span
+          data-slot="sidebar-item-action"
+          className="absolute top-1/2 right-1 z-20 flex -translate-y-1/2 items-center opacity-0 transition-opacity group-focus-within/sidebar-menu-item:opacity-100 group-hover/sidebar-menu-item:opacity-100 has-data-popup-open:opacity-100 pointer-coarse:opacity-100"
+        >
+          {action}
+        </span>
+      ) : null}
+    </>
   );
 }
 
@@ -1204,6 +1266,8 @@ export interface AISidebarSubItemProps {
   target?: "_blank" | "_self" | "_parent" | "_top";
   rel?: string;
   onSelect?: () => void;
+  /** The element to render instead of the default `a`/`button`, e.g. a router link. */
+  render?: React.ReactElement;
   className?: string;
 }
 
@@ -1217,6 +1281,7 @@ function AISidebarSubItem({
   target,
   rel,
   onSelect,
+  render,
   className,
 }: AISidebarSubItemProps) {
   const context = useAISidebar();
@@ -1259,7 +1324,31 @@ function AISidebarSubItem({
       data-slot="sidebar-sub-item"
       className="relative min-w-0"
     >
-      {href ? (
+      {render ? (
+        React.cloneElement(
+          render as React.ReactElement<Record<string, unknown>>,
+          {
+            "aria-current": isActive ? "page" : undefined,
+            "aria-disabled": disabled || undefined,
+            "data-active": isActive || undefined,
+            onClick: (
+              event: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>
+            ) => {
+              (
+                render.props as {
+                  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
+                }
+              ).onClick?.(event);
+              select(event);
+            },
+            className: cn(
+              interactiveClassName,
+              (render.props as { className?: string }).className
+            ),
+          },
+          content
+        )
+      ) : href ? (
         <motion.a
           href={href}
           target={target}
@@ -2358,6 +2447,7 @@ function AISidebarTree({
 export {
   AISidebarProvider,
   useAISidebar,
+  useSidebarPanel as useAISidebarPanel,
   AISidebar,
   AISidebarTrigger,
   AISidebarClose,
