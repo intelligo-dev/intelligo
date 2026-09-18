@@ -375,6 +375,12 @@
 }
 .section-head p { color: var(--muted-foreground); font-size: 1rem; max-width: 60ch; }
 
+/* secondary pages: hairlines run the full width, content sits in one
+   centred column, and section headings step down from the homepage's */
+.page-body > .xline > * { max-width: 80rem; margin-inline: auto; }
+.page-body .section-head h2 { font-size: 1.5rem; line-height: 1.2; margin: 0.25rem 0 0.5rem; }
+.page-body .section-head p { font-size: 0.875rem; }
+
 /* faq */
 details.q { border-top: 1px solid var(--border); }
 details.q summary {

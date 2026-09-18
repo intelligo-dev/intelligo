@@ -56,7 +56,7 @@ export function Nav({
   wide = false,
 }: {
   current?: string;
-  /** The page runs the full viewport (secondary pages, docs), so the bar does too. */
+  /** The page sits in the 1280px column (secondary pages, docs) rather than the homepage's 1152px rails; the bar lines up with it. */
   wide?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -90,7 +90,10 @@ export function Nav({
     current !== undefined &&
     (current === href || current.startsWith(`${href}/`));
 
-  const measure = cn("mx-auto px-6 md:px-10", !wide && "max-w-[1152px]");
+  const measure = cn(
+    "mx-auto px-6 md:px-10",
+    wide ? "max-w-7xl" : "max-w-[1152px]"
+  );
 
   return (
     <nav
