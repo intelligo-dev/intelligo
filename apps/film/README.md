@@ -35,8 +35,10 @@ Neither `out/film-light.mp4` nor `out/film-dark.mp4` is committed or
 auto-deployed — upload each to wherever they're meant to be hosted (R2,
 YouTube, etc.) and point `apps/site/src/lib/site.ts`'s
 `SITE.filmVideoUrl` at whichever one the homepage should embed (light and
-dark aren't both wired up there yet — see that file's comment). Until
-then, the homepage's `#film` section renders against a placeholder path.
+dark aren't both wired up there yet — see that file's comment). While
+`SITE.filmVideoUrl` is empty the homepage leaves the `#film` section out
+and the hero's scroll cue points at the next section; set the URL (and
+optionally `SITE.filmPosterUrl`) and both come back.
 
 ## Data
 

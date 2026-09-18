@@ -24,6 +24,16 @@ export const SITE = {
   status: `${proof.version} · on npm`,
   /** The repository is public: the nav shows the live star count. */
   githubPublic: true,
+  /**
+   * The homepage film (apps/film, rendered with Remotion): the build,
+   * the run, making it yours, time passing. Rendered separately and
+   * hosted externally (R2/YouTube/etc.). Empty until the render is
+   * live: the homepage leaves the section out rather than ship a player
+   * with nothing in it, and the hero's cue points at the next section.
+   */
+  filmVideoUrl: "" as string,
+  /** A still from the film, shown before it plays. Optional. */
+  filmPosterUrl: "" as string,
 } as const;
 
 /**

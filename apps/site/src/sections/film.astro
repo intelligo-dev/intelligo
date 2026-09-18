@@ -1,12 +1,47 @@
 ---
 /**
- * The film: no heading, no lede — the rail inside carries the scene
- * titles. Straight from the title card into scene 01.
+ * The film: rendered video (apps/film, built with Remotion), not the
+ * scroll-driven interactive version — muted and looping, the same way a
+ * hero clip on any product page works. No heading, no lede; the video
+ * carries its own scene captions.
+ *
+ * It plays by itself only for a reader who has not asked for less
+ * motion, and always carries controls: a clip that moves for longer
+ * than five seconds needs a way to stop it. The frame holds the
+ * video's shape before a byte of it arrives, so nothing below jumps.
  */
-import { Film } from "@/components/film";
+import { SITE } from "@/lib/site";
 ---
 <section id="film" class="xline">
-  <div class="px-6 md:px-10">
-    <Film client:load />
+  <div class="px-6 py-14 md:px-10 md:py-20">
+    <video
+      class="aspect-video w-full rounded-md border border-border bg-card"
+      src={SITE.filmVideoUrl}
+      poster={SITE.filmPosterUrl || undefined}
+      controls
+      muted
+      loop
+      playsinline
+      preload="none"
+      data-film
+      aria-label="A tour of building, running, customizing and upgrading an Intelligo application"
+    />
   </div>
 </section>
+
+<script>
+  const film = document.querySelector<HTMLVideoElement>("[data-film]");
+  if (film && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    // start when it is on screen, not on load: the clip is below the fold
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) void film.play().catch(() => {});
+          else film.pause();
+        }
+      },
+      { threshold: 0.35 }
+    );
+    io.observe(film);
+  }
+</script>
