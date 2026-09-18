@@ -114,8 +114,14 @@ export function PackageMap() {
   });
 
   const detail = PACKAGES.find((p) => p.id === selected)!;
-  const outgoing = EDGES.filter((e) => e.from === selected).map((e) => e.to);
-  const incoming = EDGES.filter((e) => e.to === selected).map((e) => e.from);
+  const labelOf = (id: string) =>
+    PACKAGES.find((p) => p.id === id)?.label ?? id;
+  const outgoing = EDGES.filter((e) => e.from === selected).map((e) =>
+    labelOf(e.to)
+  );
+  const incoming = EDGES.filter((e) => e.to === selected).map((e) =>
+    labelOf(e.from)
+  );
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">

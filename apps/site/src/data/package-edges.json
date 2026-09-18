@@ -1,0 +1,78 @@
+[
+  {
+    "from": "admin",
+    "to": "audit"
+  },
+  {
+    "from": "admin",
+    "to": "auth"
+  },
+  {
+    "from": "admin",
+    "to": "core"
+  },
+  {
+    "from": "admin",
+    "to": "executions"
+  },
+  {
+    "from": "admin",
+    "to": "jobs"
+  },
+  {
+    "from": "audit",
+    "to": "core"
+  },
+  {
+    "from": "auth",
+    "to": "core"
+  },
+  {
+    "from": "billing",
+    "to": "core"
+  },
+  {
+    "from": "billing",
+    "to": "executions"
+  },
+  {
+    "from": "chat",
+    "to": "auth"
+  },
+  {
+    "from": "chat",
+    "to": "billing"
+  },
+  {
+    "from": "chat",
+    "to": "core"
+  },
+  {
+    "from": "chat",
+    "to": "executions"
+  },
+  {
+    "from": "executions",
+    "to": "audit"
+  },
+  {
+    "from": "executions",
+    "to": "core"
+  },
+  {
+    "from": "jobs",
+    "to": "core"
+  },
+  {
+    "from": "mastra",
+    "to": "executions"
+  },
+  {
+    "from": "next",
+    "to": "auth"
+  },
+  {
+    "from": "next",
+    "to": "core"
+  }
+]

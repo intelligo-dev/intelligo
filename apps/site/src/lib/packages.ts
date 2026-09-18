@@ -1,8 +1,9 @@
 /**
- * The package map. `edges` are real workspace imports — the
- * dependency-direction architecture test enforces exactly this set,
- * so if the map is wrong the build is red.
+ * The package map. Edges between packages come from their manifests
+ * (`src/data/package-edges.json`), which the dependency-direction
+ * architecture test holds equal to the imports in the source.
  */
+import packageEdges from "@/data/package-edges.json";
 import { PROOF } from "@/lib/proof";
 
 export type PackageInfo = {
@@ -109,7 +110,7 @@ export const PACKAGES: PackageInfo[] = [
       "entitlement and settlement arrive through ports",
       "unregistered model id = architecture-test failure",
       "cost through live FX and configurable margin",
-      "depends on nothing else in the framework",
+      "never imports billing: entitlement arrives as a port",
     ],
   },
   {
@@ -182,26 +183,19 @@ export const PACKAGES: PackageInfo[] = [
   },
 ];
 
-/** Real import edges (from → to). The absence of auth→billing and executions→anything is the point. */
+/**
+ * Import edges (from → to). Package-to-package edges are the declared
+ * `@intelligo-dev/*` dependencies, written by `pnpm sync`; the
+ * application's side and the tables each package owns are listed here.
+ * The absence of auth→billing is the point.
+ */
 export const EDGES: { from: string; to: string }[] = [
   { from: "pages", to: "actions" },
   { from: "actions", to: "auth" },
   { from: "actions", to: "billing" },
   { from: "actions", to: "core" },
   { from: "agent", to: "executions" },
-  { from: "billing", to: "core" },
-  { from: "billing", to: "executions" },
-  { from: "auth", to: "core" },
-  { from: "next", to: "auth" },
-  { from: "next", to: "core" },
-  { from: "chat", to: "auth" },
-  { from: "chat", to: "billing" },
-  { from: "chat", to: "core" },
-  { from: "chat", to: "executions" },
-  { from: "admin", to: "auth" },
-  { from: "admin", to: "audit" },
-  { from: "admin", to: "core" },
-  { from: "mastra", to: "executions" },
+  ...packageEdges,
   { from: "auth", to: "db" },
   { from: "billing", to: "db" },
   { from: "executions", to: "db" },

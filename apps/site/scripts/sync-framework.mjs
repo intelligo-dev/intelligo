@@ -14,6 +14,8 @@
  *   src/content/docs/…       the generated reference pages, and the snippets
  *                            in hand-written ones (scripts/docs.mjs)
  *   src/data/proof.json      counts (tests, items, ADRs, packages) and the version
+ *   src/data/package-edges.json
+ *                            each package's declared @intelligo-dev/* dependencies
  *   public/r/*.json          the built registry items — intelligo.dev/r/<item>.json
  *                            is the hosted registry consumers install from
  *   public/llms.txt          a curated Markdown index of the docs, for an
@@ -100,13 +102,39 @@ const registryItems = registry.items.filter(
   (i) => i.type === "registry:block" && i.name !== "smoke"
 ).length;
 // Published packages only: packages/registry is a private workspace.
-const packages = readdirSync(join(FRAMEWORK, "packages")).filter((p) => {
-  const manifest = join(FRAMEWORK, "packages", p, "package.json");
-  return (
-    existsSync(manifest) &&
-    JSON.parse(readFileSync(manifest, "utf8")).private !== true
+const publishedPackages = readdirSync(join(FRAMEWORK, "packages")).filter(
+  (p) => {
+    const manifest = join(FRAMEWORK, "packages", p, "package.json");
+    return (
+      existsSync(manifest) &&
+      JSON.parse(readFileSync(manifest, "utf8")).private !== true
+    );
+  }
+);
+const packages = publishedPackages.length;
+
+// The package graph on /architecture: every declared @intelligo-dev/*
+// dependency, which the dependency-direction test holds equal to the
+// imports in the source.
+const SCOPE = "@intelligo-dev/";
+const packageEdges = publishedPackages.sort().flatMap((p) => {
+  const m = JSON.parse(
+    readFileSync(join(FRAMEWORK, "packages", p, "package.json"), "utf8")
   );
-}).length;
+  const declared = {
+    ...m.dependencies,
+    ...m.peerDependencies,
+    ...m.optionalDependencies,
+  };
+  return Object.keys(declared)
+    .filter((name) => name.startsWith(SCOPE))
+    .sort()
+    .map((name) => ({ from: p, to: name.slice(SCOPE.length) }));
+});
+writeFileSync(
+  join(SITE, "src/data/package-edges.json"),
+  JSON.stringify(packageEdges, null, 2) + "\n"
+);
 const version = JSON.parse(
   readFileSync(join(FRAMEWORK, "packages/core/package.json"), "utf8")
 ).version;
