@@ -54,6 +54,17 @@ export interface StreamingResponseProps {
   announce?: boolean;
   /** Hides the built-in completion actions without changing response status. */
   showActions?: boolean;
+  /**
+   * The footer's own controls in place of copy, retry and feedback — a
+   * product's action row. Rendered once the response completes, before
+   * the sources toggle; `null` leaves only the sources.
+   */
+  actions?: React.ReactNode;
+  /**
+   * Style the content as prose (paragraph rhythm, lists, code). Off when
+   * the children bring their own Markdown styles.
+   */
+  prose?: boolean;
   copyLabel?: string;
   copiedLabel?: string;
   retryLabel?: string;
@@ -126,6 +137,8 @@ function StreamingResponse({
   onFeedbackChange,
   announce = true,
   showActions = true,
+  actions,
+  prose = true,
   copyLabel = "Copy response",
   copiedLabel = "Copied",
   retryLabel = "Retry response",
@@ -150,8 +163,13 @@ function StreamingResponse({
   const complete = status === "complete";
   const canCopy = Boolean(copyText || onCopy);
   const hasSources = sources.length > 0;
+  const customActions = actions !== undefined;
   const shouldShowActions =
-    showActions && !streaming && (canCopy || onRetry || complete || hasSources);
+    showActions &&
+    !streaming &&
+    (customActions
+      ? actions !== null || hasSources
+      : canCopy || onRetry || complete || hasSources);
   const sourcesContentId = `${baseId}-sources`;
   const resolvedSourcePrefix =
     sourceIdPrefix ?? `response-source-${baseId.replace(/:/g, "")}`;
@@ -197,7 +215,8 @@ function StreamingResponse({
         data-slot="streaming-response-content"
         aria-live={announce ? "polite" : "off"}
         className={cn(
-          "text-sm leading-6 text-foreground/90 [&_a]:font-medium [&_a]:underline [&_a]:underline-offset-4 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-5 [&_p+p]:mt-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-border [&_pre]:bg-muted/45 [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5",
+          prose &&
+            "text-sm leading-6 text-foreground/90 [&_a]:font-medium [&_a]:underline [&_a]:underline-offset-4 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-5 [&_p+p]:mt-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-border [&_pre]:bg-muted/45 [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5",
           contentClassName
         )}
       >
@@ -218,7 +237,8 @@ function StreamingResponse({
               data-slot="streaming-response-actions"
               className={cn("flex items-center gap-0.5", actionsClassName)}
             >
-              {canCopy ? (
+              {customActions ? actions : null}
+              {!customActions && canCopy ? (
                 <ResponseAction
                   label={copied ? copiedLabel : copyLabel}
                   onClick={handleCopy}
@@ -230,12 +250,12 @@ function StreamingResponse({
                   )}
                 </ResponseAction>
               ) : null}
-              {onRetry ? (
+              {!customActions && onRetry ? (
                 <ResponseAction label={retryLabel} onClick={onRetry}>
                   <RotateCcwIcon className="size-3.5" />
                 </ResponseAction>
               ) : null}
-              {complete ? (
+              {!customActions && complete ? (
                 <>
                   <ResponseAction
                     label={helpfulLabel}

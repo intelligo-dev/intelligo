@@ -274,5 +274,17 @@
     "draft": "Draft a welcome message for a new team member",
     "brainstorm": "Brainstorm three names for an internal project",
     "save": "Save a note: the weekly sync moves to Thursdays at 10:00"
+  },
+  "fileDiff": {
+    "applying": "Applying changes",
+    "applied": "Changes applied",
+    "changes": "Changes"
+  },
+  "imageGeneration": {
+    "queued": "Waiting to generate",
+    "generating": "Generating image",
+    "refining": "Refining details",
+    "complete": "Image ready",
+    "error": "Generation failed"
   }
 }

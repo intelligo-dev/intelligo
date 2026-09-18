@@ -2549,7 +2549,12 @@
         "@intelligo/document-viewer",
         "@intelligo/status-badge",
         "@intelligo/ai-motion",
-        "@intelligo/ai-sidebar"
+        "@intelligo/ai-sidebar",
+        "@intelligo/ai-file-diff",
+        "@intelligo/ai-image-generation",
+        "@intelligo/ai-reasoning-text",
+        "@intelligo/ai-streaming-response",
+        "@intelligo/ai-agent-progress"
       ],
       "dependencies": [
         "ai@^7.0.103",
