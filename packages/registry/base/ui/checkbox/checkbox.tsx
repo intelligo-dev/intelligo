@@ -6,10 +6,14 @@
  */
 
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
+import { motion, useReducedMotion } from "motion/react";
 
+import { EASE_OUT } from "@/components/ui/ai-motion";
 import { cn } from "@/lib/utils";
 
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
+  const reduced = useReducedMotion() ?? false;
+
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
@@ -23,28 +27,45 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
         data-slot="checkbox-indicator"
         keepMounted
         className="group/checkbox-indicator grid place-content-center text-current"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={3}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-          className="size-3.5"
-        >
-          <path
-            d="M5 13l4 4L19 7"
-            pathLength={1}
-            className="transition-[stroke-dashoffset] duration-normal ease-standard [stroke-dasharray:1] [stroke-dashoffset:1] group-data-checked/checkbox-indicator:[stroke-dashoffset:0] group-data-indeterminate/checkbox-indicator:hidden"
-          />
-          <path
-            d="M6 12h12"
-            className="hidden group-data-indeterminate/checkbox-indicator:block"
-          />
-        </svg>
-      </CheckboxPrimitive.Indicator>
+        render={(indicatorProps, state) => (
+          <span {...indicatorProps}>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={3}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+              className="size-3.5"
+            >
+              {/* The tick draws itself in; the dash grows from the centre. */}
+              <motion.path
+                d="M5 13l4 4L19 7"
+                initial={false}
+                animate={{
+                  pathLength: state.checked && !state.indeterminate ? 1 : 0,
+                  opacity: state.checked && !state.indeterminate ? 1 : 0,
+                }}
+                transition={
+                  reduced ? { duration: 0 } : { duration: 0.24, ease: EASE_OUT }
+                }
+              />
+              <motion.path
+                d="M6 12h12"
+                initial={false}
+                animate={{
+                  scaleX: state.indeterminate ? 1 : 0,
+                  opacity: state.indeterminate ? 1 : 0,
+                }}
+                transition={
+                  reduced ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }
+                }
+              />
+            </svg>
+          </span>
+        )}
+      />
     </CheckboxPrimitive.Root>
   );
 }

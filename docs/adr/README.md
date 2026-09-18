@@ -20,6 +20,7 @@ The decisions the framework is built on. New ADRs get the next number; supersede
 | [0014](0014-chat-extension-contract.md)                    | One runtime seam (`streamTurn`), consumer-owned runtime bindings, the tool renderer and canvas contract | Amended in part by 0016    |
 | [0015](0015-money-is-micros-with-a-currency.md)            | Money is micros with a currency attached; a deployment declares the one it bills in                     | Accepted                   |
 | [0016](0016-chat-generation-options.md)                    | The transport passes a typed allowlist of settlement-neutral generation options                         | Accepted                   |
-| [0017](0017-intelligo-authored-primitives.md)              | Intelligo authors the interactive primitives on Base UI and owns the theme's values                     | Accepted                   |
+| [0017](0017-intelligo-authored-primitives.md)              | Intelligo authors the interactive primitives on Base UI and owns the theme's values                     | Amended in part by 0018    |
+| [0018](0018-primitive-motion-is-motion-react.md)           | Primitive motion is motion/react on the shared vocabulary; CSS stays where Base UI measures             | Accepted                   |
 
 The ADRs were written inside the private repository these packages were extracted from (ADR-0001, ADR-0006); references to internal planning documents have been removed. The decisions themselves are complete as written.

@@ -3,17 +3,38 @@
 /*
  * The dropdown menu: a rounded panel that
  * scales out of its trigger, rows that tint as the highlight moves, over
- * Base UI's Menu. shadcn base-nova's API (MIT).
+ * Base UI's Menu. shadcn base-nova's API (MIT). The panel springs open with motion; the
+ * root is kept controlled so the exit plays.
  */
 
 import * as React from "react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { ChevronRightIcon, CheckIcon } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
+import { popupMotion, useOpenState } from "@/components/ui/ai-motion";
 import { cn } from "@/lib/utils";
 
-function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
-  return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+// The open state of the nearest menu — a submenu provides its own.
+const MenuOpenContext = React.createContext<boolean | null>(null);
+
+function DropdownMenu({
+  open: openProp,
+  defaultOpen,
+  onOpenChange,
+  ...props
+}: MenuPrimitive.Root.Props) {
+  const [open, setOpen] = useOpenState(openProp, defaultOpen, onOpenChange);
+  return (
+    <MenuOpenContext.Provider value={open}>
+      <MenuPrimitive.Root
+        data-slot="dropdown-menu"
+        open={open}
+        onOpenChange={setOpen}
+        {...props}
+      />
+    </MenuOpenContext.Provider>
+  );
 }
 
 function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
@@ -36,25 +57,33 @@ function DropdownMenuContent({
     MenuPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
+  const open = React.useContext(MenuOpenContext) ?? true;
+  const reduced = useReducedMotion() ?? false;
+
   return (
-    <MenuPrimitive.Portal>
-      <MenuPrimitive.Positioner
-        className="isolate z-popover outline-none"
-        align={align}
-        alignOffset={alignOffset}
-        side={side}
-        sideOffset={sideOffset}
-      >
-        <MenuPrimitive.Popup
-          data-slot="dropdown-menu-content"
-          className={cn(
-            "max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none transition-[opacity,scale,filter] duration-normal ease-standard data-starting-style:scale-95 data-starting-style:opacity-0 data-starting-style:blur-xs data-ending-style:scale-95 data-ending-style:opacity-0 data-ending-style:duration-fast data-closed:overflow-hidden",
-            className
-          )}
-          {...props}
-        />
-      </MenuPrimitive.Positioner>
-    </MenuPrimitive.Portal>
+    <AnimatePresence>
+      {open && (
+        <MenuPrimitive.Portal keepMounted>
+          <MenuPrimitive.Positioner
+            className="isolate z-popover outline-none"
+            align={align}
+            alignOffset={alignOffset}
+            side={side}
+            sideOffset={sideOffset}
+          >
+            <MenuPrimitive.Popup
+              data-slot="dropdown-menu-content"
+              render={<motion.div {...popupMotion(reduced)} />}
+              className={cn(
+                "max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none data-closed:overflow-hidden",
+                className
+              )}
+              {...props}
+            />
+          </MenuPrimitive.Positioner>
+        </MenuPrimitive.Portal>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -105,8 +134,23 @@ function DropdownMenuItem({
   );
 }
 
-function DropdownMenuSub({ ...props }: MenuPrimitive.SubmenuRoot.Props) {
-  return <MenuPrimitive.SubmenuRoot data-slot="dropdown-menu-sub" {...props} />;
+function DropdownMenuSub({
+  open: openProp,
+  defaultOpen,
+  onOpenChange,
+  ...props
+}: MenuPrimitive.SubmenuRoot.Props) {
+  const [open, setOpen] = useOpenState(openProp, defaultOpen, onOpenChange);
+  return (
+    <MenuOpenContext.Provider value={open}>
+      <MenuPrimitive.SubmenuRoot
+        data-slot="dropdown-menu-sub"
+        open={open}
+        onOpenChange={setOpen}
+        {...props}
+      />
+    </MenuOpenContext.Provider>
+  );
 }
 
 function DropdownMenuSubTrigger({

@@ -1,6 +1,6 @@
 # ADR-0017: Intelligo authors the interactive primitives and owns the theme's values
 
-**Status:** Accepted
+**Status:** Accepted, §3 amended by ADR-0018
 **Date:** 2026-09-17
 **Amends:** ADR-0013 §3 (the token values) and §6 (T1 is shadcn's alone)
 **Driver:** the AI parts (T3) press, glide and settle with springs; the buttons, menus and dialogs around them are stock base-nova and do not, so one page moves in two languages.

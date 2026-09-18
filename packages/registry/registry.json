@@ -192,7 +192,7 @@
       "title": "Button",
       "description": "The action primitive: a pill that presses in and settles back — six variants, eight sizes, composes through render (T1).",
       "dependencies": ["@base-ui/react", "class-variance-authority"],
-      "registryDependencies": [],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/button/button.tsx",
@@ -206,8 +206,8 @@
       "type": "registry:ui",
       "title": "Checkbox",
       "description": "A checkbox whose check draws itself in, with an indeterminate state (T1).",
-      "dependencies": ["@base-ui/react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/checkbox/checkbox.tsx",
@@ -221,8 +221,8 @@
       "type": "registry:ui",
       "title": "Radio Group",
       "description": "One choice from a set; the dot springs out from the centre (T1).",
-      "dependencies": ["@base-ui/react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/radio-group/radio-group.tsx",
@@ -236,7 +236,7 @@
       "type": "registry:ui",
       "title": "Switch",
       "description": "An on/off control with a weighted thumb that squeezes while pressed (T1).",
-      "dependencies": ["@base-ui/react"],
+      "dependencies": ["@base-ui/react", "motion"],
       "registryDependencies": [],
       "files": [
         {
@@ -280,8 +280,8 @@
       "type": "registry:ui",
       "title": "Tooltip",
       "description": "A short hint on hover or focus that grows out of its trigger; neighbours open instantly (T1).",
-      "dependencies": ["@base-ui/react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/tooltip/tooltip.tsx",
@@ -295,8 +295,8 @@
       "type": "registry:ui",
       "title": "Popover",
       "description": "Floating content in a rounded panel that scales out of its trigger (T1).",
-      "dependencies": ["@base-ui/react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/popover/popover.tsx",
@@ -310,8 +310,8 @@
       "type": "registry:ui",
       "title": "Dropdown Menu",
       "description": "Actions, checkboxes and radio groups with submenus, in a panel that scales out of its trigger (T1).",
-      "dependencies": ["@base-ui/react", "lucide-react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/dropdown-menu/dropdown-menu.tsx",
@@ -325,8 +325,8 @@
       "type": "registry:ui",
       "title": "Select",
       "description": "A picker for one value from a list, on the input's field and the menu's panel (T1).",
-      "dependencies": ["@base-ui/react", "lucide-react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/select/select.tsx",
@@ -340,8 +340,8 @@
       "type": "registry:ui",
       "title": "Dialog",
       "description": "A modal window over a blurred backdrop that springs up into place (T1).",
-      "dependencies": ["@base-ui/react", "lucide-react"],
-      "registryDependencies": ["@intelligo/button"],
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["@intelligo/button", "@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/dialog/dialog.tsx",
@@ -355,8 +355,8 @@
       "type": "registry:ui",
       "title": "Alert Dialog",
       "description": "A modal that confirms a destructive or irreversible action, with the dialog's backdrop and spring (T1).",
-      "dependencies": ["@base-ui/react"],
-      "registryDependencies": ["@intelligo/button"],
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/button", "@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/alert-dialog/alert-dialog.tsx",
@@ -370,8 +370,8 @@
       "type": "registry:ui",
       "title": "Sheet",
       "description": "A panel that slides in from any edge on the drawer curve (T1).",
-      "dependencies": ["@base-ui/react", "lucide-react"],
-      "registryDependencies": ["@intelligo/button"],
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["@intelligo/button", "@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/sheet/sheet.tsx",
@@ -385,8 +385,8 @@
       "type": "registry:ui",
       "title": "Tabs",
       "description": "Switches between views with one indicator that glides from tab to tab — pill and line variants (T1).",
-      "dependencies": ["@base-ui/react", "class-variance-authority"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "class-variance-authority", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/tabs/tabs.tsx",
@@ -700,7 +700,7 @@
       "name": "ai-motion",
       "type": "registry:ui",
       "title": "AI Motion",
-      "description": "The motion vocabulary the AI parts share: easing curves, spring presets, a transform-only disclosure and a text swap, all gated on reduced motion (T3).",
+      "description": "The motion vocabulary every tier shares: easing curves, spring presets, a transform-only disclosure, a text swap, the popup and backdrop presets the primitives open with, the button press and list staggers, all gated on reduced motion.",
       "dependencies": ["motion"],
       "registryDependencies": [],
       "files": [

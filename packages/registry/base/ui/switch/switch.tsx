@@ -7,8 +7,20 @@
  */
 
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
+import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
 
 import { cn } from "@/lib/utils";
+
+// Travel of the thumb across the track, per size.
+const TRAVEL = { default: 16, sm: 12 } as const;
+
+// A thumb that overshoots a touch and settles.
+const THUMB_SPRING = {
+  type: "spring",
+  stiffness: 600,
+  damping: 32,
+  mass: 0.6,
+} as const;
 
 function Switch({
   className,
@@ -17,6 +29,8 @@ function Switch({
 }: SwitchPrimitive.Root.Props & {
   size?: "sm" | "default";
 }) {
+  const reduced = useReducedMotion() ?? false;
+
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
@@ -29,7 +43,15 @@ function Switch({
     >
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
-        className="pointer-events-none block rounded-full bg-background shadow-sm ring-0 transition-[translate,scale] duration-slow ease-emphasized group-active/switch:scale-x-115 group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 group-data-[size=default]/switch:data-checked:translate-x-4 group-data-[size=sm]/switch:data-checked:translate-x-3 data-checked:origin-right data-unchecked:origin-left data-unchecked:translate-x-0"
+        className="pointer-events-none block rounded-full bg-background shadow-sm ring-0 transition-[scale] duration-slow ease-emphasized group-active/switch:scale-x-115 group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-checked:origin-right data-unchecked:origin-left"
+        render={(thumbProps, state) => (
+          <motion.span
+            {...(thumbProps as HTMLMotionProps<"span">)}
+            initial={false}
+            animate={{ x: state.checked ? TRAVEL[size] : 0 }}
+            transition={reduced ? { duration: 0 } : THUMB_SPRING}
+          />
+        )}
       />
     </SwitchPrimitive.Root>
   );

@@ -1,13 +1,17 @@
 /*
  * The button: a pill that presses in and
  * settles back, over Base UI's Button so `render` keeps working for links
- * and triggers. shadcn base-nova's API (MIT). Motion is CSS on the `--ease-*` and
- * `--duration-*` tokens, which the base collapses under reduced motion.
+ * and triggers. shadcn base-nova's API (MIT). The press is a spring (`Press` from
+ * ai-motion, a client component) with an optional ripple; a button given
+ * its own `render` — a link, a trigger's element — keeps the CSS press.
+ * This module stays free of "use client" so a server component can import
+ * `buttonVariants`.
  */
 
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
 
+import { Press } from "@/components/ui/ai-motion";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -49,12 +53,32 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  ripple = false,
+  render,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    /** Spread a ripple from the press point (spring-pressed buttons only). */
+    ripple?: boolean;
+  }) {
+  const springs = render === undefined;
+
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      render={
+        springs ? (
+          <Press ripple={ripple} pressScale={variant === "link" ? 1 : 0.97} />
+        ) : (
+          render
+        )
+      }
+      className={cn(
+        buttonVariants({ variant, size }),
+        // The spring owns the press; the CSS one stays for custom elements.
+        springs && "active:not-aria-[haspopup]:scale-100",
+        className
+      )}
       {...props}
     />
   );
