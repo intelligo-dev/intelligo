@@ -1,4 +1,5 @@
 ---
+import { Font } from "astro:assets";
 import "../styles/global.css";
 import { SITE } from "@/lib/site";
 
@@ -14,8 +15,10 @@ interface Props {
    * software-project schema everywhere.
    */
   structuredData?: Record<string, unknown> | Record<string, unknown>[];
+  /** A page that should not be indexed (the 404): no canonical either. */
+  noindex?: boolean;
 }
-const { title = SITE.title, description = SITE.description, structuredData } = Astro.props;
+const { title = SITE.title, description = SITE.description, structuredData, noindex = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const og = new URL("/og.png", Astro.site).href;
 const DEFAULT_STRUCTURED_DATA = {
@@ -43,7 +46,7 @@ const jsonLd = JSON.stringify(
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
     <meta name="theme-color" content="#fcfcfc" />
     <meta property="og:site_name" content="Intelligo" />
     <meta property="og:title" content={title} />
@@ -57,13 +60,13 @@ const jsonLd = JSON.stringify(
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={og} />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <Font cssVariable="--font-geist" preload={[{ weight: 400 }]} />
+    <Font cssVariable="--font-outfit" preload={[{ weight: 500 }, { weight: 700 }]} />
+    <Font cssVariable="--font-geist-mono" />
     <script type="application/ld+json" set:html={jsonLd} />
     <script is:inline>
       // Put `dark` on <html> before first paint so tokens and `dark:` agree,
@@ -100,6 +103,32 @@ const jsonLd = JSON.stringify(
     <a href="#main" class="skip-link">Skip to content</a>
     <slot />
     <script>
+      // Copy, by delegation: every `[data-copy]` button on any page. It
+      // copies its own `data-copy-text`, or the code frame it sits in. A
+      // failure is shown as one — it must not look like a copy.
+      document.addEventListener("click", async (event) => {
+        const button = (event.target as Element | null)?.closest<HTMLButtonElement>("[data-copy]");
+        if (!button) return;
+        const label = button.getAttribute("aria-label") ?? "Copy";
+        const text =
+          button.dataset.copyText ??
+          (button.closest(".code-frame")?.querySelector("pre")?.innerText ?? "").replace(/\n$/, "");
+        const settle = (key: "copied" | "failed", say: string, ms: number) => {
+          button.dataset[key] = "";
+          button.setAttribute("aria-label", say);
+          setTimeout(() => {
+            delete button.dataset[key];
+            button.setAttribute("aria-label", label);
+          }, ms);
+        };
+        try {
+          await navigator.clipboard.writeText(text);
+          settle("copied", "Copied", 1600);
+        } catch {
+          settle("failed", "Copy failed — select the text instead", 2400);
+        }
+      });
+
       // Scroll reveal: flip .reveal → .is-in once.
       const els = document.querySelectorAll<HTMLElement>(".reveal");
       if ("IntersectionObserver" in window && els.length) {

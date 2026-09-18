@@ -1,0 +1,21 @@
+---
+/**
+ * One command and a copy button, with no island: the button is plain
+ * HTML and the click is handled by the delegate in Base.astro — the
+ * catalog shows sixty-five of these, and sixty-five React roots to copy a
+ * string is the wrong trade. The command scrolls rather than truncates.
+ */
+interface Props {
+  cmd: string;
+  class?: string;
+}
+const { cmd, class: className } = Astro.props;
+---
+<div class:list={["mono flex max-w-full items-center gap-1 rounded-md border border-border bg-muted py-0.5 pl-2.5 pr-0.5 text-xs", className]}>
+  <span class="text-muted-foreground" aria-hidden="true">$</span>
+  <code class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-foreground/80 [scrollbar-width:none]">{cmd}</code>
+  <button type="button" class="code-copy" aria-label="Copy command" data-copy data-copy-text={cmd}>
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="icon-copy"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="icon-check"><path d="M20 6 9 17l-5-5" /></svg>
+  </button>
+</div>

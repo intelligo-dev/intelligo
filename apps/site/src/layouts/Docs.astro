@@ -5,7 +5,7 @@
  * prev/next in reading order. Shares the token contract with every other
  * page, so the theme toggle and the design system reach the docs
  * unchanged. Code blocks arrive framed from the markdown pipeline
- * (lib/markdown.mjs); the script below copies them and tracks the TOC.
+ * (lib/markdown.mjs); Base.astro copies them, the script below tracks the TOC.
  *
  * The right rail exists from `xl` up. Below it nothing in it is lost: the
  * contents list opens from the bar under the nav, beside the page list,
@@ -189,30 +189,6 @@ const structuredData = [
 </Base>
 
 <script>
-  // Copy: every framed code block, by delegation.
-  document.addEventListener("click", async (event) => {
-    const button = (event.target as Element | null)?.closest<HTMLButtonElement>("[data-copy]");
-    if (!button) return;
-    const code = button.closest(".code-frame")?.querySelector("pre")?.innerText ?? "";
-    try {
-      await navigator.clipboard.writeText(code.replace(/\n$/, ""));
-      button.dataset.copied = "";
-      button.setAttribute("aria-label", "Copied");
-      setTimeout(() => {
-        delete button.dataset.copied;
-        button.setAttribute("aria-label", "Copy code");
-      }, 1600);
-    } catch {
-      // seen, not only announced: a failed copy must not look like a copy
-      button.dataset.failed = "";
-      button.setAttribute("aria-label", "Copy failed — select the code instead");
-      setTimeout(() => {
-        delete button.dataset.failed;
-        button.setAttribute("aria-label", "Copy code");
-      }, 2400);
-    }
-  });
-
   // The current page in view in the sidebar, without scrolling the page.
   const sidebar = document.querySelector<HTMLElement>("[data-docs-sidebar]");
   const active = sidebar?.querySelector<HTMLElement>('[aria-current="page"]');

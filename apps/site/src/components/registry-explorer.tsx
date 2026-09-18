@@ -1,6 +1,13 @@
-import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { installCommand } from "@/lib/install";
 import { Showcase, SCENE_FOR_ITEM } from "@/showcase/scenes";
 import { BrowserFrame } from "@/components/browser-frame";
 import { CommandLine } from "@/components/command-line";
@@ -21,7 +28,23 @@ import {
 const GROUPS: RegistryGroup[] = ["Auth", "Shell", "Settings", "Commerce", "AI"];
 
 export function RegistryExplorer() {
-  const [name, setName] = useState(REGISTRY_ITEMS[0]!.name);
+  const [name, setNameState] = useState(REGISTRY_ITEMS[0]!.name);
+
+  // The item on show is in the URL (`?item=`), so a link opens on it and a
+  // reload keeps it. Replaced, not pushed: thirty chips are not history.
+  useEffect(() => {
+    const wanted = new URLSearchParams(location.search).get("item");
+    if (wanted && REGISTRY_ITEMS.some((i) => i.name === wanted))
+      setNameState(wanted);
+  }, []);
+  const setName = (next: string) => {
+    setNameState(next);
+    try {
+      const url = new URL(location.href);
+      url.searchParams.set("item", next);
+      history.replaceState(null, "", url);
+    } catch {}
+  };
   const item = useMemo(
     () => REGISTRY_ITEMS.find((i) => i.name === name)!,
     [name]
@@ -29,7 +52,7 @@ export function RegistryExplorer() {
   const idx = REGISTRY_ITEMS.findIndex((i) => i.name === name);
   const chips = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion() ?? false;
-  const cmd = `pnpm exec shadcn add https://intelligo.dev/r/${item.name}.json --yes`;
+  const cmd = installCommand(item.name);
 
   // Arrow keys step through the items from the chip list only — never
   // from the window, where they belong to whatever else has focus.
@@ -90,6 +113,9 @@ export function RegistryExplorer() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="mono text-[0.78rem] text-foreground">
               {item.name}
+            </span>
+            <span className="mono text-[0.7rem] tabular-nums text-muted-foreground">
+              {idx + 1} of {REGISTRY_ITEMS.length}
             </span>
             {item.dependsOn.length > 0 && (
               <span className="mono text-[0.68rem] text-muted-foreground">

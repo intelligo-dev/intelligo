@@ -5,6 +5,8 @@
  * they sit on, then the token contract underneath. One sidebar across
  * all of it; every demo is the installed source, live.
  */
+import CopyLine from "@/components/copy-line.astro";
+import { installCommand } from "@/lib/install";
 import Page from "@/layouts/Page.astro";
 import { PrimitiveDemo } from "@/showcase/primitives";
 import { IntelligoDemo } from "@/showcase/intelligo-demos";
@@ -61,8 +63,7 @@ const GROUPS: Group[] = [
   })),
 ];
 
-const install = (e: Entry) =>
-  e.intelligo ? `pnpm dlx shadcn add ${SITE.registryBase}/${e.name}.json` : `pnpm dlx shadcn add ${e.name}`;
+const install = (e: Entry) => installCommand(e.name, { stock: !e.intelligo });
 ---
 <Page
   path="/components"
@@ -144,7 +145,7 @@ const install = (e: Entry) =>
                     {e.intelligo ? <IntelligoDemo client:visible name={e.name} /> : <PrimitiveDemo client:visible name={e.name as ComponentName} />}
                   </div>
                   <div class="mt-3 flex flex-wrap items-center gap-1">
-                    <code class="mono mr-2 max-w-full truncate rounded-md border bg-muted px-2 py-0.5 text-xs text-foreground/70">{install(e)}</code>
+                    <CopyLine cmd={install(e)} class="mr-2" />
                     {e.usedBy.map((b) => (
                       <a href={blockHref(b)} class="mono rounded-md border px-1.5 py-0.5 text-xs text-muted-foreground no-underline hover:text-foreground">{b}</a>
                     ))}

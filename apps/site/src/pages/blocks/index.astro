@@ -3,6 +3,7 @@
  * The registry catalog: how items install, a live browser across all of
  * them, and every block grouped, each linking to its own page.
  */
+import { installCommand } from "@/lib/install";
 import Page from "@/layouts/Page.astro";
 import { RegistryExplorer } from "@/components/registry-explorer";
 import { InstallCommand } from "@/components/install-command";
@@ -37,7 +38,7 @@ const RULES = [
       </div>
       <div class="mt-6">
         <div class="tag mb-2">install any block</div>
-        <InstallCommand client:visible cmd={`pnpm exec shadcn add ${SITE.registryBase}/<item>.json`} />
+        <InstallCommand client:visible cmd={installCommand("<item>")} />
       </div>
     </div>
   </section>

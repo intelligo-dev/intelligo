@@ -17,10 +17,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-sans: "Geist", "Geist Fallback", -apple-system, "Segoe UI", sans-serif;
-    --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    /* site-only: the families are self-hosted by Astro (astro.config.mjs), which
+       also generates the metric-matched fallback each variable carries */
+    --font-sans: var(--font-geist), "Geist", -apple-system, "Segoe UI", sans-serif;
+    --font-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
     /* site-only: marketing headings */
-    --font-heading: "Outfit", "Outfit Fallback", "Geist", sans-serif;
+    --font-heading: var(--font-outfit), "Outfit", var(--font-geist), sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -298,9 +300,6 @@
   width: 100%;
   border-inline: 0;
 }
-@utility wrap {
-  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
-}
 
 /* section top hairline with crosshairs where it meets the rails */
 .xline { position: relative; border-top: 1px solid var(--border); }
@@ -318,7 +317,6 @@
 /* no rail to sit on at the viewport edge */
 .rails-full .xline::before, .rails-full .xline::after { display: none; }
 
-.card { border: 1px solid var(--border); background: var(--card); border-radius: var(--radius-md); }
 .top-shade { position: relative; }
 .top-shade::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
@@ -343,13 +341,6 @@
     radial-gradient(34% 30% at 62% 34%, color-mix(in oklab, var(--brand-violet) 10%, transparent) 0%, transparent 70%),
     radial-gradient(50% 40% at 50% 30%, color-mix(in oklab, var(--foreground) 4%, transparent) 0%, transparent 70%);
 }
-.hero-frame {
-  position: relative; border: 1px solid color-mix(in oklab, var(--foreground) 15%, transparent); background: var(--card);
-  border-radius: var(--radius-xl);
-  box-shadow:
-    0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent),
-    0 24px 60px -30px color-mix(in oklab, var(--foreground) 25%, transparent);
-}
 
 /* the title card's scroll cue */
 .scroll-cue span:last-child { animation: cue 1.6s var(--ease-standard) infinite; }
@@ -368,15 +359,6 @@
    instead — it stays the one section that is not the page. */
 .band { background: var(--background); color: var(--foreground); }
 .dark .band.dark { background: var(--secondary); }
-
-/* stamps */
-.stamp {
-  font-family: var(--font-mono); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.1em;
-  padding: 0.4rem 0.8rem; border-radius: 999px; text-transform: uppercase; display: inline-block;
-}
-.stamp-settled { border: 3px double var(--success); color: var(--success); transform: rotate(-6deg); }
-.stamp-refused { border: 3px double var(--destructive); color: var(--destructive); transform: rotate(4deg); }
-.stamp-failed { border: 3px double var(--muted-foreground); color: var(--muted-foreground); transform: rotate(-3deg); }
 
 /* numbered eyebrow: "01 · the reference app" */
 .eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; }

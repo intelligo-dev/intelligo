@@ -28,11 +28,11 @@ export function BrowserFrame({
         <span className="size-2 rounded-full bg-foreground/15" />
         <span className="size-2 rounded-full bg-foreground/15" />
         <span className="size-2 rounded-full bg-foreground/15" />
-        <span className="mono ml-2 truncate text-[0.66rem] text-muted-foreground">
+        <span className="mono ml-2 truncate text-[0.7rem] text-muted-foreground">
           {path}
         </span>
         {messages && (
-          <span className="mono ml-auto hidden truncate text-[0.62rem] text-muted-foreground sm:inline">
+          <span className="mono ml-auto hidden truncate text-[0.7rem] text-muted-foreground sm:inline">
             {messages}
           </span>
         )}

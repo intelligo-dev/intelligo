@@ -5,6 +5,7 @@
  * Everything comes from registry.json, so the page cannot describe a file
  * the item does not ship.
  */
+import { installCommand } from "@/lib/install";
 import Page from "@/layouts/Page.astro";
 import { BlockPreview } from "@/components/block-preview";
 import { InstallCommand } from "@/components/install-command";
@@ -31,7 +32,7 @@ interface Props {
 }
 const { item, prev, next } = Astro.props;
 
-const cmd = `pnpm exec shadcn add ${SITE.registryBase}/${item.name}.json`;
+const cmd = installCommand(item.name);
 const components = item.primitives
   .filter((p) => p !== "utils" && !p.startsWith("font-"))
   .map((p) => ({ label: p, href: `/components#${p.replace(/^@intelligo\//, "")}` }));
@@ -120,7 +121,7 @@ const messages = item.files.find((f) => f.target.startsWith("messages/"))?.targe
         <div class="space-y-5">
           {byKind.map((g) => (
             <div>
-              <div class="mono mb-1 text-[0.66rem] uppercase tracking-[0.08em] text-muted-foreground">{g.label}</div>
+              <div class="mono mb-1 text-[0.7rem] uppercase tracking-[0.08em] text-muted-foreground">{g.label}</div>
               <ul class="space-y-0.5">
                 {g.files.map((f) => <li class="mono break-all text-[0.75rem] text-foreground/80">{f}</li>)}
               </ul>

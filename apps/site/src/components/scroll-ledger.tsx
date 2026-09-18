@@ -67,7 +67,7 @@ function LedgerLine({
       >
         {text}
       </motion.span>
-      <span className="mono hidden text-[0.68rem] text-muted-foreground sm:inline">
+      <span className="mono shrink-0 text-[0.7rem] text-muted-foreground">
         {pkg}
       </span>
       <motion.span

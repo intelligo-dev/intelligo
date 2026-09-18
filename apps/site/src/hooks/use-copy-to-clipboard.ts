@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type UseCopyToClipboardReturn = {
   copied: boolean;
+  /** The last attempt did not reach the clipboard — shown, not only logged. */
+  failed: boolean;
   copy: (text: string) => Promise<boolean>;
 };
 
@@ -35,6 +37,7 @@ function fallbackCopy(str: string): boolean {
 
 export function useCopyToClipboard(duration = 1500): UseCopyToClipboardReturn {
   const [copied, setCopied] = useState<boolean>(false);
+  const [failed, setFailed] = useState<boolean>(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const copy = useCallback(
@@ -50,6 +53,7 @@ export function useCopyToClipboard(duration = 1500): UseCopyToClipboardReturn {
         }
 
         if (success) {
+          setFailed(false);
           setCopied(true);
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
           timeoutRef.current = setTimeout(() => setCopied(false), duration);
@@ -58,6 +62,10 @@ export function useCopyToClipboard(duration = 1500): UseCopyToClipboardReturn {
         throw new Error("Copy command failed");
       } catch (err: unknown) {
         console.error("Failed to copy text: ", err);
+        setCopied(false);
+        setFailed(true);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => setFailed(false), duration * 2);
         return false;
       }
     },
@@ -74,6 +82,7 @@ export function useCopyToClipboard(duration = 1500): UseCopyToClipboardReturn {
 
   return {
     copied,
+    failed,
     copy,
   };
 }

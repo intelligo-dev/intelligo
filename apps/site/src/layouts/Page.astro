@@ -17,11 +17,12 @@ interface Props {
   title: string;
   lede?: string;
   description?: string;
+  noindex?: boolean;
 }
-const { path, tag, title, lede, description } = Astro.props;
+const { path, tag, title, lede, description, noindex } = Astro.props;
 const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
 ---
-<Base title={pageTitle} description={description ?? lede ?? SITE.description}>
+<Base title={pageTitle} description={description ?? lede ?? SITE.description} noindex={noindex}>
   <Nav client:load current={path} wide />
   <main id="main" class="rails-full">
     <header class="xline">

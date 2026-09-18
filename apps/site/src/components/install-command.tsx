@@ -14,12 +14,15 @@ export function InstallCommand({
     <TooltipProvider>
       <div
         className={cn(
-          "mono flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-[0.78rem]",
+          "mono flex items-center gap-2 rounded-md border border-border bg-muted py-1 pl-3 pr-1 text-[0.78rem]",
           className
         )}
       >
         <span className="text-muted-foreground">$</span>
-        <span className="min-w-0 flex-1 truncate text-foreground">{cmd}</span>
+        {/* scrolls rather than truncates: a command is read before it is run */}
+      <span className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] text-foreground">
+        {cmd}
+      </span>
         <CopyButton text={cmd} />
       </div>
     </TooltipProvider>

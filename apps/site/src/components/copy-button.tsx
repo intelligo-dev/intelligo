@@ -8,7 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CheckIcon, CopyIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, XIcon } from "lucide-react";
 
 type CopyButtonProps = React.ComponentProps<typeof Button> & {
   text: string;
@@ -17,13 +17,18 @@ type CopyButtonProps = React.ComponentProps<typeof Button> & {
 
 export function CopyButton({
   variant = "ghost",
-  size = "icon-sm",
+  size = "icon",
   text,
   onClick,
   disableTooltip = false,
   ...props
 }: CopyButtonProps) {
-  const { copied, copy } = useCopyToClipboard();
+  const { copied, failed, copy } = useCopyToClipboard();
+  const status = copied
+    ? "Copied"
+    : failed
+      ? "Copy failed — select the text instead"
+      : "";
 
   const handleCopy: CopyButtonProps["onClick"] = (event) => {
     copy(text);
@@ -35,8 +40,9 @@ export function CopyButton({
       <TooltipTrigger
         render={
           <Button
-            aria-label={copied ? "Copied" : "Copy to clipboard"}
-            disabled={copied || props.disabled}
+            // never disabled on success: a disabled button drops keyboard
+            // focus to <body>, and the reader starts the page over
+            aria-label="Copy to clipboard"
             onClick={handleCopy}
             size={size}
             variant={variant}
@@ -62,8 +68,15 @@ export function CopyButton({
               : "scale-100 opacity-100 blur-none"
           )}
         >
-          <CopyIcon aria-hidden="true" className="size-3.5" />
+          {failed ? (
+            <XIcon aria-hidden="true" className="size-3.5 stroke-destructive" />
+          ) : (
+            <CopyIcon aria-hidden="true" className="size-3.5" />
+          )}
         </div>
+        <span className="sr-only" role="status">
+          {status}
+        </span>
       </TooltipTrigger>
       {!disableTooltip && (
         <TooltipContent className="px-2 py-1 text-xs">

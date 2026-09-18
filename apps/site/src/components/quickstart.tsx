@@ -1,9 +1,9 @@
 import { useState } from "react";
+import { installCommand } from "@/lib/install";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/copy-button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Typewriter } from "@/components/elements/typewriter";
-import { SITE } from "@/lib/site";
 
 /**
  * Three steps, every command real:
@@ -32,7 +32,7 @@ const STEPS = [
   },
   {
     title: "Add UI",
-    cmd: `pnpm exec shadcn add ${SITE.registryBase}/app-shell.json`,
+    cmd: installCommand("app-shell"),
     note: "Repeat per page family. Each lands as your own source.",
     out: [
       "✓ app/[locale]/(app)/layout.tsx",
@@ -84,7 +84,7 @@ export function Quickstart() {
                   0{n + 1}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="mono block text-[0.66rem] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="mono block text-[0.7rem] uppercase tracking-[0.08em] text-muted-foreground">
                     {st.title}
                   </span>
                   <span className="mono mt-0.5 block truncate text-[0.8rem] text-foreground">
@@ -105,7 +105,7 @@ export function Quickstart() {
             <span className="size-2 rounded-full bg-foreground/15" />
             <span className="size-2 rounded-full bg-foreground/15" />
             <span className="size-2 rounded-full bg-foreground/15" />
-            <span className="mono ml-2 text-[0.66rem] text-muted-foreground">
+            <span className="mono ml-2 text-[0.7rem] text-muted-foreground">
               my-app — zsh
             </span>
           </div>

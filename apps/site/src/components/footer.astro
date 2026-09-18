@@ -12,10 +12,10 @@ import { FOOTER, SITE } from "@/lib/site";
     </div>
     <div class="grid grid-cols-2 gap-x-14 gap-y-6 text-[0.85rem] sm:grid-cols-4">
       {FOOTER.map((col) => (
-        <div class="flex flex-col gap-2">
-          <span class="font-medium text-foreground">{col.title}</span>
+        <div class="flex flex-col gap-0.5">
+          <span class="mb-1.5 font-medium text-foreground">{col.title}</span>
           {col.links.map((l) => (
-            <a href={l.href} class="text-muted-foreground no-underline hover:text-foreground">{l.label}</a>
+            <a href={l.href} class="py-1.5 text-muted-foreground no-underline hover:text-foreground">{l.label}</a>
           ))}
         </div>
       ))}

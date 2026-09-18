@@ -10,8 +10,9 @@ import { buttonVariants } from "@/components/ui/button";
  * A link, not a button that opens a window: it can be middle-clicked,
  * copied and read as what it is. The count comes from GitHub's public
  * API, which allows an address sixty calls an hour — so one answer is
- * kept for an hour, and a reader going page to page asks once. With no
- * answer the count is simply not shown; the link never depends on it.
+ * kept for an hour — "no answer" included, so a repository that is not
+ * public yet is asked about once, not on every page. With no answer the
+ * count is simply not shown; the link never depends on it.
  */
 
 interface GitHubStarButtonProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
@@ -33,15 +34,26 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-function readCached(key: string): number | null {
+/** `undefined`: nothing fresh is stored. `null`: asked within the hour, no answer. */
+function readCached(key: string): number | null | undefined {
   try {
     const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const { count, at } = JSON.parse(raw) as { count: number; at: number };
-    return Date.now() - at < TTL_MS && Number.isFinite(count) ? count : null;
+    if (!raw) return undefined;
+    const { count, at } = JSON.parse(raw) as {
+      count: number | null;
+      at: number;
+    };
+    if (Date.now() - at >= TTL_MS) return undefined;
+    return typeof count === "number" && Number.isFinite(count) ? count : null;
   } catch {
-    return null;
+    return undefined;
   }
+}
+
+function writeCached(key: string, count: number | null) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ count, at: Date.now() }));
+  } catch {}
 }
 
 function StarIcon({ className }: { className?: string }) {
@@ -71,7 +83,7 @@ export function GitHubStarButton({
     if (staticCount !== undefined || !showCount) return;
     const key = `stars:${owner}/${repo}`;
     const cached = readCached(key);
-    if (cached !== null) {
+    if (cached !== undefined) {
       setCount(cached);
       return;
     }
@@ -79,14 +91,11 @@ export function GitHubStarButton({
     fetch(`https://api.github.com/repos/${owner}/${repo}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { stargazers_count?: number } | null) => {
-        const n = data?.stargazers_count;
-        if (!live || typeof n !== "number") return;
-        setCount(n);
-        try {
-          localStorage.setItem(key, JSON.stringify({ count: n, at: Date.now() }));
-        } catch {}
+        const n = typeof data?.stargazers_count === "number" ? data.stargazers_count : null;
+        writeCached(key, n);
+        if (live) setCount(n);
       })
-      .catch(() => {});
+      .catch(() => writeCached(key, null));
     return () => {
       live = false;
     };
