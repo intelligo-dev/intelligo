@@ -19,7 +19,7 @@
         },
         {
           "path": ".env.example",
-          "hash": "c7601b7da0a5b0c8c396ee471d2bf81f8c484a40ace7b7ec7cd6862175d13359"
+          "hash": "fb42ef37c4d539bc91959e95fc1486c3115c11f876c72df4fbd9dd1e29b3dc20"
         },
         {
           "path": "lib/intelligo.ts",
@@ -63,7 +63,11 @@
         },
         {
           "path": "app/[locale]/layout.tsx",
-          "hash": "b2c0823599bca97ce57d6364a81c33576700ec2b6e58739cb0fca4b60460a1e5"
+          "hash": "0114d3851ebd597ee289ca3980bdedb43974e602a0a4e0ee94916e70bfc8fada"
+        },
+        {
+          "path": "app/[locale]/page.tsx",
+          "hash": "28770d046abf16677a7f5dab5e85587f9039c84e37aeb6c5d9ad4365d695d789"
         },
         {
           "path": "components/shell/theme-provider.tsx",

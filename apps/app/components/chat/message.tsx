@@ -46,10 +46,7 @@ import {
   BranchPage,
   BranchPrevious,
 } from "@/components/ui/ai-branch";
-import {
-  CitationPill,
-  type CitationItem,
-} from "@/components/ui/ai-citations";
+import { CitationPill, type CitationItem } from "@/components/ui/ai-citations";
 import { ImageGeneration } from "@/components/ui/ai-image-generation";
 import { ReasoningText } from "@/components/ui/ai-reasoning-text";
 import { StreamingResponse } from "@/components/ui/ai-streaming-response";
@@ -393,9 +390,7 @@ export function Message({
         )
       )}
 
-      {isStreamingThis &&
-      !activityLive &&
-      (isEmptyAssistant || statusLabel) ? (
+      {isStreamingThis && !activityLive && (isEmptyAssistant || statusLabel) ? (
         <ReasoningText
           phrases={[statusLabel ?? t("message.thinking")]}
           suffix=""

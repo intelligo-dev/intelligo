@@ -35,7 +35,7 @@ export interface NotificationItemProps {
  * and an effect swaps in the relative form once mounted — `Date.now()`
  * during render would differ between server and client.
  */
-function RelativeTime({ iso }: { iso: string }) {
+export function RelativeTime({ iso }: { iso: string }) {
   const format = useFormatter();
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => setNow(new Date()), []);
@@ -55,7 +55,10 @@ function RelativeTime({ iso }: { iso: string }) {
  * unrecognized type — e.g. a product's own custom type — falls back to
  * a plain bell rather than failing.
  */
-function notificationIcon(type: string): { Icon: LucideIcon; color: string } {
+export function notificationIcon(type: string): {
+  Icon: LucideIcon;
+  color: string;
+} {
   switch (type) {
     case "quota_warning_80":
       return { Icon: AlertTriangle, color: "text-warning" };

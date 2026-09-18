@@ -192,7 +192,7 @@
       "title": "Button",
       "description": "The action primitive: a pill that presses in and settles back — six variants, eight sizes, composes through render (T1).",
       "dependencies": ["@base-ui/react", "class-variance-authority"],
-      "registryDependencies": [],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/button/button.tsx",
@@ -206,8 +206,8 @@
       "type": "registry:ui",
       "title": "Checkbox",
       "description": "A checkbox whose check draws itself in, with an indeterminate state (T1).",
-      "dependencies": ["@base-ui/react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/checkbox/checkbox.tsx",
@@ -221,8 +221,8 @@
       "type": "registry:ui",
       "title": "Radio Group",
       "description": "One choice from a set; the dot springs out from the centre (T1).",
-      "dependencies": ["@base-ui/react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/radio-group/radio-group.tsx",
@@ -236,7 +236,7 @@
       "type": "registry:ui",
       "title": "Switch",
       "description": "An on/off control with a weighted thumb that squeezes while pressed (T1).",
-      "dependencies": ["@base-ui/react"],
+      "dependencies": ["@base-ui/react", "motion"],
       "registryDependencies": [],
       "files": [
         {
@@ -280,8 +280,8 @@
       "type": "registry:ui",
       "title": "Tooltip",
       "description": "A short hint on hover or focus that grows out of its trigger; neighbours open instantly (T1).",
-      "dependencies": ["@base-ui/react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/tooltip/tooltip.tsx",
@@ -295,8 +295,8 @@
       "type": "registry:ui",
       "title": "Popover",
       "description": "Floating content in a rounded panel that scales out of its trigger (T1).",
-      "dependencies": ["@base-ui/react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/popover/popover.tsx",
@@ -310,8 +310,8 @@
       "type": "registry:ui",
       "title": "Dropdown Menu",
       "description": "Actions, checkboxes and radio groups with submenus, in a panel that scales out of its trigger (T1).",
-      "dependencies": ["@base-ui/react", "lucide-react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/dropdown-menu/dropdown-menu.tsx",
@@ -325,8 +325,8 @@
       "type": "registry:ui",
       "title": "Select",
       "description": "A picker for one value from a list, on the input's field and the menu's panel (T1).",
-      "dependencies": ["@base-ui/react", "lucide-react"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/select/select.tsx",
@@ -340,8 +340,8 @@
       "type": "registry:ui",
       "title": "Dialog",
       "description": "A modal window over a blurred backdrop that springs up into place (T1).",
-      "dependencies": ["@base-ui/react", "lucide-react"],
-      "registryDependencies": ["@intelligo/button"],
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["@intelligo/button", "@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/dialog/dialog.tsx",
@@ -355,8 +355,8 @@
       "type": "registry:ui",
       "title": "Alert Dialog",
       "description": "A modal that confirms a destructive or irreversible action, with the dialog's backdrop and spring (T1).",
-      "dependencies": ["@base-ui/react"],
-      "registryDependencies": ["@intelligo/button"],
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/button", "@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/alert-dialog/alert-dialog.tsx",
@@ -370,8 +370,8 @@
       "type": "registry:ui",
       "title": "Sheet",
       "description": "A panel that slides in from any edge on the drawer curve (T1).",
-      "dependencies": ["@base-ui/react", "lucide-react"],
-      "registryDependencies": ["@intelligo/button"],
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["@intelligo/button", "@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/sheet/sheet.tsx",
@@ -385,8 +385,8 @@
       "type": "registry:ui",
       "title": "Tabs",
       "description": "Switches between views with one indicator that glides from tab to tab — pill and line variants (T1).",
-      "dependencies": ["@base-ui/react", "class-variance-authority"],
-      "registryDependencies": [],
+      "dependencies": ["@base-ui/react", "class-variance-authority", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
       "files": [
         {
           "path": "base/ui/tabs/tabs.tsx",
@@ -700,7 +700,7 @@
       "name": "ai-motion",
       "type": "registry:ui",
       "title": "AI Motion",
-      "description": "The motion vocabulary the AI parts share: easing curves, spring presets, a transform-only disclosure and a text swap, all gated on reduced motion (T3).",
+      "description": "The motion vocabulary every tier shares: easing curves, spring presets, a transform-only disclosure, a text swap, the popup and backdrop presets the primitives open with, the button press and list staggers, all gated on reduced motion.",
       "dependencies": ["motion"],
       "registryDependencies": [],
       "files": [
@@ -1017,6 +1017,145 @@
       ]
     },
     {
+      "name": "popover-morph",
+      "type": "registry:ui",
+      "title": "Popover Morph",
+      "description": "A non-modal popover whose trigger surface grows into the panel through a shared layout and folds back on close (T4).",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
+      "files": [
+        {
+          "path": "base/ui/popover-morph/popover-morph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/popover-morph.tsx"
+        }
+      ]
+    },
+    {
+      "name": "select-morph",
+      "type": "registry:ui",
+      "title": "Select Morph",
+      "description": "A select whose trigger continues into its list: the list unclips down from the trigger's edge as one surface while its options stagger in (T4).",
+      "dependencies": ["@base-ui/react", "motion", "lucide-react"],
+      "registryDependencies": ["@intelligo/ai-motion"],
+      "files": [
+        {
+          "path": "base/ui/select-morph/select-morph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/select-morph.tsx"
+        }
+      ]
+    },
+    {
+      "name": "morphing-modal",
+      "type": "registry:ui",
+      "title": "Morphing Modal",
+      "description": "A card or button that grows into a centred or bottom dialog through a shared layout, cross-fading between views while the panel resizes (T4).",
+      "dependencies": ["@base-ui/react", "motion", "lucide-react"],
+      "registryDependencies": ["@intelligo/ai-motion", "@intelligo/button"],
+      "files": [
+        {
+          "path": "base/ui/morphing-modal/morphing-modal.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/morphing-modal.tsx"
+        }
+      ]
+    },
+    {
+      "name": "notification-stack",
+      "type": "registry:ui",
+      "title": "Notification Stack",
+      "description": "Notifications fanned into a stack — the newest in front, the rest peeking out scaled back — that springs apart into a list of openable, dismissable cards on hover or click (T4).",
+      "dependencies": ["@base-ui/react", "motion", "lucide-react"],
+      "registryDependencies": ["@intelligo/ai-motion", "@intelligo/button"],
+      "files": [
+        {
+          "path": "base/ui/notification-stack/notification-stack.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/notification-stack.tsx"
+        }
+      ]
+    },
+    {
+      "name": "animated-list",
+      "type": "registry:ui",
+      "title": "Animated List",
+      "description": "A list container that staggers its rows in on mount, rows that rise in, fall out and glide on reorder (ul, ol, div or tbody/tr), and a block that reveals once as it scrolls into view (T4).",
+      "dependencies": ["motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
+      "files": [
+        {
+          "path": "base/ui/animated-list/animated-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/animated-list.tsx"
+        }
+      ]
+    },
+    {
+      "name": "otp-input",
+      "type": "registry:ui",
+      "title": "OTP Input",
+      "description": "A one-time-code input on Base UI's OTP Field whose characters roll into their slots under a blinking caret, shaking on a rejected code and drawing a check on an accepted one (T4).",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
+      "files": [
+        {
+          "path": "base/ui/otp-input/otp-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/otp-input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "file-upload",
+      "type": "registry:ui",
+      "title": "File Upload",
+      "description": "A controlled file upload — a drop zone with a queue of rows that slide in, fill a progress bar and settle on done or error, or a compact chat-composer wrapper with a drop overlay and chips (T4).",
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": [
+        "@intelligo/ai-motion",
+        "@intelligo/button",
+        "@intelligo/spinner"
+      ],
+      "files": [
+        {
+          "path": "base/ui/file-upload/file-upload.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/file-upload.tsx"
+        }
+      ]
+    },
+    {
+      "name": "expandable-tabs",
+      "type": "registry:ui",
+      "title": "Expandable Tabs",
+      "description": "A bar of icon tabs on Base UI's Tabs where the active tab widens to unfurl its label, the pill glides to it and its panel rises in (T4).",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["@intelligo/ai-motion"],
+      "files": [
+        {
+          "path": "base/ui/expandable-tabs/expandable-tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/expandable-tabs.tsx"
+        }
+      ]
+    },
+    {
+      "name": "hold-action-button",
+      "type": "registry:ui",
+      "title": "Hold Action Button",
+      "description": "A press-and-hold confirmation for a destructive action, by pointer or held Space/Enter, whose fill sweeps across while held and drains on an early release (T4).",
+      "dependencies": ["motion"],
+      "registryDependencies": ["@intelligo/ai-motion", "@intelligo/button"],
+      "files": [
+        {
+          "path": "base/ui/hold-action-button/hold-action-button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/hold-action-button.tsx"
+        }
+      ]
+    },
+    {
       "name": "smoke",
       "type": "registry:block",
       "title": "Registry Smoke Test",
@@ -1183,7 +1322,8 @@
         "@intelligo/button",
         "@intelligo/page-header",
         "@intelligo/stat-card",
-        "@intelligo/status-badge"
+        "@intelligo/status-badge",
+        "@intelligo/animated-list"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1295,12 +1435,13 @@
       "name": "app-shell",
       "type": "registry:block",
       "title": "App Shell",
-      "description": "Authenticated application shell: session and onboarding gate, workspace bootstrap, and a collapsible sidebar with workspace switcher, configurable nav, and user menu.",
+      "description": "Authenticated application shell: session and onboarding gate, workspace bootstrap, a sidebar that morphs into an icon rail with a gliding active pill, workspace switcher, configurable nav and user menu, and a page region that lifts each section in.",
       "registryDependencies": [
         "avatar",
         "@intelligo/dropdown-menu",
         "separator",
-        "@intelligo/sidebar"
+        "@intelligo/ai-sidebar",
+        "@intelligo/ai-motion"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1308,6 +1449,7 @@
         "next-themes",
         "drizzle-orm",
         "lucide-react",
+        "motion",
         "server-only",
         "next-intl"
       ],
@@ -1341,6 +1483,11 @@
           "path": "base/app-shell/components/theme-provider.tsx",
           "type": "registry:component",
           "target": "components/shell/theme-provider.tsx"
+        },
+        {
+          "path": "base/app-shell/components/page-transition.tsx",
+          "type": "registry:component",
+          "target": "components/shell/page-transition.tsx"
         },
         {
           "path": "base/app-shell/components/time-zone-cookie.tsx",
@@ -1416,7 +1563,8 @@
         "@intelligo/input",
         "label",
         "skeleton",
-        "@intelligo/page-header"
+        "@intelligo/page-header",
+        "@intelligo/hold-action-button"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1710,7 +1858,10 @@
         "scroll-area",
         "separator",
         "skeleton",
-        "@intelligo/page-header"
+        "@intelligo/page-header",
+        "@intelligo/ai-motion",
+        "@intelligo/animated-list",
+        "@intelligo/notification-stack"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -1776,7 +1927,8 @@
         "badge",
         "@intelligo/button",
         "card",
-        "skeleton"
+        "skeleton",
+        "@intelligo/animated-list"
       ],
       "dependencies": [
         "@intelligo-dev/core",
@@ -1897,7 +2049,8 @@
         "card",
         "skeleton",
         "@intelligo/page-header",
-        "@intelligo/stat-card"
+        "@intelligo/stat-card",
+        "@intelligo/animated-list"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -2108,13 +2261,15 @@
       "registryDependencies": [
         "@intelligo/button",
         "@intelligo/input",
-        "label"
+        "label",
+        "@intelligo/ai-motion"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
         "lucide-react",
         "server-only",
-        "next-intl"
+        "next-intl",
+        "motion"
       ],
       "files": [
         {
@@ -2244,7 +2399,8 @@
         "skeleton",
         "@intelligo/spinner",
         "@intelligo/page-header",
-        "@intelligo/document-viewer"
+        "@intelligo/document-viewer",
+        "@intelligo/animated-list"
       ],
       "dependencies": [
         "@intelligo-dev/auth",
@@ -2377,7 +2533,6 @@
         "@intelligo/input",
         "item",
         "@intelligo/sheet",
-        "@intelligo/sidebar",
         "skeleton",
         "@intelligo/spinner",
         "@intelligo/textarea",
@@ -2402,7 +2557,14 @@
         "@intelligo/ai-tool-result",
         "@intelligo/copy-button",
         "@intelligo/document-viewer",
-        "@intelligo/status-badge"
+        "@intelligo/status-badge",
+        "@intelligo/ai-motion",
+        "@intelligo/ai-sidebar",
+        "@intelligo/ai-file-diff",
+        "@intelligo/ai-image-generation",
+        "@intelligo/ai-reasoning-text",
+        "@intelligo/ai-streaming-response",
+        "@intelligo/ai-agent-progress"
       ],
       "dependencies": [
         "ai@^7.0.103",
@@ -2435,7 +2597,8 @@
         "@codemirror/theme-one-dark",
         "react-data-grid@7.0.0-beta.61",
         "papaparse",
-        "@types/papaparse"
+        "@types/papaparse",
+        "motion"
       ],
       "files": [
         {

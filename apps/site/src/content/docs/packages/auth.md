@@ -10,7 +10,7 @@ label: "auth"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/auth
+pnpm add @intelligo-dev/auth@beta
 ```
 
 ## What it owns

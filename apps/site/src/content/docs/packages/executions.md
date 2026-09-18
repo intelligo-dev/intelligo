@@ -10,7 +10,7 @@ label: "executions"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/executions
+pnpm add @intelligo-dev/executions@beta
 ```
 
 ## The boundary

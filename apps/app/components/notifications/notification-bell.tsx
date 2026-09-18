@@ -24,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { SwapText } from "@/components/ui/ai-motion";
 import { Link } from "@/i18n/navigation";
 
 import { useNotifications } from "@/hooks/use-notifications";
@@ -72,7 +73,10 @@ export function NotificationBell({
         <Bell className="size-5" />
         {unreadCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-destructive px-1 text-xs text-destructive-foreground">
-            {unreadCount > 99 ? "99+" : unreadCount}
+            {/* A new count rolls in rather than replacing the old one. */}
+            <SwapText value={String(unreadCount)}>
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </SwapText>
           </span>
         )}
       </PopoverTrigger>
@@ -82,6 +86,7 @@ export function NotificationBell({
           variant="compact"
           onMarkRead={markRead}
           onMarkAllRead={markAllRead}
+          onNavigate={() => setIsOpen(false)}
           footer={
             <Link
               href={notificationsHref}

@@ -27,8 +27,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@showcase/components/ui/dropdown-menu";
-import { SidebarMenuButton, useSidebar } from "@showcase/components/ui/sidebar";
+import { useAISidebar, useAISidebarPanel } from "@showcase/components/ui/ai-sidebar";
+import { cn } from "@showcase/lib/utils";
 import { useRouter } from "@showcase/i18n/navigation";
+
+const TRIGGER =
+  "flex w-full min-w-0 items-center gap-2 rounded-xl p-1.5 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring disabled:opacity-50 data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground";
 
 export interface Workspace {
   id: string;
@@ -46,7 +50,8 @@ export function WorkspaceSwitcher({
   currentWorkspace,
   workspaces,
 }: WorkspaceSwitcherProps) {
-  const { isMobile } = useSidebar();
+  const { isMobile } = useAISidebar();
+  const { collapsed } = useAISidebarPanel();
   const router = useRouter();
   const [isSwitching, setIsSwitching] = React.useState(false);
   const t = useTranslations("app-shell");
@@ -70,26 +75,30 @@ export function WorkspaceSwitcher({
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <SidebarMenuButton
-            size="lg"
+          <button
+            type="button"
             disabled={isSwitching}
-            className="data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
+            className={cn(TRIGGER, collapsed && "justify-center")}
           />
         }
       >
         <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground">
           {currentWorkspace.name[0]?.toUpperCase()}
         </div>
-        <div className="grid flex-1 text-left leading-tight">
-          <span className="truncate text-sm font-medium">
-            {currentWorkspace.name}
-          </span>
-          <span className="truncate text-xs text-muted-foreground">
-            {currentWorkspace.slug}
-          </span>
-        </div>
-        {workspaces.length > 1 && (
-          <ChevronsUpDown className="ml-auto size-4 opacity-50" />
+        {collapsed ? null : (
+          <>
+            <div className="grid min-w-0 flex-1 text-left leading-tight">
+              <span className="truncate text-sm font-medium">
+                {currentWorkspace.name}
+              </span>
+              <span className="truncate text-xs text-muted-foreground">
+                {currentWorkspace.slug}
+              </span>
+            </div>
+            {workspaces.length > 1 && (
+              <ChevronsUpDown className="ml-auto size-4 opacity-50" />
+            )}
+          </>
         )}
       </DropdownMenuTrigger>
       {workspaces.length > 1 && (

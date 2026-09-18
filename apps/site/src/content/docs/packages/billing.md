@@ -10,7 +10,7 @@ label: "billing"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/billing
+pnpm add @intelligo-dev/billing@beta
 ```
 
 ## What it owns

@@ -2,7 +2,7 @@
 
 /*
  * The shape follows Vercel AI
- * Elements' Branch, rethought for a thread that owns which version is
+ * Elements' Branch (Apache-2.0, © 2023 Vercel, Inc.), rethought for a thread that owns which version is
  * on screen: this is a pager over versions the thread keeps, not a
  * component that clones its children per branch.
  */

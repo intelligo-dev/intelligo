@@ -1,5 +1,8 @@
 {
   "sidebar": {
+    "label": "Main navigation",
+    "toggle": "Toggle sidebar",
+    "close": "Close sidebar",
     "nav": {
       "dashboard": "Dashboard",
       "chat": "Chat",

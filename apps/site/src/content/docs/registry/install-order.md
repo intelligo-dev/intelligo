@@ -46,7 +46,7 @@ pnpm dlx shadcn@latest add https://intelligo.dev/r/chat-share.json
 | [pricing](/blocks/pricing) | — | `i18n/navigation` | — |
 | [usage](/blocks/usage) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [invitation-accept](/blocks/invitation-accept) | [team-settings](/blocks/team-settings) | `i18n/navigation` | — |
-| [app-shell](/blocks/app-shell) | — | `i18n/navigation` | — |
+| [app-shell](/blocks/app-shell) | — | `i18n/navigation`, `lib/utils` | — |
 | [settings-shell](/blocks/settings-shell) | — | `i18n/navigation` | — |
 | [workspace-settings](/blocks/workspace-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [auth-login](/blocks/auth-login) | [route-error](/blocks/route-error) | `i18n/navigation` | — |

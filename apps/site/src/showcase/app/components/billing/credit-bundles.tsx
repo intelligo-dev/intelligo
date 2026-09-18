@@ -30,6 +30,7 @@ import { useFormatter, useTranslations } from "use-intl";
 import { Alert, AlertDescription } from "@showcase/components/ui/alert";
 import { Button } from "@showcase/components/ui/button";
 import { Card } from "@showcase/components/ui/card";
+import { AnimatedList, AnimatedListItem } from "@showcase/components/ui/animated-list";
 
 import { createCreditPurchaseSession } from "@showcase/actions/billing";
 import { CREDIT_BUNDLES, CURRENCY } from "@showcase/lib/billing-config";
@@ -103,45 +104,47 @@ export function CreditBundles({ currentBalance }: CreditBundlesProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <AnimatedList as="div" className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {CREDIT_BUNDLES.map((bundle) => {
           const isLoading = loadingId === bundle.id;
           const grant = grantOf(bundle);
           const price = priceOf(bundle);
           return (
-            <Card key={bundle.id} className="space-y-4 p-6">
-              <div className="flex items-center gap-2">
-                <Coins className="size-5 text-muted-foreground" />
-                <p className="font-medium">{bundle.name}</p>
-              </div>
-              <p className="text-2xl font-semibold text-foreground">
-                {format.number(grant.amount / MICROS_PER_UNIT, {
-                  style: "currency",
-                  currency: grant.currency,
-                })}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {t("creditBundles.oneTime", {
-                  price: format.number(price.amount / MICROS_PER_UNIT, {
+            <AnimatedListItem as="div" key={bundle.id}>
+              <Card className="h-full space-y-4 p-6">
+                <div className="flex items-center gap-2">
+                  <Coins className="size-5 text-muted-foreground" />
+                  <p className="font-medium">{bundle.name}</p>
+                </div>
+                <p className="text-2xl font-semibold text-foreground">
+                  {format.number(grant.amount / MICROS_PER_UNIT, {
                     style: "currency",
-                    currency: price.currency,
-                  }),
-                })}
-              </p>
-              <Button
-                onClick={() => handlePurchase(bundle.id)}
-                disabled={isLoading}
-                variant="outline"
-                className="w-full"
-              >
-                {isLoading
-                  ? t("creditBundles.redirecting")
-                  : t("creditBundles.purchase")}
-              </Button>
-            </Card>
+                    currency: grant.currency,
+                  })}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {t("creditBundles.oneTime", {
+                    price: format.number(price.amount / MICROS_PER_UNIT, {
+                      style: "currency",
+                      currency: price.currency,
+                    }),
+                  })}
+                </p>
+                <Button
+                  onClick={() => handlePurchase(bundle.id)}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {isLoading
+                    ? t("creditBundles.redirecting")
+                    : t("creditBundles.purchase")}
+                </Button>
+              </Card>
+            </AnimatedListItem>
           );
         })}
-      </div>
+      </AnimatedList>
 
       {error && (
         <Alert variant="destructive">

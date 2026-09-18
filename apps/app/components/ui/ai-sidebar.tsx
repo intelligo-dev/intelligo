@@ -684,7 +684,12 @@ function AISidebarTrigger({
         onClick?.(event);
         if (!event.defaultPrevented) context.toggleSidebar();
       }}
-      className={cn("shrink-0", className)}
+      // `aria-expanded` is this toggle's resting state while the panel is
+      // open, not a pressed look: keep the ghost button flat until hovered.
+      className={cn(
+        "shrink-0 aria-expanded:not-hover:bg-transparent aria-expanded:not-hover:text-muted-foreground",
+        className
+      )}
     >
       {children ?? <PanelLeftIcon />}
     </Button>

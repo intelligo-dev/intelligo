@@ -10,7 +10,7 @@ label: "core"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/core
+pnpm add @intelligo-dev/core@beta
 ```
 
 ## Exports

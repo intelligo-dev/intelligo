@@ -35,8 +35,8 @@ import {
   ApprovalCard,
   type ApprovalCardAnswers,
 } from "@showcase/components/ui/ai-approval-card";
-import { Spinner } from "@showcase/components/ui/spinner";
 import { StatusBadge } from "@showcase/components/ui/status-badge";
+import { AgentProgress } from "@showcase/components/ui/ai-agent-progress";
 import { TodoList, type TodoItemStatus } from "@showcase/components/ui/ai-todo-list";
 import {
   ArtifactCard,
@@ -97,7 +97,7 @@ export function ChatAgentCard({ data }: DataRendererProps) {
   return (
     <Item variant="outline" size="sm" className="max-w-xl">
       <ItemMedia variant="icon">
-        {agent.status === "started" ? <Spinner /> : <BotIcon />}
+        <BotIcon />
       </ItemMedia>
       <ItemContent>
         <ItemTitle>{agent.name}</ItemTitle>
@@ -106,15 +106,24 @@ export function ChatAgentCard({ data }: DataRendererProps) {
         ) : null}
       </ItemContent>
       <ItemActions>
-        <StatusBadge status={status} dot>
-          {t(
-            agent.status === "completed"
-              ? "activity.done"
-              : agent.status === "failed"
-                ? "activity.failed"
-                : "activity.running"
-          )}
-        </StatusBadge>
+        {agent.status === "started" ? (
+          // A working subagent shows its pulse and how long it has run.
+          <AgentProgress
+            label={t("activity.running")}
+            running
+            className="text-xs"
+          />
+        ) : (
+          <StatusBadge status={status} dot>
+            {t(
+              agent.status === "completed"
+                ? "activity.done"
+                : agent.status === "failed"
+                  ? "activity.failed"
+                  : "activity.running"
+            )}
+          </StatusBadge>
+        )}
       </ItemActions>
     </Item>
   );

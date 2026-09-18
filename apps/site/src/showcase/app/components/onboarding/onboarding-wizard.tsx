@@ -23,8 +23,10 @@
 import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "use-intl";
 import { CheckCircle2 } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { useRouter } from "@showcase/i18n/navigation";
+import { EASE_IN_OUT, EASE_OUT } from "@showcase/components/ui/ai-motion";
 import { Button } from "@showcase/components/ui/button";
 import {
   advanceStep,
@@ -57,6 +59,10 @@ export function OnboardingWizard({ initialStepId }: OnboardingWizardProps) {
     : 0;
 
   const [stepIndex, setStepIndex] = useState(initialIndex);
+  // Which way the last move went: a step slides in from the side it
+  // came from, and the one it replaces leaves the other way.
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const reduced = useReducedMotion() ?? false;
   const [answers, setAnswers] = useState<OnboardingAnswers>({});
   const [error, setError] = useState<string | null>(null);
   const [isSkipping, startSkip] = useTransition();
@@ -92,6 +98,7 @@ export function OnboardingWizard({ initialStepId }: OnboardingWizardProps) {
         setError(result.error);
         return;
       }
+      setDirection(1);
       setStepIndex(nextIndex);
       focusCard();
     });
@@ -110,6 +117,7 @@ export function OnboardingWizard({ initialStepId }: OnboardingWizardProps) {
           return;
         }
       }
+      setDirection(-1);
       setStepIndex(prevIndex);
       focusCard();
     });
@@ -167,7 +175,7 @@ export function OnboardingWizard({ initialStepId }: OnboardingWizardProps) {
         {Array.from({ length: totalScreens }).map((_, index) => (
           <div
             key={index}
-            className={`h-1.5 rounded-full transition-all ${
+            className={`h-1.5 rounded-full transition-[width,background-color] duration-slow ease-emphasized ${
               index === progressPosition
                 ? "w-8 bg-primary"
                 : index < progressPosition
@@ -189,41 +197,74 @@ export function OnboardingWizard({ initialStepId }: OnboardingWizardProps) {
           </p>
         )}
 
-        {isCompleteScreen ? (
-          <div className="text-center py-2">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
-              <CheckCircle2
-                className="w-8 h-8 text-primary"
-                aria-hidden="true"
+        <AnimatePresence mode="wait" initial={false} custom={direction}>
+          <motion.div
+            key={isCompleteScreen ? "complete" : (currentStep?.id ?? "none")}
+            custom={direction}
+            variants={{
+              enter: (dir: number) =>
+                reduced
+                  ? { opacity: 0 }
+                  : { opacity: 0, x: dir * 24, filter: "blur(3px)" },
+              center: {
+                opacity: 1,
+                x: 0,
+                filter: "blur(0px)",
+                transition: { duration: reduced ? 0 : 0.32, ease: EASE_OUT },
+              },
+              leave: (dir: number) =>
+                reduced
+                  ? { opacity: 0, transition: { duration: 0 } }
+                  : {
+                      opacity: 0,
+                      x: dir * -24,
+                      filter: "blur(3px)",
+                      transition: { duration: 0.16, ease: EASE_IN_OUT },
+                    },
+            }}
+            initial="enter"
+            animate="center"
+            exit="leave"
+          >
+            {isCompleteScreen ? (
+              <div className="text-center py-2">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
+                  <CheckCircle2
+                    className="w-8 h-8 text-primary"
+                    aria-hidden="true"
+                  />
+                </div>
+                <h2 className="text-xl font-semibold mb-2">
+                  {tAny(complete.titleKey)}
+                </h2>
+                {complete.descriptionKey && (
+                  <p className="text-sm text-muted-foreground mb-8">
+                    {tAny(complete.descriptionKey)}
+                  </p>
+                )}
+                <Button
+                  type="button"
+                  className="w-full"
+                  onClick={handleComplete}
+                  disabled={isPending}
+                >
+                  {isPending
+                    ? t("wizard.finishing")
+                    : tAny(complete.ctaLabelKey)}
+                </Button>
+              </div>
+            ) : currentStep ? (
+              <OnboardingStep
+                step={currentStep}
+                answers={answers}
+                onAnswerChange={handleAnswerChange}
+                onBack={stepIndex > 0 ? handleBack : undefined}
+                onNext={handleNext}
+                isSubmitting={isPending}
               />
-            </div>
-            <h2 className="text-xl font-semibold mb-2">
-              {tAny(complete.titleKey)}
-            </h2>
-            {complete.descriptionKey && (
-              <p className="text-sm text-muted-foreground mb-8">
-                {tAny(complete.descriptionKey)}
-              </p>
-            )}
-            <Button
-              type="button"
-              className="w-full"
-              onClick={handleComplete}
-              disabled={isPending}
-            >
-              {isPending ? t("wizard.finishing") : tAny(complete.ctaLabelKey)}
-            </Button>
-          </div>
-        ) : currentStep ? (
-          <OnboardingStep
-            step={currentStep}
-            answers={answers}
-            onAnswerChange={handleAnswerChange}
-            onBack={stepIndex > 0 ? handleBack : undefined}
-            onNext={handleNext}
-            isSubmitting={isPending}
-          />
-        ) : null}
+            ) : null}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

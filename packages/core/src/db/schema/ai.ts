@@ -19,7 +19,6 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 import { organization, users } from "./auth";
-import type { LocalizedText } from "./agents";
 
 /**
  * Generic conversation metadata bag.

@@ -20,7 +20,9 @@
     "dialogTitle": "Delete workspace",
     "dialogDescription": "Are you sure you want to delete {name}? This action cannot be undone and all workspace data will be permanently deleted.",
     "cancel": "Cancel",
-    "confirm": "Delete workspace",
+    "confirm": "Hold to delete",
+    "holding": "Keep holding…",
+    "holdDescription": "Press and hold to delete the workspace. Release to cancel.",
     "confirmPending": "Deleting…",
     "deleted": "Workspace deleted"
   },

@@ -46,12 +46,10 @@ import {
   BranchPage,
   BranchPrevious,
 } from "@showcase/components/ui/ai-branch";
-import {
-  CitationPill,
-  CitationSources,
-  type CitationItem,
-} from "@showcase/components/ui/ai-citations";
-import { ShimmerText } from "@showcase/components/ui/ai-shimmer-text";
+import { CitationPill, type CitationItem } from "@showcase/components/ui/ai-citations";
+import { ImageGeneration } from "@showcase/components/ui/ai-image-generation";
+import { ReasoningText } from "@showcase/components/ui/ai-reasoning-text";
+import { StreamingResponse } from "@showcase/components/ui/ai-streaming-response";
 import {
   Attachment,
   AttachmentContent,
@@ -373,6 +371,70 @@ export function Message({
     return null;
   }
 
+  const body = (
+    <>
+      {segments.map((segment, position) =>
+        segment.kind === "activity" ? (
+          <ToolActivity
+            key={`${message.id}-${segment.key}`}
+            parts={segment.parts}
+            working={isActivityWorking(
+              segment,
+              position === segments.length - 1,
+              isStreamingThis
+            )}
+            toolProps={toolProps}
+          />
+        ) : (
+          renderPart(segment.part, segment.index)
+        )
+      )}
+
+      {isStreamingThis && !activityLive && (isEmptyAssistant || statusLabel) ? (
+        <ReasoningText
+          phrases={[statusLabel ?? t("message.thinking")]}
+          suffix=""
+          variant="swap"
+          className="text-sm text-muted-foreground"
+        />
+      ) : null}
+    </>
+  );
+
+  const footerControls =
+    !readOnly && !isStreamingThis && (hasVisibleText || version) ? (
+      <>
+        {version ? (
+          <Branch
+            index={version.index}
+            count={version.count}
+            onIndexChange={version.onIndexChange}
+            className="mr-1"
+          >
+            <BranchPrevious label={t("branch.previous")} />
+            <BranchPage />
+            <BranchNext label={t("branch.next")} />
+          </Branch>
+        ) : null}
+        {hasVisibleText ? (
+          <MessageActions
+            conversationId={conversationId}
+            messageId={message.id}
+            role={isUser ? "user" : "assistant"}
+            text={text}
+            vote={vote}
+            alwaysVisible={isLastMessage}
+            onEdit={isUser && onEdit ? () => setEditing(true) : undefined}
+            onRegenerate={
+              !isUser && onRegenerate
+                ? () => onRegenerate(message.id)
+                : undefined
+            }
+          />
+        ) : null}
+      </>
+    ) : null;
+
   return (
     <MessageRow
       from={isUser ? "user" : "assistant"}
@@ -382,75 +444,39 @@ export function Message({
         {files.length > 0 ? (
           <AttachmentGroup className="max-w-full">
             {files.map((file, index) => (
-              <FileAttachment key={`${message.id}-file-${index}`} file={file} />
+              <FileAttachment
+                key={`${message.id}-file-${index}`}
+                file={file}
+                generated={!isUser}
+              />
             ))}
           </AttachmentGroup>
         ) : null}
 
-        {segments.map((segment, position) =>
-          segment.kind === "activity" ? (
-            <ToolActivity
-              key={`${message.id}-${segment.key}`}
-              parts={segment.parts}
-              working={isActivityWorking(
-                segment,
-                position === segments.length - 1,
-                isStreamingThis
-              )}
-              toolProps={toolProps}
-            />
-          ) : (
-            renderPart(segment.part, segment.index)
-          )
+        {isUser ? (
+          <>
+            {body}
+            {footerControls ? (
+              <MessageFooter>{footerControls}</MessageFooter>
+            ) : null}
+          </>
+        ) : (
+          // The reply's footer — its actions and a sources disclosure —
+          // rises in once the stream settles.
+          <StreamingResponse
+            status={isStreamingThis ? "streaming" : "complete"}
+            announce={false}
+            prose={false}
+            sources={isStreamingThis ? [] : [...citations.values()]}
+            sourcesLabel={(count) => t("sources.title", { count })}
+            actions={footerControls}
+            className="min-w-0"
+            contentClassName="flex min-w-0 flex-col items-start gap-1.5"
+            actionsClassName="gap-1"
+          >
+            {body}
+          </StreamingResponse>
         )}
-
-        {!isStreamingThis && sources.length > 0 ? (
-          <CitationSources
-            className="mt-1"
-            citations={[...citations.values()]}
-            label={t("sources.title", { count: sources.length })}
-            title={t("sources.heading")}
-          />
-        ) : null}
-
-        {isStreamingThis &&
-        !activityLive &&
-        (isEmptyAssistant || statusLabel) ? (
-          <ShimmerText>{statusLabel ?? t("message.thinking")}</ShimmerText>
-        ) : null}
-
-        {!readOnly && !isStreamingThis && (hasVisibleText || version) ? (
-          <MessageFooter>
-            {version ? (
-              <Branch
-                index={version.index}
-                count={version.count}
-                onIndexChange={version.onIndexChange}
-                className="mr-1"
-              >
-                <BranchPrevious label={t("branch.previous")} />
-                <BranchPage />
-                <BranchNext label={t("branch.next")} />
-              </Branch>
-            ) : null}
-            {hasVisibleText ? (
-              <MessageActions
-                conversationId={conversationId}
-                messageId={message.id}
-                role={isUser ? "user" : "assistant"}
-                text={text}
-                vote={vote}
-                alwaysVisible={isLastMessage}
-                onEdit={isUser && onEdit ? () => setEditing(true) : undefined}
-                onRegenerate={
-                  !isUser && onRegenerate
-                    ? () => onRegenerate(message.id)
-                    : undefined
-                }
-              />
-            ) : null}
-          </MessageFooter>
-        ) : null}
       </MessageContent>
     </MessageRow>
   );
@@ -489,9 +515,32 @@ function CitationAnchor({
   );
 }
 
-function FileAttachment({ file }: { file: FileUIPart }) {
+function FileAttachment({
+  file,
+  generated,
+}: {
+  file: FileUIPart;
+  /** The assistant made it: an image resolves in rather than just appearing. */
+  generated: boolean;
+}) {
   const t = useTranslations("chat");
   const isImage = file.mediaType.startsWith("image/") && Boolean(file.url);
+  if (isImage && generated) {
+    return (
+      <ImageGeneration
+        className="max-w-sm"
+        status="complete"
+        showStatus={false}
+        interactive={false}
+      >
+        <img
+          src={file.url}
+          alt={file.filename ?? t("message.imageAlt")}
+          className="size-full object-cover"
+        />
+      </ImageGeneration>
+    );
+  }
   if (isImage) {
     return (
       <a

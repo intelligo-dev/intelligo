@@ -268,5 +268,17 @@
     "upgrade": "Upgrade",
     "runningLow": "{count, plural, one {{amount} credit left} other {{amount} credits left}}",
     "topUp": "Top up"
+  },
+  "fileDiff": {
+    "applying": "Applying changes",
+    "applied": "Changes applied",
+    "changes": "Changes"
+  },
+  "imageGeneration": {
+    "queued": "Waiting to generate",
+    "generating": "Generating image",
+    "refining": "Refining details",
+    "complete": "Image ready",
+    "error": "Generation failed"
   }
 }

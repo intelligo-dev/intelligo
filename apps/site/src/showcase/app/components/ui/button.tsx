@@ -1,6 +1,7 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
 
+import { Press } from "@showcase/components/ui/ai-motion";
 import { cn } from "@showcase/lib/utils";
 
 const buttonVariants = cva(
@@ -42,12 +43,32 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  ripple = false,
+  render,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    /** Spread a ripple from the press point (spring-pressed buttons only). */
+    ripple?: boolean;
+  }) {
+  const springs = render === undefined;
+
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      render={
+        springs ? (
+          <Press ripple={ripple} pressScale={variant === "link" ? 1 : 0.97} />
+        ) : (
+          render
+        )
+      }
+      className={cn(
+        buttonVariants({ variant, size }),
+        // The spring owns the press; the CSS one stays for custom elements.
+        springs && "active:not-aria-[haspopup]:scale-100",
+        className
+      )}
       {...props}
     />
   );

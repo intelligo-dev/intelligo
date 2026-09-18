@@ -278,7 +278,7 @@ there, guarded the same way every other registration is.
 
 ### `lib/chat-renderers.tsx`
 
-Exports `ToolPartState`, `CanvasRef`, `ToolRendererActions`, `ToolRendererProps`, `ToolActivityRow`, `ToolRenderer`, `DataRendererProps`, `TOOL_RENDERERS`, `DATA_RENDERERS`, `resolveToolRenderer`, `hasToolRenderer`, `hasToolCard`, `getToolRenderer`, `getDataRenderer`, `toolLabel`, `DefaultToolCard`, `ArtifactLinkCard`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-renderers.tsx)
+Exports `ToolPartState`, `CanvasRef`, `ToolRendererActions`, `ToolRendererProps`, `ToolActivityRow`, `ToolRenderer`, `DataRendererProps`, `TOOL_RENDERERS`, `DATA_RENDERERS`, `resolveToolRenderer`, `hasToolRenderer`, `hasToolCard`, `getToolRenderer`, `getDataRenderer`, `toolLabel`, `DefaultToolCard`, `ArtifactLinkCard`, `parseUnifiedDiff`, `FileDiffCard`, `ImageGenerationCard`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-renderers.tsx)
 
 How a tool, and any runtime's data part, shows up in the chat.
 

@@ -10,7 +10,7 @@ label: "next"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/next
+pnpm add @intelligo-dev/next@beta
 ```
 
 `next` and `better-auth` are peers: the adapter binds into the copies your

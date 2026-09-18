@@ -10,7 +10,7 @@ label: "jobs"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/jobs
+pnpm add @intelligo-dev/jobs@beta
 ```
 
 Enqueue, claim with `FOR UPDATE SKIP LOCKED`, retry with backoff, prune. One

@@ -52,7 +52,11 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@showcase/components/ui/dropdown-menu";
-import { SidebarMenuButton, useSidebar } from "@showcase/components/ui/sidebar";
+import { useAISidebar, useAISidebarPanel } from "@showcase/components/ui/ai-sidebar";
+import { cn } from "@showcase/lib/utils";
+
+const TRIGGER =
+  "flex w-full min-w-0 items-center gap-2 rounded-xl p-1.5 text-left text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring disabled:opacity-50 data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground";
 
 interface UserMenuProps {
   user: {
@@ -63,7 +67,8 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user }: UserMenuProps) {
-  const { isMobile } = useSidebar();
+  const { isMobile } = useAISidebar();
+  const { collapsed } = useAISidebarPanel();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const router = useRouter();
@@ -91,9 +96,9 @@ export function UserMenu({ user }: UserMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <SidebarMenuButton
-            size="lg"
-            className="data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
+          <button
+            type="button"
+            className={cn(TRIGGER, collapsed && "justify-center")}
           />
         }
       >
@@ -101,19 +106,23 @@ export function UserMenu({ user }: UserMenuProps) {
           {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
           <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
         </Avatar>
-        <div className="grid flex-1 text-left leading-tight">
-          <span className="truncate text-sm font-medium">
-            {user.name || user.email.split("@")[0]}
-          </span>
-          <span className="truncate text-xs text-muted-foreground">
-            {user.email}
-          </span>
-        </div>
-        <ChevronsUpDown className="ml-auto size-4 opacity-50" />
+        {collapsed ? null : (
+          <>
+            <div className="grid min-w-0 flex-1 text-left leading-tight">
+              <span className="truncate text-sm font-medium">
+                {user.name || user.email.split("@")[0]}
+              </span>
+              <span className="truncate text-xs text-muted-foreground">
+                {user.email}
+              </span>
+            </div>
+            <ChevronsUpDown className="ml-auto size-4 opacity-50" />
+          </>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent
         className="w-(--anchor-width) min-w-56"
-        side={isMobile ? "bottom" : "top"}
+        side={isMobile ? "bottom" : collapsed ? "right" : "top"}
         align="end"
         sideOffset={4}
       >

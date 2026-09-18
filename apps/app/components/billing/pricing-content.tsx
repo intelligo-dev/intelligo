@@ -12,6 +12,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AnimatedList, AnimatedListItem } from "@/components/ui/animated-list";
 import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
 import { IntervalToggle } from "./interval-toggle";
@@ -75,9 +76,9 @@ export function PricingContent({
           three columns left two plans hanging against the left edge
           with a hole where the third would be. Each card takes a fixed
           width so two, three or five of them stay the same size. */}
-      <div className="flex flex-wrap justify-center gap-6">
+      <AnimatedList as="div" className="flex flex-wrap justify-center gap-6">
         {planEntries.map((plan) => (
-          <div key={plan.slug} className="w-full sm:w-80">
+          <AnimatedListItem as="div" key={plan.slug} className="w-full sm:w-80">
             <PlanCard
               plan={plan}
               currentPlanSlug={currentPlanSlug}
@@ -89,9 +90,9 @@ export function PricingContent({
               // deployment that wants a highlighted plan sets
               // `isRecommended` in its own copy of this file.
             />
-          </div>
+          </AnimatedListItem>
         ))}
-      </div>
+      </AnimatedList>
     </div>
   );
 }

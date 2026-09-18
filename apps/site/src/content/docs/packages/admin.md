@@ -10,7 +10,7 @@ label: "admin"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/admin
+pnpm add @intelligo-dev/admin@beta
 ```
 
 Intelligo-owned rather than consumer-owned source, and deliberately excluded

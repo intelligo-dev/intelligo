@@ -469,7 +469,7 @@ pnpm dlx shadcn@latest add https://intelligo.dev/r/chat-share.json
 | [pricing](/blocks/pricing) | — | `i18n/navigation` | — |
 | [usage](/blocks/usage) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [invitation-accept](/blocks/invitation-accept) | [team-settings](/blocks/team-settings) | `i18n/navigation` | — |
-| [app-shell](/blocks/app-shell) | — | `i18n/navigation` | — |
+| [app-shell](/blocks/app-shell) | — | `i18n/navigation`, `lib/utils` | — |
 | [settings-shell](/blocks/settings-shell) | — | `i18n/navigation` | — |
 | [workspace-settings](/blocks/workspace-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [auth-login](/blocks/auth-login) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
@@ -777,7 +777,7 @@ there, guarded the same way every other registration is.
 
 ### `lib/chat-renderers.tsx`
 
-Exports `ToolPartState`, `CanvasRef`, `ToolRendererActions`, `ToolRendererProps`, `ToolActivityRow`, `ToolRenderer`, `DataRendererProps`, `TOOL_RENDERERS`, `DATA_RENDERERS`, `resolveToolRenderer`, `hasToolRenderer`, `hasToolCard`, `getToolRenderer`, `getDataRenderer`, `toolLabel`, `DefaultToolCard`, `ArtifactLinkCard`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-renderers.tsx)
+Exports `ToolPartState`, `CanvasRef`, `ToolRendererActions`, `ToolRendererProps`, `ToolActivityRow`, `ToolRenderer`, `DataRendererProps`, `TOOL_RENDERERS`, `DATA_RENDERERS`, `resolveToolRenderer`, `hasToolRenderer`, `hasToolCard`, `getToolRenderer`, `getDataRenderer`, `toolLabel`, `DefaultToolCard`, `ArtifactLinkCard`, `parseUnifiedDiff`, `FileDiffCard`, `ImageGenerationCard`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-renderers.tsx)
 
 How a tool, and any runtime's data part, shows up in the chat.
 
@@ -1196,7 +1196,7 @@ Source: https://intelligo.dev/docs/packages/core
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/core
+pnpm add @intelligo-dev/core@beta
 ```
 
 ## Exports
@@ -1259,7 +1259,7 @@ Source: https://intelligo.dev/docs/packages/auth
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/auth
+pnpm add @intelligo-dev/auth@beta
 ```
 
 ## What it owns
@@ -1303,7 +1303,7 @@ Source: https://intelligo.dev/docs/packages/billing
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/billing
+pnpm add @intelligo-dev/billing@beta
 ```
 
 ## What it owns
@@ -1356,7 +1356,7 @@ Source: https://intelligo.dev/docs/packages/executions
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/executions
+pnpm add @intelligo-dev/executions@beta
 ```
 
 ## The boundary
@@ -1396,7 +1396,7 @@ Source: https://intelligo.dev/docs/packages/chat
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/chat ai
+pnpm add @intelligo-dev/chat@beta ai
 ```
 
 `ai` (the Vercel AI SDK) is a peer: the transport takes its tools, its models
@@ -1491,7 +1491,7 @@ Source: https://intelligo.dev/docs/packages/next
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/next
+pnpm add @intelligo-dev/next@beta
 ```
 
 `next` and `better-auth` are peers: the adapter binds into the copies your
@@ -1545,7 +1545,7 @@ Source: https://intelligo.dev/docs/packages/audit
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/audit
+pnpm add @intelligo-dev/audit@beta
 ```
 
 `audit_events` refuses `UPDATE` and `DELETE` at the database level, with one
@@ -1578,7 +1578,7 @@ Source: https://intelligo.dev/docs/packages/jobs
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/jobs
+pnpm add @intelligo-dev/jobs@beta
 ```
 
 Enqueue, claim with `FOR UPDATE SKIP LOCKED`, retry with backoff, prune. One
@@ -1602,7 +1602,7 @@ Source: https://intelligo.dev/docs/packages/admin
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/admin
+pnpm add @intelligo-dev/admin@beta
 ```
 
 Intelligo-owned rather than consumer-owned source, and deliberately excluded
@@ -1632,7 +1632,7 @@ Source: https://intelligo.dev/docs/packages/mastra
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/mastra
+pnpm add @intelligo-dev/mastra@beta
 ```
 
 `@mastra/core` is an optional peer dependency and **nothing here imports it** —
@@ -1657,13 +1657,13 @@ Source: https://intelligo.dev/docs/packages/cli
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/cli
+pnpm add @intelligo-dev/cli@beta
 ```
 
 ## Commands
 
 ```bash
-npx @intelligo-dev/cli create my-app   # a registry-ready Next.js app
+pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app
 intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance)
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate [--check]            # apply the framework chain
@@ -1796,6 +1796,13 @@ by content hash. A database provisioned with `db:push` has the
 schema but no rows there at all, which this reports distinctly:
 "unmanaged" is a different problem from "behind", and baselining is
 the fix (see the migrations README).
+
+Before 1.0 the framework's chain was 48 migrations; it is now one
+baseline. A database that ran the old chain holds those 48 hashes,
+which `legacy-chain.json` (next to the journal) lists: they are
+reported as `legacy`, not as unknown, and a database holding all of
+them is `adoptable` — its schema is the baseline's, so `migrate`
+records the baseline without running it.
 
 [source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/migrate-check.ts)
 

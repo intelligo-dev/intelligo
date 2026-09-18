@@ -10,7 +10,7 @@ label: "audit"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/audit
+pnpm add @intelligo-dev/audit@beta
 ```
 
 `audit_events` refuses `UPDATE` and `DELETE` at the database level, with one

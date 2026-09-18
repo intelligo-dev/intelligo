@@ -47,6 +47,7 @@ import {
   extensionOf,
   isPreviewableTitle,
 } from "@showcase/components/ui/document-viewer";
+import { AnimatedList, AnimatedListItem } from "@showcase/components/ui/animated-list";
 
 import type { ArtifactListItem } from "@showcase/actions/documents";
 import { DocumentActions } from "./document-actions";
@@ -226,11 +227,15 @@ export function DocumentList({ documents }: DocumentListProps) {
       {filtered.length === 0 ? (
         <FilteredEmptyState filterLabel={activeFilterLabel} />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <AnimatedList
+          as="div"
+          className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+        >
           {filtered.map((doc) => {
             const previewText = doc.content ? head(doc.content) : "";
             return (
-              <div
+              <AnimatedListItem
+                as="div"
                 key={doc.id}
                 className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border bg-card transition-colors hover:border-foreground/20 focus-within:border-foreground/20"
                 onClick={() => setSelectedId(doc.id)}
@@ -305,10 +310,10 @@ export function DocumentList({ documents }: DocumentListProps) {
                     buttonClassName="size-7 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                   />
                 </div>
-              </div>
+              </AnimatedListItem>
             );
           })}
-        </div>
+        </AnimatedList>
       )}
 
       <Dialog

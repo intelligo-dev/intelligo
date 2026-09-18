@@ -54,6 +54,11 @@ import type {
   AgentActivitySearch,
   AgentActivityTool,
 } from "@showcase/components/ui/ai-agent-activity";
+import { FileDiff, type FileDiffLine } from "@showcase/components/ui/ai-file-diff";
+import {
+  ImageGeneration,
+  type ImageGenerationStatus,
+} from "@showcase/components/ui/ai-image-generation";
 import {
   ToolResult,
   ToolResultOutput,
@@ -190,6 +195,8 @@ export interface DataRendererProps {
  *
  *   export const TOOL_RENDERERS: Record<string, ToolRenderer | ComponentType<ToolRendererProps>> = {
  *     saveArtifact: { component: ArtifactLinkCard, canvas: { kind: "text" } },
+ *     applyPatch: FileDiffCard,        // any tool that returns a diff
+ *     createImage: ImageGenerationCard, // any tool that returns an image
  *     getWeather: WeatherCard,
  *     lookupInvoice: { label: "invoices.lookingUp" },
  *     generateReport: { component: ReportCard, label: "reports.generating", canvas: { kind: "text" } },
@@ -200,6 +207,8 @@ export const TOOL_RENDERERS: Record<
   ToolRenderer | ComponentType<ToolRendererProps>
 > = {
   saveArtifact: { component: ArtifactLinkCard, canvas: { kind: "text" } },
+  editFile: FileDiffCard,
+  generateImage: ImageGenerationCard,
 };
 
 /**
@@ -429,5 +438,157 @@ export function ArtifactLinkCard(props: ToolRendererProps) {
           : undefined
       }
     />
+  );
+}
+
+function recordOf(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+/** A unified diff (`@@ -1,3 +1,4 @@` hunks) as the diff view's lines. */
+export function parseUnifiedDiff(patch: string): FileDiffLine[] {
+  const lines: FileDiffLine[] = [];
+  let oldLine = 0;
+  let newLine = 0;
+  for (const raw of patch.split("\n")) {
+    const hunk = raw.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+    if (hunk) {
+      oldLine = Number(hunk[1]);
+      newLine = Number(hunk[2]);
+      continue;
+    }
+    if (raw.startsWith("+++") || raw.startsWith("---")) continue;
+    if (raw.startsWith("diff ") || raw.startsWith("index ")) continue;
+    const id = `${lines.length}`;
+    if (raw.startsWith("+")) {
+      lines.push({
+        id,
+        type: "added",
+        newLine: newLine++,
+        content: raw.slice(1),
+      });
+    } else if (raw.startsWith("-")) {
+      lines.push({
+        id,
+        type: "removed",
+        oldLine: oldLine++,
+        content: raw.slice(1),
+      });
+    } else if (raw.startsWith(" ") || (raw === "" && lines.length > 0)) {
+      lines.push({
+        id,
+        type: "context",
+        oldLine: oldLine++,
+        newLine: newLine++,
+        content: raw.slice(1),
+      });
+    }
+  }
+  return lines;
+}
+
+/**
+ * A tool that edits a file, drawn as the diff it applied: added and
+ * removed lines stream in while the call runs, then the card settles.
+ * It reads `path` (or `file`) and either `lines` (the diff view's own
+ * shape) or `diff`/`patch` (a unified diff) from the output, falling
+ * back to the input while the call is still running. Anything else
+ * falls back to the generic card.
+ */
+export function FileDiffCard(props: ToolRendererProps) {
+  const { state, input, output } = props;
+  const t = useTranslations("chat");
+  const result = recordOf(output) ?? recordOf(input);
+  const file =
+    stringField(result, "path") ??
+    stringField(result, "file") ??
+    stringField(recordOf(input), "path");
+  const patch = stringField(result, "diff") ?? stringField(result, "patch");
+  const given = result?.lines;
+  const lines = Array.isArray(given)
+    ? (given as FileDiffLine[])
+    : patch
+      ? parseUnifiedDiff(patch)
+      : null;
+
+  if (!file || !lines || state === "output-error" || state === "output-denied")
+    return <DefaultToolCard {...props} />;
+
+  return (
+    <FileDiff
+      className="max-w-2xl"
+      file={file}
+      lines={lines}
+      status={state === "output-available" ? "complete" : "streaming"}
+      copyText={patch}
+      statusLabels={{
+        streaming: t("fileDiff.applying"),
+        complete: t("fileDiff.applied"),
+      }}
+      copyLabel={t("actions.copy")}
+      copiedLabel={t("actions.copied")}
+      changesLabel={t("fileDiff.changes")}
+    />
+  );
+}
+
+const IMAGE_STATUS: Record<ToolPartState, ImageGenerationStatus> = {
+  "input-streaming": "queued",
+  "input-available": "generating",
+  "approval-requested": "queued",
+  "approval-responded": "generating",
+  "output-available": "complete",
+  "output-error": "error",
+  "output-denied": "error",
+};
+
+/**
+ * A tool that makes an image: a shimmering frame while it works, the
+ * image resolving out of a blur when it lands. It reads `url` (or
+ * `imageUrl`, `image`, or the first of `images`) and an optional `alt`
+ * from the output, and the `prompt` and `aspectRatio` from the input.
+ */
+export function ImageGenerationCard(props: ToolRendererProps) {
+  const { state, input, output } = props;
+  const t = useTranslations("chat");
+  const request = recordOf(input);
+  const result = recordOf(output);
+  const first = Array.isArray(result?.images)
+    ? recordOf((result.images as unknown[])[0])
+    : null;
+  const url =
+    stringField(result, "url") ??
+    stringField(result, "imageUrl") ??
+    stringField(result, "image") ??
+    stringField(first, "url");
+  const status = IMAGE_STATUS[state];
+  const prompt = stringField(request, "prompt");
+
+  if (status === "complete" && !url) return <DefaultToolCard {...props} />;
+
+  return (
+    <ImageGeneration
+      className="max-w-md"
+      status={status}
+      prompt={prompt}
+      aspectRatio={stringField(request, "aspectRatio")?.replace(":", " / ")}
+      statusLabels={{
+        queued: t("imageGeneration.queued"),
+        generating: t("imageGeneration.generating"),
+        refining: t("imageGeneration.refining"),
+        complete: t("imageGeneration.complete"),
+        error: t("imageGeneration.error"),
+      }}
+    >
+      {url ? (
+        <img
+          src={url}
+          alt={stringField(result, "alt") ?? prompt ?? ""}
+          className="size-full object-cover"
+        />
+      ) : null}
+    </ImageGeneration>
   );
 }
