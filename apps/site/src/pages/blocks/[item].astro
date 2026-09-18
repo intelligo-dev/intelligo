@@ -62,7 +62,7 @@ const messages = item.files.find((f) => f.target.startsWith("messages/"))?.targe
     <div class="px-6 py-8 md:px-10 md:py-10">
       <InstallCommand client:visible cmd={cmd} />
       <div class="mt-6">
-        <BlockPreview client:visible name={item.name} dependsOn={item.dependsOn} bodyClassName="aspect-[16/10] max-h-[640px] w-full" />
+        <BlockPreview client:visible name={item.name} dependsOn={item.dependsOn} bodyClassName="aspect-[4/5] max-h-[640px] w-full sm:aspect-[16/10]" />
       </div>
     </div>
   </section>

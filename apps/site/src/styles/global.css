@@ -314,6 +314,9 @@
 @media (max-width: 1175px) {
   .xline::before, .xline::after { display: none; }
 }
+/* at the inverted band the glyph's backing square is the wrong colour for
+   one side of the line or the other */
+.band.xline::before, .band.xline::after, .band + .xline::before, .band + .xline::after { display: none; }
 /* no rail to sit on at the viewport edge */
 .rails-full .xline::before, .rails-full .xline::after { display: none; }
 

@@ -87,7 +87,7 @@ export function Quickstart() {
                   <span className="mono block text-[0.7rem] uppercase tracking-[0.08em] text-muted-foreground">
                     {st.title}
                   </span>
-                  <span className="mono mt-0.5 block truncate text-[0.8rem] text-foreground">
+                  <span className="mono mt-0.5 block overflow-x-auto whitespace-nowrap text-[0.8rem] text-foreground [scrollbar-width:none]">
                     $ {st.cmd}
                   </span>
                   <span className="mt-1 block text-[0.82rem] text-foreground/70">

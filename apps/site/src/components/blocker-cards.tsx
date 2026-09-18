@@ -46,7 +46,7 @@ function Card({
   return (
     // later cards must paint over earlier ones: explicit z-index, opaque surfaces
     <section
-      className="mb-4 flex items-start justify-center last:mb-0 md:sticky md:top-20 md:mb-0 md:h-[62vh] md:min-h-[420px]"
+      className="mb-4 flex items-start justify-center last:mb-0 md:sticky md:top-20 md:mb-0 md:h-[44vh] md:min-h-[320px]"
       style={pinned ? { zIndex: index + 1 } : undefined}
     >
       <motion.article

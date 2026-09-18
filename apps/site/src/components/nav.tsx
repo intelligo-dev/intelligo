@@ -171,7 +171,7 @@ export function Nav({
             type="button"
             className={cn(
               buttonVariants({ variant: "outline", size: "icon" }),
-              "size-9 bg-background md:hidden"
+              "size-9 border-foreground/20 bg-background md:hidden"
             )}
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}

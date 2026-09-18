@@ -114,7 +114,7 @@ export function GitHubStarButton({
       }
       className={cn(
         buttonVariants({ variant: "outline" }),
-        "group/star h-9 gap-2 bg-background px-3.5 no-underline",
+        "group/star h-9 gap-2 border-foreground/20 bg-background px-3.5 no-underline",
         className
       )}
       {...props}

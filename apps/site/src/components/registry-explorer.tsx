@@ -143,7 +143,7 @@ export function RegistryExplorer() {
           <BrowserFrame
             className="mt-2"
             messages={`messages/en/${item.name}.json`}
-            bodyClassName="h-[300px]"
+            bodyClassName="aspect-[4/5] w-full sm:aspect-[16/10]"
             label={`Preview of the ${item.name} block`}
           >
             <AnimatePresence mode="wait" initial={false}>
