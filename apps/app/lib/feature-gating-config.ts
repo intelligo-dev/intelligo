@@ -7,8 +7,7 @@
  * `/pricing` if your product prefers the comparison first.
  *
  * `warnAtPercent` / `urgentAtPercent`: when `QuotaWarning` starts
- * showing, and when it escalates. Below the first, it renders nothing —
- * a user who is fine should not be told about a limit.
+ * showing, and when it escalates. Below the first, it renders nothing.
  */
 
 export interface FeatureGatingConfig {

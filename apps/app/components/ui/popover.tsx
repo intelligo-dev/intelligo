@@ -67,7 +67,7 @@ function PopoverContent({
               data-slot="popover-content"
               render={<motion.div {...popupMotion(reduced)} />}
               className={cn(
-                "flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-xl border border-border bg-popover p-3 text-sm text-popover-foreground shadow-lg outline-hidden",
+                "flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-lg outline-hidden",
                 className
               )}
               {...props}

@@ -144,8 +144,8 @@ function bubbleContentClass(
   interactive: boolean
 ) {
   return cn(
-    "relative z-0 min-w-9 rounded-2xl px-3.5 py-2.5 text-sm leading-6 text-foreground",
-    "[&_a]:font-medium [&_a]:underline [&_a]:underline-offset-4 [&_code]:rounded [&_code]:bg-background/60 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p+p]:mt-2 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-background/60 [&_pre]:p-3 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5",
+    "relative z-0 min-w-9 rounded-xl px-3.5 py-2.5 text-sm leading-6 text-foreground",
+    "[&_a]:font-medium [&_a]:underline [&_a]:underline-offset-4 [&_code]:rounded [&_code]:bg-background/60 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p+p]:mt-2 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-background/60 [&_pre]:p-3 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5",
     variant === "solid" && "text-background",
     variant === "ghost" && "w-full rounded-none px-0 py-0",
     variant === "danger" && "text-destructive",
@@ -349,7 +349,7 @@ function MessageBubbleCollapsible({
         aria-controls={contentId}
         onClick={() => setOpen(!currentOpen)}
         className={cn(
-          "mt-2 inline-flex h-7 items-center gap-1 rounded-full px-2 text-xs font-medium text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+          "mt-2 inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
           triggerClassName
         )}
       >

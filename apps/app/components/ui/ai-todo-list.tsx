@@ -297,7 +297,7 @@ function TodoList({
       data-state={currentOpen ? "open" : "closed"}
       aria-label={label}
       className={cn(
-        "w-full overflow-hidden rounded-2xl border border-border/70",
+        "w-full overflow-hidden rounded-xl border border-border/70",
         className
       )}
       {...props}
@@ -309,7 +309,7 @@ function TodoList({
         aria-expanded={currentOpen}
         aria-controls={contentId}
         onClick={() => setOpen(!currentOpen)}
-        className="group flex h-11 w-full items-center gap-2.5 rounded-2xl px-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="group flex h-11 w-full items-center gap-2.5 rounded-xl px-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <TodoHeaderIcon complete={allComplete} />
         <h3
@@ -383,7 +383,7 @@ function TodoList({
                               layout: SPRING_LAYOUT,
                             }
                       }
-                      className="flex min-h-9 items-center gap-2.5 rounded-xl px-1.5 py-1"
+                      className="flex min-h-9 items-center gap-2.5 rounded-md px-1.5 py-1"
                     >
                       <TodoStatusIcon
                         status={status}

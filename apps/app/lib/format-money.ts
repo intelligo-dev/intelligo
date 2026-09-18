@@ -1,19 +1,10 @@
 /**
- * One way to show money, wherever it is rendered.
+ * Formats money for display. Amounts are micros (millionths of one major
+ * unit) with their currency; next-intl supplies the symbol, its position
+ * and the separators from the reader's locale.
  *
- * Amounts arrive from the framework as micros — millionths of one major
- * unit — with the currency attached, because a number that does not say
- * what it is of is how a tugrik ledger came to be printed with a dollar
- * sign. This turns one into a string through next-intl, so the symbol,
- * its position and the separators come from the reader's locale rather
- * than from a template in a component.
- *
- * Takes the formatter rather than calling a hook, so the same function
- * serves a server component (`await getFormatter()`) and a client one
- * (`useFormatter()`).
- *
- * Consumer-owned: a product that wants compact totals ("$1.2K") or a
- * different rounding rule edits this file.
+ * Takes the formatter rather than calling a hook, so it serves a server
+ * component (`await getFormatter()`) and a client one (`useFormatter()`).
  */
 
 import type { useFormatter } from "next-intl";

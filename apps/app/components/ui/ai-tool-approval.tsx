@@ -328,13 +328,12 @@ function ToolApproval({
                   onChange={(event) => setReason(event.target.value)}
                   placeholder={denyReasonPlaceholder}
                   aria-label={denyReasonPlaceholder}
-                  className="min-w-0 flex-1 rounded-xl text-xs"
+                  className="min-w-0 flex-1 text-xs"
                 />
                 <Button
                   type="submit"
                   variant="destructive"
                   size="sm"
-                  className="rounded-xl"
                 >
                   {denyLabel}
                 </Button>
@@ -342,7 +341,7 @@ function ToolApproval({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="rounded-xl text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground"
                   onClick={() => setDenying(false)}
                 >
                   {cancelLabel}
@@ -358,7 +357,6 @@ function ToolApproval({
                   <Button
                     type="button"
                     size="sm"
-                    className="rounded-xl"
                     onClick={() => onAllow?.(false)}
                   >
                     {allowOnceLabel}
@@ -374,7 +372,6 @@ function ToolApproval({
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="rounded-xl"
                       onClick={() => onAllow?.(true)}
                     >
                       {alwaysAllowLabel}
@@ -385,7 +382,7 @@ function ToolApproval({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="rounded-xl text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground"
                   onClick={() => {
                     if (denyReason) setDenying(true);
                     else onDeny?.();

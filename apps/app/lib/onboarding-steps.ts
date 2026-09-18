@@ -1,31 +1,18 @@
 /**
- * Onboarding steps config — the consumer-owned shape of your product's
- * onboarding wizard. Everything a product might want to change lives
- * here: the steps, their fields, the completion screen, and the hook
- * that makes a step's answers durable.
+ * The onboarding wizard: its steps, their fields, the completion screen
+ * and `onStepSubmit`.
  *
- * All copy is referenced by message key, never by literal string —
- * `titleKey`, `labelKey`, `ctaLabelKey` and friends are fully-qualified
- * keys resolved through a namespace-less `useTranslations()` (the same
- * contract as `chatConfig.starters` and `navItems[].titleKey`). The
- * defaults point into this item's own `onboarding` namespace, so
- * translating the shipped wizard means adding
- * `messages/<locale>/onboarding.json`, not editing this file; a step
- * you add can point at any namespace you own.
+ * Copy is referenced by fully-qualified message key (`titleKey`,
+ * `labelKey`, `ctaLabelKey`…), resolved through a namespace-less
+ * `useTranslations()`; a step you add can point at any namespace.
  *
- * The framework only persists step *progression* — which step id the
- * caller is on (`@intelligo-dev/auth`'s `createOnboardingService`) — via
- * `actions/onboarding.ts`. It knows nothing about your fields. Field
- * answers become durable through `onStepSubmit`, which runs
- * server-side every time the wizard advances past a step. The shipped
- * default writes the `displayName` answer to the caller's profile, so
- * a name typed into the wizard actually shows up in the shell instead
- * of being silently discarded; extend it for your own domain tables.
+ * The framework persists only which step the caller is on. Field
+ * answers are kept only if `onStepSubmit` saves them; it runs
+ * server-side each time the wizard advances past a step, and by default
+ * writes `displayName` to the profile.
  *
- * This file is imported by the `"use client"` wizard as well as by the
- * server action, so it must stay client-safe: persistence goes through
- * a server action (a serializable reference), never through a service
- * imported here directly.
+ * The client wizard imports this file too, so it must stay client-safe:
+ * persist through a server action, never a service imported here.
  */
 
 import { saveDisplayName } from "@/actions/onboarding";

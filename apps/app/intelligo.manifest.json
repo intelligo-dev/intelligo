@@ -27,19 +27,19 @@
         },
         {
           "path": "instrumentation.ts",
-          "hash": "15291823b8182f4504b64e0fc95e50844ab2ee9436103c59abda7d0f70ee818f"
+          "hash": "a5468d38ffb0c59ad016a5f7191451cdde7846193628505eb57705b37e1a1f83"
         },
         {
           "path": "lib/plans.ts",
-          "hash": "7b8348b97d4e357044100891e5bb26d6db89e11ef86c93aaa3b66f77fd1eebbe"
+          "hash": "4d54faa76c79d20f59b2530f354891e50a51cca4d32a42c63a7f4a12ffd02999"
         },
         {
           "path": "app/api/auth/[...all]/route.ts",
-          "hash": "df5f57975af1fb608b19d551f34d63e78992d9d2548a4df5030fa46d2d2b5d34"
+          "hash": "9445eadd8f77a92570ea3bad2cd16b4be8a9679c10446dab4a3cc77560684397"
         },
         {
           "path": "app/api/assistant/route.ts",
-          "hash": "e5aaa3c09c5200ac1c18ee21c208136b77ec35b10079f10fd2500b86bbaa4fa6"
+          "hash": "3dcd975d6128e222523c8f69e861da7f388becd10e2ff92c926ceac23a03810c"
         },
         {
           "path": "components.json",
@@ -51,7 +51,7 @@
         },
         {
           "path": "app/globals.css",
-          "hash": "fcc8da9ee3f9cd92dacdd877c56ef80652b1f7baa3fbc0d4e10706e86735b3bf"
+          "hash": "3f89d5f14a527220de5fc6105e6366b241444b044cf735fb723f98cfcd53d9e7"
         },
         {
           "path": "lib/utils.ts",
@@ -91,7 +91,7 @@
         },
         {
           "path": "proxy.ts",
-          "hash": "2e1a9be45d7e469ff384a9a8f79fc1f18ce90e88e89d3efbcd48332de43d7ebd"
+          "hash": "4098df30e9248d79e0c05cc4bc76017d093c260d4c8fd996a6d6ee87aa4de32e"
         },
         {
           "path": "messages/en/app.json",
