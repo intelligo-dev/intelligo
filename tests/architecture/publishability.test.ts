@@ -358,7 +358,7 @@ describe("publishability", () => {
       expect(
         manifest(pkg).engines?.node,
         `packages/${pkg} declares no Node floor`
-      ).toBe(">=22");
+      ).toBe(">=22.14");
     }
   });
 
@@ -580,5 +580,39 @@ describe("publishability", () => {
         `product vocabulary in the framework tree:\n  ${hits.join("\n  ")}`
       ).toEqual([]);
     });
+  });
+});
+
+describe("ported code carries its licence", () => {
+  const SOURCES = [
+    { mention: /upstream\.dev/, licence: /\bMIT\b/ },
+    { mention: /shadcn base-nova's API/, licence: /\bMIT\b/ },
+    { mention: /AI Elements/, licence: /Apache/ },
+  ];
+
+  it("names the licence wherever a file says what it was adapted from", () => {
+    const missing: string[] = [];
+    for (const file of walk(path.join(PACKAGES_DIR, "registry/base"), (n) =>
+      /\.(tsx?|css)$/.test(n)
+    )) {
+      const header = readFileSync(file, "utf8").slice(0, 1200);
+      for (const source of SOURCES) {
+        if (!source.mention.test(header)) continue;
+        if (!source.licence.test(header)) {
+          missing.push(`${path.relative(ROOT, file)} (${source.mention})`);
+        }
+      }
+    }
+    expect(missing, "adapted without its licence in the header").toEqual([]);
+  });
+
+  it("lists every adapted source in THIRD_PARTY_NOTICES.md", () => {
+    const notices = readFileSync(
+      path.join(ROOT, "THIRD_PARTY_NOTICES.md"),
+      "utf8"
+    );
+    for (const name of ["shadcn/ui", "MIT-licensed work", "Vercel AI Elements"]) {
+      expect(notices).toContain(`## ${name}`);
+    }
   });
 });

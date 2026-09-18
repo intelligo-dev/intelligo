@@ -9,7 +9,7 @@ is published from that repository and is not meant to be used on its own.
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/audit
+pnpm add @intelligo-dev/audit@beta
 ```
 
 `audit_events` refuses `UPDATE` and `DELETE` at the database level, with one

@@ -9,13 +9,13 @@ is published from that repository and is not meant to be used on its own.
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/cli
+pnpm add @intelligo-dev/cli@beta
 ```
 
 ## Commands
 
 ```bash
-npx @intelligo-dev/cli create my-app   # a registry-ready Next.js app
+pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app
 intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance)
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate [--check]            # apply the framework chain

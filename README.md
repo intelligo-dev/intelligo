@@ -52,16 +52,19 @@ flowchart LR
 
 ## Quickstart
 
-Prerequisites: Node 22.14+, pnpm 9, a PostgreSQL database (Neon works well).
+Prerequisites: Node 22.14+, pnpm 9, and PostgreSQL with the pgvector extension (Neon, Supabase, or `docker run pgvector/pgvector:pg17`).
 
 ```bash
-npx @intelligo-dev/cli@beta create my-app
+pnpm dlx @intelligo-dev/cli@beta create my-app
 cd my-app && pnpm install
 
-pnpm dlx shadcn@latest add https://intelligo.dev/r/app-shell.json --yes   # repeat per item
+# Pages install in dependency order — see intelligo.dev/docs/registry/install-order
+for item in route-error app-shell auth-login auth-signup dashboard chat; do
+  pnpm dlx shadcn@latest add "https://intelligo.dev/r/$item.json" --yes
+done
 ```
 
-Copy `.env.example` to `.env.local` and set `DATABASE_URL` and `BETTER_AUTH_SECRET`, then `pnpm db:migrate` (the framework's migration chain, then your own) and `pnpm dev`. The chat page streams against a built-in stub model, so the entire surface — sign-up, verification, workspaces, team, billing, usage, chat, artifacts — runs before you configure an AI provider.
+Copy `.env.example` to `.env.local` and set `DATABASE_URL` and `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), then `pnpm db:migrate` (the framework's schema, then your own tables) and `pnpm dev`. Sign up, land on the dashboard, and chat: the chat streams against a built-in stub model, and emails print to the server console, so nothing else needs configuring first. Team, billing, usage, notifications and artifacts are further items from the same registry.
 
 Prefer to explore first? Clone this repository, run `pnpm install && pnpm dev`, and open **`apps/app`**, the reference application: a complete generic workspace AI SaaS built from nothing but the public packages and installed registry items. CI recreates it from a clean scaffold on every run.
 
@@ -199,11 +202,11 @@ Not an AI framework, and not a wrapper over one. Not a component library — the
 ## Development
 
 ```bash
-pnpm dev              # all apps
+pnpm dev              # every app: reference app :4002, site :4003
 pnpm test             # unit, real-database integration, and architecture suites
 pnpm lint && pnpm type-check
 pnpm registry:build   # rebuild the page registry artifacts
-pnpm db:push          # push the Drizzle schema
+pnpm db:migrate       # apply the framework's schema (intelligo migrate)
 ```
 
 Releases: one commit bumps every published package and heads `CHANGELOG.md` with its section; merging it to main publishes to npm, tags, and creates the GitHub release (`.github/workflows/release.yml`). The site and the hosted registry deploy from `apps/site`. See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [SUPPORT.md](SUPPORT.md). Working on the framework itself from a clone, `pnpm exec tsx packages/cli/src/bin.ts create apps/my-app --link-workspace` scaffolds an app against the workspace packages and `pnpm registry:build` installs items from `packages/registry/public/r`.

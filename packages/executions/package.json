@@ -79,7 +79,7 @@
     "drizzle-orm": "^0.45.1"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.14"
   },
   "sideEffects": false
 }

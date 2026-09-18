@@ -9,7 +9,7 @@ is published from that repository and is not meant to be used on its own.
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/auth
+pnpm add @intelligo-dev/auth@beta
 ```
 
 ## What it owns

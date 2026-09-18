@@ -23,14 +23,20 @@ Prerequisites: Node 22.14 or newer, pnpm 9 (`corepack enable` picks the
 version from `package.json`), and Docker for a local Postgres.
 
 ```bash
-docker compose up -d   # Postgres with pgvector on localhost
-cp .env.example .env   # DATABASE_URL points at it
+docker compose up -d   # Postgres with pgvector on localhost:5445
+cp .env.example .env   # DATABASE_URL already points at it
+# set BETTER_AUTH_SECRET in .env:  openssl rand -base64 32
 pnpm install
-pnpm dev            # reference app
-pnpm test           # the real suite (root vitest projects)
+pnpm db:migrate        # the framework's schema (intelligo migrate)
+pnpm dev               # reference app :4002, site :4003
+pnpm test              # the real suite (root vitest projects)
 pnpm type-check
 pnpm lint
 ```
+
+Every app and package reads the repository root `.env`; an app-local
+`.env` or the shell wins over it. `pnpm dev` runs every workspace app;
+`pnpm --filter @intelligo-dev/app dev` runs only the reference app.
 
 ## What a good pull request looks like
 

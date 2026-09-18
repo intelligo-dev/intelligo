@@ -48,7 +48,7 @@
   },
   "peerDependencies": {
     "drizzle-orm": "^0.45.1",
-    "stripe": "^20.3.1",
+    "stripe": ">=20.3.1 <23",
     "zod": "^3.25.76 || ^4.0.0"
   },
   "devDependencies": {
@@ -104,7 +104,7 @@
     }
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.14"
   },
   "sideEffects": false
 }

@@ -1,20 +1,15 @@
 /**
  * Feature Flags Schema
  *
- * v0.3: Runtime-toggleable feature flags.
- * TODO: In v0.3, hasFeature() will query this table for runtime flag overrides.
- * For v0.2, FEATURE_MATRIX constant in billing/features.ts is the sole source of truth.
- * This schema exists to prepare the DB for future runtime toggleability.
+ * Runtime overrides for feature gates: `@intelligo-dev/billing`'s
+ * feature check reads a flag by name here before it falls back to the
+ * plan's entitlements, so a feature can be switched off (or on) for a
+ * deployment without a deploy.
  */
 
 import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
 
-/**
- * Feature flags table - Runtime feature toggles (v0.3)
- *
- * In v0.2, this table is created but NOT used for feature gating.
- * FEATURE_MATRIX constant in billing/features.ts is the sole source of truth.
- */
+/** Feature flags table — runtime feature toggles. */
 export const featureFlags = pgTable("feature_flags", {
   id: text("id").primaryKey(),
   name: text("name").notNull().unique(),

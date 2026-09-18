@@ -9,7 +9,7 @@ is published from that repository and is not meant to be used on its own.
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/mastra
+pnpm add @intelligo-dev/mastra@beta
 ```
 
 `@mastra/core` is an optional peer dependency and **nothing here imports it** —

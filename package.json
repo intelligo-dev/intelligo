@@ -2,6 +2,9 @@
   "name": "intelligo",
   "private": true,
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.14"
+  },
   "packageManager": "pnpm@9.15.4",
   "workspaces": [
     "apps/*",
@@ -21,7 +24,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,mdx}\"",
     "db:push": "pnpm --filter @intelligo-dev/core db:push",
     "db:generate": "pnpm --filter @intelligo-dev/core db:generate",
-    "db:migrate": "pnpm --filter @intelligo-dev/core db:migrate",
+    "db:migrate": "tsx packages/cli/src/bin.ts migrate",
     "db:studio": "pnpm --filter @intelligo-dev/core db:studio",
     "db:check": "pnpm --filter @intelligo-dev/core db:check",
     "app:regenerate": "bash scripts/regenerate-reference-app.sh"

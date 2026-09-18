@@ -7,12 +7,8 @@
  * Pattern: Server-side only, used by server actions and webhooks.
  */
 
-// BILL-12: Billing mode detection
-// billingMode defaults to "subscription" for all workspaces.
-// When products are implemented (v0.3), the first product a workspace uses
-// will determine billingMode: a subscription product or a credit-metered one.
-// For now, workspace owners can switch to credit mode by purchasing credits.
-// TODO(v0.3): Add setWorkspaceBillingMode() triggered by first product usage.
+// Billing mode: every workspace starts on "subscription"; buying credits
+// switches a workspace to credit-metered billing.
 
 import { db } from "@intelligo-dev/core/db";
 import {
