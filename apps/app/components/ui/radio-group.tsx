@@ -7,7 +7,9 @@
 
 import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
+import { motion, useReducedMotion } from "motion/react";
 
+import { SPRING_PRESS } from "@/components/ui/ai-motion";
 import { cn } from "@/lib/utils";
 
 function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
@@ -21,6 +23,8 @@ function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
 }
 
 function RadioGroupItem({ className, ...props }: RadioPrimitive.Root.Props) {
+  const reduced = useReducedMotion() ?? false;
+
   return (
     <RadioPrimitive.Root
       data-slot="radio-group-item"
@@ -32,10 +36,20 @@ function RadioGroupItem({ className, ...props }: RadioPrimitive.Root.Props) {
     >
       <RadioPrimitive.Indicator
         data-slot="radio-group-indicator"
+        keepMounted
         className="flex size-4 items-center justify-center"
-      >
-        <span className="absolute top-1/2 left-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-foreground transition-[scale] duration-normal ease-standard group-data-unchecked/radio-group-item:scale-0 starting:scale-0" />
-      </RadioPrimitive.Indicator>
+        render={(indicatorProps, state) => (
+          <span {...indicatorProps}>
+            {/* The dot pops in on a spring and shrinks away when cleared. */}
+            <motion.span
+              className="absolute top-1/2 left-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-foreground"
+              initial={false}
+              animate={{ scale: state.checked ? 1 : 0 }}
+              transition={reduced ? { duration: 0 } : SPRING_PRESS}
+            />
+          </span>
+        )}
+      />
     </RadioPrimitive.Root>
   );
 }

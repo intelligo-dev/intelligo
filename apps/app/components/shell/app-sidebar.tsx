@@ -12,6 +12,10 @@
  * `sidebar.nav.dashboard`), and this component resolves it via
  * `t(item.titleKey)`. A consumer overriding `items` supplies its own
  * keys backed by its own messages — never hardcoded titles here.
+ *
+ * The sidebar collapses to an icon rail on desktop (⌘/Ctrl-B, or the
+ * header's trigger) and slides in as a sheet on mobile; the active row's
+ * pill glides between items as the route changes.
  */
 
 import * as React from "react";
@@ -20,16 +24,16 @@ import type { LucideIcon } from "lucide-react";
 
 import { Link, usePathname } from "@/i18n/navigation";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+  AISidebar,
+  AISidebarContent,
+  AISidebarFooter,
+  AISidebarHeader,
+  AISidebarItem,
+  AISidebarMenu,
+  AISidebarMenuItem,
+  AISidebarRail,
+  AISidebarSection,
+} from "@/components/ui/ai-sidebar";
 import { UserMenu } from "./user-menu";
 import { WorkspaceSwitcher, type Workspace } from "./workspace-switcher";
 import { navItems as configuredNavItems } from "@/lib/nav-config";
@@ -71,48 +75,47 @@ export function AppSidebar({
   const t = useTranslations("app-shell");
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
+    <AISidebar
+      collapsible="icon"
+      label={t("sidebar.label")}
+      closeLabel={t("sidebar.close")}
+    >
+      <AISidebarHeader>
         <WorkspaceSwitcher
           currentWorkspace={workspace}
           workspaces={workspaces}
         />
-      </SidebarHeader>
+      </AISidebarHeader>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  pathname?.startsWith(`${item.href}/`);
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      tooltip={t(item.titleKey)}
-                      render={<Link href={item.href} />}
-                    >
-                      {item.icon && <item.icon />}
-                      <span>{t(item.titleKey)}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <AISidebarContent>
+        <AISidebarSection>
+          <AISidebarMenu>
+            {items.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                pathname?.startsWith(`${item.href}/`);
+              return (
+                <AISidebarMenuItem key={item.href}>
+                  <AISidebarItem
+                    isActive={isActive}
+                    icon={item.icon ? <item.icon /> : undefined}
+                    tooltip={t(item.titleKey)}
+                    render={<Link href={item.href} />}
+                  >
+                    {t(item.titleKey)}
+                  </AISidebarItem>
+                </AISidebarMenuItem>
+              );
+            })}
+          </AISidebarMenu>
+        </AISidebarSection>
         {children}
-      </SidebarContent>
+      </AISidebarContent>
 
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <UserMenu user={user} />
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
+      <AISidebarFooter>
+        <UserMenu user={user} />
+      </AISidebarFooter>
+      <AISidebarRail label={t("sidebar.toggle")} />
+    </AISidebar>
   );
 }

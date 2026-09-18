@@ -1,9 +1,10 @@
 "use client";
 
 /*
- * The motion vocabulary the AI
- * parts share: easing curves, spring presets, a transform-only
- * disclosure and a text swap. import * as React from "react";
+ * Intelligo design system. The motion vocabulary every tier shares:
+ * easing curves, spring presets, a transform-only disclosure, a text
+ * swap, the popup and backdrop presets the primitives open with, the
+ * button's press, and list staggers. import * as React from "react";
 import {
   AnimatePresence,
   motion,
@@ -50,6 +51,13 @@ export const SPRING_LAYOUT = {
   type: "spring",
   stiffness: 360,
   damping: 32,
+  mass: 0.6,
+} as const;
+/** Popups rising out of their trigger — menus, popovers, dialogs, tooltips. */
+export const SPRING_POPUP = {
+  type: "spring",
+  stiffness: 520,
+  damping: 38,
   mass: 0.6,
 } as const;
 /** Cursor-follow physics for decorative tracking. */
@@ -193,4 +201,183 @@ function SwapText({
   );
 }
 
-export { Disclosure, SwapText };
+/* ----------------------------------------------------------------------------
+ * Popups. A Base UI popup animates with motion only when its root is
+ * controlled, so AnimatePresence can see the open state and hold the
+ * portal mounted through the exit. `useOpenState` makes any root
+ * controlled without changing its API: a passed `open` still wins,
+ * `defaultOpen` still seeds it, and a cancelled change is respected.
+ * ------------------------------------------------------------------------- */
+
+type OpenChangeHandler<Details> =
+  | ((open: boolean, details: Details) => void)
+  | undefined;
+
+export function useOpenState<Details>(
+  open: boolean | undefined,
+  defaultOpen: boolean | undefined,
+  onOpenChange: OpenChangeHandler<Details>
+) {
+  const [uncontrolled, setUncontrolled] = React.useState(defaultOpen ?? false);
+  const controlled = open !== undefined;
+
+  const setOpen = React.useCallback(
+    (next: boolean, details: Details) => {
+      onOpenChange?.(next, details);
+      if ((details as { isCanceled?: boolean } | undefined)?.isCanceled) return;
+      if (!controlled) setUncontrolled(next);
+    },
+    [controlled, onOpenChange]
+  );
+
+  return [controlled ? open : uncontrolled, setOpen] as const;
+}
+
+/**
+ * The enter and exit of a popup that grows out of its trigger: scale from
+ * the trigger's side (the popup's `origin-(--transform-origin)`), a blur
+ * that clears, a quick fade out. Opacity always animates — Base UI reads
+ * it through `getAnimations()` to know when the exit is done.
+ */
+export function popupMotion(reduced: boolean, from = 0.92) {
+  if (reduced) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1, transition: { duration: 0 } },
+      exit: { opacity: 0, transition: { duration: 0 } },
+    } as const;
+  }
+  return {
+    initial: { opacity: 0, scale: from, filter: "blur(4px)" },
+    animate: {
+      opacity: 1,
+      scale: 1,
+      filter: "blur(0px)",
+      transition: {
+        ...SPRING_POPUP,
+        opacity: { duration: 0.16, ease: EASE_OUT },
+        filter: { duration: 0.2, ease: EASE_OUT },
+      },
+    },
+    exit: {
+      opacity: 0,
+      scale: (from + 1) / 2,
+      filter: "blur(2px)",
+      transition: { duration: 0.12, ease: EASE_IN_OUT },
+    },
+  } as const;
+}
+
+/** A backdrop that fades under a dialog or sheet. */
+export function backdropMotion(reduced: boolean) {
+  const duration = reduced ? 0 : 0.2;
+  return {
+    initial: { opacity: 0 },
+    animate: { opacity: 1, transition: { duration, ease: EASE_OUT } },
+    exit: { opacity: 0, transition: { duration: duration * 0.7 } },
+  } as const;
+}
+
+/* ----------------------------------------------------------------------------
+ * Press: the button's element — a spring down on press, a spring back on
+ * release, and an optional ripple from the press point. The button item
+ * renders it through Base UI's `render`, so the button module itself stays
+ * importable from a server component.
+ * ------------------------------------------------------------------------- */
+
+type Ripple = { id: number; x: number; y: number; size: number };
+
+export interface PressProps extends HTMLMotionProps<"button"> {
+  /** How far the surface sinks on press; 1 turns the press off. */
+  pressScale?: number;
+  /** Spread a ripple from the press point. */
+  ripple?: boolean;
+}
+
+function Press({
+  pressScale = 0.97,
+  ripple = false,
+  className,
+  children,
+  onPointerDown,
+  ...props
+}: PressProps) {
+  const reduced = useReducedMotion() ?? false;
+  const [ripples, setRipples] = React.useState<Ripple[]>([]);
+  const nextId = React.useRef(0);
+  const opensPopup =
+    props["aria-haspopup"] !== undefined && props["aria-haspopup"] !== false;
+  const sinks = !reduced && !opensPopup && pressScale !== 1;
+
+  return (
+    <motion.button
+      {...props}
+      className={cn(ripple && "relative overflow-hidden", className)}
+      whileTap={sinks ? { scale: pressScale } : undefined}
+      transition={SPRING_PRESS}
+      onPointerDown={(event) => {
+        onPointerDown?.(event);
+        if (!ripple || reduced) return;
+        const rect = event.currentTarget.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height) * 2;
+        const id = nextId.current++;
+        setRipples((current) => [
+          ...current,
+          {
+            id,
+            x: event.clientX - rect.left - size / 2,
+            y: event.clientY - rect.top - size / 2,
+            size,
+          },
+        ]);
+      }}
+    >
+      {children as React.ReactNode}
+      {ripple && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          <AnimatePresence>
+            {ripples.map((r) => (
+              <motion.span
+                key={r.id}
+                className="absolute rounded-full bg-current"
+                style={{ left: r.x, top: r.y, width: r.size, height: r.size }}
+                initial={{ scale: 0, opacity: 0.18 }}
+                animate={{ scale: 1, opacity: 0 }}
+                transition={{ duration: 0.6, ease: EASE_OUT }}
+                onAnimationComplete={() =>
+                  setRipples((current) => current.filter((c) => c.id !== r.id))
+                }
+              />
+            ))}
+          </AnimatePresence>
+        </span>
+      )}
+    </motion.button>
+  );
+}
+
+/* ----------------------------------------------------------------------------
+ * Lists. A container staggers its children in; each child rises and
+ * clears. Pair `listStagger` on the parent with `listItem` on the rows.
+ * ------------------------------------------------------------------------- */
+
+export const listStagger: Variants = {
+  hidden: {},
+  shown: { transition: { staggerChildren: 0.04, delayChildren: 0.02 } },
+};
+
+export const listItem: Variants = {
+  hidden: { opacity: 0, y: 6, filter: "blur(2px)" },
+  shown: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.32, ease: EASE_OUT },
+  },
+  exit: { opacity: 0, y: -4, transition: { duration: 0.14, ease: EASE_IN_OUT } },
+};
+
+export { Disclosure, Press, SwapText };

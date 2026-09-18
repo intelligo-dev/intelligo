@@ -49,9 +49,13 @@ import { db } from "@intelligo-dev/core/db";
 import { users } from "@intelligo-dev/core/db/schema";
 
 import { AppSidebar } from "@/components/shell/app-sidebar";
+import { PageTransition } from "@/components/shell/page-transition";
 import { ShellHeader } from "@/components/shell/shell-header";
 import { TimeZoneCookie } from "@/components/shell/time-zone-cookie";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import {
+  AISidebarInset,
+  AISidebarProvider,
+} from "@/components/ui/ai-sidebar";
 import { redirect } from "@/i18n/navigation";
 import { shellConfig } from "@/lib/shell-config";
 import { onWorkspaceCreated } from "@/lib/workspace-bootstrap";
@@ -96,13 +100,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     logo: org.logo ?? null,
   }));
 
-  // The shell is exactly one screen tall and `main` scrolls inside it.
-  // A shell that grows with its page scrolls the window instead, and a
-  // page that pins something to the bottom — the chat composer — or
-  // scrolls its own region — the transcript — has no height to work in.
+  // The shell is exactly one screen tall and the page region scrolls
+  // inside it. A shell that grows with its page scrolls the window
+  // instead, and a page that pins something to the bottom — the chat
+  // composer — or scrolls its own region — the transcript — has no
+  // height to work in.
   const SidebarContent = shellConfig.sidebarContent;
   return (
-    <SidebarProvider className="h-svh overflow-hidden">
+    <AISidebarProvider className="h-svh min-h-0 overflow-hidden">
       {/* Renders nothing; tells the server which day it is here. */}
       <TimeZoneCookie />
       <AppSidebar
@@ -116,7 +121,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       >
         {SidebarContent ? <SidebarContent /> : null}
       </AppSidebar>
-      <SidebarInset className="min-h-0 overflow-hidden">
+      <AISidebarInset className="min-h-0 overflow-hidden">
         <ShellHeader>
           {shellConfig.headerRight && (
             <div className="ml-auto flex items-center gap-2">
@@ -125,8 +130,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           )}
         </ShellHeader>
         {shellConfig.bannerTop && <shellConfig.bannerTop />}
-        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+        <PageTransition className="min-h-0 flex-1 overflow-y-auto">
+          {children}
+        </PageTransition>
+      </AISidebarInset>
+    </AISidebarProvider>
   );
 }
