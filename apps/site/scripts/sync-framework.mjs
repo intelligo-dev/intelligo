@@ -16,6 +16,8 @@
  *   src/data/proof.json      counts (tests, items, ADRs, packages) and the version
  *   public/r/*.json          the built registry items — intelligo.dev/r/<item>.json
  *                            is the hosted registry consumers install from
+ *   public/llms.txt          a curated Markdown index of the docs, for an
+ *   public/llms-full.txt     LLM/agent (llmstxt.org) — the docs concatenated
  */
 import {
   cpSync,
@@ -36,6 +38,7 @@ import {
   docFiles,
   generateData,
   generateDocs,
+  generateLlmsTxt,
   isGenerated,
 } from "./docs.mjs";
 
@@ -270,3 +273,9 @@ for (const [rel, content] of Object.entries(generateData(FRAMEWORK))) {
 console.log(
   `docs: ${Object.keys(pages).length} generated pages, snippets refreshed in ${snippetFiles} files`
 );
+
+// --- llms.txt: an agent-readable index and full-text mirror of the docs ---
+for (const [rel, content] of Object.entries(generateLlmsTxt(SITE))) {
+  writeFileSync(join(SITE, rel), content);
+}
+console.log("llms.txt: public/llms.txt and public/llms-full.txt written");

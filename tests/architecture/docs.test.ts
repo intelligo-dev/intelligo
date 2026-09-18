@@ -26,9 +26,11 @@ import {
 
 type DocsModule = {
   DOCS_DIR: string;
+  DOC_SECTIONS: readonly { id: string; title: string }[];
   isGenerated: (rel: string) => boolean;
   generateDocs: (root: string) => Record<string, string>;
   generateData: (root: string) => Record<string, string>;
+  generateLlmsTxt: (siteRoot: string) => Record<string, string>;
   applySnippets: (markdown: string, root: string) => string;
   docFiles: (siteRoot: string) => string[];
 };
@@ -75,6 +77,32 @@ describe("generated docs", () => {
       )
       .map(([rel]) => rel);
     expect(stale, STALE).toEqual([]);
+  });
+
+  it("llms.txt and llms-full.txt are current", () => {
+    const stale = Object.entries(docs.generateLlmsTxt(SITE))
+      .filter(
+        ([rel, content]) =>
+          readFileSync(path.join(SITE, rel), "utf8") !== content
+      )
+      .map(([rel]) => rel);
+    expect(stale, STALE).toEqual([]);
+  });
+
+  it("DOC_SECTIONS matches src/lib/docs-nav.ts's copy", () => {
+    // docs.mjs runs under plain Node and can't import an astro:content
+    // module, so its DOC_SECTIONS is a deliberate duplicate — this is the
+    // guard against the two drifting apart.
+    const navSource = readFileSync(
+      path.join(SITE, "src/lib/docs-nav.ts"),
+      "utf8"
+    );
+    const missing = docs.DOC_SECTIONS.filter(
+      ({ id, title }) =>
+        !navSource.includes(`id: "${id}"`) ||
+        !navSource.includes(`title: "${title}"`)
+    );
+    expect(missing).toEqual([]);
   });
 
   it("no page points readers at the ADRs, which are the maintainers' record", () => {

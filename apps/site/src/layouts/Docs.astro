@@ -1,6 +1,6 @@
 ---
 /**
- * A docs page: the site's nav and rails, a section sidebar, the article,
+ * A docs page: the site's nav, the full width, a section sidebar, the article,
  * an on-page contents list with the section you are reading marked, and
  * prev/next in reading order. Shares the token contract with every other
  * page, so the theme toggle and the design system reach the docs
@@ -29,10 +29,29 @@ const { path, section, title, description, headings = [], prev, next, source } =
 const sidebar = await docsSidebar();
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
 const current = sidebar.flatMap((s) => s.items).find((i) => i.href === path);
+const canonical = new URL(path, Astro.site).href;
+const structuredData = [
+  {
+    "@type": "TechArticle",
+    headline: title,
+    description,
+    url: canonical,
+    isPartOf: { "@type": "WebSite", name: SITE.name, url: Astro.site?.href },
+  },
+  {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Docs", item: new URL("/docs", Astro.site).href },
+      ...(section !== "Docs"
+        ? [{ "@type": "ListItem", position: 2, name: section }]
+        : []),
+    ],
+  },
+];
 ---
-<Base title={`${title} — ${SITE.name} docs`} description={description}>
+<Base title={`${title} — ${SITE.name} docs`} description={description} structuredData={structuredData}>
   <Nav client:load current={path} />
-  <main class="rails">
+  <main class="rails-full">
     <div class="grid grid-cols-1 border-t border-border lg:grid-cols-[248px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)_216px]">
       <aside class="hidden border-r border-border lg:block">
         <nav aria-label="Docs" class="docs-scroll sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto px-5 pb-10 pt-8" data-docs-sidebar>

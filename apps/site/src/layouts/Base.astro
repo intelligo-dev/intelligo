@@ -5,11 +5,20 @@ import { SITE } from "@/lib/site";
 interface Props {
   title?: string;
   description?: string;
+  /**
+   * Page-specific JSON-LD (one object, or several — a docs page pairs a
+   * `TechArticle` with a `BreadcrumbList`). Defaults to describing the
+   * framework itself, right for the homepage and every page that doesn't
+   * override it; a docs or catalog page should pass its own so a crawler
+   * gets a signal for what kind of page it actually is, not the same
+   * software-project schema everywhere.
+   */
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
 }
-const { title = SITE.title, description = SITE.description } = Astro.props;
+const { title = SITE.title, description = SITE.description, structuredData } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const og = new URL("/og.png", Astro.site).href;
-const jsonLd = JSON.stringify({
+const DEFAULT_STRUCTURED_DATA = {
   "@context": "https://schema.org",
   "@type": "SoftwareSourceCode",
   name: "Intelligo",
@@ -20,7 +29,12 @@ const jsonLd = JSON.stringify({
   programmingLanguage: "TypeScript",
   runtimePlatform: "Node.js",
   version: SITE.version,
-});
+};
+const jsonLd = JSON.stringify(
+  structuredData
+    ? [structuredData].flat().map((d) => ({ "@context": "https://schema.org", ...d }))
+    : DEFAULT_STRUCTURED_DATA
+);
 ---
 <!doctype html>
 <html lang="en">

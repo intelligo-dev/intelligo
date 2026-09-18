@@ -11,6 +11,7 @@ import { InstallCommand } from "@/components/install-command";
 import { Toaster } from "sonner";
 import { REGISTRY_ITEMS, blockHref, type RegistryItem } from "@/lib/registry-items";
 import { SITE } from "@/lib/site";
+import { truncate } from "@/lib/seo";
 
 export function getStaticPaths() {
   return REGISTRY_ITEMS.map((item, i) => ({
@@ -54,7 +55,7 @@ const messages = item.files.find((f) => f.target.startsWith("messages/"))?.targe
   tag={`blocks · ${item.group.toLowerCase()} · ${item.name}`}
   title={item.title}
   lede={item.fullDescription}
-  description={`${item.title} — an Intelligo registry block, installed as source with the shadcn CLI. ${item.description}`}
+  description={truncate(`${item.title} — an Intelligo registry block, installed as source with the shadcn CLI. ${item.description}`)}
 >
   <section class="xline">
     <div class="px-6 py-8 md:px-10 md:py-10">
