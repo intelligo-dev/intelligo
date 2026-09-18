@@ -67,7 +67,8 @@ function StatusIcon({
   status: ToolResultStatus;
   label: string;
 }) {
-  if (status === "running") return <Spinner className="size-3" aria-label={label} />;
+  if (status === "running")
+    return <Spinner className="size-3" aria-label={label} />;
   if (status === "success") return <CircleCheckIcon className="size-3" />;
   if (status === "error") return <CircleXIcon className="size-3" />;
   return <BanIcon className="size-3" />;
@@ -101,8 +102,10 @@ function ToolResultAction({
  * ToolResultOutput: the tool's text, highlighted, wrapping in the pane.
  * ------------------------------------------------------------------------- */
 
-export interface ToolResultOutputProps
-  extends Omit<React.ComponentProps<typeof HighlightedCode>, "code" | "children"> {
+export interface ToolResultOutputProps extends Omit<
+  React.ComponentProps<typeof HighlightedCode>,
+  "code" | "children"
+> {
   children: string;
   language?: CodeLanguage;
 }
@@ -118,7 +121,10 @@ function ToolResultOutput({
       data-slot="tool-result-output"
       code={children}
       language={language}
-      className={cn("break-words whitespace-pre-wrap text-foreground/80", className)}
+      className={cn(
+        "break-words whitespace-pre-wrap text-foreground/80",
+        className,
+      )}
       {...props}
     />
   );
@@ -128,8 +134,10 @@ function ToolResultOutput({
  * ToolResult
  * ------------------------------------------------------------------------- */
 
-export interface ToolResultProps
-  extends Omit<React.ComponentProps<"div">, "title" | "children"> {
+export interface ToolResultProps extends Omit<
+  React.ComponentProps<"div">,
+  "title" | "children"
+> {
   /** The tool's name, in monospace. */
   tool: React.ReactNode;
   /** What the call did, in words. */
@@ -206,7 +214,7 @@ function ToolResult({
       if (open === undefined) setInternalOpen(next);
       onOpenChange?.(next);
     },
-    [onOpenChange, open]
+    [onOpenChange, open],
   );
 
   React.useEffect(() => {
@@ -227,7 +235,7 @@ function ToolResult({
     () => () => {
       if (copyTimer.current) window.clearTimeout(copyTimer.current);
     },
-    []
+    [],
   );
 
   // While the tool runs the viewport follows the newest output.
@@ -298,7 +306,7 @@ function ToolResult({
           data-slot="tool-result-status"
           className={cn(
             "inline-flex shrink-0 items-center gap-1 text-xs font-medium",
-            STATUS_CLASS[status]
+            STATUS_CLASS[status],
           )}
         >
           <StatusIcon status={status} label={statusLabel} />

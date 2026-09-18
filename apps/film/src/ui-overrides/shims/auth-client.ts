@@ -5,9 +5,15 @@
  * never fires, so it needs no real behavior — just a shape that
  * type-checks against what UserMenu/WorkspaceSwitcher call.
  */
-type Callbacks = { onRequest?: () => void; onSuccess?: (ctx: { data: unknown }) => void };
+type Callbacks = {
+  onRequest?: () => void;
+  onSuccess?: (ctx: { data: unknown }) => void;
+};
 
-async function ok<T>(data: T, callbacks?: Callbacks): Promise<{ data: T; error: null }> {
+async function ok<T>(
+  data: T,
+  callbacks?: Callbacks,
+): Promise<{ data: T; error: null }> {
   callbacks?.onSuccess?.({ data });
   return { data, error: null };
 }

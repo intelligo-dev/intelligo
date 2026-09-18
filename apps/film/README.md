@@ -52,7 +52,7 @@ not a live page. Update it by hand, from that file and
 
 ## Design tokens
 
-`src/index.css` carries the light *and* dark halves of the token
+`src/index.css` carries the light _and_ dark halves of the token
 contract (`apps/site/src/styles/global.css` — the same CSS `shadcn add
 https://intelligo.dev/r/intelligo.json` writes into a consumer), trimmed
 to what this film's classNames use. `Film`'s `theme` prop toggles a

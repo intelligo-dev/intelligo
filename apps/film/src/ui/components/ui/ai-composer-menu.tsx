@@ -52,7 +52,7 @@ function ComposerMenu({
       (option) =>
         option.label.toLowerCase().includes(needle) ||
         option.value.toLowerCase().includes(needle) ||
-        option.description?.toLowerCase().includes(needle)
+        option.description?.toLowerCase().includes(needle),
     );
   }, [options, query]);
 
@@ -73,7 +73,7 @@ function ComposerMenu({
       role="presentation"
       className={cn(
         "absolute bottom-full left-0 z-50 mb-2 w-80 max-w-full overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-md",
-        className
+        className,
       )}
     >
       <Command shouldFilter={false} loop>

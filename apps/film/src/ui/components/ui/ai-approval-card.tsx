@@ -65,8 +65,10 @@ export interface ApprovalCardAnswer {
 
 export type ApprovalCardAnswers = Record<string, ApprovalCardAnswer>;
 
-export interface ApprovalCardProps
-  extends Omit<React.ComponentProps<"div">, "title" | "onSubmit"> {
+export interface ApprovalCardProps extends Omit<
+  React.ComponentProps<"div">,
+  "title" | "onSubmit"
+> {
   title?: React.ReactNode;
   description?: React.ReactNode;
   questions?: ApprovalCardQuestion[];
@@ -147,7 +149,7 @@ function OptionRow({
       data-slot="approval-card-option"
       className={cn(
         OPTION_ROW,
-        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
       )}
     >
       {children}
@@ -190,7 +192,7 @@ function QuestionOptions({
                         selected: checked
                           ? [...answer.selected, option.value]
                           : answer.selected.filter(
-                              (value) => value !== option.value
+                              (value) => value !== option.value,
                             ),
                       })
                     }
@@ -237,7 +239,7 @@ function QuestionOptions({
           }
           className={cn(
             "h-10 rounded-xl border-0 bg-background/70 px-3 text-sm focus-visible:bg-background",
-            question.options?.length && "mt-1.5"
+            question.options?.length && "mt-1.5",
           )}
         />
       ) : null}
@@ -323,7 +325,7 @@ function ApprovalCard({
   const currentAnswers = answers ?? internalAnswers;
   const currentStep = Math.min(
     Math.max(0, step ?? internalStep),
-    Math.max(0, questions.length - 1)
+    Math.max(0, questions.length - 1),
   );
   const question = questions[currentStep];
   const questionMode = questions.length > 0;
@@ -351,7 +353,7 @@ function ApprovalCard({
       if (answers === undefined) setInternalAnswers(next);
       onAnswersChange?.(next);
     },
-    [answers, onAnswersChange]
+    [answers, onAnswersChange],
   );
 
   const setStep = (next: number) => {
@@ -399,7 +401,7 @@ function ApprovalCard({
       aria-busy={busy || undefined}
       className={cn(
         "w-full overflow-hidden rounded-2xl bg-muted p-4 text-sm",
-        className
+        className,
       )}
       {...props}
     >
@@ -409,7 +411,7 @@ function ApprovalCard({
           aria-hidden="true"
           className={cn(
             "grid size-5 shrink-0 place-items-center text-muted-foreground",
-            ICON_CLASS[status]
+            ICON_CLASS[status],
           )}
         >
           {busy ? (
@@ -428,7 +430,10 @@ function ApprovalCard({
         </span>
 
         <div className="min-w-0 flex-1">
-          <div data-slot="approval-card-header" className="flex min-w-0 items-start gap-3">
+          <div
+            data-slot="approval-card-header"
+            className="flex min-w-0 items-start gap-3"
+          >
             <h3
               data-slot="approval-card-title"
               className="min-w-0 flex-1 text-base leading-5 font-medium text-foreground"
@@ -447,7 +452,7 @@ function ApprovalCard({
                 data-slot="approval-card-status"
                 className={cn(
                   "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors",
-                  BADGE_CLASS[status]
+                  BADGE_CLASS[status],
                 )}
               >
                 {statusLabel}

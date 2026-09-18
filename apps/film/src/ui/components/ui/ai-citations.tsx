@@ -87,7 +87,7 @@ function useFavicon(url?: string) {
         released = true;
       };
     },
-    [src]
+    [src],
   );
 
   return { src, ref };
@@ -106,8 +106,10 @@ function shortName(citation: CitationItem): React.ReactNode {
  * Citation: the numbered inline marker that jumps to its reference.
  * ------------------------------------------------------------------------- */
 
-export interface CitationProps
-  extends Omit<React.ComponentProps<"a">, "href" | "children"> {
+export interface CitationProps extends Omit<
+  React.ComponentProps<"a">,
+  "href" | "children"
+> {
   citationId: string;
   index: number;
   /** Must match the related Citations idPrefix. */
@@ -132,7 +134,7 @@ function Citation({
       aria-label={label ?? `View citation ${index}`}
       className={cn(
         "mx-0.5 inline-flex min-w-4 -translate-y-0.5 items-center justify-center rounded-md bg-muted/60 px-1 py-0.5 font-semibold leading-none text-muted-foreground no-underline outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
-        className
+        className,
       )}
       style={{ ...TINY_TEXT, ...style }}
       {...props}
@@ -164,7 +166,7 @@ function CitationFavicon({
       aria-hidden="true"
       className={cn(
         "grid size-5 shrink-0 place-items-center text-muted-foreground",
-        className
+        className,
       )}
     >
       {favicon.src ? (
@@ -191,7 +193,11 @@ export interface CitationStackProps {
   className?: string;
 }
 
-function CitationStack({ citations, limit = 3, className }: CitationStackProps) {
+function CitationStack({
+  citations,
+  limit = 3,
+  className,
+}: CitationStackProps) {
   return (
     <span
       data-slot="citation-stack"
@@ -255,8 +261,9 @@ function CitationCard({
   );
   const classes = cn(
     "grid gap-1 rounded-md p-2 text-left outline-none transition-colors",
-    citation.url && "hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
-    className
+    citation.url &&
+      "hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
+    className,
   );
 
   return citation.url ? (
@@ -295,7 +302,7 @@ function CitationPill({ citations, label, className }: CitationPillProps) {
 
   const pillClass = cn(
     "mx-0.5 inline-flex max-w-44 -translate-y-px items-center gap-1 rounded-full bg-muted px-1.5 align-middle text-xs leading-5 font-medium text-muted-foreground no-underline! outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring",
-    className
+    className,
   );
   const pill = (
     <>
@@ -328,7 +335,11 @@ function CitationPill({ citations, label, className }: CitationPillProps) {
       >
         {pill}
       </HoverCardTrigger>
-      <HoverCardContent side="top" align="start" className="grid w-80 gap-0.5 p-1">
+      <HoverCardContent
+        side="top"
+        align="start"
+        className="grid w-80 gap-0.5 p-1"
+      >
         {citations.map((citation) => (
           <CitationCard key={citation.id} citation={citation} />
         ))}
@@ -366,7 +377,7 @@ function CitationSources({
         render={<button type="button" />}
         className={cn(
           "inline-flex h-8 w-fit items-center gap-2 rounded-full border bg-background py-1 pr-3 pl-1 text-sm text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
-          className
+          className,
         )}
       >
         <CitationStack citations={citations} className="[&>span]:size-5.5" />
@@ -381,7 +392,11 @@ function CitationSources({
             <CitationCard
               key={citation.id}
               citation={citation}
-              index={Number.isNaN(Number(citation.id)) ? undefined : Number(citation.id)}
+              index={
+                Number.isNaN(Number(citation.id))
+                  ? undefined
+                  : Number(citation.id)
+              }
               className="p-2.5"
             />
           ))}
@@ -530,7 +545,7 @@ function Citations({
       if (open === undefined) setInternalOpen(next);
       onOpenChange?.(next);
     },
-    [onOpenChange, open]
+    [onOpenChange, open],
   );
 
   return (

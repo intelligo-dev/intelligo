@@ -112,7 +112,7 @@ export function ChatAgentCard({ data }: DataRendererProps) {
               ? "activity.done"
               : agent.status === "failed"
                 ? "activity.failed"
-                : "activity.running"
+                : "activity.running",
           )}
         </StatusBadge>
       </ItemActions>
@@ -183,7 +183,7 @@ export function ChatQuestionCard({
     const picked = answers[question.id] ?? { selected: [], custom: "" };
     const labels = picked.selected.map(
       (value) =>
-        question.options?.find((option) => option.id === value)?.label ?? value
+        question.options?.find((option) => option.id === value)?.label ?? value,
     );
     const answer = [...labels, picked.custom?.trim() ?? ""]
       .filter(Boolean)

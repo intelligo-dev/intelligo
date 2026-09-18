@@ -86,7 +86,7 @@ function ToolApprovalCode({
         // Parameter values sit in a narrow grid column with nowhere to scroll
         // on touch, so they wrap instead of clipping.
         "border-border/50 bg-muted/30 text-xs [&_code]:text-xs! [&_pre]:p-2.5! [&_pre]:text-xs! [&_pre]:leading-5 [&_pre]:break-words [&_pre]:whitespace-pre-wrap",
-        className
+        className,
       )}
       {...props}
     />
@@ -97,8 +97,10 @@ function ToolApprovalCode({
  * ToolApproval: the card.
  * ------------------------------------------------------------------------- */
 
-export interface ToolApprovalProps
-  extends Omit<React.ComponentProps<"div">, "title"> {
+export interface ToolApprovalProps extends Omit<
+  React.ComponentProps<"div">,
+  "title"
+> {
   /** The tool's name, shown in monospace under the title. */
   tool: React.ReactNode;
   title?: React.ReactNode;
@@ -178,7 +180,7 @@ function ToolApproval({
       if (open === undefined) setInternalOpen(next);
       onOpenChange?.(next);
     },
-    [onOpenChange, open]
+    [onOpenChange, open],
   );
   const busy = status === "approving" || status === "running";
   const pending = status === "pending";
@@ -206,17 +208,20 @@ function ToolApproval({
       aria-busy={busy || undefined}
       className={cn(
         "w-full overflow-hidden rounded-xl border bg-card text-sm",
-        className
+        className,
       )}
       {...props}
     >
-      <div data-slot="tool-approval-header" className="flex items-start gap-2.5 p-3">
+      <div
+        data-slot="tool-approval-header"
+        className="flex items-start gap-2.5 p-3"
+      >
         <span
           data-slot="tool-approval-icon"
           aria-hidden="true"
           className={cn(
             "mt-0.5 grid size-4 shrink-0 place-items-center text-muted-foreground",
-            error && "text-destructive"
+            error && "text-destructive",
           )}
         >
           <StatusIcon status={status} busy={busy} />
@@ -252,7 +257,7 @@ function ToolApproval({
                 data-slot="tool-approval-status"
                 className={cn(
                   "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors",
-                  BADGE_CLASS[status]
+                  BADGE_CLASS[status],
                 )}
               >
                 {statusLabel}

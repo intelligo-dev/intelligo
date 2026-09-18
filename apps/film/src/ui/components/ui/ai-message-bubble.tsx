@@ -12,16 +12,15 @@ import { ChevronDownIcon } from "lucide-react";
 import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
 
 import { MessageSideContext } from "@ui/components/ui/ai-message";
-import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from "@ui/components/ui/ai-motion";
+import {
+  EASE_OUT,
+  SPRING_LAYOUT,
+  SPRING_SWAP,
+} from "@ui/components/ui/ai-motion";
 import { cn } from "@ui/lib/utils";
 
 export type MessageBubbleVariant =
-  | "solid"
-  | "soft"
-  | "tint"
-  | "outline"
-  | "ghost"
-  | "danger";
+  "solid" | "soft" | "tint" | "outline" | "ghost" | "danger";
 export type MessageBubbleAlign = "start" | "end";
 
 interface MessageBubbleContextValue {
@@ -36,8 +35,10 @@ const MessageBubbleContext = React.createContext<MessageBubbleContextValue>({
 });
 const MessageBubbleLayoutContext = React.createContext<() => void>(() => {});
 
-export interface MessageBubbleProps
-  extends Omit<HTMLMotionProps<"div">, "children"> {
+export interface MessageBubbleProps extends Omit<
+  HTMLMotionProps<"div">,
+  "children"
+> {
   variant?: MessageBubbleVariant;
   /** Defaults to the surrounding Message alignment when omitted. */
   align?: MessageBubbleAlign;
@@ -55,8 +56,7 @@ export interface MessageBubbleGroupProps extends React.ComponentProps<"div"> {
   spacing?: "compact" | "default";
 }
 
-export interface MessageBubbleCollapsibleProps
-  extends React.ComponentProps<"div"> {
+export interface MessageBubbleCollapsibleProps extends React.ComponentProps<"div"> {
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -129,7 +129,7 @@ function MessageBubble({
         className={cn(
           "group/bubble flex w-full flex-col",
           resolvedAlign === "end" ? "items-end" : "items-start",
-          className
+          className,
         )}
         {...props}
       >
@@ -141,7 +141,7 @@ function MessageBubble({
 
 function bubbleContentClass(
   variant: MessageBubbleVariant,
-  interactive: boolean
+  interactive: boolean,
 ) {
   return cn(
     "relative z-0 min-w-9 rounded-2xl px-3.5 py-2.5 text-sm leading-6 text-foreground",
@@ -150,20 +150,20 @@ function bubbleContentClass(
     variant === "ghost" && "w-full rounded-none px-0 py-0",
     variant === "danger" && "text-destructive",
     interactive &&
-      "cursor-pointer text-left outline-none transition-[background-color,color,transform] duration-150 hover:brightness-[0.98] focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]"
+      "cursor-pointer text-left outline-none transition-[background-color,color,transform] duration-150 hover:brightness-[0.98] focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]",
   );
 }
 
 /** The bubble is capped at most of the column; ghost fills it. */
 function bubbleContentStyle(
-  variant: MessageBubbleVariant
+  variant: MessageBubbleVariant,
 ): React.CSSProperties {
   return variant === "ghost" ? { maxWidth: "none" } : { maxWidth: "82%" };
 }
 
 function bubbleSurfaceClass(
   variant: MessageBubbleVariant,
-  align: MessageBubbleAlign
+  align: MessageBubbleAlign,
 ) {
   return cn(
     "pointer-events-none absolute inset-0 -z-10",
@@ -172,7 +172,7 @@ function bubbleSurfaceClass(
     variant === "soft" && "bg-muted",
     variant === "tint" && "bg-primary/10",
     variant === "outline" && "border border-border/70 bg-background",
-    variant === "danger" && "bg-destructive/10"
+    variant === "danger" && "bg-destructive/10",
   );
 }
 
@@ -193,7 +193,7 @@ function MessageBubbleContent({
   const [layoutVersion, setLayoutVersion] = React.useState(0);
   const notifyLayout = React.useCallback(
     () => setLayoutVersion((version) => version + 1),
-    []
+    [],
   );
   const interactive = render?.type === "button" || render?.type === "a";
   const classes = cn(bubbleContentClass(variant, interactive), className);
@@ -247,7 +247,10 @@ function MessageBubbleContent({
 
     return React.cloneElement(child, {
       ...props,
-      ref: mergeRefs(child.props.ref, ref as React.Ref<HTMLElement> | undefined),
+      ref: mergeRefs(
+        child.props.ref,
+        ref as React.Ref<HTMLElement> | undefined,
+      ),
       className: cn(classes, child.props.className),
       style: { ...bubbleContentStyle(variant), ...style, ...child.props.style },
       children: composedChildren,
@@ -279,7 +282,7 @@ function MessageBubbleGroup({
       className={cn(
         "flex w-full flex-col",
         spacing === "compact" ? "gap-1.5" : "gap-3",
-        className
+        className,
       )}
       {...props}
     />
@@ -319,7 +322,7 @@ function MessageBubbleCollapsible({
       if (open === undefined) setInternalOpen(next);
       onOpenChange?.(next);
     },
-    [notifyLayout, onOpenChange, open]
+    [notifyLayout, onOpenChange, open],
   );
 
   return (
@@ -337,7 +340,7 @@ function MessageBubbleCollapsible({
           !currentOpen && LINE_CLAMP_CLASS[collapsedLines],
           !currentOpen &&
             "[mask-image:linear-gradient(to_bottom,var(--foreground)_68%,transparent_100%)]",
-          contentClassName
+          contentClassName,
         )}
       >
         {children}
@@ -350,7 +353,7 @@ function MessageBubbleCollapsible({
         onClick={() => setOpen(!currentOpen)}
         className={cn(
           "mt-2 inline-flex h-7 items-center gap-1 rounded-full px-2 text-xs font-medium text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
-          triggerClassName
+          triggerClassName,
         )}
       >
         <span>{currentOpen ? lessLabel : moreLabel}</span>

@@ -56,7 +56,7 @@ function TooltipContent({
           data-slot="tooltip-content"
           className={cn(
             "inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-lg border border-border bg-popover px-2.5 py-1 text-xs font-medium text-popover-foreground shadow-lg transition-[opacity,scale,filter] duration-normal ease-standard has-data-[slot=kbd]:pr-1 data-instant:duration-0 data-starting-style:scale-90 data-starting-style:opacity-0 data-starting-style:blur-xs data-ending-style:scale-95 data-ending-style:opacity-0 data-ending-style:duration-fast",
-            className
+            className,
           )}
           {...props}
         >

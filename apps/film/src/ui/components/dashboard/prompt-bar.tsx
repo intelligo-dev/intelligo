@@ -79,7 +79,7 @@ export function PromptBar() {
                 const spoken = spokenText.trim();
                 if (!spoken) return;
                 setMessage((current) =>
-                  current ? `${current.replace(/\s+$/, "")} ${spoken}` : spoken
+                  current ? `${current.replace(/\s+$/, "")} ${spoken}` : spoken,
                 );
               }}
             />

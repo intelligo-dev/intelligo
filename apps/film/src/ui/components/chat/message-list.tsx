@@ -49,7 +49,7 @@ export function MessageList({
   const isMobile = useIsMobile();
   // Sending brings the reader back to the end, even from far up.
   const lastUserId = messages.findLast(
-    (message) => message.role === "user"
+    (message) => message.role === "user",
   )?.id;
 
   return (

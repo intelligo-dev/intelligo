@@ -21,7 +21,7 @@ type ReasoningContextValue = {
 };
 
 const ReasoningContext = React.createContext<ReasoningContextValue | null>(
-  null
+  null,
 );
 
 function useReasoning() {
@@ -59,7 +59,7 @@ function Reasoning({
       if (open === undefined) setOpenState(next);
       onOpenChange?.(next);
     },
-    [open, onOpenChange]
+    [open, onOpenChange],
   );
 
   const [measured, setMeasured] = React.useState<number | undefined>();
@@ -113,7 +113,7 @@ function ReasoningTrigger({
   /** The translated status line: "Thinking…" while streaming, "Thought for 3 seconds" after. */
   getThinkingMessage?: (
     isStreaming: boolean,
-    duration?: number
+    duration?: number,
   ) => React.ReactNode;
 }) {
   const { isStreaming, isOpen, duration } = useReasoning();
@@ -123,7 +123,7 @@ function ReasoningTrigger({
       data-slot="reasoning-trigger"
       className={cn(
         "flex w-full items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
-        className
+        className,
       )}
       {...props}
     >
@@ -136,7 +136,7 @@ function ReasoningTrigger({
           <ChevronDownIcon
             className={cn(
               "size-4 transition-transform",
-              isOpen && "rotate-180"
+              isOpen && "rotate-180",
             )}
           />
         </>

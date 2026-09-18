@@ -108,38 +108,38 @@ export function Alternatives() {
         className="rounded-md border border-border bg-card p-5 md:min-h-[19rem] md:p-6"
       >
         <div key={a.id} className="animate-in fade-in duration-normal">
-            <div className="tag">what's different here</div>
-            <p className="mt-2 max-w-[60ch] text-[1.05rem] leading-relaxed text-foreground">
-              {a.answer}
-            </p>
-            <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
-              <div>
-                <div className="mono text-[0.68rem] tracking-wide text-success">
-                  what you keep
-                </div>
-                <ul className="mt-1.5 space-y-1 text-[0.88rem] text-foreground/70">
-                  {a.keep.map((k) => (
-                    <li key={k} className="flex gap-2">
-                      <span className="text-success">✓</span>
-                      {k}
-                    </li>
-                  ))}
-                </ul>
+          <div className="tag">what's different here</div>
+          <p className="mt-2 max-w-[60ch] text-[1.05rem] leading-relaxed text-foreground">
+            {a.answer}
+          </p>
+          <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
+            <div>
+              <div className="mono text-[0.68rem] tracking-wide text-success">
+                what you keep
               </div>
-              <div>
-                <div className="mono text-[0.68rem] tracking-wide text-destructive">
-                  what you drop
-                </div>
-                <ul className="mt-1.5 space-y-1 text-[0.88rem] text-foreground/70">
-                  {a.drop.map((k) => (
-                    <li key={k} className="flex gap-2">
-                      <span className="text-destructive">−</span>
-                      {k}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <ul className="mt-1.5 space-y-1 text-[0.88rem] text-foreground/70">
+                {a.keep.map((k) => (
+                  <li key={k} className="flex gap-2">
+                    <span className="text-success">✓</span>
+                    {k}
+                  </li>
+                ))}
+              </ul>
             </div>
+            <div>
+              <div className="mono text-[0.68rem] tracking-wide text-destructive">
+                what you drop
+              </div>
+              <ul className="mt-1.5 space-y-1 text-[0.88rem] text-foreground/70">
+                {a.drop.map((k) => (
+                  <li key={k} className="flex gap-2">
+                    <span className="text-destructive">−</span>
+                    {k}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>

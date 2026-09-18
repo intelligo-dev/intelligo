@@ -153,7 +153,7 @@ function defaultRow(
   name: string,
   readSources:
     ((output: unknown) => ReturnType<typeof sourcesFromToolOutput>) | undefined,
-  t: (key: string, values?: Record<string, string | number>) => string
+  t: (key: string, values?: Record<string, string | number>) => string,
 ): ToolActivityRow {
   const status =
     props.state === "output-error" || props.state === "output-denied"

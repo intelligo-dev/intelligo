@@ -146,7 +146,7 @@ export function MastraWorkflowActivity({
   return (
     <Timeline
       title={String(
-        snapshot.name ?? snapshot.workflowId ?? t("activity.workflow")
+        snapshot.name ?? snapshot.workflowId ?? t("activity.workflow"),
       )}
       status={stepStatus(snapshot.status)}
       steps={stepsOf(snapshot)}
@@ -167,7 +167,7 @@ export function MastraWorkflowStepActivity({
         snapshot.name ??
           snapshot.stepId ??
           snapshot.id ??
-          t("activity.workflow")
+          t("activity.workflow"),
       )}
       status={stepStatus(snapshot.status)}
       steps={[]}
@@ -185,7 +185,7 @@ export function MastraNetworkActivity({
   return (
     <Timeline
       title={String(
-        snapshot.name ?? snapshot.networkId ?? t("activity.network")
+        snapshot.name ?? snapshot.networkId ?? t("activity.network"),
       )}
       status={stepStatus(snapshot.status)}
       steps={stepsOf(snapshot)}
@@ -203,7 +203,7 @@ export function MastraToolAgentActivity({
   return (
     <Timeline
       title={String(
-        snapshot.name ?? snapshot.agentId ?? snapshot.id ?? t("activity.agent")
+        snapshot.name ?? snapshot.agentId ?? snapshot.id ?? t("activity.agent"),
       )}
       status={stepStatus(snapshot.status)}
       steps={stepsOf(snapshot)}

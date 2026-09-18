@@ -20,10 +20,7 @@ import {
 import { cn } from "@ui/lib/utils";
 
 export type TodoItemStatus =
-  | "pending"
-  | "in-progress"
-  | "completed"
-  | "cancelled";
+  "pending" | "in-progress" | "completed" | "cancelled";
 
 export interface TodoItem {
   id: string;
@@ -147,7 +144,7 @@ function TodoStatusIcon({
       className={cn(
         "mx-0.5 size-5 shrink-0 overflow-visible text-muted-foreground",
         status === "in-progress" && "text-foreground",
-        status === "cancelled" && "text-destructive"
+        status === "cancelled" && "text-destructive",
       )}
     >
       <motion.circle
@@ -258,7 +255,7 @@ function TodoList({
       if (open === undefined) setInternalOpen(next);
       onOpenChange?.(next);
     },
-    [onOpenChange, open]
+    [onOpenChange, open],
   );
 
   // Fold once everything is done; unfold again if a task comes back.
@@ -298,7 +295,7 @@ function TodoList({
       aria-label={label}
       className={cn(
         "w-full overflow-hidden rounded-2xl border border-border/70",
-        className
+        className,
       )}
       {...props}
     >
@@ -322,7 +319,7 @@ function TodoList({
           data-slot="todo-list-count"
           className={cn(
             "shrink-0 text-xs font-medium tabular-nums text-muted-foreground",
-            allComplete && "text-success"
+            allComplete && "text-success",
           )}
         >
           <span className="sr-only">
@@ -397,7 +394,7 @@ function TodoList({
                           status === "pending" && "text-muted-foreground/65",
                           status === "in-progress" && "text-foreground",
                           status === "completed" && "text-muted-foreground/60",
-                          status === "cancelled" && "text-muted-foreground/55"
+                          status === "cancelled" && "text-muted-foreground/55",
                         )}
                       >
                         <span className="relative inline-block max-w-full">

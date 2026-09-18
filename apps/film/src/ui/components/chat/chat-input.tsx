@@ -73,7 +73,7 @@ const DEFAULT_UPLOAD_URL = "/api/chat/upload";
 /** In `stored` mode a picked file uploads first; the message carries its app URL. */
 async function upload(
   file: FileUIPart,
-  uploadUrl: string
+  uploadUrl: string,
 ): Promise<FileUIPart> {
   const blob = await (await fetch(file.url)).blob();
   const form = new FormData();
@@ -133,7 +133,7 @@ export function ChatInput({
   function reportError(error: PromptInputError) {
     if (error.code === "max_files") {
       toast.error(
-        t("attachments.tooMany", { max: attachments?.maxFiles ?? 1 })
+        t("attachments.tooMany", { max: attachments?.maxFiles ?? 1 }),
       );
     } else if (error.code === "max_file_size") {
       toast.error(t("attachments.tooLarge"));
@@ -167,8 +167,8 @@ export function ChatInput({
             try {
               parts = await Promise.all(
                 files.map((file) =>
-                  upload(file, attachments.uploadUrl ?? DEFAULT_UPLOAD_URL)
-                )
+                  upload(file, attachments.uploadUrl ?? DEFAULT_UPLOAD_URL),
+                ),
               );
             } catch {
               toast.error(t("attachments.uploadFailed"));
@@ -239,7 +239,7 @@ export function ChatInput({
                 const spoken = text.trim();
                 if (!spoken) return;
                 onChange(
-                  value ? `${value.replace(/\s+$/, "")} ${spoken}` : spoken
+                  value ? `${value.replace(/\s+$/, "")} ${spoken}` : spoken,
                 );
               }}
             />

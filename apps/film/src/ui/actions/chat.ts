@@ -6,13 +6,12 @@
  * fires, so a same-shaped no-op is enough to keep the module resolving.
  */
 export type ChatActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };
 
 export async function voteMessage(
   _conversationId: string,
   _messageId: string,
-  _vote: "up" | "down" | null
+  _vote: "up" | "down" | null,
 ): Promise<ChatActionResult<undefined>> {
   return { success: true, data: undefined };
 }

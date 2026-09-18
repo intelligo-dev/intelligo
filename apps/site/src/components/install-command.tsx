@@ -20,9 +20,9 @@ export function InstallCommand({
       >
         <span className="text-muted-foreground">$</span>
         {/* scrolls rather than truncates: a command is read before it is run */}
-      <span className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] text-foreground">
-        {cmd}
-      </span>
+        <span className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] text-foreground">
+          {cmd}
+        </span>
         <CopyButton text={cmd} />
       </div>
     </TooltipProvider>

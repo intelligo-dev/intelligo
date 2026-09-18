@@ -91,12 +91,7 @@ export interface AgentActivityTool {
 }
 
 export type AgentTraceKind =
-  | "thinking"
-  | "message"
-  | "write"
-  | "run"
-  | "read"
-  | (string & {});
+  "thinking" | "message" | "write" | "run" | "read" | (string & {});
 
 export interface AgentActivityTrace {
   id: string;
@@ -212,7 +207,7 @@ function StepRow({ item }: { item: AgentActivityStep }) {
           "min-w-0 flex-1 leading-5",
           state === "pending"
             ? "text-muted-foreground/55"
-            : "text-foreground/90"
+            : "text-foreground/90",
         )}
       >
         {item.label}
@@ -258,7 +253,8 @@ function SearchResultRow({ result }: { result: AgentSearchResult }) {
   );
   const className = cn(
     "flex min-h-7 items-center gap-2 rounded-md px-1.5 py-1 text-left outline-none transition-colors",
-    result.url && "hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring"
+    result.url &&
+      "hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring",
   );
 
   return result.url ? (
@@ -288,7 +284,9 @@ function RowStatusIcon({
 }) {
   const reduce = useReducedMotion() ?? false;
   if (status === "error") {
-    return <CircleAlertIcon className="size-4 text-destructive" strokeWidth={1.8} />;
+    return (
+      <CircleAlertIcon className="size-4 text-destructive" strokeWidth={1.8} />
+    );
   }
   if (status === "running") {
     return (
@@ -340,7 +338,7 @@ function RowWithDetails({
         onClick={() => setOpen(!open)}
         className={cn(
           className,
-          "group/row w-full text-left outline-none transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring"
+          "group/row w-full text-left outline-none transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
         {children}
@@ -350,14 +348,17 @@ function RowWithDetails({
           transition={reduce ? { duration: 0 } : SPRING_SWAP}
           className={cn(
             "inline-flex shrink-0 text-muted-foreground/60 transition-opacity group-hover/row:opacity-100 group-focus-visible/row:opacity-100",
-            open ? "opacity-100" : "opacity-0"
+            open ? "opacity-100" : "opacity-0",
           )}
         >
           <ChevronDownIcon className="size-3.5" />
         </motion.span>
       </button>
       <Disclosure id={detailsId} open={open}>
-        <div data-slot="agent-activity-details" className="pt-1 pr-1.5 pb-2 pl-8">
+        <div
+          data-slot="agent-activity-details"
+          className="pt-1 pr-1.5 pb-2 pl-8"
+        >
           {details}
         </div>
       </Disclosure>
@@ -394,7 +395,10 @@ function SearchRow({
         details={item.details}
         className="flex min-h-7 items-center gap-2.5 rounded-md px-1.5 py-1 text-muted-foreground"
       >
-        <span aria-hidden="true" className="grid size-4 shrink-0 place-items-center">
+        <span
+          aria-hidden="true"
+          className="grid size-4 shrink-0 place-items-center"
+        >
           <RowStatusIcon status={item.status ?? "complete"}>
             <SearchIcon className="size-4" strokeWidth={1.7} />
           </RowStatusIcon>
@@ -477,7 +481,8 @@ function ToolRow({
         <span
           className={cn(
             "min-w-0 flex-1 truncate rounded-lg bg-muted/80 px-2.5 py-1 font-mono text-xs text-muted-foreground",
-            status === "error" && "bg-transparent px-0 font-sans text-destructive"
+            status === "error" &&
+              "bg-transparent px-0 font-sans text-destructive",
           )}
         >
           {item.target}
@@ -628,7 +633,7 @@ function useControllableOpen({
       if (!controlled) setInternalOpen(next);
       onOpenChange?.(next);
     },
-    [controlled, onOpenChange]
+    [controlled, onOpenChange],
   );
 
   return [currentOpen, setOpen] as const;
@@ -643,7 +648,7 @@ function getSummary(
   type: AgentActivityContentType,
   items: AgentActivityItem[],
   duration: string,
-  labels: AgentActivitySummaryLabels
+  labels: AgentActivitySummaryLabels,
 ): React.ReactNode {
   if (type === "step" || type === "text") return labels.thought(duration);
   if (type === "search") return labels.searched;
@@ -652,7 +657,7 @@ function getSummary(
     const messages = items.filter(
       (item) =>
         item.type === "trace" &&
-        (item.kind === "thinking" || item.kind === "message")
+        (item.kind === "thinking" || item.kind === "message"),
     ).length;
     return labels.trace(items.length - messages, messages);
   }
@@ -819,7 +824,7 @@ function AgentActivity({
             "pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
             capped && expanded && !working
               ? "overflow-y-auto"
-              : "overflow-y-hidden"
+              : "overflow-y-hidden",
           )}
           style={{
             height: viewportHeight,

@@ -109,7 +109,7 @@ export type CanvasRef = {
 export interface ToolRendererActions {
   /** Send the next user turn — a picked option, a suggested reply. */
   sendMessage: (
-    message: string | { text: string; files?: FileUIPart[] }
+    message: string | { text: string; files?: FileUIPart[] },
   ) => void;
   /** Answer a tool the client executes. */
   addToolResult: (args: {
@@ -224,7 +224,7 @@ export const DATA_RENDERERS: Record<
 };
 
 export function resolveToolRenderer(
-  toolName: string
+  toolName: string,
 ): ToolRenderer & { component: ComponentType<ToolRendererProps> } {
   const entry = TOOL_RENDERERS[toolName];
   if (!entry) return { component: DefaultToolCard };
@@ -246,13 +246,13 @@ export function hasToolCard(toolName: string): boolean {
 
 /** Kept for cards written against the earlier seam. */
 export function getToolRenderer(
-  toolName: string
+  toolName: string,
 ): ComponentType<ToolRendererProps> {
   return resolveToolRenderer(toolName).component;
 }
 
 export function getDataRenderer(
-  name: string
+  name: string,
 ): ComponentType<DataRendererProps> | null {
   return DATA_RENDERERS[name] ?? null;
 }

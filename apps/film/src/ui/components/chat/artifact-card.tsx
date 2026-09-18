@@ -115,7 +115,7 @@ export function ArtifactCard({
           <span
             className={cn(
               "truncate text-xs leading-4 text-muted-foreground",
-              status === "error" && "text-destructive"
+              status === "error" && "text-destructive",
             )}
           >
             {subtitle}
@@ -144,7 +144,7 @@ export function ArtifactCard({
     "group/artifact flex w-full max-w-md flex-col overflow-hidden rounded-xl border bg-card text-left",
     interactive &&
       "outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring",
-    className
+    className,
   );
 
   if (onOpen) {

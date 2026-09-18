@@ -58,7 +58,7 @@ function useHoverGesture() {
         return !arrivedInContact && event.pointerType !== "touch";
       },
     }),
-    []
+    [],
   );
 }
 
@@ -90,7 +90,7 @@ function useTapGesture<S>() {
         record.current = null;
       },
     }),
-    []
+    [],
   );
 }
 
@@ -103,7 +103,7 @@ function useTapGesture<S>() {
 function useDismiss(
   open: boolean,
   onDismiss: () => void,
-  ref: React.RefObject<HTMLElement | null>
+  ref: React.RefObject<HTMLElement | null>,
 ) {
   React.useEffect(() => {
     if (!open) return;
@@ -208,7 +208,7 @@ function PreviewRail({
   const reduced = useReducedMotion() ?? false;
   const rootRef = React.useRef<HTMLDivElement>(null);
   const [internalActiveId, setInternalActiveId] = React.useState(
-    defaultActiveId ?? items[0]?.id ?? ""
+    defaultActiveId ?? items[0]?.id ?? "",
   );
   const [hoveredId, setHoveredId] = React.useState<string | null>(null);
   // A finger cannot hover, so a tap lights the tick instead. Kept apart from
@@ -261,7 +261,7 @@ function PreviewRail({
         isHorizontal
           ? "min-h-64 flex-col items-center justify-center"
           : "min-h-80",
-        className
+        className,
       )}
     >
       <nav
@@ -282,7 +282,7 @@ function PreviewRail({
           isHorizontal
             ? "h-12 w-fit max-w-full self-center justify-center"
             : "w-12 content-center",
-          railClassName
+          railClassName,
         )}
       >
         {items.map((item, index) => {
@@ -311,7 +311,7 @@ function PreviewRail({
                 isHorizontal
                   ? "h-12 w-0.5 origin-bottom"
                   : "h-0.5 w-12 origin-left",
-                highlighted ? "text-foreground" : undefined
+                highlighted ? "text-foreground" : undefined,
               )}
             />
           );
@@ -320,18 +320,18 @@ function PreviewRail({
             "relative flex text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             isHorizontal
               ? "h-12 w-6 items-end justify-center"
-              : "h-6 w-12 items-center"
+              : "h-6 w-12 items-center",
           );
           const sharedStyle = isHorizontal
             ? { width: itemSize }
             : { height: itemSize };
           const handlePointerEnter = (
-            event: React.PointerEvent<HTMLElement>
+            event: React.PointerEvent<HTMLElement>,
           ) => {
             if (hover.enter(event)) setHoveredId(item.id);
           };
           const handlePointerDown = (
-            event: React.PointerEvent<HTMLElement>
+            event: React.PointerEvent<HTMLElement>,
           ) => {
             tap.start(event, pinnedId === item.id);
             setFocusedId(null);
@@ -426,18 +426,16 @@ function PreviewRail({
               : previewSide === "before"
                 ? "inset-y-0 right-16 left-4 content-center"
                 : "inset-y-0 right-4 left-16 content-center",
-            previewContainerClassName
+            previewContainerClassName,
           )}
         >
           {items.map((item) => (
             <div
               key={item.id}
-              style={
-                isHorizontal ? { width: itemSize } : { height: itemSize }
-              }
+              style={isHorizontal ? { width: itemSize } : { height: itemSize }}
               className={cn(
                 "relative flex items-center",
-                isHorizontal ? "justify-center" : undefined
+                isHorizontal ? "justify-center" : undefined,
               )}
             >
               {item.id === displayedId ? (
@@ -447,9 +445,9 @@ function PreviewRail({
                       ? "absolute bottom-12 left-1/2 w-72 -translate-x-1/2"
                       : cn(
                           "w-full max-w-sm",
-                          previewSide === "before" && "ml-auto"
+                          previewSide === "before" && "ml-auto",
                         ),
-                    previewClassName
+                    previewClassName,
                   )}
                 >
                   <motion.div
@@ -522,7 +520,9 @@ function truncateMessageText(text: string, limit: number) {
 
 function getMessageText(message: HTMLElement) {
   const surface =
-    message.querySelector<HTMLElement>('[data-slot="message-bubble-content"]') ??
+    message.querySelector<HTMLElement>(
+      '[data-slot="message-bubble-content"]',
+    ) ??
     message.querySelector<HTMLElement>('[data-slot="message-content"]') ??
     message;
   return (surface.textContent ?? "").replace(/\s+/g, " ").trim();
@@ -531,7 +531,7 @@ function getMessageText(message: HTMLElement) {
 function getMessagePreview(
   message: HTMLElement,
   emptyLabel: string,
-  assistantResponse?: HTMLElement
+  assistantResponse?: HTMLElement,
 ) {
   const text = getMessageText(message);
   if (!text) {
@@ -589,7 +589,7 @@ export interface MessageScrollerProps extends React.ComponentProps<"div"> {
   navigationItemLabel?: (
     sender: string,
     index: number,
-    total: number
+    total: number,
   ) => string;
   /** Preview title for a row that has no readable text. */
   emptyPreviewLabel?: string;
@@ -622,7 +622,7 @@ export interface MessageScrollerProps extends React.ComponentProps<"div"> {
 const defaultNavigationItemLabel = (
   sender: string,
   index: number,
-  total: number
+  total: number,
 ) => `Go to ${sender} message ${index + 1} of ${total}`;
 
 function MessageScroller({
@@ -680,7 +680,7 @@ function MessageScroller({
         externalViewportRef.current = node;
       }
     },
-    [externalViewportRef]
+    [externalViewportRef],
   );
 
   // Mirrors `followingRef` for rendering: the scroll-to-latest control
@@ -694,7 +694,7 @@ function MessageScroller({
       setAtEnd(next);
       onFollowChange?.(next);
     },
-    [onFollowChange]
+    [onFollowChange],
   );
 
   const updateActiveRailItem = React.useCallback(() => {
@@ -732,9 +732,7 @@ function MessageScroller({
       }
     }
 
-    setActiveRailId((current) =>
-      current === nearestId ? current : nearestId
-    );
+    setActiveRailId((current) => (current === nearestId ? current : nearestId));
   }, [followThreshold, navigation]);
 
   const syncRailItems = React.useCallback(() => {
@@ -744,7 +742,7 @@ function MessageScroller({
     if (!content || !viewport) return;
 
     const messages = Array.from(
-      content.querySelectorAll<HTMLElement>('[data-slot="message"]')
+      content.querySelectorAll<HTMLElement>('[data-slot="message"]'),
     );
     const targets = new Map<string, HTMLElement>();
     const nextItems = messages.map((message, index) => {
@@ -765,7 +763,7 @@ function MessageScroller({
       const preview = getMessagePreview(
         message,
         emptyPreviewLabel,
-        assistantResponse
+        assistantResponse,
       );
 
       return {
@@ -785,12 +783,12 @@ function MessageScroller({
             item.id === nextItems[index]?.id &&
             item.label === nextItems[index]?.label &&
             item.description === nextItems[index]?.description &&
-            item.ariaLabel === nextItems[index]?.ariaLabel
+            item.ariaLabel === nextItems[index]?.ariaLabel,
         );
       return unchanged ? current : nextItems;
     });
     setRailOverflowing(
-      viewport.scrollHeight > viewport.clientHeight + 1 && messages.length > 1
+      viewport.scrollHeight > viewport.clientHeight + 1 && messages.length > 1,
     );
   }, [emptyPreviewLabel, navigation, navigationItemLabel]);
 
@@ -818,7 +816,7 @@ function MessageScroller({
       () => {
         programmaticScrollRef.current = false;
       },
-      behavior === "smooth" ? 320 : 0
+      behavior === "smooth" ? 320 : 0,
     );
   }, []);
 
@@ -911,7 +909,7 @@ function MessageScroller({
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
       if (railFrameRef.current) cancelAnimationFrame(railFrameRef.current);
     },
-    []
+    [],
   );
 
   const scrollToRailItem = React.useCallback(
@@ -949,10 +947,10 @@ function MessageScroller({
         () => {
           programmaticScrollRef.current = false;
         },
-        behavior === "smooth" ? 320 : 0
+        behavior === "smooth" ? 320 : 0,
       );
     },
-    [railItems, reduced, scrollToEnd, setFollowing, smooth]
+    [railItems, reduced, scrollToEnd, setFollowing, smooth],
   );
 
   const anchorRef = React.useRef(anchor);
@@ -1003,7 +1001,7 @@ function MessageScroller({
           ? "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           : "[scrollbar-gutter:stable]",
         viewportClassName,
-        navigation === "rail" && railOverflowing && "pr-10"
+        navigation === "rail" && railOverflowing && "pr-10",
       )}
     >
       <div
@@ -1044,7 +1042,7 @@ function MessageScroller({
             railOverflowing
               ? "pointer-events-auto opacity-100"
               : "pointer-events-none opacity-0",
-            railClassName
+            railClassName,
           )}
         >
           {viewport}
@@ -1061,7 +1059,9 @@ function MessageScroller({
             aria-label={scrollToEndLabel}
             title={scrollToEndLabel}
             onClick={returnToEnd}
-            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.9 }}
+            initial={
+              reduced ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.9 }
+            }
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.9 }}
             transition={reduced ? { duration: 0.12 } : SPRING_LAYOUT}

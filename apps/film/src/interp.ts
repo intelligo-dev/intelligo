@@ -9,7 +9,7 @@ import { interpolate } from "remotion";
 export function interp(
   value: number,
   input: readonly number[],
-  output: readonly number[]
+  output: readonly number[],
 ): number {
   return interpolate(value, input as number[], output as number[], {
     extrapolateLeft: "clamp",
@@ -18,7 +18,8 @@ export function interp(
 }
 
 export const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-export const seg = (v: number, a: number, b: number) => clamp01((v - a) / (b - a));
+export const seg = (v: number, a: number, b: number) =>
+  clamp01((v - a) / (b - a));
 
 /** `text` typed out while `v` runs a → b. */
 export function typed(v: number, a: number, b: number, text: string): string {

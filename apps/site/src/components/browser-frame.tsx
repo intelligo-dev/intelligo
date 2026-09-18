@@ -24,7 +24,10 @@ export function BrowserFrame({
       aria-label={label}
       className={cn("m-0 border border-foreground/15 bg-card", className)}
     >
-      <div aria-hidden="true" className="flex h-7 items-center gap-1.5 border-b border-border px-3">
+      <div
+        aria-hidden="true"
+        className="flex h-7 items-center gap-1.5 border-b border-border px-3"
+      >
         <span className="size-2 rounded-full bg-foreground/15" />
         <span className="size-2 rounded-full bg-foreground/15" />
         <span className="size-2 rounded-full bg-foreground/15" />

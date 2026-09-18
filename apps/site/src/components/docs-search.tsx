@@ -80,7 +80,8 @@ export function DocsSearch({ className }: { className?: string }) {
 
   const sections = useMemo(() => {
     const by = new Map<string, Row[]>();
-    for (const r of rows ?? []) by.set(r.section, [...(by.get(r.section) ?? []), r]);
+    for (const r of rows ?? [])
+      by.set(r.section, [...(by.get(r.section) ?? []), r]);
     return [...by.entries()];
   }, [rows]);
 

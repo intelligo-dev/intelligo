@@ -18,7 +18,7 @@ export type MessageSide = "start" | "end";
 
 /** Which edge the surrounding message sits on; read by the bubble. */
 const MessageSideContext = React.createContext<MessageSide | undefined>(
-  undefined
+  undefined,
 );
 
 interface MessageContextValue {
@@ -29,8 +29,10 @@ const MessageContext = React.createContext<MessageContextValue>({
   from: "assistant",
 });
 
-export interface MessageProps
-  extends Omit<HTMLMotionProps<"article">, "children"> {
+export interface MessageProps extends Omit<
+  HTMLMotionProps<"article">,
+  "children"
+> {
   from: MessageFrom;
   /** Plays a trailing-edge pop-up once when this message row mounts. */
   animateIn?: boolean;
@@ -113,7 +115,7 @@ function Message({
           className={cn(
             "group/message flex w-full items-start gap-2",
             from === "user" ? "flex-row-reverse" : "flex-row",
-            className
+            className,
           )}
           {...props}
         >
@@ -135,7 +137,7 @@ function MessageGroup({
       className={cn(
         "flex w-full flex-col",
         spacing === "compact" ? "gap-1.5" : "gap-4",
-        className
+        className,
       )}
       {...props}
     />
@@ -155,7 +157,7 @@ function MessageAvatar({
       className={cn(
         "grid size-7 shrink-0 place-items-center overflow-hidden rounded-full bg-muted text-xs font-medium text-muted-foreground [&_img]:size-full [&_img]:object-cover [&_svg]:size-3.5",
         placeholder && "invisible",
-        className
+        className,
       )}
       {...props}
     >
@@ -173,7 +175,7 @@ function MessageContent({ className, ...props }: MessageContentProps) {
       className={cn(
         "flex min-w-0 flex-1 flex-col gap-1.5",
         from === "user" ? "items-end" : "items-start",
-        className
+        className,
       )}
       {...props}
     />
@@ -189,7 +191,7 @@ function MessageHeader({ className, ...props }: MessageHeaderProps) {
       className={cn(
         "flex items-center gap-1.5 px-1 text-xs leading-none text-muted-foreground",
         from === "user" ? "justify-end" : "justify-start",
-        className
+        className,
       )}
       {...props}
     />
@@ -205,7 +207,7 @@ function MessageFooter({ className, ...props }: MessageFooterProps) {
       className={cn(
         "flex min-h-5 items-center gap-1 px-1 text-xs text-muted-foreground",
         from === "user" ? "justify-end" : "justify-start",
-        className
+        className,
       )}
       {...props}
     />
@@ -218,7 +220,7 @@ function MessageMarker({ className, style, ...props }: MessageMarkerProps) {
       data-slot="message-marker"
       className={cn(
         "mx-auto flex w-fit items-center gap-1.5 rounded-full bg-muted/70 px-2.5 py-1 text-center text-xs text-muted-foreground",
-        className
+        className,
       )}
       style={{ maxWidth: "88%", ...style }}
       {...props}

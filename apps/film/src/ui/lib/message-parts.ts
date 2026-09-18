@@ -47,7 +47,7 @@ function isBoundary(part: PartLike): boolean {
  */
 export function groupParts<P extends PartLike>(
   parts: readonly P[],
-  isCard: (part: P) => boolean
+  isCard: (part: P) => boolean,
 ): MessageSegment<P>[] {
   const segments: MessageSegment<P>[] = [];
   let run: PartAt<P>[] | null = null;
@@ -84,14 +84,14 @@ export function groupParts<P extends PartLike>(
 export function isActivityWorking<P extends PartLike>(
   segment: Extract<MessageSegment<P>, { kind: "activity" }>,
   isLastSegment: boolean,
-  isStreaming: boolean
+  isStreaming: boolean,
 ): boolean {
   if (!isStreaming) return false;
   if (isLastSegment) return true;
   return segment.parts.some(
     ({ part }) =>
       isToolPart(part) &&
-      !SETTLED_TOOL_STATES.has((part as { state?: string }).state ?? "")
+      !SETTLED_TOOL_STATES.has((part as { state?: string }).state ?? ""),
   );
 }
 
@@ -150,7 +150,7 @@ export function sourcesFromToolOutput(output: unknown): SourceItem[] {
  */
 export function collectSources<P extends PartLike>(
   parts: readonly P[],
-  sourcesOf: (part: P) => SourceItem[]
+  sourcesOf: (part: P) => SourceItem[],
 ): NumberedSource[] {
   const byIndex = new Map<number, NumberedSource>();
   const seenUrls = new Set<string>();
@@ -224,7 +224,7 @@ const CITE_PREFIX = "#cite-";
  */
 export function linkCitations(
   text: string,
-  known: ReadonlySet<number>
+  known: ReadonlySet<number>,
 ): string {
   if (known.size === 0) return text;
   return text.replace(/(?:\[\d{1,3}(?:\s*,\s*\d{1,3})*\])+(?!\()/g, (run) => {

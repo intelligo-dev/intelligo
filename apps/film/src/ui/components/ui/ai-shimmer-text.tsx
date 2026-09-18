@@ -25,7 +25,7 @@ const SHIMMER_GRADIENT =
 function shimmerStyle(
   /** Seconds taken for one pass; the utility's own default when omitted. */
   duration?: number,
-  gradient: string = SHIMMER_GRADIENT
+  gradient: string = SHIMMER_GRADIENT,
 ): React.CSSProperties {
   const style: Record<string, string> = { "--shimmer-image": gradient };
   if (duration !== undefined) style["--shimmer-duration"] = `${duration}s`;
@@ -55,7 +55,7 @@ function ShimmerText({
       role="status"
       className={cn(
         "relative inline-grid overflow-hidden text-sm text-muted-foreground",
-        className
+        className,
       )}
       style={style}
       {...props}

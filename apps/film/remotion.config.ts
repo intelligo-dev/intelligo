@@ -7,7 +7,7 @@
 
 import { join } from "node:path";
 import { Config } from "@remotion/cli/config";
-import { enableTailwind } from '@remotion/tailwind-v4';
+import { enableTailwind } from "@remotion/tailwind-v4";
 
 // Neither import.meta.url nor __dirname identifies this file's own
 // location — Remotion loads remotion.config.ts through a bundler

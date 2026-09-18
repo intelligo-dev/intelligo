@@ -47,7 +47,7 @@ function Branch({
 }) {
   const value = React.useMemo(
     () => ({ index, count, onIndexChange }),
-    [index, count, onIndexChange]
+    [index, count, onIndexChange],
   );
   if (count < 2) return null;
   return (
@@ -123,7 +123,7 @@ function BranchPage({ className, ...props }: React.ComponentProps<"span">) {
       data-slot="branch-page"
       className={cn(
         "min-w-8 text-center text-xs tabular-nums text-muted-foreground",
-        className
+        className,
       )}
       aria-live="polite"
       {...props}

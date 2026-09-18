@@ -64,8 +64,10 @@ export const SPRING_GLIDE = { stiffness: 700, damping: 50, mass: 0.5 } as const;
  * Disclosure: a transform-only reveal for collapsible agent content.
  * ------------------------------------------------------------------------- */
 
-export interface DisclosureProps
-  extends Omit<HTMLMotionProps<"div">, "animate" | "initial"> {
+export interface DisclosureProps extends Omit<
+  HTMLMotionProps<"div">,
+  "animate" | "initial"
+> {
   open: boolean;
   openHeight?: React.CSSProperties["height"];
 }
@@ -168,7 +170,7 @@ function SwapText({
       data-slot="swap-text"
       className={cn(
         "relative inline-block max-w-full align-bottom whitespace-nowrap",
-        className
+        className,
       )}
       style={{ clipPath: "inset(0 -999px)" }}
     >

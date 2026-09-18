@@ -22,7 +22,7 @@ function toString(href: Href): string {
   const q = href.query
     ? "?" +
       new URLSearchParams(
-        Object.entries(href.query).map(([k, v]) => [k, String(v)])
+        Object.entries(href.query).map(([k, v]) => [k, String(v)]),
       ).toString()
     : "";
   return href.pathname + q;

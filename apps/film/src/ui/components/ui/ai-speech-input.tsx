@@ -70,7 +70,7 @@ function SpeechInput({
     () => () => {
       recognition.current?.stop();
     },
-    []
+    [],
   );
 
   function start() {

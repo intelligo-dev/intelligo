@@ -192,24 +192,25 @@ export function Message({
   const [editing, setEditing] = useState(false);
 
   const hasVisibleText = message.parts.some(
-    (part) => isTextUIPart(part) && part.text
+    (part) => isTextUIPart(part) && part.text,
   );
   const isEmptyAssistant =
     !isUser &&
     message.parts.every(
-      (part) => (isTextUIPart(part) && !part.text) || part.type === "step-start"
+      (part) =>
+        (isTextUIPart(part) && !part.text) || part.type === "step-start",
     );
 
   const files = message.parts.flatMap((part) =>
-    isFilePart(part) ? [part] : []
+    isFilePart(part) ? [part] : [],
   );
   const sources = isUser ? [] : collectSources(message.parts, sourcesOf);
   const citations = new Map(
-    sources.map((source) => [source.index, citationItem(source)])
+    sources.map((source) => [source.index, citationItem(source)]),
   );
   const lastTextIndex = message.parts.reduce(
     (last, part, index) => (isTextUIPart(part) ? index : last),
-    -1
+    -1,
   );
   // A document a tool returned draws once: the tool's card. The
   // streamed `data-chat-artifact` part for the same document is what
@@ -262,7 +263,7 @@ export function Message({
     message.parts,
     (part) =>
       isToolUIPart(part) &&
-      (part.state === "approval-requested" || hasToolCard(getToolName(part)))
+      (part.state === "approval-requested" || hasToolCard(getToolName(part))),
   );
   const lastSegment = segments.at(-1);
   const activityLive =
@@ -395,13 +396,13 @@ export function Message({
               working={isActivityWorking(
                 segment,
                 position === segments.length - 1,
-                isStreamingThis
+                isStreamingThis,
               )}
               toolProps={toolProps}
             />
           ) : (
             renderPart(segment.part, segment.index)
-          )
+          ),
         )}
 
         {!isStreamingThis && sources.length > 0 ? (
@@ -608,7 +609,7 @@ function ApprovalCard({
             id: key,
             label: key,
             value: typeof value === "string" ? value : JSON.stringify(value),
-          })
+          }),
         )
       : [];
   const canDecide = !isReadonly && Boolean(actions) && Boolean(approvalId);

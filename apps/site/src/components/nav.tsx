@@ -104,7 +104,9 @@ export function Nav({
         className="pointer-events-none absolute inset-x-0 bottom-[-1px] h-px origin-left scale-x-0 bg-foreground"
         aria-hidden="true"
       />
-      <div className={cn(measure, "flex h-14 items-center justify-between gap-4")}>
+      <div
+        className={cn(measure, "flex h-14 items-center justify-between gap-4")}
+      >
         <a
           href="/"
           className="heading -my-2 flex items-center gap-2 py-2 text-[1.05rem] font-semibold tracking-tight no-underline"

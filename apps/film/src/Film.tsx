@@ -256,11 +256,7 @@ function Part({
   const y = interp(p, win, [from.y ?? 0, 0]);
   const rotate = interp(p, win, [from.r ?? 0, 0]);
   const scale = interp(p, win, [from.s ?? 1, 1]);
-  const opacity = interp(
-    p,
-    [win[0], win[0] + (win[1] - win[0]) * 0.6],
-    [0, 1]
-  );
+  const opacity = interp(p, [win[0], win[0] + (win[1] - win[0]) * 0.6], [0, 1]);
   return (
     <div
       style={{
@@ -440,7 +436,7 @@ function BlockEl({ kind }: { kind: Block["kind"] }) {
         <div
           className={cn(
             base,
-            "flex items-end gap-[2px] border border-border bg-background px-1 pb-1"
+            "flex items-end gap-[2px] border border-border bg-background px-1 pb-1",
           )}
         >
           {[40, 70, 55, 90, 65, 80].map((h, i) => (
@@ -554,7 +550,7 @@ function MomentView({
   const headOp = interp(
     p,
     [a + len * 0.05, a + len * 0.18, park[0], park[0] + len * 0.1],
-    [0, 1, 1, 0]
+    [0, 1, 1, 0],
   );
   const headY = interp(p, [a + len * 0.05, a + len * 0.18], [12, 0]);
   const checkOp = interp(p, [build[1], build[1] + len * 0.08], [0, 1]);
@@ -611,7 +607,7 @@ function MomentView({
           <div className="relative" style={{ width: HERO.w, height: HERO.h }}>
             {m.items.map((name, i) => {
               const it = REGISTRY_ITEMS.find(
-                (r: RegistryItem) => r.name === name
+                (r: RegistryItem) => r.name === name,
               )!;
               return (
                 <div
@@ -673,7 +669,15 @@ function GridCard({
 }) {
   const mine = interp(local, [(i / n) * 0.6, (i / n) * 0.6 + 0.4], [0, 1]);
   return (
-    <Wireframe local={mine} seed={100 + i} name={name} group={group} w={w} h={h} label />
+    <Wireframe
+      local={mine}
+      seed={100 + i}
+      name={name}
+      group={group}
+      w={w}
+      h={h}
+      label
+    />
   );
 }
 
@@ -737,7 +741,7 @@ function TermLine({ p, i, line }: { p: number; i: number; line: Line }) {
         line.tone === "cmd" && "mt-2 text-foreground first:mt-0",
         line.tone === "ok" && "text-success",
         line.tone === "dim" && "text-foreground/70",
-        line.tone === "amber" && "text-foreground"
+        line.tone === "amber" && "text-foreground",
       )}
     >
       {line.tone === "cmd" && <span className="text-muted-foreground">$ </span>}
@@ -832,14 +836,15 @@ function chat1Messages(r: number): UIMessage[] {
 /* ---- chat2: the feature showcase — attachment, tool activity, a human
  * approval gate, sources, and the answer becomes an artifact ---- */
 
-const ASK2 = "Draft a renewal notice and check whether legal needs to sign off first.";
+const ASK2 =
+  "Draft a renewal notice and check whether legal needs to sign off first.";
 const ANSWER2 =
   "Found the escalator clause and confirmed legal review is required over $50k [1]. Drafted the notice — approved below, so it's on its way.";
 
 /** A small inline placeholder — a scanned-clause look — so the fixture
  * needs no network access during a render. */
 const CLAUSE_IMAGE = `data:image/svg+xml,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160"><rect width="240" height="160" fill="#e2e2e2"/><rect x="16" y="16" width="180" height="10" fill="#9a9a9a"/><rect x="16" y="36" width="208" height="8" fill="#b8b8b8"/><rect x="16" y="52" width="190" height="8" fill="#b8b8b8"/><rect x="16" y="68" width="150" height="8" fill="#b8b8b8"/><rect x="16" y="96" width="208" height="8" fill="#b8b8b8"/><rect x="16" y="112" width="130" height="8" fill="#b8b8b8"/></svg>'
+  '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160"><rect width="240" height="160" fill="#e2e2e2"/><rect x="16" y="16" width="180" height="10" fill="#9a9a9a"/><rect x="16" y="36" width="208" height="8" fill="#b8b8b8"/><rect x="16" y="52" width="190" height="8" fill="#b8b8b8"/><rect x="16" y="68" width="150" height="8" fill="#b8b8b8"/><rect x="16" y="96" width="208" height="8" fill="#b8b8b8"/><rect x="16" y="112" width="130" height="8" fill="#b8b8b8"/></svg>',
 )}`;
 
 function chat2Messages(r: number): UIMessage[] {
@@ -919,7 +924,8 @@ type Screen = "dashboard" | "chat1" | "chat2";
 
 function ChatScreen({ screen, r }: { screen: "chat1" | "chat2"; r: number }) {
   const messages = screen === "chat1" ? chat1Messages(r) : chat2Messages(r);
-  const isStreaming = screen === "chat1" ? r > 0.05 && r < 0.56 : r > 0.05 && r < 0.95;
+  const isStreaming =
+    screen === "chat1" ? r > 0.05 && r < 0.56 : r > 0.05 && r < 0.95;
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
@@ -994,7 +1000,11 @@ function Stage({
             style={{ left: 0, top: 0, width: SB, height: H }}
             className="overflow-hidden rounded-l-xl border-r border-border"
           >
-            <AppSidebar workspace={WORKSPACE} workspaces={WORKSPACES} user={USER} />
+            <AppSidebar
+              workspace={WORKSPACE}
+              workspaces={WORKSPACES}
+              user={USER}
+            />
           </Part>
 
           {/* header + page — the real ShellHeader, and the real dashboard
@@ -1060,7 +1070,13 @@ function BoundaryPanel({ chat1 }: { chat1: number }) {
   const x = interp(chat1, [0.04, 0.14], [BOUNDARY.w + 40, 0]);
   const opacity = interp(chat1, [0.04, 0.12, 0.94, 1], [0, 1, 1, 0]);
   const active =
-    chat1 < 0.2 ? "none" : chat1 < 0.42 ? "admit" : chat1 < 0.68 ? "run" : "settle";
+    chat1 < 0.2
+      ? "none"
+      : chat1 < 0.42
+        ? "admit"
+        : chat1 < 0.68
+          ? "run"
+          : "settle";
   const note =
     active === "admit"
       ? "ADMIT · plan checked through a port, worst-case cost held"
@@ -1097,20 +1113,17 @@ function BoundaryPanel({ chat1 }: { chat1: number }) {
   );
 }
 
-function CodeLine({
-  l,
-  active,
-}: {
-  l: (typeof CODE)[number];
-  active: string;
-}) {
+function CodeLine({ l, active }: { l: (typeof CODE)[number]; active: string }) {
   const bg = active === l.step ? "var(--muted)" : "transparent";
   const color =
     active === "none" || active === l.step
       ? "var(--foreground)"
       : "var(--muted-foreground)";
   return (
-    <div style={{ background: bg, color }} className="-mx-1 whitespace-pre rounded-sm px-1">
+    <div
+      style={{ background: bg, color }}
+      className="-mx-1 whitespace-pre rounded-sm px-1"
+    >
       {l.text || " "}
     </div>
   );
@@ -1148,7 +1161,7 @@ function Editor({
   const name = typed(customize, 0.3, 0.5, "Contract Copilot");
   const oldName = "Assistant".slice(
     0,
-    Math.round((1 - seg(customize, 0.22, 0.3)) * 9)
+    Math.round((1 - seg(customize, 0.22, 0.3)) * 9),
   );
   const iconOp = interp(customize, [0.52, 0.58], [0, 1]);
   const modified = interp(customize, [0.6, 0.64], [0, 1]);
@@ -1173,7 +1186,7 @@ function Editor({
             key={f}
             className={cn(
               "flex items-center justify-between truncate rounded-sm px-1 py-[3px]",
-              hot ? "bg-background text-foreground" : "text-foreground/70"
+              hot ? "bg-background text-foreground" : "text-foreground/70",
             )}
           >
             <span className="truncate">{f}</span>
@@ -1191,7 +1204,8 @@ function Editor({
       <div className="mono flex-1 p-3 text-[10px] leading-[1.65] text-foreground">
         <div className="mb-2 text-muted-foreground">lib/chat-config.tsx</div>
         <div>
-          <span className="text-foreground">export const</span> chatConfig = {"{"}
+          <span className="text-foreground">export const</span> chatConfig ={" "}
+          {"{"}
         </div>
         <div className="pl-3">agent: {"{"}</div>
         <div className="pl-6">
@@ -1203,12 +1217,16 @@ function Editor({
           ,
         </div>
         <div className="pl-6">
-          icon: <span className="text-success" style={{ opacity: iconOp }}>"📄"</span>
+          icon:{" "}
+          <span className="text-success" style={{ opacity: iconOp }}>
+            "📄"
+          </span>
           {iconOp > 0.5 && ","}
         </div>
         <div className="pl-3">{"},"}</div>
         <div className="pl-3">
-          starters: [<span className="text-success">"Summarise this contract"</span>,{" "}
+          starters: [
+          <span className="text-success">"Summarise this contract"</span>,{" "}
           <span className="text-success">"Flag renewal risks"</span>],
         </div>
         <div>{"};"}</div>
@@ -1249,9 +1267,9 @@ function Ending({ ending }: { ending: number }) {
         Now add your own feature
       </div>
       <p className="max-w-sm text-[12.5px] text-muted-foreground">
-        Every part above is on npm or in the registry. Bring your own agent
-        into the one seam it's built for — upgrades never touch what
-        you've customized.
+        Every part above is on npm or in the registry. Bring your own agent into
+        the one seam it's built for — upgrades never touch what you've
+        customized.
       </p>
     </div>
   );
@@ -1328,7 +1346,8 @@ export function Film({ theme = "light" }: FilmProps) {
   const ending = interp(p, SCENE.ending, [0, 1]);
   const trayFade = interp(p, TRAY_CLEAR, [1, 0]);
 
-  const screen: Screen = chat2 > 0 ? "chat2" : chat1 > 0 ? "chat1" : "dashboard";
+  const screen: Screen =
+    chat2 > 0 ? "chat2" : chat1 > 0 ? "chat1" : "dashboard";
 
   let step = 0;
   STEPS.forEach((s, n) => {
@@ -1342,65 +1361,78 @@ export function Film({ theme = "light" }: FilmProps) {
 
   return (
     <FilmProviders>
-    <AbsoluteFill
-      className={theme === "dark" ? "dark" : undefined}
-      style={
-        {
-          backgroundColor: "var(--background)",
-          color: "var(--foreground)",
-          fontFamily: "var(--font-sans)",
-          "--font-sans": SANS_FONT,
-          "--font-mono": MONO_FONT,
-          "--font-heading": HEADING_FONT,
-        } as CSSProperties
-      }
-    >
-      <div
-        style={{
-          position: "absolute",
-          left: (width - stageW) / 2,
-          top: (height - CAPTION_BAND - stageH) / 2,
-          width: stageW,
-          height: stageH,
-          overflow: "hidden",
-        }}
+      <AbsoluteFill
+        className={theme === "dark" ? "dark" : undefined}
+        style={
+          {
+            backgroundColor: "var(--background)",
+            color: "var(--foreground)",
+            fontFamily: "var(--font-sans)",
+            "--font-sans": SANS_FONT,
+            "--font-mono": MONO_FONT,
+            "--font-heading": HEADING_FONT,
+          } as CSSProperties
+        }
       >
-        <div style={{ transform: `scale(${SCALE})`, transformOrigin: "top left" }}>
-          <div className="film-stage relative overflow-hidden rounded-xl" style={{ width: W, height: H }}>
-            <Moments p={blocks} fade={trayFade} />
-            <Terminal p={terminal} />
-            <App
-              entrance={dashboard}
-              screen={screen}
-              chat1={chat1}
-              chat2={chat2}
-              ending={ending}
-            />
-            {/* Editor paints after App now — unlike the old timeline
-             * (customize fully before the product ever appeared, so the
-             * app was invisible while Editor was on screen), the app is
-             * already up and opaque behind this overlay, and DOM order
-             * is paint order with no z-index in play. */}
-            <Editor customize={customize} closesWith={chat2} />
+        <div
+          style={{
+            position: "absolute",
+            left: (width - stageW) / 2,
+            top: (height - CAPTION_BAND - stageH) / 2,
+            width: stageW,
+            height: stageH,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              transform: `scale(${SCALE})`,
+              transformOrigin: "top left",
+            }}
+          >
+            <div
+              className="film-stage relative overflow-hidden rounded-xl"
+              style={{ width: W, height: H }}
+            >
+              <Moments p={blocks} fade={trayFade} />
+              <Terminal p={terminal} />
+              <App
+                entrance={dashboard}
+                screen={screen}
+                chat1={chat1}
+                chat2={chat2}
+                ending={ending}
+              />
+              {/* Editor paints after App now — unlike the old timeline
+               * (customize fully before the product ever appeared, so the
+               * app was invisible while Editor was on screen), the app is
+               * already up and opaque behind this overlay, and DOM order
+               * is paint order with no z-index in play. */}
+              <Editor customize={customize} closesWith={chat2} />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* lower-third: the same scene/step context the site's Rail gives a scroller.
-       * Lives in the reserved CAPTION_BAND strip below the stage, never over it. */}
-      <div
-        className="mono absolute left-16 text-foreground"
-        style={{ bottom: (CAPTION_BAND - 92) / 2, textShadow: "0 1px 12px var(--background)" }}
-      >
-        <div className="text-[13px] uppercase tracking-[0.08em] text-muted-foreground">
-          scene {SCENES[scene]!.n} / 07 · {pct}%
+        {/* lower-third: the same scene/step context the site's Rail gives a scroller.
+         * Lives in the reserved CAPTION_BAND strip below the stage, never over it. */}
+        <div
+          className="mono absolute left-16 text-foreground"
+          style={{
+            bottom: (CAPTION_BAND - 92) / 2,
+            textShadow: "0 1px 12px var(--background)",
+          }}
+        >
+          <div className="text-[13px] uppercase tracking-[0.08em] text-muted-foreground">
+            scene {SCENES[scene]!.n} / 07 · {pct}%
+          </div>
+          <div className="heading mt-1 text-[22px] font-medium text-foreground">
+            {SCENES[scene]!.title}
+          </div>
+          <div className="mt-1 text-[14px] text-foreground/80">
+            {STEPS[step]!.label}
+          </div>
         </div>
-        <div className="heading mt-1 text-[22px] font-medium text-foreground">
-          {SCENES[scene]!.title}
-        </div>
-        <div className="mt-1 text-[14px] text-foreground/80">{STEPS[step]!.label}</div>
-      </div>
-    </AbsoluteFill>
+      </AbsoluteFill>
     </FilmProviders>
   );
 }

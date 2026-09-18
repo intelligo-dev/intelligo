@@ -58,14 +58,14 @@ type AttachmentsContextValue = {
 };
 
 const AttachmentsContext = React.createContext<AttachmentsContextValue | null>(
-  null
+  null,
 );
 
 function usePromptInputAttachments() {
   const context = React.useContext(AttachmentsContext);
   if (!context) {
     throw new Error(
-      "usePromptInputAttachments must be used within a PromptInput"
+      "usePromptInputAttachments must be used within a PromptInput",
     );
   }
   return context;
@@ -87,7 +87,7 @@ function matchesAccept(file: File, accept?: string) {
     .some((pattern) =>
       pattern.endsWith("/*")
         ? file.type.startsWith(pattern.slice(0, -1))
-        : file.type === pattern
+        : file.type === pattern,
     );
 }
 
@@ -128,7 +128,7 @@ function PromptInput({
   onError?: (error: PromptInputError) => void;
   onSubmit: (
     message: PromptInputMessage,
-    event: React.FormEvent<HTMLFormElement>
+    event: React.FormEvent<HTMLFormElement>,
   ) => void | Promise<void>;
 }) {
   const inputRef = React.useRef<HTMLInputElement | null>(null);
@@ -146,7 +146,7 @@ function PromptInput({
         return;
       }
       const sized = accepted.filter((file) =>
-        maxFileSize ? file.size <= maxFileSize : true
+        maxFileSize ? file.size <= maxFileSize : true,
       );
       if (accepted.length > 0 && sized.length === 0) {
         onError?.({ code: "max_file_size" });
@@ -169,11 +169,11 @@ function PromptInput({
             url: URL.createObjectURL(file),
             mediaType: file.type,
             filename: file.name,
-          }))
+          })),
         );
       });
     },
-    [accept, maxFiles, maxFileSize, onError]
+    [accept, maxFiles, maxFileSize, onError],
   );
 
   const remove = React.useCallback((id: string) => {
@@ -226,7 +226,7 @@ function PromptInput({
         if (file.url) URL.revokeObjectURL(file.url);
       }
     },
-    []
+    [],
   );
 
   const context = React.useMemo<AttachmentsContextValue>(
@@ -238,7 +238,7 @@ function PromptInput({
       openFileDialog,
       fileInputRef: inputRef,
     }),
-    [files, add, remove, clear, openFileDialog]
+    [files, add, remove, clear, openFileDialog],
   );
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -252,8 +252,8 @@ function PromptInput({
       files.map(async ({ id: _id, ...file }) =>
         file.url?.startsWith("blob:")
           ? { ...file, url: (await blobUrlToDataUrl(file.url)) ?? file.url }
-          : file
-      )
+          : file,
+      ),
     )
       .then(async (converted) => {
         await onSubmit({ text, files: converted }, event);
@@ -328,7 +328,7 @@ function PromptInputTextarea({
       event.preventDefault();
       const form = event.currentTarget.form;
       const submit = form?.querySelector<HTMLButtonElement>(
-        'button[type="submit"]'
+        'button[type="submit"]',
       );
       if (submit?.disabled) return;
       form?.requestSubmit();
@@ -368,7 +368,7 @@ function PromptInputTextarea({
       rows={2}
       className={cn(
         "field-sizing-content block max-h-64 min-h-12 w-full resize-none bg-transparent px-2 pt-1.5 text-sm leading-6 text-foreground outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed",
-        className
+        className,
       )}
       name="message"
       onCompositionEnd={() => setIsComposing(false)}
@@ -387,7 +387,10 @@ function PromptInputHeader({
   return (
     <div
       data-slot="prompt-input-header"
-      className={cn("order-first flex flex-wrap items-center gap-1 px-1 pb-1", className)}
+      className={cn(
+        "order-first flex flex-wrap items-center gap-1 px-1 pb-1",
+        className,
+      )}
       {...props}
     />
   );
@@ -400,7 +403,10 @@ function PromptInputFooter({
   return (
     <div
       data-slot="prompt-input-footer"
-      className={cn("mt-1 flex min-h-8 items-center justify-between gap-1", className)}
+      className={cn(
+        "mt-1 flex min-h-8 items-center justify-between gap-1",
+        className,
+      )}
       {...props}
     />
   );
@@ -435,7 +441,7 @@ function PromptInputButton({
       className={cn(
         "rounded-full text-muted-foreground hover:text-foreground",
         iconOnly && "size-8",
-        className
+        className,
       )}
       {...props}
     />
@@ -499,7 +505,7 @@ function PromptInputAttachment({
 }
 
 function PromptInputActionMenu(
-  props: React.ComponentProps<typeof DropdownMenu>
+  props: React.ComponentProps<typeof DropdownMenu>,
 ) {
   return <DropdownMenu {...props} />;
 }
@@ -517,7 +523,7 @@ function PromptInputActionMenuTrigger({
           {...props}
           className={cn(
             "[&>svg]:transition-transform [&>svg]:duration-200 aria-expanded:[&>svg]:rotate-45 motion-reduce:[&>svg]:transition-none",
-            props.className
+            props.className,
           )}
         />
       }
@@ -542,7 +548,7 @@ function PromptInputActionMenuContent({
 }
 
 function PromptInputActionMenuItem(
-  props: React.ComponentProps<typeof DropdownMenuItem>
+  props: React.ComponentProps<typeof DropdownMenuItem>,
 ) {
   return <DropdownMenuItem {...props} />;
 }
@@ -579,9 +585,15 @@ function PromptInputSubmit({
   const pending = status === "submitted" || status === "streaming";
   let icon = <ArrowUpIcon />;
   if (status === "submitted") icon = <Spinner />;
-  else if (status === "streaming") icon = <SquareIcon className="size-3 fill-current" />;
+  else if (status === "streaming")
+    icon = <SquareIcon className="size-3 fill-current" />;
   else if (status === "error") icon = <XIcon />;
-  const key = status === "submitted" || status === "streaming" ? "stop" : status === "error" ? "error" : "send";
+  const key =
+    status === "submitted" || status === "streaming"
+      ? "stop"
+      : status === "error"
+        ? "error"
+        : "send";
 
   return (
     <Button
@@ -600,7 +612,9 @@ function PromptInputSubmit({
         <AnimatePresence initial={false} mode="popLayout">
           <motion.span
             key={key}
-            initial={reduced ? { opacity: 1 } : { opacity: 0, y: 3, scale: 0.8 }}
+            initial={
+              reduced ? { opacity: 1 } : { opacity: 0, y: 3, scale: 0.8 }
+            }
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: -3, scale: 0.8 }}
             transition={reduced ? { duration: 0 } : SPRING_SWAP}
@@ -626,7 +640,7 @@ function PromptInputSelectTrigger({
     <SelectTrigger
       className={cn(
         "h-8 max-w-52 rounded-xl border-none bg-transparent px-2 text-xs font-medium text-muted-foreground shadow-none transition-colors hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
-        className
+        className,
       )}
       {...props}
     />

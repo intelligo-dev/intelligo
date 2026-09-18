@@ -69,7 +69,7 @@ function IconAction({
             size="icon-xs"
             className={cn(
               "text-muted-foreground",
-              pressed && "bg-accent text-foreground"
+              pressed && "bg-accent text-foreground",
             )}
             aria-label={label}
             aria-pressed={pressed}
@@ -133,7 +133,7 @@ export function MessageActions({
       data-slot="message-actions"
       className={cn(
         "flex items-center gap-0.5 transition-opacity focus-within:opacity-100 group-hover/chat-message:opacity-100",
-        alwaysVisible ? "opacity-100" : "opacity-0"
+        alwaysVisible ? "opacity-100" : "opacity-0",
       )}
     >
       {text ? (

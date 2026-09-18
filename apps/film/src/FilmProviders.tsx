@@ -13,7 +13,11 @@ import chatMessages from "@ui/messages/en/chat.json";
  * fixture "acme" workspace and one "Maya" user, matching the names the
  * original hand-drawn sidebar/topbar already used.
  */
-export const WORKSPACE: Workspace = { id: "ws_acme", name: "Acme Inc", slug: "acme" };
+export const WORKSPACE: Workspace = {
+  id: "ws_acme",
+  name: "Acme Inc",
+  slug: "acme",
+};
 export const WORKSPACES: Workspace[] = [WORKSPACE];
 export const USER = { name: "Maya Chen", email: "maya@acme.com", image: null };
 

@@ -29,7 +29,7 @@ const SEARCH_DEBOUNCE_MS = 150;
 export function detectTrigger(
   text: string,
   caret: number,
-  mentionTrigger = "@"
+  mentionTrigger = "@",
 ): Trigger | null {
   const before = text.slice(0, caret);
   if (/\s/.test(before.slice(-1))) return null;
@@ -160,7 +160,7 @@ export function useComposerMenu({
       setPicked((previous) =>
         previous.some((m) => m.id === mention.id)
           ? previous
-          : [...previous, mention]
+          : [...previous, mention],
       );
       const before = value.slice(0, trigger.start);
       setValue(`${before}${mentionTrigger}${mention.label} ${after}`);
@@ -175,16 +175,16 @@ export function useComposerMenu({
       send,
       mentionResults,
       mentionTrigger,
-    ]
+    ],
   );
 
   /** The mentions still present in the text, for the turn's body. */
   const activeMentions = useMemo(
     () =>
       picked.filter((mention) =>
-        value.includes(`${mentionTrigger}${mention.label}`)
+        value.includes(`${mentionTrigger}${mention.label}`),
       ),
-    [picked, value, mentionTrigger]
+    [picked, value, mentionTrigger],
   );
 
   const clearPicked = useCallback(() => setPicked([]), []);

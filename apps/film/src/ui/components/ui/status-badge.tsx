@@ -24,7 +24,7 @@ const statusBadgeVariants = cva(
     defaultVariants: {
       status: "neutral",
     },
-  }
+  },
 );
 
 function StatusBadge({

@@ -91,7 +91,10 @@ export function GitHubStarButton({
     fetch(`https://api.github.com/repos/${owner}/${repo}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { stargazers_count?: number } | null) => {
-        const n = typeof data?.stargazers_count === "number" ? data.stargazers_count : null;
+        const n =
+          typeof data?.stargazers_count === "number"
+            ? data.stargazers_count
+            : null;
         writeCached(key, n);
         if (live) setCount(n);
       })
@@ -108,9 +111,7 @@ export function GitHubStarButton({
       target="_blank"
       rel="noreferrer"
       aria-label={
-        count !== null
-          ? `Star on GitHub, ${count} stars`
-          : "Star on GitHub"
+        count !== null ? `Star on GitHub, ${count} stars` : "Star on GitHub"
       }
       className={cn(
         buttonVariants({ variant: "outline" }),

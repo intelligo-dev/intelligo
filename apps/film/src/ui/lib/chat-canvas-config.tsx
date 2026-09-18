@@ -99,7 +99,9 @@ export interface CanvasKind {
 
 const TextEditor = lazy(() => import("@ui/components/chat/canvas/text-editor"));
 const CodeEditor = lazy(() => import("@ui/components/chat/canvas/code-editor"));
-const SheetEditor = lazy(() => import("@ui/components/chat/canvas/sheet-editor"));
+const SheetEditor = lazy(
+  () => import("@ui/components/chat/canvas/sheet-editor"),
+);
 
 function Loading() {
   return (

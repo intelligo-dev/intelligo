@@ -136,7 +136,9 @@ export function TextView({ content, streaming }: DocumentViewProps) {
 }
 
 export function CodeView({ content, title }: DocumentViewProps) {
-  return <CodeBlock code={content} language={languageOf(title)} showLineNumbers />;
+  return (
+    <CodeBlock code={content} language={languageOf(title)} showLineNumbers />
+  );
 }
 
 /** A sheet as its raw rows — a grid is an editor's job. */
