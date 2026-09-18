@@ -54,10 +54,7 @@ import type {
   AgentActivitySearch,
   AgentActivityTool,
 } from "@/components/ui/ai-agent-activity";
-import {
-  FileDiff,
-  type FileDiffLine,
-} from "@/components/ui/ai-file-diff";
+import { FileDiff, type FileDiffLine } from "@/components/ui/ai-file-diff";
 import {
   ImageGeneration,
   type ImageGenerationStatus,
@@ -466,9 +463,19 @@ export function parseUnifiedDiff(patch: string): FileDiffLine[] {
     if (raw.startsWith("diff ") || raw.startsWith("index ")) continue;
     const id = `${lines.length}`;
     if (raw.startsWith("+")) {
-      lines.push({ id, type: "added", newLine: newLine++, content: raw.slice(1) });
+      lines.push({
+        id,
+        type: "added",
+        newLine: newLine++,
+        content: raw.slice(1),
+      });
     } else if (raw.startsWith("-")) {
-      lines.push({ id, type: "removed", oldLine: oldLine++, content: raw.slice(1) });
+      lines.push({
+        id,
+        type: "removed",
+        oldLine: oldLine++,
+        content: raw.slice(1),
+      });
     } else if (raw.startsWith(" ") || (raw === "" && lines.length > 0)) {
       lines.push({
         id,

@@ -114,15 +114,15 @@ export function ChatAgentCard({ data }: DataRendererProps) {
             className="text-xs"
           />
         ) : (
-        <StatusBadge status={status} dot>
-          {t(
-            agent.status === "completed"
-              ? "activity.done"
-              : agent.status === "failed"
-                ? "activity.failed"
-                : "activity.running"
-          )}
-        </StatusBadge>
+          <StatusBadge status={status} dot>
+            {t(
+              agent.status === "completed"
+                ? "activity.done"
+                : agent.status === "failed"
+                  ? "activity.failed"
+                  : "activity.running"
+            )}
+          </StatusBadge>
         )}
       </ItemActions>
     </Item>

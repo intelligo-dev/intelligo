@@ -92,8 +92,7 @@ export function AppSidebar({
           <AISidebarMenu>
             {items.map((item) => {
               const isActive =
-                pathname === item.href ||
-                pathname?.startsWith(`${item.href}/`);
+                pathname === item.href || pathname?.startsWith(`${item.href}/`);
               return (
                 <AISidebarMenuItem key={item.href}>
                   <AISidebarItem

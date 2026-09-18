@@ -52,10 +52,7 @@ import { AppSidebar } from "@/components/shell/app-sidebar";
 import { PageTransition } from "@/components/shell/page-transition";
 import { ShellHeader } from "@/components/shell/shell-header";
 import { TimeZoneCookie } from "@/components/shell/time-zone-cookie";
-import {
-  AISidebarInset,
-  AISidebarProvider,
-} from "@/components/ui/ai-sidebar";
+import { AISidebarInset, AISidebarProvider } from "@/components/ui/ai-sidebar";
 import { redirect } from "@/i18n/navigation";
 import { shellConfig } from "@/lib/shell-config";
 import { onWorkspaceCreated } from "@/lib/workspace-bootstrap";
