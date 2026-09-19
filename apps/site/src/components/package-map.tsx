@@ -137,7 +137,7 @@ export function PackageMap() {
                   onClick={() => setSelected(p.id)}
                   aria-pressed={selected === p.id}
                   className={cn(
-                    "mono min-h-10 rounded-md border px-3 text-[0.8rem] transition-colors",
+                    "mono min-h-10 rounded-lg border px-3 text-[0.8rem] transition-colors",
                     selected === p.id
                       ? "border-foreground bg-foreground text-background"
                       : related.has(p.id)
@@ -155,7 +155,7 @@ export function PackageMap() {
 
       <div
         ref={wrapRef}
-        className="relative hidden overflow-hidden rounded-md border border-border bg-card md:block"
+        className="relative hidden overflow-hidden rounded-xl border border-border bg-card md:block"
         style={{ height: H * scale + 2 }}
       >
         {/* layer labels */}
@@ -225,7 +225,7 @@ export function PackageMap() {
         </div>
       </div>
 
-      <aside className="rounded-md border border-border bg-card p-4">
+      <aside className="rounded-xl border border-border bg-card p-4">
         <div className="mono text-[0.72rem] text-muted-foreground">
           {detail.layer === "intelligo"
             ? "@intelligo-dev/"

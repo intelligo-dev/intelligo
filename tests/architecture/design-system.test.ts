@@ -166,6 +166,35 @@ describe("motion honours prefers-reduced-motion", () => {
   });
 });
 
+describe("the site follows the radius scale", () => {
+  it("sets no corner above xl in its own pages and components", () => {
+    const radius = RULES.find((rule) => rule.id === "radius-scale")!.pattern;
+    const site = path.join(ROOT, "apps/site/src");
+    // Generated copies, and the stock shadcn primitives the site installs.
+    const skip = [
+      path.join(site, "showcase/app"),
+      path.join(site, "components/ui"),
+    ];
+    const files: string[] = [];
+    const visit = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const full = path.join(dir, entry);
+        if (skip.includes(full)) continue;
+        if (statSync(full).isDirectory()) visit(full);
+        else if (/\.(astro|tsx?)$/.test(entry)) files.push(full);
+      }
+    };
+    visit(site);
+    const offenders = files.flatMap((file) =>
+      [...readFileSync(file, "utf8").matchAll(radius)].map(
+        (match) => `${path.relative(ROOT, file)} ${match[0]}`
+      )
+    );
+    expect(files.length).toBeGreaterThan(20);
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe("design-system source rules", () => {
   const current = collectViolations();
 

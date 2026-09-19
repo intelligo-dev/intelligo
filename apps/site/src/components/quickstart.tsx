@@ -100,7 +100,7 @@ export function Quickstart() {
           ))}
         </ol>
 
-        <div className="rounded-md border border-border bg-muted">
+        <div className="rounded-xl border border-border bg-muted">
           <div className="flex h-8 items-center gap-1.5 border-b border-border px-3">
             <span className="size-2 rounded-full bg-foreground/15" />
             <span className="size-2 rounded-full bg-foreground/15" />

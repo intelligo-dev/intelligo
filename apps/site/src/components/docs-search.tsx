@@ -100,7 +100,7 @@ export function DocsSearch({ className }: { className?: string }) {
         onClick={() => setOpen(true)}
         aria-keyshortcuts="Meta+K Control+K /"
         className={cn(
-          "flex h-9 items-center gap-2 rounded-full border border-input bg-background px-3 text-[0.82rem] text-muted-foreground transition-colors duration-fast hover:border-foreground/30 hover:text-foreground",
+          "flex h-9 items-center gap-2 rounded-lg border border-input bg-background px-3 text-[0.82rem] text-muted-foreground transition-colors duration-fast hover:border-foreground/30 hover:text-foreground",
           className
         )}
       >

@@ -95,7 +95,7 @@ export function RegistryExplorer() {
                     onClick={() => setName(i.name)}
                     aria-pressed={i.name === name}
                     className={cn(
-                      "mono min-h-8 rounded-md border px-2.5 text-[0.75rem] transition-colors",
+                      "mono min-h-8 rounded-lg border px-2.5 text-[0.75rem] transition-colors",
                       i.name === name
                         ? "border-foreground bg-foreground text-background"
                         : "border-input text-foreground/70 hover:border-foreground/40 hover:text-foreground"
@@ -125,7 +125,7 @@ export function RegistryExplorer() {
                     key={d}
                     type="button"
                     onClick={() => setName(d)}
-                    className="ml-1 rounded-md border border-input px-1.5 py-1 text-foreground/70 hover:border-foreground/40 hover:text-foreground"
+                    className="ml-1 rounded-lg border border-input px-1.5 py-1 text-foreground/70 hover:border-foreground/40 hover:text-foreground"
                   >
                     {d}
                   </button>

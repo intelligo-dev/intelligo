@@ -51,7 +51,7 @@ function Card({
     >
       <motion.article
         style={pinned ? { scale, top: `${index * 24}px` } : undefined}
-        className="relative grid w-full origin-top gap-6 rounded-md border border-border bg-card p-6 md:min-h-[300px] md:grid-cols-[1.1fr_1fr] md:p-8"
+        className="relative grid w-full origin-top gap-6 rounded-xl border border-border bg-card p-6 md:min-h-[300px] md:grid-cols-[1.1fr_1fr] md:p-8"
       >
         <div>
           <span className="tag">[ {card.tag} ]</span>
@@ -62,7 +62,7 @@ function Card({
             {card.body}
           </p>
         </div>
-        <div className="mono self-end overflow-x-auto rounded-md border border-border bg-background p-3.5 text-[0.76rem] leading-relaxed">
+        <div className="mono self-end overflow-x-auto rounded-lg border border-border bg-background p-3.5 text-[0.76rem] leading-relaxed">
           {card.evidence.map((l, i) => (
             <div
               key={i}

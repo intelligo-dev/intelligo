@@ -16,7 +16,7 @@ export function RuleToggles() {
           <div
             key={r.id}
             className={cn(
-              "overflow-hidden rounded-md border transition-colors",
+              "overflow-hidden rounded-xl border transition-colors",
               on ? "border-destructive" : "border-border"
             )}
           >
@@ -37,7 +37,7 @@ export function RuleToggles() {
                 aria-pressed={on}
                 onClick={() => setBroken(on ? null : r.id)}
                 className={cn(
-                  "mono min-h-9 rounded-md border px-3 text-[0.75rem] transition-colors",
+                  "mono min-h-9 rounded-lg border px-3 text-[0.75rem] transition-colors",
                   on
                     ? "border-destructive bg-destructive/10 text-destructive"
                     : "border-input text-foreground/70 hover:text-foreground"

@@ -105,7 +105,7 @@ export function Alternatives() {
         role="tabpanel"
         aria-labelledby={`alt-tab-${a.id}`}
         tabIndex={0}
-        className="rounded-md border border-border bg-card p-5 md:min-h-[19rem] md:p-6"
+        className="rounded-xl border border-border bg-card p-5 md:min-h-[19rem] md:p-6"
       >
         <div key={a.id} className="animate-in fade-in duration-normal">
           <div className="tag">what's different here</div>

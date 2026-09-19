@@ -14,7 +14,7 @@ export function InstallCommand({
     <TooltipProvider>
       <div
         className={cn(
-          "mono flex items-center gap-2 rounded-md border border-border bg-muted py-1 pl-3 pr-1 text-[0.78rem]",
+          "mono flex items-center gap-2 rounded-lg border border-border bg-muted py-1 pl-3 pr-1 text-[0.78rem]",
           className
         )}
       >

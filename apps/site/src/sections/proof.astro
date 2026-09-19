@@ -36,7 +36,7 @@ const OPEN: { icon: LucideIcon; title: string; body: string; href: string; cta: 
       title="Not a pitch. A count."
       lede="Counted from the framework repository, not typed into a landing page — and the rules behind them fail the build when broken."
     />
-    <div class="reveal mt-8 grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+    <div class="reveal mt-8 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
       {PROOF_STATS.map((s) => (
         <div class="bg-card p-5 top-shade">
           <div class="heading text-[2.6rem] font-semibold leading-none tabular-nums text-foreground">{s.value}</div>
@@ -49,7 +49,7 @@ const OPEN: { icon: LucideIcon; title: string; body: string; href: string; cta: 
       counted {PROOF.sampledAt} · v{PROOF.version} · <a href={`${SITE.github}/blob/main/apps/site/scripts/sync-framework.mjs`} class="hover:text-foreground">by a script, committed with the site →</a>
     </p>
 
-    <ul class="reveal mt-8 grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-3">
+    <ul class="reveal mt-8 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">
       {OPEN.map(({ icon: Icon, title, body, href, cta }) => (
         <li>
           <a href={href} class="group flex h-full items-start gap-3 bg-background px-4 py-3.5 no-underline transition-colors hover:bg-accent">

@@ -35,7 +35,10 @@ const { item, prev, next } = Astro.props;
 const cmd = installCommand(item.name);
 const components = item.primitives
   .filter((p) => p !== "utils" && !p.startsWith("font-"))
-  .map((p) => ({ label: p, href: `/components#${p.replace(/^@intelligo\//, "")}` }));
+  .map((p) => {
+    const name = p.replace(/^@intelligo\//, "");
+    return { label: name, href: `/components#${name}` };
+  });
 
 /** Installed files, grouped by what shadcn calls them. */
 const KINDS: [string, string][] = [
@@ -100,11 +103,11 @@ const messages = item.files.find((f) => f.target.startsWith("messages/"))?.targe
         {components.length > 0 && (
           <div>
             <div class="tag mb-2">built from</div>
-            <div class="flex flex-wrap gap-1">
-              {components.map((c) => (
-                <a href={c.href} class="mono rounded-md border border-border px-2 py-0.5 text-[0.72rem] text-foreground/70 no-underline hover:text-foreground">{c.label}</a>
+            <p class="text-[0.86rem] leading-relaxed text-foreground/70">
+              {components.map((c, i) => (
+                <>{i > 0 && ", "}<a href={c.href} class="text-foreground/80 hover:text-foreground">{c.label}</a></>
               ))}
-            </div>
+            </p>
           </div>
         )}
 

@@ -129,7 +129,7 @@ export function Nav({
                 href={n.href}
                 aria-current={isActive(n.href) ? "page" : undefined}
                 className={cn(
-                  "rounded-full px-3 py-2 text-[0.85rem] text-muted-foreground no-underline transition-colors duration-fast hover:bg-accent hover:text-foreground",
+                  "rounded-lg px-3 py-2 text-[0.85rem] text-muted-foreground no-underline transition-colors duration-fast hover:bg-accent hover:text-foreground",
                   isActive(n.href) && "bg-accent font-medium text-foreground"
                 )}
               >

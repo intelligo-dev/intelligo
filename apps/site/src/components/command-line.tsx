@@ -12,7 +12,7 @@ export function CommandLine({
   return (
     <div
       className={cn(
-        "mono flex items-center gap-2 rounded-md border border-border bg-muted py-0.5 pl-3 pr-1 text-[0.74rem]",
+        "mono flex items-center gap-2 rounded-lg border border-border bg-muted py-0.5 pl-3 pr-1 text-[0.74rem]",
         className
       )}
     >

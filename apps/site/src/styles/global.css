@@ -273,7 +273,7 @@
 /* first thing in the tab order, on screen only once it is focused */
 .skip-link {
   position: absolute; left: 0.75rem; top: 0.75rem; z-index: var(--z-toast);
-  padding: 0.55rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 500; text-decoration: none;
+  padding: 0.55rem 0.9rem; border-radius: var(--radius-lg); font-size: 0.85rem; font-weight: 500; text-decoration: none;
   background: var(--foreground); color: var(--background);
   transform: translateY(-200%);
 }
@@ -396,7 +396,7 @@ details.q .a { padding: 0 1.25rem 1.1rem; color: var(--muted-foreground); font-s
 .astro-code, pre.code {
   background: var(--card) !important;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   font-family: var(--font-mono);
   font-size: 0.82rem;
   line-height: 1.65;
@@ -449,7 +449,7 @@ details.q .a { padding: 0 1.25rem 1.1rem; color: var(--muted-foreground); font-s
 .docs-mobile-menu summary::-webkit-details-marker { display: none; }
 
 .docs-pager {
-  display: block; border: 1px solid var(--border); border-radius: var(--radius-md);
+  display: block; border: 1px solid var(--border); border-radius: var(--radius-xl);
   padding: 0.85rem 1rem; text-decoration: none;
   transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
 }
@@ -504,7 +504,7 @@ html:not(.js) .docs-prose table { display: block; overflow-x: auto; }
 
 /* docs: code frames (lib/markdown.mjs) */
 .code-frame {
-  border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden;
+  border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden;
   background: color-mix(in oklab, var(--muted) 45%, var(--background));
 }
 .docs-prose li > .code-frame { margin-top: 0.7em; }
@@ -534,7 +534,7 @@ html:not(.js) .docs-prose table { display: block; overflow-x: auto; }
   content: "$"; margin-right: 0.75ch; color: var(--muted-foreground); user-select: none;
 }
 @media (max-width: 640px) {
-  .code-frame { border-radius: var(--radius-md); }
+  .code-frame { border-radius: var(--radius-lg); }
   .code-frame pre.astro-code { font-size: 0.76rem; padding: 0.85rem 0.9rem; }
 }
 
