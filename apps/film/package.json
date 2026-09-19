@@ -47,7 +47,6 @@
     "sync-ui": "node scripts/sync-ui.mjs",
     "render": "remotion render src/index.ts Film out/film-light.mp4 --props='{\"theme\":\"light\"}'",
     "render:dark": "remotion render src/index.ts Film out/film-dark.mp4 --props='{\"theme\":\"dark\"}'",
-    "render:teaser": "remotion render src/index.ts Film out/teaser-light.mp4 --frames=0-374 --props='{\"theme\":\"light\"}'",
     "upgrade": "remotion upgrade",
     "lint": "eslint src",
     "type-check": "tsc --noEmit"

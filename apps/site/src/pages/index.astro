@@ -1,9 +1,8 @@
 ---
 /**
  * The homepage, problem to install: a title card; the two halves of an
- * AI product; the film — a rendered video, four scenes (the build ·
- * the run · make it yours · time passes), or the live product until
- * it is rendered; what you take home; the
+ * AI product; the film — a rendered minute, from the problem to the
+ * install command; the same product, live; what you take home; the
  * boundary in code; the count; the quickstart; the questions. Each
  * section is a door into /why, /blocks, /components, /architecture or
  * /docs.
@@ -20,14 +19,14 @@ import Code from "@/sections/code.astro";
 import Proof from "@/sections/proof.astro";
 import Quickstart from "@/sections/quickstart.astro";
 import Faq from "@/sections/faq.astro";
-import { SITE } from "@/lib/site";
 ---
 <Base>
   <Nav client:load current="/" />
   <main id="main" class="rails">
     <Hero />
     <Halves />
-    {SITE.filmVideoUrl ? <Film /> : <Preview />}
+    <Film />
+    <Preview />
     <WhatYouGet />
     <Code />
     <Proof />

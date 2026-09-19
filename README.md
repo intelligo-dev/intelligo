@@ -16,6 +16,15 @@ Intelligo is everything around it — tested, typed, and yours.
 
 [Quickstart](#quickstart) · [Features](#features) · [Pages](#pages) · [Architecture](#architecture) · [Decisions](#design-decisions)
 
+<a href="https://intelligo.dev/#film">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="apps/site/public/film/teaser-dark.gif" />
+    <img src="apps/site/public/film/teaser-light.gif" width="860" alt="Your agent works. It isn't a product yet: sign-up, workspaces, plans, credits, invoices, usage and audit are still to do. That half is the same in every AI SaaS — Intelligo ships it with one command." />
+  </picture>
+</a>
+
+<sub>The first twelve seconds. <a href="https://intelligo.dev/#film">Watch the whole minute</a> — pages as source, the execution boundary, usage, and the config that makes it yours.</sub>
+
 </div>
 
 > **Status: 1.0 beta.** Published to npm under the `beta` dist-tag (`@intelligo-dev/*@beta`); APIs are settling until 1.0. Everything on this page exists and runs today — nothing is aspirational.

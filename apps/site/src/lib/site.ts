@@ -25,15 +25,14 @@ export const SITE = {
   /** The repository is public: the nav shows the live star count. */
   githubPublic: true,
   /**
-   * The homepage film (apps/film, rendered with Remotion): the build,
-   * the run, making it yours, time passing. Rendered separately and
-   * hosted externally (R2/YouTube/etc.). Empty until the render is
-   * live: the homepage leaves the section out rather than ship a player
-   * with nothing in it, and the hero's cue points at the next section.
+   * The homepage film (apps/film, rendered with Remotion), one render
+   * per theme, served from `public/film/` with a still shown before it
+   * plays. Re-render, then copy `apps/film/out/*.mp4` over these.
    */
-  filmVideoUrl: "" as string,
-  /** A still from the film, shown before it plays. Optional. */
-  filmPosterUrl: "" as string,
+  film: {
+    light: { video: "/film/film-light.mp4", poster: "/film/poster-light.jpg" },
+    dark: { video: "/film/film-dark.mp4", poster: "/film/poster-dark.jpg" },
+  },
 } as const;
 
 /**

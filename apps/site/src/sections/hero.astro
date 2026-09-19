@@ -43,8 +43,8 @@ const create = "pnpm dlx @intelligo-dev/cli@beta create my-app";
       <InstallCommand client:visible cmd={create} className="justify-center bg-background/80 backdrop-blur" />
     </div>
 
-    <a href={SITE.filmVideoUrl ? "#film" : "#halves"} class="scroll-cue mono absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground no-underline hover:text-foreground" aria-label={SITE.filmVideoUrl ? "Scroll to the film" : "Scroll to the next section"}>
-      <span>{SITE.filmVideoUrl ? "watch it build" : "how it splits"}</span>
+    <a href="#film" class="scroll-cue mono absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground no-underline hover:text-foreground" aria-label="Scroll to the film">
+      <span>watch it build</span>
       <span aria-hidden="true">↓</span>
     </a>
   </div>

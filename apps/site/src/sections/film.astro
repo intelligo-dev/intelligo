@@ -1,9 +1,13 @@
 ---
 /**
- * The film: rendered video (apps/film, built with Remotion), not the
- * scroll-driven interactive version — muted and looping, the same way a
- * hero clip on any product page works. No heading, no lede; the video
- * carries its own scene captions.
+ * The film: a rendered video (apps/film, built with Remotion), muted and
+ * looping, the same way a hero clip on any product page works. No
+ * heading, no lede; the video carries its own script line.
+ *
+ * One render per theme. Both players are in the markup and CSS shows the
+ * one that applies, so the server's HTML is right for either theme;
+ * neither fetches a byte until it plays. When the theme flips, the
+ * player coming into view picks up where the other one was.
  *
  * It plays by itself only for a reader who has not asked for less
  * motion, and always carries controls: a clip that moves for longer
@@ -11,37 +15,65 @@
  * video's shape before a byte of it arrives, so nothing below jumps.
  */
 import { SITE } from "@/lib/site";
+
+const players = [
+  { theme: "light", show: "block dark:hidden", ...SITE.film.light },
+  { theme: "dark", show: "hidden dark:block", ...SITE.film.dark },
+];
 ---
 <section id="film" class="xline">
   <div class="px-6 py-14 md:px-10 md:py-20">
-    <video
-      class="aspect-video w-full rounded-xl border border-border bg-card"
-      src={SITE.filmVideoUrl}
-      poster={SITE.filmPosterUrl || undefined}
-      controls
-      muted
-      loop
-      playsinline
-      preload="none"
-      data-film
-      aria-label="A tour of building, running, customizing and upgrading an Intelligo application"
-    />
+    {players.map((player) => (
+      <video
+        class:list={["aspect-video w-full rounded-xl border border-border bg-card", player.show]}
+        src={player.video}
+        poster={player.poster}
+        controls
+        muted
+        loop
+        playsinline
+        preload="none"
+        data-film={player.theme}
+        aria-label="One minute: an agent that works, the product it is missing, and Intelligo installing that half — pages, the execution boundary, usage, and the config that makes it yours"
+      />
+    ))}
   </div>
 </section>
 
 <script>
-  const film = document.querySelector<HTMLVideoElement>("[data-film]");
-  if (film && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    // start when it is on screen, not on load: the clip is below the fold
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) void film.play().catch(() => {});
-          else film.pause();
-        }
-      },
-      { threshold: 0.35 }
-    );
-    io.observe(film);
+  const films = [...document.querySelectorAll<HTMLVideoElement>("[data-film]")];
+  const autoplay = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const shown = () => films.find((film) => film.offsetParent !== null);
+  let onScreen = false;
+
+  const play = (film: HTMLVideoElement) => void film.play().catch(() => {});
+
+  if (films.length > 0) {
+    if (autoplay) {
+      // start when it is on screen, not on load: the clip is below the fold
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.target !== shown()) continue;
+            onScreen = e.isIntersecting;
+            if (onScreen) play(e.target as HTMLVideoElement);
+            else (e.target as HTMLVideoElement).pause();
+          }
+        },
+        { threshold: 0.35 },
+      );
+      films.forEach((film) => io.observe(film));
+    }
+
+    // the theme is a class on <html>: when it flips, hand the playhead over
+    new MutationObserver(() => {
+      const next = shown();
+      const previous = films.find((film) => film !== next);
+      if (!next || !previous) return;
+      const wasPlaying = !previous.paused;
+      previous.pause();
+      if (previous.currentTime > 0) next.currentTime = previous.currentTime;
+      if (wasPlaying || (autoplay && onScreen)) play(next);
+    }).observe(document.documentElement, { attributeFilter: ["class"] });
   }
 </script>

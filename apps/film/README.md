@@ -22,15 +22,16 @@ Problem → promise → proof → ownership → call to action. `BEATS` in
 | 07  | 48–54   | `lib/chat-config.tsx` edited, the header hot-reloads         | _Make it yours — config, not forks._                                                        |
 | 08  | 54–60   | The closing card, with the `create` command                  | _You build the agent. Intelligo is everything around it._                                   |
 
-Acts 01–02 stand alone as the short cut (`pnpm --filter film
-render:teaser`): the problem, then "One command".
+Acts 01–02 stand alone as the short cut — the problem, then "One
+command" — which is what the repository README autoplays (see "After
+rendering").
 
 Everything on screen exists today; a beat that needs a feature the
 framework does not have does not go in the film.
 
-Not deployed, not published, no CI job renders it — this is a one-off
-production tool. Its `out/` (rendered video) and `build/` (bundled)
-directories are gitignored.
+Not published, and no CI job renders it — rendering is a maintainer's
+step. Its `out/` (rendered video) and `build/` (bundled) directories are
+gitignored.
 
 ## Commands
 
@@ -38,7 +39,6 @@ directories are gitignored.
 pnpm --filter film dev          # Remotion Studio — scrub the timeline, inspect any frame
 pnpm --filter film render       # renders out/film-light.mp4
 pnpm --filter film render:dark  # renders out/film-dark.mp4
-pnpm --filter film render:teaser # the first two acts, out/teaser-light.mp4
 pnpm --filter film lint
 pnpm --filter film type-check
 ```
@@ -48,14 +48,22 @@ render prop (`--props={"theme":"..."}`), not two separate compositions.
 
 ## After rendering
 
-Neither `out/film-light.mp4` nor `out/film-dark.mp4` is committed or
-auto-deployed — upload each to wherever they're meant to be hosted (R2,
-YouTube, etc.) and point `apps/site/src/lib/site.ts`'s
-`SITE.filmVideoUrl` at whichever one the homepage should embed (light and
-dark aren't both wired up there yet — see that file's comment). While
-`SITE.filmVideoUrl` is empty the homepage leaves the `#film` section out
-and the hero's scroll cue points at the next section; set the URL (and
-optionally `SITE.filmPosterUrl`) and both come back.
+`out/` is gitignored; what ships is the copy under
+`apps/site/public/film/`, which `SITE.film` (`apps/site/src/lib/site.ts`)
+points the homepage at — the light render on the light theme, the dark
+one on the dark — and which the repository README links its teaser from.
+After a re-render, refresh all of it:
+
+```bash
+cd apps && for t in light dark; do
+  cp film/out/film-$t.mp4 site/public/film/film-$t.mp4
+  ffmpeg -y -ss 6.85 -i film/out/film-$t.mp4 -frames:v 1 -q:v 4 site/public/film/poster-$t.jpg
+  ffmpeg -y -t 12.5 -i film/out/film-$t.mp4 -vf "fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=48:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" site/public/film/teaser-$t.gif
+done
+```
+
+The poster is the end of act 01 (the agent among its empty slots); the
+teaser GIF is acts 01–02, the README's autoplaying cut.
 
 ## Data
 
