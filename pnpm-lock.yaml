@@ -535,9 +535,6 @@ importers:
       react:
         specifier: ^19.3.0
         version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -595,15 +592,9 @@ importers:
       drizzle-orm:
         specifier: '>=0.45.2'
         version: 0.45.2(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(kysely@0.28.17)(pg@8.18.0)
-      next:
-        specifier: ~16.3.5
-        version: 16.3.5(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.13.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       stripe:
         specifier: ^22.6.2
         version: 22.6.2(@types/node@24.13.5)
-      tsx:
-        specifier: ^4.23.13
-        version: 4.23.13
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -635,9 +626,6 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-      zod:
-        specifier: ^4.6.5
-        version: 4.6.5
 
   packages/cli:
     dependencies:
@@ -706,9 +694,6 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-      zod:
-        specifier: ^4.6.5
-        version: 4.6.5
 
   packages/executions:
     dependencies:

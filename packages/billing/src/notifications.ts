@@ -10,13 +10,7 @@
  */
 
 import { db } from "@intelligo-dev/core/db";
-import {
-  notificationHistory,
-  organization,
-  users,
-  member,
-} from "@intelligo-dev/core/db/schema";
-import { eq, and } from "drizzle-orm";
+import { notificationHistory } from "@intelligo-dev/core/db/schema";
 import { formatMoney, money } from "@intelligo-dev/core/money";
 import { getBillingSettings } from "./billing-settings";
 import { getQuotaThresholds } from "./quota";
@@ -26,6 +20,7 @@ import {
   triggerQuotaNotification,
   triggerTrialNotification,
 } from "@intelligo-dev/core/notifications";
+import { getWorkspaceOwner } from "./webhook-helpers";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,35 +43,6 @@ const MESSAGE_LOCALE = "en";
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Look up workspace owner's userId and email for notification delivery.
- * Returns null if workspace or owner not found.
- */
-async function getWorkspaceOwner(workspaceId: string): Promise<{
-  userId: string;
-  email: string;
-  workspaceName: string;
-} | null> {
-  const result = await db
-    .select({
-      workspaceName: organization.name,
-      userId: users.id,
-      email: users.email,
-    })
-    .from(organization)
-    .innerJoin(member, eq(member.organizationId, organization.id))
-    .innerJoin(users, eq(users.id, member.userId))
-    .where(and(eq(organization.id, workspaceId), eq(member.role, "owner")))
-    .limit(1);
-
-  if (!result[0]) return null;
-  return {
-    userId: result[0].userId,
-    email: result[0].email,
-    workspaceName: result[0].workspaceName,
-  };
-}
 
 /**
  * Check all notification thresholds and record triggered notifications.

@@ -14,6 +14,7 @@ import {
 } from "@intelligo-dev/auth";
 
 import { requireAdminOrRefuse } from "./authorization";
+import { recordAuditEventOrThrow } from "@intelligo-dev/audit";
 
 export type { ImpersonatedSession as ImpersonationResult } from "@intelligo-dev/auth";
 
@@ -75,7 +76,6 @@ export async function stopImpersonation(input: {
     );
   }
 
-  const { recordAuditEventOrThrow } = await import("@intelligo-dev/audit");
   await recordAuditEventOrThrow({
     workspaceId: null,
     actorId: impersonatedBy,

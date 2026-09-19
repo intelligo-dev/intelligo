@@ -9,9 +9,6 @@ import { db } from "@intelligo-dev/core/db";
 import {
   trialCredits,
   notificationHistory,
-  organization,
-  users,
-  member,
 } from "@intelligo-dev/core/db/schema";
 import { eq, and, gt, gte, lt } from "drizzle-orm";
 import type { TrialCredit } from "@intelligo-dev/core/db/schema";
@@ -26,6 +23,7 @@ import { getTrialConfig, type TrialStatus } from "./trial-types";
 import { normalizeEmailForAbuseCheck, checkTrialAbuse } from "./trial-abuse";
 import { deductTrialCredits } from "./trial-deduction";
 import type { BillingReader } from "./reader";
+import { getWorkspaceOwner } from "./webhook-helpers";
 
 // Re-export config accessor and types
 export { getTrialConfig, NO_TRIAL } from "./trial-types";
@@ -274,35 +272,6 @@ export async function hasActiveTrial(workspaceId: string): Promise<boolean> {
   return (
     status.status === "active" && !status.isExpired && status.daysRemaining > 0
   );
-}
-
-// ---------------------------------------------------------------------------
-// Helper: Look up workspace owner for email notifications
-// ---------------------------------------------------------------------------
-
-async function getWorkspaceOwner(workspaceId: string): Promise<{
-  userId: string;
-  email: string;
-  workspaceName: string;
-} | null> {
-  const result = await db
-    .select({
-      workspaceName: organization.name,
-      userId: users.id,
-      email: users.email,
-    })
-    .from(organization)
-    .innerJoin(member, eq(member.organizationId, organization.id))
-    .innerJoin(users, eq(users.id, member.userId))
-    .where(and(eq(organization.id, workspaceId), eq(member.role, "owner")))
-    .limit(1);
-
-  if (!result[0]) return null;
-  return {
-    userId: result[0].userId,
-    email: result[0].email,
-    workspaceName: result[0].workspaceName,
-  };
 }
 
 // ---------------------------------------------------------------------------
