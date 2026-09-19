@@ -20,12 +20,13 @@ export function TrialExpiryEmail({
   const isExpired = daysRemaining <= 0;
   const isUrgent = daysRemaining <= 1 && daysRemaining > 0;
 
+  const days = `${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
   const text = {
-    previewExpired: "Your Pro trial has expired",
-    previewExpiring: `Your Pro trial expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`,
-    headingExpired: "Your Pro Trial Has Expired",
-    headingExpiring: `Your Pro Trial Expires in ${daysRemaining} Day${daysRemaining === 1 ? "" : "s"}`,
-    buttonExpired: "Upgrade to Pro",
+    previewExpired: "Your trial has ended",
+    previewExpiring: `Your trial ends in ${days}`,
+    headingExpired: "Your Trial Has Ended",
+    headingExpiring: `Your Trial Ends in ${days}`,
+    buttonExpired: "Choose a Plan",
     buttonUpgrade: "Upgrade Now",
   };
 
@@ -40,55 +41,28 @@ export function TrialExpiryEmail({
       {isExpired ? (
         <>
           <Text style={bodyTextStyle}>
-            Your 14-day Pro trial for &lsquo;{workspaceName}&rsquo; has ended.
+            The trial for &lsquo;{workspaceName}&rsquo; has ended, and the
+            workspace is back on its plan&rsquo;s limits. All your data has been
+            preserved.
           </Text>
           <Text style={bodyTextStyle}>
-            Your workspace has been downgraded to the Free plan. All your data
-            has been preserved and you can continue using Intelligo with the
-            Free plan limits.
-          </Text>
-          <Text style={warningTextStyle}>
-            What you&rsquo;ll be missing on the Free plan:
-          </Text>
-          <Text style={listItemStyle}>• 100K tokens/month instead of 2M</Text>
-          <Text style={listItemStyle}>
-            • Access to basic models only (GPT-4o mini)
-          </Text>
-          <Text style={listItemStyle}>• 10 conversations instead of 100</Text>
-          <Text style={listItemStyle}>• Single workspace instead of 3</Text>
-          <Text style={bodyTextStyle}>
-            Upgrade to Pro to restore full access and continue building with AI.
+            Upgrade to restore what the trial included.
           </Text>
         </>
       ) : (
         <>
           <Text style={bodyTextStyle}>
-            Your 14-day Pro trial for &lsquo;{workspaceName}&rsquo; expires on{" "}
-            <strong>{expiryDate}</strong>.
-          </Text>
-          <Text style={bodyTextStyle}>
-            When your trial ends, your workspace will be downgraded to the Free
-            plan. All your data will be preserved.
+            The trial for &lsquo;{workspaceName}&rsquo; ends on{" "}
+            <strong>{expiryDate}</strong>. After that the workspace goes back to
+            its plan&rsquo;s limits; all your data will be preserved.
           </Text>
           {isUrgent && (
             <Text style={urgentTextStyle}>
-              This is your last chance to upgrade before losing Pro features!
+              Upgrade today to keep what the trial includes.
             </Text>
           )}
-          <Text style={warningTextStyle}>
-            What happens after your trial expires:
-          </Text>
-          <Text style={listItemStyle}>
-            • Token quota: 2M → 100K tokens/month
-          </Text>
-          <Text style={listItemStyle}>
-            • AI models: All models → Basic models only
-          </Text>
-          <Text style={listItemStyle}>• Conversations: 100 → 10</Text>
-          <Text style={listItemStyle}>• Workspaces: 3 → 1</Text>
           <Text style={secondaryTextStyle}>
-            No action needed if you&rsquo;re happy with the Free plan. Your
-            workspace will continue working with Free plan limits.
+            No action is needed if the current plan is enough for you.
           </Text>
         </>
       )}
@@ -115,14 +89,6 @@ const bodyTextStyle: React.CSSProperties = {
   margin: "0 0 12px",
 };
 
-const warningTextStyle: React.CSSProperties = {
-  color: "#dc2626",
-  fontSize: "15px",
-  fontWeight: 600,
-  lineHeight: "24px",
-  margin: "12px 0 8px",
-};
-
 const urgentTextStyle: React.CSSProperties = {
   color: "#dc2626",
   fontSize: "16px",
@@ -133,13 +99,6 @@ const urgentTextStyle: React.CSSProperties = {
   backgroundColor: "#fef2f2",
   borderRadius: "6px",
   border: "1px solid #fecaca",
-};
-
-const listItemStyle: React.CSSProperties = {
-  color: "#52525b",
-  fontSize: "14px",
-  lineHeight: "20px",
-  margin: "4px 0 4px 8px",
 };
 
 const secondaryTextStyle: React.CSSProperties = {

@@ -46,11 +46,38 @@ const source = createRegistryRef<RequestContextSource | undefined>(
   undefined
 );
 
-/** Explicitly bound headers, for a call that is not inside a request. */
-const override = createRegistryRef<Headers | undefined>(
-  "core/request-headers-override",
+/**
+ * Headers bound by `withRequestHeaders`, visible only to the async work
+ * that call started. Scoped rather than a shared slot: a slot would hand
+ * one caller's cookie to every request that reads it while the call is
+ * awaiting.
+ */
+type HeaderScope = {
+  run<T>(headers: Headers, fn: () => T): T;
+  getStore(): Headers | undefined;
+};
+
+const scope = createRegistryRef<HeaderScope | undefined>(
+  "core/request-headers-scope",
   undefined
 );
+
+/**
+ * The runtime's `AsyncLocalStorage`: the global one Next.js and edge
+ * runtimes provide, or Node's own, loaded only when there is none — a
+ * script, a worker or a test.
+ */
+async function headerScope(): Promise<HeaderScope> {
+  const existing = scope.get();
+  if (existing) return existing;
+  const Storage =
+    (globalThis as { AsyncLocalStorage?: new () => HeaderScope })
+      .AsyncLocalStorage ??
+    (await import("node:async_hooks")).AsyncLocalStorage;
+  const created = new Storage() as HeaderScope;
+  scope.set(created);
+  return created;
+}
 
 export function setRequestContextSource(next: RequestContextSource): void {
   source.set(next);
@@ -59,11 +86,10 @@ export function setRequestContextSource(next: RequestContextSource): void {
 /** Forget the bound source. For tests composing a fresh root. */
 export function clearRequestContextSource(): void {
   source.set(undefined);
-  override.set(undefined);
 }
 
 export function hasRequestContextSource(): boolean {
-  return source.get() !== undefined || override.get() !== undefined;
+  return source.get() !== undefined || scope.get()?.getStore() !== undefined;
 }
 
 /**
@@ -72,7 +98,7 @@ export function hasRequestContextSource(): boolean {
  * @throws {RequestContextUnavailableError} when nothing is bound.
  */
 export async function getRequestHeaders(): Promise<Headers> {
-  const explicit = override.get();
+  const explicit = scope.get()?.getStore();
   if (explicit) return explicit;
 
   const resolve = source.get();
@@ -99,20 +125,13 @@ export function resolveTimeZone(value: string | null | undefined): string {
 /**
  * Runs `fn` with these headers, whatever the ambient source says — for a
  * background job, a script acting as a user, or an integration test.
- * Restores the previous value afterwards, so nesting works.
- *
- * Not `AsyncLocalStorage`: that would require a Node built-in that Edge
- * runtimes only partly provide.
+ * Only `fn` and the work it starts see them; a concurrent request keeps
+ * its own. Nesting works: the innermost call wins.
  */
 export async function withRequestHeaders<T>(
   headers: Headers,
   fn: () => Promise<T> | T
 ): Promise<T> {
-  const previous = override.get();
-  override.set(headers);
-  try {
-    return await fn();
-  } finally {
-    override.set(previous);
-  }
+  const storage = await headerScope();
+  return await storage.run(headers, async () => await fn());
 }

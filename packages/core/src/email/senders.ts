@@ -10,6 +10,7 @@
  */
 
 import * as React from "react";
+import { emailBrand } from "./brand";
 import { sendEmail, type SendEmailResult } from "./send";
 import { formatMoney, type Money } from "../money";
 import {
@@ -34,7 +35,9 @@ export async function sendWelcomeEmail(params: {
 }): Promise<SendEmailResult> {
   return sendEmail({
     to: params.to,
-    subject: "Welcome to Intelligo!",
+    subject: emailBrand().name
+      ? `Welcome to ${emailBrand().name}!`
+      : "Welcome!",
     react: React.createElement(WelcomeEmail, {
       userName: params.userName,
       dashboardUrl: params.dashboardUrl,
@@ -268,8 +271,8 @@ export async function sendTrialExpiryEmail(params: {
     to: params.to,
     subject:
       params.daysRemaining <= 0
-        ? `Your Pro trial for ${params.workspaceName} has expired`
-        : `Your Pro trial expires in ${params.daysRemaining} day${params.daysRemaining === 1 ? "" : "s"}`,
+        ? `Your trial for ${params.workspaceName} has ended`
+        : `Your trial ends in ${params.daysRemaining} day${params.daysRemaining === 1 ? "" : "s"}`,
     react: React.createElement(TrialExpiryEmail, {
       workspaceName: params.workspaceName,
       expiryDate: params.expiryDate,

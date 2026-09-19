@@ -46,7 +46,11 @@ vi.mock("@intelligo-dev/core/db", () => ({
 
 import { provisionTrialCredits } from "./trial";
 
-const input = { workspaceId: "ws-1", email: "a@example.com", ipAddress: "1.2.3.4" };
+const input = {
+  workspaceId: "ws-1",
+  email: "a@example.com",
+  ipAddress: "1.2.3.4",
+};
 
 beforeEach(() => {
   vi.clearAllMocks();

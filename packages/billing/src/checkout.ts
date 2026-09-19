@@ -248,7 +248,10 @@ async function liveSubscription(
   customerId: string
 ): Promise<{ id: string; status: string } | null> {
   const local = (await getWorkspaceSubscription(workspaceId))?.subscription;
-  if (local?.stripeSubscriptionId && STRIPE_SUBSCRIPTION_OPEN.has(local.status)) {
+  if (
+    local?.stripeSubscriptionId &&
+    STRIPE_SUBSCRIPTION_OPEN.has(local.status)
+  ) {
     return { id: local.stripeSubscriptionId, status: local.status };
   }
   const remote = await getStripe().subscriptions.list({

@@ -67,6 +67,31 @@ d("workspace service — real DB integration", () => {
     ({ isWorkspaceServiceError } = await import("./errors"));
   });
 
+  it("bootstraps the personal workspace the signup hook creates", async () => {
+    const { setWorkspaceCreatedHandler, clearWorkspaceCreatedHandler } =
+      await import("../workspace-bootstrap");
+    const bootstrap = vi.fn(async () => {});
+    setWorkspaceCreatedHandler(bootstrap);
+    try {
+      const fresh = await signUpVerified(
+        `it-ws-bootstrap-${suffix}@example.test`,
+        "Bootstrap IT"
+      );
+      await vi.waitFor(() =>
+        expect(bootstrap).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: fresh.userId,
+            email: fresh.email,
+            workspaceId: expect.any(String),
+          })
+        )
+      );
+      expect(bootstrap).toHaveBeenCalledTimes(1);
+    } finally {
+      clearWorkspaceCreatedHandler();
+    }
+  });
+
   // Create -> auto-activate -> list -> read back -> update -> delete
   // (switches to the remaining workspace). One ordered sequence.
   describe("lifecycle", () => {

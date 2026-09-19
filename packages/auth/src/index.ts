@@ -18,6 +18,14 @@ export {
   type AuthGuardErrorCode,
 } from "./guard-error";
 export { ensureUserWorkspace } from "./workspace-init";
+export {
+  setWorkspaceCreatedHandler,
+  clearWorkspaceCreatedHandler,
+} from "./workspace-bootstrap";
+export type {
+  WorkspaceCreated,
+  WorkspaceCreatedHandler,
+} from "./workspace-bootstrap";
 export type { WorkspaceRole } from "./helpers";
 export { PLATFORM_ADMIN_ROLE } from "./roles";
 export {

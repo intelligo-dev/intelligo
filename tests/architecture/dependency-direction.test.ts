@@ -397,7 +397,12 @@ describe("leaf subpaths", () => {
     const specs = importSpecifiers(
       readFileSync(path.join(coreSrc, "request-context.ts"), "utf8")
     );
-    expect(specs).toEqual(["./registry"]);
+    // `node:async_hooks` is loaded lazily, and only where the runtime
+    // provides no global AsyncLocalStorage (a script, a worker, a test);
+    // Next.js and edge runtimes never reach it.
+    expect(specs.filter((spec) => spec !== "node:async_hooks")).toEqual([
+      "./registry",
+    ]);
   });
 
   describe("billing's pure subpaths", () => {

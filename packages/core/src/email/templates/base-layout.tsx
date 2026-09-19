@@ -11,6 +11,8 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 
+import { emailBrand } from "../brand";
+
 // Inline styles only: email clients do not reliably support CSS classes.
 // Colors are literal values, not CSS variables, so they survive dark-mode
 // email clients.
@@ -30,6 +32,7 @@ const colors = {
 } as const;
 
 export function BaseLayout({ preview, children }: BaseLayoutProps) {
+  const brand = emailBrand();
   return (
     <Html lang="en">
       <Head>
@@ -38,9 +41,11 @@ export function BaseLayout({ preview, children }: BaseLayoutProps) {
       <Preview>{preview}</Preview>
       <Body style={bodyStyle}>
         <Container style={containerStyle}>
-          <Section style={headerStyle}>
-            <Text style={logoStyle}>Intelligo</Text>
-          </Section>
+          {brand.name ? (
+            <Section style={headerStyle}>
+              <Text style={logoStyle}>{brand.name}</Text>
+            </Section>
+          ) : null}
 
           <Hr style={hrStyle} />
 
@@ -49,14 +54,26 @@ export function BaseLayout({ preview, children }: BaseLayoutProps) {
           <Hr style={hrStyle} />
 
           <Section style={footerStyle}>
-            <Text style={footerTextStyle}>Intelligo AI Platform</Text>
+            {brand.name ? (
+              <Text style={footerTextStyle}>{brand.name}</Text>
+            ) : null}
             <Text style={footerMutedStyle}>
-              This is a transactional email from Intelligo. If you believe you
-              received this email in error, please contact{" "}
-              <Link href="mailto:support@intelligo.dev" style={footerLinkStyle}>
-                support@intelligo.dev
-              </Link>
-              .
+              This is a transactional email
+              {brand.name ? ` from ${brand.name}` : ""}.
+              {brand.supportEmail ? (
+                <>
+                  {" "}
+                  If you believe you received this email in error, please
+                  contact{" "}
+                  <Link
+                    href={`mailto:${brand.supportEmail}`}
+                    style={footerLinkStyle}
+                  >
+                    {brand.supportEmail}
+                  </Link>
+                  .
+                </>
+              ) : null}
             </Text>
           </Section>
         </Container>

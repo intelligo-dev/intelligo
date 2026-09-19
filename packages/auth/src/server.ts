@@ -45,6 +45,7 @@ import {
 import { eq } from "drizzle-orm";
 import { invitationLinks } from "./invitation-links";
 import { personalWorkspaceSlug } from "./workspace-slug";
+import { workspaceCreated } from "./workspace-bootstrap";
 
 /**
  * The origin this app is served from. `NEXT_PUBLIC_APP_URL` is required, but
@@ -145,7 +146,7 @@ export const auth = betterAuth({
         after: async (user) => {
           // Provision the personal workspace.
           try {
-            await auth.api.createOrganization({
+            const created = await auth.api.createOrganization({
               // Deliberately no `headers`: the organization plugin throws
               // UNAUTHORIZED when headers are present but carry no session,
               // and an empty `new Headers()` counts as present. Omitting
@@ -156,6 +157,13 @@ export const auth = betterAuth({
                 userId: user.id,
               },
             });
+            if (created) {
+              workspaceCreated({
+                workspaceId: created.id,
+                userId: user.id,
+                email: user.email,
+              });
+            }
           } catch (error) {
             // The slug is derived from the user, so a racing provisioner
             // loses on `organization.slug`'s unique index: the workspace

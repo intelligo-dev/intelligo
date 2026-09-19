@@ -1,13 +1,18 @@
 /**
  * Ensures every authenticated user has a workspace; called from the
  * authenticated layout on every render. Post-creation work (trial
- * provisioning) arrives as a callback, so auth never imports billing.
+ * provisioning) is the handler set with `setWorkspaceCreatedHandler`,
+ * so auth never imports billing.
  */
 
 import { auth } from "./server";
 import type { User } from "better-auth/types";
 import { createLogger } from "@intelligo-dev/core/logger";
 import { personalWorkspaceSlug } from "./workspace-slug";
+import {
+  workspaceCreated,
+  type WorkspaceCreatedHandler,
+} from "./workspace-bootstrap";
 
 const log = createLogger("WorkspaceInit");
 
@@ -21,18 +26,16 @@ const log = createLogger("WorkspaceInit");
  *
  * @param user - Authenticated user from session
  * @param headers - Request headers (required for Better-Auth API)
- * @param options.onWorkspaceCreated - Optional callback invoked after a new workspace is created.
- *   Receives workspaceId and email. Fire-and-forget: a failure is logged, never thrown.
+ * @param options.onWorkspaceCreated - Runs after this call creates a workspace, in place of
+ *   the handler set with `setWorkspaceCreatedHandler`. Fire-and-forget: a failure is logged,
+ *   never thrown.
  * @returns The organization ID that was set as active (useful for immediate access before session updates)
  */
 export async function ensureUserWorkspace(
   user: User,
   headers: Headers,
   options?: {
-    onWorkspaceCreated?: (params: {
-      workspaceId: string;
-      email: string;
-    }) => Promise<void>;
+    onWorkspaceCreated?: WorkspaceCreatedHandler;
   }
 ): Promise<string> {
   log.info("Starting workspace check", { email: user.email });
@@ -127,15 +130,10 @@ export async function ensureUserWorkspace(
     });
   }
 
-  if (options?.onWorkspaceCreated) {
-    options
-      .onWorkspaceCreated({ workspaceId, email: user.email })
-      .catch((err) =>
-        log.error("onWorkspaceCreated callback failed", {
-          error: err instanceof Error ? err.message : String(err),
-        })
-      );
-  }
+  workspaceCreated(
+    { workspaceId, userId: user.id, email: user.email },
+    options?.onWorkspaceCreated
+  );
 
   return workspaceId;
 }

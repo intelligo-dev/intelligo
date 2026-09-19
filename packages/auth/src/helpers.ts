@@ -272,7 +272,11 @@ export async function requirePlatformAdmin(): Promise<{
   const { session, user } = await requireAuth();
 
   const { allowlisted, hasRole, roles } = platformAdminStanding(
-    user as { email?: string | null; role?: string | null }
+    user as {
+      email?: string | null;
+      emailVerified?: boolean | null;
+      role?: string | null;
+    }
   );
 
   if (!allowlisted && !hasRole) {

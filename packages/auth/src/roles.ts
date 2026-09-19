@@ -17,9 +17,15 @@ export const PLATFORM_ADMIN_ROLE = "platform-admin";
  * Where a user stands as a platform admin: `hasRole` reads `users.role`
  * (comma-separated), `allowlisted` reads PLATFORM_ADMIN_EMAILS, the
  * bootstrap that `requirePlatformAdmin` promotes into the column.
+ *
+ * The allowlist names an address, so it counts only once the address
+ * is verified: otherwise whoever registers an allowlisted address
+ * first — before the real admin, or on a deployment that sends no
+ * verification mail — would become an admin.
  */
 export function platformAdminStanding(user: {
   email?: string | null;
+  emailVerified?: boolean | null;
   role?: string | null;
 }): { allowlisted: boolean; hasRole: boolean; roles: string[] } {
   const allowlist = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
@@ -34,7 +40,8 @@ export function platformAdminStanding(user: {
     .filter(Boolean);
 
   return {
-    allowlisted: !!email && allowlist.includes(email),
+    allowlisted:
+      !!email && user.emailVerified === true && allowlist.includes(email),
     hasRole: roles.includes(PLATFORM_ADMIN_ROLE),
     roles,
   };

@@ -23,6 +23,10 @@ vi.mock("@intelligo-dev/core/logger", () => ({
 }));
 
 import { ensureUserWorkspace } from "./workspace-init";
+import {
+  clearWorkspaceCreatedHandler,
+  setWorkspaceCreatedHandler,
+} from "./workspace-bootstrap";
 
 const user = { id: "u1", email: "u1@example.test", name: "U" } as never;
 const headers = new Headers();
@@ -30,6 +34,7 @@ const orgs = [{ id: "org-a" }, { id: "org-b" }];
 
 beforeEach(() => {
   vi.clearAllMocks();
+  clearWorkspaceCreatedHandler();
   api.listOrganizations.mockResolvedValue(orgs);
   api.setActiveOrganization.mockResolvedValue(undefined);
 });
@@ -77,6 +82,44 @@ describe("ensureUserWorkspace", () => {
 
     expect(id).toBe("org-new");
     expect(api.getSession).not.toHaveBeenCalled();
+  });
+
+  it("runs the composition root's bootstrap for the workspace it created", async () => {
+    api.listOrganizations.mockResolvedValue([]);
+    api.createOrganization.mockResolvedValue({ id: "org-new" });
+    const bootstrap = vi.fn().mockResolvedValue(undefined);
+    setWorkspaceCreatedHandler(bootstrap);
+
+    await ensureUserWorkspace(user, headers);
+
+    expect(bootstrap).toHaveBeenCalledWith({
+      workspaceId: "org-new",
+      userId: "u1",
+      email: "u1@example.test",
+    });
+  });
+
+  it("does not bootstrap a workspace it found rather than created", async () => {
+    api.getSession.mockResolvedValue({ session: {} });
+    const bootstrap = vi.fn().mockResolvedValue(undefined);
+    setWorkspaceCreatedHandler(bootstrap);
+
+    await ensureUserWorkspace(user, headers);
+
+    expect(bootstrap).not.toHaveBeenCalled();
+  });
+
+  it("prefers a handler passed by the caller over the registered one", async () => {
+    api.listOrganizations.mockResolvedValue([]);
+    api.createOrganization.mockResolvedValue({ id: "org-new" });
+    const registered = vi.fn().mockResolvedValue(undefined);
+    const passed = vi.fn().mockResolvedValue(undefined);
+    setWorkspaceCreatedHandler(registered);
+
+    await ensureUserWorkspace(user, headers, { onWorkspaceCreated: passed });
+
+    expect(passed).toHaveBeenCalledTimes(1);
+    expect(registered).not.toHaveBeenCalled();
   });
 
   it("points the session at the workspace it just created", async () => {

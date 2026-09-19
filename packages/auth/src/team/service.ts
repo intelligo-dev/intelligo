@@ -8,7 +8,10 @@
  * from their active workspace, and a bare call then resolves to nothing.
  */
 
+import { db } from "@intelligo-dev/core/db";
+import { member } from "@intelligo-dev/core/db/schema";
 import { getRequestHeaders } from "@intelligo-dev/core/request-context";
+import { eq, sql } from "drizzle-orm";
 import type { ZodType } from "zod";
 import { createLogger } from "@intelligo-dev/core/logger";
 
@@ -21,7 +24,11 @@ import { TeamServiceError, isTeamServiceError } from "./errors";
 const log = createLogger("TeamService");
 
 export type TeamServicePorts = {
-  /** Plan-defined member cap for a workspace. No port ⇒ unlimited. */
+  /**
+   * Plan-defined member cap for a workspace. No port ⇒ unlimited.
+   * `currentCount` is the seats already spoken for: members plus pending
+   * invitations when inviting, members when an invitation is accepted.
+   */
   checkMemberLimit?: (
     workspaceId: string,
     currentCount: number
@@ -152,9 +159,28 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     );
   }
 
+  async function enforceMemberLimit(
+    workspaceId: string,
+    seats: number
+  ): Promise<void> {
+    if (!ports.checkMemberLimit) return;
+    const limitCheck = await ports.checkMemberLimit(workspaceId, seats);
+    if (!limitCheck.allowed) {
+      throw new TeamServiceError(
+        "member_limit_reached",
+        `Your plan allows up to ${limitCheck.limit} team member${
+          limitCheck.limit === 1 ? "" : "s"
+        }. Upgrade to add more members.`,
+        { meta: { limit: limitCheck.limit } }
+      );
+    }
+  }
+
   /**
    * Invite a member by email. Owner/admin only. The member-limit port,
-   * when bound, gates the invite before it is created.
+   * when bound, gates the invite before it is created, counting pending
+   * invitations as seats: otherwise a workspace one seat short of its
+   * limit could send any number of invitations and have them all accepted.
    */
   async function inviteMember(input: {
     email: string;
@@ -172,21 +198,18 @@ export function createTeamService(ports: TeamServicePorts = {}) {
           query: { organizationId: workspace.id },
         })
       );
-      const currentMemberCount = org?.members?.length ?? 0;
-
-      const limitCheck = await ports.checkMemberLimit(
+      const now = Date.now();
+      const pendingInvitations = (
+        (org?.invitations ?? []) as OrgInvitation[]
+      ).filter(
+        (invitation) =>
+          invitation.status === "pending" &&
+          new Date(invitation.expiresAt).getTime() > now
+      ).length;
+      await enforceMemberLimit(
         workspace.id,
-        currentMemberCount
+        (org?.members?.length ?? 0) + pendingInvitations
       );
-      if (!limitCheck.allowed) {
-        throw new TeamServiceError(
-          "member_limit_reached",
-          `Your plan allows up to ${limitCheck.limit} team member${
-            limitCheck.limit === 1 ? "" : "s"
-          }. Upgrade to add more members.`,
-          { meta: { limit: limitCheck.limit } }
-        );
-      }
     }
 
     // Better-Auth's own duplicate-pending-invite guard
@@ -254,6 +277,17 @@ export function createTeamService(ports: TeamServicePorts = {}) {
         "invitation_not_found",
         "Invitation not found"
       );
+    }
+
+    // The plan may have shrunk, or members joined another way, since the
+    // invitation was sent. Counted from the table: the invitee cannot
+    // read an organization it is not yet a member of.
+    if (ports.checkMemberLimit) {
+      const [row] = await db
+        .select({ n: sql<number>`count(*)` })
+        .from(member)
+        .where(eq(member.organizationId, matched.organizationId));
+      await enforceMemberLimit(matched.organizationId, Number(row?.n ?? 0));
     }
 
     await callOrgApi("accept-invitation", () =>

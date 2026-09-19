@@ -97,3 +97,22 @@ describe("hasRequestContextSource", () => {
     expect(hasRequestContextSource()).toBe(false);
   });
 });
+
+describe("withRequestHeaders under concurrency", () => {
+  it("does not lend its headers to a request running at the same time", async () => {
+    setRequestContextSource(() => new Headers({ a: "request-b" }));
+    let release!: () => void;
+    const paused = new Promise<void>((resolve) => (release = resolve));
+
+    const job = withRequestHeaders(new Headers({ a: "job" }), async () => {
+      await paused;
+      return (await getRequestHeaders()).get("a");
+    });
+    // While the job awaits, another request reads its own headers.
+    const concurrent = (await getRequestHeaders()).get("a");
+    release();
+
+    expect(concurrent).toBe("request-b");
+    expect(await job).toBe("job");
+  });
+});

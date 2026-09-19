@@ -1,5 +1,6 @@
 import { Button, Text } from "@react-email/components";
 import * as React from "react";
+import { emailBrand } from "../brand";
 import { BaseLayout } from "./base-layout";
 
 export interface WelcomeEmailProps {
@@ -8,9 +9,12 @@ export interface WelcomeEmailProps {
 }
 
 export function WelcomeEmail({ userName, dashboardUrl }: WelcomeEmailProps) {
+  const { name } = emailBrand();
   const text = {
-    preview: `Welcome to Intelligo, ${userName}!`,
-    heading: "Welcome to Intelligo",
+    preview: name
+      ? `Welcome to ${name}, ${userName}!`
+      : `Welcome, ${userName}!`,
+    heading: name ? `Welcome to ${name}` : "Welcome",
     greeting: "Hi",
     body: "Thanks for signing up! You're all set to start using AI-powered tools to boost your productivity.",
     button: "Go to Dashboard",

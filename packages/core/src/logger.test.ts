@@ -103,6 +103,33 @@ describe("Logger", () => {
       expect(output).not.toContain("ws_abc123def456");
     });
 
+    it("redacts a credential nested inside the data", async () => {
+      const { _createLoggerWithStream } = await import("./logger");
+      const { stream, getOutput } = createTestStream();
+      const log = _createLoggerWithStream("Test", stream);
+      log.error("request failed", {
+        request: { headers: { authorization: "Bearer sk_live_123" } },
+        attempts: [{ token: "t-1" }],
+      });
+      const output = getOutput();
+      expect(output).not.toContain("sk_live_123");
+      expect(output).not.toContain("t-1");
+      expect(output).toContain("[REDACTED]");
+    });
+
+    it("leaves a value whose key merely contains 'id' alone", async () => {
+      const { _createLoggerWithStream } = await import("./logger");
+      const { stream, getOutput } = createTestStream();
+      const log = _createLoggerWithStream("Test", stream);
+      log.info("call", {
+        provider: "openai-provider-x",
+        userId: "user_1234567890",
+      });
+      const output = getOutput();
+      expect(output).toContain("openai-provider-x");
+      expect(output).not.toContain("user_1234567890");
+    });
+
     it("suppresses debug messages in production", async () => {
       const { _createLoggerWithStream } = await import("./logger");
       const { stream, getOutput } = createTestStream();

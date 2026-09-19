@@ -57,7 +57,11 @@ import {
 } from "./helpers";
 import { isAuthGuardError } from "./guard-error";
 
-const userFixture = { id: "user_1", email: "u@example.com" } as unknown as {
+const userFixture = {
+  id: "user_1",
+  email: "u@example.com",
+  emailVerified: true,
+} as unknown as {
   id: string;
   email: string;
 };
@@ -458,6 +462,21 @@ describe("requirePlatformAdmin", () => {
       { role: "platform-admin" },
       expect.anything()
     );
+  });
+
+  it("does not honour the allowlist for an address that is not verified", async () => {
+    // Whoever registers the allowlisted address first would otherwise
+    // be an admin.
+    vi.stubEnv("PLATFORM_ADMIN_EMAILS", "u@example.com");
+    getSessionMock.mockResolvedValue({
+      session: sessionFixture,
+      user: { ...userFixture, emailVerified: false },
+    });
+
+    await expect(requirePlatformAdmin()).rejects.toMatchObject({
+      code: "forbidden",
+    });
+    expect(updateSetMock).not.toHaveBeenCalled();
   });
 
   it("admits a user who has the role but is not on the allowlist", async () => {

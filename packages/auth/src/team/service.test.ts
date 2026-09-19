@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => {
 
   const getFullOrganization = vi.fn();
   const getSession = vi.fn();
+  /** `count(*)` of the target workspace's members, read on accept. */
+  const memberCount = vi.fn();
 
   const orgApi = {
     "/organization/invite-member": vi.fn(),
@@ -38,9 +40,23 @@ const mocks = vi.hoisted(() => {
     headersMock,
     getFullOrganization,
     getSession,
+    memberCount,
     orgApi,
   };
 });
+
+vi.mock("@intelligo-dev/core/db", () => ({
+  db: {
+    select: () => ({
+      from: () => ({
+        where: async () => [{ n: mocks.memberCount() }],
+      }),
+    }),
+  },
+}));
+vi.mock("@intelligo-dev/core/db/schema", () => ({
+  member: { organizationId: "organization_id" },
+}));
 
 vi.mock("@intelligo-dev/core/request-context", () => ({
   getRequestHeaders: mocks.headersMock,
@@ -203,6 +219,28 @@ describe("inviteMember", () => {
     expect(mocks.orgApi["/organization/invite-member"]).not.toHaveBeenCalled();
   });
 
+  it("counts pending invitations as seats", async () => {
+    const checkMemberLimit = vi.fn().mockResolvedValue({
+      allowed: true,
+      limit: 5,
+    });
+    mocks.getFullOrganization.mockResolvedValue({
+      members: [{ userId: "a" }, { userId: "b" }],
+      invitations: [
+        { status: "pending", expiresAt: new Date(Date.now() + 60_000) },
+        { status: "pending", expiresAt: new Date(Date.now() - 60_000) },
+        { status: "accepted", expiresAt: new Date(Date.now() + 60_000) },
+      ],
+    });
+    mocks.orgApi["/organization/invite-member"].mockResolvedValue({ id: "i" });
+    const service = createTeamService({ checkMemberLimit });
+
+    await service.inviteMember({ email: "new@test.com", role: "member" });
+
+    // Two members and the one invitation still open.
+    expect(checkMemberLimit).toHaveBeenCalledWith(expect.any(String), 3);
+  });
+
   it("proceeds when the limit port allows", async () => {
     const checkMemberLimit = vi.fn().mockResolvedValue({
       allowed: true,
@@ -325,6 +363,23 @@ describe("acceptInvitation", () => {
         memberEmail: "n@test.com",
       })
     );
+  });
+
+  it("refuses to accept once the workspace is at its member limit", async () => {
+    mocks.memberCount.mockReturnValue(3);
+    const checkMemberLimit = vi.fn().mockResolvedValue({
+      allowed: false,
+      limit: 3,
+    });
+    const service = createTeamService({ checkMemberLimit });
+
+    const err = await service.acceptInvitation("inv-1").catch((e) => e);
+
+    expect(err.code).toBe("member_limit_reached");
+    expect(checkMemberLimit).toHaveBeenCalledWith("ws-1", 3);
+    expect(
+      mocks.orgApi["/organization/accept-invitation"]
+    ).not.toHaveBeenCalled();
   });
 
   it("rejects with invitation_not_found when the id is not in the caller's pending list", async () => {

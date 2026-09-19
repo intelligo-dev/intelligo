@@ -66,37 +66,52 @@ export function isCredentialKey(key: string): boolean {
   return CREDENTIAL_KEY_FRAGMENTS.some((needle) => lower.includes(needle));
 }
 
-function redactData(data: Record<string, unknown>): Record<string, unknown> {
+/**
+ * An identifier's key: `id`, `userId`, `workspace_id`. Matched as a
+ * suffix, not a substring, so `provider` or `paid` keep their values.
+ */
+function isIdKey(key: string): boolean {
+  return /^id$|[a-z0-9]Id$|[_-]id$/.test(key) || /workspace/i.test(key);
+}
+
+/** Nested objects and arrays are walked, to this depth, so a credential inside one is still found. */
+const MAX_REDACT_DEPTH = 6;
+
+function redactValue(key: string, value: unknown, depth: number): unknown {
+  if (isCredentialKey(key)) return "[REDACTED]";
+
+  if (value !== null && typeof value === "object") {
+    if (depth >= MAX_REDACT_DEPTH) return "[TRUNCATED]";
+    if (Array.isArray(value)) {
+      return value.map((item) => redactValue(key, item, depth + 1));
+    }
+    if (Object.getPrototypeOf(value) === Object.prototype) {
+      return redactObject(value as Record<string, unknown>, depth + 1);
+    }
+    return value;
+  }
+
+  // Email and id redaction is production-only, so development logs show
+  // real values.
+  if (!isProduction || typeof value !== "string") return value;
+  if (key.toLowerCase().includes("email")) return redactEmail(value);
+  if (isIdKey(key)) return redactId(value);
+  return value;
+}
+
+function redactObject(
+  data: Record<string, unknown>,
+  depth: number
+): Record<string, unknown> {
   const redacted: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data)) {
-    if (isCredentialKey(key)) {
-      redacted[key] = "[REDACTED]";
-      continue;
-    }
-
-    // Email and id redaction is production-only, so development logs show
-    // real values.
-    if (!isProduction) {
-      redacted[key] = value;
-      continue;
-    }
-
-    if (typeof value === "string") {
-      if (key.toLowerCase().includes("email")) {
-        redacted[key] = redactEmail(value);
-      } else if (
-        key.toLowerCase().includes("id") ||
-        key.toLowerCase().includes("workspace")
-      ) {
-        redacted[key] = redactId(value);
-      } else {
-        redacted[key] = value;
-      }
-    } else {
-      redacted[key] = value;
-    }
+    redacted[key] = redactValue(key, value, depth);
   }
   return redacted;
+}
+
+function redactData(data: Record<string, unknown>): Record<string, unknown> {
+  return redactObject(data, 0);
 }
 
 const baseLogger = pino({

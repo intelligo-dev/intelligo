@@ -112,7 +112,16 @@ export function sanitizeForSystemPrompt(
   if (!text || text.trim().length === 0) return text;
 
   const originalLength = text.length;
-  let sanitized = normalizeText(text).withSpaces;
+  const { withSpaces, stripped } = normalizeText(text);
+  // Detection reads both forms; so does this. A marker split by a
+  // zero-width character ("ig\u200Bnore") only exists once the
+  // character is removed, and cleaning the spaced form would pass it on.
+  const hiddenByZeroWidth = patterns.some(
+    ({ pattern }) =>
+      new RegExp(pattern.source, pattern.flags).test(stripped) &&
+      !new RegExp(pattern.source, pattern.flags).test(withSpaces)
+  );
+  let sanitized = hiddenByZeroWidth ? stripped : withSpaces;
   for (const { pattern } of patterns) {
     sanitized = sanitized.replace(
       new RegExp(pattern.source, pattern.flags),

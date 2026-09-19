@@ -88,7 +88,11 @@ async function claim(limit: number): Promise<Job[]> {
 
   return db
     .update(jobs)
-    .set({ status: "running", attempts: sql`${jobs.attempts} + 1`, startedAt: now })
+    .set({
+      status: "running",
+      attempts: sql`${jobs.attempts} + 1`,
+      startedAt: now,
+    })
     .where(inArray(jobs.id, due))
     .returning();
 }

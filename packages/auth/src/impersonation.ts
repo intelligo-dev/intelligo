@@ -50,7 +50,12 @@ export async function impersonateUser(
     .limit(1);
 
   if (target) {
-    const { allowlisted, hasRole } = platformAdminStanding(target);
+    // Protective here, so the allowlist counts whether or not the
+    // target has verified the address yet.
+    const { allowlisted, hasRole } = platformAdminStanding({
+      ...target,
+      emailVerified: true,
+    });
     if (allowlisted || hasRole) {
       throw new AuthGuardError(
         "forbidden",

@@ -112,7 +112,10 @@ export function createChatUploadHandler(
     // Refused before the body is read: `formData()` buffers all of it.
     const maxBytes = policy.maxBytes ?? ATTACHMENT_MAX_BYTES;
     const declared = Number(request.headers.get("content-length"));
-    if (Number.isFinite(declared) && declared > maxBytes + FORM_OVERHEAD_BYTES) {
+    if (
+      Number.isFinite(declared) &&
+      declared > maxBytes + FORM_OVERHEAD_BYTES
+    ) {
       return refuse("BAD_REQUEST", t("attachmentRejected"));
     }
 

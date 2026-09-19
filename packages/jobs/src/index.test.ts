@@ -173,7 +173,9 @@ describe("drain", () => {
     expect(result.unhandled).toEqual(["unknown.kind"]);
     expect(result.succeeded).toBe(0);
     expect(setFor("j-1")).toMatchObject({ status: "pending" });
-    expect((setFor("j-1")!.runAt as Date).getTime()).toBeGreaterThan(Date.now());
+    expect((setFor("j-1")!.runAt as Date).getTime()).toBeGreaterThan(
+      Date.now()
+    );
   });
 
   it("reschedules a failing job with backoff while attempts remain", async () => {
@@ -191,9 +193,7 @@ describe("drain", () => {
   });
 
   it("gives up once attempts reach maxAttempts", async () => {
-    mocks.claimed.mockResolvedValue(
-      [job({ attempts: 3, maxAttempts: 3 })],
-    );
+    mocks.claimed.mockResolvedValue([job({ attempts: 3, maxAttempts: 3 })]);
 
     await drain({
       "credits.cleanup": vi.fn().mockRejectedValue(new Error("still down")),
@@ -205,9 +205,7 @@ describe("drain", () => {
   });
 
   it("keeps processing the batch after one handler throws", async () => {
-    mocks.claimed.mockResolvedValue(
-      [job({ id: "j-1" }), job({ id: "j-2" })],
-    );
+    mocks.claimed.mockResolvedValue([job({ id: "j-1" }), job({ id: "j-2" })]);
     const handler = vi
       .fn()
       .mockRejectedValueOnce(new Error("boom"))
