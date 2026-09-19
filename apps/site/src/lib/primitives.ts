@@ -274,7 +274,7 @@ export const CATALOG = COMPONENTS.filter(
 );
 
 /** Site-only marketing effects live beside the installed components and are not part of the system. */
-const SITE_EFFECTS = new Set(["circuit-board", "text-reveal"]);
+const SITE_EFFECTS = new Set(["text-reveal"]);
 
 const installed = Object.keys(import.meta.glob("../components/ui/*.tsx"))
   .map((p) =>

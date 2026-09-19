@@ -1,24 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import {
-  CircuitBoard,
-  type CircuitConnection,
-  type CircuitNodeType,
-} from "@/components/ui/circuit-board";
 import { EDGES, PACKAGES } from "@/lib/packages";
 
 /**
- * The package map on @componentry/circuit-board. Node positions are
- * laid out in three rows (your app / intelligo / postgres); edges are
- * the real import graph. Hover dims everything not connected to the
- * node; click opens its detail.
+ * The package map. Packages sit in rows by how much of the framework
+ * they stand on — `core` at the bottom, `chat` at the top — so every
+ * import points down, and the database is a bar under all of them. The
+ * columns are chosen so that no edge passes behind a package it does
+ * not touch. Hover or focus lights a package's own edges: what it
+ * imports as solid lines, what imports it as dashed ones; click opens
+ * its detail.
  *
  * The board is a 760px drawing. Scaled to a phone it is five-pixel
  * labels on ten-pixel buttons, so below `md` the same packages are a
  * plain list of the three layers, driving the same detail panel.
  */
 const W = 760;
-const H = 400;
+const H = 496;
+/** Half the height of a package's button: where its edges attach. */
+const NODE_HALF = 14;
+const DB_TOP = 446;
 
 const LAYERS = [
   ["app", "your application"],
@@ -27,45 +28,37 @@ const LAYERS = [
 ] as const;
 
 const POS: Record<string, { x: number; y: number }> = {
-  pages: { x: 150, y: 50 },
-  actions: { x: 380, y: 50 },
-  agent: { x: 610, y: 50 },
-  auth: { x: 90, y: 190 },
-  billing: { x: 210, y: 190 },
-  next: { x: 90, y: 290 },
-  chat: { x: 210, y: 290 },
-  core: { x: 330, y: 190 },
-  audit: { x: 450, y: 190 },
-  jobs: { x: 560, y: 190 },
-  executions: { x: 670, y: 190 },
-  admin: { x: 450, y: 290 },
-  cli: { x: 560, y: 290 },
-  mastra: { x: 670, y: 290 },
-  db: { x: 330, y: 365 },
+  pages: { x: 107, y: 46 },
+  actions: { x: 350, y: 46 },
+  agent: { x: 532, y: 46 },
+  chat: { x: 410, y: 140 },
+  admin: { x: 167, y: 202 },
+  mastra: { x: 532, y: 202 },
+  billing: { x: 653, y: 202 },
+  next: { x: 350, y: 264 },
+  executions: { x: 471, y: 264 },
+  jobs: { x: 46, y: 326 },
+  auth: { x: 167, y: 326 },
+  audit: { x: 289, y: 326 },
+  core: { x: 410, y: 388 },
+  cli: { x: 532, y: 388 },
 };
 
-function useThemeVariant(): "light" | "dark" {
-  const [v, setV] = useState<"light" | "dark">("light");
-  useEffect(() => {
-    const read = () =>
-      setV(
-        document.documentElement.classList.contains("dark") ? "dark" : "light"
-      );
-    read();
-    const mo = new MutationObserver(read);
-    mo.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => mo.disconnect();
-  }, []);
-  return v;
+/** An import, drawn from the importer down to what it imports. */
+function edgePath(from: string, to: string): string {
+  const a = POS[from]!;
+  if (to === "db") return `M${a.x},${a.y + NODE_HALF} V${DB_TOP}`;
+  const b = POS[to]!;
+  if (a.y === b.y) return `M${a.x},${a.y} H${b.x}`;
+  const y1 = a.y + NODE_HALF;
+  const y2 = b.y - NODE_HALF;
+  const mid = (y1 + y2) / 2;
+  return `M${a.x},${y1} C${a.x},${mid} ${b.x},${mid} ${b.x},${y2}`;
 }
 
 export function PackageMap() {
   const [selected, setSelected] = useState("executions");
   const [hover, setHover] = useState<string | null>(null);
-  const variant = useThemeVariant();
   const wrapRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
@@ -88,30 +81,6 @@ export function PackageMap() {
     }
     return s;
   }, [focus]);
-
-  const nodes: CircuitNodeType[] = PACKAGES.map((p) => ({
-    id: p.id,
-    x: POS[p.id]!.x,
-    y: POS[p.id]!.y,
-    // labels are the clickable overlays below, not the board's own
-    size: p.layer === "intelligo" ? "md" : "lg",
-    status:
-      p.id === focus ? "active" : related.has(p.id) ? "processing" : "inactive",
-  }));
-
-  const connections: CircuitConnection[] = EDGES.map((e) => {
-    const lit = e.from === focus || e.to === focus;
-    return {
-      from: e.from,
-      to: e.to,
-      animated: lit,
-      // --accent is a fill, a shade off the card: a lit trace drawn in it is no trace
-      color: lit
-        ? "var(--foreground)"
-        : "color-mix(in srgb, color-mix(in oklab, var(--foreground) 15%, transparent) 70%, transparent)",
-      pulseColor: "var(--foreground)",
-    };
-  });
 
   const detail = PACKAGES.find((p) => p.id === selected)!;
   const labelOf = (id: string) =>
@@ -158,11 +127,9 @@ export function PackageMap() {
         className="relative hidden overflow-hidden rounded-xl border border-border bg-card md:block"
         style={{ height: H * scale + 2 }}
       >
-        {/* layer labels */}
         {[
-          ["your application", 22],
-          ["intelligo packages", 150],
-          ["postgresql", 345],
+          ["your application", 8],
+          ["intelligo packages", 96],
         ].map(([l, y]) => (
           <span
             key={l as string}
@@ -172,7 +139,14 @@ export function PackageMap() {
             {l}
           </span>
         ))}
+        <span
+          className="mono absolute right-3 text-[0.62rem] text-muted-foreground"
+          style={{ top: 10 * scale }}
+        >
+          ── imports &nbsp; ╌╌ imported by
+        </span>
         <div
+          className="relative mx-auto"
           style={{
             transform: `scale(${scale})`,
             transformOrigin: "top left",
@@ -180,41 +154,83 @@ export function PackageMap() {
             height: H,
           }}
         >
-          <CircuitBoard
-            nodes={nodes}
-            connections={connections}
+          <svg
             width={W}
             height={H}
-            variant={variant}
-            gridSize={24}
-            traceWidth={1.5}
-            pulseSpeed={2.4}
-            gridColor="color-mix(in srgb, color-mix(in oklab, var(--foreground) 15%, transparent) 60%, transparent)"
-            nodeColor="color-mix(in oklab, var(--foreground) 15%, transparent)"
-          />
-          {/* clickable overlays with labels (CircuitBoard nodes are decorative) */}
+            viewBox={`0 0 ${W} ${H}`}
+            aria-hidden="true"
+            className="absolute inset-0"
+          >
+            {/* lit edges last, so they sit above the quiet ones */}
+            {[...EDGES]
+              .sort(
+                (a, b) =>
+                  Number(a.from === focus || a.to === focus) -
+                  Number(b.from === focus || b.to === focus)
+              )
+              .map((e) => {
+                const imports = e.from === focus;
+                const importedBy = e.to === focus;
+                return (
+                  <path
+                    key={`${e.from}-${e.to}`}
+                    d={edgePath(e.from, e.to)}
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeWidth={imports || importedBy ? 1.5 : 1}
+                    strokeDasharray={importedBy ? "4 4" : undefined}
+                    className={cn(
+                      "transition-[stroke,opacity] duration-200",
+                      imports || importedBy
+                        ? "stroke-foreground"
+                        : "stroke-foreground/10"
+                    )}
+                  />
+                );
+              })}
+          </svg>
           {PACKAGES.map((p) => {
-            const { x, y } = POS[p.id]!;
             const isFocus = p.id === focus;
             const isRelated = related.has(p.id);
+            const state = isFocus
+              ? "border-foreground bg-muted text-foreground"
+              : isRelated
+                ? "border-foreground/30 bg-background text-foreground"
+                : "border-border bg-background text-muted-foreground";
+            const handlers = {
+              onMouseEnter: () => setHover(p.id),
+              onMouseLeave: () => setHover(null),
+              onFocus: () => setHover(p.id),
+              onBlur: () => setHover(null),
+              onClick: () => setSelected(p.id),
+            };
+            if (p.layer === "db") {
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  {...handlers}
+                  aria-pressed={selected === p.id}
+                  className={cn(
+                    "mono absolute inset-x-3 rounded-lg border py-1.5 text-center text-[0.72rem] transition-colors",
+                    state
+                  )}
+                  style={{ top: DB_TOP }}
+                >
+                  {p.label}
+                </button>
+              );
+            }
+            const { x, y } = POS[p.id]!;
             return (
               <button
                 key={p.id}
                 type="button"
-                onMouseEnter={() => setHover(p.id)}
-                onMouseLeave={() => setHover(null)}
-                onFocus={() => setHover(p.id)}
-                onBlur={() => setHover(null)}
-                onClick={() => setSelected(p.id)}
+                {...handlers}
                 aria-pressed={selected === p.id}
                 className={cn(
-                  "mono absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap border px-2 py-1 text-[0.72rem] transition-all",
-                  isFocus
-                    ? "border-foreground bg-muted text-foreground"
-                    : isRelated
-                      ? "border-foreground/15 bg-background text-foreground"
-                      : "border-border bg-background text-muted-foreground",
-                  p.layer === "db" && "rounded-full px-3"
+                  "mono absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border px-2 py-1 text-[0.72rem] transition-colors",
+                  state
                 )}
                 style={{ left: x, top: y }}
               >
