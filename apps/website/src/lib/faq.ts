@@ -1,3 +1,4 @@
+import { EXAMPLE } from "@/lib/example";
 import { PROOF } from "@/lib/proof";
 
 /**
@@ -8,6 +9,10 @@ export const FAQ = [
   {
     q: "Does Intelligo replace my AI framework?",
     a: "No. Mastra, the Vercel AI SDK or anything else stays native. Intelligo only brackets each run — admit, settle, fail — and has no agent or tool abstraction to adopt. The chat block is the one place with a wire format: it streams the AI SDK's UI messages, and another runtime plugs in by emitting them.",
+  },
+  {
+    q: "Is anything real running on it?",
+    a: `One product so far. ${EXAMPLE.name}, ${EXAMPLE.what}, is in beta with its first users at ${EXAMPLE.host}. It is the product the framework was extracted from, and it consumes the same npm packages and registry blocks you would — there is no private fork. That is one product at small scale, not a wall of logos; the reference app in the repository is the other thing you can run and read.`,
   },
   {
     q: "Is it ready for production?",

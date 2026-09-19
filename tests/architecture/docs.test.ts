@@ -364,6 +364,22 @@ describe("quoted evidence", async () => {
       expect(spelling).toMatch(/^pnpm exec shadcn add @intelligo\//);
   });
 
+  it("the README tells the homepage's one product, line for line", async () => {
+    const { EXAMPLE } = (await import(
+      path.join(SITE, "src/lib/example.ts")
+    )) as {
+      EXAMPLE: { name: string; url: string; lede: string; lines: string[] };
+    };
+    const readme = readFileSync(path.join(ROOT, "README.md"), "utf8");
+
+    expect(readme).toContain(
+      `**[${EXAMPLE.name}](${EXAMPLE.url})** ${EXAMPLE.lede}`
+    );
+    EXAMPLE.lines.forEach((line, i) =>
+      expect(readme).toContain(`\n${i + 1}. ${line}\n`)
+    );
+  });
+
   it("the film's acts and captions are the composition's", async () => {
     const { FILM_CHAPTERS, FILM_SECONDS } = (await import(
       path.join(SITE, "src/lib/film.ts")
