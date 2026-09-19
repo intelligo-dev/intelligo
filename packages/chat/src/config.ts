@@ -71,6 +71,14 @@ export interface ChatTurnContext extends ChatActor {
    * are replaced, other keys kept. Rejects before the row exists.
    */
   updateMetadata: (patch: Record<string, unknown>) => Promise<void>;
+  /**
+   * Add the tokens a tool spent on its own model call — a search that
+   * asks a model, a sub-agent — to what this turn settles. They are
+   * priced as the turn's model, so a call on another model is its own
+   * execution rather than usage added here. Usage added after the run
+   * settles is not charged.
+   */
+  addUsage: (usage: TokenUsage) => void;
 }
 
 /** The agent this turn runs as. */

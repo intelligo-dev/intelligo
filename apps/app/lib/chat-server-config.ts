@@ -219,8 +219,8 @@ function lastSourceIndex(messages: readonly unknown[]): number {
  * 2.5 does not accept function tools and `google.tools.googleSearch` in
  * one request, so binding the provider tool directly would drop
  * `saveArtifact`. The search runs as its own grounded call instead and
- * returns the answer with its sources — that inner call's tokens are
- * not part of the turn's settled usage.
+ * returns the answer with its sources; `turn.addUsage` settles that
+ * inner call's tokens with the turn's.
  *
  * Sources are numbered across the conversation, so the `[n]` the model
  * cites is the number the chat shows; `lib/chat-renderers.tsx` reads
@@ -228,7 +228,7 @@ function lastSourceIndex(messages: readonly unknown[]): number {
  *
  * Bound only when a Gemini key is configured; the stub never calls it.
  */
-function webSearchTools(): ToolSet {
+function webSearchTools(turn: ChatTurnContext): ToolSet {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) return {};
   return {
     webSearch: tool({
@@ -242,6 +242,7 @@ function webSearchTools(): ToolSet {
           prompt: query,
           abortSignal,
         });
+        turn.addUsage(result.totalUsage);
         const found = await Promise.all(
           result.sources.flatMap((source) =>
             source.sourceType === "url"
@@ -298,7 +299,7 @@ export const chatServerConfig: ChatServerConfig = {
       "Tools are extras on top of that, never the limit of what you can do: " +
       "when the user asks you to save, note, or keep something, call the saveArtifact tool; " +
       "for current events or facts you are unsure of, call the webSearch tool and cite the sources it returns.",
-    tools: (turn) => ({ ...artifactTools(turn), ...webSearchTools() }),
+    tools: (turn) => ({ ...artifactTools(turn), ...webSearchTools(turn) }),
     // Gemini only streams its thoughts when asked; with `reasoning` on,
     // the transcript shows them.
     providerOptions: {

@@ -33,3 +33,14 @@ export function sumStepUsage(
   }
   return { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
 }
+
+/** The sum of two usages; a total a provider omitted is input plus output. */
+export function sumUsage(a: TokenUsage, b: TokenUsage): TokenUsage {
+  const total = (u: TokenUsage) =>
+    u.totalTokens ?? (u.inputTokens ?? 0) + (u.outputTokens ?? 0);
+  return {
+    inputTokens: (a.inputTokens ?? 0) + (b.inputTokens ?? 0),
+    outputTokens: (a.outputTokens ?? 0) + (b.outputTokens ?? 0),
+    totalTokens: total(a) + total(b),
+  };
+}

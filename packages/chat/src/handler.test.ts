@@ -827,6 +827,33 @@ describe("POST streaming", () => {
     expect(usage.outputTokens).toBe(2);
   });
 
+  it("settles the tokens a tool spent on its own model call with the turn's", async () => {
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler({
+      executions: fake.executions,
+      model: { defaultId: MODEL_ID },
+      streamTurn: (turn) => {
+        turn.addUsage({ inputTokens: 5, outputTokens: 2 });
+        return {
+          stream: uiChunks([{ type: "finish" }]),
+          usage: Promise.resolve({
+            inputTokens: 7,
+            outputTokens: 3,
+            totalTokens: 10,
+          }),
+        };
+      },
+    });
+    const response = await POST(turn("search something"));
+    await response.text();
+    await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+    expect(fake.complete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        usage: { inputTokens: 12, outputTokens: 5, totalTokens: 17 },
+      })
+    );
+  });
+
   it("limits the model to the tools activeTools names", async () => {
     const { jsonSchema, tool } = await import("ai");
     const model = recordingModel();

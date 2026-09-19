@@ -84,7 +84,7 @@ import type {
   ChatUIMessage,
 } from "./parts";
 import { truncateTitle } from "./title";
-import { pickUsage, sumStepUsage } from "./usage";
+import { pickUsage, sumStepUsage, sumUsage } from "./usage";
 import type { TokenUsage } from "./usage";
 import { applyConversationWindow, extractText } from "./windowing";
 
@@ -546,6 +546,8 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     // The writer exists only while the stream is open; a tool that
     // writes outside that window is dropped rather than crashed.
     let writerSlot: UIMessageStreamWriter<ChatUIMessage> | null = null;
+    // Tokens tools spent on their own model calls, settled with the run's.
+    let nestedUsage: TokenUsage | null = null;
 
     const context: ChatTurnContext = {
       ...actor,
@@ -559,6 +561,9 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       },
       updateMetadata: async (patch) => {
         await updateConversationMetadata(actor, body.id, patch);
+      },
+      addUsage: (usage) => {
+        nestedUsage = sumUsage(nestedUsage ?? {}, pickUsage(usage));
       },
     };
 
@@ -796,9 +801,10 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       usage: TokenUsage,
       detail: { aborted: boolean } & Record<string, unknown>
     ) => {
+      const whole = nestedUsage ? sumUsage(usage, nestedUsage) : usage;
       const normalized = config.normalizeUsage
-        ? config.normalizeUsage(usage)
-        : usage;
+        ? config.normalizeUsage(whole)
+        : whole;
       // Settling can throw (unrecorded usage must not be reported as
       // success). Log and continue so a settlement failure does not
       // also cost the user their message history.

@@ -72,7 +72,9 @@ model is never told which workspace it is in.
 A tool reaches the client mid-turn through the turn: `turn.write()` sends a
 `data-chat-*` part (a status line, a plan), and `createArtifactWriter(turn,
 { kind, title })` streams a document into the chat's canvas — `append`
-deltas, `finish({ documentId })`. `sanitizeForShare` strips a transcript
+deltas, `finish({ documentId })`. A tool that calls a model itself — a
+grounded search, a sub-agent on the same model — hands its tokens to
+`turn.addUsage()`, and the turn settles them with its own. `sanitizeForShare` strips a transcript
 for a public page; `recordChatFeedback` records a vote and tells the hook.
 Stored attachments mount two more handlers, `createChatUploadHandler` and
 `createChatAttachmentHandler`.
