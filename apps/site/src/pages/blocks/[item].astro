@@ -56,16 +56,17 @@ const messages = item.files.find((f) => f.target.startsWith("messages/"))?.targe
 ---
 <Page
   path={blockHref(item.name)}
-  tag={`blocks · ${item.group.toLowerCase()} · ${item.name}`}
+  compact
+  tag={`<a href="/blocks" class="hover:text-foreground">Blocks</a> / <a href="/blocks?item=${item.name}" class="hover:text-foreground">${item.group}</a>`}
   title={item.title}
-  lede={item.fullDescription}
+  lede={item.description}
   description={truncate(`${item.title} — an Intelligo registry block, installed as source with the shadcn CLI. ${item.description}`)}
 >
   <section class="xline">
-    <div class="px-6 py-8 md:px-10 md:py-10">
+    <div class="px-6 py-8 md:px-10">
       <InstallCommand client:visible cmd={cmd} />
-      <div class="mt-6">
-        <BlockPreview client:visible name={item.name} dependsOn={item.dependsOn} bodyClassName="aspect-[4/5] max-h-[640px] w-full sm:aspect-[16/10]" />
+      <div class="mt-4">
+        <BlockPreview client:visible name={item.name} dependsOn={item.dependsOn} bodyClassName="aspect-[4/5] w-full sm:aspect-auto sm:h-[min(72dvh,760px)]" />
       </div>
     </div>
   </section>
@@ -73,6 +74,11 @@ const messages = item.files.find((f) => f.target.startsWith("messages/"))?.targe
   <section class="xline">
     <div class="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <div class="space-y-8 px-6 py-10 md:px-10">
+        <div>
+          <div class="tag mb-2">about this block</div>
+          <p class="text-[0.9rem] leading-relaxed text-foreground/80">{item.fullDescription}</p>
+        </div>
+
         <div>
           <div class="tag mb-2">yours to edit</div>
           {item.seams.length > 0 ? (

@@ -1,100 +1,20 @@
 ---
 /**
- * The registry catalog: how items install, a live browser across all of
- * them, and every block grouped, each linking to its own page.
+ * The registry catalog: every block in a rail, the one chosen rendered
+ * live beside its install command, each linking to its own page.
  */
-import { installCommand } from "@/lib/install";
 import Page from "@/layouts/Page.astro";
 import { RegistryExplorer } from "@/components/registry-explorer";
-import { InstallCommand } from "@/components/install-command";
-import { REGISTRY_COUNT, REGISTRY_GROUPS, REGISTRY_ITEMS, blockHref } from "@/lib/registry-items";
-import { countWord } from "@/lib/count-words";
-import { SITE } from "@/lib/site";
-
-const Count = countWord(REGISTRY_COUNT);
-
-const RULES = [
-  ["Installed components are used as-is.", "What a deployment varies arrives through config files the items ship for you to edit: navigation, banners, onboarding steps, credit bundles, chat identity, conversation starters, tool renderers."],
-  ["Copy is translation, not code.", "Every item reads its strings from a per-item next-intl namespace and ships messages/en/<item>.json. Adding a language means adding message files — never editing a component."],
-  ["Business rules live behind the pages.", "An installed action parses, calls a typed service, maps the error, revalidates. The invariants are in the packages, tested against a real database."],
-];
+import { REGISTRY_COUNT } from "@/lib/registry-items";
 ---
 <Page
   path="/blocks"
-  tag="blocks · the registry"
-  title={`${Count} blocks,<br />shipped as your own source.`}
-  lede="Pages, components, loading, empty and error states, and thin actions — installed with the shadcn CLI from the registry this site hosts at /r, rendered by your own shadcn primitives. No runtime UI package, nothing to fork later."
+  compact
+  title="Blocks"
+  lede={`${REGISTRY_COUNT} pages you install as source with the shadcn CLI, rendered live.`}
   description={`All ${REGISTRY_COUNT} Intelligo registry blocks, rendered live, installed as consumer-owned source with the shadcn CLI.`}
 >
-  <section class="xline">
-    <div class="px-6 py-10 md:px-10 md:py-14">
-      <div class="grid gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-3">
-        {RULES.map(([h, b]) => (
-          <div class="bg-background p-4">
-            <div class="text-[0.98rem] font-semibold text-foreground">{h}</div>
-            <p class="mt-1 text-[0.86rem] text-foreground/70">{b}</p>
-          </div>
-        ))}
-      </div>
-      <div class="mt-6">
-        <div class="tag mb-2">install any block</div>
-        <InstallCommand client:visible cmd={installCommand("<item>")} />
-      </div>
-    </div>
-  </section>
-
   <section id="explorer" class="xline">
-    <div class="px-6 py-10 md:px-10 md:py-14">
-      <div class="section-head mb-8">
-        <span class="tag">browse</span>
-        <h2>Every block, live.</h2>
-        <p>The real component, its own messages/en, fixture data in place of the packages' reads. Arrow keys move between items.</p>
-      </div>
-      <RegistryExplorer client:load />
-    </div>
-  </section>
-
-  <nav aria-label="Block groups" class="xline">
-    <div class="flex flex-wrap gap-x-6 gap-y-2 px-6 py-6 md:px-10">
-      {REGISTRY_GROUPS.map((g) => (
-        <a href={`#group-${g.toLowerCase()}`} class="mono text-[0.78rem] text-foreground/70 no-underline hover:text-foreground">
-          {g} <span class="text-muted-foreground">{REGISTRY_ITEMS.filter((i) => i.group === g).length}</span>
-        </a>
-      ))}
-      <a href="/components" class="mono ml-auto text-[0.78rem] text-muted-foreground no-underline hover:text-foreground">components →</a>
-    </div>
-  </nav>
-
-  {REGISTRY_GROUPS.map((g) => (
-    <section id={`group-${g.toLowerCase()}`} class="xline">
-      <div class="px-6 py-10 md:px-10 md:py-14">
-        <div class="section-head">
-          <span class="tag">{g.toLowerCase()}</span>
-          <h2 class="heading text-[1.5rem] font-medium">{g}</h2>
-        </div>
-        <ul class="mt-6 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
-          {REGISTRY_ITEMS.filter((i) => i.group === g).map((item) => (
-            <li>
-              <a href={blockHref(item.name)} class="group flex h-full flex-col gap-2 bg-background p-4 no-underline transition-colors hover:bg-accent">
-                <span class="mono text-[0.72rem] text-muted-foreground">{item.name}</span>
-                <span class="text-[1rem] font-semibold text-foreground">{item.title}</span>
-                <span class="text-[0.86rem] leading-snug text-foreground/70">{item.description}</span>
-                <span class="mono mt-auto pt-2 text-[0.68rem] text-muted-foreground transition-colors group-hover:text-foreground">
-                  {item.fileCount} files{item.seams.length > 0 && ` · ${item.seams.length} config seam${item.seams.length === 1 ? "" : "s"}`} →
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  ))}
-
-  <section class="xline">
-    <div class="px-6 py-8 md:px-10">
-      <p class="mono text-[0.72rem] text-muted-foreground">
-        Installed blocks are used as-is; what varies arrives through the config files they ship.
-      </p>
-    </div>
+    <div><RegistryExplorer client:load /></div>
   </section>
 </Page>

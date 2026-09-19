@@ -11,7 +11,6 @@ import Page from "@/layouts/Page.astro";
 import { ComponentDemo } from "@/showcase/intelligo-demos";
 import { CATALOG, COMPONENTS, GROUPS, INTELLIGO, TIERS, type ComponentEntry } from "@/lib/primitives";
 import { CONTRAST_PAIRS, DURATIONS, EASINGS, LAYERS, TOKENS } from "@/lib/design-tokens";
-import { countWord } from "@/lib/count-words";
 
 const COLORS: [string, string[]][] = [
   ["Surface", ["background", "foreground", "card", "card-foreground", "popover", "popover-foreground"]],
@@ -35,7 +34,6 @@ const FONTS = [
   ["--font-heading", "Outfit · site only", "heading", "The application framework for vertical AI SaaS."],
 ];
 const idOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-const Count = countWord(INTELLIGO.length);
 
 const LEDES: Record<string, string> = {
   Patterns: TIERS.T4.lede,
@@ -53,9 +51,9 @@ const install = (e: ComponentEntry) => installCommand(e.name, { stock: !e.intell
 ---
 <Page
   path="/components"
-  tag="components · the design system"
-  title={`${Count} AI parts and patterns,<br />one design system.`}
-  lede={`Intelligo's own components — messages, reasoning, tool calls, approvals, citations, artifacts — on Base UI and the intelligo token contract, beside the ${CATALOG.length} primitives and composites every block also uses. Everything below is the installed source, live; switch the theme in the nav and it follows.`}
+  compact
+  title="Components"
+  lede={`${INTELLIGO.length} Intelligo components and ${CATALOG.length} primitives and composites, rendered live from the source you install.`}
   description={`The Intelligo design system: ${INTELLIGO.length} AI parts and patterns, ${CATALOG.length} primitives and composites, the token contract and WCAG AA contrast — all rendered live.`}
 >
   <section class="xline">

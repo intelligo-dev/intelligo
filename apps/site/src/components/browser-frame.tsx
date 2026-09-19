@@ -22,7 +22,10 @@ export function BrowserFrame({
   return (
     <figure
       aria-label={label}
-      className={cn("m-0 border border-foreground/15 bg-card", className)}
+      className={cn(
+        "m-0 overflow-hidden rounded-xl border border-foreground/15 bg-card",
+        className
+      )}
     >
       <div
         aria-hidden="true"
