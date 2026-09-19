@@ -1,0 +1,5 @@
+# Checked out with LF everywhere. The CLI and `intelligo migrate` hash
+# file contents (generated-file manifest, migration chain), so a CRLF
+# checkout would read every generated file as edited and every
+# migration as unknown.
+* text=auto eol=lf

@@ -39,12 +39,6 @@ export type RegistryRequires = {
 };
 
 /**
- * The registry's requirements file ships with the CLI (a verified copy
- * of registry/requires.json) so doctor can check an installed app
- * without a registry checkout. `../../templates` resolves from src/
- * and from dist/commands/ alike.
- */
-/**
  * Block and line comments removed, so a check cannot be satisfied — or
  * defeated — by prose. The composition root's own doc comment names
  * `registerModels` in several of the templates.
@@ -58,7 +52,9 @@ function stripComments(text: string): string {
 /**
  * templates/registry-requires.json is a build-time copy of
  * packages/registry/requires.json (scripts/sync-registry-requires.mjs),
- * committed so that running from source works too.
+ * committed so that running from source works too, and shipped so
+ * doctor can check an installed app without a registry checkout.
+ * `../../templates` resolves from src/ and from dist/commands/ alike.
  */
 function bundledRequires(): RegistryRequires | null {
   const file = path.resolve(
@@ -357,9 +353,10 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
         const source = readFileSync(abs, "utf8");
         const missing = names.filter(
           (n) =>
-            !new RegExp(`export\\s+(?:const|function|let|var)\\s+${n}\\b`).test(
-              source
-            ) && !new RegExp(`export\\s*\\{[^}]*\\b${n}\\b`).test(source)
+            !new RegExp(
+              `export\\s+(?:default\\s+)?(?:async\\s+)?(?:const|function\\*?|let|var|class)\\s+${n}\\b`
+            ).test(source) &&
+            !new RegExp(`export\\s*\\{[^}]*\\b${n}\\b`).test(source)
         );
         if (missing.length) {
           problems.push(`${file} must export ${missing.join(", ")}`);

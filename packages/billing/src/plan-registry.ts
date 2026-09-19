@@ -263,7 +263,7 @@ export const DEFAULT_TRIAL_PLAN_SLUG = "pro";
  * The default when a product registered none, and deliberately not a
  * generous one: a framework that invents a free grant for a
  * deployment that never asked for one is giving away someone else's
- * money. `grantTrialCredits` checks `durationDays` and does nothing
+ * money. `provisionTrialCredits` checks `durationDays` and does nothing
  * at zero.
  */
 export const NO_TRIAL: TrialConfig = {

@@ -166,6 +166,22 @@ describe("runChecks", () => {
       );
     });
 
+    it("accepts an async or default export of a required name", () => {
+      const results = runChecks({
+        root: app({
+          "app/chat/page.tsx": "// chat",
+          "components/errors/route-error.tsx": "// route-error",
+          "i18n/navigation.ts": "// nav",
+          "lib/intelligo.ts":
+            "export async function composeIntelligo() {}\nexport const executions = {};",
+          "lib/plans.ts": "export const FEATURES = { chat: ['free'] };",
+        }),
+        env: fullEnv,
+        requires,
+      });
+      expect(results.find((r) => r.name === "item:chat")!.status).toBe("ok");
+    });
+
     it("is silent for items whose marker file is absent", () => {
       const results = runChecks({ root: app({}), env: fullEnv, requires });
       expect(results.some((r) => r.name.startsWith("item:"))).toBe(false);

@@ -15,7 +15,12 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { addFeature, formatAddResult, readCatalogue } from "./commands/add.js";
+import {
+  addFeature,
+  formatAddResult,
+  addExitCode,
+  readCatalogue,
+} from "./commands/add.js";
 import { exitCodeFor, formatResults, runChecks } from "./commands/doctor.js";
 import {
   formatMigrateCheck,
@@ -174,11 +179,25 @@ async function main(): Promise<number> {
       console.log(formatResults(results));
       return exitCodeFor(results);
     }
-    case "migrate":
+    case "migrate": {
+      // Applying is the default, so a mistyped flag (`--dry-run`,
+      // `--chek`) must not fall through to it.
+      const unknown = rest.filter(
+        (arg) => arg !== "--check" && arg !== "--json"
+      );
+      if (unknown.length > 0) {
+        console.error(
+          `intelligo migrate: unknown argument ${unknown.join(" ")}. ` +
+            "Use `intelligo migrate` to apply, `--check` to only report, " +
+            "and `--json` with `--check` for a machine-readable answer."
+        );
+        return 2;
+      }
       return runMigrate(
         rest.includes("--check") ? "check" : "apply",
         rest.includes("--json")
       );
+    }
     case "create": {
       // Imported lazily so the prompts library loads only for the one
       // command that converses.
@@ -207,7 +226,7 @@ async function main(): Promise<number> {
         force: rest.includes("--force"),
       });
       console.log(formatAddResult(result));
-      return 0;
+      return addExitCode(result);
     }
     case "upgrade": {
       if (!rest.includes("--check")) {

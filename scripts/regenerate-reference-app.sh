@@ -16,6 +16,11 @@ cd "$R"
 KEEP="$(mktemp -d)"
 trap 'rm -rf "$KEEP"; [ -n "${SERVER:-}" ] && kill "$SERVER" 2>/dev/null || true' EXIT
 
+# Recreating the app makes pnpm resolve its importer again, which can
+# move versions nobody asked to move. The lockfile is put back unless
+# the regenerated app really needs a different one.
+cp pnpm-lock.yaml "$KEEP/pnpm-lock.yaml"
+
 echo "› keeping the files the app owns"
 node -e '
   const fs = require("fs"), path = require("path");
@@ -85,7 +90,22 @@ node -e '
 ' "$APP" "$KEEP" "$R/scripts/reference-app-owned.json"
 pnpm install --no-frozen-lockfile >/dev/null
 
+LOCK_CHANGED=false
+if ! cmp -s pnpm-lock.yaml "$KEEP/pnpm-lock.yaml"; then
+  cp "$KEEP/pnpm-lock.yaml" pnpm-lock.yaml
+  if ! pnpm install --frozen-lockfile >/dev/null 2>&1; then
+    pnpm install --no-frozen-lockfile >/dev/null
+    LOCK_CHANGED=true
+    echo "! pnpm-lock.yaml changed: the regenerated app needs different dependencies"
+  fi
+fi
+
 if $CHECK; then
+  if $LOCK_CHANGED; then
+    echo "apps/app needs a different lockfile than the one committed:"
+    git diff --stat -- pnpm-lock.yaml
+    exit 1
+  fi
   if [ -n "$(git status --porcelain -- apps/app)" ]; then
     echo "apps/app is not the CLI's output — a generated file was edited by hand:"
     git status --porcelain -- apps/app | head -40

@@ -2,11 +2,8 @@ import { defineConfig } from "vitest/config";
 import path from "node:path";
 import { globSync } from "node:fs";
 
-// Single root vitest config for the whole monorepo. Replaces the
-// previous split between vitest.config.ts (resolve.alias) and
-// vitest.workspace.ts (project list) — vitest 4's `test.projects`
-// field accepts the same project paths the deprecated
-// `defineWorkspace` used to take.
+// Single root vitest config for the whole monorepo: the alias every
+// project needs and, through `test.projects`, the project list.
 //
 // Projects are discovered rather than listed: a hand-maintained list
 // silently omits a new package's tests.

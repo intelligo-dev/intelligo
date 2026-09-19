@@ -17,7 +17,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { createApp, deriveNames } from "./create.js";
+import { createApp, deriveNames, formatNextSteps } from "./create.js";
 import { hashContents, readManifest } from "../manifest.js";
 
 let workdir: string;
@@ -148,5 +148,23 @@ describe("createApp", () => {
     expect(readFileSync(path.join(target, "package.json"), "utf8")).toContain(
       '"@intelligo-dev/core": "workspace:*"'
     );
+  });
+});
+
+describe("formatNextSteps", () => {
+  it("quotes a directory the shell would split", () => {
+    const steps = formatNextSteps("my app", {
+      packageManager: "pnpm",
+      installed: true,
+    });
+    expect(steps.split("\n")[0]).toBe("cd 'my app'");
+  });
+
+  it("leaves a plain directory as it is", () => {
+    const steps = formatNextSteps("acme", {
+      packageManager: "pnpm",
+      installed: true,
+    });
+    expect(steps.split("\n")[0]).toBe("cd acme");
   });
 });

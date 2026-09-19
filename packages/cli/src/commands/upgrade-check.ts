@@ -23,8 +23,9 @@ export type UpgradeItem = {
    * - `conflict`   — template changed AND the consumer edited the file
    * - `customized` — consumer edited it; template unchanged
    * - `deleted`    — consumer removed it
+   * - `new`        — the template has a file this app was never given
    */
-  state: "current" | "outdated" | "conflict" | "customized" | "deleted";
+  state: "current" | "outdated" | "conflict" | "customized" | "deleted" | "new";
 };
 
 export type UpgradeReport = {
@@ -59,6 +60,10 @@ export function upgradeCheck(options: UpgradeCheckOptions): UpgradeReport {
     const targetToTemplate = new Map(
       (spec?.files ?? []).map((f) => [f.target, f.template])
     );
+
+    for (const target of newFiles(spec, entry.files)) {
+      report.items.push({ feature, path: target, state: "new" });
+    }
 
     for (const file of entry.files) {
       const abs = path.join(options.appRoot, file.path);
@@ -102,6 +107,17 @@ export function upgradeCheck(options: UpgradeCheckOptions): UpgradeReport {
   return report;
 }
 
+/** The feature's files the manifest has no record of: added to the template since. */
+function newFiles(
+  spec: { files: { target: string }[] } | undefined,
+  recorded: { path: string }[]
+): string[] {
+  const known = new Set(recorded.map((file) => file.path));
+  return (spec?.files ?? [])
+    .map((file) => file.target)
+    .filter((target) => !known.has(target));
+}
+
 export function formatUpgradeReport(r: UpgradeReport): string {
   if (r.items.length === 0) {
     return "No generated files recorded — nothing to upgrade.";
@@ -113,6 +129,7 @@ export function formatUpgradeReport(r: UpgradeReport): string {
     conflict: "! template changed AND you edited it — review the diff",
     customized: "= yours (template unchanged)",
     deleted: "✗ removed by you",
+    new: "+ new in the template — `intelligo add` writes it",
   };
 
   const lines: string[] = [];

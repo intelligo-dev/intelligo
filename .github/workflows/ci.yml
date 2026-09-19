@@ -39,11 +39,9 @@ jobs:
   verify:
     name: Typecheck, lint, unit tests
     runs-on: ubuntu-latest
-    # This used to carry the scaffold checks too and took 22 minutes —
-    # a push waited that long for an answer the fast checks had after
-    # six, and one slow step timing out cancelled checks that had
-    # already passed. Those checks now run at release time, where what
-    # they prove (that a consumer can install this) actually matters.
+    # The scaffold checks are not here: they take over twenty minutes,
+    # and what they prove — that a consumer can install this — is a
+    # question about a release, so the release workflow runs them.
     timeout-minutes: 20
 
     steps:
@@ -262,7 +260,9 @@ jobs:
         run: |
           out=$(pnpm exec tsx packages/cli/src/bin.ts migrate --check || true)
           echo "$out"
-          echo "$out" | grep -q "baseline"
+          # Not "baseline": every pending line names 0000_baseline, so
+          # that would match whether or not the state was detected.
+          echo "$out" | grep -q "has no migration records"
 
       # A push-provisioned database must be refused, not half-migrated:
       # `migrate` (apply) sees the tables, sees no records, and stops.

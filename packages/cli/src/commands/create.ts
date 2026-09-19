@@ -100,10 +100,17 @@ export type NextSteps = {
   pending?: Command[];
 };
 
+/** A path the reader can paste into a shell, spaces and quotes included. */
+function shellQuote(value: string): string {
+  return /^[\w@%+=:,./-]+$/.test(value)
+    ? value
+    : `'${value.replace(/'/g, "'\\''")}'`;
+}
+
 export function formatNextSteps(target: string, next: NextSteps): string {
   const pm = next.packageManager;
   return [
-    `cd ${path.relative(process.cwd(), path.resolve(target)) || "."}`,
+    `cd ${shellQuote(path.relative(process.cwd(), path.resolve(target)) || ".")}`,
     "cp .env.example .env.local   # then fill it in",
     ...(next.pending?.length
       ? next.pending.map(formatCommand)

@@ -42,7 +42,15 @@
         "next.config.*",
         "public/**",
         "astro.config.*",
-        "wrangler.jsonc"
+        "wrangler.jsonc",
+        "hooks/**",
+        "i18n/**",
+        "messages/**",
+        "proxy.ts",
+        "middleware.ts",
+        "instrumentation.ts",
+        "drizzle/**",
+        "postcss.config.*"
       ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
@@ -58,7 +66,11 @@
         "lib/**",
         "tools/**",
         "actions/**",
-        "*.config.*"
+        "*.config.*",
+        "hooks/**",
+        "i18n/**",
+        "proxy.ts",
+        "instrumentation.ts"
       ]
     },
     "type-check": {
@@ -70,7 +82,12 @@
         "tools/**",
         "actions/**",
         "tsconfig.json",
-        "astro.config.*"
+        "astro.config.*",
+        "hooks/**",
+        "i18n/**",
+        "proxy.ts",
+        "middleware.ts",
+        "instrumentation.ts"
       ],
       "dependsOn": ["^type-check"]
     },
@@ -104,7 +121,8 @@
       "dependsOn": ["^build"],
       "inputs": [
         "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/packages/registry/requires.json"
+        "$TURBO_ROOT$/packages/registry/requires.json",
+        "$TURBO_ROOT$/packages/registry/registry.json"
       ],
       "outputs": ["dist/**"]
     },

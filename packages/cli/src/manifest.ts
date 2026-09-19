@@ -69,37 +69,6 @@ export function writeManifest(appRoot: string, manifest: Manifest): void {
 }
 
 /**
- * What happened to a generated file since it was written.
- *
- * `customized` is the state the whole mechanism exists to detect: the
- * consumer owns that file now, and an upgrade must not touch it.
- */
-export type FileState = "unchanged" | "customized" | "deleted";
-
-export type FileStatus = {
-  path: string;
-  state: FileState;
-};
-
-export function inspectFile(appRoot: string, file: GeneratedFile): FileStatus {
-  const abs = path.join(appRoot, file.path);
-  if (!existsSync(abs)) return { path: file.path, state: "deleted" };
-
-  const current = hashContents(readFileSync(abs, "utf8"));
-  return {
-    path: file.path,
-    state: current === file.hash ? "unchanged" : "customized",
-  };
-}
-
-export function inspectFeature(
-  appRoot: string,
-  entry: FeatureEntry
-): FileStatus[] {
-  return entry.files.map((f) => inspectFile(appRoot, f));
-}
-
-/**
  * Record a feature's generated files, replacing any previous entry for
  * the same feature — re-generating is how a consumer accepts a new
  * template version, and the recorded hashes must then describe what is

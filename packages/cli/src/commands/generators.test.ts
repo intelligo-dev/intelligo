@@ -17,7 +17,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { addFeature, formatAddResult } from "./add.js";
+import { addExitCode, addFeature, formatAddResult } from "./add.js";
 import { upgradeCheck, upgradeCheckExitCode } from "./upgrade-check.js";
 import { readManifest } from "../manifest.js";
 
@@ -120,6 +120,10 @@ describe("addFeature", () => {
 
     expect(result.skippedUnknown).toEqual(["app/demo/page.tsx"]);
     expect(readFileSync(target(), "utf8")).toBe("// pre-existing, not ours\n");
+    // The feature is not installed, so the command does not succeed, and
+    // the output does not also claim there was nothing to do.
+    expect(addExitCode(result)).toBe(1);
+    expect(formatAddResult(result)).not.toContain("nothing to do");
   });
 
   it("rejects an unknown feature by name", () => {
@@ -211,6 +215,31 @@ describe("upgradeCheck", () => {
     expect(report.installedVersion.demo).toBe("1.0.0");
     expect(report.templateVersion.demo).toBe("1.1.0");
     expect(upgradeCheckExitCode(report)).toBe(0);
+  });
+
+  it("reports a file the template gained since the app was generated", () => {
+    add();
+    mkdirSync(path.join(templatesDir, "demo"), { recursive: true });
+    writeFileSync(path.join(templatesDir, "demo", "extra.ts.tpl"), "// new\n");
+    writeFileSync(
+      path.join(templatesDir, "manifest.json"),
+      JSON.stringify({
+        demo: {
+          templateVersion: "1.1.0",
+          description: "demo",
+          files: [
+            { template: "demo/page.tsx.tpl", target: "app/demo/page.tsx" },
+            { template: "demo/extra.ts.tpl", target: "lib/extra.ts" },
+          ],
+        },
+      })
+    );
+
+    expect(check().items).toContainEqual({
+      feature: "demo",
+      path: "lib/extra.ts",
+      state: "new",
+    });
   });
 
   it("reports a change on both sides as a conflict, and exits non-zero", () => {

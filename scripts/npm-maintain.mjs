@@ -23,23 +23,34 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 
 const dryRun = process.argv.includes("--dry-run");
 
-/** `npm view <spec> <field> --json`, or undefined when there is nothing. */
+/** Windows runs `npm` through its `.cmd` shim, which needs a shell. */
+const viaShell = process.platform === "win32";
+
+/**
+ * `npm view <spec> <field> --json`, or undefined when the registry has
+ * no such package or version. Anything else — no network, no auth, no
+ * npm — throws: reading it as "never published" would skip the work and
+ * report success.
+ */
 function view(spec, field) {
   try {
     const out = execFileSync("npm", ["view", spec, field, "--json"], {
       encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: viaShell,
     }).trim();
     return out ? JSON.parse(out) : undefined;
-  } catch {
-    return undefined;
+  } catch (error) {
+    const said = `${error.stdout ?? ""}${error.stderr ?? ""}`;
+    if (/\bE404\b/.test(said)) return undefined;
+    throw error;
   }
 }
 
 function npm(args) {
   console.log(`$ npm ${args.map((a) => JSON.stringify(a)).join(" ")}`);
   if (dryRun) return;
-  const result = spawnSync("npm", args, { stdio: "inherit" });
+  const result = spawnSync("npm", args, { stdio: "inherit", shell: viaShell });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
