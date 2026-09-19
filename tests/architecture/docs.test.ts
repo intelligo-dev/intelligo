@@ -297,6 +297,48 @@ describe("quoted evidence", async () => {
     expect(missing).toEqual([]);
   });
 
+  it("the quickstart's terminal is what the CLI would print", async () => {
+    const { QUICKSTART } = (await import(
+      path.join(SITE, "src/lib/quickstart.ts")
+    )) as { QUICKSTART: { title: string; out: string[] }[] };
+    const out = (title: string) =>
+      QUICKSTART.find((step) => step.title === title)!.out;
+    const cli = path.join(PACKAGES_DIR, "cli");
+
+    const scaffold = (
+      JSON.parse(
+        readFileSync(path.join(cli, "templates/manifest.json"), "utf8")
+      ) as Record<string, { files: unknown[] }>
+    )["app-scaffold"]!.files.length;
+    expect(out("Create")).toContain(`◆ Scaffolded ${scaffold} files in my-app`);
+
+    const flow = readFileSync(
+      path.join(cli, "src/commands/create-flow.ts"),
+      "utf8"
+    );
+    const suggested = [
+      .../const SUGGESTED = \[([^\]]*)\]/
+        .exec(flow)![1]!
+        .matchAll(/"([^"]+)"/g),
+    ].map((m) => m[1]!);
+    const pages = out("Create")
+      .filter((line) => line.includes("shadcn add"))
+      .at(-1)!;
+    for (const name of suggested)
+      expect(pages).toContain(`@intelligo/${name} `);
+
+    const chain = walk(
+      path.join(PACKAGES_DIR, "core/src/db/migrations"),
+      (name) => name.endsWith(".sql")
+    )
+      .map((file) => path.basename(file, ".sql"))
+      .sort();
+    expect(out("Migrate")).toEqual([
+      `✓ Applied ${chain.length} migration(s):`,
+      ...chain.map((tag) => `    ${tag}`),
+    ]);
+  });
+
   it("every path a card installs is a target of the blocks it adds", () => {
     const registry = JSON.parse(
       readFileSync(path.join(PACKAGES_DIR, "registry/registry.json"), "utf8")
@@ -305,7 +347,9 @@ describe("quoted evidence", async () => {
     const missing = BLOCKERS.flatMap((card) => {
       const add = /^\$ pnpm exec shadcn add (.+)$/.exec(card.evidence[0] ?? "");
       if (!add) return [];
-      const names = add[1]!.split(/\s+/).map((n) => n.replace("@intelligo/", ""));
+      const names = add[1]!
+        .split(/\s+/)
+        .map((n) => n.replace("@intelligo/", ""));
       const targets = new Set(
         registry.items
           .filter((item) => names.includes(item.name))

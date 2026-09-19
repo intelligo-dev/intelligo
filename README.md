@@ -14,7 +14,7 @@ Intelligo is everything around it — and it is tested, typed, and yours.
 <img src="https://img.shields.io/badge/Next.js-16-black" alt="Next.js 16" />
 <img src="https://img.shields.io/badge/PostgreSQL-Drizzle-336791" alt="PostgreSQL" />
 
-[Website](https://intelligo.dev) · [Docs](https://intelligo.dev/docs) · [Pages](https://intelligo.dev/blocks) · [Components](https://intelligo.dev/components) · [Architecture](https://intelligo.dev/architecture) · [Why](https://intelligo.dev/why)
+[Website](https://intelligo.dev) · [Docs](https://intelligo.dev/docs) · [Blocks](https://intelligo.dev/blocks) · [Components](https://intelligo.dev/components) · [Architecture](https://intelligo.dev/architecture) · [Why](https://intelligo.dev/why)
 
 <a href="https://intelligo.dev/#film">
   <picture>
@@ -66,14 +66,12 @@ flowchart LR
 You need Node 22.14+, pnpm 9, and PostgreSQL with pgvector (Neon, Supabase, or `docker run pgvector/pgvector:pg17`).
 
 ```bash
+# asks which pages you want, then installs them as your source — tick the chat
 pnpm dlx @intelligo-dev/cli@beta create my-app
-cd my-app && pnpm install
-
-# Pages install in dependency order — intelligo.dev/docs/registry/install-order
-for item in route-error app-shell auth-login auth-signup dashboard chat; do
-  pnpm dlx shadcn@latest add "https://intelligo.dev/r/$item.json" --yes
-done
+cd my-app
 ```
+
+Anything you skip installs later, from the registry the scaffold's `components.json` names `@intelligo`: `pnpm exec shadcn add @intelligo/billing-settings`. Blocks install in [dependency order](https://intelligo.dev/docs/registry/install-order), which `create` works out for you.
 
 Copy `.env.example` to `.env.local`, set `DATABASE_URL` and `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), then:
 
@@ -128,9 +126,9 @@ Services live in npm packages you upgrade. Each takes its dependencies as ports,
 
 Every package has its own page under [intelligo.dev/docs/packages](https://intelligo.dev/docs/packages).
 
-## Pages you own
+## Blocks you own
 
-Pages do not come in a package. They install into your application as **source**, through the standard [shadcn registry](https://ui.shadcn.com/docs/registry) protocol — pages, components, loading/empty/error states and thin server actions, rendered by your own shadcn primitives:
+Pages do not come in a package. They arrive as registry **blocks** — pages, the shells around them, and drop-in surfaces like banners, gates and the chat panel — and install into your application as **source**, through the standard [shadcn registry](https://ui.shadcn.com/docs/registry) protocol — pages, components, loading/empty/error states and thin server actions, rendered by your own shadcn primitives:
 
 |                    |                      |                       |                           |
 | ------------------ | -------------------- | --------------------- | ------------------------- |

@@ -1,56 +1,9 @@
 import { useState } from "react";
-import { installCommand } from "@/lib/install";
+import { QUICKSTART as STEPS } from "@/lib/quickstart";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/copy-button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Typewriter } from "@/components/elements/typewriter";
-
-/**
- * Three steps, every command real:
- *   1. `intelligo create` — the published CLI (bin: intelligo); the
- *      "Next:" lines are what it prints (packages/cli/src/commands/create.ts).
- *   2. `shadcn add <url>` — the hosted registry this site serves at /r.
- *   3. `pnpm dev` — the scaffold's own script.
- * Database, env and provider setup are in the docs, not here.
- */
-const STEPS = [
-  {
-    title: "Create",
-    cmd: "pnpm dlx @intelligo-dev/cli@beta create my-app",
-    note: "Next.js 16, shadcn, Tailwind 4, next-intl, a composition root wired to the execution boundary.",
-    out: [
-      "✓ my-app/lib/intelligo.ts — composition root",
-      "✓ my-app/lib/plans.ts",
-      "✓ my-app/intelligo.manifest.json — generated files hashed",
-      "",
-      "Next:",
-      "  cd my-app",
-      "  cp .env.example .env.local   # then fill it in",
-      "  pnpm install",
-      "  pnpm dev",
-    ],
-  },
-  {
-    title: "Add UI",
-    cmd: installCommand("app-shell"),
-    note: "Repeat per page family. Each lands as your own source.",
-    out: [
-      "✓ app/[locale]/(app)/layout.tsx",
-      "✓ components/shell/*.tsx",
-      "✓ lib/nav-config.ts · lib/shell-config.tsx",
-      "✓ messages/en/app-shell.json",
-    ],
-  },
-  {
-    title: "Run",
-    cmd: "pnpm dev",
-    note: "Set DATABASE_URL and BETTER_AUTH_SECRET in .env.local first. Chat streams against a built-in stub model — no provider key needed yet.",
-    out: [
-      "▲ ready on http://localhost:3000",
-      "sign-up → workspace → billing → chat",
-    ],
-  },
-];
 
 export function Quickstart() {
   const [i, setI] = useState(0);

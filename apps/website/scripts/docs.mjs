@@ -22,7 +22,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { basename, dirname, join, relative, resolve } from "node:path";
 
-const GITHUB = "https://github.com/intelligo-mn/framework";
+const GITHUB = "https://github.com/intelligo-dev/framework";
 const SITE_URL = "https://intelligo.dev";
 
 /** Where the docs live, relative to the site. */
@@ -378,13 +378,10 @@ function registryPages(root) {
       order: 1,
     }) +
     `${marker("packages/registry/requires.json")}\n\n` +
-    "Install top to bottom and every block finds what it imports. `intelligo doctor` checks an installed app against the same requirements.\n\n" +
+    "Run these inside the app, top to bottom, and every block finds what it imports. The first line is the design-system base — tokens, fonts and the base-nova config every block is drawn with — which `intelligo create` installs for you. `@intelligo` is the registry the scaffold's `components.json` names. `intelligo doctor` checks an installed app against the same requirements.\n\n" +
     "```bash\n" +
-    order
-      .map(
-        (n) =>
-          `pnpm dlx shadcn@latest add ${"https://intelligo.dev/r"}/${n}.json`
-      )
+    ["intelligo", ...order]
+      .map((n) => `pnpm exec shadcn add @intelligo/${n}`)
       .join("\n") +
     "\n```\n\n" +
     "| Block | Needs these blocks | Imports these scaffold files | Gates on these features |\n| --- | --- | --- | --- |\n" +

@@ -7,10 +7,10 @@ order: 0
 Intelligo's pages are not a runtime UI package. They are **registry blocks**: shadcn-schema items hosted at `https://intelligo.dev/r/<item>.json`, installed with the standard shadcn CLI into your repository. Each brings its routes, components, loading, empty and error states, thin Server Actions, config files and English messages. [/blocks](/blocks) renders every one of them live.
 
 ```bash
-pnpm dlx shadcn@latest add https://intelligo.dev/r/team-settings.json
+pnpm exec shadcn add @intelligo/team-settings
 ```
 
-The app `intelligo create` scaffolds is already registry-ready: shadcn base-nova, Tailwind 4, the `intelligo` design tokens, next-intl routing under `app/[locale]` and the `@/i18n/navigation` helpers the blocks import.
+The app `intelligo create` scaffolds is already registry-ready: shadcn base-nova, Tailwind 4, next-intl routing under `app/[locale]`, the `@/i18n/navigation` helpers the blocks import, and a `components.json` that names the hosted registry `@intelligo`. `create` also installs the `intelligo` base item — the design tokens, fonts and base-nova config every block is drawn with — before any block. Installing into an app it did not make, add that registry entry and run `pnpm exec shadcn add @intelligo/intelligo` first.
 
 ## Install order
 

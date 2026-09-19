@@ -11,6 +11,7 @@ import proof from "@/data/proof.json";
 export const PROOF = {
   sampledAt: proof.sampledAt as string,
   version: proof.version as string,
+  published: proof.published as string,
   packages: proof.packages as number,
   testCases: proof.testCases as number,
   testFiles: proof.testFiles as number,
@@ -29,8 +30,8 @@ export const PROOF_STATS: ProofStat[] = [
   },
   {
     value: String(PROOF.registryItems),
-    label: "page families",
-    note: "installed as source through the registry",
+    label: "blocks",
+    note: "pages, shells and drop-in surfaces, installed as source",
   },
   {
     value: String(PROOF.packages),
@@ -40,6 +41,6 @@ export const PROOF_STATS: ProofStat[] = [
   {
     value: "npm",
     label: "published",
-    note: `@intelligo-dev/* ${PROOF.version}`,
+    note: `@intelligo-dev/* ${PROOF.published}`,
   },
 ];

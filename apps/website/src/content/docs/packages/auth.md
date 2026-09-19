@@ -55,4 +55,4 @@ so the plugin and the guard cannot disagree.
 - `@intelligo-dev/auth/client`
 - `@intelligo-dev/auth/edge`
 
-[npm](https://www.npmjs.com/package/@intelligo-dev/auth) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/auth)
+[npm](https://www.npmjs.com/package/@intelligo-dev/auth) · [source](https://github.com/intelligo-dev/framework/tree/main/packages/auth)

@@ -27,4 +27,4 @@ with `registerIntegrationProbe`.
 - `@intelligo-dev/admin/views`
 - `@intelligo-dev/admin/health`
 
-[npm](https://www.npmjs.com/package/@intelligo-dev/admin) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/admin)
+[npm](https://www.npmjs.com/package/@intelligo-dev/admin) · [source](https://github.com/intelligo-dev/framework/tree/main/packages/admin)

@@ -113,4 +113,4 @@ modelIds })` reads it once per model a picker offers.
 - `@intelligo-dev/chat/client`
 - `@intelligo-dev/chat/testing`
 
-[npm](https://www.npmjs.com/package/@intelligo-dev/chat) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/chat)
+[npm](https://www.npmjs.com/package/@intelligo-dev/chat) · [source](https://github.com/intelligo-dev/framework/tree/main/packages/chat)

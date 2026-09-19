@@ -51,4 +51,4 @@ it anywhere else — is what makes that true.
 - `@intelligo-dev/next`
 - `@intelligo-dev/next/auth`
 
-[npm](https://www.npmjs.com/package/@intelligo-dev/next) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/next)
+[npm](https://www.npmjs.com/package/@intelligo-dev/next) · [source](https://github.com/intelligo-dev/framework/tree/main/packages/next)

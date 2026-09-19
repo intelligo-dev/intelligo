@@ -39,7 +39,7 @@ declares, after the dependencies — and only once you approve the exact
 commands, or pass `--yes`. `--no-install` stops after the scaffold and
 prints them instead.
 
-[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/create.ts)
+[source](https://github.com/intelligo-dev/framework/blob/main/packages/cli/src/commands/create.ts)
 
 ## add
 
@@ -51,7 +51,7 @@ The manifest records what was written and its hash so a later
 upgrade can tell an untouched file from one the consumer has made
 their own, and refuse to overwrite the latter.
 
-[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/add.ts)
+[source](https://github.com/intelligo-dev/framework/blob/main/packages/cli/src/commands/add.ts)
 
 | Feature | What it generates |
 | --- | --- |
@@ -63,7 +63,7 @@ their own, and refuse to overwrite the latter.
 Report the problems that are invisible until
 they are an incident.
 
-[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/doctor.ts)
+[source](https://github.com/intelligo-dev/framework/blob/main/packages/cli/src/commands/doctor.ts)
 
 ## migrate
 
@@ -94,7 +94,7 @@ every migration is `IF NOT EXISTS`-guarded) and leave the records
 half-written. Baselining is the fix, and it is deliberately a manual
 step — see `packages/core/src/db/migrations/README.md`.
 
-[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/migrate.ts)
+[source](https://github.com/intelligo-dev/framework/blob/main/packages/cli/src/commands/migrate.ts)
 
 ## migrate --check
 
@@ -136,7 +136,7 @@ JSON object on stdout, same exit code, whose `state` is
 Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
 `unknown`, `legacy` and `adoptable`.
 
-[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/migrate-check.ts)
+[source](https://github.com/intelligo-dev/framework/blob/main/packages/cli/src/commands/migrate-check.ts)
 
 ## upgrade --check
 
@@ -145,4 +145,4 @@ never overwrite consumer source, so the interesting output is not
 "these templates changed" but "these changed AND you have edited
 them" — the set where the consumer has to make a decision.
 
-[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/upgrade-check.ts)
+[source](https://github.com/intelligo-dev/framework/blob/main/packages/cli/src/commands/upgrade-check.ts)

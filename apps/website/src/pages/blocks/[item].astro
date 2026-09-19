@@ -65,6 +65,7 @@ const messages = item.files.find((f) => f.target.startsWith("messages/"))?.targe
   <section class="xline">
     <div class="px-6 py-8 md:px-10">
       <InstallCommand client:visible cmd={cmd} />
+      <p class="mono mt-2 text-[0.72rem] text-muted-foreground">Run it inside an app made by <code>intelligo create</code>. Anywhere else, <a href="/docs/registry" class="text-foreground/80 hover:text-foreground">name the registry and install the base first</a>.</p>
       <div class="mt-4">
         <BlockPreview client:visible name={item.name} dependsOn={item.dependsOn} bodyClassName="aspect-[4/5] w-full sm:aspect-auto sm:h-[min(72dvh,760px)]" />
       </div>

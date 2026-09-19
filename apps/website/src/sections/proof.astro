@@ -23,7 +23,7 @@ const OPEN: { icon: LucideIcon; title: string; body: string; href: string; cta: 
   {
     icon: GitPullRequest,
     title: "Small, scoped, green",
-    body: "Conventional commits, SemVer releases from a tag, green after every slice.",
+    body: "Conventional commits. A SemVer release is one commit: CI passes, npm publishes, the tag follows.",
     href: `${SITE.github}/blob/main/CONTRIBUTING.md`,
     cta: "CONTRIBUTING",
   },
@@ -46,7 +46,7 @@ const OPEN: { icon: LucideIcon; title: string; body: string; href: string; cta: 
       ))}
     </div>
     <p class="mono mt-3 text-[0.7rem] text-muted-foreground">
-      counted {PROOF.sampledAt} · v{PROOF.version} · <a href={`${SITE.github}/blob/main/apps/website/scripts/sync-framework.mjs`} class="hover:text-foreground">by a script, committed with the site →</a>
+      counted {PROOF.sampledAt} from the v{PROOF.version} tree · <a href={`${SITE.github}/blob/main/apps/website/scripts/sync-framework.mjs`} class="hover:text-foreground">by a script, committed with the site →</a>
     </p>
 
     <ul class="reveal mt-8 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">

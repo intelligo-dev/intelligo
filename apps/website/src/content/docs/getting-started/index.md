@@ -16,7 +16,7 @@ label: Quickstart
 pnpm dlx @intelligo-dev/cli@beta create my-app
 ```
 
-`create` asks which pages you want — the shell, sign-in, the dashboard and the chat are ticked to start with — adds the pages they build on, and shows you the commands that install them: `pnpm install` (shadcn is one of the scaffold's dev dependencies), then `shadcn add` for the design-system base and your pages, in the order they need. Nothing runs until you approve. `--items chat,billing-settings` or `--all` answers the question up front, `--yes` approves the commands, and `--no-install` stops after the scaffold.
+`create` asks which pages you want — the shell, sign-in, sign-up and the dashboard are ticked to start with — adds the pages they build on, and shows you the commands that install them: `pnpm install` (shadcn is one of the scaffold's dev dependencies), then `shadcn add` for the design-system base and your pages, in the order they need. Nothing runs until you approve. `--items chat,billing-settings` or `--all` answers the question up front, `--yes` approves the commands, and `--no-install` stops after the scaffold.
 
 `create` writes a Next.js 16 application with shadcn (base-nova), Tailwind 4 and next-intl already wired, plus the files that make it an Intelligo app:
 

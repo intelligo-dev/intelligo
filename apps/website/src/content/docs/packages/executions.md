@@ -37,4 +37,4 @@ bills at the most expensive rate.
 - `@intelligo-dev/executions/pricing`
 - `@intelligo-dev/executions/db`
 
-[npm](https://www.npmjs.com/package/@intelligo-dev/executions) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/executions)
+[npm](https://www.npmjs.com/package/@intelligo-dev/executions) · [source](https://github.com/intelligo-dev/framework/tree/main/packages/executions)

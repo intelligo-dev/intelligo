@@ -13,7 +13,8 @@
  *   src/data/seams.json      each block's consumer-owned config files
  *   src/content/docs/…       the generated reference pages, and the snippets
  *                            in hand-written ones (scripts/docs.mjs)
- *   src/data/proof.json      counts (tests, items, packages) and the version
+ *   src/data/proof.json      counts (tests, items, packages), this tree's version
+ *                            and the version npm serves
  *   src/data/package-edges.json
  *                            each package's declared @intelligo-dev/* dependencies
  *   public/r/*.json          the built registry items — intelligo.dev/r/<item>.json
@@ -136,9 +137,40 @@ const version = JSON.parse(
   readFileSync(join(FRAMEWORK, "packages/core/package.json"), "utf8")
 ).version;
 
+/**
+ * What npm serves under the dist-tag this version releases to — the one
+ * version the site may call "on npm". The tree runs ahead of npm between
+ * a version bump and its release, and stays ahead if the release fails.
+ * Without the network the last answer stands: sync works offline.
+ */
+async function publishedVersion() {
+  const proofPath = join(SITE, "src/data/proof.json");
+  const last = existsSync(proofPath)
+    ? JSON.parse(readFileSync(proofPath, "utf8")).published
+    : undefined;
+  const tag = /-([a-z]+)/.exec(version)?.[1] ?? "latest";
+  try {
+    const response = await fetch(
+      "https://registry.npmjs.org/-/package/@intelligo-dev%2fcore/dist-tags",
+      { signal: AbortSignal.timeout(10_000) }
+    );
+    if (!response.ok) throw new Error(`npm answered ${response.status}`);
+    const published = (await response.json())[tag];
+    if (!published) throw new Error(`npm has no "${tag}" dist-tag`);
+    return published;
+  } catch (error) {
+    console.warn(
+      `proof: could not read npm (${error.message}); keeping published = ${last ?? "unknown"}`
+    );
+    return last;
+  }
+}
+const published = await publishedVersion();
+
 const proof = {
   sampledAt: new Date().toISOString().slice(0, 10),
   version,
+  published,
   packages,
   testFiles: testFiles.length,
   testCases,
@@ -288,7 +320,7 @@ console.log(
 );
 
 console.log(
-  `proof: v${version}, ${packages} packages, ${testCases} tests in ${testFiles.length} files, ${architectureTests} architecture suites, ${registryItems} items`
+  `proof: v${version} (npm has ${published ?? "unknown"}), ${packages} packages, ${testCases} tests in ${testFiles.length} files, ${architectureTests} architecture suites, ${registryItems} items`
 );
 
 // --- docs: generated reference pages and snippets ----------------------------

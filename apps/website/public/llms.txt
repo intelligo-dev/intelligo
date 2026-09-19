@@ -58,4 +58,4 @@
 - [Blocks](https://intelligo.dev/blocks): every registry item, rendered live from its installed source.
 - [Components](https://intelligo.dev/components): the base-nova design system catalog.
 - [Hosted registry](https://intelligo.dev/r/intelligo.json): install any item with the shadcn CLI.
-- [Source](https://github.com/intelligo-mn/framework)
+- [Source](https://github.com/intelligo-dev/framework)

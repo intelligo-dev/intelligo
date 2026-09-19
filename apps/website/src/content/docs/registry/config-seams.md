@@ -12,7 +12,7 @@ Installed components are used verbatim. What a deployment varies lives in these 
 
 ### `lib/error-reporting.ts`
 
-Exports `RouteErrorContext`, `reportRouteError`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/route-error/lib/error-reporting.ts)
+Exports `RouteErrorContext`, `reportRouteError`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/route-error/lib/error-reporting.ts)
 
 Error-reporting seam — consumer-owned.
 
@@ -43,7 +43,7 @@ than take the error screen down with it.
 
 ### `lib/shell-config.tsx`
 
-Exports `ShellConfig`, `shellConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/shell-config.tsx)
+Exports `ShellConfig`, `shellConfig`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/app-shell/lib/shell-config.tsx)
 
 What your product adds around the app shell, without editing
 `layout.tsx` or `components/shell/*`. Every slot is optional and takes
@@ -69,7 +69,7 @@ export const shellConfig: ShellConfig = {
 
 ### `lib/nav-config.ts`
 
-Exports `navItems`, `accountItems`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/nav-config.ts)
+Exports `navItems`, `accountItems`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/app-shell/lib/nav-config.ts)
 
 Shell navigation. Imported directly by client components, never passed
 from a Server Component: icons are components and cannot cross the
@@ -83,7 +83,7 @@ entries whose routes you did not install; they would 404.
 
 ### `lib/settings-nav.ts`
 
-Exports `SettingsTab`, `settingsTabs`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/settings-shell/lib/settings-nav.ts)
+Exports `SettingsTab`, `settingsTabs`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/settings-shell/lib/settings-nav.ts)
 
 Settings tab configuration — consumer-owned (same contract as
 `lib/nav-config.ts` for the app sidebar).
@@ -108,7 +108,7 @@ component values can't cross the RSC boundary as props (see
 
 ### `lib/trial-banner-config.ts`
 
-Exports `TrialBannerConfig`, `trialBannerConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/trial-banner/lib/trial-banner-config.ts)
+Exports `TrialBannerConfig`, `trialBannerConfig`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/trial-banner/lib/trial-banner-config.ts)
 
 Trial banner config — consumer-owned.
 
@@ -124,7 +124,7 @@ costs the most. Empty the list to show it everywhere.
 
 ### `lib/billing-config.ts`
 
-Exports `CURRENCY`, `CREDIT_BUNDLES`, `getCreditBundle`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/pricing/lib/billing-config.ts)
+Exports `CURRENCY`, `CREDIT_BUNDLES`, `getCreditBundle`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/pricing/lib/billing-config.ts)
 
 Client-safe billing configuration, kept apart from the `server-only`
 `lib/billing.ts` so client components can read it without pulling
@@ -138,7 +138,7 @@ it. A bundle's `name` is rendered verbatim, not translated.
 
 ### `lib/feature-catalog.ts`
 
-Exports `FeatureDescriptor`, `featureCatalog`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/feature-gating/lib/feature-catalog.ts)
+Exports `FeatureDescriptor`, `featureCatalog`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/feature-gating/lib/feature-catalog.ts)
 
 Feature catalogue — consumer-owned.
 
@@ -159,7 +159,7 @@ back to generic copy.
 
 ### `lib/feature-gating-config.ts`
 
-Exports `FeatureGatingConfig`, `featureGatingConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/feature-gating/lib/feature-gating-config.ts)
+Exports `FeatureGatingConfig`, `featureGatingConfig`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/feature-gating/lib/feature-gating-config.ts)
 
 Feature-gating configuration — consumer-owned.
 
@@ -175,7 +175,7 @@ showing, and when it escalates. Below the first, it renders nothing.
 
 ### `lib/local-payment.ts`
 
-Exports `LocalPaymentInvoice`, `LocalPaymentStatus`, `LocalPaymentRequest`, `createLocalPayment`, `checkLocalPaymentStatus`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/payment-poll/lib/local-payment.ts)
+Exports `LocalPaymentInvoice`, `LocalPaymentStatus`, `LocalPaymentRequest`, `createLocalPayment`, `checkLocalPaymentStatus`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/payment-poll/lib/local-payment.ts)
 
 Local payment provider binding — consumer-owned.
 
@@ -198,7 +198,7 @@ unbound.
 
 ### `lib/payment-poll-config.ts`
 
-Exports `PaymentPollConfig`, `paymentPollConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/payment-poll/lib/payment-poll-config.ts)
+Exports `PaymentPollConfig`, `paymentPollConfig`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/payment-poll/lib/payment-poll-config.ts)
 
 Polling behaviour for the QR payment modal — consumer-owned.
 
@@ -216,7 +216,7 @@ cut off mid-payment.
 
 ### `lib/onboarding-steps.ts`
 
-Exports `OnboardingFieldType`, `OnboardingSelectOption`, `OnboardingField`, `OnboardingStepConfig`, `OnboardingCompleteConfig`, `OnboardingAnswers`, `OnboardingConfig`, `onboardingConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/onboarding/lib/onboarding-steps.ts)
+Exports `OnboardingFieldType`, `OnboardingSelectOption`, `OnboardingField`, `OnboardingStepConfig`, `OnboardingCompleteConfig`, `OnboardingAnswers`, `OnboardingConfig`, `onboardingConfig`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/onboarding/lib/onboarding-steps.ts)
 
 The onboarding wizard: its steps, their fields, the completion screen
 and `onStepSubmit`.
@@ -237,7 +237,7 @@ persist through a server action, never a service imported here.
 
 ### `lib/dashboard-config.tsx`
 
-Exports `DashboardConfig`, `dashboardConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/dashboard/lib/dashboard-config.tsx)
+Exports `DashboardConfig`, `dashboardConfig`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/dashboard/lib/dashboard-config.tsx)
 
 Dashboard configuration — consumer-owned, imported by client
 components (so, like `nav-config.ts`, it may hold React/Lucide
@@ -260,7 +260,7 @@ part is replaceable here rather than in a component:
 
 ### `lib/dashboard-data.ts`
 
-Exports `ResumeActor`, `ResumeTarget`, `getResume`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/dashboard/lib/dashboard-data.ts)
+Exports `ResumeActor`, `ResumeTarget`, `getResume`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/dashboard/lib/dashboard-data.ts)
 
 Dashboard data seam — consumer-owned, read on the server.
 
@@ -289,7 +289,7 @@ rather than rendered empty.
 
 ### `lib/document-patterns.ts`
 
-Exports `registerDefaultDocumentPatterns`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/artifacts/lib/document-patterns.ts)
+Exports `registerDefaultDocumentPatterns`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/artifacts/lib/document-patterns.ts)
 
 Title patterns that map a document to an agent label (shown on its
 card) and to the "Reports" tab. With none registered, every document
@@ -303,7 +303,7 @@ onto the same in-memory registry.
 
 ### `lib/chat-model.ts`
 
-Exports `CHAT_MODEL_ID`, `getChatModel`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-model.ts)
+Exports `CHAT_MODEL_ID`, `getChatModel`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/chat/lib/chat-model.ts)
 
 Consumer-owned model resolution for the chat transport.
 
@@ -335,7 +335,7 @@ prefix off the registered id, and never write it out a second time.
 
 ### `lib/chat-models.ts`
 
-Exports `CHAT_MODELS`, `getChatModelOptions`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-models.ts)
+Exports `CHAT_MODELS`, `getChatModelOptions`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/chat/lib/chat-models.ts)
 
 The models the composer offers — consumer-owned.
 
@@ -358,7 +358,7 @@ is what makes the server's answer match the composer's offer.
 
 ### `lib/chat-renderers.tsx`
 
-Exports `ToolPartState`, `CanvasRef`, `ToolRendererActions`, `ToolRendererProps`, `ToolActivityRow`, `ToolRenderer`, `DataRendererProps`, `TOOL_RENDERERS`, `DATA_RENDERERS`, `resolveToolRenderer`, `hasToolRenderer`, `hasToolCard`, `getToolRenderer`, `getDataRenderer`, `toolLabel`, `DefaultToolCard`, `ArtifactLinkCard`, `parseUnifiedDiff`, `FileDiffCard`, `ImageGenerationCard`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-renderers.tsx)
+Exports `ToolPartState`, `CanvasRef`, `ToolRendererActions`, `ToolRendererProps`, `ToolActivityRow`, `ToolRenderer`, `DataRendererProps`, `TOOL_RENDERERS`, `DATA_RENDERERS`, `resolveToolRenderer`, `hasToolRenderer`, `hasToolCard`, `getToolRenderer`, `getDataRenderer`, `toolLabel`, `DefaultToolCard`, `ArtifactLinkCard`, `parseUnifiedDiff`, `FileDiffCard`, `ImageGenerationCard`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/chat/lib/chat-renderers.tsx)
 
 How a tool, and any runtime's data part, shows up in the chat.
 
@@ -405,7 +405,7 @@ names and render on the activity timeline.
 
 ### `lib/chat-canvas-config.tsx`
 
-Exports `CanvasContentProps`, `CanvasActionContext`, `CanvasAction`, `CanvasToolbarItem`, `CanvasKind`, `fileNameOf`, `DEFAULT_CANVAS_KINDS`, `CANVAS_KINDS`, `resolveCanvasKind`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-canvas-config.tsx)
+Exports `CanvasContentProps`, `CanvasActionContext`, `CanvasAction`, `CanvasToolbarItem`, `CanvasKind`, `fileNameOf`, `DEFAULT_CANVAS_KINDS`, `CANVAS_KINDS`, `resolveCanvasKind`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/chat/lib/chat-canvas-config.tsx)
 
 Canvas kinds — how a document opened beside the chat is shown and
 edited, by `kind`. Consumer-owned, a plain object literal.
@@ -439,7 +439,7 @@ blank.
 
 ### `lib/chat-config.tsx`
 
-Exports `ChatHeaderRightProps`, `ChatAgentIdentity`, `ChatAttachmentsConfig`, `ChatCommand`, `ChatMention`, `ChatMentionsConfig`, `ChatConfig`, `chatConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-config.tsx)
+Exports `ChatHeaderRightProps`, `ChatAgentIdentity`, `ChatAttachmentsConfig`, `ChatCommand`, `ChatMention`, `ChatMentionsConfig`, `ChatConfig`, `chatConfig`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/chat/lib/chat-config.tsx)
 
 Chat composition config — the consumer-owned extension point for
 everything a product adds to the chat surface without editing an
@@ -495,7 +495,7 @@ export const chatConfig: ChatConfig = {
 
 ### `lib/chat-server-config.ts`
 
-Exports `chatServerConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-server-config.ts)
+Exports `chatServerConfig`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/chat/lib/chat-server-config.ts)
 
 Server-side chat config — consumer-owned, read by
 `app/api/chat/route.ts` through `createChatHandler`.
@@ -617,7 +617,7 @@ else.
 
 ### `lib/chat-widget-config.tsx`
 
-Exports `ChatWidgetConfig`, `chatWidgetConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat-widget/lib/chat-widget-config.tsx)
+Exports `ChatWidgetConfig`, `chatWidgetConfig`. [source](https://github.com/intelligo-dev/framework/blob/main/packages/registry/base/chat-widget/lib/chat-widget-config.tsx)
 
 Chat widget config — the consumer-owned seam for the floating
 assistant (composition through a config you own, never a

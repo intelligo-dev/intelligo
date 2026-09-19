@@ -1,5 +1,7 @@
 import proof from "@/data/proof.json";
 
+const PUBLISHED = proof.published as string;
+
 export const SITE = {
   name: "intelligo",
   title: "Intelligo — the application framework for vertical AI SaaS",
@@ -9,21 +11,26 @@ export const SITE = {
   /** The long form, for the footer and the social card. */
   tagline:
     "You build the agent. Intelligo is everything around it — auth, workspaces, billing, credits, execution accounting, pages and operations — shipped as versioned packages and consumer-owned source. Your AI framework stays native. Open source, Apache-2.0.",
-  github: "https://github.com/intelligo-mn/framework",
-  githubOwner: "intelligo-mn",
+  github: "https://github.com/intelligo-dev/framework",
+  githubOwner: "intelligo-dev",
   githubRepo: "framework",
-  license: "https://github.com/intelligo-mn/framework/blob/main/LICENSE",
+  license: "https://github.com/intelligo-dev/framework/blob/main/LICENSE",
+  changelog:
+    "https://github.com/intelligo-dev/framework/blob/main/CHANGELOG.md",
   docs: "/docs",
   /** Where every "Get started" lands. */
   start: "/docs/getting-started",
   npm: "https://www.npmjs.com/org/intelligo-dev",
-  /** The hosted registry: `pnpm exec shadcn add https://intelligo.dev/r/<item>.json`. */
+  /** The hosted registry, which a scaffold's components.json names `@intelligo`. */
   registryBase: "https://intelligo.dev/r",
-  /** From `pnpm --filter website sync`, so the site never names a version that is not on npm. */
-  version: proof.version as string,
-  status: `${proof.version} · on npm`,
-  /** The repository is public: the nav shows the live star count. */
-  githubPublic: true,
+  /**
+   * What npm serves, read from its dist-tags by `pnpm sync` — not this
+   * tree's version, which runs ahead of npm until its release lands.
+   */
+  version: PUBLISHED,
+  status: `${PUBLISHED} · on npm`,
+  /** While the repository is private the star count has nothing to read: the nav shows a plain link. */
+  githubPublic: false,
   /**
    * The homepage film (tools/film, rendered with Remotion), one render
    * per theme, served from `public/film/` with a still shown before it
@@ -82,6 +89,7 @@ export const FOOTER: {
     links: [
       { href: SITE.github, label: "GitHub" },
       { href: SITE.npm, label: "npm" },
+      { href: SITE.changelog, label: "Changelog" },
       { href: SITE.license, label: "License" },
     ],
   },
