@@ -61,6 +61,16 @@ flowchart LR
     intelligo --> db[("PostgreSQL")]
 ```
 
+## Is it for you?
+
+| If you would otherwise…             | What is different here                                                                                                                                                               |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Build it in-house**               | Tenancy, entitlements, credits, metering, billing and audit arrive as typed services with unit, real-database and architecture suites already around them.                           |
+| **Start from a SaaS boilerplate**   | A boilerplate is a fork you maintain alone. Here the services stay upgradable packages, and the pages are registry installs with your variance isolated in config and message files. |
+| **Adopt an all-in-one AI platform** | Those own your agent. Intelligo cannot: it has no agent abstraction to lock you into. It admits, settles and records the runs your own framework produces.                           |
+
+It is **not** an AI framework or a wrapper over one, not a component library, not a hosted platform — you deploy it like any Next.js application — and it has no runtime plugin system: composition happens at build time, on purpose.
+
 ## Quickstart
 
 You need Node 22.14+, pnpm 9, and PostgreSQL with pgvector (Neon, Supabase, or `docker run pgvector/pgvector:pg17`).
@@ -158,16 +168,6 @@ Three rules keep installed pages healthy for years rather than weeks:
 - **Architecture is failing tests, not documents.** Dependency direction, tenant scoping, registry hygiene and model-id registration break the build when violated.
 
 The longer version, with the package graph, is at [intelligo.dev/architecture](https://intelligo.dev/architecture).
-
-## Is it for you?
-
-| If you would otherwise…             | What is different here                                                                                                                                                               |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Build it in-house**               | Tenancy, entitlements, credits, metering, billing and audit arrive as typed services with unit, real-database and architecture suites already around them.                           |
-| **Start from a SaaS boilerplate**   | A boilerplate is a fork you maintain alone. Here the services stay upgradable packages, and the pages are registry installs with your variance isolated in config and message files. |
-| **Adopt an all-in-one AI platform** | Those own your agent. Intelligo cannot: it has no agent abstraction to lock you into. It admits, settles and records the runs your own framework produces.                           |
-
-It is **not** an AI framework or a wrapper over one, not a component library, not a hosted platform — you deploy it like any Next.js application — and it has no runtime plugin system: composition happens at build time, on purpose.
 
 ## This repository
 

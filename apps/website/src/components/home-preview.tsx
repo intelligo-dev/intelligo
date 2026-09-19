@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { BlockPreview } from "@/components/block-preview";
+import { installCommand } from "@/lib/install";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 /**
@@ -37,7 +38,7 @@ export function HomePreview() {
           href={`/blocks/${block}`}
           className="mono text-[0.72rem] text-muted-foreground no-underline hover:text-foreground"
         >
-          shadcn add {block} →
+          {installCommand(block)} →
         </a>
       </div>
       <BlockPreview key={block} name={block} />

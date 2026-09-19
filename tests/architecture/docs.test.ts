@@ -339,6 +339,31 @@ describe("quoted evidence", async () => {
     ]);
   });
 
+  it("the README's quickstart is the site's, in one install spelling", async () => {
+    const { QUICKSTART } = (await import(
+      path.join(SITE, "src/lib/quickstart.ts")
+    )) as { QUICKSTART: { cmd: string }[] };
+    const readme = readFileSync(path.join(ROOT, "README.md"), "utf8");
+
+    const block = readme.slice(
+      readme.indexOf("\n## Quickstart\n"),
+      readme.indexOf("\n## One request")
+    );
+    const commands = [
+      ...block.matchAll(/^(pnpm \S+(?: [^#\n]*?)?)\s*(?:#.*)?$/gm),
+    ]
+      .map((m) => m[1]!.trim())
+      .filter((cmd) => cmd !== "cd my-app");
+    expect(commands).toEqual(QUICKSTART.map((step) => step.cmd));
+
+    const installs = [
+      ...readme.matchAll(/(?:[\w-]+ [\w-]+ )?shadcn add [^\s`"]+/g),
+    ];
+    expect(installs.length).toBeGreaterThan(0);
+    for (const [spelling] of installs)
+      expect(spelling).toMatch(/^pnpm exec shadcn add @intelligo\//);
+  });
+
   it("the film's acts and captions are the composition's", async () => {
     const { FILM_CHAPTERS, FILM_SECONDS } = (await import(
       path.join(SITE, "src/lib/film.ts")

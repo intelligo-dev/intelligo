@@ -30,7 +30,7 @@ const RADII = [
 const rem = parseFloat(TOKENS.light.radius);
 const FONTS = [
   ["--font-sans", "Geist", "font-sans", "Workspaces, credits and every page around your agent."],
-  ["--font-mono", "Geist Mono", "font-mono", "pnpm exec shadcn add intelligo.dev/r/chat.json"],
+  ["--font-mono", "Geist Mono", "font-mono", installCommand("chat")],
   ["--font-heading", "Outfit · site only", "heading", "The application framework for vertical AI SaaS."],
 ];
 const idOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
