@@ -3,11 +3,31 @@
 apps/website/public/r/
 apps/website/src/showcase/app/
 apps/website/src/data/
+# The site chrome's copies of Intelligo components, which sync overwrites
+# from packages/registry/base/ui (ignored below).
+apps/website/src/components/ui/ai-motion.tsx
+apps/website/src/components/ui/alert-dialog.tsx
+apps/website/src/components/ui/attachment.tsx
+apps/website/src/components/ui/button.tsx
+apps/website/src/components/ui/dialog.tsx
+apps/website/src/components/ui/dropdown-menu.tsx
+apps/website/src/components/ui/input-group.tsx
+apps/website/src/components/ui/input.tsx
+apps/website/src/components/ui/popover.tsx
+apps/website/src/components/ui/progress.tsx
+apps/website/src/components/ui/select.tsx
+apps/website/src/components/ui/sheet.tsx
+apps/website/src/components/ui/sidebar.tsx
+apps/website/src/components/ui/spinner.tsx
+apps/website/src/components/ui/tabs.tsx
+apps/website/src/components/ui/textarea.tsx
+apps/website/src/components/ui/tooltip.tsx
 # Docs generated from READMEs and CLI source by apps/website/scripts/docs.mjs.
 apps/website/src/content/docs/packages/
 apps/website/src/content/docs/cli/
 apps/website/src/content/docs/registry/install-order.md
 apps/website/src/content/docs/registry/config-seams.md
+apps/website/src/content/docs/getting-started/environment.md
 apps/website/.astro/
 # Build output
 **/dist/

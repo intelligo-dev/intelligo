@@ -18,8 +18,12 @@ name: Release
 # a folded package, moving a dist-tag — is scripts/npm-maintain.mjs,
 # which a maintainer runs.
 #
+# Only the release commit publishes: a version still missing from npm
+# on a later commit fails the run instead of shipping a tree its
+# changelog does not describe.
+#
 # Pushing a `v*` tag by hand still works and is the fallback; the tag
-# must equal the manifests' version.
+# must equal the manifests' version and point at the release commit.
 #
 # The npm dist-tag follows the version: `1.0.0-beta.2` publishes under
 # `beta`, `1.0.0-rc.1` under `rc`, and a plain `1.0.0` under `latest`.
@@ -139,6 +143,20 @@ jobs:
             fi
           done
           echo "published=$published" >> "$GITHUB_OUTPUT"
+
+          # What ships is the release commit's own tree. A version that
+          # did not publish from its release commit (a red CI, a failed
+          # check below) does not publish later from whatever main has
+          # become: the changelog section describes the older tree. Such
+          # a commit fails here until a new release commit bumps the
+          # version. A re-run of the release commit's run passes.
+          if [ "$published" != "true" ]; then
+            previous=$(git show HEAD~1:packages/core/package.json | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).version")
+            if [ "$previous" = "$VERSION" ]; then
+              echo "::error::$VERSION is not on npm and $(git rev-parse --short HEAD) is not the commit that set it. Bump every manifest and head CHANGELOG.md with the new version in one commit."
+              exit 1
+            fi
+          fi
 
       - if: steps.check.outputs.published != 'true'
         run: pnpm turbo build
