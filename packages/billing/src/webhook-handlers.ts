@@ -458,7 +458,14 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice) {
       currentPeriodEnd: new Date(periodEnd * 1000),
       updatedAt: new Date(),
     })
-    .where(eq(subscriptions.stripeSubscriptionId, subscriptionId));
+    .where(
+      and(
+        eq(subscriptions.stripeSubscriptionId, subscriptionId),
+        // Canceled is terminal in Stripe; a late delivery must not
+        // bring the plan back.
+        ne(subscriptions.status, "canceled")
+      )
+    );
 
   const sub = await getSubscriptionByStripeId(subscriptionId);
   if (sub) {
@@ -478,7 +485,7 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice) {
  * Handle invoice.payment_failed
  *
  * Triggered when subscription payment fails.
- * Mark subscription as past_due and log for notification.
+ * Marks the subscription past_due and tells the workspace owner.
  */
 export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   const subscriptionId = invoiceSubscriptionId(invoice);
@@ -501,7 +508,10 @@ export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   if (sub) {
     invalidateFeatureCache(sub.workspaceId);
     try {
-      await sendPaymentFailedEmail(sub.workspaceId);
+      await sendPaymentFailedEmail(sub.workspaceId, {
+        amountMinor: invoice.amount_due,
+        currency: invoice.currency,
+      });
     } catch (emailError) {
       log.error("Failed to send payment failed email", {
         error:
@@ -552,7 +562,12 @@ export async function handleSubscriptionUpdated(
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId));
+    .where(
+      and(
+        eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId),
+        ne(subscriptions.status, "canceled")
+      )
+    );
 
   invalidateFeatureCache(localSub.workspaceId);
 

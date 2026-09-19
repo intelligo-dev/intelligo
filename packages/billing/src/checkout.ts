@@ -1,7 +1,7 @@
 /**
- * Checkout & billing overview service: Stripe checkout/portal session
- * creation, the pending credit-purchase row, and the role-shaped billing
- * overview read.
+ * Checkout service: Stripe checkout/portal session creation, the pending
+ * credit-purchase row, and ending a subscription. The role-shaped
+ * overview read is `./billing-overview`.
  *
  * These functions take resolved `workspaceId`/`userId`/`role` values and
  * never call `requireWorkspace`/`requireRole` (billing cannot depend on
@@ -108,6 +108,10 @@ export type CheckoutSessionResult = { url: string };
  * (Stripe shows the proration and takes the customer's consent) while
  * the subscription is `active` or `trialing`, the portal's home while a
  * payment is outstanding, since that is what has to be settled first.
+ * Stripe is asked as well as the local row, which the webhook fills in
+ * after the redirect. Any subscription checkout still open for the
+ * customer is expired before a new one is created, so two tabs cannot
+ * both be paid.
  */
 export async function createSubscriptionCheckout(
   input: CreateSubscriptionCheckoutInput
@@ -168,23 +172,31 @@ export async function createSubscriptionCheckout(
 
   const stripe = getStripe();
 
-  const existing = (await getWorkspaceSubscription(workspaceId))?.subscription;
-  if (
-    existing?.stripeSubscriptionId &&
-    STRIPE_SUBSCRIPTION_OPEN.has(existing.status)
-  ) {
+  const live = await liveSubscription(workspaceId, customerId);
+  if (live) {
     const portal = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: returnUrl ?? withoutQuery(cancelUrl),
       locale: stripeLocale as PortalLocale,
       ...(await planChangeFlow({
-        stripeSubscriptionId: existing.stripeSubscriptionId,
-        status: existing.status,
+        stripeSubscriptionId: live.id,
+        status: live.status,
         stripePriceId,
         returnUrl: returnUrl ?? withoutQuery(cancelUrl),
       })),
     });
     return { url: portal.url };
+  }
+
+  const open = await stripe.checkout.sessions.list({
+    customer: customerId,
+    status: "open",
+    limit: 100,
+  });
+  for (const pending of open.data) {
+    if (pending.mode === "subscription") {
+      await stripe.checkout.sessions.expire(pending.id);
+    }
   }
 
   const session = await stripe.checkout.sessions.create({
@@ -226,6 +238,29 @@ const STRIPE_SUBSCRIPTION_OPEN: ReadonlySet<string> = new Set([
   "unpaid",
   "paused",
 ]);
+
+/**
+ * The subscription that still bills this workspace: the local row's, or
+ * — before its webhook lands — one Stripe already holds for the customer.
+ */
+async function liveSubscription(
+  workspaceId: string,
+  customerId: string
+): Promise<{ id: string; status: string } | null> {
+  const local = (await getWorkspaceSubscription(workspaceId))?.subscription;
+  if (local?.stripeSubscriptionId && STRIPE_SUBSCRIPTION_OPEN.has(local.status)) {
+    return { id: local.stripeSubscriptionId, status: local.status };
+  }
+  const remote = await getStripe().subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 100,
+  });
+  const found = remote.data.find((sub) =>
+    STRIPE_SUBSCRIPTION_OPEN.has(sub.status)
+  );
+  return found ? { id: found.id, status: found.status } : null;
+}
 
 function withoutQuery(url: string): string {
   const parsed = new URL(url);
@@ -455,6 +490,28 @@ export async function createBillingPortal(
   return { url: session.url };
 }
 
+/**
+ * End a workspace's Stripe subscription at once. For a workspace about
+ * to be deleted: its `subscriptions` row goes with it, and Stripe would
+ * keep charging the customer for a workspace nobody can reach. A
+ * workspace with no live Stripe subscription is left as it is.
+ */
+export async function cancelWorkspaceSubscription(
+  workspaceId: string
+): Promise<void> {
+  const { subscription } = await getWorkspaceBilling(workspaceId);
+  if (!subscription?.stripeSubscriptionId) return;
+  if (subscription.status === "canceled") return;
+
+  try {
+    await getStripe().subscriptions.cancel(subscription.stripeSubscriptionId);
+  } catch (error) {
+    // Canceled or removed on Stripe's side already.
+    if ((error as { code?: string }).code === "resource_missing") return;
+    throw error;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Checkout session read (checkout-success page)
 // ---------------------------------------------------------------------------
@@ -557,100 +614,5 @@ export async function getCheckoutSession(
     planName,
     billingInterval,
     customerEmail,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Billing overview (role-shaped read)
-// ---------------------------------------------------------------------------
-
-export type BillingRole = "member" | "admin" | "owner";
-
-export type BillingOverviewMember = {
-  role: "member";
-  planName: string;
-  status: string;
-};
-
-export type BillingOverviewAdmin = {
-  role: "admin";
-  planName: string;
-  planSlug: string;
-};
-
-export type BillingOverviewOwner = {
-  role: "owner";
-  planName: string;
-  planSlug: string;
-  subscription: {
-    status: string;
-    currentPeriodEnd: Date | null;
-    cancelAtPeriodEnd: boolean;
-    stripeCustomerId: string | null;
-  } | null;
-  /**
-   * The top-up balance, in the deployment's billing currency. `null`
-   * when the workspace has no ledger row to denominate.
-   */
-  creditBalance: Money | null;
-  billingMode: "subscription" | "credit";
-};
-
-export type BillingOverview =
-  BillingOverviewMember | BillingOverviewAdmin | BillingOverviewOwner;
-
-const billingOverviewSchema = z.object({
-  workspaceId: z.string().min(1),
-  role: z.enum(["member", "admin", "owner"]),
-});
-
-export type GetBillingOverviewInput = z.infer<typeof billingOverviewSchema>;
-
-/**
- * Role-shaped billing read: `member` gets a status-only view, `admin`
- * a read-only plan name, `owner` the full subscription/credit-balance
- * detail. The caller resolves `role` from `requireWorkspace()`'s
- * membership — this module never reads a role for itself.
- */
-export async function getBillingOverview(
-  input: GetBillingOverviewInput
-): Promise<BillingOverview> {
-  const { workspaceId, role } = billingOverviewSchema.parse(input);
-
-  const billing = await getWorkspaceBilling(workspaceId);
-  const planName = billing.plan?.name ?? "Free";
-  const planSlug = billing.plan?.slug ?? "free";
-
-  if (role === "member") {
-    return {
-      role: "member",
-      planName,
-      status: billing.subscription?.status ?? "active",
-    };
-  }
-
-  if (role === "admin") {
-    return { role: "admin", planName, planSlug };
-  }
-
-  return {
-    role: "owner",
-    planName,
-    planSlug,
-    subscription: billing.subscription
-      ? {
-          status: billing.subscription.status,
-          currentPeriodEnd: billing.subscription.currentPeriodEnd,
-          cancelAtPeriodEnd: billing.subscription.cancelAtPeriodEnd,
-          stripeCustomerId: billing.subscription.stripeCustomerId,
-        }
-      : null,
-    creditBalance: billing.creditBalance.currency
-      ? money(
-          billing.creditBalance.balanceMicros,
-          billing.creditBalance.currency
-        )
-      : null,
-    billingMode: billing.billingMode,
   };
 }

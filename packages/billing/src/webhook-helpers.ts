@@ -14,9 +14,12 @@ import {
   plans,
 } from "@intelligo-dev/core/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { formatMoney, fromMajor } from "@intelligo-dev/core/money";
+import { formatMoney, fromMajor, fromMinor } from "@intelligo-dev/core/money";
 import { getBillingSettings } from "./billing-settings";
-import { handleSubscriptionConfirmedEmail } from "./email-triggers";
+import {
+  handlePaymentFailedEmail,
+  handleSubscriptionConfirmedEmail,
+} from "./email-triggers";
 import { createLogger } from "@intelligo-dev/core/logger";
 
 const log = createLogger("WebhookHelpers");
@@ -145,19 +148,27 @@ export async function sendSubscriptionConfirmation(params: {
 }
 
 /**
- * Send payment failed email notification.
+ * Tell the workspace owner a renewal payment failed: an in-app
+ * notification and an email, for the invoice's amount in its currency.
  */
-export async function sendPaymentFailedEmail(workspaceId: string) {
+export async function sendPaymentFailedEmail(
+  workspaceId: string,
+  invoice: { amountMinor: number; currency: string }
+) {
   const owner = await getWorkspaceOwner(workspaceId);
   if (!owner) {
     log.error("Workspace owner not found for payment failed email");
     return;
   }
 
-  // Payment failed emails require amount - skip since we don't have invoice amount here.
-  // The invoice webhook handler calls handlePaymentFailedEmail directly with full params.
-  log.info("Payment failed notification needed", {
+  await handlePaymentFailedEmail({
+    userId: owner.userId,
+    userEmail: owner.email,
     workspaceId,
-    email: owner.email,
+    workspaceName: owner.workspaceName,
+    amount: formatMoney(
+      fromMinor(invoice.amountMinor, invoice.currency.toUpperCase()),
+      "en-US"
+    ),
   });
 }

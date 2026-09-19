@@ -218,7 +218,7 @@ export async function summarizeExecutionsByDay(
  * died before the final `settling → succeeded` flip, in which case the
  * workspace WAS charged. A `usage_records` row (or a `settled`
  * reservation) for the same `requestId` distinguishes the two. This
- * only reports; nothing in the framework repairs these rows.
+ * only reports; `createExecutions().reconcile()` repairs a row.
  */
 export async function findStaleExecutions(olderThan: Date, limit = 100) {
   return db

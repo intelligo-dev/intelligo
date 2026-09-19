@@ -8,11 +8,11 @@ import "server-only";
 
 import { db } from "@intelligo-dev/core/db";
 import { organization, users } from "@intelligo-dev/core/db/schema";
-import { executions } from "@intelligo-dev/executions";
+import { executions, findStaleExecutions } from "@intelligo-dev/executions";
 import { PLATFORM_ADMIN_ROLE } from "@intelligo-dev/auth";
 import { queryAuditEvents } from "@intelligo-dev/audit";
 import { listFailedJobs } from "@intelligo-dev/jobs";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { desc, eq, gte, sql } from "drizzle-orm";
 import { money, type Money } from "@intelligo-dev/core/money";
 
 export type PlatformOverview = {
@@ -119,7 +119,9 @@ export type UserRow = {
  * only produces a confusing failure.
  */
 export async function listUsers(limit = 50): Promise<UserRow[]> {
-  const rows = await db
+  // Filtered in SQL, before the limit, so the page is full of users
+  // who can be impersonated.
+  return db
     .select({
       id: users.id,
       email: users.email,
@@ -127,10 +129,11 @@ export async function listUsers(limit = 50): Promise<UserRow[]> {
       role: users.role,
     })
     .from(users)
+    .where(
+      sql`coalesce(${users.role}, '') NOT LIKE ${`%${PLATFORM_ADMIN_ROLE}%`}`
+    )
     .orderBy(desc(users.createdAt))
     .limit(Math.min(limit, 200));
-
-  return rows.filter((u) => !(u.role ?? "").includes(PLATFORM_ADMIN_ROLE));
 }
 
 /**
@@ -139,18 +142,7 @@ export async function listUsers(limit = 50): Promise<UserRow[]> {
  * the question "is settlement broken right now" is platform-wide.
  */
 export async function listUnsettledExecutions(olderThanMs = 600_000) {
-  const cutoff = new Date(Date.now() - olderThanMs);
-  return db
-    .select()
-    .from(executions)
-    .where(
-      and(
-        sql`${executions.status} IN ('running', 'settling')`,
-        sql`${executions.startedAt} < ${cutoff}`
-      )
-    )
-    .orderBy(desc(executions.startedAt))
-    .limit(100);
+  return findStaleExecutions(new Date(Date.now() - olderThanMs));
 }
 
 /** Recent executions for one workspace — the support-ticket view. */

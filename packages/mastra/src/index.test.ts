@@ -292,13 +292,19 @@ describe("streamWithExecution", () => {
     expect(fail).toHaveBeenCalled();
   });
 
-  it("refuses before starting the stream", async () => {
-    const { executions } = fakeExecutions({ allowed: false, reason: "nope" });
+  it("refuses before starting the stream, with the refusal code", async () => {
+    const { executions } = fakeExecutions({
+      allowed: false,
+      reason: "nope",
+      code: "insufficient_credits",
+    });
     const start = vi.fn();
 
-    await expect(
-      streamWithExecution({ ...base, executions }, start)
-    ).rejects.toBeInstanceOf(ExecutionRefusedError);
+    const refused = streamWithExecution({ ...base, executions }, start);
+    await expect(refused).rejects.toBeInstanceOf(ExecutionRefusedError);
+    await expect(refused).rejects.toMatchObject({
+      reasonCode: "insufficient_credits",
+    });
     expect(start).not.toHaveBeenCalled();
   });
 });

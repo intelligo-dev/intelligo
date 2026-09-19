@@ -46,6 +46,7 @@ d("money path (integration)", () => {
   let executions: ReturnType<
     typeof import("@intelligo-dev/executions").createExecutions
   >;
+  let settle: typeof import("../quota").recordTokenUsage;
   let handleCheckoutCompleted: typeof import("../webhook-handlers").handleCheckoutCompleted;
 
   async function balanceMicros(): Promise<number> {
@@ -184,6 +185,7 @@ d("money path (integration)", () => {
 
     const { checkQuota, recordTokenUsage, releaseReservation } =
       await import("../quota");
+    settle = recordTokenUsage;
     const { createExecutions } = await import("@intelligo-dev/executions");
     executions = createExecutions({
       async checkEntitlement({ workspaceId: ws, requestId, model }) {
@@ -374,5 +376,48 @@ d("money path (integration)", () => {
     await Promise.all(
       admitted.map((r) => r.fail({ error: new Error("cleanup") }))
     );
+  });
+
+  it("settles a request once however often settlement is called", async () => {
+    await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+    await setBalance(mnt(50_000));
+    const once = () =>
+      settle({
+        workspaceId,
+        userId,
+        model: "openai/gpt-5-mini",
+        agent: "chat.message",
+        inputTokens: 20_000,
+        outputTokens: 4_000,
+        totalTokens: 24_000,
+        requestId: `replay-${suffix}`,
+      });
+
+    const [first, second] = await Promise.all([once(), once()]);
+
+    const { rows } = await client.query(
+      `SELECT 1 FROM usage_records WHERE request_id = $1`,
+      [`replay-${suffix}`]
+    );
+    expect(rows).toHaveLength(1);
+    expect([first.replayed, second.replayed].sort()).toEqual([false, true]);
+    expect(mnt(50_000) - (await balanceMicros())).toBe(first.charged.amount);
+  });
+
+  it("does not spend a top-up denominated in another currency", async () => {
+    await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+    await setBalance(mnt(50_000));
+    await client.query(
+      `UPDATE credit_balances SET currency = 'USD' WHERE workspace_id = $1`,
+      [workspaceId]
+    );
+    try {
+      expect((await begin()).allowed).toBe(false);
+    } finally {
+      await client.query(
+        `UPDATE credit_balances SET currency = 'MNT' WHERE workspace_id = $1`,
+        [workspaceId]
+      );
+    }
   });
 });

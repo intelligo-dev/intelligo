@@ -43,6 +43,12 @@ export type WorkspaceServicePorts = {
     userId: string,
     currentCount: number
   ) => Promise<{ allowed: boolean; limit: number }>;
+  /**
+   * Runs before a workspace is deleted, after the owner check. Whatever
+   * outlives the row has to be ended here — a paid subscription keeps
+   * billing the customer otherwise. A throw stops the deletion.
+   */
+  beforeDeleteWorkspace?: (workspaceId: string) => Promise<void>;
 };
 
 function errorMessage(error: unknown): string {
@@ -254,6 +260,18 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
   async function deleteWorkspace(): Promise<void> {
     const { workspace } = await callRequireRole(["owner"]);
     const hdrs = await getRequestHeaders();
+
+    if (ports.beforeDeleteWorkspace) {
+      try {
+        await ports.beforeDeleteWorkspace(workspace.id);
+      } catch (error) {
+        throw new WorkspaceServiceError(
+          "provider_error",
+          `Could not prepare the workspace for deletion: ${errorMessage(error)}`,
+          { cause: error }
+        );
+      }
+    }
 
     await callOrgApi("delete", () =>
       auth.api.deleteOrganization({

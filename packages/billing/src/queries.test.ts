@@ -8,6 +8,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   customersCreate: vi.fn(),
+  customersDel: vi.fn(),
+  /** Rows the conditional customer-id write matched. */
+  stored: [{ id: "sub-row" }] as unknown[],
   rows: {
     subscriptions: [] as unknown[],
     plans: [] as unknown[],
@@ -16,17 +19,25 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("./stripe", () => ({
-  getStripe: () => ({ customers: { create: mocks.customersCreate } }),
+  getStripe: () => ({
+    customers: { create: mocks.customersCreate, del: mocks.customersDel },
+  }),
 }));
 
 vi.mock("@intelligo-dev/core/db/schema", () => ({
   plans: { table: "plans", id: "id", slug: "slug" },
-  subscriptions: { table: "subscriptions", id: "id" },
+  subscriptions: {
+    table: "subscriptions",
+    id: "id",
+    stripeCustomerId: "stripe_customer_id",
+  },
   creditBalances: { table: "credit_balances" },
 }));
 
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn((col: unknown, val: unknown) => ({ op: "eq", col, val })),
+  and: vi.fn((...args: unknown[]) => ({ op: "and", args })),
+  isNull: vi.fn((col: unknown) => ({ op: "isNull", col })),
 }));
 
 vi.mock("@intelligo-dev/core/db", () => ({
@@ -40,7 +51,11 @@ vi.mock("@intelligo-dev/core/db", () => ({
         };
       },
     }),
-    update: () => ({ set: () => ({ where: async () => [] }) }),
+    update: () => ({
+      set: () => ({
+        where: () => ({ returning: async () => mocks.stored }),
+      }),
+    }),
   },
 }));
 
@@ -117,6 +132,9 @@ describe("getWorkspaceBilling", () => {
 describe("getOrCreateStripeCustomer", () => {
   beforeEach(() => {
     mocks.rows.subscriptions = subscribed("active");
+    mocks.stored = [{ id: "sub-row" }];
+    mocks.customersCreate.mockResolvedValue({ id: "cus_new" });
+    mocks.customersDel.mockResolvedValue({});
   });
 
   it.each(["mn", "de", "pt-BR"])(
@@ -145,5 +163,20 @@ describe("getOrCreateStripeCustomer", () => {
       "cus_existing"
     );
     expect(mocks.customersCreate).not.toHaveBeenCalled();
+  });
+
+  it("keeps the customer a concurrent call stored first, and removes its own", async () => {
+    mocks.stored = [];
+    const reads = [subscribed("active"), subscribed("active", "cus_first")];
+    Object.defineProperty(mocks.rows, "subscriptions", {
+      get: () => reads.shift() ?? subscribed("active", "cus_first"),
+      set: () => {},
+      configurable: true,
+    });
+
+    expect(await getOrCreateStripeCustomer("ws-1", "a@example.com", "A")).toBe(
+      "cus_first"
+    );
+    expect(mocks.customersDel).toHaveBeenCalledWith("cus_new");
   });
 });

@@ -5,9 +5,10 @@
  * settlement that increments the monthly counter *and* decrements a
  * balance for the same charge counts it twice, and the workspace loses
  * 2× per turn whenever two pools are non-zero. These tests pin the
- * order — allowance first, then exactly one of trial / top-up for the
- * remainder — the reservation settlement, and that the whole thing
- * runs under the per-workspace advisory lock admission uses.
+ * order — allowance first, then the top-up up to its balance, then the
+ * trial up to its grant — the reservation settlement, a replay that
+ * charges nothing, and that the whole thing runs under the
+ * per-workspace advisory lock admission uses.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -28,6 +29,10 @@ const state = vi.hoisted(() => ({
   allowanceUsedMicros: null as number | null,
   /** null = no active trial row. */
   trialRemainingMicros: null as number | null,
+  /** null = no credit_balances row. */
+  topupBalanceMicros: null as number | null,
+  /** A usage_records row already written for the request. */
+  settledMicros: null as number | null,
   log: [] as string[],
 }));
 
@@ -77,7 +82,12 @@ vi.mock("@intelligo-dev/core/db/schema", () => {
       ...cols.map((c) => [c, `${name}.${c}`]),
     ]);
   return {
-    usageRecords: table("usage_records", []),
+    usageRecords: table("usage_records", [
+      "workspaceId",
+      "requestId",
+      "chargedMicros",
+      "currency",
+    ]),
     monthlyUsage: table("monthly_usage", [
       "workspaceId",
       "periodStart",
@@ -89,6 +99,7 @@ vi.mock("@intelligo-dev/core/db/schema", () => {
       "workspaceId",
       "balanceMicros",
       "totalUsedMicros",
+      "currency",
     ]),
     trialCredits: table("trial_credits", [
       "workspaceId",
@@ -98,6 +109,7 @@ vi.mock("@intelligo-dev/core/db/schema", () => {
       "creditsRemaining",
       "creditsUsed",
       "depletedAt",
+      "currency",
     ]),
     creditReservations: table("credit_reservations", [
       "workspaceId",
@@ -120,6 +132,16 @@ vi.mock("@intelligo-dev/core/db", () => {
       return state.trialRemainingMicros === null
         ? []
         : [{ remainingMicros: state.trialRemainingMicros }];
+    }
+    if (t.__name === "credit_balances") {
+      return state.topupBalanceMicros === null
+        ? []
+        : [{ balanceMicros: state.topupBalanceMicros }];
+    }
+    if (t.__name === "usage_records") {
+      return state.settledMicros === null
+        ? []
+        : [{ chargedMicros: state.settledMicros, currency: "MNT" }];
     }
     return [];
   };
@@ -151,6 +173,7 @@ vi.mock("@intelligo-dev/core/db", () => {
           for: vi.fn(() => ({
             limit: vi.fn(async () => rowsFor(t)),
           })),
+          limit: vi.fn(async () => rowsFor(t)),
         })),
       })),
     })),
@@ -199,6 +222,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   state.allowanceUsedMicros = null;
   state.trialRemainingMicros = null;
+  state.topupBalanceMicros = null;
+  state.settledMicros = null;
   state.log = [];
   mocks.getWorkspaceBilling.mockResolvedValue({ plan: { slug: "free" } });
   mocks.getBillingSettings.mockResolvedValue({
@@ -221,6 +246,7 @@ describe("recordTokenUsage", () => {
       plan: CHARGED,
       topup: zero("MNT"),
       trial: zero("MNT"),
+      replayed: false,
     });
     expect(updates()).toEqual([
       "update monthly_usage",
@@ -236,6 +262,7 @@ describe("recordTokenUsage", () => {
       plan: mnt(200),
       topup: mnt(300),
       trial: zero("MNT"),
+      replayed: false,
     });
     expect(updates()).toEqual([
       "update monthly_usage",
@@ -252,12 +279,13 @@ describe("recordTokenUsage", () => {
       plan: zero("MNT"),
       topup: CHARGED,
       trial: zero("MNT"),
+      replayed: false,
     });
     expect(updates()).toContain("update credit_balances");
     expect(updates()).not.toContain("update trial_credits");
   });
 
-  it("debits the trial grant instead when admitted on trial credits and it still covers the remainder", async () => {
+  it("debits the trial grant when the top-up holds nothing", async () => {
     state.allowanceUsedMicros = mnt(2000).amount;
     state.trialRemainingMicros = mnt(1000).amount;
     const out = await settle({ usingTrialCredits: true });
@@ -266,19 +294,44 @@ describe("recordTokenUsage", () => {
       plan: zero("MNT"),
       topup: zero("MNT"),
       trial: CHARGED,
+      replayed: false,
     });
     expect(updates()).toContain("update trial_credits");
     expect(updates()).not.toContain("update credit_balances");
   });
 
-  it("falls back to the top-up balance when the trial no longer covers the remainder", async () => {
+  it("takes the top-up before the trial, as admission counts them", async () => {
+    state.allowanceUsedMicros = mnt(2000).amount;
+    state.topupBalanceMicros = mnt(300).amount;
+    state.trialRemainingMicros = mnt(1000).amount;
+    const out = await settle();
+    expect(out).toMatchObject({ topup: mnt(300), trial: mnt(200) });
+  });
+
+  it("splits across the pools when the trial covers only part of it", async () => {
     state.allowanceUsedMicros = mnt(2000).amount;
     state.trialRemainingMicros = mnt(100).amount;
     const out = await settle({ usingTrialCredits: true });
-    expect(out.trial).toEqual(zero("MNT"));
-    expect(out.topup).toEqual(CHARGED);
+    expect(out.trial).toEqual(mnt(100));
+    // Neither pool holds the other 400₮; it is recorded on the top-up.
+    expect(out.topup).toEqual(mnt(400));
     expect(updates()).toContain("update credit_balances");
-    expect(updates()).not.toContain("update trial_credits");
+    expect(updates()).toContain("update trial_credits");
+  });
+
+  it("charges a request that was already settled only once", async () => {
+    state.settledMicros = CHARGED.amount;
+    const out = await settle();
+    expect(out).toEqual({
+      charged: CHARGED,
+      plan: zero("MNT"),
+      topup: zero("MNT"),
+      trial: zero("MNT"),
+      replayed: true,
+    });
+    expect(state.log).not.toContain("insert usage_records");
+    expect(updates()).toEqual([]);
+    expect(mocks.checkNotificationTriggers).not.toHaveBeenCalled();
   });
 
   it("never touches a balance for a charge the allowance covered", async () => {

@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => ({
   checkoutSessionsRetrieve: vi.fn(),
   billingPortalSessionsCreate: vi.fn(),
   subscriptionsRetrieve: vi.fn(),
+  subscriptionsCancel: vi.fn(),
+  subscriptionsList: vi.fn(),
+  checkoutSessionsList: vi.fn(),
+  checkoutSessionsExpire: vi.fn(),
   getStripe: vi.fn(),
   getWorkspaceSubscription: vi.fn(),
 
@@ -69,10 +73,11 @@ import {
   createSubscriptionCheckout,
   createCreditCheckout,
   createBillingPortal,
+  cancelWorkspaceSubscription,
   getCheckoutSession,
-  getBillingOverview,
   isBillingServiceError,
 } from "./checkout";
+import { getBillingOverview } from "./billing-overview";
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -98,13 +103,21 @@ beforeEach(() => {
       sessions: {
         create: mocks.checkoutSessionsCreate,
         retrieve: mocks.checkoutSessionsRetrieve,
+        list: mocks.checkoutSessionsList,
+        expire: mocks.checkoutSessionsExpire,
       },
     },
     billingPortal: {
       sessions: { create: mocks.billingPortalSessionsCreate },
     },
-    subscriptions: { retrieve: mocks.subscriptionsRetrieve },
+    subscriptions: {
+      retrieve: mocks.subscriptionsRetrieve,
+      cancel: mocks.subscriptionsCancel,
+      list: mocks.subscriptionsList,
+    },
   });
+  mocks.subscriptionsList.mockResolvedValue({ data: [] });
+  mocks.checkoutSessionsList.mockResolvedValue({ data: [] });
 
   mocks.getOrCreateStripeCustomer.mockResolvedValue("cus_123");
   // A workspace on the free row: no Stripe subscription yet.
@@ -305,6 +318,46 @@ describe("createSubscriptionCheckout", () => {
     ).not.toHaveProperty("flow_data");
   });
 
+  it("sends to the portal a subscription Stripe holds before its webhook landed", async () => {
+    mocks.getPlanBySlug.mockReturnValue(basePlan);
+    mocks.subscriptionsList.mockResolvedValue({
+      data: [{ id: "sub_paid", status: "active" }],
+    });
+    mocks.subscriptionsRetrieve.mockResolvedValue({
+      id: "sub_paid",
+      items: { data: [{ id: "si_1", price: { id: "price_monthly_123" } }] },
+    });
+    mocks.billingPortalSessionsCreate.mockResolvedValue({
+      url: "https://billing.stripe.com/p/session_live",
+    });
+
+    const result = await createSubscriptionCheckout(upgrade);
+
+    expect(result.url).toBe("https://billing.stripe.com/p/session_live");
+    expect(mocks.checkoutSessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it("expires an open subscription checkout before opening another", async () => {
+    mocks.getPlanBySlug.mockReturnValue(basePlan);
+    mocks.checkoutSessionsList.mockResolvedValue({
+      data: [
+        { id: "cs_tab1", mode: "subscription" },
+        { id: "cs_credits", mode: "payment" },
+      ],
+    });
+    mocks.checkoutSessionsCreate.mockResolvedValue({
+      url: "https://checkout.stripe.com/session_tab2",
+    });
+
+    await createSubscriptionCheckout(upgrade);
+
+    expect(mocks.checkoutSessionsExpire).toHaveBeenCalledTimes(1);
+    expect(mocks.checkoutSessionsExpire).toHaveBeenCalledWith("cs_tab1");
+    expect(
+      mocks.checkoutSessionsExpire.mock.invocationCallOrder[0]!
+    ).toBeLessThan(mocks.checkoutSessionsCreate.mock.invocationCallOrder[0]!);
+  });
+
   it.each(["canceled", "incomplete", "incomplete_expired"])(
     "opens a new checkout when the previous subscription is %s",
     async (status) => {
@@ -467,6 +520,34 @@ describe("createCreditCheckout", () => {
   });
 });
 
+describe("cancelWorkspaceSubscription", () => {
+  it("cancels a live Stripe subscription", async () => {
+    mocks.getWorkspaceBilling.mockResolvedValue({
+      subscription: { status: "active", stripeSubscriptionId: "sub_1" },
+    });
+    await cancelWorkspaceSubscription("ws_1");
+    expect(mocks.subscriptionsCancel).toHaveBeenCalledWith("sub_1");
+  });
+
+  it("leaves a workspace without one, or already canceled, alone", async () => {
+    mocks.getWorkspaceBilling.mockResolvedValue({ subscription: null });
+    await cancelWorkspaceSubscription("ws_1");
+    mocks.getWorkspaceBilling.mockResolvedValue({
+      subscription: { status: "canceled", stripeSubscriptionId: "sub_1" },
+    });
+    await cancelWorkspaceSubscription("ws_1");
+    expect(mocks.subscriptionsCancel).not.toHaveBeenCalled();
+  });
+
+  it("treats a subscription Stripe no longer has as ended", async () => {
+    mocks.getWorkspaceBilling.mockResolvedValue({
+      subscription: { status: "active", stripeSubscriptionId: "sub_gone" },
+    });
+    mocks.subscriptionsCancel.mockRejectedValue({ code: "resource_missing" });
+    await expect(cancelWorkspaceSubscription("ws_1")).resolves.toBeUndefined();
+  });
+});
+
 describe("createBillingPortal", () => {
   it("creates a portal session when a Stripe customer exists", async () => {
     mocks.getWorkspaceBilling.mockResolvedValue({
@@ -582,7 +663,7 @@ describe("getBillingOverview", () => {
     billingMode: "subscription" as const,
   };
 
-  it("shapes a member view with only plan name and status", async () => {
+  it("shapes a member view with the plan and status only", async () => {
     mocks.getWorkspaceBilling.mockResolvedValue(billingState);
 
     const overview = await getBillingOverview({
@@ -593,6 +674,7 @@ describe("getBillingOverview", () => {
     expect(overview).toEqual({
       role: "member",
       planName: "Standard",
+      planSlug: "standard",
       status: "active",
     });
   });

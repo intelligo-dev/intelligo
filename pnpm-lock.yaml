@@ -744,9 +744,15 @@ importers:
       '@types/node':
         specifier: ^22.20.3
         version: 22.20.3
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
       drizzle-orm:
         specifier: '>=0.45.2'
         version: 0.45.2(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(kysely@0.28.17)(pg@8.18.0)
+      pg:
+        specifier: 8.18.0
+        version: 8.18.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

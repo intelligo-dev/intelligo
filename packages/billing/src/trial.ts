@@ -25,6 +25,7 @@ import {
 import { getTrialConfig, type TrialStatus } from "./trial-types";
 import { normalizeEmailForAbuseCheck, checkTrialAbuse } from "./trial-abuse";
 import { deductTrialCredits } from "./trial-deduction";
+import type { BillingReader } from "./reader";
 
 // Re-export config accessor and types
 export { getTrialConfig, NO_TRIAL } from "./trial-types";
@@ -42,7 +43,8 @@ export { deductTrialCredits };
 /**
  * Provision the registered trial grant for a new workspace. Uses
  * onConflictDoNothing so a second call is a no-op; returns the trial
- * record, or null if already provisioned or no trial is registered.
+ * record, or null if already provisioned, no trial is registered, or
+ * `checkTrialAbuse` refuses the email or address.
  */
 export async function provisionTrialCredits(params: {
   workspaceId: string;
@@ -70,6 +72,14 @@ export async function provisionTrialCredits(params: {
     );
   }
   const grantMicros = grant.amount;
+
+  const abuse = await checkTrialAbuse(params.email, params.ipAddress);
+  if (!abuse.allowed) {
+    console.warn(
+      `[Trial] Not provisioned for workspace ${params.workspaceId}: ${abuse.reason}`
+    );
+    return null;
+  }
 
   const result = await db
     .insert(trialCredits)
@@ -175,12 +185,15 @@ export async function getTrialStatus(
  * What is left of the trial grant, for the quota engine's decision
  * about whether trial fallback is available.
  */
-export async function getActiveTrialGrant(workspaceId: string): Promise<{
+export async function getActiveTrialGrant(
+  workspaceId: string,
+  reader: BillingReader = db
+): Promise<{
   active: boolean;
   remainingMicros: number;
   currency: string | null;
 }> {
-  const rows = await db
+  const rows = await reader
     .select({
       remainingMicros: trialCredits.remainingMicros,
       currency: trialCredits.currency,
@@ -395,13 +408,19 @@ export async function processTrialExpirations(): Promise<{
 
   for (const trial of expiredTrials) {
     try {
-      await db
+      // Still `active`: a trial converted or depleted since the read
+      // above keeps its status.
+      const expired = await db
         .update(trialCredits)
         .set({
           status: "expired",
           depletedAt: now,
         })
-        .where(eq(trialCredits.id, trial.id));
+        .where(
+          and(eq(trialCredits.id, trial.id), eq(trialCredits.status, "active"))
+        )
+        .returning({ id: trialCredits.id });
+      if (expired.length === 0) continue;
 
       const sub = await getWorkspaceSubscription(trial.workspaceId);
       if (

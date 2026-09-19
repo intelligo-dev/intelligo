@@ -77,7 +77,10 @@ export type RecordUsageParams = {
  * `charged === plan + topup + trial`.
  */
 export type SettlementOutcome = {
-  /** What the turn charged: `charged === plan + topup + trial`. */
+  /**
+   * What the turn charged: `charged === plan + topup + trial`, except on
+   * a replay, where the pools are zero because nothing was debited again.
+   */
   charged: Money;
   /** Funded by this period's plan allowance. */
   plan: Money;
@@ -85,6 +88,8 @@ export type SettlementOutcome = {
   topup: Money;
   /** Debited from the trial grant. */
   trial: Money;
+  /** True when the request had already been settled and this call wrote nothing. */
+  replayed: boolean;
 };
 
 export type UsageSummary = {

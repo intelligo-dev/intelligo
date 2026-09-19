@@ -31,12 +31,16 @@ vi.mock("@intelligo-dev/jobs", () => ({
   jobs: {
     status: "status",
     runAt: "runAt",
+    startedAt: "startedAt",
+    finishedAt: "finishedAt",
     createdAt: "createdAt",
   },
 }));
 
 vi.mock("drizzle-orm", () => ({
   and: (...a: unknown[]) => ({ and: a }),
+  or: (...a: unknown[]) => ({ or: a }),
+  eq: (...a: unknown[]) => ({ eq: a }),
   gte: (...a: unknown[]) => ({ gte: a }),
   inArray: (...a: unknown[]) => ({ inArray: a }),
   lt: (...a: unknown[]) => ({ lt: a }),

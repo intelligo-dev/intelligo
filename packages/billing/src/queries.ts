@@ -13,8 +13,9 @@ import {
   subscriptions,
   creditBalances,
 } from "@intelligo-dev/core/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { getStripe } from "./stripe";
+import type { BillingReader } from "./reader";
 
 /**
  * Whether a subscription in this status puts its plan in force.
@@ -29,8 +30,8 @@ export function subscriptionEntitles(status: string): boolean {
   return status === "active" || status === "trialing" || status === "past_due";
 }
 
-async function getFreePlanRow() {
-  const rows = await db
+async function getFreePlanRow(reader: BillingReader = db) {
+  const rows = await reader
     .select()
     .from(plans)
     .where(eq(plans.slug, "free"))
@@ -54,8 +55,11 @@ export type QueryPlanLimits = {
  * Get workspace subscription with plan details
  * Returns subscription + plan or null if no subscription exists
  */
-export async function getWorkspaceSubscription(workspaceId: string) {
-  const result = await db
+export async function getWorkspaceSubscription(
+  workspaceId: string,
+  reader: BillingReader = db
+) {
+  const result = await reader
     .select()
     .from(subscriptions)
     .leftJoin(plans, eq(subscriptions.planId, plans.id))
@@ -81,8 +85,11 @@ export async function getWorkspaceSubscription(workspaceId: string) {
  * Get workspace credit balance
  * Returns balance info or default zero state if no record exists
  */
-export async function getWorkspaceCreditBalance(workspaceId: string) {
-  const result = await db
+export async function getWorkspaceCreditBalance(
+  workspaceId: string,
+  reader: BillingReader = db
+) {
+  const result = await reader
     .select()
     .from(creditBalances)
     .where(eq(creditBalances.workspaceId, workspaceId))
@@ -116,15 +123,18 @@ export async function getWorkspaceCreditBalance(workspaceId: string) {
  * is the stored row either way, so a caller can still show its status
  * and reach its Stripe customer.
  */
-export async function getWorkspaceBilling(workspaceId: string) {
-  const subscriptionData = await getWorkspaceSubscription(workspaceId);
-  const creditBalance = await getWorkspaceCreditBalance(workspaceId);
+export async function getWorkspaceBilling(
+  workspaceId: string,
+  reader: BillingReader = db
+) {
+  const subscriptionData = await getWorkspaceSubscription(workspaceId, reader);
+  const creditBalance = await getWorkspaceCreditBalance(workspaceId, reader);
 
   // If no subscription exists, return virtual free subscription
   if (!subscriptionData) {
     return {
       subscription: null,
-      plan: await getFreePlanRow(),
+      plan: await getFreePlanRow(reader),
       creditBalance,
       billingMode: "subscription" as const,
     };
@@ -132,7 +142,7 @@ export async function getWorkspaceBilling(workspaceId: string) {
 
   const plan = subscriptionEntitles(subscriptionData.subscription.status)
     ? subscriptionData.plan
-    : await getFreePlanRow();
+    : await getFreePlanRow(reader);
 
   return {
     subscription: subscriptionData.subscription,
@@ -145,7 +155,8 @@ export async function getWorkspaceBilling(workspaceId: string) {
 
 /**
  * Ensure workspace has a free subscription
- * Creates one if it doesn't exist (idempotent)
+ * Creates one if it doesn't exist (idempotent, also under concurrent
+ * calls: the loser of the insert reads the winner's row)
  * Used during workspace initialization
  */
 export async function ensureFreeSubscription(workspaceId: string) {
@@ -171,9 +182,13 @@ export async function ensureFreeSubscription(workspaceId: string) {
       status: "active",
       billingMode: "subscription",
     })
+    .onConflictDoNothing({ target: subscriptions.workspaceId })
     .returning();
 
-  return newSubscription[0];
+  return (
+    newSubscription[0] ??
+    (await getWorkspaceSubscription(workspaceId))?.subscription
+  );
 }
 
 /** A BCP 47 language tag with an optional region or script: `en`, `pt-BR`. */
@@ -222,15 +237,30 @@ export async function getOrCreateStripeCustomer(
     throw new Error("Failed to create subscription for workspace");
   }
 
-  await db
+  // Only the first writer's customer is kept: a concurrent call that
+  // created another one finds the id taken, removes its own and returns
+  // the stored one.
+  const stored = await db
     .update(subscriptions)
     .set({
       stripeCustomerId: customer.id,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptions.id, subscription.id));
+    .where(
+      and(
+        eq(subscriptions.id, subscription.id),
+        isNull(subscriptions.stripeCustomerId)
+      )
+    )
+    .returning({ id: subscriptions.id });
+  if (stored.length > 0) return customer.id;
 
-  return customer.id;
+  await stripe.customers.del(customer.id).catch(() => {});
+  const winner = await getWorkspaceSubscription(workspaceId);
+  if (!winner?.subscription.stripeCustomerId) {
+    throw new Error("Failed to store the Stripe customer for workspace");
+  }
+  return winner.subscription.stripeCustomerId;
 }
 
 /**

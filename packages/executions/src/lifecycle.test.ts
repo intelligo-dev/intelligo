@@ -117,6 +117,23 @@ describe("begin", () => {
     expect(insertedRow().requestId).toBe("req-42");
   });
 
+  it("gives the hold back when the execution row cannot be written", async () => {
+    const releaseHold = vi.fn().mockResolvedValue(undefined);
+    const executions = createExecutions({
+      checkEntitlement: vi.fn().mockResolvedValue({ allowed: true }),
+      releaseHold,
+    });
+    mocks.insertValues.mockRejectedValueOnce(new Error("duplicate request_id"));
+
+    await expect(
+      executions.begin({ ...beginInput, requestId: "req-dup" })
+    ).rejects.toThrow("duplicate request_id");
+    expect(releaseHold).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      requestId: "req-dup",
+    });
+  });
+
   it("passes the capability and model to the entitlement port", async () => {
     const checkEntitlement = vi.fn().mockResolvedValue({ allowed: true });
     const executions = createExecutions({ checkEntitlement });

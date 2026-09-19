@@ -15,6 +15,13 @@
       "when": 1789740314941,
       "tag": "0001_reconcile_chain_built_databases",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789808201382,
+      "tag": "0002_webhook_claim_lease",
+      "breakpoints": true
     }
   ]
 }

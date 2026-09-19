@@ -12,12 +12,15 @@
 
 import { db } from "@intelligo-dev/core/db";
 import { createLogger } from "@intelligo-dev/core/logger";
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, lte, or, sql } from "drizzle-orm";
 
 import { jobs } from "./db/schema";
 import type { Job } from "./db/schema";
 
 const log = createLogger("Jobs");
+
+const UNHANDLED_DELAY_MS = 60_000;
+const ABANDONED_AFTER_MS = 30 * 60_000;
 
 export type EnqueueInput = {
   kind: string;
@@ -62,29 +65,32 @@ export async function enqueue(input: EnqueueInput): Promise<string> {
 
 /**
  * Claim due jobs atomically. SKIP LOCKED means a concurrent worker
- * takes different rows rather than blocking on ours.
+ * takes different rows rather than blocking on ours. A job whose
+ * handler started more than `ABANDONED_AFTER_MS` ago and is still
+ * `running` belongs to a worker that died mid-handler, and is claimed
+ * again — so a handler must finish well within that.
  */
 async function claim(limit: number): Promise<Job[]> {
   const now = new Date();
-  const claimed = await db.execute(sql`
-    UPDATE jobs SET
-      status = 'running',
-      attempts = attempts + 1,
-      started_at = ${now}
-    WHERE id IN (
-      SELECT id FROM jobs
-      WHERE status = 'pending' AND run_at <= ${now}
-      ORDER BY run_at
-      FOR UPDATE SKIP LOCKED
-      LIMIT ${limit}
+  const abandonedBefore = new Date(now.getTime() - ABANDONED_AFTER_MS);
+  const due = db
+    .select({ id: jobs.id })
+    .from(jobs)
+    .where(
+      or(
+        and(eq(jobs.status, "pending"), lte(jobs.runAt, now)),
+        and(eq(jobs.status, "running"), lt(jobs.startedAt, abandonedBefore))
+      )
     )
-    RETURNING *
-  `);
+    .orderBy(jobs.runAt)
+    .limit(limit)
+    .for("update", { skipLocked: true });
 
-  const rows =
-    (claimed as unknown as { rows?: Job[] }).rows ??
-    (claimed as unknown as Job[]);
-  return Array.isArray(rows) ? rows : [];
+  return db
+    .update(jobs)
+    .set({ status: "running", attempts: sql`${jobs.attempts} + 1`, startedAt: now })
+    .where(inArray(jobs.id, due))
+    .returning();
 }
 
 export async function drain(
@@ -105,15 +111,27 @@ export async function drain(
     if (!handler) {
       // Put it back rather than burning an attempt on a kind this
       // worker simply doesn't know about — another deployment might.
+      // Moving `runAt` sends it behind the due jobs this worker can run,
+      // so a backlog of unknown kinds cannot fill every claim.
       result.unhandled.push(job.kind);
       await db
         .update(jobs)
-        .set({ status: "pending", attempts: sql`${jobs.attempts} - 1` })
+        .set({
+          status: "pending",
+          attempts: sql`${jobs.attempts} - 1`,
+          runAt: new Date(Date.now() + UNHANDLED_DELAY_MS),
+        })
         .where(eq(jobs.id, job.id));
       continue;
     }
 
     try {
+      // A batch runs one job at a time; the clock that decides a job was
+      // abandoned starts when its own handler does.
+      await db
+        .update(jobs)
+        .set({ startedAt: new Date() })
+        .where(eq(jobs.id, job.id));
       await handler(job);
       await db
         .update(jobs)
@@ -150,13 +168,13 @@ export async function drain(
   return result;
 }
 
-/** Jobs that exhausted their attempts — surfaced in the admin console. */
+/** Jobs that exhausted their attempts, newest first — surfaced in the admin console. */
 export async function listFailedJobs(limit = 50) {
   return db
     .select()
     .from(jobs)
     .where(eq(jobs.status, "failed"))
-    .orderBy(jobs.finishedAt)
+    .orderBy(desc(jobs.finishedAt))
     .limit(limit);
 }
 

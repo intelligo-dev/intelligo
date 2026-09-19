@@ -133,7 +133,9 @@ d("workspace service — real DB integration", () => {
 
     it("deleteWorkspace removes the active workspace and switches to another", async () => {
       asUser(owner.cookie);
-      await service().deleteWorkspace();
+      const beforeDeleteWorkspace = vi.fn(async () => {});
+      await createWorkspaceService({ beforeDeleteWorkspace }).deleteWorkspace();
+      expect(beforeDeleteWorkspace).toHaveBeenCalledWith(firstOrgId);
 
       // Deleted — remove from cleanup list so afterAll doesn't retry it.
       createdOrgs.splice(

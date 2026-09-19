@@ -147,6 +147,12 @@ export const financeEvents = pgTable("finance_events", {
   amountMinor: integer("amount_minor"),
   currency: text("currency").default("USD"),
   metadata: text("metadata"), // JSON string
+  /**
+   * When a delivery took the event for processing. A lease: a claim
+   * older than the webhook's lease is taken as a delivery that died.
+   */
+  claimedAt: timestamp("claimed_at"),
+  /** Set once the handlers finished; the event is never run again. */
   processedAt: timestamp("processed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

@@ -110,18 +110,22 @@ export async function deleteFact(
 
   const existing = await verifyFact(actor, factId);
 
-  await db.delete(userFacts).where(eq(userFacts.id, factId));
-
-  await recordMemoryAudit({
-    userId: actor.userId,
-    workspaceId: actor.workspaceId,
-    targetKind: "fact",
-    targetId: factId,
-    action: "delete",
-    actorKind: "user",
-    actorId: actor.userId,
-    beforeValue: existing,
-    reason: "user requested deletion",
+  await db.transaction(async (tx) => {
+    await tx.delete(userFacts).where(eq(userFacts.id, factId));
+    await recordMemoryAudit(
+      {
+        userId: actor.userId,
+        workspaceId: actor.workspaceId,
+        targetKind: "fact",
+        targetId: factId,
+        action: "delete",
+        actorKind: "user",
+        actorId: actor.userId,
+        beforeValue: existing,
+        reason: "user requested deletion",
+      },
+      tx
+    );
   });
 }
 

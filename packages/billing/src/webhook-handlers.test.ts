@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
     balanceMicros: 0,
     ledgerCurrency: "USD",
     subscriptionSets: [] as Record<string, unknown>[],
+    subscriptionWheres: [] as unknown[],
     subscriptionUpserts: [] as Record<string, unknown>[],
   },
 }));
@@ -88,9 +89,10 @@ vi.mock("@intelligo-dev/core/db", () => {
     }),
     update: (table: Table) => ({
       set: (values: Record<string, unknown>) => ({
-        where: () => {
+        where: (condition: unknown) => {
           if (table.table === "subscriptions") {
             state.subscriptionSets.push(values);
+            state.subscriptionWheres.push(condition);
             return result([{ workspaceId: "ws-1" }]);
           }
           const purchase = state.purchase;
@@ -199,6 +201,7 @@ beforeEach(() => {
   mocks.state.balanceMicros = 0;
   mocks.state.ledgerCurrency = "USD";
   mocks.state.subscriptionSets = [];
+  mocks.state.subscriptionWheres = [];
   mocks.state.subscriptionUpserts = [];
   mocks.getBillingSettings.mockResolvedValue({ currency: "USD" });
   mocks.getSubscriptionByStripeId.mockResolvedValue({
@@ -357,6 +360,31 @@ describe("status-changing events drop the workspace's feature cache", () => {
       status: "past_due",
     });
     expect(mocks.invalidateFeatureCache).toHaveBeenCalledWith("ws-1");
+  });
+
+  it("invoice.payment_failed tells the owner what the invoice was for", async () => {
+    await handleInvoicePaymentFailed({
+      ...invoice,
+      amount_due: 2900,
+      currency: "usd",
+    } as Stripe.Invoice);
+    expect(mocks.sendPaymentFailedEmail).toHaveBeenCalledWith("ws-1", {
+      amountMinor: 2900,
+      currency: "usd",
+    });
+  });
+
+  it("a late invoice.paid or update never reopens a canceled subscription", async () => {
+    const guard = expect.objectContaining({ op: "ne", val: "canceled" });
+    await handleInvoicePaid(invoice);
+    await handleSubscriptionUpdated(subscription());
+    for (const where of mocks.state.subscriptionWheres) {
+      expect(where).toMatchObject({
+        op: "and",
+        conds: expect.arrayContaining([guard]),
+      });
+    }
+    expect(mocks.state.subscriptionWheres).toHaveLength(2);
   });
 });
 

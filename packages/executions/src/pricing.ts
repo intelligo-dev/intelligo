@@ -17,7 +17,6 @@ import {
   convert,
   currency,
   money,
-  multiply,
   type CurrencyCode,
   type Money,
 } from "@intelligo-dev/core/money";
@@ -218,10 +217,12 @@ export const PROVIDER_CURRENCY: CurrencyCode = currency("USD");
 /**
  * What the provider charges for this call, in USD.
  *
- * Exact in micros with no floating detour: a price quoted per million
- * tokens is, per token, that many millionths of a dollar — so the
- * micros are `tokens × price`. Fractions round up, which keeps the
- * cheapest models from pricing a real call at nothing.
+ * A price quoted per million tokens is, per token, that many millionths
+ * of a dollar — so the micros are `tokens × price`. The price is scaled
+ * to an integer first, because `100 × 1.1` in floating point is
+ * `110.00000000000001` and would round up to a micro nobody used.
+ * Fractions of a micro round up, which keeps the cheapest models from
+ * pricing a real call at nothing.
  *
  * @throws {UnknownModelError} when the id has no registered price.
  */
@@ -231,14 +232,19 @@ export function providerCost(
   outputTokens: number
 ): Money {
   const config = requireModel(modelId);
+  const scaled = (price: number) => Math.round(price * PRICE_SCALE);
   return money(
     Math.ceil(
-      inputTokens * config.costPerMInputTokens +
-        outputTokens * config.costPerMOutputTokens
+      (inputTokens * scaled(config.costPerMInputTokens) +
+        outputTokens * scaled(config.costPerMOutputTokens)) /
+        PRICE_SCALE
     ),
     PROVIDER_CURRENCY
   );
 }
+
+/** Prices carry at most six decimals of a dollar per million tokens. */
+const PRICE_SCALE = 1_000_000;
 
 /**
  * What a deployment bills in: its currency, what one USD costs in it
@@ -287,7 +293,10 @@ export function chargeFor(
   rate: BillingRate
 ): { providerCost: Money; charged: Money } {
   const cost = providerCost(modelId, inputTokens, outputTokens);
-  const withMargin = multiply(cost, rate.marginBp / BP_PER_MULTIPLE);
+  const withMargin = money(
+    Math.ceil((cost.amount * rate.marginBp) / BP_PER_MULTIPLE),
+    PROVIDER_CURRENCY
+  );
   return {
     providerCost: cost,
     charged: convert(withMargin, rate.currency, rate.usdRateMicros),

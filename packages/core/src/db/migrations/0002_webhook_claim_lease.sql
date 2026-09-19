@@ -1,0 +1,1 @@
+ALTER TABLE "finance_events" ADD COLUMN "claimed_at" timestamp;

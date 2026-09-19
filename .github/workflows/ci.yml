@@ -250,6 +250,7 @@ jobs:
           pnpm vitest run \
             packages/core/src/db/__tests__ \
             packages/executions/src/__tests__ \
+            packages/jobs/src/__tests__ \
             packages/billing/src/__tests__
 
       # The replay applied the files directly with psql, so drizzle has

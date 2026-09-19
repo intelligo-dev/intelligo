@@ -9,25 +9,29 @@
  *   handler runs, keyed by Stripe's event id. A delivery whose handler
  *   throws is therefore never "lost" — the row exists with no
  *   `processed_at`, and the next delivery claims it again.
- * - **Claim, then process.** Processing is gated on an `UPDATE …
- *   WHERE processed_at IS NULL` claim, so two concurrent deliveries of
- *   one event run the handlers once. A failed run releases the claim.
+ * - **Claim, then process.** Processing is gated on an `UPDATE … SET
+ *   claimed_at` that only succeeds while the event is unprocessed and
+ *   unclaimed, so two concurrent deliveries of one event run the
+ *   handlers once; the other is answered 409 and Stripe retries it.
+ *   `processed_at` is written only after the handlers succeed. A failed
+ *   run releases the claim, and a claim older than `CLAIM_LEASE_MS` —
+ *   the process died or timed out mid-handler — can be taken again.
  * - **Fail loudly.** A handler error returns 500. Stripe retries on
  *   non-2xx; answering 2xx to an error would tell Stripe the event was
  *   handled and silently drop it.
  * - A bad or missing signature is 400 — that is Stripe's own contract,
  *   and it reveals nothing a caller without the secret did not know.
  *
- * Out of scope, deliberately: ordering between events. Stripe does not
- * guarantee it, and the subscription handlers upsert the latest state
- * they are given; a deployment that needs stricter sequencing compares
- * `event.created` against the row it is about to overwrite.
+ * Ordering between events is not guaranteed by Stripe. The handlers
+ * write the state they are given, with one exception that is terminal
+ * in Stripe too: a canceled subscription is never made active again by
+ * a late `invoice.paid` or `customer.subscription.updated`.
  */
 
 import type Stripe from "stripe";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, lt, or } from "drizzle-orm";
 import { db } from "@intelligo-dev/core/db";
-import { financeEvents } from "@intelligo-dev/core/db/schema";
+import { financeEvents, organization } from "@intelligo-dev/core/db/schema";
 import { createLogger } from "@intelligo-dev/core/logger";
 
 import { getStripe } from "./stripe";
@@ -137,16 +141,36 @@ export async function dispatchStripeEvent(event: Stripe.Event): Promise<void> {
 }
 
 /**
- * Record the receipt (idempotent on event id) and try to claim it for
- * processing. Returns false when another delivery already processed
- * it — or is processing it right now.
+ * Longer than any handler takes; a claim this old belongs to a delivery
+ * that died, and the next one may take the event.
  */
-async function claimEvent(event: Stripe.Event): Promise<boolean> {
+const CLAIM_LEASE_MS = 5 * 60_000;
+
+/** The workspace the event names, when it still exists. */
+async function knownWorkspaceId(event: Stripe.Event): Promise<string | null> {
+  const named = extractWorkspaceId(event);
+  if (!named) return null;
+  const rows = await db
+    .select({ id: organization.id })
+    .from(organization)
+    .where(eq(organization.id, named))
+    .limit(1);
+  return rows[0]?.id ?? null;
+}
+
+type Claim = "claimed" | "processed" | "in_flight";
+
+/**
+ * Record the receipt (idempotent on event id) and try to claim it for
+ * processing. A deleted workspace's events are still recorded, without
+ * the workspace, rather than failing the foreign key on every retry.
+ */
+async function claimEvent(event: Stripe.Event): Promise<Claim> {
   await db
     .insert(financeEvents)
     .values({
       id: crypto.randomUUID(),
-      workspaceId: extractWorkspaceId(event),
+      workspaceId: await knownWorkspaceId(event),
       stripeEventId: event.id,
       type: event.type,
       amountMinor: extractAmount(event),
@@ -157,23 +181,42 @@ async function claimEvent(event: Stripe.Event): Promise<boolean> {
     })
     .onConflictDoNothing({ target: financeEvents.stripeEventId });
 
+  const now = new Date();
   const claimed = await db
     .update(financeEvents)
-    .set({ processedAt: new Date() })
+    .set({ claimedAt: now })
     .where(
       and(
         eq(financeEvents.stripeEventId, event.id),
-        isNull(financeEvents.processedAt)
+        isNull(financeEvents.processedAt),
+        or(
+          isNull(financeEvents.claimedAt),
+          lt(financeEvents.claimedAt, new Date(now.getTime() - CLAIM_LEASE_MS))
+        )
       )
     )
     .returning({ id: financeEvents.id });
-  return claimed.length > 0;
+  if (claimed.length > 0) return "claimed";
+
+  const rows = await db
+    .select({ processedAt: financeEvents.processedAt })
+    .from(financeEvents)
+    .where(eq(financeEvents.stripeEventId, event.id))
+    .limit(1);
+  return rows[0]?.processedAt ? "processed" : "in_flight";
+}
+
+async function markProcessed(event: Stripe.Event): Promise<void> {
+  await db
+    .update(financeEvents)
+    .set({ processedAt: new Date() })
+    .where(eq(financeEvents.stripeEventId, event.id));
 }
 
 async function releaseClaim(event: Stripe.Event): Promise<void> {
   await db
     .update(financeEvents)
-    .set({ processedAt: null })
+    .set({ claimedAt: null })
     .where(eq(financeEvents.stripeEventId, event.id));
 }
 
@@ -207,9 +250,16 @@ export function createStripeWebhookHandler(
       return json({ error: "invalid signature" }, 400);
     }
 
-    if (!(await claimEvent(event))) {
+    const claim = await claimEvent(event);
+    if (claim === "processed") {
       log.debug("Event already processed, skipping", { eventId: event.id });
       return json({ received: true, duplicate: true }, 200);
+    }
+    if (claim === "in_flight") {
+      // Another delivery holds it. Not 2xx: if that one dies, Stripe's
+      // retry of this one is what finishes the event.
+      log.debug("Event is being processed, deferring", { eventId: event.id });
+      return json({ error: "event in progress" }, 409);
     }
 
     try {
@@ -233,6 +283,7 @@ export function createStripeWebhookHandler(
       return json({ error: "processing failed" }, 500);
     }
 
+    await markProcessed(event);
     log.info("Processed event", { eventType: event.type, eventId: event.id });
     return json({ received: true }, 200);
   };

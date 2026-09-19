@@ -11,8 +11,8 @@ export type DocumentPatternEntry = {
   productSlug: string;
   /** Human-readable agent label rendered in the documents UI. */
   agentLabel: string;
-  /** Case-insensitive substring patterns; document matches if its
-   *  lowercased title contains ANY of these. */
+  /** Case-insensitive substring patterns; a document matches when its
+   *  title contains ANY of these, whatever the case of either. */
   patterns: string[];
 };
 
@@ -34,7 +34,7 @@ export function classifyDocumentTitle(title: string): {
 } {
   const lower = title.toLowerCase();
   for (const entry of registry.values()) {
-    if (entry.patterns.some((p) => lower.includes(p))) {
+    if (entry.patterns.some((p) => lower.includes(p.toLowerCase()))) {
       return { productSlug: entry.productSlug, agentLabel: entry.agentLabel };
     }
   }

@@ -68,8 +68,6 @@ const FUNCTION_EXEMPTIONS: Record<string, string> = {
     "one turn, start to finish. Every early return is a typed refusal and the tail is a single stream closure sharing `captured`, `writerSlot` and `run` — splitting that sharing is a redesign of the one path where a silent change costs money.",
   "packages/executions/src/lifecycle.ts begin":
     "admission: entitlement, the hold, the row and the handle. The handle is the part worth extracting.",
-  "packages/billing/src/quota.ts recordTokenUsage":
-    "settlement, and the reason `quota-settlement.test.ts` already exists as its own suite.",
 };
 
 /** Every line index a comment touches, so a span can be measured in code. */

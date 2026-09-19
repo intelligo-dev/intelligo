@@ -1,6 +1,7 @@
 import { db } from "@intelligo-dev/core/db";
 import { monthlyUsage } from "@intelligo-dev/core/db/schema";
 import { eq, and } from "drizzle-orm";
+import type { BillingReader } from "./reader";
 
 /**
  * The billing period is the calendar month in UTC, so every host agrees
@@ -30,10 +31,13 @@ export function getCurrentPeriodKey(now: Date = new Date()): string {
  * Reads without FOR UPDATE: concurrent requests are handled by SQL-level
  * atomic arithmetic in recordTokenUsage, not a JS read-modify-write.
  */
-export async function getCurrentMonthlyUsage(workspaceId: string) {
+export async function getCurrentMonthlyUsage(
+  workspaceId: string,
+  reader: BillingReader = db
+) {
   const periodStart = getCurrentPeriodStart();
 
-  const rows = await db
+  const rows = await reader
     .select({
       tokensUsed: monthlyUsage.tokensUsed,
       allowanceUsedMicros: monthlyUsage.allowanceUsedMicros,

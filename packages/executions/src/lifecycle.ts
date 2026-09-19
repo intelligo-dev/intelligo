@@ -102,7 +102,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         })
       : { allowed: true };
 
-    await db.insert(executions).values({
+    const row = db.insert(executions).values({
       id,
       workspaceId: input.workspaceId,
       userId: input.userId ?? null,
@@ -118,6 +118,24 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       durationMs: decision.allowed ? null : 0,
       metadata: input.metadata ?? null,
     });
+    try {
+      await row;
+    } catch (error) {
+      // No row means nothing will ever settle or release the hold
+      // entitlement just took (a reused `requestId` hits the unique
+      // index here), so give it back before failing.
+      if (decision.allowed && ports.releaseHold) {
+        await ports
+          .releaseHold({ workspaceId: input.workspaceId, requestId })
+          .catch((releaseError) =>
+            log.warn("Hold release failed after insert error", {
+              requestId,
+              error: errorMessage(releaseError),
+            })
+          );
+      }
+      throw error;
+    }
 
     const usingTrialCredits = decision.usingTrialCredits ?? false;
 
@@ -470,6 +488,8 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       inputTokens: row.inputTokens ?? 0,
       outputTokens: row.outputTokens ?? 0,
       totalTokens: row.totalTokens,
+      // Admission's pool choice is not on the row; a settlement port
+      // takes the pools in its own order rather than trusting this.
       usingTrialCredits: false,
       metadata: row.metadata ?? undefined,
     });

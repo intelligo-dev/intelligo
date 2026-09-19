@@ -11,7 +11,7 @@ import { db } from "@intelligo-dev/core/db";
 import { createRegistry } from "@intelligo-dev/core/registry";
 import { executions as executionsTable } from "@intelligo-dev/executions";
 import { jobs } from "@intelligo-dev/jobs";
-import { and, gte, inArray, lt, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, or, sql } from "drizzle-orm";
 
 export type HealthStatus = "ok" | "degraded" | "down" | "unconfigured";
 
@@ -81,15 +81,19 @@ async function checkJobs(): Promise<Omit<IntegrationHealth, "key" | "label">> {
       .select({ n: sql<number>`count(*)` })
       .from(jobs)
       .where(
-        and(inArray(jobs.status, ["pending"]), lt(jobs.runAt, staleBefore))
+        or(
+          and(eq(jobs.status, "pending"), lt(jobs.runAt, staleBefore)),
+          // A job still `running` this long belongs to a worker that died.
+          and(eq(jobs.status, "running"), lt(jobs.startedAt, staleBefore))
+        )
       ),
     db
       .select({ n: sql<number>`count(*)` })
       .from(jobs)
       .where(
         and(
-          inArray(jobs.status, ["failed"]),
-          gte(jobs.createdAt, new Date(Date.now() - 24 * 60 * 60_000))
+          eq(jobs.status, "failed"),
+          gte(jobs.finishedAt, new Date(Date.now() - 24 * 60 * 60_000))
         )
       ),
   ]);
@@ -103,7 +107,7 @@ async function checkJobs(): Promise<Omit<IntegrationHealth, "key" | "label">> {
   if (staleCount > 0) {
     return {
       status: "down",
-      detail: `${staleCount} job(s) overdue by more than 15 minutes — no worker appears to be draining the queue.`,
+      detail: `${staleCount} job(s) overdue or stuck running for more than 15 minutes — no worker appears to be draining the queue.`,
       metrics: {
         pending: pendingCount,
         overdue: staleCount,
@@ -127,17 +131,15 @@ async function checkSettlement(): Promise<
 > {
   const cutoff = new Date(Date.now() - UNSETTLED_MS);
 
-  const [[unsettled]] = await Promise.all([
-    db
-      .select({ n: sql<number>`count(*)` })
-      .from(executionsTable)
-      .where(
-        and(
-          inArray(executionsTable.status, ["running", "settling"]),
-          lt(executionsTable.startedAt, cutoff)
-        )
-      ),
-  ]);
+  const [unsettled] = await db
+    .select({ n: sql<number>`count(*)` })
+    .from(executionsTable)
+    .where(
+      and(
+        inArray(executionsTable.status, ["running", "settling"]),
+        lt(executionsTable.startedAt, cutoff)
+      )
+    );
 
   const count = Number(unsettled?.n ?? 0);
 

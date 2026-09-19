@@ -252,6 +252,11 @@ describe("providerCost", () => {
     expect(providerCost("google/gemini-2.5-flash", 0, 0).amount).toBe(0);
   });
 
+  it("does not round float noise up to a micro nobody used", () => {
+    // o4-mini: $1.10 in per million; 100 × 1.1 is 110.00000000000001.
+    expect(providerCost("openai/o4-mini", 100, 0).amount).toBe(110);
+  });
+
   it("keeps a real call off zero by rounding the fraction up", () => {
     expect(providerCost("google/gemini-2.5-flash", 1, 0).amount).toBe(1);
   });
@@ -317,6 +322,14 @@ describe("chargeFor", () => {
   };
   // A 1,447-token turn on Flash.
   const TURN = { input: 1_100, output: 347 };
+
+  it("applies a fractional margin without float noise", () => {
+    // 110 micros × 1.1 is exactly 121, not 122.
+    expect(
+      chargeFor("openai/o4-mini", 100, 0, { ...USD, marginBp: 11_000 }).charged
+        .amount
+    ).toBe(121);
+  });
 
   it("charges a USD deployment a fraction of a cent for one turn", () => {
     const { providerCost: cost, charged } = chargeFor(

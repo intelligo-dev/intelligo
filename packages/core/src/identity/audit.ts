@@ -28,10 +28,15 @@ export type RecordMemoryAuditInput = {
   reason?: string;
 };
 
+/**
+ * `writer` is the transaction of the mutation being audited, so the
+ * change and its record commit or fail together.
+ */
 export async function recordMemoryAudit(
-  input: RecordMemoryAuditInput
+  input: RecordMemoryAuditInput,
+  writer: Pick<typeof db, "insert"> = db
 ): Promise<UserMemoryAuditRow> {
-  const [row] = await db
+  const [row] = await writer
     .insert(userMemoryAudit)
     .values({
       id: crypto.randomUUID(),

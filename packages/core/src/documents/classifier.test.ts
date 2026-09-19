@@ -33,6 +33,17 @@ describe("document classifier registry", () => {
     });
   });
 
+  it("matches a pattern registered with capitals", () => {
+    registerDocumentPatterns({
+      productSlug: "caps",
+      agentLabel: "Caps",
+      patterns: ["Quarterly Report"],
+    });
+    expect(classifyDocumentTitle("the quarterly report, Q3").productSlug).toBe(
+      "caps"
+    );
+  });
+
   it("matches a title that carries any one of an entry's patterns", () => {
     // ANY, not ALL: a product registers the several shapes its titles
     // take, and a document carries one of them.

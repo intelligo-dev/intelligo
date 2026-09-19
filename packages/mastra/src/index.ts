@@ -173,7 +173,8 @@ export async function streamWithExecution<T extends NativeResult>(
   if (!execution.allowed) {
     throw new ExecutionRefusedError(
       execution.reason ?? "Execution refused",
-      execution.id
+      execution.id,
+      execution.code
     );
   }
 

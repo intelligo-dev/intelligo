@@ -68,10 +68,13 @@ export type ExecutionPorts = {
   ) => Promise<EntitlementDecision>;
 
   /**
-   * Record real usage and release the hold. Called at most once per
-   * execution: the lifecycle claims the row by compare-and-swap before
-   * calling this and never retries it, so the port itself need not be
-   * idempotent (the reference binding, `recordTokenUsage`, is not).
+   * Record real usage and release the hold. Must be idempotent per
+   * `requestId`: the lifecycle's compare-and-swap lets one complete()
+   * through, but `reconcile()` re-runs settlement for a row stuck in
+   * `settling`, and two reconciles — or a reconcile and a settlement
+   * still in flight — can reach it for the same request. A second call
+   * returns the first charge and debits nothing (billing's
+   * `recordTokenUsage` does this under the workspace lock).
    */
   settleUsage?: (
     settlement: UsageSettlement

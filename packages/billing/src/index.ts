@@ -149,10 +149,11 @@ export {
   createSubscriptionCheckout,
   createCreditCheckout,
   createBillingPortal,
+  cancelWorkspaceSubscription,
   getCheckoutSession,
-  getBillingOverview,
   creditBundleSchema,
 } from "./checkout";
+export { getBillingOverview } from "./billing-overview";
 export type {
   BillingServiceErrorCode,
   CheckoutSessionResult,
@@ -163,13 +164,15 @@ export type {
   CheckoutSessionStatus,
   CheckoutSessionSummary,
   GetCheckoutSessionInput,
+} from "./checkout";
+export type {
   BillingRole,
   BillingOverviewMember,
   BillingOverviewAdmin,
   BillingOverviewOwner,
   BillingOverview,
   GetBillingOverviewInput,
-} from "./checkout";
+} from "./billing-overview";
 
 // Changing the billing settings after first boot, the rate-limit bucket
 // a caller gets by default, and the UTC billing period

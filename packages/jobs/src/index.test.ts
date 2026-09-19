@@ -10,7 +10,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  execute: vi.fn(),
+  claimed: vi.fn(),
+  select: vi.fn(),
   insertValues: vi.fn(),
   insert: vi.fn(),
   updateWhere: vi.fn(),
@@ -20,7 +21,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@intelligo-dev/core/db", () => ({
   db: {
-    execute: mocks.execute,
+    select: mocks.select,
     insert: mocks.insert,
     update: mocks.update,
   },
@@ -40,6 +41,7 @@ vi.mock("./db/schema", () => ({
     id: "id",
     status: "status",
     attempts: "attempts",
+    runAt: "runAt",
     finishedAt: "finishedAt",
   },
 }));
@@ -48,6 +50,10 @@ vi.mock("drizzle-orm", () => ({
   and: vi.fn((...args: unknown[]) => ({ op: "and", args })),
   eq: vi.fn((col: unknown, val: unknown) => ({ op: "eq", col, val })),
   lte: vi.fn((col: unknown, val: unknown) => ({ op: "lte", col, val })),
+  lt: vi.fn((col: unknown, val: unknown) => ({ op: "lt", col, val })),
+  or: vi.fn((...args: unknown[]) => ({ op: "or", args })),
+  desc: vi.fn((col: unknown) => ({ op: "desc", col })),
+  inArray: vi.fn((col: unknown, val: unknown) => ({ op: "inArray", col, val })),
   sql: Object.assign(
     (strings: TemplateStringsArray, ...values: unknown[]) => ({
       sql: strings.join("?"),
@@ -80,11 +86,12 @@ function job(overrides: Partial<FakeJob> = {}): FakeJob {
   };
 }
 
-/** set() payload of the update for a given job id. */
+/** set() payload of the last update for a given job id — its outcome. */
 function setFor(id: string) {
-  const idx = mocks.updateWhere.mock.calls.findIndex(
-    (c) => (c[0] as { val?: string }).val === id
+  const ids = mocks.updateWhere.mock.calls.map(
+    (c) => (c[0] as { val?: string }).val
   );
+  const idx = ids.lastIndexOf(id);
   return idx >= 0
     ? (mocks.updateSet.mock.calls[idx]![0]! as Record<string, unknown>)
     : undefined;
@@ -96,7 +103,18 @@ beforeEach(() => {
   mocks.insertValues.mockResolvedValue(undefined);
   mocks.update.mockReturnValue({ set: mocks.updateSet });
   mocks.updateSet.mockReturnValue({ where: mocks.updateWhere });
-  mocks.updateWhere.mockResolvedValue(undefined);
+  // The claim is the one update that ends in `.returning()`.
+  mocks.updateWhere.mockImplementation(() =>
+    Object.assign(Promise.resolve(undefined), { returning: mocks.claimed })
+  );
+  const chain = {
+    from: () => chain,
+    where: () => chain,
+    orderBy: () => chain,
+    limit: () => chain,
+    for: () => chain,
+  };
+  mocks.select.mockReturnValue(chain);
 });
 
 describe("enqueue", () => {
@@ -134,7 +152,7 @@ describe("enqueue", () => {
 
 describe("drain", () => {
   it("marks a handled job succeeded", async () => {
-    mocks.execute.mockResolvedValue({ rows: [job()] });
+    mocks.claimed.mockResolvedValue([job()]);
     const handler = vi.fn().mockResolvedValue(undefined);
 
     const result = await drain({ "credits.cleanup": handler });
@@ -148,17 +166,18 @@ describe("drain", () => {
   });
 
   it("returns an unknown kind to pending without burning an attempt", async () => {
-    mocks.execute.mockResolvedValue({ rows: [job({ kind: "unknown.kind" })] });
+    mocks.claimed.mockResolvedValue([job({ kind: "unknown.kind" })]);
 
     const result = await drain({ "credits.cleanup": vi.fn() });
 
     expect(result.unhandled).toEqual(["unknown.kind"]);
     expect(result.succeeded).toBe(0);
     expect(setFor("j-1")).toMatchObject({ status: "pending" });
+    expect((setFor("j-1")!.runAt as Date).getTime()).toBeGreaterThan(Date.now());
   });
 
   it("reschedules a failing job with backoff while attempts remain", async () => {
-    mocks.execute.mockResolvedValue({ rows: [job({ attempts: 1 })] });
+    mocks.claimed.mockResolvedValue([job({ attempts: 1 })]);
 
     const result = await drain({
       "credits.cleanup": vi.fn().mockRejectedValue(new Error("upstream down")),
@@ -172,9 +191,9 @@ describe("drain", () => {
   });
 
   it("gives up once attempts reach maxAttempts", async () => {
-    mocks.execute.mockResolvedValue({
-      rows: [job({ attempts: 3, maxAttempts: 3 })],
-    });
+    mocks.claimed.mockResolvedValue(
+      [job({ attempts: 3, maxAttempts: 3 })],
+    );
 
     await drain({
       "credits.cleanup": vi.fn().mockRejectedValue(new Error("still down")),
@@ -186,9 +205,9 @@ describe("drain", () => {
   });
 
   it("keeps processing the batch after one handler throws", async () => {
-    mocks.execute.mockResolvedValue({
-      rows: [job({ id: "j-1" }), job({ id: "j-2" })],
-    });
+    mocks.claimed.mockResolvedValue(
+      [job({ id: "j-1" }), job({ id: "j-2" })],
+    );
     const handler = vi
       .fn()
       .mockRejectedValueOnce(new Error("boom"))
@@ -201,7 +220,7 @@ describe("drain", () => {
   });
 
   it("truncates a very long error message", async () => {
-    mocks.execute.mockResolvedValue({ rows: [job()] });
+    mocks.claimed.mockResolvedValue([job()]);
 
     await drain({
       "credits.cleanup": vi.fn().mockRejectedValue(new Error("x".repeat(4000))),
@@ -211,7 +230,7 @@ describe("drain", () => {
   });
 
   it("reports an empty batch without touching handlers", async () => {
-    mocks.execute.mockResolvedValue({ rows: [] });
+    mocks.claimed.mockResolvedValue([]);
     const handler = vi.fn();
 
     const result = await drain({ "credits.cleanup": handler });

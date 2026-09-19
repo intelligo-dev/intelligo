@@ -38,6 +38,7 @@ import {
 } from "@intelligo-dev/core/money";
 import { getBillingSettings } from "./billing-settings";
 import { getWorkspaceBilling } from "./queries";
+import type { BillingReader } from "./reader";
 import type {
   QuotaCheckResult,
   QuotaEstimate,
@@ -88,24 +89,44 @@ type Pools = {
   rate: BillingRate;
 };
 
-async function readPools(workspaceId: string): Promise<Pools> {
-  const [billing, monthly, trial, settings] = await Promise.all([
-    getWorkspaceBilling(workspaceId),
-    getCurrentMonthlyUsage(workspaceId),
-    getActiveTrialGrant(workspaceId),
-    getBillingSettings(),
-  ]);
+/**
+ * Reads the pools through `reader`: inside admission that is the
+ * transaction holding the workspace lock, so the reads share its
+ * connection and its snapshot instead of taking a second one from the
+ * pool while the first waits.
+ *
+ * A ledger row in another currency than the deployment's is not
+ * spendable (see `updateBillingSettings`): its pool reads as empty, and
+ * a period row in another currency leaves no allowance.
+ */
+async function readPools(
+  workspaceId: string,
+  reader: BillingReader = db
+): Promise<Pools> {
+  const settings = await getBillingSettings();
+  const billing = await getWorkspaceBilling(workspaceId, reader);
+  const monthly = await getCurrentMonthlyUsage(workspaceId, reader);
+  const trial = await getActiveTrialGrant(workspaceId, reader);
 
   const planSlug = billing.plan?.slug ?? "free";
+  const foreign = (rowCurrency: string | null | undefined) =>
+    rowCurrency != null && rowCurrency !== settings.currency;
 
-  const pooled = (micros: number | null | undefined): Money =>
-    money(Math.max(0, micros ?? 0), settings.currency);
+  const pooled = (
+    micros: number | null | undefined,
+    rowCurrency: string | null | undefined
+  ): Money =>
+    foreign(rowCurrency)
+      ? zero(settings.currency)
+      : money(Math.max(0, micros ?? 0), settings.currency);
 
   const allowance = getPlanMonthlyAllowance(planSlug, settings.currency);
-  const used = pooled(monthly.allowanceUsedMicros);
+  const used = foreign(monthly.currency)
+    ? allowance
+    : pooled(monthly.allowanceUsedMicros, monthly.currency);
   const planLeft = subtract(allowance, used);
   const trialRemaining = trial.active
-    ? pooled(trial.remainingMicros)
+    ? pooled(trial.remainingMicros, trial.currency)
     : zero(settings.currency);
 
   return {
@@ -114,7 +135,10 @@ async function readPools(workspaceId: string): Promise<Pools> {
     allowance,
     used,
     planRemaining: isNegative(planLeft) ? zero(settings.currency) : planLeft,
-    topupBalance: pooled(billing.creditBalance.balanceMicros),
+    topupBalance: pooled(
+      billing.creditBalance.balanceMicros,
+      billing.creditBalance.currency
+    ),
     trialRemaining,
     rate: {
       currency: settings.currency,
@@ -203,7 +227,7 @@ export async function reserveQuota(
       // Only now read the balances: every settlement holds this same
       // lock for the duration of its writes, so what we read here cannot
       // be consumed between this snapshot and our reservation.
-      const pools = await readPools(workspaceId);
+      const pools = await readPools(workspaceId, tx);
 
       const reservedRows = await tx
         .select({
@@ -413,25 +437,25 @@ export async function releaseReservation(requestId: string): Promise<void> {
  * Record token consumption for an AI request and charge it.
  *
  * One transaction, serialized per workspace by the same advisory lock
- * `checkQuota` takes for admission:
+ * `reserveQuota` takes for admission:
  *
- * 1. Insert the `usage_records` row (the full charge, for reporting).
- * 2. Charge the plan allowance first: `monthly_usage.charged_mnt` grows
- *    by at most what is left of the allowance this period.
- * 3. Send the remainder — if any — to exactly one of the trial grant
- *    (when the request was admitted on trial credits and the grant
- *    still covers it) or the top-up balance. Never both, and never the
- *    part the allowance already funded: admission sums the three pools,
- *    so charging two of them for one turn would count it twice.
- * 4. Settle the admission reservation by `requestId`.
+ * 1. A request that already has a `usage_records` row was settled: its
+ *    charge is returned and nothing is written again, so a retry, or
+ *    `executions.reconcile()` racing a late settlement, charges once.
+ * 2. Insert the `usage_records` row (the full charge, for reporting).
+ * 3. Charge the plan allowance first: `monthly_usage.allowance_used_micros`
+ *    grows by at most what is left of the allowance this period.
+ * 4. Take the remainder in admission's order: the top-up balance up to
+ *    what it holds, then the trial grant up to what it holds. A shortfall
+ *    neither covers is recorded against the top-up, whose balance stops
+ *    at zero. Each pool is debited only its own share, so
+ *    `charged === plan + topup + trial` and no share is counted twice.
+ * 5. Settle the admission reservation by `requestId`.
  *
- * The `monthly_usage` and `trial_credits` rows are read `FOR UPDATE`
- * and every decrement is SQL arithmetic, so nothing here is
- * read-modify-write in JavaScript.
- *
- * Not idempotent per `requestId`: calling this twice for one request
- * records and charges twice. The execution lifecycle's compare-and-swap
- * is what guarantees a single call per execution.
+ * The `monthly_usage`, `credit_balances` and `trial_credits` rows are
+ * read `FOR UPDATE` and every decrement is SQL arithmetic, so nothing
+ * here is read-modify-write in JavaScript. Pools in another currency
+ * than the deployment's are left untouched.
  */
 export async function recordTokenUsage(
   params: RecordUsageParams
@@ -468,6 +492,11 @@ export async function recordTokenUsage(
       sql`SELECT pg_advisory_xact_lock(hashtext(${params.workspaceId}))`
     );
 
+    const prior = requestId
+      ? await priorSettlement(tx, params.workspaceId, requestId, rate.currency)
+      : null;
+    if (prior) return prior;
+
     await tx.insert(usageRecords).values({
       id: crypto.randomUUID(),
       workspaceId: params.workspaceId,
@@ -494,7 +523,7 @@ export async function recordTokenUsage(
 
     // The plan allowance funds the charge first. Make sure the period
     // row exists, lock it, and take only what is left of the allowance.
-    const billing = await getWorkspaceBilling(params.workspaceId);
+    const billing = await getWorkspaceBilling(params.workspaceId, tx);
     const allowance = getPlanMonthlyAllowance(
       billing.plan?.slug ?? "free",
       rate.currency
@@ -559,56 +588,9 @@ export async function recordTokenUsage(
         )
       );
 
-    let trial = zero(rate.currency);
-    let topup = zero(rate.currency);
-
-    if (!isZero(remainder)) {
-      // Lock the trial row (if any) so the pool decision is made once.
-      const trialRow = await tx
-        .select()
-        .from(trialCredits)
-        .where(
-          and(
-            eq(trialCredits.workspaceId, params.workspaceId),
-            eq(trialCredits.status, "active")
-          )
-        )
-        .for("update")
-        .limit(1);
-
-      const trialHasSufficient =
-        params.usingTrialCredits &&
-        trialRow.length > 0 &&
-        (trialRow[0]?.remainingMicros ?? 0) >= remainder.amount;
-
-      if (trialHasSufficient) {
-        trial = remainder;
-        await tx
-          .update(trialCredits)
-          .set({
-            remainingMicros: sql`GREATEST(${trialCredits.remainingMicros} - ${remainder.amount}, 0)`,
-            usedMicros: sql`${trialCredits.usedMicros} + ${remainder.amount}`,
-            creditsRemaining: sql`GREATEST(${trialCredits.creditsRemaining} - ${params.totalTokens}, 0)`,
-            creditsUsed: sql`${trialCredits.creditsUsed} + ${params.totalTokens}`,
-            status: sql`CASE WHEN GREATEST(${trialCredits.remainingMicros} - ${remainder.amount}, 0) <= 0 THEN 'depleted' ELSE ${trialCredits.status} END`,
-            depletedAt: sql`CASE WHEN GREATEST(${trialCredits.remainingMicros} - ${remainder.amount}, 0) <= 0 THEN NOW() ELSE ${trialCredits.depletedAt} END`,
-          })
-          .where(eq(trialCredits.workspaceId, params.workspaceId));
-      } else {
-        // Top-up balance. GREATEST keeps the stored balance at zero when
-        // the charge exceeds it; total_used_micros still records the
-        // full remainder so the shortfall is visible.
-        topup = remainder;
-        await tx
-          .update(creditBalances)
-          .set({
-            balanceMicros: sql`GREATEST(${creditBalances.balanceMicros} - ${remainder.amount}, 0)`,
-            totalUsedMicros: sql`${creditBalances.totalUsedMicros} + ${remainder.amount}`,
-            updatedAt: new Date(),
-          })
-          .where(eq(creditBalances.workspaceId, params.workspaceId));
-      }
-    }
+    const { topup, trial } = isZero(remainder)
+      ? { topup: zero(rate.currency), trial: zero(rate.currency) }
+      : await debitRemainder(tx, params, remainder);
 
     // Settle the admission reservation so it stops counting against
     // the workspace's available balance.
@@ -619,14 +601,135 @@ export async function recordTokenUsage(
         .where(eq(creditReservations.requestId, requestId));
     }
 
-    return { charged, plan, topup, trial };
+    return { charged, plan, topup, trial, replayed: false };
   });
+
+  if (outcome.replayed) return outcome;
 
   checkNotificationTriggers(params.workspaceId).catch((err) =>
     console.error("[Notifications] Error checking triggers:", err)
   );
 
   return outcome;
+}
+
+type SettlementTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * The charge already recorded for this request, as a replay that debits
+ * nothing; null when the request has not been settled.
+ */
+async function priorSettlement(
+  tx: SettlementTx,
+  workspaceId: string,
+  requestId: string,
+  fallbackCurrency: string
+): Promise<(SettlementOutcome & { replayed: true }) | null> {
+  const settled = await tx
+    .select({
+      chargedMicros: usageRecords.chargedMicros,
+      currency: usageRecords.currency,
+    })
+    .from(usageRecords)
+    .where(
+      and(
+        eq(usageRecords.workspaceId, workspaceId),
+        eq(usageRecords.requestId, requestId)
+      )
+    )
+    .limit(1);
+  const prior = settled[0];
+  if (!prior) return null;
+  const currency = prior.currency ?? fallbackCurrency;
+  return {
+    charged: money(Number(prior.chargedMicros ?? 0), currency),
+    plan: zero(currency),
+    topup: zero(currency),
+    trial: zero(currency),
+    replayed: true,
+  };
+}
+
+/**
+ * Takes what the allowance did not fund in admission's order: the
+ * top-up up to its balance, then the trial up to its grant. A shortfall
+ * neither holds is recorded against the top-up, whose balance stops at
+ * zero, so it stays visible in `total_used_micros`.
+ */
+async function debitRemainder(
+  tx: SettlementTx,
+  params: RecordUsageParams,
+  remainder: Money
+): Promise<{ topup: Money; trial: Money }> {
+  const unit = remainder.currency;
+  const balanceRow = await tx
+    .select({ balanceMicros: creditBalances.balanceMicros })
+    .from(creditBalances)
+    .where(
+      and(
+        eq(creditBalances.workspaceId, params.workspaceId),
+        eq(creditBalances.currency, unit)
+      )
+    )
+    .for("update")
+    .limit(1);
+  const trialRow = await tx
+    .select({ remainingMicros: trialCredits.remainingMicros })
+    .from(trialCredits)
+    .where(
+      and(
+        eq(trialCredits.workspaceId, params.workspaceId),
+        eq(trialCredits.status, "active"),
+        eq(trialCredits.currency, unit)
+      )
+    )
+    .for("update")
+    .limit(1);
+
+  const held = (micros: number | null | undefined) =>
+    money(Math.max(0, Number(micros ?? 0)), unit);
+  const lesser = (a: Money, b: Money) => (compare(a, b) <= 0 ? a : b);
+
+  const fromTopup = lesser(remainder, held(balanceRow[0]?.balanceMicros));
+  const trial = trialRow[0]
+    ? lesser(subtract(remainder, fromTopup), held(trialRow[0].remainingMicros))
+    : zero(unit);
+  const topup = subtract(remainder, trial);
+
+  if (!isZero(trial)) {
+    await tx
+      .update(trialCredits)
+      .set({
+        remainingMicros: sql`GREATEST(${trialCredits.remainingMicros} - ${trial.amount}, 0)`,
+        usedMicros: sql`${trialCredits.usedMicros} + ${trial.amount}`,
+        creditsRemaining: sql`GREATEST(${trialCredits.creditsRemaining} - ${params.totalTokens}, 0)`,
+        creditsUsed: sql`${trialCredits.creditsUsed} + ${params.totalTokens}`,
+        status: sql`CASE WHEN GREATEST(${trialCredits.remainingMicros} - ${trial.amount}, 0) <= 0 THEN 'depleted' ELSE ${trialCredits.status} END`,
+        depletedAt: sql`CASE WHEN GREATEST(${trialCredits.remainingMicros} - ${trial.amount}, 0) <= 0 THEN NOW() ELSE ${trialCredits.depletedAt} END`,
+      })
+      .where(
+        and(
+          eq(trialCredits.workspaceId, params.workspaceId),
+          eq(trialCredits.status, "active")
+        )
+      );
+  }
+  if (!isZero(topup)) {
+    await tx
+      .update(creditBalances)
+      .set({
+        balanceMicros: sql`GREATEST(${creditBalances.balanceMicros} - ${topup.amount}, 0)`,
+        totalUsedMicros: sql`${creditBalances.totalUsedMicros} + ${topup.amount}`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(creditBalances.workspaceId, params.workspaceId),
+          eq(creditBalances.currency, unit)
+        )
+      );
+  }
+  return { topup, trial };
 }
 
 /**
