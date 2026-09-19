@@ -42,7 +42,7 @@
     "pg": "8.18.0"
   },
   "devDependencies": {
-    "@types/node": "^22.20.3",
+    "@types/node": "^26.6.1",
     "@types/pg": "^8.23.1",
     "typescript": "^5.9.3"
   },

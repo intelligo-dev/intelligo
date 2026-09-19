@@ -37,7 +37,7 @@
     "@intelligo-dev/core": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.20.3",
+    "@types/node": "^26.6.1",
     "drizzle-orm": "^0.45.2",
     "typescript": "^5.9.3"
   },

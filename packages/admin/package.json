@@ -44,7 +44,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "@types/node": "^22.20.3",
+    "@types/node": "^26.6.1",
     "@types/react": "19.2.18",
     "drizzle-orm": "^0.45.2",
     "react": "^19.3.0",

@@ -28,7 +28,7 @@
     "@streamdown/code": "^1.1.1",
     "@streamdown/math": "^1.0.2",
     "@streamdown/mermaid": "^1.0.2",
-    "@types/node": "^22.20.3",
+    "@types/node": "^26.6.1",
     "@types/papaparse": "^5.5.2",
     "@types/react": "19.2.18",
     "@types/react-dom": "^19.3.0",
