@@ -269,6 +269,9 @@
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+/* the palette's field is the dialog's only control and takes focus as it
+   opens: the caret and the dialog around it say where focus is */
+[cmdk-input]:focus-visible { outline: none; }
 
 /* first thing in the tab order, on screen only once it is focused */
 .skip-link {

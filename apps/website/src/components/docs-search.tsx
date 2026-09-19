@@ -1,54 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import { Command } from "cmdk";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { SearchIcon } from "lucide-react";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 /**
- * Search over the docs: every page, and every h2/h3 on it, from the
- * index the build writes to /docs/search.json. Opened by the button —
- * which is what exists on a phone — or by ⌘K / Ctrl-K, or `/` when the
- * reader is not typing somewhere. The index is fetched the first time
- * the dialog opens, not with the page.
+ * Search over the docs, from the nav of every page. Opened by the button
+ * — an icon below `lg`, which is what exists on a phone — or by ⌘K /
+ * Ctrl-K, or `/` when the reader is not typing somewhere. The dialog is
+ * its own chunk, loaded the first time it opens. One instance per page:
+ * it owns the key listener.
  */
-
-type Row = {
-  href: string;
-  title: string;
-  section: string;
-  description: string;
-  headings: { slug: string; text: string }[];
-};
-
-/**
- * cmdk's own scorer is fuzzy over the whole value: against a sentence-long
- * description nearly any word "matches", and the best hit for `artifact`
- * was the first page. Here every word typed has to be in the entry, and a
- * hit in the title or heading outranks one in the description.
- */
-function score(value: string, search: string, keywords?: string[]): number {
-  const name = value.toLowerCase();
-  const rest = (keywords ?? []).join(" ").toLowerCase();
-  let total = 0;
-  for (const word of search.toLowerCase().split(/\s+/).filter(Boolean)) {
-    if (name.startsWith(word)) total += 1;
-    else if (name.includes(word)) total += 0.7;
-    else if (rest.includes(word)) total += 0.2;
-    else return 0;
-  }
-  return total;
-}
+const DocsSearchDialog = lazy(() => import("@/components/docs-search-dialog"));
 
 export function DocsSearch({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
-  const [rows, setRows] = useState<Row[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [wanted, setWanted] = useState(false);
   const [mac, setMac] = useState(false);
 
   useEffect(() => {
@@ -60,9 +26,11 @@ export function DocsSearch({ className }: { className?: string }) {
           /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName));
       if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
+        setWanted(true);
         setOpen((o) => !o);
       } else if (e.key === "/" && !typing) {
         e.preventDefault();
+        setWanted(true);
         setOpen(true);
       }
     };
@@ -70,129 +38,33 @@ export function DocsSearch({ className }: { className?: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  useEffect(() => {
-    if (!open || rows) return;
-    fetch("/docs/search.json")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.statusText))))
-      .then((data: Row[]) => setRows(data))
-      .catch(() => setFailed(true));
-  }, [open, rows]);
-
-  const sections = useMemo(() => {
-    const by = new Map<string, Row[]>();
-    for (const r of rows ?? [])
-      by.set(r.section, [...(by.get(r.section) ?? []), r]);
-    return [...by.entries()];
-  }, [rows]);
-
-  const go = (href: string) => {
-    setOpen(false);
-    location.assign(href);
-  };
-
-  const item =
-    "flex cursor-pointer flex-col gap-0.5 rounded-md px-3 py-2 text-[0.9rem] text-foreground/80 data-[selected=true]:bg-accent data-[selected=true]:text-foreground";
-
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setWanted(true);
+          setOpen(true);
+        }}
+        aria-label="Search docs"
         aria-keyshortcuts="Meta+K Control+K /"
         className={cn(
-          "flex h-9 items-center gap-2 rounded-lg border border-input bg-background px-3 text-[0.82rem] text-muted-foreground transition-colors duration-fast hover:border-foreground/30 hover:text-foreground",
+          "flex size-9 items-center justify-center gap-2 rounded-lg border border-transparent text-[0.82rem] text-muted-foreground transition-colors duration-fast hover:bg-accent hover:text-foreground lg:w-auto lg:justify-start lg:border-input lg:bg-background lg:px-3 lg:hover:border-foreground/30 lg:hover:bg-background",
           className
         )}
       >
-        <SearchIcon aria-hidden="true" className="size-3.5" />
-        <span>Search docs</span>
-        <kbd className="mono ml-2 hidden rounded border border-border px-1.5 text-[0.7rem] text-muted-foreground sm:inline">
+        <SearchIcon aria-hidden="true" className="size-4 lg:size-3.5" />
+        <span className="hidden lg:inline">Search docs</span>
+        <kbd className="mono ml-2 hidden rounded border border-border px-1.5 text-[0.7rem] text-muted-foreground lg:inline">
           {mac ? "⌘K" : "Ctrl K"}
         </kbd>
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          showCloseButton={false}
-          className="top-[12vh] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-xl"
-        >
-          <DialogTitle className="sr-only">Search the docs</DialogTitle>
-          <DialogDescription className="sr-only">
-            Type to filter pages and sections; Enter opens the selection.
-          </DialogDescription>
-          <Command label="Search the docs" loop filter={score}>
-            <div className="flex items-center gap-2 border-b border-border px-4">
-              <SearchIcon
-                aria-hidden="true"
-                className="size-4 shrink-0 text-muted-foreground"
-              />
-              <Command.Input
-                autoFocus
-                placeholder="Search pages and sections…"
-                className="h-12 w-full bg-transparent text-[0.95rem] text-foreground outline-none placeholder:text-muted-foreground"
-              />
-            </div>
-            <Command.List className="max-h-[min(60vh,26rem)] overflow-y-auto p-2">
-              {!rows && !failed && (
-                <Command.Loading>
-                  <p className="px-3 py-6 text-center text-[0.85rem] text-muted-foreground">
-                    Loading the index…
-                  </p>
-                </Command.Loading>
-              )}
-              {failed && (
-                <p className="px-3 py-6 text-center text-[0.85rem] text-destructive">
-                  The search index did not load. The sidebar lists every page.
-                </p>
-              )}
-              {rows && (
-                <Command.Empty className="px-3 py-6 text-center text-[0.85rem] text-muted-foreground">
-                  Nothing in the docs matches that.
-                </Command.Empty>
-              )}
-              {sections.map(([section, pages]) => (
-                <Command.Group
-                  key={section}
-                  heading={section}
-                  className="[&_[cmdk-group-heading]]:mono [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:text-[0.7rem] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-muted-foreground"
-                >
-                  {pages.map((p) => (
-                    <div key={p.href}>
-                      <Command.Item
-                        value={`${p.title} — ${p.href}`}
-                        keywords={[p.description]}
-                        onSelect={() => go(p.href)}
-                        className={item}
-                      >
-                        <span className="font-medium text-foreground">
-                          {p.title}
-                        </span>
-                        <span className="line-clamp-1 text-[0.8rem] text-muted-foreground">
-                          {p.description}
-                        </span>
-                      </Command.Item>
-                      {p.headings.map((h) => (
-                        <Command.Item
-                          key={h.slug}
-                          value={`${h.text} — ${p.href}#${h.slug}`}
-                          keywords={[p.title]}
-                          onSelect={() => go(`${p.href}#${h.slug}`)}
-                          className={cn(item, "pl-7 text-[0.85rem]")}
-                        >
-                          <span>
-                            <span className="text-muted-foreground"># </span>
-                            {h.text}
-                          </span>
-                        </Command.Item>
-                      ))}
-                    </div>
-                  ))}
-                </Command.Group>
-              ))}
-            </Command.List>
-          </Command>
-        </DialogContent>
-      </Dialog>
+      {wanted && (
+        <Suspense fallback={null}>
+          <DocsSearchDialog open={open} onOpenChange={setOpen} />
+        </Suspense>
+      )}
     </>
   );
 }

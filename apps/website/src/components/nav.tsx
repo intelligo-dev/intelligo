@@ -3,6 +3,7 @@ import { MenuIcon, MoonIcon, SunIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { NAV, SITE } from "@/lib/site";
+import { DocsSearch } from "@/components/docs-search";
 import { GitHubStarButton } from "@/components/elements/github-star-button";
 
 /**
@@ -128,6 +129,7 @@ export function Nav({ current }: { current?: string }) {
             ))}
             <span className="mx-2 h-5 w-px bg-border" aria-hidden="true" />
           </div>
+          <DocsSearch />
           <button
             type="button"
             onClick={toggleTheme}
