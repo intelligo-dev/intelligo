@@ -1,6 +1,6 @@
 # intelligo
 
-> Open-source application framework for vertical AI SaaS — auth, workspaces, billing, credits and execution accounting. You build the agent; your AI framework stays native.
+> Open-source framework for AI SaaS: sign-up, teams, plans, credits, per-run cost and an admin console. Pages you own, packages you upgrade. Your agent stays yours.
 
 ## Getting started
 
@@ -55,6 +55,7 @@
 
 ## More
 
+- [Product](https://intelligo.dev/product): every service and surface, under the job it takes off you.
 - [Blocks](https://intelligo.dev/blocks): every registry item, rendered live from its installed source.
 - [Components](https://intelligo.dev/components): the base-nova design system catalog.
 - [Hosted registry](https://intelligo.dev/r/intelligo.json): install any item with the shadcn CLI.

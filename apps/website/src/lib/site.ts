@@ -4,13 +4,13 @@ const PUBLISHED = proof.published as string;
 
 export const SITE = {
   name: "intelligo",
-  title: "Intelligo — the application framework for vertical AI SaaS",
+  title: "Intelligo — everything your AI product needs, except the AI",
   /** ≤160 characters: what search engines and link previews show. */
   description:
-    "Open-source application framework for vertical AI SaaS — auth, workspaces, billing, credits and execution accounting. You build the agent; your AI framework stays native.",
+    "Open-source framework for AI SaaS: sign-up, teams, plans, credits, per-run cost and an admin console. Pages you own, packages you upgrade. Your agent stays yours.",
   /** The long form, for the footer and the social card. */
   tagline:
-    "You build the agent. Intelligo is everything around it — auth, workspaces, billing, credits, execution accounting, pages and operations — shipped as versioned packages and consumer-owned source. Your AI framework stays native. Open source, Apache-2.0.",
+    "You build the agent. Intelligo is everything around it — sign-up, teams, plans, credits, per-run cost and an admin console — as pages you own and packages you upgrade. Your AI framework stays native. Open source, Apache-2.0.",
   github: "https://github.com/intelligo-dev/intelligo",
   githubOwner: "intelligo-dev",
   githubRepo: "intelligo",
@@ -45,16 +45,21 @@ export const SITE = {
 } as const;
 
 /**
- * Site navigation: what a reader comes back for — build with it (Docs),
- * see and install it (Blocks, Components). /architecture and /why are
- * read once, and are reached from the homepage's sections and the footer.
- * An entry is active on its own path and everything under it.
+ * Site navigation, by what a reader is asking: what it does (Product),
+ * why not build or buy it another way (Why), how to build with it (Docs),
+ * and the pages and components themselves (UI). An entry is active on its
+ * own path and everything under it, and on any path in `also`.
  */
-export const NAV = [
+export const NAV: readonly {
+  href: string;
+  label: string;
+  also?: readonly string[];
+}[] = [
+  { href: "/product", label: "Product" },
+  { href: "/why", label: "Why" },
   { href: "/docs", label: "Docs" },
-  { href: "/blocks", label: "Blocks" },
-  { href: "/components", label: "Components" },
-] as const;
+  { href: "/ui", label: "UI", also: ["/blocks", "/components"] },
+];
 
 export const FOOTER: {
   title: string;
@@ -63,15 +68,17 @@ export const FOOTER: {
   {
     title: "Product",
     links: [
+      { href: "/product", label: "What it does" },
       { href: "/why", label: "Why Intelligo" },
       { href: "/why#compare", label: "Compare" },
       { href: "/architecture", label: "Architecture" },
     ],
   },
   {
-    title: "Registry",
+    title: "UI",
     links: [
-      { href: "/blocks", label: "Blocks" },
+      { href: "/ui", label: "Intelligo UI" },
+      { href: "/blocks", label: "Pages" },
       { href: "/components", label: "Components" },
       { href: "/r/intelligo.json", label: "Hosted registry" },
     ],

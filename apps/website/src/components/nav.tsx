@@ -63,10 +63,12 @@ export function Nav({ current }: { current?: string }) {
     };
   }, [open]);
 
-  /** `/docs` is active on `/docs/cli` too; `/` only on itself. */
-  const isActive = (href: string) =>
+  /** `/docs` is active on `/docs/cli` too, and UI on the galleries under it. */
+  const isActive = (entry: (typeof NAV)[number]) =>
     current !== undefined &&
-    (current === href || current.startsWith(`${href}/`));
+    [entry.href, ...(entry.also ?? [])].some(
+      (href) => current === href || current.startsWith(`${href}/`)
+    );
 
   const measure = "mx-auto max-w-7xl px-6 md:px-10";
 
@@ -102,10 +104,10 @@ export function Nav({ current }: { current?: string }) {
               <a
                 key={n.href}
                 href={n.href}
-                aria-current={isActive(n.href) ? "page" : undefined}
+                aria-current={isActive(n) ? "page" : undefined}
                 className={cn(
                   "rounded-lg px-3 py-2 text-[0.85rem] text-muted-foreground no-underline transition-colors duration-fast hover:bg-accent hover:text-foreground",
-                  isActive(n.href) && "bg-accent font-medium text-foreground"
+                  isActive(n) && "bg-accent font-medium text-foreground"
                 )}
               >
                 {n.label}
@@ -160,11 +162,11 @@ export function Nav({ current }: { current?: string }) {
             <a
               key={n.href}
               href={n.href}
-              aria-current={isActive(n.href) ? "page" : undefined}
+              aria-current={isActive(n) ? "page" : undefined}
               onClick={() => setOpen(false)}
               className={cn(
                 "py-3 text-[0.95rem] text-muted-foreground no-underline hover:text-foreground",
-                isActive(n.href) && "font-medium text-foreground"
+                isActive(n) && "font-medium text-foreground"
               )}
             >
               {n.label}

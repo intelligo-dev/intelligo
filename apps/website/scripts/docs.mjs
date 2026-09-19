@@ -731,6 +731,7 @@ export function generateLlmsTxt(siteRoot) {
       .filter(Boolean)
       .join("\n") +
     "\n## More\n\n" +
+    `- [Product](${SITE_URL}/product): every service and surface, under the job it takes off you.\n` +
     `- [Blocks](${SITE_URL}/blocks): every registry item, rendered live from its installed source.\n` +
     `- [Components](${SITE_URL}/components): the base-nova design system catalog.\n` +
     `- [Hosted registry](${SITE_URL}/r/intelligo.json): install any item with the shadcn CLI.\n` +

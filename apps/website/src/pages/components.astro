@@ -31,7 +31,7 @@ const rem = parseFloat(TOKENS.light.radius);
 const FONTS = [
   ["--font-sans", "Geist", "font-sans", "Workspaces, credits and every page around your agent."],
   ["--font-mono", "Geist Mono", "font-mono", installCommand("chat")],
-  ["--font-heading", "Outfit · site only", "heading", "The application framework for vertical AI SaaS."],
+  ["--font-heading", "Outfit · site only", "heading", "Everything your AI product needs."],
 ];
 const idOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
@@ -52,6 +52,7 @@ const install = (e: ComponentEntry) => installCommand(e.name, { stock: !e.intell
 <Page
   path="/components"
   compact
+  gallery="components"
   title="Components"
   lede={`${INTELLIGO.length} Intelligo components and ${CATALOG.length} primitives and composites, rendered live from the source you install.`}
   description={`The Intelligo design system: ${INTELLIGO.length} AI parts and patterns, ${CATALOG.length} primitives and composites, the token contract and WCAG AA contrast — all rendered live.`}
