@@ -17,7 +17,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { addFeature } from "./add.js";
+import { addFeature, formatAddResult } from "./add.js";
 import { upgradeCheck, upgradeCheckExitCode } from "./upgrade-check.js";
 import { readManifest } from "../manifest.js";
 
@@ -130,6 +130,55 @@ describe("addFeature", () => {
         frameworkVersion: "0.0.0",
       })
     ).toThrow(/Unknown feature/);
+  });
+});
+
+describe("addFeature with a cron", () => {
+  const CRON = { path: "/api/cron/demo", schedule: "0-59/5 * * * *" };
+  const vercelJson = () => path.join(appRoot, "vercel.json");
+
+  beforeEach(() => {
+    const file = path.join(templatesDir, "manifest.json");
+    const catalogue = JSON.parse(readFileSync(file, "utf8"));
+    catalogue.demo.cron = CRON;
+    writeFileSync(file, JSON.stringify(catalogue));
+  });
+
+  it("schedules it in a new vercel.json the manifest does not claim", () => {
+    const result = add();
+
+    expect(result.cron?.status).toBe("written");
+    expect(JSON.parse(readFileSync(vercelJson(), "utf8")).crons).toEqual([
+      CRON,
+    ]);
+    expect(
+      readManifest(appRoot)!.features.demo!.files.map((f) => f.path)
+    ).toEqual(["app/demo/page.tsx"]);
+    expect(formatAddResult(result)).toContain("Hobby");
+    expect(formatAddResult(result)).toContain("curl");
+  });
+
+  it("never touches an existing vercel.json, and prints the entry to add", () => {
+    const mine = JSON.stringify({ buildCommand: "pnpm build" });
+    writeFileSync(vercelJson(), mine);
+
+    const result = add(true);
+
+    expect(result.cron?.status).toBe("manual");
+    expect(readFileSync(vercelJson(), "utf8")).toBe(mine);
+    expect(formatAddResult(result)).toContain(JSON.stringify(CRON));
+  });
+
+  it("recognises a path that is already scheduled", () => {
+    writeFileSync(
+      vercelJson(),
+      JSON.stringify({ crons: [{ path: CRON.path, schedule: "0 3 * * *" }] })
+    );
+
+    const result = add();
+
+    expect(result.cron?.status).toBe("present");
+    expect(formatAddResult(result)).not.toContain('Add to its "crons"');
   });
 });
 

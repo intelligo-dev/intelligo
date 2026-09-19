@@ -2,10 +2,19 @@
  * Maintenance route: the periodic work the framework relies on.
  *
  * Mount a scheduler at GET /api/cron/maintenance with
- * `Authorization: Bearer $CRON_SECRET` every few minutes. On Vercel,
- * add an entry to `crons` in vercel.json with this path and a
- * five-minute schedule (`0-59/5 * * * *`); Vercel sends the header
- * itself.
+ * `Authorization: Bearer $CRON_SECRET` every five minutes. A stale
+ * execution is reconciled once it is ten minutes old, so the cadence
+ * decides how long an abandoned run keeps its credit hold.
+ *
+ * On Vercel, `intelligo add maintenance` writes the `crons` entry to
+ * vercel.json (`0-59/5 * * * *`) when the app has none, and Vercel
+ * sends the header itself. Vercel Hobby runs a cron at most once a day
+ * and refuses a deployment that asks for more: on Hobby, or on any
+ * other host, drop the entry and call the route from a scheduler of
+ * your own —
+ *
+ *   curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
+ *     https://your-app.example/api/cron/maintenance
  *
  * What one run does, and why each step exists:
  *

@@ -2,7 +2,7 @@ import { render } from "@react-email/components";
 import type React from "react";
 import { getEmailProvider, type EmailTemplateRef } from "./provider";
 
-// Wraps the provider with a default `from` (EMAIL_FROM), React Email
+// Wraps the provider with the deployment's sender (EMAIL_FROM), React Email
 // rendering, and up to 3 attempts with exponential backoff (1s, 2s, 4s) on
 // 5xx, 429 and network errors. Never throws; returns a result object.
 
@@ -10,7 +10,10 @@ export interface SendEmailParams {
   to: string | string[];
   subject: string;
   html: string;
-  /** Defaults to EMAIL_FROM env var or "Intelligo <noreply@intelligo.dev>" */
+  /**
+   * Defaults to the EMAIL_FROM env var. There is no built-in sender: a
+   * provider that needs one refuses the send when neither is set.
+   */
   from?: string;
   replyTo?: string;
   /**
@@ -25,7 +28,10 @@ export interface SendEmailWithComponentParams {
   subject: string;
   /** A React Email component element. Will be rendered to HTML before sending. */
   react: React.ReactElement;
-  /** Defaults to EMAIL_FROM env var or "Intelligo <noreply@intelligo.dev>" */
+  /**
+   * Defaults to the EMAIL_FROM env var. There is no built-in sender: a
+   * provider that needs one refuses the send when neither is set.
+   */
   from?: string;
   replyTo?: string;
   /**
@@ -90,10 +96,7 @@ export async function sendEmail(
 ): Promise<SendEmailResult> {
   try {
     const provider = getEmailProvider();
-    const from =
-      params.from ??
-      process.env.EMAIL_FROM ??
-      "Intelligo <noreply@intelligo.dev>";
+    const from = params.from ?? (process.env.EMAIL_FROM?.trim() || undefined);
 
     const recipient = Array.isArray(params.to)
       ? params.to.join(", ")

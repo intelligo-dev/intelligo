@@ -21,7 +21,10 @@ export default async function UsagePage() {
   const { workspace } = await requireWorkspace();
 
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  // Billing periods are UTC calendar months.
+  const monthStart = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
+  );
 
   const [summary, recent] = await Promise.all([
     summarizeExecutions(workspace.id, { from: monthStart, to: now }),

@@ -101,6 +101,72 @@ describe("template catalogue", () => {
     });
   });
 
+  it("the scaffold declares every peer of the packages it depends on", () => {
+    // A strict package manager does not install a missing peer, and the
+    // failure is an unresolvable import at the consumer's first build.
+    const scaffold = JSON.parse(
+      readFileSync(
+        path.join(TEMPLATES_DIR, "app-scaffold/package.json.tpl"),
+        "utf8"
+      )
+    ) as {
+      dependencies: Record<string, string>;
+      devDependencies: Record<string, string>;
+    };
+    const missing: string[] = [];
+    for (const name of Object.keys(scaffold.dependencies)) {
+      if (!name.startsWith("@intelligo-dev/")) continue;
+      const manifest = JSON.parse(
+        readFileSync(
+          path.resolve(
+            __dirname,
+            "..",
+            "..",
+            name.slice("@intelligo-dev/".length),
+            "package.json"
+          ),
+          "utf8"
+        )
+      ) as {
+        peerDependencies?: Record<string, string>;
+        peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+      };
+      for (const peer of Object.keys(manifest.peerDependencies ?? {})) {
+        if (manifest.peerDependenciesMeta?.[peer]?.optional) continue;
+        if (!scaffold.dependencies[peer]) missing.push(`${name} → ${peer}`);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it("the scaffold can resolve a Postgres driver for drizzle-kit migrate", () => {
+    // drizzle-kit loads `pg` from the app, not from @intelligo-dev/core.
+    const scaffold = readFileSync(
+      path.join(TEMPLATES_DIR, "app-scaffold/package.json.tpl"),
+      "utf8"
+    );
+    expect(scaffold).toMatch(/"db:migrate": ".*drizzle-kit migrate"/);
+    expect(JSON.parse(scaffold).devDependencies.pg).toBeDefined();
+  });
+
+  it("the maintenance cron outpaces the route's stale threshold, and the route says so", () => {
+    const cron = catalogue.maintenance!.cron!;
+    const route = readFileSync(
+      path.join(TEMPLATES_DIR, "maintenance/maintenance-route.ts.tpl"),
+      "utf8"
+    );
+    const everyMinutes = Number(cron.schedule.match(/^0-59\/(\d+) /)?.[1]);
+    const staleMinutes = Number(
+      route.match(/STALE_AFTER_MS = (\d+) \* 60_000/)?.[1]
+    );
+
+    expect(everyMinutes).toBeGreaterThan(0);
+    expect(everyMinutes).toBeLessThanOrEqual(staleMinutes);
+    expect(route).toContain(`\`${cron.schedule}\``);
+    expect(route).toContain("Hobby");
+    expect(catalogue.maintenance!.description).toContain("five minutes");
+  });
+
   it("no two features write to the same path", () => {
     // Two features claiming one file would make `add` order-dependent
     // and the manifest ambiguous about which template owns it.

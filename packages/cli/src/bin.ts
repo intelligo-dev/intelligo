@@ -19,11 +19,13 @@ import { addFeature, formatAddResult, readCatalogue } from "./commands/add.js";
 import { exitCodeFor, formatResults, runChecks } from "./commands/doctor.js";
 import {
   formatMigrateCheck,
+  formatMigrateCheckJson,
   migrateCheck,
   migrateCheckExitCode,
 } from "./commands/migrate-check.js";
 import {
   MIGRATIONS_TABLE_SQL,
+  SCHEMA_PROBE_SQL,
   applyExitCode,
   applyMigrations,
   formatApplyResult,
@@ -71,13 +73,18 @@ function usage(): string {
     "  doctor            Report configuration and migration-chain problems",
     "  migrate           Apply the framework's migration chain to DATABASE_URL",
     "  migrate --check   Compare the framework's migrations to a database",
+    "                    (--json: one object whose `state` is up_to_date | pending |",
+    "                    fresh | ahead | unmanaged | legacy)",
     "  add <feature>     Generate consumer-owned source (--force to overwrite)",
     "  upgrade --check   Show what a template upgrade would change",
     "",
   ].join("\n");
 }
 
-async function runMigrate(mode: "check" | "apply"): Promise<number> {
+async function runMigrate(
+  mode: "check" | "apply",
+  json = false
+): Promise<number> {
   const url = process.env.DATABASE_URL;
   if (!url) {
     console.error(
@@ -106,7 +113,15 @@ async function runMigrate(mode: "check" | "apply"): Promise<number> {
         migrationsDir,
         async (sql) => (await client.query<{ hash: string }>(sql)).rows
       );
-      console.log(formatMigrateCheck(result));
+      const probe = await client.query<{ rel: string | null }>(
+        SCHEMA_PROBE_SQL
+      );
+      const schemaExists = probe.rows[0]?.rel != null;
+      console.log(
+        json
+          ? formatMigrateCheckJson(result, schemaExists)
+          : formatMigrateCheck(result, schemaExists)
+      );
       return migrateCheckExitCode(result);
     }
 
@@ -160,7 +175,10 @@ async function main(): Promise<number> {
       return exitCodeFor(results);
     }
     case "migrate":
-      return runMigrate(rest.includes("--check") ? "check" : "apply");
+      return runMigrate(
+        rest.includes("--check") ? "check" : "apply",
+        rest.includes("--json")
+      );
     case "create": {
       // Imported lazily so the prompts library loads only for the one
       // command that converses.

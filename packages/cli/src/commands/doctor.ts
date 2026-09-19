@@ -6,9 +6,14 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { existsSync, readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
 
 import { inspectMigrationChain, readMigrationChain } from "../migrations.js";
 import { readManifest } from "../manifest.js";
+import {
+  MODEL_CATALOGUE_LOCATIONS,
+  readCatalogueModelIds,
+} from "../model-catalogue.js";
 import {
   MIGRATION_LOCATIONS,
   resolveMigrationsDir,
@@ -84,6 +89,182 @@ const REQUIRED_ENV = [
   "NEXT_PUBLIC_APP_URL",
 ];
 
+/** The app's `assertEnv` refuses a shorter BETTER_AUTH_SECRET. */
+const MIN_AUTH_SECRET_LENGTH = 32;
+
+/** Env files Next.js reads only for a production build or server. */
+const PRODUCTION_ENV_FILES = [".env.production.local", ".env.production"];
+
+const LOCAL_URL = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::|\/|$)/;
+
+/**
+ * Where a production deployment would get a NEXT_PUBLIC_APP_URL that
+ * points at this machine: the environment itself when it says
+ * production, or a production env file in the app.
+ */
+function localAppUrlInProduction(
+  root: string,
+  env: NodeJS.ProcessEnv
+): string | null {
+  if (
+    env.NODE_ENV === "production" &&
+    LOCAL_URL.test(env.NEXT_PUBLIC_APP_URL ?? "")
+  ) {
+    return "NODE_ENV=production";
+  }
+  for (const name of PRODUCTION_ENV_FILES) {
+    const file = path.join(root, name);
+    if (!existsSync(file)) continue;
+    const url = parseEnv(readFileSync(file, "utf8")).NEXT_PUBLIC_APP_URL;
+    if (url && LOCAL_URL.test(url)) return name;
+  }
+  return null;
+}
+
+/** Files of the chat items that name the models a deployment runs on. */
+const MODEL_ID_FILES = [
+  "lib/chat-model.ts",
+  "lib/chat-models.ts",
+  "lib/chat-server-config.ts",
+];
+
+/** A provider-prefixed model id literal, in any of the three quote styles. */
+const MODEL_ID =
+  /["'`]((?:openai|anthropic|google|xai|mistral|meta)\/[a-z0-9._-]+)["'`]/g;
+
+/** `id: "provider/model"` — a model registered by a literal. */
+const REGISTERED_ID = /\bid:\s*["'`]([a-z0-9-]+\/[a-z0-9._-]+)["'`]/g;
+
+/**
+ * Required environment: present, and strong enough that the app's own
+ * startup validation will accept it.
+ */
+function checkEnvironment(
+  root: string,
+  env: NodeJS.ProcessEnv | Record<string, string | undefined>
+): CheckResult[] {
+  const results: CheckResult[] = [];
+  const missing = REQUIRED_ENV.filter((k) => !env[k]);
+  const authSecret = env.BETTER_AUTH_SECRET ?? "";
+  const weakSecret =
+    authSecret.length > 0 && authSecret.length < MIN_AUTH_SECRET_LENGTH;
+  if (missing.length > 0) {
+    results.push({
+      name: "env",
+      status: "error",
+      detail: `Missing: ${missing.join(", ")}`,
+    });
+  }
+  if (weakSecret) {
+    results.push({
+      name: "env",
+      status: "error",
+      detail:
+        `BETTER_AUTH_SECRET is ${authSecret.length} chars — the app refuses to ` +
+        `boot with fewer than ${MIN_AUTH_SECRET_LENGTH}. Generate one with: ` +
+        "openssl rand -base64 32",
+    });
+  }
+  if (missing.length === 0 && !weakSecret) {
+    results.push({
+      name: "env",
+      status: "ok",
+      detail: `${REQUIRED_ENV.length} required variables present`,
+    });
+  }
+  const localUrlSource = localAppUrlInProduction(root, env);
+  if (localUrlSource) {
+    results.push({
+      name: "env",
+      status: "warn",
+      detail:
+        `NEXT_PUBLIC_APP_URL points at localhost (${localUrlSource}) — auth ` +
+        "callbacks and email links are built from it; production needs the " +
+        "public https URL",
+    });
+  }
+  return results;
+}
+
+/**
+ * Model ids. A registered catalogue still refuses an id it does not
+ * hold, so a typo in the chat seam is a refused first turn. Every
+ * provider-prefixed literal there must be in DEFAULT_MODELS (when the
+ * root registers it) or registered by a literal `id` in the root.
+ */
+function checkModelIds(root: string, source: string): CheckResult[] {
+  const used = new Map<string, string>();
+  for (const rel of MODEL_ID_FILES) {
+    const file = path.join(root, rel);
+    if (!existsSync(file)) continue;
+    const text = stripComments(readFileSync(file, "utf8"));
+    for (const match of text.matchAll(MODEL_ID)) {
+      if (!used.has(match[1]!)) used.set(match[1]!, rel);
+    }
+  }
+
+  if (used.size === 0) return [];
+
+  const code = stripComments(source);
+  const known = new Set([...code.matchAll(REGISTERED_ID)].map((m) => m[1]!));
+  const usesCatalogue = /\bDEFAULT_MODELS\b/.test(code);
+  const catalogue = usesCatalogue ? readCatalogueModelIds(root) : null;
+  for (const id of catalogue ?? []) known.add(id);
+
+  const unknown = [...used].filter(([id]) => !known.has(id));
+  const listed = unknown.map(([id, rel]) => `${id} (${rel})`).join(", ");
+
+  if (unknown.length === 0) {
+    return [
+      {
+        name: "model-ids",
+        status: "ok",
+        detail: `${used.size} model id(s) in the chat seam, all registered`,
+      },
+    ];
+  } else if (usesCatalogue && !catalogue) {
+    return [
+      {
+        name: "model-ids",
+        status: "warn",
+        detail:
+          `cannot read DEFAULT_MODELS (looked in ${MODEL_CATALOGUE_LOCATIONS.join(", ")}) ` +
+          `to check ${listed} — is @intelligo-dev/executions installed?`,
+      },
+    ];
+  } else if (OPAQUE_REGISTRATION.test(code)) {
+    return [
+      {
+        name: "model-ids",
+        status: "warn",
+        detail:
+          `${listed} not found in DEFAULT_MODELS or a literal registerModel({ id }) — ` +
+          "the composition root registers a catalogue defined elsewhere, " +
+          "so confirm it holds them",
+      },
+    ];
+  } else {
+    return [
+      {
+        name: "model-ids",
+        status: "error",
+        detail:
+          `${listed} not registered — admission refuses an unpriced model ` +
+          "with `unknown_model`. Fix the id, or add " +
+          "`registerModel({ id, … })` to the composition root",
+      },
+    ];
+  }
+}
+
+/**
+ * A `registerModel(s)` argument that is neither a literal nor
+ * `DEFAULT_MODELS`: a catalogue defined in another module, whose ids
+ * cannot be read from the composition root.
+ */
+const OPAQUE_REGISTRATION =
+  /\bregisterModels?\s*\(\s*(?![\s[{]|DEFAULT_MODELS\s*[,)])/;
+
 export function runChecks(options: DoctorOptions = {}): CheckResult[] {
   const root = options.root ?? process.cwd();
   const env = options.env ?? process.env;
@@ -118,20 +299,7 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
   }
 
   // 2. Required environment.
-  const missing = REQUIRED_ENV.filter((k) => !env[k]);
-  results.push(
-    missing.length === 0
-      ? {
-          name: "env",
-          status: "ok",
-          detail: `${REQUIRED_ENV.length} required variables present`,
-        }
-      : {
-          name: "env",
-          status: "error",
-          detail: `Missing: ${missing.join(", ")}`,
-        }
-  );
+  results.push(...checkEnvironment(root, env));
 
   // 3. Billing product. The engine has no built-in default catalogue;
   //    an unset product means every plan lookup returns nothing and
@@ -287,6 +455,8 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
               "or your own catalogue",
           }
     );
+
+    if (registers) results.push(...checkModelIds(root, source));
   }
 
   // 5. Generated source. A conflict — template and consumer both

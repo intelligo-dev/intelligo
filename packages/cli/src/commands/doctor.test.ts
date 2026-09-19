@@ -12,7 +12,7 @@ import { exitCodeFor, formatResults, runChecks } from "./doctor.js";
 
 const fullEnv = {
   DATABASE_URL: "postgresql://localhost/x",
-  BETTER_AUTH_SECRET: "s",
+  BETTER_AUTH_SECRET: "a-secret-padded-to-thirty-two-chars",
   NEXT_PUBLIC_APP_URL: "http://localhost:4000",
   INTELLIGO_BILLING_PRODUCT: "acme",
 } as NodeJS.ProcessEnv;
@@ -31,6 +31,55 @@ describe("runChecks", () => {
     const results = runChecks({ root: "/nonexistent", env: fullEnv });
 
     expect(results.find((r) => r.name === "env")!.status).toBe("ok");
+  });
+
+  it("errors on a BETTER_AUTH_SECRET the app would refuse to boot with", () => {
+    const results = runChecks({
+      root: "/nonexistent",
+      env: { ...fullEnv, BETTER_AUTH_SECRET: "short" },
+    });
+    const env = results.filter((r) => r.name === "env");
+
+    expect(env).toHaveLength(1);
+    expect(env[0]!.status).toBe("error");
+    expect(env[0]!.detail).toContain("32");
+    expect(exitCodeFor(results)).toBe(1);
+  });
+
+  it("warns when production would build links to localhost", () => {
+    const warned = (env: NodeJS.ProcessEnv) =>
+      runChecks({ root: "/nonexistent", env }).some(
+        (r) => r.name === "env" && r.status === "warn"
+      );
+
+    expect(warned(fullEnv)).toBe(false);
+    expect(warned({ ...fullEnv, NODE_ENV: "production" })).toBe(true);
+    expect(
+      warned({
+        ...fullEnv,
+        NODE_ENV: "production",
+        NEXT_PUBLIC_APP_URL: "https://app.example.com",
+      })
+    ).toBe(false);
+  });
+
+  it("reads the localhost URL out of a production env file", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-env-"));
+    try {
+      writeFileSync(
+        path.join(root, ".env.production"),
+        "NEXT_PUBLIC_APP_URL=http://localhost:3000\n"
+      );
+      const results = runChecks({ root, env: fullEnv });
+      const warning = results.find(
+        (r) => r.name === "env" && r.status === "warn"
+      )!;
+
+      expect(warning.detail).toContain(".env.production");
+      expect(exitCodeFor(results)).toBe(0);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("warns when no billing product is configured", () => {
@@ -195,6 +244,124 @@ describe("runChecks", () => {
     it("is silent where there is no composition root to read", () => {
       const results = runChecks({ root: "/nonexistent", env: fullEnv });
       expect(results.find((r) => r.name === "models")).toBeUndefined();
+    });
+  });
+
+  describe("model ids in the chat seam", () => {
+    let root: string;
+
+    afterEach(() => {
+      rmSync(root, { recursive: true, force: true });
+    });
+
+    // Unregistered ids are assembled, not written: the repository's own
+    // model-registry rule reads every literal in the tree, tests included.
+    const id = (provider: string, model: string) => `${provider}/${model}`;
+    const TYPO = id("google", "gemini-2.5-flahs");
+    const CUSTOM = id("anthropic", "claude-custom");
+
+    const CATALOGUE = `export const DEFAULT_MODELS = [
+      { id: "google/gemini-2.5-flash", provider: "google" },
+    ];`;
+    const DEFAULT_ROOT = `import { DEFAULT_MODELS, registerModels } from "@intelligo-dev/executions";
+      export function composeIntelligo() { registerModels(DEFAULT_MODELS); }`;
+
+    function app(files: Record<string, string>): string {
+      root = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-ids-"));
+      const all = {
+        "node_modules/@intelligo-dev/executions/dist/pricing.js": CATALOGUE,
+        ...files,
+      };
+      for (const [rel, body] of Object.entries(all)) {
+        mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+        writeFileSync(path.join(root, rel), body);
+      }
+      return root;
+    }
+
+    const modelIds = (dir: string) =>
+      runChecks({ root: dir, env: fullEnv, requires: null }).find(
+        (r) => r.name === "model-ids"
+      );
+
+    it("passes an id the shipped catalogue prices", () => {
+      const result = modelIds(
+        app({
+          "lib/intelligo.ts": DEFAULT_ROOT,
+          "lib/chat-model.ts": `export const CHAT_MODEL_ID = "google/gemini-2.5-flash";`,
+        })
+      )!;
+
+      expect(result.status).toBe("ok");
+    });
+
+    it("errors on an id nothing registers, naming the file", () => {
+      const result = modelIds(
+        app({
+          "lib/intelligo.ts": DEFAULT_ROOT,
+          "lib/chat-models.ts": `export const MODELS = ["${TYPO}"];`,
+        })
+      )!;
+
+      expect(result.status).toBe("error");
+      expect(result.detail).toContain(TYPO);
+      expect(result.detail).toContain("lib/chat-models.ts");
+    });
+
+    it("accepts an id the composition root registers by literal", () => {
+      const result = modelIds(
+        app({
+          "lib/intelligo.ts": `${DEFAULT_ROOT}
+            registerModel({ id: "${CUSTOM}", provider: "anthropic" });`,
+          "lib/chat-server-config.ts": `const id = '${CUSTOM}';`,
+        })
+      )!;
+
+      expect(result.status).toBe("ok");
+    });
+
+    it("does not count the catalogue for a root that never registers it", () => {
+      const result = modelIds(
+        app({
+          "lib/intelligo.ts": `registerModel({ id: "${id("openai", "own")}", provider: "openai" });`,
+          "lib/chat-model.ts": `export const CHAT_MODEL_ID = "google/gemini-2.5-flash";`,
+        })
+      )!;
+
+      expect(result.status).toBe("error");
+    });
+
+    it("only warns when the catalogue is defined in another module", () => {
+      const result = modelIds(
+        app({
+          "lib/intelligo.ts": `import { MODELS } from "./models";
+            export function composeIntelligo() { registerModels(MODELS); }`,
+          "lib/chat-model.ts": `export const CHAT_MODEL_ID = "${id("mistral", "large")}";`,
+        })
+      )!;
+
+      expect(result.status).toBe("warn");
+    });
+
+    it("warns when DEFAULT_MODELS cannot be read", () => {
+      const dir = app({
+        "lib/intelligo.ts": DEFAULT_ROOT,
+        "lib/chat-model.ts": `export const CHAT_MODEL_ID = "google/gemini-2.5-flash";`,
+      });
+      rmSync(path.join(dir, "node_modules"), { recursive: true });
+
+      expect(modelIds(dir)!.status).toBe("warn");
+    });
+
+    it("ignores ids named only in comments, and apps with no chat seam", () => {
+      expect(
+        modelIds(
+          app({
+            "lib/intelligo.ts": DEFAULT_ROOT,
+            "lib/chat-model.ts": `// was "${id("openai", "gpt-0")}"\nexport const x = 1;`,
+          })
+        )
+      ).toBeUndefined();
     });
   });
 

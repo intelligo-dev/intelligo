@@ -12,6 +12,9 @@ type EnvVar = {
   minLength?: number;
 };
 
+// Only variables the framework itself reads. A model provider's key is
+// absent on purpose: which provider a deployment calls is the product's
+// choice, and its SDK reports a missing key on the first request.
 const ENV_VARS: EnvVar[] = [
   {
     name: "DATABASE_URL",
@@ -31,11 +34,6 @@ const ENV_VARS: EnvVar[] = [
     description: "Application base URL for auth and redirects",
   },
   {
-    name: "OPENAI_API_KEY",
-    required: false,
-    description: "OpenAI API key (AI chat features)",
-  },
-  {
     name: "STRIPE_SECRET_KEY",
     required: false,
     description: "Stripe API key (billing features)",
@@ -44,11 +42,6 @@ const ENV_VARS: EnvVar[] = [
     name: "STRIPE_WEBHOOK_SECRET",
     required: false,
     description: "Stripe webhook signature secret",
-  },
-  {
-    name: "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
-    required: false,
-    description: "Stripe publishable key (billing UI)",
   },
   {
     name: "RESEND_API_KEY",
@@ -120,8 +113,28 @@ export function validateEnv(): {
     }
   }
 
+  // Resend rejects a send without a sender on a verified domain, and the
+  // framework has no domain of its own to fall back on. Loops takes the
+  // sender from each template, so only Resend is checked.
+  const emailProvider = process.env.EMAIL_PROVIDER?.toLowerCase();
+  const sendsThroughResend =
+    Boolean(process.env.RESEND_API_KEY?.trim()) &&
+    emailProvider !== "loops" &&
+    emailProvider !== "console";
+  if (sendsThroughResend && !process.env.EMAIL_FROM?.trim()) {
+    warnings.push(
+      'RESEND_API_KEY is set but EMAIL_FROM is not — every email fails until EMAIL_FROM names a sender on a domain verified with Resend, e.g. "Acme <noreply@acme.com>"'
+    );
+  }
+
   // Production safety checks
   if (process.env.NODE_ENV === "production") {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+    if (appUrl && !appUrl.startsWith("https://")) {
+      warnings.push(
+        `NEXT_PUBLIC_APP_URL is ${appUrl}, not an https URL — auth callbacks, email links and secure cookies are built from it`
+      );
+    }
     if (!process.env.RESEND_API_KEY && !process.env.LOOPS_API_KEY) {
       warnings.push(
         "No email provider (RESEND_API_KEY or LOOPS_API_KEY) — sign-ups are not email-verified and emails only reach the server console"

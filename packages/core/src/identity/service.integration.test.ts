@@ -9,6 +9,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { randomUUID } from "node:crypto";
 import { Client } from "pg";
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -16,7 +17,7 @@ const d = DATABASE_URL ? describe : describe.skip;
 
 d("identity service — real DB integration", () => {
   const client = new Client({ connectionString: DATABASE_URL });
-  const suffix = Date.now();
+  const suffix = `${Date.now()}-${randomUUID().slice(0, 8)}`;
   const workspaceId = `identity-it-ws-${suffix}`;
   const userId = `identity-it-user-${suffix}`;
   const otherUserId = `identity-it-user-other-${suffix}`;
@@ -75,17 +76,15 @@ d("identity service — real DB integration", () => {
     );
   });
 
+  // `user_memory_audit` is append-only: a BEFORE DELETE trigger raises on
+  // every row, including the ones a cascade reaches. Its foreign keys to
+  // `users` and `organization` are ON DELETE CASCADE, so deleting either
+  // parent of an audited row raises too. The audit rows, the workspace and
+  // the users therefore stay; the run's ids are unique, so a later run
+  // never meets them. Facts carry no audit constraint and are removed.
   afterAll(async () => {
-    await client.query(
-      `DELETE FROM user_memory_audit WHERE workspace_id = $1`,
-      [workspaceId]
-    );
     await client.query(`DELETE FROM user_facts WHERE workspace_id = $1`, [
       workspaceId,
-    ]);
-    await client.query(`DELETE FROM organization WHERE id = $1`, [workspaceId]);
-    await client.query(`DELETE FROM users WHERE id = ANY($1)`, [
-      [userId, otherUserId],
     ]);
     await client.end();
   });

@@ -14,9 +14,11 @@ import path from "node:path";
 
 import {
   formatMigrateCheck,
+  formatMigrateCheckJson,
   hashMigration,
   migrateCheck,
   migrateCheckExitCode,
+  migrateState,
 } from "./migrate-check.js";
 
 let dir: string;
@@ -101,6 +103,74 @@ describe("migrateCheck", () => {
     expect(r.pending).toEqual([]);
     expect(migrateCheckExitCode(r)).toBe(0);
     expect(formatMigrateCheck(r)).toContain("Up to date");
+  });
+});
+
+describe("migrateState", () => {
+  it("tells an empty database from a stale one though both exit 1", async () => {
+    chain(["0000_a", "0001_b"]);
+
+    writeFileSync(path.join(dir, "0001_b.sql"), "SELECT 2;");
+
+    const fresh = await migrateCheck(dir, async () => {
+      throw new Error('relation "drizzle.__drizzle_migrations" does not exist');
+    });
+    const stale = await migrateCheck(dir, async () => [
+      { hash: hashMigration(SQL) },
+    ]);
+    const current = await migrateCheck(dir, async () => [
+      { hash: hashMigration(SQL) },
+      { hash: hashMigration("SELECT 2;") },
+    ]);
+
+    expect(migrateState(fresh, false)).toBe("fresh");
+    expect(migrateState(stale, true)).toBe("pending");
+    expect(migrateCheckExitCode(fresh)).toBe(1);
+    expect(migrateCheckExitCode(stale)).toBe(1);
+    expect(migrateState(current, true)).toBe("up_to_date");
+  });
+
+  it("calls tables without records unmanaged, not fresh", async () => {
+    chain(["0000_a"]);
+    const r = await migrateCheck(dir, async () => []);
+
+    expect(migrateState(r, true)).toBe("unmanaged");
+    expect(formatMigrateCheck(r, true)).toContain("db:push");
+    expect(formatMigrateCheck(r, false)).toContain("empty");
+    expect(formatMigrateCheck(r, false)).not.toContain("db:push");
+  });
+
+  it("puts ahead and legacy before anything else", async () => {
+    chain(["0000_a"]);
+    writeFileSync(
+      path.join(dir, "legacy-chain.json"),
+      JSON.stringify({ entries: [{ tag: "0000_old", hash: "0ld" }] })
+    );
+
+    const legacy = await migrateCheck(dir, async () => [{ hash: "0ld" }]);
+    const ahead = await migrateCheck(dir, async () => [
+      { hash: "0ld" },
+      { hash: "deadbeefdeadbeefdeadbeef" },
+    ]);
+
+    expect(migrateState(legacy, true)).toBe("legacy");
+    expect(migrateState(ahead, true)).toBe("ahead");
+  });
+
+  it("prints one JSON object carrying the state and the exit code", async () => {
+    chain(["0000_a", "0001_b"]);
+    const r = await migrateCheck(dir, async () => []);
+
+    expect(JSON.parse(formatMigrateCheckJson(r, false))).toEqual({
+      state: "fresh",
+      exitCode: 1,
+      chain: ["0000_a", "0001_b"],
+      applied: [],
+      pending: ["0000_a", "0001_b"],
+      unknown: [],
+      legacy: [],
+      adoptable: false,
+    });
   });
 });
 

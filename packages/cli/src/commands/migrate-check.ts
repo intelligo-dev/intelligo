@@ -21,6 +21,23 @@
  * journal) lists: they are reported as `legacy`, not as unknown, and a
  * database holding all of them is `adoptable` — its schema is the
  * baseline's, so `migrate` records the baseline without running it.
+ *
+ * The exit code is 1 whenever anything is pending or the database is
+ * ahead, which a brand-new database and a stale one share. A deploy
+ * gate that must tell them apart reads `migrate --check --json`: one
+ * JSON object on stdout, same exit code, whose `state` is
+ *
+ *   - `up_to_date` — every migration is applied;
+ *   - `pending`    — a migrated database is behind this checkout;
+ *   - `fresh`      — no migration records and none of the framework's
+ *                    tables: an empty database, `migrate` applies the chain;
+ *   - `unmanaged`  — the tables exist with no records (`db:push`);
+ *   - `ahead`      — applied migrations this checkout does not contain;
+ *   - `legacy`     — the pre-1.0 chain; `adoptable` says whether
+ *                    `migrate` can take it over.
+ *
+ * Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
+ * `unknown`, `legacy` and `adoptable`.
  */
 
 import { createHash } from "node:crypto";
@@ -135,10 +152,24 @@ export async function migrateCheck(
   };
 }
 
-export function formatMigrateCheck(r: MigrateCheckResult): string {
+/**
+ * `schemaExists` is whether the framework's tables are in the database
+ * (`SCHEMA_PROBE_SQL`). When the caller did not probe, a database with
+ * no records gets the cautious `db:push` wording.
+ */
+export function formatMigrateCheck(
+  r: MigrateCheckResult,
+  schemaExists?: boolean
+): string {
   const lines: string[] = [];
 
-  if (r.unmanaged) {
+  if (r.unmanaged && schemaExists === false) {
+    lines.push(
+      `! This database is empty: no migration records and none of the ` +
+        `framework's tables. \`intelligo migrate\` applies all ` +
+        `${r.chain.length} migration(s).`
+    );
+  } else if (r.unmanaged) {
     lines.push(
       `! This database has no migration records. If it was provisioned with ` +
         `db:push, baseline it before running migrate — otherwise migrate will ` +
@@ -188,4 +219,39 @@ export function migrateCheckExitCode(r: MigrateCheckResult): number {
 /** A partial pre-1.0 chain: neither adoptable nor migratable from here. */
 export function isPartialLegacy(r: MigrateCheckResult): boolean {
   return r.legacy.length > 0 && r.legacy.length < r.legacyChainLength;
+}
+
+export type MigrateState =
+  "up_to_date" | "pending" | "fresh" | "ahead" | "unmanaged" | "legacy";
+
+/**
+ * One word for what the check found, most urgent first: a database that
+ * is ahead or on the pre-1.0 chain is that before it is anything else.
+ * `schemaExists` separates an empty database from a push-provisioned one.
+ */
+export function migrateState(
+  r: MigrateCheckResult,
+  schemaExists: boolean
+): MigrateState {
+  if (r.unknown.length > 0) return "ahead";
+  if (r.legacy.length > 0) return "legacy";
+  if (r.unmanaged) return schemaExists ? "unmanaged" : "fresh";
+  return r.pending.length > 0 ? "pending" : "up_to_date";
+}
+
+/** The `--json` report: `state` first, then the detail behind it. */
+export function formatMigrateCheckJson(
+  r: MigrateCheckResult,
+  schemaExists: boolean
+): string {
+  return JSON.stringify({
+    state: migrateState(r, schemaExists),
+    exitCode: migrateCheckExitCode(r),
+    chain: r.chain,
+    applied: r.applied,
+    pending: r.pending,
+    unknown: r.unknown,
+    legacy: r.legacy,
+    adoptable: r.adoptable,
+  });
 }

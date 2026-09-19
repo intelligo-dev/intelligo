@@ -5,8 +5,7 @@
  * limits are yours, read through the registry your composition root
  * populates. `monthlyAllowance` is what the credit engine enforces: an
  * amount with its currency, which must be the one your composition root
- * declares to `ensureBillingSettingsRow`. `rolloverEnabled` in `limits`
- * is read directly too.
+ * declares to `ensureBillingSettingsRow`.
  */
 
 import { fromMajor } from "@intelligo-dev/core/money";
@@ -22,7 +21,7 @@ export const PLANS: Record<string, PlanConfig> = {
     aiModelLabel: "Base",
     /** Half a dollar of model time a month — roughly a hundred cheap turns. */
     monthlyAllowance: fromMajor(0.5, "USD"),
-    limits: { rolloverEnabled: false },
+    limits: {},
     features: [],
   },
   pro: {
@@ -34,7 +33,7 @@ export const PLANS: Record<string, PlanConfig> = {
     aiModelLabel: "Advanced",
     /** $15 of model time inside a $20 plan. */
     monthlyAllowance: fromMajor(15, "USD"),
-    limits: { rolloverEnabled: true },
+    limits: {},
     features: [],
   },
 };

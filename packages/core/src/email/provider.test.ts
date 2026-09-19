@@ -73,6 +73,22 @@ describe("getEmailProvider factory", () => {
   });
 });
 
+describe("ResendProvider", () => {
+  it("refuses a send with no sender instead of inventing one", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new ResendProvider("re_key");
+    await expect(
+      provider.send({ to: "user@example.com", subject: "Welcome", html: "" })
+    ).rejects.toMatchObject({
+      message: expect.stringContaining("EMAIL_FROM"),
+      statusCode: 400,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("LoopsProvider", () => {
   const fetchMock = vi.fn();
 

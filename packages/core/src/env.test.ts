@@ -56,16 +56,60 @@ describe("validateEnv", () => {
   });
 
   it("returns warnings for missing optional vars", () => {
-    // Cleared explicitly: CI sets a dummy OPENAI_API_KEY for the Next.js
-    // build.
-    vi.stubEnv("OPENAI_API_KEY", "");
+    vi.stubEnv("STRIPE_SECRET_KEY", "");
 
     const result = validateEnv();
 
-    expect(result.warnings.length).toBeGreaterThan(0);
-    expect(result.warnings.some((w) => w.includes("OPENAI_API_KEY"))).toBe(
+    expect(result.warnings.some((w) => w.includes("STRIPE_SECRET_KEY"))).toBe(
       true
     );
+  });
+
+  it("does not warn about variables the framework never reads", () => {
+    vi.stubEnv("OPENAI_API_KEY", "");
+    vi.stubEnv("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "");
+
+    const { warnings } = validateEnv();
+
+    expect(warnings.some((w) => w.includes("OPENAI_API_KEY"))).toBe(false);
+    expect(
+      warnings.some((w) => w.includes("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"))
+    ).toBe(false);
+  });
+
+  it("warns when Resend is configured without a sender", () => {
+    vi.stubEnv("EMAIL_PROVIDER", "");
+    vi.stubEnv("RESEND_API_KEY", "re_key");
+    vi.stubEnv("EMAIL_FROM", "");
+    expect(validateEnv().warnings.some((w) => w.includes("EMAIL_FROM"))).toBe(
+      true
+    );
+
+    vi.stubEnv("EMAIL_FROM", "Acme <noreply@acme.com>");
+    expect(validateEnv().warnings.some((w) => w.includes("EMAIL_FROM"))).toBe(
+      false
+    );
+  });
+
+  it("does not ask for a sender when Loops sends the email", () => {
+    vi.stubEnv("RESEND_API_KEY", "re_key");
+    vi.stubEnv("LOOPS_API_KEY", "loops-key");
+    vi.stubEnv("EMAIL_PROVIDER", "loops");
+    vi.stubEnv("EMAIL_FROM", "");
+    expect(validateEnv().warnings.some((w) => w.includes("EMAIL_FROM"))).toBe(
+      false
+    );
+  });
+
+  it("warns about a non-https app URL in production only", () => {
+    const flagged = () =>
+      validateEnv().warnings.some((w) => w.includes("not an https URL"));
+
+    expect(flagged()).toBe(false);
+    vi.stubEnv("NODE_ENV", "production");
+    expect(flagged()).toBe(true);
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.example.com");
+    expect(flagged()).toBe(false);
   });
 
   it("warns about test Stripe key in production", () => {

@@ -46,8 +46,16 @@ export class ResendProvider implements EmailProvider {
   }
 
   async send(params: EmailSendParams): Promise<{ id: string }> {
+    // A sender is an address on a domain the deployment verified with
+    // Resend, which only the deployment knows.
+    if (!params.from) {
+      throw statusError(
+        `No sender for "${params.subject}" — set EMAIL_FROM to an address on a domain verified with Resend, e.g. "Acme <noreply@acme.com>"`,
+        400
+      );
+    }
     const { data, error } = await this.client.emails.send({
-      from: params.from ?? "Intelligo <noreply@intelligo.dev>",
+      from: params.from,
       to: Array.isArray(params.to) ? params.to : [params.to],
       subject: params.subject,
       html: params.html,

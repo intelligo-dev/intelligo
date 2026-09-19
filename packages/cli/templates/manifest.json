@@ -135,8 +135,12 @@
     ]
   },
   "maintenance": {
-    "templateVersion": "1.0.0",
-    "description": "A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs \u2014 schedule it every few minutes",
+    "templateVersion": "1.1.0",
+    "description": "A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs \u2014 scheduled every five minutes, in vercel.json when the app has none",
+    "cron": {
+      "path": "/api/cron/maintenance",
+      "schedule": "0-59/5 * * * *"
+    },
     "files": [
       {
         "template": "maintenance/maintenance-route.ts.tpl",

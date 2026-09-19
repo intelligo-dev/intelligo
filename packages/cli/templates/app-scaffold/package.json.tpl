@@ -23,6 +23,8 @@
     "@intelligo-dev/executions": "__INTELLIGO_DEP__",
     "@intelligo-dev/jobs": "__INTELLIGO_DEP__",
     "@intelligo-dev/next": "__INTELLIGO_DEP__",
+    "ai": "^7.0.103",
+    "better-auth": "~1.6.33",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
     "drizzle-orm": "^0.45.2",
@@ -33,7 +35,9 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "server-only": "^0.0.1",
-    "sonner": "^2.0.8"
+    "sonner": "^2.0.8",
+    "stripe": "^22.6.2",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@intelligo-dev/cli": "__INTELLIGO_DEP__",
@@ -43,6 +47,7 @@
     "@types/react-dom": "^19.3.0",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
+    "pg": "8.18.0",
     "shadcn": "^4.21.0",
     "tailwindcss": "^4.3.3",
     "tw-animate-css": "^1.4.0",
