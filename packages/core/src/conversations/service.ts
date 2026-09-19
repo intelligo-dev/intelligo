@@ -54,7 +54,8 @@ async function verifyConversation(
 
 /**
  * Creates a conversation. `agentId` and `modelId` are opaque to this
- * module; `id` defaults to a fresh UUID.
+ * module; `id` defaults to a fresh UUID. An `id` the actor already owns
+ * returns that conversation; one another actor owns is `forbidden`.
  */
 export async function createConversation(
   actor: ConversationActor,
@@ -65,26 +66,32 @@ export async function createConversation(
     title?: string | null;
   }
 ): Promise<Conversation> {
+  const id = params.id ?? crypto.randomUUID();
   const [conversation] = await db
     .insert(conversations)
     .values({
-      id: params.id ?? crypto.randomUUID(),
+      id,
       workspaceId: actor.workspaceId,
       userId: actor.userId,
       agentId: params.agentId,
       modelId: params.modelId,
       title: params.title ?? null,
     })
+    .onConflictDoNothing({ target: conversations.id })
     .returning();
 
-  if (!conversation) {
+  if (conversation) return conversation;
+
+  // The id is taken: by the actor's own racing first turn, which is the
+  // conversation this call wanted, or by someone else's.
+  try {
+    return await verifyConversation(actor, id);
+  } catch {
     throw new ConversationServiceError(
-      "database_error",
-      "Failed to create conversation"
+      "forbidden",
+      "Conversation id belongs to another actor"
     );
   }
-
-  return conversation;
 }
 
 /** Get a single conversation, scoped to the actor. */

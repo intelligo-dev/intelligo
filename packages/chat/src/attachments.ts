@@ -34,7 +34,10 @@ import {
   StorageUnavailableError,
 } from "@intelligo-dev/core/storage";
 
-import { attachmentUrl } from "./body";
+import { ATTACHMENT_MAX_BYTES, attachmentUrl } from "./body";
+
+/** Room for the multipart boundaries and headers around the file. */
+const FORM_OVERHEAD_BYTES = 64 * 1024;
 import type { ChatActor, ChatServerConfig } from "./config";
 import { DEFAULT_CHAT_MESSAGES, refuse } from "./errors";
 
@@ -106,6 +109,13 @@ export function createChatUploadHandler(
       return refuse("UNAUTHORIZED", t("unauthorized"));
     }
 
+    // Refused before the body is read: `formData()` buffers all of it.
+    const maxBytes = policy.maxBytes ?? ATTACHMENT_MAX_BYTES;
+    const declared = Number(request.headers.get("content-length"));
+    if (Number.isFinite(declared) && declared > maxBytes + FORM_OVERHEAD_BYTES) {
+      return refuse("BAD_REQUEST", t("attachmentRejected"));
+    }
+
     let form: FormData;
     try {
       form = await request.formData();
@@ -120,7 +130,7 @@ export function createChatUploadHandler(
     if (!policy.accept.includes(mediaType)) {
       return refuse("BAD_REQUEST", t("attachmentRejected"));
     }
-    if (policy.maxBytes !== undefined && file.size > policy.maxBytes) {
+    if (file.size > maxBytes) {
       return refuse("BAD_REQUEST", t("attachmentRejected"));
     }
 

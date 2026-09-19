@@ -87,6 +87,31 @@ d("conversations service — real DB integration", () => {
     );
   });
 
+  it("createConversation returns the actor's own row for a taken id, and refuses another actor's", async () => {
+    const conv = await service.createConversation(actor, {
+      agentId: "assistant",
+      modelId: "google/gemini-2.5-flash",
+    });
+
+    const again = await service.createConversation(actor, {
+      id: conv.id,
+      agentId: "assistant",
+      modelId: "google/gemini-2.5-flash",
+    });
+    expect(again.id).toBe(conv.id);
+
+    await expect(
+      service.createConversation(otherActor, {
+        id: conv.id,
+        agentId: "assistant",
+        modelId: "google/gemini-2.5-flash",
+      })
+    ).rejects.toSatisfy(
+      (err: unknown) =>
+        isConversationServiceError(err) && err.code === "forbidden"
+    );
+  });
+
   it("listConversations only returns the actor's own conversations", async () => {
     await service.createConversation(actor, {
       agentId: "assistant",

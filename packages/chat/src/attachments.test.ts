@@ -154,6 +154,28 @@ describe("createChatUploadHandler", () => {
     expect(memory.objects.size).toBe(0);
   });
 
+  it("refuses a body that declares more than the limit before reading it", async () => {
+    const { POST } = createChatUploadHandler(config());
+    const formData = vi.fn();
+    const request = {
+      headers: new Headers({ "content-length": String(50 * 1024 * 1024) }),
+      formData,
+    } as unknown as Request;
+    expect((await POST(request)).status).toBe(400);
+    expect(formData).not.toHaveBeenCalled();
+  });
+
+  it("applies the default limit when the policy names none", async () => {
+    const { POST } = createChatUploadHandler(
+      config({ attachments: { accept: ["image/png"], mode: "stored" } })
+    );
+    const huge = new Blob([new Uint8Array(10 * 1024 * 1024 + 1)], {
+      type: "image/png",
+    });
+    expect((await POST(upload(huge))).status).toBe(400);
+    expect(memory.objects.size).toBe(0);
+  });
+
   it("refuses when the policy is inline or unset", async () => {
     const { POST } = createChatUploadHandler(
       config({ attachments: { accept: ["image/png"] } })

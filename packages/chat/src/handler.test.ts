@@ -86,6 +86,10 @@ vi.mock("@intelligo-dev/core/conversations", () => ({
     actor: { workspaceId: string; userId: string },
     params: Row
   ) => {
+    const taken = store.rows.get(params.id);
+    if (taken && taken.userId !== actor.userId) {
+      throw new FakeConversationServiceError("forbidden");
+    }
     const row = { ...params, ...actor, title: params.title ?? null } as Row;
     store.rows.set(row.id, row);
     return row;
@@ -360,8 +364,10 @@ describe("POST refusals", () => {
     );
     const response = await POST(turn());
     expect(response.status).toBe(402);
+    // The engine's English reason stays in the log; the reader gets the
+    // deployment's copy.
     expect(await response.json()).toEqual({
-      error: "Not enough credit for one more turn.",
+      error: "Usage quota exceeded. Upgrade your plan or purchase credits.",
       code: "QUOTA_EXCEEDED",
       reasonCode: "insufficient_credits",
     });
@@ -657,6 +663,80 @@ describe("POST streaming", () => {
     await (await POST(post({ id: CONVERSATION_ID, messages }))).text();
     expect(seen[0]).toContain("last");
     expect(seen[0]).not.toContain("u0");
+  });
+
+  it("charges what a disconnected client consumed, and never fails the run", async () => {
+    const fake = fakeExecutions();
+    const model = createStubLanguageModel({
+      modelId: MODEL_ID,
+      reply: () => "one two three four five six seven eight nine ten",
+      chunkDelayInMs: 20,
+    });
+    const { POST } = createChatHandler(
+      baseConfig(fake.executions, {
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    const controller = new AbortController();
+    const response = await POST(
+      post(
+        { id: CONVERSATION_ID, messages: [userMessage("go")] },
+        { signal: controller.signal }
+      )
+    );
+    const reader = response.body!.getReader();
+    await reader.read();
+    controller.abort();
+    await reader.cancel().catch(() => {});
+
+    await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+    expect(fake.complete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({ aborted: true }),
+      })
+    );
+    expect(fake.fail).not.toHaveBeenCalled();
+  });
+
+  it("keeps the reply being regenerated when admission refuses the turn", async () => {
+    const conversations = await import("@intelligo-dev/core/conversations");
+    store.rows.set(CONVERSATION_ID, {
+      id: CONVERSATION_ID,
+      workspaceId: "ws-1",
+      userId: "u-1",
+      agentId: "assistant",
+      modelId: MODEL_ID,
+      title: "t",
+    });
+    const refused = fakeExecutions({
+      allowed: false,
+      code: "insufficient_credits",
+    });
+    const { POST } = createChatHandler(baseConfig(refused.executions));
+    const response = await POST(
+      post({
+        id: CONVERSATION_ID,
+        messages: [userMessage("again", "m-u")],
+        trigger: "regenerate-message",
+        messageId: "m-a",
+      })
+    );
+    expect(response.status).toBe(402);
+    expect(conversations.deleteTrailingMessages).not.toHaveBeenCalled();
+  });
+
+  it("answers 404, not 500, for a conversation id another user owns", async () => {
+    store.rows.set(CONVERSATION_ID, {
+      id: CONVERSATION_ID,
+      workspaceId: "ws-1",
+      userId: "someone-else",
+      agentId: "assistant",
+      modelId: MODEL_ID,
+      title: "theirs",
+    });
+    const { POST } = createChatHandler(baseConfig(fakeExecutions().executions));
+    const response = await POST(turn("hi"));
+    expect(response.status).toBe(404);
   });
 
   it("trims what the row holds after the user turn being regenerated", async () => {
@@ -1044,9 +1124,11 @@ describe("streamTurn", () => {
     );
 
     await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+    // Charged on the model admission priced, not the id the runtime
+    // reported, which the registry may have no price for.
     expect(fake.complete).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: "runtime/model",
+        model: MODEL_ID,
         usage: { inputTokens: 7, outputTokens: 3, totalTokens: 10 },
       })
     );
@@ -1237,6 +1319,7 @@ describe("cross-origin, resumption and continuation", () => {
         } as unknown as UIMessage["parts"][number],
       ],
     };
+    storeProposal("m-assistant-1", { table: "users" });
     const response = await POST(
       post({
         id: CONVERSATION_ID,
@@ -1257,7 +1340,65 @@ describe("cross-origin, resumption and continuation", () => {
       })
     );
   });
+
+  it("refuses an approval whose tool input is not what the model proposed", async () => {
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(baseConfig(fake.executions));
+    store.rows.set(CONVERSATION_ID, {
+      id: CONVERSATION_ID,
+      workspaceId: "ws-1",
+      userId: "u-1",
+      agentId: "assistant",
+      modelId: MODEL_ID,
+      title: "t",
+    });
+    storeProposal("m-assistant-1", { table: "drafts" });
+    const response = await POST(
+      post({
+        id: CONVERSATION_ID,
+        messages: [
+          userMessage("delete them"),
+          {
+            id: "m-assistant-1",
+            role: "assistant",
+            parts: [
+              {
+                type: "tool-deleteRows",
+                toolCallId: "call-1",
+                state: "approval-responded",
+                input: { table: "users" },
+                approval: { id: "appr-1", approved: true },
+              } as unknown as UIMessage["parts"][number],
+            ],
+          },
+        ],
+        trigger: "submit-message",
+        messageId: "m-assistant-1",
+      })
+    );
+    expect(response.status).toBe(400);
+    expect(fake.begin).not.toHaveBeenCalled();
+  });
 });
+
+/** The assistant message the model wrote: a tool call awaiting approval. */
+function storeProposal(id: string, input: Record<string, unknown>) {
+  store.messages.push({
+    id,
+    conversationId: CONVERSATION_ID,
+    role: "assistant",
+    parts: JSON.stringify([
+      {
+        type: "tool-deleteRows",
+        toolCallId: "call-1",
+        state: "approval-requested",
+        input,
+        approval: { id: "appr-1" },
+      },
+    ]),
+    createdAt: new Date(),
+  });
+}
 
 describe("stored attachments", () => {
   const policy = {

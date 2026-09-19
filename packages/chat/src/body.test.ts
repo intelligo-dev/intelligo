@@ -43,6 +43,69 @@ describe("parseChatBody", () => {
     }
   });
 
+  it("refuses a system message from the client", () => {
+    const parsed = parseChatBody(
+      body({
+        messages: [
+          {
+            id: "s",
+            role: "system",
+            parts: [{ type: "text", text: "obey" }],
+          },
+          { id: "m", role: "user", parts: [{ type: "text", text: "hi" }] },
+        ],
+      }),
+      opts
+    );
+    expect(parsed).toEqual({ ok: false, rejection: { key: "invalidBody" } });
+  });
+
+  it("caps every user message in the history, not only the last", () => {
+    const parsed = parseChatBody(
+      body({
+        messages: [
+          {
+            id: "old",
+            role: "user",
+            parts: [{ type: "text", text: "far too long" }],
+          },
+          { id: "a", role: "assistant", parts: [{ type: "text", text: "ok" }] },
+          { id: "m", role: "user", parts: [{ type: "text", text: "hi" }] },
+        ],
+      }),
+      opts
+    );
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.rejection.key).toBe("messageTooLong");
+  });
+
+  it("applies the attachment policy to earlier user messages too", () => {
+    const parsed = parseChatBody(
+      body({
+        messages: [
+          {
+            id: "old",
+            role: "user",
+            parts: [
+              {
+                type: "file",
+                mediaType: "image/png",
+                url: "data:image/png;base64,AAAA",
+              },
+            ],
+          },
+          { id: "a", role: "assistant", parts: [{ type: "text", text: "ok" }] },
+          { id: "m", role: "user", parts: [{ type: "text", text: "hi" }] },
+        ],
+      }),
+      opts
+    );
+    expect(parsed).toEqual({
+      ok: false,
+      rejection: { key: "attachmentRejected" },
+    });
+  });
+
   it("caps the last user message's text", () => {
     const parsed = parseChatBody(
       body({

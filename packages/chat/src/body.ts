@@ -16,7 +16,7 @@ import { extractText } from "./windowing";
 export type ChatAttachmentPolicy = {
   /** Media types a file part may carry, e.g. `["image/jpeg", "image/png"]`. */
   accept: readonly string[];
-  /** Largest payload accepted, in bytes. Unbounded when omitted. */
+  /** Largest payload accepted, in bytes. `ATTACHMENT_MAX_BYTES` when omitted. */
   maxBytes?: number;
   /**
    * `inline` (default): the file travels in the message as a data URL
@@ -58,8 +58,15 @@ export type ChatBodyRejection = {
 export type ParsedChatBody =
   { ok: true; body: ChatBody } | { ok: false; rejection: ChatBodyRejection };
 
+/** 10 MB: the limit a policy that names none gets. */
+export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ROLES = new Set(["system", "user", "assistant"]);
+/**
+ * No `system`: the system prompt is the server's. A client that could
+ * send one could rewrite the agent's instructions.
+ */
+const ROLES = new Set(["user", "assistant"]);
 const SDK_FIELDS = new Set(["id", "messages", "trigger", "messageId"]);
 const ID_PLACEHOLDER = "__ATTACHMENT_ID__";
 
@@ -146,9 +153,9 @@ function rejectedAttachment(
       if (attachmentIdFromUrl(policy, file.url) === null) return true;
       continue;
     }
-    if (policy.maxBytes !== undefined) {
-      const bytes = dataUrlBytes(file.url);
-      if (bytes !== null && bytes > policy.maxBytes) return true;
+    const bytes = dataUrlBytes(file.url);
+    if (bytes !== null && bytes > (policy.maxBytes ?? ATTACHMENT_MAX_BYTES)) {
+      return true;
     }
   }
   return false;
@@ -182,9 +189,11 @@ export function parseChatBody(
   }
 
   const messages = json.messages as UIMessage[];
-  const last = messages[messages.length - 1]!;
-  if (last.role === "user") {
-    const length = extractText(last.parts).length;
+  // Every user message, not only the new one: the history is the
+  // client's too, and a turn is billed for all of it.
+  for (const message of messages) {
+    if (message.role !== "user") continue;
+    const length = extractText(message.parts).length;
     if (length > options.maxMessageLength) {
       return {
         ok: false,
@@ -194,18 +203,19 @@ export function parseChatBody(
         },
       };
     }
-    if (rejectedAttachment(last, options.attachments)) {
+    if (rejectedAttachment(message, options.attachments)) {
       return { ok: false, rejection: { key: "attachmentRejected" } };
     }
-  } else if (last.role === "assistant") {
+  }
+
+  const last = messages[messages.length - 1]!;
+  if (last.role === "assistant") {
     // A turn that continues the assistant's own message — tool results
     // or approval answers added client-side — names that message. The
     // SDK sends exactly this; anything else is a hand-made body that
     // would make the reply a fresh message with the tool loop lost.
     if (json.trigger === "regenerate-message") return invalid;
     if (json.messageId !== last.id) return invalid;
-  } else {
-    return invalid;
   }
 
   const extra: Record<string, unknown> = {};

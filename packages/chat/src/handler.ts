@@ -101,7 +101,11 @@ const DEFAULT_SYSTEM_PROMPT =
   "You are a helpful assistant embedded in a SaaS product. Be concise and direct.";
 const DEFAULT_MAX_MESSAGE_LENGTH = 8000;
 const DEFAULT_MAX_STEPS = 5;
-const DEFAULT_WINDOW = { maxMessages: 40 } as const;
+/**
+ * Admission holds the price of a 16K-token input; the history is kept
+ * under 12K of it, leaving the rest to the system prompt and tools.
+ */
+const DEFAULT_WINDOW = { maxMessages: 40, maxTokens: 12_000 } as const;
 const MODEL_URL_SECONDS = 900;
 
 async function defaultAuthenticate(): Promise<ChatActor> {
@@ -275,7 +279,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
   }
 
   function refusal(
-    t: ChatMessages,
     code: ChatErrorCode,
     error: string,
     where: { actor: ChatActor | null; conversationId: string | null },
@@ -290,7 +293,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         ...(extra.reasonCode ? { reasonCode: extra.reasonCode } : {}),
       })
     );
-    void t;
     return refuse(code, error, extra, headers);
   }
 
@@ -435,6 +437,49 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     }
   }
 
+  /**
+   * An approval answer runs the tool it approves with the input it
+   * carries, so that input must be what the model proposed. With the
+   * transport's own persistence the stored assistant message is that
+   * proposal: a continuation whose approved call is missing from it, or
+   * carries other input, is refused. A deployment that persists
+   * elsewhere (`persist`) makes this check in its own `prepareMessages`.
+   */
+  async function approvalsMatchStored(
+    actor: ChatActor,
+    body: { id: string; messages: UIMessage[] }
+  ): Promise<boolean> {
+    if (config.persist !== undefined) return true;
+    const last = body.messages[body.messages.length - 1]!;
+    let stored: UIMessage | undefined;
+    try {
+      stored = toUIMessages(await getMessages(actor, body.id)).find(
+        (message) => message.id === last.id
+      );
+    } catch {
+      return false;
+    }
+    if (!stored) return false;
+
+    const proposed = new Map<string, Record<string, unknown>>();
+    for (const raw of stored.parts) {
+      const part = raw as unknown as Record<string, unknown>;
+      if (typeof part.toolCallId === "string") {
+        proposed.set(part.toolCallId, part);
+      }
+    }
+    return last.parts.every((raw) => {
+      const part = raw as unknown as Record<string, unknown>;
+      if (part.state !== "approval-responded") return true;
+      const original = proposed.get(String(part.toolCallId));
+      return (
+        original !== undefined &&
+        original.type === part.type &&
+        JSON.stringify(original.input) === JSON.stringify(part.input)
+      );
+    });
+  }
+
   // POST: stream a reply.
 
   async function POST(request: Request): Promise<Response> {
@@ -447,12 +492,12 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     try {
       json = await request.json();
     } catch {
-      return refusal(t, "BAD_REQUEST", t("invalidBody"), nowhere, {}, cors);
+      return refusal("BAD_REQUEST", t("invalidBody"), nowhere, {}, cors);
     }
     const parsed = parseChatBody(json, { maxMessageLength, attachments });
     if (!parsed.ok) {
       const { key, params } = parsed.rejection;
-      return refusal(t, "BAD_REQUEST", t(key, params), nowhere, {}, cors);
+      return refusal("BAD_REQUEST", t(key, params), nowhere, {}, cors);
     }
     const body = parsed.body;
     const where = { actor: null as ChatActor | null, conversationId: body.id };
@@ -461,7 +506,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     try {
       actor = await authenticate(request);
     } catch {
-      return refusal(t, "UNAUTHORIZED", t("unauthorized"), where, {}, cors);
+      return refusal("UNAUTHORIZED", t("unauthorized"), where, {}, cors);
     }
     where.actor = actor;
 
@@ -472,7 +517,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       if (!decision.allowed) {
         const seconds = decision.retryAfterSeconds ?? 60;
         return refusal(
-          t,
           "RATE_LIMITED",
           t("rateLimited", { seconds }),
           where,
@@ -490,13 +534,13 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         isConversationServiceError(loaded.error) &&
         loaded.error.code === "forbidden"
       ) {
-        return refusal(t, "NOT_FOUND", t("notFound"), where, {}, cors);
+        return refusal("NOT_FOUND", t("notFound"), where, {}, cors);
       }
       log.error("Failed to load conversation", {
         conversationId: body.id,
         error: errorMessage(loaded.error),
       });
-      return refusal(t, "INTERNAL", t("internalError"), where, {}, cors);
+      return refusal("INTERNAL", t("internalError"), where, {}, cors);
     }
 
     // The writer exists only while the stream is open; a tool that
@@ -529,7 +573,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       await emit(() =>
         events.fail?.({ turn: context, error, phase: "unhandled" })
       );
-      return refusal(t, "INTERNAL", t("internalError"), where, {}, cors);
+      return refusal("INTERNAL", t("internalError"), where, {}, cors);
     }
 
     const featureKey =
@@ -541,7 +585,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     if (featureKey !== null) {
       const allowed = await hasFeature(actor.workspaceId, featureKey);
       if (!allowed) {
-        return refusal(t, "FEATURE_GATED", t("featureGated"), where, {}, cors);
+        return refusal("FEATURE_GATED", t("featureGated"), where, {}, cors);
       }
     }
 
@@ -550,7 +594,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     const picked = await requestedModel(actor, body.extra);
     if (picked === false) {
       return refusal(
-        t,
         "FEATURE_GATED",
         t("featureGated"),
         where,
@@ -584,43 +627,40 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           title,
         });
       } catch (error) {
+        // Another actor's id: answer as if it did not exist.
+        if (isConversationServiceError(error) && error.code === "forbidden") {
+          return refusal("NOT_FOUND", t("notFound"), where, {}, cors);
+        }
         log.error("Failed to create conversation", {
           conversationId: body.id,
           error: errorMessage(error),
         });
-        return refusal(t, "INTERNAL", t("internalError"), where, {}, cors);
+        return refusal("INTERNAL", t("internalError"), where, {}, cors);
       }
+    }
+
+    // What the stored transcript loses to this turn — the reply being
+    // regenerated, the path an edit replaces. Run only once the turn is
+    // admitted: a refused regenerate must leave the old answer in place.
+    let trimAfter: string | null = null;
+    if (!loaded.row) {
+      // A new conversation has nothing to trim.
     } else if (body.trigger === "regenerate-message") {
       // The client dropped the reply it is regenerating; drop what the
       // row holds after the user message that gets a second answer.
-      const user = lastUserMessage(body.messages);
-      if (user) {
-        try {
-          await deleteTrailingMessages(actor, { id: user.id });
-        } catch (error) {
-          // The user message may never have been persisted (a failed
-          // first attempt). Regenerating still makes sense.
-          log.warn("Could not trim messages before regenerate", {
-            conversationId: body.id,
-            error: errorMessage(error),
-          });
-        }
-      }
+      trimAfter = lastUserMessage(body.messages)?.id ?? null;
     } else if (lastUserMessage(body.messages) && body.messages.length > 1) {
       // An edit: the client cut the transcript and re-sent a message
       // with a new id. Whatever the row holds after the message before
       // it is the path being replaced. On an ordinary send the message
       // before is the latest reply and nothing follows it, so this
       // deletes nothing.
-      const before = body.messages[body.messages.length - 2]!;
-      try {
-        await deleteTrailingMessages(actor, { id: before.id });
-      } catch (error) {
-        log.warn("Could not trim messages before an edited turn", {
-          conversationId: body.id,
-          error: errorMessage(error),
-        });
-      }
+      trimAfter = body.messages[body.messages.length - 2]!.id;
+    }
+
+    const answers = approvalAnswers(body.messages);
+    if (answers.length > 0 && !(await approvalsMatchStored(actor, body))) {
+      return refusal("BAD_REQUEST", t("invalidBody"), where, {}, cors);
     }
 
     const turn: ChatTurn = {
@@ -631,7 +671,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
 
     // Approval answers ride on a continuation; the audit hook sees
     // each once, before the tool they gate runs.
-    for (const answer of approvalAnswers(body.messages)) {
+    for (const answer of answers) {
       await emit(() => events.approval?.({ turn: context, ...answer }));
     }
 
@@ -644,7 +684,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         error: errorMessage(error),
       });
       await emit(() => events.fail?.({ turn, error, phase: "unhandled" }));
-      return refusal(t, "INTERNAL", t("internalError"), where, {}, cors);
+      return refusal("INTERNAL", t("internalError"), where, {}, cors);
     }
 
     const metadata = {
@@ -676,7 +716,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         // the operator's to read in the log; the reader gets neutral
         // copy, since nothing they can do changes the answer.
         return refusal(
-          t,
           "MODEL_UNAVAILABLE",
           t("modelUnavailable"),
           where,
@@ -691,15 +730,28 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           reason: run.reason,
         });
       }
+      // The engine's `reason` is English and for the log; the reader
+      // gets the deployment's copy, and `reasonCode` says which case.
       return refusal(
-        t,
         notConfigured ? "BILLING_NOT_CONFIGURED" : "QUOTA_EXCEEDED",
-        run.reason ??
-          t(notConfigured ? "billingNotConfigured" : "quotaExceeded"),
+        t(notConfigured ? "billingNotConfigured" : "quotaExceeded"),
         where,
         { ...(run.code ? { reasonCode: run.code } : {}) },
         limitHeaders
       );
+    }
+
+    if (trimAfter) {
+      try {
+        await deleteTrailingMessages(actor, { id: trimAfter });
+      } catch (error) {
+        // The message may never have been persisted (a failed first
+        // attempt). The turn still makes sense.
+        log.warn("Could not trim messages before the turn", {
+          conversationId: body.id,
+          error: errorMessage(error),
+        });
+      }
     }
 
     const tools: ToolSet | undefined =
@@ -753,7 +805,9 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       try {
         await run.complete({
           usage: normalized,
-          model: captured?.modelId ?? modelId,
+          // The model admission priced. A runtime may report a
+          // provider-resolved id the registry has no price for.
+          model: modelId,
           metadata: { ...metadata, aborted: detail.aborted },
         });
       } catch (error) {
@@ -840,6 +894,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
             ...(usage.modelId ? { modelId: usage.modelId } : {}),
             ...(usage.finishReason ? { finishReason: usage.finishReason } : {}),
           };
+          await settle(captured.usage, { aborted: request.signal.aborted });
           const title = await applyTitle();
           if (title) {
             writer.write({
@@ -898,7 +953,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           // run continues server-side to completion — billed in full
           // for a reply nobody receives — and `onAbort` never fires.
           abortSignal: request.signal,
-          onFinish: ({
+          onFinish: async ({
             totalUsage,
             finishReason,
             rawFinishReason,
@@ -912,6 +967,10 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
               providerMetadata,
               warnings: warnings as unknown[] | undefined,
             };
+            // Settled here, where the usage is final, rather than when
+            // the UI stream closes: a client that disconnects closes it
+            // first, and the run must still be charged.
+            await settle(captured.usage, { aborted: false });
           },
           onAbort: async ({ steps }) => {
             await settle(sumStepUsage(steps), { aborted: true });
@@ -945,13 +1004,13 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       generateId,
       onFinish: async ({ responseMessage, isContinuation }) => {
         writerSlot = null;
-        if (captured) {
-          await settle(captured.usage, { aborted: request.signal.aborted });
-        } else {
-          // The stream closed without the model run reporting usage and
-          // without an abort or error having settled it. Failing
-          // releases the hold and leaves a `failed` row an operator can
-          // see — settling zero tokens as `succeeded` would hide it.
+        // The run settles itself where its usage becomes known (above).
+        // A stream that closed with no usage and no disconnect never
+        // will: failing releases the hold and leaves a `failed` row an
+        // operator can see. After a disconnect the run is still ending —
+        // `onAbort` or the runtime's usage settles it, and `reconcile()`
+        // abandons it if neither does.
+        if (!captured && !request.signal.aborted) {
           void run.fail({ error: new Error("stream ended without usage") });
         }
 
@@ -1025,7 +1084,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     }
     if (!id) {
       return refusal(
-        t,
         "BAD_REQUEST",
         t("invalidBody"),
         { actor: null, conversationId: null },
@@ -1039,7 +1097,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       actor = await authenticate(request);
     } catch {
       return refusal(
-        t,
         "UNAUTHORIZED",
         t("unauthorized"),
         { actor: null, conversationId: id },
@@ -1056,7 +1113,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         (error.code === "not_found" || error.code === "forbidden")
       ) {
         return refusal(
-          t,
           "NOT_FOUND",
           t("notFound"),
           { actor, conversationId: id },
@@ -1069,7 +1125,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         error: errorMessage(error),
       });
       return refusal(
-        t,
         "INTERNAL",
         t("internalError"),
         { actor, conversationId: id },
