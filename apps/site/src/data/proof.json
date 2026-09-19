@@ -2,8 +2,8 @@
   "sampledAt": "2026-09-19",
   "version": "1.0.0-beta.8",
   "packages": 11,
-  "testFiles": 92,
-  "testCases": 922,
+  "testFiles": 93,
+  "testCases": 926,
   "architectureTests": 14,
   "registryItems": 28,
   "adrs": 18

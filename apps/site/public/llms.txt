@@ -6,6 +6,7 @@
 
 - [Getting started](https://intelligo.dev/docs/getting-started): Create an application, connect PostgreSQL, install the pages and run the whole product against a stub model — before you configure an AI provider.
 - [Explore the reference app](https://intelligo.dev/docs/getting-started/reference-app): A complete workspace AI SaaS built from nothing but the public packages and registry blocks — clone the framework and run it.
+- [Environment variables](https://intelligo.dev/docs/getting-started/environment): Every variable an Intelligo app reads — the two it cannot boot without, and the ones that switch on email, OAuth, Stripe, the maintenance cron and the admin console.
 
 ## Concepts
 
@@ -14,6 +15,7 @@
 - [The execution boundary](https://intelligo.dev/docs/concepts/execution-boundary): Every AI run is admitted, settled or failed exactly once — entitlement checked, worst-case cost reserved, actual usage charged — without wrapping the run.
 - [Who owns which file](https://intelligo.dev/docs/concepts/ownership): Packages, generated source, installed pages and your agent — four kinds of file with four owners, and upgrades that never overwrite yours.
 - [Package topology](https://intelligo.dev/docs/concepts/package-topology): Why the framework is the packages it is — one package per runtime target, shared modules as subpaths, and imports that point one way.
+- [Credits and money](https://intelligo.dev/docs/concepts/credits-and-money): How an amount is represented, which pools a turn draws from, how provider cost becomes a charge, and what the workspace sees of it.
 
 ## Registry
 
@@ -45,6 +47,11 @@
 ## Guides
 
 - [Bring your agent](https://intelligo.dev/docs/guides/bring-your-agent): Replace the stub model with your provider, prompt and tools — in the chat's server config, with Mastra, or around any run of your own.
+- [Models and pricing](https://intelligo.dev/docs/guides/models-and-pricing): Run chat on a real provider model, register what it costs, offer a plan-gated model picker, and see how each turn's charge is computed.
+- [Plans, features and quotas](https://intelligo.dev/docs/guides/plans-and-features): Define your plans, gate a feature to a plan on the server, cap how often it runs, and show an upgrade prompt when a workspace hits the limit.
+- [Billing with Stripe](https://intelligo.dev/docs/guides/billing-stripe): Connect your plans and credit bundles to a Stripe account — keys, price ids, the webhook, checkout and the customer portal, locally and in production.
+- [Auth, workspaces and roles](https://intelligo.dev/docs/guides/auth-and-teams): Guard your own pages, Server Actions and route handlers by session, workspace and role — and see how sign-in, invitations, workspace switching and platform admins work.
+- [Deploying](https://intelligo.dev/docs/guides/deploy): Put the app on Vercel with Postgres and pgvector, apply both migration chains on every deploy, and get email, the Stripe webhook and the maintenance cron working.
 
 ## More
 

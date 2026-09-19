@@ -50,7 +50,7 @@ Tools are native AI SDK tools. The function form closes over the caller's tenanc
 
 ### Register the model
 
-Every model id must be registered with its pricing before it runs. `registerModels(DEFAULT_MODELS)` in the composition root covers the built-in catalogue; pass your own entries for contracted rates or a model it doesn't know. An unregistered id throws where its price is needed, and an architecture test catches literals at build time.
+Every model id must be registered with its pricing before it runs. `registerModels(DEFAULT_MODELS)` in the composition root covers the built-in catalogue; pass your own entries for contracted rates or a model it doesn't know. An unregistered id has no price, so the chat refuses the turn rather than guess a rate, and an architecture test catches literals at build time. [Models and pricing](/docs/guides/models-and-pricing) covers swapping the stub for a provider model, the pricing fields and the model picker.
 
 ### More seams
 

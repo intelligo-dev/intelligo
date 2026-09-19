@@ -489,6 +489,9 @@ details.q .a { padding: 0 1.25rem 1.1rem; color: var(--muted-foreground); font-s
   background: color-mix(in oklab, var(--muted) 70%, transparent); color: var(--foreground);
 }
 .docs-prose td :not(pre) > code { white-space: normal; overflow-wrap: anywhere; }
+/* The first column names the thing a row is about; a name broken mid-word
+   reads as two. The table scrolls when that makes it too wide. */
+.docs-prose td:first-child :not(pre) > code { white-space: nowrap; }
 .docs-prose blockquote { border-left: 2px solid var(--border); padding-left: 1em; color: var(--muted-foreground); }
 /* A wide table scrolls inside a wrapper the docs layout puts round it, so
    the <table> keeps its rows and cells for a screen reader — display:block

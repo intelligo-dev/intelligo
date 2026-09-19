@@ -30,6 +30,12 @@ export function composeIntelligo(): void {
   setDefaultProductSlug(PRODUCT_SLUG);
   registerProductPlans(PRODUCT_SLUG, PLANS);
   registerProductFeatures(PRODUCT_SLUG, FEATURES);
+  registerTeamMemberLimits(PRODUCT_SLUG, TEAM_MEMBER_LIMITS);
+
+  // The plans table is a copy of the catalogue above: a subscription
+  // row references its plan there, so the rows exist before the first
+  // checkout rather than being seeded by a migration.
+  void ensurePlanRows();
 
   // What each model costs. The framework ships a catalogue as data and
   // registers none of it: an id with no registered price throws where
