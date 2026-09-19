@@ -60,4 +60,4 @@ chain to tables that already exist.
 - `@intelligo-dev/core/prompt`
 - `@intelligo-dev/core/logger`
 
-[npm](https://www.npmjs.com/package/@intelligo-dev/core) · [source](https://github.com/intelligo-dev/framework/tree/main/packages/core)
+[npm](https://www.npmjs.com/package/@intelligo-dev/core) · [source](https://github.com/intelligo-dev/intelligo/tree/main/packages/core)

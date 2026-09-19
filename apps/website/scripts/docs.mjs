@@ -22,7 +22,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { basename, dirname, join, relative, resolve } from "node:path";
 
-const GITHUB = "https://github.com/intelligo-dev/framework";
+const GITHUB = "https://github.com/intelligo-dev/intelligo";
 const SITE_URL = "https://intelligo.dev";
 
 /** Where the docs live, relative to the site. */

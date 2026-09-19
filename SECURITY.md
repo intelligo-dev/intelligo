@@ -6,7 +6,7 @@ Report security issues privately — **do not open a public issue**.
 
 Use either channel:
 
-- a [private security advisory](https://github.com/intelligo-mn/framework/security/advisories/new)
+- a [private security advisory](https://github.com/intelligo-dev/intelligo/security/advisories/new)
   on GitHub, or
 - email to **security@intelligo.dev**.
 

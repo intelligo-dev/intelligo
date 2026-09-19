@@ -8,8 +8,8 @@ label: The reference app
 The framework repository contains `apps/app`: a generic workspace AI product — sign-up, verification, login, the app shell, dashboard, team, billing, usage, notifications, chat with a stub model, and artifacts — built **only** from the published packages and installed registry items.
 
 ```bash
-git clone https://github.com/intelligo-dev/framework
-cd framework
+git clone https://github.com/intelligo-dev/intelligo
+cd intelligo
 docker compose up -d   # local PostgreSQL with pgvector
 pnpm install
 pnpm dev               # the reference app on :4002

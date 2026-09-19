@@ -325,7 +325,7 @@ describe("publishability", () => {
         `packages/${pkg} has no keywords`
       ).toBeGreaterThan(0);
       expect(m.repository?.url, `packages/${pkg} repository.url`).toBe(
-        "git+https://github.com/intelligo-mn/framework.git"
+        "git+https://github.com/intelligo-dev/intelligo.git"
       );
       expect(
         m.repository?.directory,

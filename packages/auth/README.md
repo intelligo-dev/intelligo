@@ -2,7 +2,7 @@
 
 Multi-tenant authentication, workspaces and RBAC on Better-Auth.
 
-Part of [Intelligo](https://github.com/intelligo-mn/framework), an application
+Part of [Intelligo](https://github.com/intelligo-dev/intelligo), an application
 framework and operational platform for vertical AI SaaS products. This package
 is published from that repository and is not meant to be used on its own.
 

@@ -7,7 +7,7 @@
 You build the agent, with the AI framework you already use.<br/>
 Intelligo is everything around it — and it is tested, typed, and yours.
 
-<a href="https://github.com/intelligo-mn/framework/actions/workflows/ci.yml"><img src="https://github.com/intelligo-mn/framework/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
+<a href="https://github.com/intelligo-dev/intelligo/actions/workflows/ci.yml"><img src="https://github.com/intelligo-dev/intelligo/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
 <a href="https://www.npmjs.com/package/@intelligo-dev/core"><img src="https://img.shields.io/npm/v/@intelligo-dev/core/beta?label=npm%40beta" alt="npm beta" /></a>
 <img src="https://img.shields.io/badge/licence-Apache--2.0-blue" alt="Apache-2.0" />
 <img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript" />
@@ -195,7 +195,7 @@ A release is one commit: it bumps every published package and heads [`CHANGELOG.
 
 ## Community
 
-Questions and ideas go to [Discussions](https://github.com/intelligo-mn/framework/discussions), bugs to [issues](https://github.com/intelligo-mn/framework/issues/new/choose), and vulnerabilities go privately, the way [SECURITY.md](SECURITY.md) describes. See also [SUPPORT.md](SUPPORT.md) and the [code of conduct](CODE_OF_CONDUCT.md).
+Questions and ideas go to [Discussions](https://github.com/intelligo-dev/intelligo/discussions), bugs to [issues](https://github.com/intelligo-dev/intelligo/issues/new/choose), and vulnerabilities go privately, the way [SECURITY.md](SECURITY.md) describes. See also [SUPPORT.md](SUPPORT.md) and the [code of conduct](CODE_OF_CONDUCT.md).
 
 ## Licence
 

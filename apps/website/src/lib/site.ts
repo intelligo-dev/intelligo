@@ -11,12 +11,12 @@ export const SITE = {
   /** The long form, for the footer and the social card. */
   tagline:
     "You build the agent. Intelligo is everything around it — auth, workspaces, billing, credits, execution accounting, pages and operations — shipped as versioned packages and consumer-owned source. Your AI framework stays native. Open source, Apache-2.0.",
-  github: "https://github.com/intelligo-dev/framework",
+  github: "https://github.com/intelligo-dev/intelligo",
   githubOwner: "intelligo-dev",
-  githubRepo: "framework",
-  license: "https://github.com/intelligo-dev/framework/blob/main/LICENSE",
+  githubRepo: "intelligo",
+  license: "https://github.com/intelligo-dev/intelligo/blob/main/LICENSE",
   changelog:
-    "https://github.com/intelligo-dev/framework/blob/main/CHANGELOG.md",
+    "https://github.com/intelligo-dev/intelligo/blob/main/CHANGELOG.md",
   docs: "/docs",
   /** Where every "Get started" lands. */
   start: "/docs/getting-started",
@@ -29,8 +29,8 @@ export const SITE = {
    */
   version: PUBLISHED,
   status: `${PUBLISHED} · on npm`,
-  /** While the repository is private the star count has nothing to read: the nav shows a plain link. */
-  githubPublic: false,
+  /** The repository is public: the nav shows the live star count. */
+  githubPublic: true,
   /**
    * The homepage film (tools/film, rendered with Remotion), one render
    * per theme, served from `public/film/` with a still shown before it

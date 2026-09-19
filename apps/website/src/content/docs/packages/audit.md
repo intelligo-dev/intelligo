@@ -30,4 +30,4 @@ this package knowing about it.
 - `@intelligo-dev/audit`
 - `@intelligo-dev/audit/db`
 
-[npm](https://www.npmjs.com/package/@intelligo-dev/audit) · [source](https://github.com/intelligo-dev/framework/tree/main/packages/audit)
+[npm](https://www.npmjs.com/package/@intelligo-dev/audit) · [source](https://github.com/intelligo-dev/intelligo/tree/main/packages/audit)

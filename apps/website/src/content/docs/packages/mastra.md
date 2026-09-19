@@ -22,4 +22,4 @@ agent, and settles what it cost.
 
 - `@intelligo-dev/mastra`
 
-[npm](https://www.npmjs.com/package/@intelligo-dev/mastra) · [source](https://github.com/intelligo-dev/framework/tree/main/packages/mastra)
+[npm](https://www.npmjs.com/package/@intelligo-dev/mastra) · [source](https://github.com/intelligo-dev/intelligo/tree/main/packages/mastra)

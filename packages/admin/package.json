@@ -16,12 +16,12 @@
   "author": "Turtuvshin Byambaa <toroo.byamba@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/intelligo-mn/framework.git",
+    "url": "git+https://github.com/intelligo-dev/intelligo.git",
     "directory": "packages/admin"
   },
-  "homepage": "https://github.com/intelligo-mn/framework#readme",
+  "homepage": "https://github.com/intelligo-dev/intelligo#readme",
   "bugs": {
-    "url": "https://github.com/intelligo-mn/framework/issues"
+    "url": "https://github.com/intelligo-dev/intelligo/issues"
   },
   "type": "module",
   "exports": {

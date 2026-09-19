@@ -12,7 +12,7 @@ name: Release
 # manifests say, the notes are what the changelog says.
 #
 # There is no npm token. Every @intelligo-dev package names this file,
-# in the `npm` environment of intelligo-mn/framework, as its trusted
+# in the `npm` environment of intelligo-dev/intelligo, as its trusted
 # publisher; npm checks the run's OIDC identity at publish time and
 # attaches provenance. The registry work OIDC cannot do — deprecating
 # a folded package, moving a dist-tag — is scripts/npm-maintain.mjs,

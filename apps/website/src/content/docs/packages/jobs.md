@@ -21,4 +21,4 @@ fewer moving part in an operational stack that already has Postgres.
 - `@intelligo-dev/jobs`
 - `@intelligo-dev/jobs/db`
 
-[npm](https://www.npmjs.com/package/@intelligo-dev/jobs) · [source](https://github.com/intelligo-dev/framework/tree/main/packages/jobs)
+[npm](https://www.npmjs.com/package/@intelligo-dev/jobs) · [source](https://github.com/intelligo-dev/intelligo/tree/main/packages/jobs)

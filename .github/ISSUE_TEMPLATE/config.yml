@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/intelligo-mn/framework/security/advisories/new
+    url: https://github.com/intelligo-dev/intelligo/security/advisories/new
     about: Privately, never in a public issue. See SECURITY.md.
   - name: Ask a question
-    url: https://github.com/intelligo-mn/framework/discussions
+    url: https://github.com/intelligo-dev/intelligo/discussions
     about: Usage questions and ideas go to Discussions.

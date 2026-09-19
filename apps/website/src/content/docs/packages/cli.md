@@ -57,4 +57,4 @@ scheduler with `Authorization: Bearer $CRON_SECRET`.
 
 - `@intelligo-dev/cli`
 
-[npm](https://www.npmjs.com/package/@intelligo-dev/cli) · [source](https://github.com/intelligo-dev/framework/tree/main/packages/cli)
+[npm](https://www.npmjs.com/package/@intelligo-dev/cli) · [source](https://github.com/intelligo-dev/intelligo/tree/main/packages/cli)

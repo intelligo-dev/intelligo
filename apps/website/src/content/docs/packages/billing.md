@@ -75,4 +75,4 @@ error tells Stripe the event was handled and silently drops it.
 - `@intelligo-dev/billing/rate-limit`
 - `@intelligo-dev/billing/quota`
 
-[npm](https://www.npmjs.com/package/@intelligo-dev/billing) · [source](https://github.com/intelligo-dev/framework/tree/main/packages/billing)
+[npm](https://www.npmjs.com/package/@intelligo-dev/billing) · [source](https://github.com/intelligo-dev/intelligo/tree/main/packages/billing)
