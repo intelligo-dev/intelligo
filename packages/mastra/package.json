@@ -44,7 +44,7 @@
     }
   },
   "devDependencies": {
-    "@types/node": "^22.20.3",
+    "@types/node": "^26.6.1",
     "typescript": "^5.9.3"
   },
   "files": [

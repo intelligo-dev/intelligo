@@ -73,7 +73,7 @@
   "devDependencies": {
     "@intelligo-dev/cli": "workspace:*",
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^22.20.3",
+    "@types/node": "^26.6.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "^19.3.0",
     "dotenv": "^17.4.2",
