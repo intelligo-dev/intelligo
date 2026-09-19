@@ -55,10 +55,10 @@ one on the dark — and which the repository README links its teaser from.
 After a re-render, refresh all of it:
 
 ```bash
-cd apps && for t in light dark; do
-  cp film/out/film-$t.mp4 site/public/film/film-$t.mp4
-  ffmpeg -y -ss 6.85 -i film/out/film-$t.mp4 -frames:v 1 -q:v 4 site/public/film/poster-$t.jpg
-  ffmpeg -y -t 12.5 -i film/out/film-$t.mp4 -vf "fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=48:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" site/public/film/teaser-$t.gif
+for t in light dark; do
+  cp tools/film/out/film-$t.mp4 apps/site/public/film/film-$t.mp4
+  ffmpeg -y -ss 6.85 -i tools/film/out/film-$t.mp4 -frames:v 1 -q:v 4 apps/site/public/film/poster-$t.jpg
+  ffmpeg -y -t 12.5 -i tools/film/out/film-$t.mp4 -vf "fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=48:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" apps/site/public/film/teaser-$t.gif
 done
 ```
 

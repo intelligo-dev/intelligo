@@ -312,109 +312,6 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  apps/film:
-    dependencies:
-      '@base-ui/react':
-        specifier: ^1.8.0
-        version: 1.8.0(@types/react@19.2.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      '@remotion/cli':
-        specifier: 4.0.525
-        version: 4.0.525(@swc/helpers@0.5.23)(postcss@8.5.28)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
-      '@remotion/google-fonts':
-        specifier: 4.0.525
-        version: 4.0.525(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      '@remotion/tailwind-v4':
-        specifier: 4.0.525
-        version: 4.0.525(@remotion/bundler@4.0.525(@swc/helpers@0.5.23)(postcss@8.5.28)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@rspack/core@1.7.11(@swc/helpers@0.5.23))(webpack@5.105.0(esbuild@0.28.2)(postcss@8.5.28))
-      '@streamdown/cjk':
-        specifier: ^1.0.3
-        version: 1.0.3(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.3)(unified@11.0.5)
-      '@streamdown/code':
-        specifier: ^1.1.1
-        version: 1.1.1(react@19.2.3)
-      '@streamdown/math':
-        specifier: ^1.0.2
-        version: 1.0.2(react@19.2.3)
-      '@streamdown/mermaid':
-        specifier: ^1.0.2
-        version: 1.0.2(react@19.2.3)
-      class-variance-authority:
-        specifier: ^0.7.1
-        version: 0.7.1
-      cmdk:
-        specifier: ^1.1.1
-        version: 1.1.1(@types/react-dom@19.3.0(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      cn:
-        specifier: ^0.3.0
-        version: 0.3.0
-      katex:
-        specifier: ^0.18.7
-        version: 0.18.7
-      lucide-react:
-        specifier: ^1.46.0
-        version: 1.46.0(react@19.2.3)
-      motion:
-        specifier: ^13.4.0
-        version: 13.4.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      next-themes:
-        specifier: ^0.4.6
-        version: 0.4.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      react:
-        specifier: 19.2.3
-        version: 19.2.3
-      react-dom:
-        specifier: 19.2.3
-        version: 19.2.3(react@19.2.3)
-      remotion:
-        specifier: 4.0.525
-        version: 4.0.525(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      shiki:
-        specifier: ^4.4.3
-        version: 4.4.3
-      sonner:
-        specifier: ^2.0.8
-        version: 2.0.8(@types/react@19.2.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      streamdown:
-        specifier: ^2.6.0
-        version: 2.6.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      tailwindcss:
-        specifier: 4.0.0
-        version: 4.0.0
-      use-intl:
-        specifier: ^4.14.5
-        version: 4.14.5(react@19.2.3)
-    devDependencies:
-      '@intelligo-dev/chat':
-        specifier: workspace:*
-        version: link:../../packages/chat
-      '@remotion/eslint-config-flat':
-        specifier: 4.0.525
-        version: 4.0.525(eslint@9.19.0(jiti@2.7.0))(typescript@5.9.3)
-      '@types/react':
-        specifier: 19.2.18
-        version: 19.2.18
-      '@types/web':
-        specifier: 0.0.166
-        version: 0.0.166
-      ai:
-        specifier: ^7.0.103
-        version: 7.0.104(zod@4.6.5)
-      eslint:
-        specifier: 9.19.0
-        version: 9.19.0(jiti@2.7.0)
-      prettier:
-        specifier: 3.8.1
-        version: 3.8.1
-      shadcn:
-        specifier: ^4.21.0
-        version: 4.21.0(typescript@5.9.3)
-      tw-animate-css:
-        specifier: ^1.4.0
-        version: 1.4.0
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
-
   apps/site:
     dependencies:
       '@ai-sdk/react':
@@ -1063,6 +960,109 @@ packages:
     resolution: {integrity: sha512-F6Ew1AtPzCLhTn8h9yiqTe7DiDf6XVrSnq9V1YqSl9eWqPm6anMveTiKdCSb/76cW0YiJc24rNaUrVezFFHbqQ==}
     engines: {node: '>=18'}
     peerDependencies:
+  tools/film:
+    dependencies:
+      '@base-ui/react':
+        specifier: ^1.8.0
+        version: 1.8.0(@types/react@19.2.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@remotion/cli':
+        specifier: 4.0.525
+        version: 4.0.525(@swc/helpers@0.5.23)(postcss@8.5.28)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
+      '@remotion/google-fonts':
+        specifier: 4.0.525
+        version: 4.0.525(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@remotion/tailwind-v4':
+        specifier: 4.0.525
+        version: 4.0.525(@remotion/bundler@4.0.525(@swc/helpers@0.5.23)(postcss@8.5.28)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@rspack/core@1.7.11(@swc/helpers@0.5.23))(webpack@5.105.0(esbuild@0.28.2)(postcss@8.5.28))
+      '@streamdown/cjk':
+        specifier: ^1.0.3
+        version: 1.0.3(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.3)(unified@11.0.5)
+      '@streamdown/code':
+        specifier: ^1.1.1
+        version: 1.1.1(react@19.2.3)
+      '@streamdown/math':
+        specifier: ^1.0.2
+        version: 1.0.2(react@19.2.3)
+      '@streamdown/mermaid':
+        specifier: ^1.0.2
+        version: 1.0.2(react@19.2.3)
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      cmdk:
+        specifier: ^1.1.1
+        version: 1.1.1(@types/react-dom@19.3.0(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      cn:
+        specifier: ^0.3.0
+        version: 0.3.0
+      katex:
+        specifier: ^0.18.7
+        version: 0.18.7
+      lucide-react:
+        specifier: ^1.46.0
+        version: 1.46.0(react@19.2.3)
+      motion:
+        specifier: ^13.4.0
+        version: 13.4.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react:
+        specifier: 19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: 19.2.3
+        version: 19.2.3(react@19.2.3)
+      remotion:
+        specifier: 4.0.525
+        version: 4.0.525(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      shiki:
+        specifier: ^4.4.3
+        version: 4.4.3
+      sonner:
+        specifier: ^2.0.8
+        version: 2.0.8(@types/react@19.2.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      streamdown:
+        specifier: ^2.6.0
+        version: 2.6.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      tailwindcss:
+        specifier: 4.0.0
+        version: 4.0.0
+      use-intl:
+        specifier: ^4.14.5
+        version: 4.14.5(react@19.2.3)
+    devDependencies:
+      '@intelligo-dev/chat':
+        specifier: workspace:*
+        version: link:../../packages/chat
+      '@remotion/eslint-config-flat':
+        specifier: 4.0.525
+        version: 4.0.525(eslint@9.19.0(jiti@2.7.0))(typescript@5.9.3)
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      '@types/web':
+        specifier: 0.0.166
+        version: 0.0.166
+      ai:
+        specifier: ^7.0.103
+        version: 7.0.104(zod@4.6.5)
+      eslint:
+        specifier: 9.19.0
+        version: 9.19.0(jiti@2.7.0)
+      prettier:
+        specifier: 3.8.1
+        version: 3.8.1
+      shadcn:
+        specifier: ^4.21.0
+        version: 4.21.0(typescript@5.9.3)
+      tw-animate-css:
+        specifier: ^1.4.0
+        version: 1.4.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
       '@bufbuild/protobuf': ^2.10.2
       '@grpc/grpc-js': ^1.11.0
       express: ^4.21.2 || ^5.1.0

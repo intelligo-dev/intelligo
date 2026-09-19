@@ -6,6 +6,8 @@ export const ROOT = path.resolve(__dirname, "../..");
 
 export const PACKAGES_DIR = path.join(ROOT, "packages");
 export const APPS_DIR = path.join(ROOT, "apps");
+/** Production tools that are workspaces but never deployed or published. */
+export const TOOLS_DIR = path.join(ROOT, "tools");
 
 /**
  * Packages dissolved into the framework rather than kept as their own
@@ -46,7 +48,7 @@ export const IGNORED_DIRS = new Set([
   // repository twice, the second time with deliberately broken source.
   ".stryker-tmp",
   "reports",
-  // Remotion's bundle and rendered output (apps/film), gitignored; the
+  // Remotion's bundle and rendered output (tools/film), gitignored; the
   // minified bundle trips the credential patterns.
   "build",
   "out",

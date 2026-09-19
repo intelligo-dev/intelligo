@@ -13,7 +13,7 @@ import { enableTailwind } from "@remotion/tailwind-v4";
 // location — Remotion loads remotion.config.ts through a bundler
 // context whose __dirname resolves inside its own package, not here.
 // Every render/studio command (package.json's scripts, this doc's own)
-// runs with apps/film as the working directory, same as the relative
+// runs with tools/film as the working directory, same as the relative
 // entry point (`src/index.ts`) they already pass.
 const SRC = join(process.cwd(), "src");
 

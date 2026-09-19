@@ -49,7 +49,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const FILM = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-// apps/film lives inside the framework repository: two directories up.
+// tools/film lives inside the framework repository: two directories up.
 const FRAMEWORK = resolve(FILM, "../..");
 const UI_ROOT = join(FILM, "src/ui");
 

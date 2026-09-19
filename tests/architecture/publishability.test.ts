@@ -16,10 +16,17 @@
 
 import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { APPS_DIR, PACKAGES_DIR, ROOT, listWorkspaces, walk } from "./tree";
+import {
+  APPS_DIR,
+  PACKAGES_DIR,
+  ROOT,
+  TOOLS_DIR,
+  listWorkspaces,
+  walk,
+} from "./tree";
 
 type PackageManifest = {
   private?: boolean;
@@ -197,6 +204,7 @@ function localEnvValues(): { source: string; key: string; value: string }[] {
     ...listWorkspaces(APPS_DIR).map((app) => `apps/${app}/.env`),
     ...listWorkspaces(APPS_DIR).map((app) => `apps/${app}/.env.local`),
     ...listWorkspaces(PACKAGES_DIR).map((pkg) => `packages/${pkg}/.env`),
+    ...listWorkspaces(TOOLS_DIR).map((tool) => `tools/${tool}/.env`),
   ].filter((rel) => existsSync(path.join(ROOT, rel)));
 
   const out: { source: string; key: string; value: string }[] = [];
@@ -416,18 +424,22 @@ describe("publishability", () => {
     }
   });
 
-  it("keeps the applications off npm", () => {
+  it("keeps the applications and tools off npm", () => {
     // `private: true` is what stops `pnpm publish -r` from putting the
-    // reference app or the site on a registry by accident. It is the
-    // last line of defence, so it is asserted.
+    // reference app, the site or the film on a registry by accident. It
+    // is the last line of defence, so it is asserted.
     const apps = listWorkspaces(APPS_DIR);
     expect(apps.length).toBeGreaterThan(0);
+    const unpublished = [
+      ...apps.map((app) => path.join("apps", app)),
+      ...listWorkspaces(TOOLS_DIR).map((tool) => path.join("tools", tool)),
+    ];
 
-    for (const app of apps) {
+    for (const dir of unpublished) {
       const pkgJson = JSON.parse(
-        readFileSync(path.join(APPS_DIR, app, "package.json"), "utf8")
+        readFileSync(path.join(ROOT, dir, "package.json"), "utf8")
       ) as { private?: boolean };
-      expect(pkgJson.private, `apps/${app} is not marked private`).toBe(true);
+      expect(pkgJson.private, `${dir} is not marked private`).toBe(true);
     }
   });
 

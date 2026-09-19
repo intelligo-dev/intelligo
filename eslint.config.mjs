@@ -95,7 +95,11 @@ export default [
     // Applications and registry items may not reach for a dissolved
     // package either — it resolves to nothing on npm — nor for a folded
     // one, whose name is deprecated there.
-    files: ["apps/*/**/*.{ts,tsx}", "packages/registry/base/**/*.{ts,tsx}"],
+    files: [
+      "apps/*/**/*.{ts,tsx}",
+      "tools/*/**/*.{ts,tsx}",
+      "packages/registry/base/**/*.{ts,tsx}",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",

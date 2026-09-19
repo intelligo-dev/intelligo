@@ -25,9 +25,9 @@ export const SITE = {
   /** The repository is public: the nav shows the live star count. */
   githubPublic: true,
   /**
-   * The homepage film (apps/film, rendered with Remotion), one render
+   * The homepage film (tools/film, rendered with Remotion), one render
    * per theme, served from `public/film/` with a still shown before it
-   * plays. Re-render, then copy `apps/film/out/*.mp4` over these.
+   * plays. Re-render, then copy `tools/film/out/*.mp4` over these.
    */
   film: {
     light: { video: "/film/film-light.mp4", poster: "/film/poster-light.jpg" },

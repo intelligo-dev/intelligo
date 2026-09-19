@@ -19,6 +19,7 @@ import path from "node:path";
 
 import {
   APPS_DIR,
+  TOOLS_DIR,
   DISSOLVED_PACKAGES,
   FOLDED_PACKAGES,
   PACKAGES_DIR,
@@ -108,6 +109,11 @@ function declaredIntelligoDeps(manifestPath: string): string[] {
 // item by item in registry.test.ts, not as a package edge.
 const packages = listPublishedWorkspaces(PACKAGES_DIR);
 const apps = listWorkspaces(APPS_DIR);
+/** Every workspace that consumes the packages: applications and tools. */
+const consumers = [
+  ...apps.map((a) => ["apps", a] as const),
+  ...listWorkspaces(TOOLS_DIR).map((t) => ["tools", t] as const),
+];
 
 /** What this repository publishes: the only `@intelligo-dev/*` names that resolve. */
 const PUBLISHED = new Set(packages.map((pkg) => `@intelligo-dev/${pkg}`));
@@ -199,8 +205,8 @@ describe("apps", () => {
     expect(apps.length).toBeGreaterThan(0);
   });
 
-  describe.each(apps)("%s", (app) => {
-    const appDir = path.join(APPS_DIR, app);
+  describe.each(consumers)("%s/%s", (kind, app) => {
+    const appDir = path.join(ROOT, kind, app);
 
     it("imports only packages this repository publishes", () => {
       const violations: string[] = [];
@@ -216,7 +222,7 @@ describe("apps", () => {
 
       expect(
         violations,
-        `apps/${app} imports what is not published:\n  ${violations.join("\n  ")}`
+        `${kind}/${app} imports what is not published:\n  ${violations.join("\n  ")}`
       ).toEqual([]);
     });
 
@@ -238,7 +244,7 @@ describe("apps", () => {
 
       expect(
         [...undeclared],
-        `apps/${app} imports packages it does not declare`
+        `${kind}/${app} imports packages it does not declare`
       ).toEqual([]);
     });
   });
@@ -269,7 +275,7 @@ describe("nothing depends on the dissolved set", () => {
 
   describe.each([
     ...packages.map((p) => ["packages", p] as const),
-    ...apps.map((a) => ["apps", a] as const),
+    ...consumers,
   ])("%s/%s", (kind, name) => {
     const dir = path.join(ROOT, kind, name);
 
@@ -317,7 +323,7 @@ describe("nothing depends on the folded set", () => {
 
   describe.each([
     ...packages.map((p) => ["packages", p] as const),
-    ...apps.map((a) => ["apps", a] as const),
+    ...consumers,
   ])("%s/%s", (kind, name) => {
     const dir = path.join(ROOT, kind, name);
 
