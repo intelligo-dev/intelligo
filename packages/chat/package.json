@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/chat",
-  "version": "1.0.0-beta.8",
+  "version": "1.0.0-beta.9",
   "description": "The AI-SDK-native chat transport: a Route Handler as a function.",
   "keywords": [
     "intelligo",

@@ -14,6 +14,86 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [1.0.0-beta.9] — 2026-09-20
+
+The first version on npm since `1.0.0-beta.6`. `1.0.0-beta.7` and
+`1.0.0-beta.8` were versioned but never published; their sections
+below are part of this release, and so is everything here, which is
+what the tree became while their releases were failing. The
+repository is now public at `intelligo-dev/intelligo`.
+
+### Breaking
+
+- **Auth guards throw `AuthGuardError`** with a `code`
+  (`unauthenticated`, `no_workspace`, `forbidden`);
+  `requireWorkspace()` with no session is `unauthenticated`.
+  `requireFeature` throws `FeatureNotAvailableError`.
+- **An unregistered model id is an outage, not a paywall:** chat answers
+  503 `MODEL_UNAVAILABLE` instead of 402 `QUOTA_EXCEEDED`.
+- **The workspace bootstrap is set from the composition root** with
+  `setWorkspaceCreatedHandler`, and runs for the workspace signup
+  creates; the app-shell layout no longer passes it.
+- `deleteWorkspace` takes a `beforeDeleteWorkspace` port
+  (`cancelWorkspaceSubscription` is billing's binding);
+  `checkRateLimit` takes a bucket.
+- `migrate` refuses an unknown flag instead of applying.
+- `finance_events.claimed_at` (migration `0002`): run
+  `intelligo migrate`.
+
+### Added
+
+- `turn.addUsage()` on the chat turn: a tool that calls a model itself
+  hands over its tokens, and the turn settles them with its own.
+- `intelligo create` asks which pages to install and installs them with
+  the shadcn CLI once approved (`--items`, `--all`, `--yes`,
+  `--no-install` for scripts).
+- The team page can leave a workspace and transfer it.
+- `updateBillingSettings()` changes rate, margin or currency after first
+  boot; `ensurePlanRows()` writes the plans table from the registered
+  catalogue.
+- `doctor` checks model ids, secret strength and a localhost app URL in
+  production; `migrate --check --json` names the database's state.
+- One radius scale on a 0.5rem radius; `ai-markdown` loads maths and
+  diagram support only when a reply has them.
+
+### Fixed
+
+- **Money.** Settlement is idempotent per request under the workspace
+  lock, so `reconcile()` cannot charge twice; a client that disconnects
+  is still charged; a turn is charged on the model admission priced;
+  provider cost and margin are exact integer micros. Entitlement
+  follows the subscription's status and Stripe price; a Stripe event is
+  marked processed only after its handlers succeed, behind a claim
+  lease; a canceled subscription is never reopened by a late event;
+  delayed payments settle a credit purchase once.
+- **Tenancy.** Request headers are scoped with AsyncLocalStorage — the
+  shared slot handed one caller's cookie to concurrent requests.
+  `PLATFORM_ADMIN_EMAILS` promotes only a verified address;
+  impersonation checks both caller and target; pending invitations
+  count as seats.
+- **Chat.** A refused turn keeps the reply it would have regenerated;
+  an approval must match the tool call the model proposed; client
+  system messages are refused; uploads over the limit are refused
+  before their body is read.
+- **Jobs.** A failing job stops at `maxAttempts`; a job abandoned
+  mid-run is claimed again.
+- **A new app works end to end:** the composition root seeds the plan
+  and billing-settings rows before the first request and retries a
+  failed seed; the scaffold registers team seat limits, declares its
+  peers, and has a tsconfig `next dev` does not rewrite.
+- Installed pages keep the reader's work (onboarding saves the last
+  step, invitations survive sign-in), and show translated errors.
+
+### Changed
+
+- Every package's `repository`, `homepage` and `bugs` point at
+  `github.com/intelligo-dev/intelligo`.
+- core and chat no longer peer zod, admin no longer peers react-dom,
+  billing no longer depends on next or tsx.
+- A release publishes only from its own release commit, after an app
+  scaffolded outside the monorepo from the packed tarballs installs
+  every registry item, type-checks, builds and boots.
+
 ## [1.0.0-beta.8] — 2026-09-18
 
 The framework's schema becomes one baseline that describes structure and
