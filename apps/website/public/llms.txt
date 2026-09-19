@@ -2,6 +2,8 @@
 
 > Open-source Next.js framework for AI SaaS: sign-up, teams, plans, credits, per-run cost and an admin console. Pages you own, packages you upgrade.
 
+Every docs page below is also served as Markdown: the same URL with `.md` appended.
+
 ## Getting started
 
 - [Getting started](https://intelligo.dev/docs/getting-started): Create an application, connect PostgreSQL, install the pages and run the whole product against a stub model — before you configure an AI provider.
@@ -53,10 +55,109 @@
 - [Auth, workspaces and roles](https://intelligo.dev/docs/guides/auth-and-teams): Guard pages, Server Actions and route handlers by session, workspace and role, and see how sign-in, invitations and workspace switching work.
 - [Deploying](https://intelligo.dev/docs/guides/deploy): Put the app on Vercel with Postgres and pgvector, apply both migration chains on every deploy, and get email, Stripe webhooks and the cron working.
 
+## Pages
+
+Product pages installed into a Next.js app as your own source: `pnpm exec shadcn add @intelligo/<name>`.
+
+- [Route Error States](https://intelligo.dev/blocks/route-error): The app's error surfaces: a shared RouteError component every error.tsx renders, message-based error classification, an (app) group boundary, a translated 404, and a dependency-free global-error.
+- [Team Settings](https://intelligo.dev/blocks/team-settings): Workspace team management: invite members, change roles, remove members, and manage pending invitations, backed by the framework's team service.
+- [Usage](https://intelligo.dev/blocks/usage): Workspace usage dashboard: current-period summary tiles, a period selector, and a table of recent AI execution records.
+- [Invitation Accept](https://intelligo.dev/blocks/invitation-accept): Accept or decline a workspace invitation via the team service.
+- [App Shell](https://intelligo.dev/blocks/app-shell): Authenticated application shell: session and onboarding gate, workspace bootstrap, a sidebar that morphs into an icon rail with a gliding active pill, workspace switcher, configurable nav and user menu, and a page region that lifts each section in.
+- [Settings Shell](https://intelligo.dev/blocks/settings-shell): The shared frame around every /settings page: layout with heading and width constraint, a configurable tab bar (lib/settings-nav.ts), and a /settings index that redirects to the first tab.
+- [Workspace Settings](https://intelligo.dev/blocks/workspace-settings): Workspace name/URL editing and owner-only deletion, backed by the framework's workspace service.
+- [Auth: Login](https://intelligo.dev/blocks/auth-login): Email/password and OAuth login.
+- [Auth: Signup](https://intelligo.dev/blocks/auth-signup): Email/password and OAuth account creation.
+- [Auth: Password Reset](https://intelligo.dev/blocks/auth-password-reset): Forgot-password and reset-password pages, backed by the Better-Auth client SDK's requestPasswordReset/resetPassword actions.
+- [Auth: Email Verification](https://intelligo.dev/blocks/auth-email-verification): Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action.
+- [Language Switcher](https://intelligo.dev/blocks/language-switcher): Locale dropdown over the locales i18n/routing.ts declares, labeled with each language's own name.
+- [Trial Banner](https://intelligo.dev/blocks/trial-banner): Dismissable trial-status strip for the app shell's bannerTop seam: days and credits remaining with an upgrade CTA, urgency-ramped visuals, dismiss-for-today, and a consumer config (lib/trial-banner-config.ts) for the CTA target and route suppression (hidden on /chat by default).
+- [Notifications](https://intelligo.dev/blocks/notifications): Notification bell with an unread badge and dropdown, plus a full notifications page with mark-as-read and load-more, backed by the framework's notification records.
+- [Pricing](https://intelligo.dev/blocks/pricing): Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue.
+- [Checkout](https://intelligo.dev/blocks/checkout): Checkout-success page that verifies the Stripe session directly through the framework's checkout service, covering the webhook-race window between the browser redirect and Stripe's webhook delivery.
+- [Billing Settings](https://intelligo.dev/blocks/billing-settings): Workspace billing management: current plan, credit balance, credit bundle purchase, and the Stripe billing portal, shaped server-side by role (member/admin/owner).
+- [Feature Gating](https://intelligo.dev/blocks/feature-gating): The vocabulary for selling a plan: a server-side FeatureGate that renders gated content only to entitled workspaces, three densities of upgrade prompt (full, compact, inline), a quota warning that escalates as a limit approaches, and a preview paywall that blurs content instead of hiding it.
+- [QR Payment (poll)](https://intelligo.dev/blocks/payment-poll): The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms.
+- [Profile Settings](https://intelligo.dev/blocks/profile-settings): User profile name editing, read-only email, and account deletion with typed confirmation, backed by the framework's profile service.
+- [Onboarding](https://intelligo.dev/blocks/onboarding): A generic multi-step onboarding wizard driven by a consumer-owned steps config: text and single-select-card fields, a completion screen, skip, and back/next - backed by the framework's onboarding service (durable step progress, no vertical-specific UI).
+- [Dashboard](https://intelligo.dev/blocks/dashboard): An AI-first workspace home: a hero and a real composer centred as one unit, starter chips that fill it, and a resume affordance for unfinished work — and nothing else, because history belongs to the sidebar and spend to /usage.
+- [Artifacts](https://intelligo.dev/blocks/artifacts): Browse and manage AI-generated document artifacts: filterable list, full-content preview, copy-to-clipboard, and version delete, backed by the framework's document persistence service.
+- [Privacy Settings](https://intelligo.dev/blocks/privacy-settings): GDPR-style data export, a read-only memory-audit trail, and per-category fact listing with delete, backed by the framework's identity service.
+- [Chat](https://intelligo.dev/blocks/chat): A ChatGPT-level AI chat surface: a streaming thread with edit, regenerate and response versions, attachments, a model picker, reasoning, sources, tool cards and human-in-the-loop approvals, agent activity for Mastra and eve turns, a canvas beside the chat for documents a tool streams, a sidebar with pinned and dated groups, share links and feedback — on a two-line Route Handler that binds @intelligo-dev/chat's transport (auth, rate limit, feature gate, persistence, the execution boundary) to consumer-owned config (lib/chat-server-config.ts).
+- [Chat Panel](https://intelligo.dev/blocks/chat-panel): The chat as a side panel on any page: a sheet that opens the same thread the chat page runs, with the page's context on every turn.
+- [Chat Widget](https://intelligo.dev/blocks/chat-widget): The floating assistant: a launcher in a corner of every page and a compact chat over it, configured in lib/chat-widget-config.tsx.
+- [Chat Share](https://intelligo.dev/blocks/chat-share): A conversation its owner published, readable by anyone with the link at /share/[id]: the same transcript, read-only, minus reasoning, tool details and attachments.
+
+## Components
+
+The design system and AI components, installable in any shadcn project the same way.
+
+- [Button](https://intelligo.dev/components#button): The action primitive: presses in and settles back — six variants, eight sizes, composes through render.
+- [Checkbox](https://intelligo.dev/components#checkbox): A checkbox whose check draws itself in, with an indeterminate state.
+- [Radio Group](https://intelligo.dev/components#radio-group): One choice from a set; the dot springs out from the centre.
+- [Switch](https://intelligo.dev/components#switch): An on/off control with a weighted thumb that squeezes while pressed.
+- [Input](https://intelligo.dev/components#input): A single-line text field whose border and soft ring ease in on focus.
+- [Textarea](https://intelligo.dev/components#textarea): A multi-line text field that grows with its content.
+- [Tooltip](https://intelligo.dev/components#tooltip): A short hint on hover or focus that grows out of its trigger; neighbours open instantly.
+- [Popover](https://intelligo.dev/components#popover): Floating content in a rounded panel that scales out of its trigger.
+- [Dropdown Menu](https://intelligo.dev/components#dropdown-menu): Actions, checkboxes and radio groups with submenus, in a panel that scales out of its trigger.
+- [Select](https://intelligo.dev/components#select): A picker for one value from a list, on the input's field and the menu's panel.
+- [Dialog](https://intelligo.dev/components#dialog): A modal window over a blurred backdrop that springs up into place.
+- [Alert Dialog](https://intelligo.dev/components#alert-dialog): A modal that confirms a destructive or irreversible action, with the dialog's backdrop and spring.
+- [Sheet](https://intelligo.dev/components#sheet): A panel that slides in from any edge on the drawer curve.
+- [Tabs](https://intelligo.dev/components#tabs): Switches between views with one indicator that glides from tab to tab — raised and line variants.
+- [Collapsible](https://intelligo.dev/components#collapsible): Content that eases open and closed from its measured height.
+- [Progress](https://intelligo.dev/components#progress): A rounded bar whose fill glides to each new value.
+- [Spinner](https://intelligo.dev/components#spinner): Pending state: a faint ring with a running arc.
+- [Attachment](https://intelligo.dev/components#attachment): A file attached to a message or a prompt.
+- [Input Group](https://intelligo.dev/components#input-group): An input or textarea with inline addons, buttons and text.
+- [Command](https://intelligo.dev/components#command): A searchable list of actions, inline or in a dialog.
+- [Sidebar](https://intelligo.dev/components#sidebar): The app sidebar — collapsible to icons, keyboard-toggled, a sheet on mobile.
+- [Page Header](https://intelligo.dev/components#page-header): The one page title every Intelligo page renders: heading, description and actions.
+- [Stat Card](https://intelligo.dev/components#stat-card): A metric on a card — label, value, an action such as a status badge, and a footer.
+- [Status Badge](https://intelligo.dev/components#status-badge): A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour.
+- [Copy Button](https://intelligo.dev/components#copy-button): Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own.
+- [AI Code Block](https://intelligo.dev/components#ai-code-block): Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark.
+- [AI Markdown](https://intelligo.dev/components#ai-markdown): Markdown as a model writes it — GFM, highlighted code, CJK emphasis — with maths and diagrams fetched only when the text contains them.
+- [AI Reasoning](https://intelligo.dev/components#ai-reasoning): Streamed reasoning, collapsible, with the time it took.
+- [AI Suggestion](https://intelligo.dev/components#ai-suggestion): Conversation starters and follow-ups in a scrollable row.
+- [AI Artifact](https://intelligo.dev/components#ai-artifact): A generated document's frame: header, actions and content.
+- [AI Prompt Input](https://intelligo.dev/components#ai-prompt-input): The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply.
+- [AI Branch](https://intelligo.dev/components#ai-branch): A pager over the versions of a reply or an edited message — previous, next, `2 / 3`.
+- [AI Speech Input](https://intelligo.dev/components#ai-speech-input): Voice into the composer on the browser's speech recognition; renders nothing where it is absent.
+- [AI Composer Menu](https://intelligo.dev/components#ai-composer-menu): The picker a composer opens for slash commands and @ mentions, anchored above the textarea.
+- [AI Motion](https://intelligo.dev/components#ai-motion): The motion vocabulary every tier shares: easing curves, spring presets, a transform-only disclosure, a text swap, the popup and backdrop presets the primitives open with, the button press and list staggers, all gated on reduced motion.
+- [AI Shimmer Text](https://intelligo.dev/components#ai-shimmer-text): A status line that reads as alive while the agent works; a token gradient sweeps the text and the words swap with motion, honouring reduced motion.
+- [AI Agent Activity](https://intelligo.dev/components#ai-agent-activity): One adaptive stream of what the agent is doing: reasoning text, plan steps, web searches with results, tool calls and structured traces, gliding while it works and folding into a summary when done.
+- [AI Approval Card](https://intelligo.dev/components#ai-approval-card): A decision surface: approve, reject or request changes, or step through single-choice, multiple-choice and freeform questions and submit the answers.
+- [AI File Diff](https://intelligo.dev/components#ai-file-diff): A file the agent is changing: the path with live added and removed counts, opening onto a unified diff whose highlighted rows arrive while the change streams.
+- [AI Message Bubble](https://intelligo.dev/components#ai-message-bubble): The speech bubble inside a message row: six surface variants that pop into place, grouped bubbles and a collapsible long body.
+- [AI Message Scroller](https://intelligo.dev/components#ai-message-scroller): The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages.
+- [AI Message](https://intelligo.dev/components#ai-message): One turn of a conversation: the row with its side, optional avatar, content column, header, footer, a centred marker and the typing indicator.
+- [AI Todo List](https://intelligo.dev/components#ai-todo-list): The agent's to-do list: a collapsible plan whose status marks morph between pending, in progress, completed and cancelled, with a rolling completion count.
+- [AI Tool Approval](https://intelligo.dev/components#ai-tool-approval): A permission card for a tool call: name, parameters behind a disclosure, allow once / always allow / deny, and the outcome as a status.
+- [AI Tool Result](https://intelligo.dev/components#ai-tool-result): The result of a tool the agent ran: a summary line that opens onto highlighted output, status rolling from running to done, copy and run-again actions.
+- [AI Agent Progress](https://intelligo.dev/components#ai-agent-progress): A long-running step: a pulsing grid beside the verb and an elapsed-time counter.
+- [AI Citations](https://intelligo.dev/components#ai-citations): The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list.
+- [AI Image Generation](https://intelligo.dev/components#ai-image-generation): An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes.
+- [AI Reasoning Text](https://intelligo.dev/components#ai-reasoning-text): What the agent is doing while it reasons: phrases cycle with a cascade, swap or scramble behind an ASCII loader.
+- [AI Streaming Response](https://intelligo.dev/components#ai-streaming-response): An assistant reply as it streams and once it lands: content, copy, retry and feedback actions, and a sources disclosure.
+- [AI Sidebar](https://intelligo.dev/components#ai-sidebar): The AI product's sidebar: a shell that morphs between a panel and an icon rail with tooltips, slides in as a sheet on mobile, holds menus with a gliding hover and active pill and staggered submenus, and a resource tree of folders, projects, conversations, files and bookmarks with keyboard and drag-and-drop moves, rename and a row menu.
+- [Document Viewer](https://intelligo.dev/components#document-viewer): How a saved document reads when nobody is editing it: markdown with maths and diagrams, highlighted code, a sheet's rows, an image, and a sandboxed HTML preview — plus the title-to-language and kind-glyph helpers the chat canvas and the artifacts library share.
+- [Popover Morph](https://intelligo.dev/components#popover-morph): A non-modal popover whose trigger surface grows into the panel through a shared layout and folds back on close.
+- [Select Morph](https://intelligo.dev/components#select-morph): A select whose trigger continues into its list: the list unclips down from the trigger's edge as one surface while its options stagger in.
+- [Morphing Modal](https://intelligo.dev/components#morphing-modal): A card or button that grows into a centred or bottom dialog through a shared layout, cross-fading between views while the panel resizes.
+- [Notification Stack](https://intelligo.dev/components#notification-stack): Notifications fanned into a stack — the newest in front, the rest peeking out scaled back — that springs apart into a list of openable, dismissable cards on hover or click.
+- [Animated List](https://intelligo.dev/components#animated-list): A list container that staggers its rows in on mount, rows that rise in, fall out and glide on reorder (ul, ol, div or tbody/tr), and a block that reveals once as it scrolls into view.
+- [OTP Input](https://intelligo.dev/components#otp-input): A one-time-code input on Base UI's OTP Field whose characters roll into their slots under a blinking caret, shaking on a rejected code and drawing a check on an accepted one.
+- [File Upload](https://intelligo.dev/components#file-upload): A controlled file upload — a drop zone with a queue of rows that slide in, fill a progress bar and settle on done or error, or a compact chat-composer wrapper with a drop overlay and chips.
+- [Expandable Tabs](https://intelligo.dev/components#expandable-tabs): A bar of icon tabs on Base UI's Tabs where the active tab widens to unfurl its label, the pill glides to it and its panel rises in.
+- [Hold Action Button](https://intelligo.dev/components#hold-action-button): A press-and-hold confirmation for a destructive action, by pointer or held Space/Enter, whose fill sweeps across while held and drains on an early release.
+
 ## More
 
 - [Product](https://intelligo.dev/product): every service and surface, under the job it takes off you.
-- [Blocks](https://intelligo.dev/blocks): every registry item, rendered live from its installed source.
-- [Components](https://intelligo.dev/components): the base-nova design system catalog.
+- [Why Intelligo](https://intelligo.dev/why): the half of every AI SaaS that is not the AI, and how Intelligo compares to a boilerplate or an agent platform.
+- [Architecture](https://intelligo.dev/architecture): the package graph, the rules the tests enforce, and who owns which file.
 - [Hosted registry](https://intelligo.dev/r/intelligo.json): install any item with the shadcn CLI.
 - [Source](https://github.com/intelligo-dev/intelligo)
