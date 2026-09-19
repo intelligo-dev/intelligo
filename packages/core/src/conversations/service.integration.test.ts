@@ -306,7 +306,7 @@ d("conversations service — real DB integration", () => {
     const page1 = await service.getConversationHistory(actor, { limit: 2 });
     expect(page1.chats).toHaveLength(2);
 
-    const cursor = page1.chats.at(-1)!.id;
+    const cursor = page1.chats[page1.chats.length - 1]!.id;
     const page2 = await service.getConversationHistory(actor, {
       limit: 2,
       endingBefore: cursor,

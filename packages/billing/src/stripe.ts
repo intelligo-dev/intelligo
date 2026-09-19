@@ -78,7 +78,7 @@ const STRIPE_HOSTED_LOCALES: ReadonlySet<string> = new Set([
 export function toStripeLocale(locale: string | null | undefined): string {
   if (!locale) return "auto";
   const [language = "", ...rest] = locale.replace(/_/g, "-").split("-");
-  const region = rest.at(-1);
+  const region = rest[rest.length - 1];
   const tag = region
     ? `${language.toLowerCase()}-${region.length === 2 ? region.toUpperCase() : region}`
     : language.toLowerCase();
