@@ -35,6 +35,7 @@ import {
   registerModels,
 } from "@intelligo-dev/executions";
 import { nextRequestContext } from "@intelligo-dev/next";
+import { createLogger } from "@intelligo-dev/core/logger";
 
 import {
   REFERENCE_FEATURES,
@@ -50,12 +51,61 @@ export const CAPABILITIES = {
   assistantMessage: "assistant.message",
 } as const;
 
+const log = createLogger("Intelligo");
+
 let composed = false;
 
 export function composeIntelligo(): void {
-  if (composed) return;
-  composed = true;
+  if (!composed) {
+    composed = true;
+    bind();
+  }
+  // Every call checks the seed, so a database that was unreachable at
+  // boot is seeded by the first request after it comes back.
+  seedIntelligo().catch((error: unknown) => {
+    log.error("Seeding the plan and billing-settings rows failed", {
+      error,
+    });
+  });
+}
 
+let seeding: Promise<void> | undefined;
+
+/**
+ * Writes the rows the registrations imply, and resolves once they
+ * exist. Both writes are idempotent upserts, so processes that boot
+ * together are safe; callers share one promise, and a failure clears
+ * it so the next call tries again.
+ */
+export function seedIntelligo(): Promise<void> {
+  seeding ??= Promise.all([
+    // The plans table is a copy of the catalogue: a subscription row
+    // references its plan there, so the rows exist before the first
+    // checkout rather than being seeded by a migration.
+    ensurePlanRows(),
+
+    // What this deployment bills in. There is no default rate: provider
+    // prices are USD, so a USD deployment converts at exactly 1.0, and
+    // one selling in another currency states its own rate here. Seeds the
+    // settings row once; an existing row is left alone, because changing
+    // the currency under a ledger that already holds balances is an
+    // operator's decision, not a deploy's.
+    ensureBillingSettingsRow({
+      currency: "USD",
+      usdRateMicros: 1_000_000,
+      marginBp: DEFAULT_MARGIN_BP,
+    }),
+  ]).then(
+    () => undefined,
+    (error: unknown) => {
+      seeding = undefined;
+      throw error;
+    }
+  );
+  return seeding;
+}
+
+function bind(): void {
   // Fail on the first request rather than on the first query: a
   // missing DATABASE_URL or auth secret is a configuration error, not
   // something to discover deep inside a handler.
@@ -75,28 +125,11 @@ export function composeIntelligo(): void {
   registerProductFeatures(PRODUCT_SLUG, REFERENCE_FEATURES);
   registerTeamMemberLimits(PRODUCT_SLUG, REFERENCE_TEAM_MEMBER_LIMITS);
 
-  // The plans table is a copy of the catalogue above: a subscription
-  // row references its plan there, so the rows exist before the first
-  // checkout rather than being seeded by a migration.
-  void ensurePlanRows();
-
   // What each model costs. The catalogue the framework ships is data,
   // not a default: nothing self-registers, so a deployment always knows
   // which prices it is billing against, and can register its own
   // contracted rates — or a model the framework has never heard of.
   registerModels(DEFAULT_MODELS);
-
-  // What this deployment bills in. There is no default rate: provider
-  // prices are USD, so a USD deployment converts at exactly 1.0, and
-  // one selling in another currency states its own rate here. Seeds the
-  // settings row once; an existing row is left alone, because changing
-  // the currency under a ledger that already holds balances is an
-  // operator's decision, not a deploy's.
-  void ensureBillingSettingsRow({
-    currency: "USD",
-    usdRateMicros: 1_000_000,
-    marginBp: DEFAULT_MARGIN_BP,
-  });
 }
 
 export const executions = createExecutions({

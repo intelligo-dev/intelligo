@@ -12,7 +12,10 @@
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { composeIntelligo } = await import("./lib/intelligo");
+    const { composeIntelligo, seedIntelligo } = await import("./lib/intelligo");
     composeIntelligo();
+    // The first request finds the plan and billing-settings rows in
+    // place. A failure is already logged, and the next request retries.
+    await seedIntelligo().catch(() => undefined);
   }
 }

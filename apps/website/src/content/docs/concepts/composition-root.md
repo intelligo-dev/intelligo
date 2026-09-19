@@ -13,50 +13,16 @@ label: Composition root
 
 ```ts title="lib/intelligo.ts"
 export function composeIntelligo(): void {
-  if (composed) return;
-  composed = true;
-
-  // Fail on the first request rather than on the first query: a
-  // missing DATABASE_URL or auth secret is a configuration error, not
-  // something to discover deep inside a handler.
-  assertEnv();
-
-  // Where the framework reads the incoming request's headers from.
-  // Only this line knows the app is a Next.js one; `@intelligo-dev/auth`
-  // asks `@intelligo-dev/core/request-context` and stays usable from a
-  // worker or a test.
-  setRequestContextSource(nextRequestContext);
-
-  // What a new user's personal workspace starts with.
-  setWorkspaceCreatedHandler(onWorkspaceCreated);
-
-  setDefaultProductSlug(PRODUCT_SLUG);
-  registerProductPlans(PRODUCT_SLUG, PLANS);
-  registerProductFeatures(PRODUCT_SLUG, FEATURES);
-  registerTeamMemberLimits(PRODUCT_SLUG, TEAM_MEMBER_LIMITS);
-
-  // The plans table is a copy of the catalogue above: a subscription
-  // row references its plan there, so the rows exist before the first
-  // checkout rather than being seeded by a migration.
-  void ensurePlanRows();
-
-  // What each model costs. The framework ships a catalogue as data and
-  // registers none of it: an id with no registered price throws where
-  // the price is needed, rather than being guessed. Swap in your own
-  // contracted rates, or add a model the framework has never heard of,
-  // by passing your own array here.
-  registerModels(DEFAULT_MODELS);
-
-  // What you bill in. Provider prices are USD, so a USD deployment
-  // converts at exactly 1.0; selling in another currency means stating
-  // its rate per USD here, in micros. There is no default rate — a
-  // framework that guesses one is inventing money. Seeds the row once;
-  // an existing row is left alone, because changing the currency under
-  // a ledger that holds balances is your decision, not a deploy's.
-  void ensureBillingSettingsRow({
-    currency: "USD",
-    usdRateMicros: 1_000_000,
-    marginBp: DEFAULT_MARGIN_BP,
+  if (!composed) {
+    composed = true;
+    bind();
+  }
+  // Every call checks the seed, so a database that was unreachable at
+  // boot is seeded by the first request after it comes back.
+  seedIntelligo().catch((error: unknown) => {
+    log.error("Seeding the plan and billing-settings rows failed", {
+      error,
+    });
   });
 }
 ```
