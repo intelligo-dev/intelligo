@@ -34,11 +34,13 @@ export const SITE = {
   /**
    * The homepage film (tools/film, rendered with Remotion), one render
    * per theme, served from `public/film/` with a still shown before it
-   * plays. Re-render, then copy `tools/film/out/*.mp4` over these.
+   * plays and the script as a captions track. Re-render, then copy
+   * `tools/film/out/*.mp4` over these.
    */
   film: {
     light: { video: "/film/film-light.mp4", poster: "/film/poster-light.jpg" },
     dark: { video: "/film/film-dark.mp4", poster: "/film/poster-dark.jpg" },
+    captions: "/film/film.en.vtt",
   },
 } as const;
 

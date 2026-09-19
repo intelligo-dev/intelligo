@@ -57,13 +57,16 @@ After a re-render, refresh all of it:
 ```bash
 for t in light dark; do
   cp tools/film/out/film-$t.mp4 apps/website/public/film/film-$t.mp4
-  ffmpeg -y -ss 6.85 -i tools/film/out/film-$t.mp4 -frames:v 1 -q:v 4 apps/website/public/film/poster-$t.jpg
+  ffmpeg -y -ss 29 -i tools/film/out/film-$t.mp4 -frames:v 1 -q:v 4 apps/website/public/film/poster-$t.jpg
   ffmpeg -y -t 12.5 -i tools/film/out/film-$t.mp4 -vf "fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=48:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" apps/website/public/film/teaser-$t.gif
 done
 ```
 
-The poster is the end of act 01 (the agent among its empty slots); the
-teaser GIF is acts 01–02, the README's autoplaying cut.
+The poster is the end of act 04 (the running shell under "A running
+product. Day one."), so the still already shows the product; the teaser
+GIF is acts 01–02, the README's autoplaying cut. The homepage's act
+buttons and captions read `apps/website/src/lib/film.ts` and
+`apps/website/public/film/film.en.vtt` — a script change moves all three.
 
 ## Data
 

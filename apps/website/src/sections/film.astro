@@ -1,8 +1,10 @@
 ---
 /**
  * The film: a rendered video (tools/film, built with Remotion), muted and
- * looping, the same way a hero clip on any product page works. No
- * heading, no lede; the video carries its own script line.
+ * looping, under a head that says what the minute shows. The acts below
+ * it are buttons that seek, and the one playing is marked; the script is
+ * also a captions track and a transcript, for a reader who will not
+ * press play.
  *
  * One render per theme. Both players are in the markup and CSS shows the
  * one that applies, so the server's HTML is right for either theme;
@@ -14,18 +16,28 @@
  * than five seconds needs a way to stop it. The frame holds the
  * video's shape before a byte of it arrives, so nothing below jumps.
  */
+import SectionHead from "@/components/section-head.astro";
+import { FILM_CHAPTERS, FILM_SECONDS } from "@/lib/film";
 import { SITE } from "@/lib/site";
 
 const players = [
   { theme: "light", show: "block dark:hidden", ...SITE.film.light },
   { theme: "dark", show: "hidden dark:block", ...SITE.film.dark },
-];
+]
+
+const clock = (seconds: number) =>
+  `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
 ---
 <section id="film" class="xline">
   <div class="px-6 py-14 md:px-10 md:py-20">
+    <SectionHead
+      tag={`the film · ${FILM_SECONDS} seconds · silent`}
+      title="From a working agent to a running product.<br />One minute."
+      lede="Everything on screen is the registry's own pages and the real execution boundary, not a mock-up. Jump to the act you care about."
+    />
     {players.map((player) => (
       <video
-        class:list={["aspect-video w-full rounded-xl border border-border bg-card", player.show]}
+        class:list={["mt-10 aspect-video w-full rounded-xl border border-border bg-card", player.show]}
         src={player.video}
         poster={player.poster}
         controls
@@ -35,13 +47,41 @@ const players = [
         preload="none"
         data-film={player.theme}
         aria-label="One minute: an agent that works, the product it is missing, and Intelligo installing that half — pages, the execution boundary, usage, and the config that makes it yours"
-      />
+      >
+        <track kind="captions" src={SITE.film.captions} srclang="en" label="English" />
+      </video>
     ))}
+
+    <ol class="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4 lg:grid-cols-8" aria-label="Acts of the film">
+      {FILM_CHAPTERS.map((chapter) => (
+        <li class="flex">
+          <button
+            type="button"
+            data-film-at={chapter.at}
+            class="group flex w-full flex-col items-start gap-0.5 bg-background px-3 py-2.5 text-left transition-colors hover:bg-accent aria-[current=true]:bg-card"
+          >
+            <span class="mono text-[0.68rem] tabular-nums text-muted-foreground">{chapter.n} · {clock(chapter.at)}</span>
+            <span class="text-[0.8rem] font-medium leading-snug text-foreground/70 group-hover:text-foreground group-aria-[current=true]:text-foreground">{chapter.title}</span>
+          </button>
+        </li>
+      ))}
+    </ol>
+
+    <details class="mt-3 text-[0.82rem] text-muted-foreground">
+      <summary class="mono cursor-pointer text-[0.72rem] hover:text-foreground">read it instead</summary>
+      <ol class="mt-3 space-y-1.5">
+        {FILM_CHAPTERS.map((chapter) => (
+          <li><span class="mono tabular-nums">{clock(chapter.at)}</span> — <span class="text-foreground/80">{chapter.line}</span></li>
+        ))}
+      </ol>
+    </details>
   </div>
 </section>
 
 <script>
   const films = [...document.querySelectorAll<HTMLVideoElement>("[data-film]")];
+  const chapters = [...document.querySelectorAll<HTMLButtonElement>("[data-film-at]")];
+  const startOf = (chapter: HTMLButtonElement) => Number(chapter.dataset.filmAt);
   const autoplay = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const shown = () => films.find((film) => film.offsetParent !== null);
   let onScreen = false;
@@ -49,6 +89,26 @@ const players = [
   const play = (film: HTMLVideoElement) => void film.play().catch(() => {});
 
   if (films.length > 0) {
+    const mark = (film: HTMLVideoElement) => {
+      if (film !== shown()) return;
+      const playing = chapters.findLast((chapter) => startOf(chapter) <= film.currentTime);
+      for (const chapter of chapters) {
+        if (chapter === playing) chapter.setAttribute("aria-current", "true");
+        else chapter.removeAttribute("aria-current");
+      }
+    };
+    films.forEach((film) => film.addEventListener("timeupdate", () => mark(film)));
+
+    for (const chapter of chapters) {
+      chapter.addEventListener("click", () => {
+        const film = shown();
+        if (!film) return;
+        film.currentTime = startOf(chapter);
+        mark(film);
+        play(film);
+      });
+    }
+
     if (autoplay) {
       // start when it is on screen, not on load: the clip is below the fold
       const io = new IntersectionObserver(

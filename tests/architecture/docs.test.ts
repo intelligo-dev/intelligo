@@ -339,6 +339,39 @@ describe("quoted evidence", async () => {
     ]);
   });
 
+  it("the film's acts and captions are the composition's", async () => {
+    const { FILM_CHAPTERS, FILM_SECONDS } = (await import(
+      path.join(SITE, "src/lib/film.ts")
+    )) as {
+      FILM_CHAPTERS: { at: number; title: string; line: string }[];
+      FILM_SECONDS: number;
+    };
+    const film = readFileSync(
+      path.join(ROOT, "tools/film/src/Film.tsx"),
+      "utf8"
+    );
+    const captions = readFileSync(
+      path.join(SITE, "public/film/film.en.vtt"),
+      "utf8"
+    );
+
+    const scenes = /^const SCENE = \{\n([\s\S]*?)^\};/m.exec(film)![1]!;
+    const starts = [...scenes.matchAll(/: \[([\d.]+),/g)].map(
+      (m) => Number(m[1]) * FILM_SECONDS
+    );
+    expect(FILM_CHAPTERS.map((chapter) => chapter.at)).toEqual(
+      starts.map((s) => Number(s.toFixed(1)))
+    );
+
+    for (const chapter of FILM_CHAPTERS) {
+      expect(film).toContain(`title: "${chapter.title}"`);
+      for (const sentence of chapter.line.split(/(?<=\.)\s+/)) {
+        expect(film).toContain(sentence);
+        expect(captions).toContain(sentence);
+      }
+    }
+  });
+
   it("every path a card installs is a target of the blocks it adds", () => {
     const registry = JSON.parse(
       readFileSync(path.join(PACKAGES_DIR, "registry/registry.json"), "utf8")
