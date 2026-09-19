@@ -18,7 +18,7 @@
     "url": "git+https://github.com/intelligo-dev/intelligo.git",
     "directory": "packages/audit"
   },
-  "homepage": "https://github.com/intelligo-dev/intelligo#readme",
+  "homepage": "https://intelligo.dev/docs/packages/audit",
   "bugs": {
     "url": "https://github.com/intelligo-dev/intelligo/issues"
   },

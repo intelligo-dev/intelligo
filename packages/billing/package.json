@@ -21,7 +21,7 @@
     "url": "git+https://github.com/intelligo-dev/intelligo.git",
     "directory": "packages/billing"
   },
-  "homepage": "https://github.com/intelligo-dev/intelligo#readme",
+  "homepage": "https://intelligo.dev/docs/packages/billing",
   "bugs": {
     "url": "https://github.com/intelligo-dev/intelligo/issues"
   },

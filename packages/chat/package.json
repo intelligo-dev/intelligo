@@ -19,7 +19,7 @@
     "url": "git+https://github.com/intelligo-dev/intelligo.git",
     "directory": "packages/chat"
   },
-  "homepage": "https://github.com/intelligo-dev/intelligo#readme",
+  "homepage": "https://intelligo.dev/docs/packages/chat",
   "bugs": {
     "url": "https://github.com/intelligo-dev/intelligo/issues"
   },

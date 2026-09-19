@@ -18,7 +18,7 @@
     "url": "git+https://github.com/intelligo-dev/intelligo.git",
     "directory": "packages/jobs"
   },
-  "homepage": "https://github.com/intelligo-dev/intelligo#readme",
+  "homepage": "https://intelligo.dev/docs/packages/jobs",
   "bugs": {
     "url": "https://github.com/intelligo-dev/intelligo/issues"
   },
