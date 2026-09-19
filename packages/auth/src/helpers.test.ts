@@ -55,12 +55,17 @@ import {
   requireRole,
   requirePlatformAdmin,
 } from "./helpers";
+import { isAuthGuardError } from "./guard-error";
 
 const userFixture = { id: "user_1", email: "u@example.com" } as unknown as {
   id: string;
   email: string;
 };
-const sessionFixture = { id: "sess_1", userId: "user_1" };
+const sessionFixture = {
+  id: "sess_1",
+  userId: "user_1",
+  activeOrganizationId: "org_1",
+};
 
 const orgFixture = {
   id: "org_1",
@@ -123,6 +128,15 @@ describe("requireAuth", () => {
 
     await expect(requireAuth()).rejects.toThrow("Unauthorized");
   });
+
+  it("types the failure as unauthenticated", async () => {
+    getSessionMock.mockResolvedValue(null);
+
+    const error = await requireAuth().catch((e: unknown) => e);
+
+    expect(isAuthGuardError(error)).toBe(true);
+    expect(error).toMatchObject({ code: "unauthenticated" });
+  });
 });
 
 describe("getWorkspaceContext", () => {
@@ -138,6 +152,55 @@ describe("getWorkspaceContext", () => {
     expect(result).not.toBeNull();
     expect(result!.workspace.id).toBe("org_1");
     expect(result!.membership.role).toBe("owner");
+  });
+
+  it("reads the active organization by its explicit id, never the implicit one", async () => {
+    getSessionMock.mockResolvedValue({
+      session: { ...sessionFixture, activeOrganizationId: "org_active" },
+      user: userFixture,
+    });
+    getFullOrganizationMock.mockResolvedValue({
+      ...orgFixture,
+      id: "org_active",
+    });
+
+    await getWorkspaceContext();
+
+    expect(getFullOrganizationMock).toHaveBeenCalledTimes(1);
+    expect(getFullOrganizationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ query: { organizationId: "org_active" } })
+    );
+  });
+
+  it("goes straight to the user's workspaces when the session names no active organization", async () => {
+    getSessionMock.mockResolvedValue({
+      session: { ...sessionFixture, activeOrganizationId: null },
+      user: userFixture,
+    });
+    listOrganizationsMock.mockResolvedValue([{ id: "org_1" }]);
+    getFullOrganizationMock.mockResolvedValue(orgFixture);
+
+    const result = await getWorkspaceContext();
+
+    expect(getFullOrganizationMock).toHaveBeenCalledTimes(1);
+    expect(getFullOrganizationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ query: { organizationId: "org_1" } })
+    );
+    expect(result!.workspace.id).toBe("org_1");
+  });
+
+  it("falls back to the first workspace when the active organization no longer admits the user", async () => {
+    getSessionMock.mockResolvedValue({
+      session: { ...sessionFixture, activeOrganizationId: "org_removed" },
+      user: userFixture,
+    });
+    getFullOrganizationMock.mockRejectedValueOnce(new Error("FORBIDDEN"));
+    listOrganizationsMock.mockResolvedValue([{ id: "org_1" }]);
+    getFullOrganizationMock.mockResolvedValueOnce(orgFixture);
+
+    const result = await getWorkspaceContext();
+
+    expect(result!.workspace.id).toBe("org_1");
   });
 
   it("auto-selects first workspace when no active org set", async () => {
@@ -261,6 +324,32 @@ describe("requireWorkspace", () => {
 
     await expect(requireWorkspace()).rejects.toThrow("No active workspace");
   });
+
+  it("types a signed-in user with no workspace as no_workspace", async () => {
+    getSessionMock.mockResolvedValue({
+      session: sessionFixture,
+      user: userFixture,
+    });
+    getFullOrganizationMock.mockResolvedValue(null);
+    listOrganizationsMock.mockResolvedValue([]);
+
+    const error = await requireWorkspace().catch((e: unknown) => e);
+
+    expect(isAuthGuardError(error)).toBe(true);
+    expect(error).toMatchObject({ code: "no_workspace" });
+  });
+
+  it("throws unauthenticated, not no_workspace, when there is no session", async () => {
+    getSessionMock.mockResolvedValue(null);
+
+    const error = await requireWorkspace().catch((e: unknown) => e);
+
+    expect(error).toMatchObject({
+      code: "unauthenticated",
+      message: "Unauthorized",
+    });
+    expect(getFullOrganizationMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("requireRole", () => {
@@ -300,6 +389,25 @@ describe("requireRole", () => {
     listOrganizationsMock.mockResolvedValue([]);
 
     await expect(requireRole(["owner"])).rejects.toThrow("No active workspace");
+  });
+
+  it("tells a missing role (forbidden) from a missing session (unauthenticated)", async () => {
+    getSessionMock.mockResolvedValue({
+      session: sessionFixture,
+      user: userFixture,
+    });
+    getFullOrganizationMock.mockResolvedValue({
+      ...orgFixture,
+      members: [{ id: "mem_1", userId: "user_1", role: "member" }],
+    });
+    await expect(requireRole(["owner"])).rejects.toMatchObject({
+      code: "forbidden",
+    });
+
+    getSessionMock.mockResolvedValue(null);
+    await expect(requireRole(["owner"])).rejects.toMatchObject({
+      code: "unauthenticated",
+    });
   });
 });
 
@@ -405,6 +513,20 @@ describe("requirePlatformAdmin", () => {
     vi.stubEnv("PLATFORM_ADMIN_EMAILS", "u@example.com");
     getSessionMock.mockResolvedValue(null);
 
-    await expect(requirePlatformAdmin()).rejects.toThrow();
+    await expect(requirePlatformAdmin()).rejects.toMatchObject({
+      code: "unauthenticated",
+    });
+  });
+
+  it("types a signed-in non-admin as forbidden", async () => {
+    vi.stubEnv("PLATFORM_ADMIN_EMAILS", "");
+    getSessionMock.mockResolvedValue({
+      session: sessionFixture,
+      user: userFixture,
+    });
+
+    await expect(requirePlatformAdmin()).rejects.toMatchObject({
+      code: "forbidden",
+    });
   });
 });

@@ -12,6 +12,11 @@ export {
   requireRole,
   requirePlatformAdmin,
 } from "./helpers";
+export {
+  AuthGuardError,
+  isAuthGuardError,
+  type AuthGuardErrorCode,
+} from "./guard-error";
 export { ensureUserWorkspace } from "./workspace-init";
 export type { WorkspaceRole } from "./helpers";
 export { PLATFORM_ADMIN_ROLE } from "./roles";

@@ -43,6 +43,7 @@ import {
   sendInvitationEmail,
 } from "@intelligo-dev/core/email";
 import { eq } from "drizzle-orm";
+import { invitationLinks } from "./invitation-links";
 import { personalWorkspaceSlug } from "./workspace-slug";
 
 /**
@@ -244,13 +245,14 @@ export const auth = betterAuth({
       organizationLimit: 5,
       creatorRole: "owner",
       sendInvitationEmail: async (data) => {
+        const { acceptUrl, declineUrl } = invitationLinks(APP_URL, data.id);
         sendInvitationEmail({
           to: data.email,
           inviterName: data.inviter?.user?.name || "A team member",
           workspaceName: data.organization?.name || "a workspace",
           role: data.role || "member",
-          acceptUrl: `${APP_URL}/accept-invitation/${data.id}`,
-          declineUrl: `${APP_URL}/invitation/decline?id=${data.id}`,
+          acceptUrl,
+          declineUrl,
         }).catch((err) =>
           console.error("[Auth] Failed to send invitation email:", err)
         );

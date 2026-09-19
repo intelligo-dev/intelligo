@@ -145,7 +145,11 @@ export function createTeamService(ports: TeamServicePorts = {}) {
       })
     );
 
-    return (org?.invitations ?? []) as OrgInvitation[];
+    // Better-Auth keeps accepted, rejected and canceled invitations on
+    // the organization; only a pending one can still be acted on.
+    return ((org?.invitations ?? []) as OrgInvitation[]).filter(
+      (invitation) => invitation.status === "pending"
+    );
   }
 
   /**

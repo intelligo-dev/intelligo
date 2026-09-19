@@ -120,11 +120,17 @@ describe("listMembers + listInvitations", () => {
   it("returns invitations from the active org", async () => {
     mocks.getFullOrganization.mockResolvedValue({
       members: [],
-      invitations: [{ id: "inv-1", email: "a@test.com" }],
+      invitations: [
+        { id: "inv-1", email: "a@test.com", status: "pending" },
+        { id: "inv-2", email: "b@test.com", status: "canceled" },
+        { id: "inv-3", email: "c@test.com", status: "accepted" },
+      ],
     });
     const service = createTeamService();
 
-    expect(await service.listInvitations()).toHaveLength(1);
+    expect((await service.listInvitations()).map((i) => i.id)).toEqual([
+      "inv-1",
+    ]);
   });
 
   it("throws a forbidden TeamServiceError when there is no active workspace", async () => {
