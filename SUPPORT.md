@@ -5,5 +5,5 @@
 - **Security vulnerabilities** — privately, per [SECURITY.md](SECURITY.md). Never in a public issue.
 
 Intelligo is in its 1.0 beta and maintained by a small team; there is no
-paid support channel. The documentation is the [README](README.md),
-[AGENTS.md](AGENTS.md) and the [ADRs](docs/adr/README.md).
+paid support channel. The documentation is [intelligo.dev/docs](https://intelligo.dev/docs),
+the [README](README.md) and [AGENTS.md](AGENTS.md).

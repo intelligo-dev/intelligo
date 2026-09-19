@@ -3,7 +3,7 @@
 apps/website/public/r/
 apps/website/src/showcase/app/
 apps/website/src/data/
-# Docs generated from READMEs, ADRs and CLI source by apps/website/scripts/docs.mjs.
+# Docs generated from READMEs and CLI source by apps/website/scripts/docs.mjs.
 apps/website/src/content/docs/packages/
 apps/website/src/content/docs/cli/
 apps/website/src/content/docs/registry/install-order.md

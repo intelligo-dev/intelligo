@@ -3,9 +3,9 @@
 ## Before you write code
 
 Read [AGENTS.md](AGENTS.md) — it is the single source of truth for the
-architecture boundary, the commands, and the conventions — and the
-[ADRs](docs/adr/README.md) for decisions that are settled. The one that
-decides most pull requests is **the boundary**:
+architecture boundary, the commands, the conventions, and the decisions
+that are settled. The one that decides most pull requests is **the
+boundary**:
 
 > Intelligo owns SaaS infrastructure: auth, workspaces/RBAC,
 > entitlements, credits, billing, execution/usage/cost/audit records,

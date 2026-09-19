@@ -11,7 +11,7 @@ pnpm --filter website type-check # astro check
 
 ## Keeping it truthful
 
-Everything the site says about the framework — the registry items, the test/ADR/page counts, the published version — is pulled from the repository the site lives in by one script and **committed**, so a deploy needs nothing but this directory and the site cannot list a page that does not exist:
+Everything the site says about the framework — the registry items, the test and page counts, the published version — is pulled from the repository the site lives in by one script and **committed**, so a deploy needs nothing but this directory and the site cannot list a page that does not exist:
 
 ```bash
 pnpm sync                     # repository root: builds packages/registry/public/r, then syncs
@@ -29,7 +29,7 @@ Static assets on Cloudflare Workers (`wrangler.jsonc`: assets only, no Worker sc
 - `/` — the homepage as a film: a title card (headline, `create` command, a scroll cue), then four scenes on one pinned stage with one continuous state (`src/components/film.tsx`): **01 the build** (pages created group by group, packages installed, the parts lock into a running application), **02 the run** (a message is admitted, answered by the agent, settled — credits, usage and audit move in the same frame), **03 make it yours** (the chat page opens as source; one config line changes and the app follows), **04 time passes** (a release lands; migrations, doctor, customised files kept). Then the count + open source, the quickstart with the closing CTA, and the FAQ. Architecture, ownership and the boundary as prose live on /architecture and /why-intelligo.
 - `/404` — the not-found page wrangler serves for unknown routes (`src/pages/404.astro`).
 - `/pages` — the registry explorer, every page family with its install command.
-- `/architecture` — the full package graph, the architecture rules as tests, ownership, ADRs.
+- `/architecture` — the full package graph, the architecture rules as tests, ownership.
 - `/why-intelligo` — the other half counted in full, and the agent objection.
 - `/compare` — the alternatives.
 - `/r/<item>.json` — the hosted registry.

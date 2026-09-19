@@ -13,7 +13,7 @@
  *   src/data/seams.json      each block's consumer-owned config files
  *   src/content/docs/…       the generated reference pages, and the snippets
  *                            in hand-written ones (scripts/docs.mjs)
- *   src/data/proof.json      counts (tests, items, ADRs, packages) and the version
+ *   src/data/proof.json      counts (tests, items, packages) and the version
  *   src/data/package-edges.json
  *                            each package's declared @intelligo-dev/* dependencies
  *   public/r/*.json          the built registry items — intelligo.dev/r/<item>.json
@@ -95,9 +95,6 @@ const testCases = testFiles.reduce(
 const architectureTests = readdirSync(
   join(FRAMEWORK, "tests/architecture")
 ).filter((f) => f.endsWith(".test.ts")).length;
-const adrs = readdirSync(join(FRAMEWORK, "docs/adr")).filter((f) =>
-  /^\d{4}-.*\.md$/.test(f)
-).length;
 const registryItems = registry.items.filter(
   (i) => i.type === "registry:block" && i.name !== "smoke"
 ).length;
@@ -147,7 +144,6 @@ const proof = {
   testCases,
   architectureTests,
   registryItems,
-  adrs,
 };
 writeFileSync(
   join(SITE, "src/data/proof.json"),
@@ -292,7 +288,7 @@ console.log(
 );
 
 console.log(
-  `proof: v${version}, ${packages} packages, ${testCases} tests in ${testFiles.length} files, ${architectureTests} architecture suites, ${registryItems} items, ${adrs} ADRs`
+  `proof: v${version}, ${packages} packages, ${testCases} tests in ${testFiles.length} files, ${architectureTests} architecture suites, ${registryItems} items`
 );
 
 // --- docs: generated reference pages and snippets ----------------------------

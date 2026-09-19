@@ -5,6 +5,5 @@
   "testFiles": 102,
   "testCases": 1043,
   "architectureTests": 14,
-  "registryItems": 28,
-  "adrs": 18
+  "registryItems": 28
 }

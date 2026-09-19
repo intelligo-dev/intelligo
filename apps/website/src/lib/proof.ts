@@ -16,7 +16,6 @@ export const PROOF = {
   testFiles: proof.testFiles as number,
   architectureTests: proof.architectureTests as number,
   registryItems: proof.registryItems as number,
-  adrs: proof.adrs as number,
 };
 
 export type ProofStat = { value: string; label: string; note: string };
