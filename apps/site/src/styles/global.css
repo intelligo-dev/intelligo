@@ -289,9 +289,9 @@
   color: var(--muted-foreground);
 }
 
-/* the 1152px rails: every section sits between two hairlines */
+/* the 1280px rails: every section sits between two hairlines */
 @utility rails {
-  max-width: 1152px;
+  max-width: 80rem;
   margin-inline: auto;
   border-inline: 1px solid var(--border);
 }
@@ -311,7 +311,7 @@
    widens the page wherever the rails meet the viewport edge */
 .xline::before { left: 0; transform: translateX(-50%); }
 .xline::after { right: 0; transform: translateX(50%); }
-@media (max-width: 1175px) {
+@media (max-width: 1303px) {
   .xline::before, .xline::after { display: none; }
 }
 /* at the inverted band the glyph's backing square is the wrong colour for

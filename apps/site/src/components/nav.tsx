@@ -51,14 +51,7 @@ function useReadingProgress() {
   return bar;
 }
 
-export function Nav({
-  current,
-  wide = false,
-}: {
-  current?: string;
-  /** The page sits in the 1280px column (secondary pages, docs) rather than the homepage's 1152px rails; the bar lines up with it. */
-  wide?: boolean;
-}) {
+export function Nav({ current }: { current?: string }) {
   const [open, setOpen] = useState(false);
   const bar = useReadingProgress();
   const root = useRef<HTMLElement>(null);
@@ -90,10 +83,7 @@ export function Nav({
     current !== undefined &&
     (current === href || current.startsWith(`${href}/`));
 
-  const measure = cn(
-    "mx-auto px-6 md:px-10",
-    wide ? "max-w-7xl" : "max-w-[1152px]"
-  );
+  const measure = "mx-auto max-w-7xl px-6 md:px-10";
 
   return (
     <nav

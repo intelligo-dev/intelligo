@@ -24,7 +24,7 @@ const { path, tag, title, lede, description, noindex } = Astro.props;
 const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
 ---
 <Base title={pageTitle} description={description ?? lede ?? SITE.description} noindex={noindex}>
-  <Nav client:load current={path} wide />
+  <Nav client:load current={path} />
   <main id="main" class="page-body rails-full">
     <header class="xline">
       <div class="px-6 pb-10 pt-14 md:px-10 md:pb-12 md:pt-20">

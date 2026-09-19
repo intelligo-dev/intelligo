@@ -55,7 +55,7 @@ const structuredData = [
 ];
 ---
 <Base title={`${title} — ${SITE.name} docs`} description={description} structuredData={structuredData}>
-  <Nav client:load current={path} wide />
+  <Nav client:load current={path} />
   <main id="main" class="rails-full">
     <div class="mx-auto grid max-w-7xl grid-cols-1 border-t border-border lg:grid-cols-[248px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)_216px] xl:border-x">
       <aside class="hidden border-r border-border lg:block">
