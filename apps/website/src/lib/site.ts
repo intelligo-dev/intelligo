@@ -45,16 +45,15 @@ export const SITE = {
 } as const;
 
 /**
- * Site navigation: one entry per job — build with it (Docs), see and
- * install it (Blocks, Components), understand it (Architecture, Why).
+ * Site navigation: what a reader comes back for — build with it (Docs),
+ * see and install it (Blocks, Components). /architecture and /why are
+ * read once, and are reached from the homepage's sections and the footer.
  * An entry is active on its own path and everything under it.
  */
 export const NAV = [
   { href: "/docs", label: "Docs" },
   { href: "/blocks", label: "Blocks" },
   { href: "/components", label: "Components" },
-  { href: "/architecture", label: "Architecture" },
-  { href: "/why", label: "Why" },
 ] as const;
 
 export const FOOTER: {
