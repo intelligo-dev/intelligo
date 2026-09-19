@@ -44,7 +44,7 @@
     "@types/node": "^22.20.3",
     "@types/pg": "^8.23.1",
     "drizzle-orm": "^0.45.2",
-    "pg": "8.18.0",
+    "pg": "8.23.0",
     "typescript": "^5.9.3"
   },
   "files": [
