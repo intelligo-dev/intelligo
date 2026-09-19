@@ -276,7 +276,7 @@ export async function getUsageOverview(): Promise<ActionResult<UsageOverview>> {
       success: true,
       data: {
         plan: {
-          name: billing.plan?.name ?? "Free",
+          name: billing.plan?.name ?? t("summaryCards.noPlan"),
           slug: billing.plan?.slug ?? "free",
         },
         billingMode: billing.billingMode,

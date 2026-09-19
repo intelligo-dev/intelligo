@@ -1,5 +1,6 @@
 {
   "genericFeature": "This feature",
+  "genericPlan": "a paid plan",
   "prompt": {
     "title": "{feature} requires {plan}",
     "description": "{feature} is included from the {plan} plan up. Upgrade to unlock it.",

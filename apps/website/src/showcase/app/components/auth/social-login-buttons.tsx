@@ -26,31 +26,48 @@ type Provider = "google" | "github";
 
 interface SocialLoginButtonsProps {
   providers: string[];
+  /** Where to go once signed in — a path on this site. */
+  next?: string;
 }
 
-export function SocialLoginButtons({ providers }: SocialLoginButtonsProps) {
+export function SocialLoginButtons({
+  providers,
+  next = "/dashboard",
+}: SocialLoginButtonsProps) {
   const t = useTranslations("auth-login");
   const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
+  const [failed, setFailed] = useState(false);
 
   if (providers.length === 0) {
     return null;
   }
 
   async function handleSocialLogin(provider: Provider) {
+    setFailed(false);
+    setLoadingProvider(provider);
     try {
-      setLoadingProvider(provider);
-      await authClient.signIn.social({
+      // On success the browser leaves for the provider. A provider the
+      // server does not have configured answers `{ error }` instead of
+      // throwing, and the buttons must come back either way.
+      const { error } = await authClient.signIn.social({
         provider,
-        callbackURL: "/dashboard",
+        callbackURL: next,
       });
-    } catch (error) {
-      console.error(`${provider} login error:`, error);
-      setLoadingProvider(null);
+      if (!error) return;
+    } catch {
+      // Same outcome as `{ error }`: stay on the page and say so.
     }
+    setFailed(true);
+    setLoadingProvider(null);
   }
 
   return (
     <div className="space-y-4">
+      {failed ? (
+        <p role="alert" className="text-sm text-destructive">
+          {t("socialLogin.failed")}
+        </p>
+      ) : null}
       <div className="grid gap-2">
         {providers.includes("google") && (
           <Button

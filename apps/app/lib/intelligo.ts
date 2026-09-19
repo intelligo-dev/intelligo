@@ -26,6 +26,7 @@ import {
   registerTeamMemberLimits,
   setDefaultProductSlug,
 } from "@intelligo-dev/billing/plans";
+import { setWorkspaceCreatedHandler } from "@intelligo-dev/auth";
 import { assertEnv } from "@intelligo-dev/core/env";
 import { setRequestContextSource } from "@intelligo-dev/core/request-context";
 import {
@@ -40,6 +41,7 @@ import {
   REFERENCE_PLANS,
   REFERENCE_TEAM_MEMBER_LIMITS,
 } from "./plans";
+import { onWorkspaceCreated } from "./workspace-bootstrap";
 
 export const PRODUCT_SLUG = "reference";
 
@@ -64,6 +66,9 @@ export function composeIntelligo(): void {
   // asks `@intelligo-dev/core/request-context` and stays usable from a
   // worker or a test.
   setRequestContextSource(nextRequestContext);
+
+  // What a new user's personal workspace starts with.
+  setWorkspaceCreatedHandler(onWorkspaceCreated);
 
   setDefaultProductSlug(PRODUCT_SLUG);
   registerProductPlans(PRODUCT_SLUG, REFERENCE_PLANS);

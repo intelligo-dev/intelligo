@@ -298,7 +298,10 @@ export async function saveMessageAsArtifact(params: {
     return { success: false, error: t("actions.emptyArtifact") };
   }
 
-  const title = params.title?.trim() || deriveArtifactTitle(content);
+  const title =
+    params.title?.trim() ||
+    deriveArtifactTitle(content) ||
+    t("artifactCard.untitled");
 
   try {
     const saved = await saveDocument(await actor(), {
@@ -362,14 +365,14 @@ export async function saveArtifactVersion(params: {
 
 const MAX_ARTIFACT_TITLE = 60;
 
-/** First line of the reply, trimmed to something list-sized. */
+/** First line of the reply, trimmed to something list-sized; "" when there is none. */
 function deriveArtifactTitle(content: string): string {
   const line =
     content
       .split("\n")
       .map((value) => value.replace(/^#+\s*/, "").trim())
       .find(Boolean) ?? "";
-  if (!line) return "Untitled";
+  if (!line) return "";
   return line.length <= MAX_ARTIFACT_TITLE
     ? line
     : `${line.slice(0, MAX_ARTIFACT_TITLE - 1).trimEnd()}…`;

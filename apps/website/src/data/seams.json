@@ -6,7 +6,6 @@
   "usage": [],
   "invitation-accept": [],
   "app-shell": [
-    "lib/workspace-bootstrap.ts",
     "lib/shell-config.tsx",
     "lib/nav-config.ts"
   ],

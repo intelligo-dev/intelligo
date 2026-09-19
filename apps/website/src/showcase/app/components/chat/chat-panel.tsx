@@ -15,10 +15,12 @@
  * Installed from the `chat-panel` item; requires the `chat` item.
  */
 
-import { Suspense, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
+import type { UIMessage } from "ai";
 import { useTranslations } from "use-intl";
 import { MessageSquareIcon } from "lucide-react";
 
+import { loadConversationForChat } from "@showcase/actions/chat";
 import { ChatThread } from "@showcase/components/chat/chat-thread";
 import { Button } from "@showcase/components/ui/button";
 import {
@@ -58,7 +60,35 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const t = useTranslations("chat-panel");
   const [open, setOpen] = useState(false);
-  const [id] = useState(() => conversationId ?? crypto.randomUUID());
+  const [minted] = useState(() => crypto.randomUUID());
+  const id = conversationId ?? minted;
+  // A pinned conversation opens on its history, loaded once per id; a
+  // minted one has none. `null` while it is still loading.
+  const [history, setHistory] = useState<{
+    id: string;
+    messages: UIMessage[];
+  } | null>(null);
+
+  useEffect(() => {
+    if (!open || !conversationId || history?.id === conversationId) return;
+    let current = true;
+    void loadConversationForChat(conversationId).then((result) => {
+      if (!current) return;
+      setHistory({
+        id: conversationId,
+        messages: result.success ? result.data.messages : [],
+      });
+    });
+    return () => {
+      current = false;
+    };
+  }, [open, conversationId, history?.id]);
+
+  const initialMessages = conversationId
+    ? history?.id === conversationId
+      ? history.messages
+      : null
+    : [];
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -89,11 +119,12 @@ export function ChatPanel({
             {description ?? t("description")}
           </SheetDescription>
         </SheetHeader>
-        {open ? (
+        {open && initialMessages ? (
           <Suspense fallback={null}>
             <ChatThread
+              key={id}
               conversationId={id}
-              initialMessages={[]}
+              initialMessages={initialMessages}
               variant="panel"
               agentId={agentId}
               body={body}

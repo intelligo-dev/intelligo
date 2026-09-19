@@ -3,7 +3,7 @@
   "frameworkVersion": "1.0.0-beta.8",
   "features": {
     "app-scaffold": {
-      "templateVersion": "1.13.0",
+      "templateVersion": "1.14.0",
       "files": [
         {
           "path": "package.json",
@@ -19,11 +19,11 @@
         },
         {
           "path": ".env.example",
-          "hash": "20e49e55640c13fd494ab7449dff583466622cc7f2ea982252b9a55b13476cdd"
+          "hash": "0c911c2a69967526b713c1ead8f6f33ac194e40c9aeb7aefda6715f2d04f3044"
         },
         {
           "path": "lib/intelligo.ts",
-          "hash": "9df6172fb43d78178b63aaeda8d6bda64b348d177448601062d41cfb41ebc2f9"
+          "hash": "61d46228d0498e9cbbfcc8dcb659229731d637e85fb51b41bf67107f876301c1"
         },
         {
           "path": "instrumentation.ts",
@@ -32,6 +32,10 @@
         {
           "path": "lib/plans.ts",
           "hash": "21325ae314658f069c7414fb71b019f4c6b3f497b6e2e9802ad7b45050d7e8c1"
+        },
+        {
+          "path": "lib/workspace-bootstrap.ts",
+          "hash": "7cb0d28d7204cf1ecb411a0f1d23a41e2612d48edbe53666998afc479aa4efd9"
         },
         {
           "path": "app/api/auth/[...all]/route.ts",

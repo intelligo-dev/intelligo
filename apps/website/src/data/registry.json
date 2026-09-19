@@ -1424,17 +1424,22 @@
         {
           "path": "base/invitation-accept/page.tsx",
           "type": "registry:page",
-          "target": "app/[locale]/(app)/accept-invitation/[id]/page.tsx"
+          "target": "app/[locale]/accept-invitation/[id]/page.tsx"
+        },
+        {
+          "path": "base/invitation-accept/layout.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/accept-invitation/[id]/layout.tsx"
         },
         {
           "path": "base/invitation-accept/loading.tsx",
           "type": "registry:page",
-          "target": "app/[locale]/(app)/accept-invitation/[id]/loading.tsx"
+          "target": "app/[locale]/accept-invitation/[id]/loading.tsx"
         },
         {
           "path": "base/invitation-accept/error.tsx",
           "type": "registry:page",
-          "target": "app/[locale]/(app)/accept-invitation/[id]/error.tsx"
+          "target": "app/[locale]/accept-invitation/[id]/error.tsx"
         },
         {
           "path": "base/invitation-accept/components/invitation-actions.tsx",
@@ -1471,6 +1476,7 @@
         "next-themes",
         "drizzle-orm",
         "lucide-react",
+        "sonner",
         "motion",
         "server-only",
         "next-intl"
@@ -1515,11 +1521,6 @@
           "path": "base/app-shell/components/time-zone-cookie.tsx",
           "type": "registry:component",
           "target": "components/shell/time-zone-cookie.tsx"
-        },
-        {
-          "path": "base/app-shell/lib/workspace-bootstrap.ts",
-          "type": "registry:file",
-          "target": "lib/workspace-bootstrap.ts"
         },
         {
           "path": "base/app-shell/lib/shell-config.tsx",
@@ -2824,7 +2825,7 @@
       "title": "Chat Panel",
       "description": "The chat as a side panel on any page: a sheet that opens the same thread the chat page runs, with the page's context on every turn. Requires the chat item.",
       "registryDependencies": ["@intelligo/button", "@intelligo/sheet"],
-      "dependencies": ["lucide-react", "next-intl"],
+      "dependencies": ["ai@^7.0.103", "lucide-react", "next-intl"],
       "files": [
         {
           "path": "base/chat-panel/components/chat-panel.tsx",

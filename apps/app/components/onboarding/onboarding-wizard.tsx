@@ -77,11 +77,13 @@ export function OnboardingWizard({ initialStepId }: OnboardingWizardProps) {
     setError(null);
     startTransition(async () => {
       const nextIndex = stepIndex + 1;
-      const nextStep = steps[nextIndex];
-      // The completion screen is not a step and persists no step id.
-      const result = nextStep
-        ? await advanceStep(nextStep.id, answers)
-        : { success: true as const, data: undefined };
+      // The step being left is submitted, the last one included; the
+      // completion screen is not a step and persists no step id.
+      const result = await advanceStep({
+        from: currentStep.id,
+        to: steps[nextIndex]?.id ?? null,
+        answers,
+      });
       if (!result.success) {
         setError(result.error);
         return;
@@ -99,7 +101,10 @@ export function OnboardingWizard({ initialStepId }: OnboardingWizardProps) {
       const prevIndex = stepIndex - 1;
       const prevStep = steps[prevIndex];
       if (prevStep) {
-        const result = await advanceStep(prevStep.id, answers);
+        const result = await advanceStep({
+          from: currentStep?.id ?? prevStep.id,
+          to: prevStep.id,
+        });
         if (!result.success) {
           setError(result.error);
           return;

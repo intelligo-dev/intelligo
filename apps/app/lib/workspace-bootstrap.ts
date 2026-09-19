@@ -1,25 +1,21 @@
 import "server-only";
 
-import { getAuthSession } from "@intelligo-dev/auth";
+import type { WorkspaceCreated } from "@intelligo-dev/auth";
 import { createNotification } from "@intelligo-dev/core/notifications";
 import { createLogger } from "@intelligo-dev/core/logger";
 
 /**
- * Workspace bootstrap — composition-root binding for the app shell's one
- * extension point: what happens the first time `ensureUserWorkspace`
- * (`@intelligo-dev/auth`) has to create a workspace for a user, instead of
- * finding an existing one.
+ * What a user's personal workspace starts with, set from the composition
+ * root with `setWorkspaceCreatedHandler` (`@intelligo-dev/auth`). It runs
+ * once, when the signup hook — or `ensureUserWorkspace`, if the hook did
+ * not get to it — creates the workspace.
  *
- * `@intelligo-dev/auth` must not import `@intelligo-dev/billing` — a product's
- * trial/referral/welcome-bonus rules are a business decision, not a
- * framework one, and importing them directly would recreate the very
- * auth → billing cycle `ensureUserWorkspace`'s callback parameter exists
- * to avoid. So the layout injects this callback instead of the package
- * importing anything. That binding happens here, in a file
- * the composition root owns and calls explicitly — never as an import
- * side effect.
+ * `@intelligo-dev/auth` must not import `@intelligo-dev/billing`: a
+ * product's trial/referral/welcome-bonus rules are a business decision,
+ * not a framework one. So the product hands auth this handler instead of
+ * the package importing anything.
  *
- * The registry default provisions nothing. The reference app posts a
+ * The scaffold's default provisions nothing. The reference app posts a
  * welcome notification, which is also what stops `/notifications` from
  * being a page that can only ever be empty: nothing else in a fresh
  * install writes one until somebody accepts a team invitation.
@@ -32,16 +28,10 @@ const log = createLogger("WorkspaceBootstrap");
 
 export async function onWorkspaceCreated({
   workspaceId,
+  userId,
   email,
-}: {
-  workspaceId: string;
-  email: string;
-}): Promise<void> {
+}: WorkspaceCreated): Promise<void> {
   try {
-    const session = await getAuthSession();
-    const userId = session?.user?.id;
-    if (!userId) return;
-
     await createNotification({
       userId,
       workspaceId,

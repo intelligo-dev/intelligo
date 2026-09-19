@@ -26,6 +26,7 @@ import { AnimatedList, AnimatedListItem } from "@showcase/components/ui/animated
 
 import { createCreditPurchaseSession } from "@showcase/actions/billing";
 import { CREDIT_BUNDLES, CURRENCY } from "@showcase/lib/billing-config";
+import { formatMoney } from "@showcase/lib/format-money";
 
 /** Micros are millionths of one major unit. */
 const MICROS_PER_UNIT = 1_000_000;
@@ -83,10 +84,7 @@ export function CreditBundles({ currentBalance }: CreditBundlesProps) {
         {currentBalance && (
           <p className="text-sm text-muted-foreground">
             {t("creditBundles.currentBalance", {
-              balance: format.number(currentBalance.amount / MICROS_PER_UNIT, {
-                style: "currency",
-                currency: currentBalance.currency,
-              }),
+              balance: formatMoney(format, currentBalance),
             })}
           </p>
         )}
@@ -105,17 +103,11 @@ export function CreditBundles({ currentBalance }: CreditBundlesProps) {
                   <p className="font-medium">{bundle.name}</p>
                 </div>
                 <p className="text-2xl font-semibold text-foreground">
-                  {format.number(grant.amount / MICROS_PER_UNIT, {
-                    style: "currency",
-                    currency: grant.currency,
-                  })}
+                  {formatMoney(format, grant)}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {t("creditBundles.oneTime", {
-                    price: format.number(price.amount / MICROS_PER_UNIT, {
-                      style: "currency",
-                      currency: price.currency,
-                    }),
+                    price: formatMoney(format, price),
                   })}
                 </p>
                 <Button

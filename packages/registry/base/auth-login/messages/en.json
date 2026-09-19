@@ -24,7 +24,8 @@
     "connecting": "Connecting…",
     "continueWithGoogle": "Continue with Google",
     "continueWithGithub": "Continue with GitHub",
-    "orContinueWith": "Or continue with"
+    "orContinueWith": "Or continue with",
+    "failed": "Couldn't start that sign-in. Please try again or use your email."
   },
   "validation": {
     "emailInvalid": "Please enter a valid email address",

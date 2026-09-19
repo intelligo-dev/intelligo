@@ -40,7 +40,9 @@ function friendlyError(error: unknown, t: Translator): string {
   if (isBillingServiceError(error)) {
     return friendlyMessage(t)[error.code] ?? error.message;
   }
-  return error instanceof Error ? error.message : t("errors.genericFailure");
+  // `Error#message` can carry internals (SQL, hostnames) to the UI.
+  console.error("[pricing]", error);
+  return t("errors.genericFailure");
 }
 
 /**

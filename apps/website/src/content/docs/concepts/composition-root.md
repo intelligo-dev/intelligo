@@ -27,6 +27,9 @@ export function composeIntelligo(): void {
   // worker or a test.
   setRequestContextSource(nextRequestContext);
 
+  // What a new user's personal workspace starts with.
+  setWorkspaceCreatedHandler(onWorkspaceCreated);
+
   setDefaultProductSlug(PRODUCT_SLUG);
   registerProductPlans(PRODUCT_SLUG, PLANS);
   registerProductFeatures(PRODUCT_SLUG, FEATURES);

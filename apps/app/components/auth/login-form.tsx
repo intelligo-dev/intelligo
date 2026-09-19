@@ -20,7 +20,8 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { loginSchema, type LoginInput } from "@/lib/auth-validation";
 
-export function LoginForm() {
+/** `next`: where to go once signed in — a path on this site. */
+export function LoginForm({ next = "/dashboard" }: { next?: string }) {
   const t = useTranslations("auth-login");
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export function LoginForm() {
       const result = await authClient.signIn.email({
         email: data.email,
         password: data.password,
-        callbackURL: "/dashboard",
+        callbackURL: next,
       });
 
       if (result.error) {
@@ -53,7 +54,7 @@ export function LoginForm() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(next);
     } catch (error) {
       console.error("Login error:", error);
       setFormError(t("loginForm.errors.unexpected"));
@@ -134,7 +135,11 @@ export function LoginForm() {
       <p className="text-center text-sm text-muted-foreground">
         {t("loginForm.noAccount")}{" "}
         <Link
-          href="/signup"
+          href={
+            next === "/dashboard"
+              ? "/signup"
+              : `/signup?next=${encodeURIComponent(next)}`
+          }
           className="font-medium text-primary hover:text-primary/80"
         >
           {t("loginForm.signUpLink")}

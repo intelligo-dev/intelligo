@@ -7,6 +7,7 @@
  */
 
 import * as React from "react";
+import { toast } from "sonner";
 import { useTranslations } from "use-intl";
 import { Check, ChevronsUpDown } from "lucide-react";
 
@@ -56,10 +57,17 @@ export function WorkspaceSwitcher({
     if (!currentWorkspace || workspaceId === currentWorkspace.id) return;
     setIsSwitching(true);
     try {
-      await authClient.organization.setActive({ organizationId: workspaceId });
+      // Better-Auth answers a refusal as `{ error }` rather than throwing.
+      const { error } = await authClient.organization.setActive({
+        organizationId: workspaceId,
+      });
+      if (error) {
+        toast.error(t("workspaceSwitcher.switchFailed"));
+        return;
+      }
       router.refresh();
-    } catch (error) {
-      console.error("Failed to switch workspace:", error);
+    } catch {
+      toast.error(t("workspaceSwitcher.switchFailed"));
     } finally {
       setIsSwitching(false);
     }

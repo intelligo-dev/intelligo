@@ -10,6 +10,11 @@
  * tells them apart, so "Invitation unavailable" covers all three.
  * "Expired" is reachable: the endpoint filters on `status`, not
  * `expiresAt`, so this page compares the timestamp itself.
+ *
+ * It sits outside `(app)`: the shell's redirects — to `/login` without
+ * a way back, to onboarding before anything else — would lose the
+ * invitation. The layout sends a visitor without a session to sign in
+ * and back here.
  */
 
 import { getFormatter, getTranslations } from "next-intl/server";

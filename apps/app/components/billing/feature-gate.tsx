@@ -50,7 +50,11 @@ export async function FeatureGate({
   return (
     <UpgradePrompt
       feature={descriptor ? tAny(descriptor.labelKey) : t("genericFeature")}
-      requiredPlan={planName(descriptor?.requiredPlan ?? "pro")}
+      requiredPlan={
+        descriptor?.requiredPlan
+          ? planName(descriptor.requiredPlan)
+          : t("genericPlan")
+      }
       description={
         descriptor?.descriptionKey ? tAny(descriptor.descriptionKey) : undefined
       }

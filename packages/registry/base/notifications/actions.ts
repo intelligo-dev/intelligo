@@ -70,8 +70,13 @@ function toNotificationData(row: CoreNotification): NotificationData {
   };
 }
 
+/**
+ * The reader gets the translated fallback; the error itself goes to the
+ * server log. `Error#message` can carry internals (SQL, hostnames).
+ */
 function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
+  console.error("[notifications]", error);
+  return fallback;
 }
 
 /**

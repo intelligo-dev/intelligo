@@ -8,8 +8,8 @@ import { getLocale } from "next-intl/server";
  *    route is a sibling of `(app)`, so this cannot redirect into itself;
  *    if you nest onboarding under `(app)`, skip this check on that route.
  * 3. An active workspace. `ensureUserWorkspace` creates one if none
- *    exists and calls `onWorkspaceCreated` from
- *    `@/lib/workspace-bootstrap` for first-workspace provisioning.
+ *    exists; what a new workspace starts with is the handler
+ *    `lib/intelligo.ts` sets with `setWorkspaceCreatedHandler`.
  */
 
 import { eq } from "drizzle-orm";
@@ -32,7 +32,6 @@ import { TimeZoneCookie } from "@/components/shell/time-zone-cookie";
 import { AISidebarInset, AISidebarProvider } from "@/components/ui/ai-sidebar";
 import { redirect } from "@/i18n/navigation";
 import { shellConfig } from "@/lib/shell-config";
-import { onWorkspaceCreated } from "@/lib/workspace-bootstrap";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await getAuthSession();
@@ -53,9 +52,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   }
 
   const hdrs = await headers();
-  const activeWorkspaceId = await ensureUserWorkspace(session.user, hdrs, {
-    onWorkspaceCreated,
-  });
+  const activeWorkspaceId = await ensureUserWorkspace(session.user, hdrs);
 
   const [workspaces, workspaceContext] = await Promise.all([
     auth.api.listOrganizations({ headers: hdrs }).then((orgs) => orgs ?? []),

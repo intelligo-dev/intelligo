@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { getAuthSession } from "@intelligo-dev/auth";
 
 import { redirect } from "@/i18n/navigation";
+import { returnPath } from "@/lib/auth-validation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
 import { SignupForm } from "@/components/auth/signup-form";
@@ -26,13 +27,21 @@ export async function generateMetadata(): Promise<Metadata> {
  * rotated secret — and the loop locks them out of the page that would
  * fix it.
  */
-async function redirectIfSignedIn(): Promise<void> {
+async function redirectIfSignedIn(next: string): Promise<void> {
   if (await getAuthSession())
-    redirect({ href: "/dashboard", locale: await getLocale() });
+    redirect({ href: next, locale: await getLocale() });
 }
 
-export default async function SignupPage() {
-  await redirectIfSignedIn();
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  // Where the reader was going — an invitation link, say — when they
+  // were sent here to sign in.
+  const raw = (await searchParams).next;
+  const next = returnPath(Array.isArray(raw) ? raw[0] : raw);
+  await redirectIfSignedIn(next);
 
   const t = await getTranslations("auth-signup");
 
@@ -50,8 +59,8 @@ export default async function SignupPage() {
   return (
     <AuthCard title={t("card.title")} description={t("card.description")}>
       <div className="space-y-6">
-        <SocialLoginButtons providers={providers} />
-        <SignupForm />
+        <SocialLoginButtons providers={providers} next={next} />
+        <SignupForm next={next} />
       </div>
     </AuthCard>
   );

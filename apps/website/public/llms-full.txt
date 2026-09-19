@@ -132,6 +132,7 @@ Source: https://intelligo.dev/docs/getting-started/environment
 | `GOOGLE_CLIENT_ID`<br>`GOOGLE_CLIENT_SECRET`<br>`GITHUB_CLIENT_ID`<br>`GITHUB_CLIENT_SECRET` | Sign in with Google or GitHub. A provider's button appears once both of its values are set; the callback URL to register with the provider is NEXT_PUBLIC_APP_URL + /api/auth/callback/google (or /github). |
 | `RESEND_API_KEY` | Email. Without a provider, emails (verification, invitations, reset links) are printed to the server console, and sign-ups are not held for email verification. |
 | `EMAIL_FROM` | The sender of every email, on a domain verified with Resend. Required with RESEND_API_KEY: there is no built-in sender, so sends fail without it. Loops ignores it and takes the sender from each template. The scaffold sets `Acme <noreply@example.com>`. |
+| `APP_NAME`<br>`SUPPORT_EMAIL` | The product's name in every email's heading and footer; defaults to the display name in EMAIL_FROM. SUPPORT_EMAIL is the address the footer offers for replies; without it the footer offers none. The scaffold sets `Acme`. |
 | `LOOPS_API_KEY` | Loops sends by template id instead of HTML: map each template with LOOPS_TRANSACTIONAL_ID_&lt;KEY>, e.g. LOOPS_TRANSACTIONAL_ID_VERIFY_EMAIL. |
 | `EMAIL_PROVIDER` | With both keys set Resend wins; force one with resend \| loops \| console. |
 | `STRIPE_SECRET_KEY`<br>`STRIPE_WEBHOOK_SECRET` | Stripe. Billing pages say "not configured" until these are set; the webhook at /api/webhooks/stripe verifies with the secret. |
@@ -219,6 +220,9 @@ export function composeIntelligo(): void {
   // asks `@intelligo-dev/core/request-context` and stays usable from a
   // worker or a test.
   setRequestContextSource(nextRequestContext);
+
+  // What a new user's personal workspace starts with.
+  setWorkspaceCreatedHandler(onWorkspaceCreated);
 
   setDefaultProductSlug(PRODUCT_SLUG);
   registerProductPlans(PRODUCT_SLUG, PLANS);
@@ -699,15 +703,6 @@ than take the error screen down with it.
 
 ## [app-shell](/blocks/app-shell)
 
-### `lib/workspace-bootstrap.ts`
-
-Exports `onWorkspaceCreated`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/workspace-bootstrap.ts)
-
-Runs once, when `ensureUserWorkspace` creates a user's first workspace:
-the place for trial credits, referral bonuses or any other one-time
-provisioning. It lives here so `@intelligo-dev/auth` never imports
-billing.
-
 ### `lib/shell-config.tsx`
 
 Exports `ShellConfig`, `shellConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/shell-config.tsx)
@@ -1136,10 +1131,6 @@ empty `chatConfig`, so the chat surface renders its baseline UI:
    `lib/chat-server-config.ts` (`attachments.accept`, `maxBytes`,
    `mode`): the composer keeps the reader from picking a file the
    route would refuse, and in `stored` mode uploads it first.
- - `activity`: how reasoning, tool calls and runtime steps read in
-   the transcript — `inline` (each as its own card, the default) or
-   `timeline` (grouped into one collapsible activity block per
-   reply, the way an agent's work is usually shown).
  - `commands`: slash commands the composer offers when a message
    starts with `/`. Each names a message key for its label and either
    inserts text or runs a callback.
@@ -2069,7 +2060,7 @@ their own, and refuse to overwrite the latter.
 
 | Feature | What it generates |
 | --- | --- |
-| `admin-page` | Mount the Intelligo operational console at /admin — `app/admin/page.tsx` |
+| `admin-page` | Mount the Intelligo operational console at /admin — `app/[locale]/admin/page.tsx` |
 | `maintenance` | A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs — scheduled every five minutes, in vercel.json when the app has none — `app/api/cron/maintenance/route.ts` |
 
 ## doctor

@@ -37,9 +37,13 @@ export async function listConversationHistory(): Promise<
   await wait(200);
   return { success: true, data: CONVERSATIONS };
 }
-export async function loadConversationForChat(
-  ..._args: unknown[]
-): Promise<ChatActionResult<unknown>> {
+export async function loadConversationForChat(..._args: unknown[]): Promise<
+  ChatActionResult<{
+    conversation: { id: string; title: string | null } | null;
+    messages: import("ai").UIMessage[];
+    votes: Record<string, "up" | "down">;
+  }>
+> {
   await wait(200);
   return { success: false, error: PREVIEW_NOTE };
 }

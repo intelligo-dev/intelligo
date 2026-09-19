@@ -2,9 +2,9 @@ import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 // tsconfig.json extends the generated, gitignored tsconfig.paths.json,
-// and the transform reads it for every test file. Only `type-check`
-// wrote it, so a run that tests without type-checking first — the
-// release workflow — failed to load the suite.
+// and the transform reads it for every test file. Written here as well
+// as by `type-check`, so a run that tests without type-checking first
+// still loads the suite.
 import "./scripts/tsconfig-paths.mjs";
 
 /**

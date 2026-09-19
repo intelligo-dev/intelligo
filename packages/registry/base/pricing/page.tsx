@@ -21,9 +21,6 @@ export default async function PricingPage() {
     getBillingOverview({ workspaceId: workspace.id, role: membership.role }),
   ]);
 
-  const currentPlanSlug =
-    overview.role === "member" ? "free" : overview.planSlug;
-
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 p-4 md:p-10">
       <header className="space-y-2 text-center">
@@ -37,7 +34,7 @@ export default async function PricingPage() {
 
       <PricingContent
         plans={plans}
-        currentPlanSlug={currentPlanSlug}
+        currentPlanSlug={overview.planSlug}
         canCheckout={membership.role === "owner"}
       />
     </div>

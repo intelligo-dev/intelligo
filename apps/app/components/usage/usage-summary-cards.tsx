@@ -46,15 +46,22 @@ export function UsageSummaryCards({
   const [period, setPeriod] = useState<UsagePeriod>("current");
   const [summary, setSummary] = useState(initialPeriodSummary);
   const [isPending, startTransition] = useTransition();
+  const [failed, setFailed] = useState(false);
 
+  // The tab moves only with its numbers: a failed load keeps the period
+  // the cards are showing and says so, rather than labelling the old
+  // numbers with the new period.
   function handlePeriodChange(next: string) {
     const nextPeriod = next as UsagePeriod;
-    setPeriod(nextPeriod);
+    setFailed(false);
 
     startTransition(async () => {
       const result = await getUsagePeriodSummary(nextPeriod);
       if (result.success) {
         setSummary(result.data);
+        setPeriod(nextPeriod);
+      } else {
+        setFailed(true);
       }
     });
   }
@@ -76,6 +83,11 @@ export function UsageSummaryCards({
 
   return (
     <div className="space-y-4">
+      {failed ? (
+        <p role="alert" className="text-sm text-destructive">
+          {t("summaryCards.periodFailed")}
+        </p>
+      ) : null}
       <Tabs value={period} onValueChange={handlePeriodChange}>
         <TabsList>
           {PERIODS.map((value) => (

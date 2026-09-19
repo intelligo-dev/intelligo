@@ -55,7 +55,7 @@ their own, and refuse to overwrite the latter.
 
 | Feature | What it generates |
 | --- | --- |
-| `admin-page` | Mount the Intelligo operational console at /admin — `app/admin/page.tsx` |
+| `admin-page` | Mount the Intelligo operational console at /admin — `app/[locale]/admin/page.tsx` |
 | `maintenance` | A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs — scheduled every five minutes, in vercel.json when the app has none — `app/api/cron/maintenance/route.ts` |
 
 ## doctor

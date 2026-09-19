@@ -27,10 +27,6 @@
  *    `lib/chat-server-config.ts` (`attachments.accept`, `maxBytes`,
  *    `mode`): the composer keeps the reader from picking a file the
  *    route would refuse, and in `stored` mode uploads it first.
- *  - `activity`: how reasoning, tool calls and runtime steps read in
- *    the transcript — `inline` (each as its own card, the default) or
- *    `timeline` (grouped into one collapsible activity block per
- *    reply, the way an agent's work is usually shown).
  *  - `commands`: slash commands the composer offers when a message
  *    starts with `/`. Each names a message key for its label and either
  *    inserts text or runs a callback.
@@ -128,8 +124,6 @@ export interface ChatConfig {
   headerRight?: ComponentType<ChatHeaderRightProps>;
   /** What the composer lets the reader attach. Unset: no attachments. */
   attachments?: ChatAttachmentsConfig;
-  /** How reasoning, tool calls and runtime steps read. Default `inline`. */
-  activity?: "inline" | "timeline";
   /** Slash commands the composer offers. */
   commands?: ChatCommand[];
   /** The `@` picker. */

@@ -28,24 +28,29 @@ async function friendlyError(error: unknown): Promise<string> {
     if (error.code === "forbidden") return t("errors.forbidden");
     return t("errors.unexpected");
   }
-  if (error instanceof Error) return error.message;
+  // `Error#message` can carry internals (SQL, hostnames) to the UI.
+  console.error("[onboarding]", error);
   const t = await getTranslations("onboarding");
   return t("errors.generic");
 }
 
 /**
- * Moves to `stepId`. First runs `onStepSubmit` from
- * `lib/onboarding-steps.ts` with the answers of the step being left.
+ * Leaves the step `from` for `to`. Going forward (`answers` given), it
+ * first runs `onStepSubmit` from `lib/onboarding-steps.ts` with `from`
+ * and its answers; going back submits nothing. `to` null is the
+ * completion screen, which persists no step id, so the caller resumes
+ * at `from`.
  */
-export async function advanceStep(
-  stepId: string,
-  answers: OnboardingAnswers
-): Promise<OnboardingActionResult> {
+export async function advanceStep(move: {
+  from: string;
+  to: string | null;
+  answers?: OnboardingAnswers;
+}): Promise<OnboardingActionResult> {
   try {
-    if (onboardingConfig.onStepSubmit) {
-      await onboardingConfig.onStepSubmit(stepId, answers);
+    if (move.answers && onboardingConfig.onStepSubmit) {
+      await onboardingConfig.onStepSubmit(move.from, move.answers);
     }
-    await onboarding.setStep(stepId);
+    await onboarding.setStep(move.to ?? move.from);
     return { success: true, data: undefined };
   } catch (error) {
     return { success: false, error: await friendlyError(error) };

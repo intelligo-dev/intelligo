@@ -37,8 +37,9 @@ export function ChatWidget({ body, className }: ChatWidgetProps) {
   const [open, setOpen] = useState(false);
   const [id] = useState(() => crypto.randomUUID());
 
-  const hidden = (chatWidgetConfig.hideOn ?? []).some((prefix) =>
-    pathname.startsWith(prefix)
+  // Segment-aware: hiding on `/chat` must not hide it on `/chatbots`.
+  const hidden = (chatWidgetConfig.hideOn ?? []).some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
   if (hidden) return null;
 

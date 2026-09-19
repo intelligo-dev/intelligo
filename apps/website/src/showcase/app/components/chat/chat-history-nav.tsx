@@ -98,11 +98,21 @@ export function ChatHistoryNav({
   const [titles, setTitles] = useState<Record<string, string>>({});
   const [pins, setPins] = useState<Record<string, boolean>>({});
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  // Read when a delete lands, seconds after the click: by then the
+  // reader may have opened another conversation.
+  const activeIdRef = useRef(activeId);
+  activeIdRef.current = activeId;
 
+  // Leaving with a delete still in its undo window keeps the delete:
+  // the reader asked for it and did not take it back.
   useEffect(() => {
     const pending = timers.current;
     return () => {
-      for (const timer of pending.values()) clearTimeout(timer);
+      for (const [id, timer] of pending) {
+        clearTimeout(timer);
+        void deleteConversation(id);
+      }
+      pending.clear();
     };
   }, []);
 
@@ -191,7 +201,7 @@ export function ChatHistoryNav({
           toast.error(result.error);
           return;
         }
-        if (id === activeId) router.push("/chat");
+        if (id === activeIdRef.current) router.push("/chat");
         router.refresh();
       });
     }, UNDO_MS);

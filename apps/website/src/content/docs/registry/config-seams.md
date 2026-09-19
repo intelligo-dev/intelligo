@@ -41,15 +41,6 @@ than take the error screen down with it.
 
 ## [app-shell](/blocks/app-shell)
 
-### `lib/workspace-bootstrap.ts`
-
-Exports `onWorkspaceCreated`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/workspace-bootstrap.ts)
-
-Runs once, when `ensureUserWorkspace` creates a user's first workspace:
-the place for trial credits, referral bonuses or any other one-time
-provisioning. It lives here so `@intelligo-dev/auth` never imports
-billing.
-
 ### `lib/shell-config.tsx`
 
 Exports `ShellConfig`, `shellConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/shell-config.tsx)
@@ -478,10 +469,6 @@ empty `chatConfig`, so the chat surface renders its baseline UI:
    `lib/chat-server-config.ts` (`attachments.accept`, `maxBytes`,
    `mode`): the composer keeps the reader from picking a file the
    route would refuse, and in `stored` mode uploads it first.
- - `activity`: how reasoning, tool calls and runtime steps read in
-   the transcript — `inline` (each as its own card, the default) or
-   `timeline` (grouped into one collapsible activity block per
-   reply, the way an agent's work is usually shown).
  - `commands`: slash commands the composer offers when a message
    starts with `/`. Each names a message key for its label and either
    inserts text or runs a callback.

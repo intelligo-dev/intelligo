@@ -88,18 +88,26 @@ function str(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
 }
 
-/** The option an approval answer picks: eve names them; we match by intent. */
+const APPROVING = /\b(approve|allow|yes|confirm|accept|ok)\b/i;
+const DENYING = /\b(deny|reject|no|not|cancel|decline|disallow|never|stop)\b/i;
+
+/**
+ * The option an approval answer picks: eve names them; we match by
+ * intent, on whole words, so "Approve now" is not read as "no". An
+ * answer never lands on an option that says the opposite: with none that
+ * matches, it is undefined and the answer goes back as text.
+ */
 function optionFor(
   options: EveInputRequest["options"] | undefined,
   approved: boolean
 ): string | undefined {
   if (!options?.length) return undefined;
-  const wanted = approved
-    ? /approve|allow|yes|confirm|accept/i
-    : /deny|reject|no|cancel|decline/i;
-  const byId = options.find((o) => wanted.test(o.id) || wanted.test(o.label));
-  if (byId) return byId.id;
-  return approved ? options[0]!.id : options[options.length - 1]!.id;
+  const [wanted, opposite] = approved
+    ? [APPROVING, DENYING]
+    : [DENYING, APPROVING];
+  const says = (o: { id: string; label: string }, pattern: RegExp) =>
+    pattern.test(o.id) || pattern.test(o.label);
+  return options.find((o) => says(o, wanted) && !says(o, opposite))?.id;
 }
 
 // ---------------------------------------------------------------------------
@@ -695,10 +703,11 @@ export function eveStreamTurn(options: EveStreamTurnOptions): StreamTurn {
       throw new Error(`eve answered ${response.status} to the turn`);
     }
     const accepted = asRecord(await response.json().catch(() => ({})));
+    // `str` answers "" for a missing field, which `??` would keep.
     sessionId =
-      sessionId ??
-      str(accepted.sessionId) ??
-      response.headers.get("x-eve-session-id") ??
+      sessionId ||
+      str(accepted.sessionId) ||
+      response.headers.get("x-eve-session-id") ||
       undefined;
     if (!sessionId) throw new Error("eve did not return a session id");
     const fixedSessionId = sessionId;

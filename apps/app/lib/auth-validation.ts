@@ -66,3 +66,14 @@ export const resetPasswordSchema = z
   });
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+/**
+ * Where to go after signing in: `next` when it is a path on this site,
+ * `/dashboard` otherwise. A full URL, or `//host`, would let a link send
+ * a reader who just signed in to somebody else's site.
+ */
+export function returnPath(next: string | null | undefined): string {
+  return typeof next === "string" && /^\/(?![/\\])/.test(next)
+    ? next
+    : "/dashboard";
+}

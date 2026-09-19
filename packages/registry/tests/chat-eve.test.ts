@@ -302,6 +302,49 @@ describe("approvalResponsesFrom / userContentFrom", () => {
     ]);
   });
 
+  it.each([
+    [
+      false,
+      [
+        { id: "approve-now", label: "Approve now" },
+        { id: "allow-always", label: "Allow always" },
+      ],
+    ],
+    [
+      true,
+      [
+        { id: "no", label: "No" },
+        { id: "deny", label: "Deny" },
+      ],
+    ],
+  ])(
+    "never answers approved=%s with an option that says the opposite",
+    (approved, options) => {
+      const messages: UIMessage[] = [
+        {
+          id: "a",
+          role: "assistant",
+          parts: [
+            {
+              type: "dynamic-tool",
+              toolName: "deleteRows",
+              toolCallId: "c9",
+              state: "approval-responded",
+              input: {},
+              approval: { id: "req_A", approved },
+              callProviderMetadata: {
+                eve: { inputRequest: { requestId: "req_A", options } },
+              },
+            } as unknown as UIMessage["parts"][number],
+          ],
+        },
+      ];
+      expect(approvalResponsesFrom(messages)).toEqual([
+        { requestId: "req_A", text: approved ? "approve" : "deny" },
+      ]);
+    }
+  );
+
   it("sends text alone as a string and files as parts", () => {
     expect(
       userContentFrom({
@@ -337,7 +380,7 @@ describe("approvalResponsesFrom / userContentFrom", () => {
 });
 
 describe("eveStreamTurn", () => {
-  function fakeEve(events: EveEvent[]) {
+  function fakeEve(events: EveEvent[], { idInHeader = false } = {}) {
     const calls: Array<{ url: string; method: string; body?: unknown }> = [];
     const fetchImpl = vi.fn(
       async (input: string | URL | Request, init?: RequestInit) => {
@@ -348,7 +391,12 @@ describe("eveStreamTurn", () => {
           body: init?.body ? JSON.parse(String(init.body)) : undefined,
         });
         if (url.endsWith("/eve/v1/session") && init?.method === "POST") {
-          return Response.json({ sessionId: "wrun_1" }, { status: 202 });
+          return idInHeader
+            ? Response.json(
+                {},
+                { status: 202, headers: { "x-eve-session-id": "wrun_1" } }
+              )
+            : Response.json({ sessionId: "wrun_1" }, { status: 202 });
         }
         if (url.includes("/stream")) {
           const body = events.map((e) => JSON.stringify(e)).join("\n") + "\n";
@@ -397,6 +445,32 @@ describe("eveStreamTurn", () => {
     }
     return out;
   }
+
+  it("takes the session id from the header when the body has none", async () => {
+    const { fetchImpl, calls } = fakeEve(
+      [ev("turn.completed", {}), ev("session.waiting", {})],
+      { idInHeader: true }
+    );
+    const { turn: t } = turn();
+    const produced = await eveStreamTurn({
+      baseUrl: "https://eve.test",
+      fetch: fetchImpl,
+    })(
+      t as never,
+      {
+        messages: [
+          { id: "u", role: "user", parts: [{ type: "text", text: "hello" }] },
+        ],
+      },
+      {
+        modelId: "m",
+        abortSignal: new AbortController().signal,
+        writer: {} as never,
+      }
+    );
+    await drain(produced.stream);
+    expect(calls[1]!.url).toContain("/session/wrun_1/stream");
+  });
 
   it("creates a session, streams the turn, settles usage and stores the cursor", async () => {
     const { fetchImpl, calls } = fakeEve([

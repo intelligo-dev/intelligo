@@ -43,9 +43,9 @@ function friendlyError(error: unknown, t: Translator): string {
   if (isIdentityServiceError(error)) {
     return friendlyMessage(t)[error.code] ?? error.message;
   }
-  return error instanceof Error
-    ? error.message
-    : t("errors.somethingWentWrong");
+  // `Error#message` can carry internals (SQL, hostnames) to the UI.
+  console.error("[privacy-settings]", error);
+  return t("errors.somethingWentWrong");
 }
 
 const PRIVACY_SETTINGS_PATH = "/settings/privacy";

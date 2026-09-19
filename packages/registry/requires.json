@@ -27,7 +27,7 @@
       "files": ["i18n/navigation"]
     },
     "invitation-accept": {
-      "marker": "app/[locale]/(app)/accept-invitation/[id]/page.tsx",
+      "marker": "app/[locale]/accept-invitation/[id]/page.tsx",
       "items": ["team-settings"],
       "files": ["i18n/navigation"]
     },

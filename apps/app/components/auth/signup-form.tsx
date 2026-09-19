@@ -26,7 +26,8 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { signupSchema, type SignupInput } from "@/lib/auth-validation";
 
-export function SignupForm() {
+/** `next`: where to go once signed up — a path on this site. */
+export function SignupForm({ next = "/dashboard" }: { next?: string }) {
   const t = useTranslations("auth-signup");
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
@@ -49,7 +50,7 @@ export function SignupForm() {
         name: data.name,
         email: data.email,
         password: data.password,
-        callbackURL: "/dashboard",
+        callbackURL: next,
       });
 
       if (result.error) {
@@ -67,7 +68,7 @@ export function SignupForm() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(next);
     } catch (error) {
       console.error("Signup error:", error);
       setFormError(t("signupForm.errors.unexpected"));
@@ -180,7 +181,11 @@ export function SignupForm() {
       <p className="text-center text-sm text-muted-foreground">
         {t("signupForm.alreadyHaveAccount")}{" "}
         <Link
-          href="/login"
+          href={
+            next === "/dashboard"
+              ? "/login"
+              : `/login?next=${encodeURIComponent(next)}`
+          }
           className="font-medium text-primary hover:text-primary/80"
         >
           {t("signupForm.logInLink")}

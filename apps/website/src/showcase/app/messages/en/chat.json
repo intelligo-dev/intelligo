@@ -8,12 +8,9 @@
     "renameSave": "Save title",
     "renameCancel": "Cancel rename",
     "renameEdit": "Rename conversation",
-    "historyTrigger": "History",
     "historyEmpty": "No past conversations",
     "historyUntitled": "Untitled conversation",
-    "newChat": "New",
     "delete": "Delete conversation",
-    "openHistory": "Open conversations",
     "share": "Share"
   },
   "agent": {
@@ -44,7 +41,6 @@
     "thinking": "Thinking…",
     "thoughtBriefly": "Thought for a few seconds",
     "thoughtFor": "{seconds, plural, one {Thought for # second} other {Thought for # seconds}}",
-    "you": "You",
     "attachment": "Attachment",
     "imageAlt": "Image attached to the message"
   },
@@ -116,8 +112,7 @@
     "running": "Running",
     "done": "Done",
     "failed": "Failed",
-    "pending": "Pending",
-    "suspended": "Waiting"
+    "pending": "Pending"
   },
   "task": {
     "title": "Plan",
@@ -177,7 +172,6 @@
     "confirm": "Delete"
   },
   "artifactCard": {
-    "saved": "Saved to your artifacts",
     "open": "Open",
     "streaming": "Writing…",
     "failed": "Couldn't create the document",
@@ -186,7 +180,6 @@
   "attachments": {
     "add": "Add photos or files",
     "remove": "Remove attachment",
-    "dropHere": "Drop files to attach them",
     "tooMany": "You can attach {max, plural, one {# file} other {# files}} at most.",
     "tooLarge": "That file is too large.",
     "unsupported": "That file type isn't accepted.",
@@ -200,8 +193,7 @@
     "mentions": "Mentions",
     "noResults": "No matches",
     "voiceStart": "Start voice input",
-    "voiceStop": "Stop voice input",
-    "voiceListening": "Listening…"
+    "voiceStop": "Stop voice input"
   },
   "sidebar": {
     "label": "Conversations",
@@ -229,7 +221,6 @@
     "title": "Canvas",
     "close": "Close canvas",
     "version": "Version",
-    "latest": "Latest",
     "openInArtifacts": "Open in Artifacts",
     "copy": "Copy content",
     "download": "Download",
@@ -261,8 +252,7 @@
     "copyLink": "Copy link",
     "linkCopied": "Link copied",
     "readOnly": "You are viewing a shared, read-only conversation.",
-    "openApp": "Start your own",
-    "unavailable": "This conversation isn't shared."
+    "openApp": "Start your own"
   },
   "creditBanner": {
     "outOfCredits": "You're out of credits",

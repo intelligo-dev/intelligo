@@ -51,7 +51,9 @@
     "quotaAllowanceCredit": "{percentage}% of the {planName} plan's monthly allowance (credit balance)",
     "trialCredits": "Trial credits",
     "trialRemaining": "{count} remaining",
-    "trialOf": "of {count}"
+    "trialOf": "of {count}",
+    "periodFailed": "Couldn't load that period. Showing the previous one.",
+    "noPlan": "No plan"
   },
   "unavailable": {
     "title": "Usage unavailable"

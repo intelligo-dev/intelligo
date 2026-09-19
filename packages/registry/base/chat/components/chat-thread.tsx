@@ -386,15 +386,30 @@ export function ChatThread({
   });
 
   // Prefill from `?query=`, once, and only into a conversation that has
-  // no messages yet.
+  // no messages yet. It waits for the stored model pick, so the turn
+  // runs on the model the reader chose, and a thread that may not send
+  // gets the text as a draft instead.
   const prefillSent = useRef(false);
   useEffect(() => {
     if (prefillSent.current) return;
     const query = searchParams.get("query");
     if (!query || messages.length > 0) return;
+    if (models.length > 0 && modelId === undefined) return;
     prefillSent.current = true;
+    if (blocked) {
+      draft.setValue(query);
+      return;
+    }
     void sendMessage({ text: query }, { body: bodyRef.current });
-  }, [searchParams, messages.length, sendMessage]);
+  }, [
+    searchParams,
+    messages.length,
+    sendMessage,
+    models.length,
+    modelId,
+    blocked,
+    draft,
+  ]);
 
   // Rebuilt each render on purpose: `send` closes over `isStreaming`,
   // and nothing downstream is memoized on this object.

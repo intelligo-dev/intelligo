@@ -60,8 +60,9 @@ export interface OnboardingConfig {
   steps: OnboardingStepConfig[];
   complete: OnboardingCompleteConfig;
   /**
-   * Runs server-side whenever the wizard advances past `stepId`, with
-   * that step's answers. The only place answers are saved.
+   * Runs server-side whenever the wizard advances past `stepId` — the
+   * last step included — with the answers so far. The only place
+   * answers are saved.
    */
   onStepSubmit?: (
     stepId: string,
@@ -127,7 +128,8 @@ export const onboardingConfig: OnboardingConfig = {
   },
   onStepSubmit: async (stepId, answers) => {
     if (stepId === "profile" && answers.displayName) {
-      await saveDisplayName(answers.displayName);
+      const saved = await saveDisplayName(answers.displayName);
+      if (!saved.success) throw new Error(saved.error);
     }
   },
 };

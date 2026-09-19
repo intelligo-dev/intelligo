@@ -37,9 +37,9 @@ function friendlyError(error: unknown, t: Translator): string {
   if (isProfileServiceError(error)) {
     return friendlyMessage(t)[error.code] ?? error.message;
   }
-  return error instanceof Error
-    ? error.message
-    : t("errors.somethingWentWrong");
+  // `Error#message` can carry internals (SQL, hostnames) to the UI.
+  console.error("[profile-settings]", error);
+  return t("errors.somethingWentWrong");
 }
 
 export async function updateProfile(

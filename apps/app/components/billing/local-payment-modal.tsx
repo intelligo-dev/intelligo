@@ -38,7 +38,10 @@ interface LocalPaymentModalProps {
   onClose: () => void;
   /** What is being bought — a plan slug, a bundle id, an order id. */
   reference: string;
-  /** Amount to display. The server prices the invoice itself. */
+  /**
+   * Amount to display, in major units of `CURRENCY` (29.5 is twenty-nine
+   * and a half). The server prices the invoice itself.
+   */
   amount: number;
   /** Localized name of what is being bought. */
   label: string;
@@ -85,37 +88,49 @@ export function LocalPaymentModal({
     void createInvoice();
   }, [open, attempt, createInvoice]);
 
+  // One poll at a time, only while the dialog is open: closing it, or a
+  // poll outliving its interval, must not run `onPaid` twice or after
+  // the reader has walked away.
   useEffect(() => {
-    if (step !== "waiting" || !invoice) return;
+    if (!open || step !== "waiting" || !invoice) return;
 
     const { pollIntervalMs, timeoutMs } = paymentPollConfig;
     const startedAt = Date.now();
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
-    const timer = setInterval(async () => {
+    const poll = async () => {
+      if (stopped) return;
       if (Date.now() - startedAt > timeoutMs) {
-        clearInterval(timer);
         setStep("timedOut");
         return;
       }
 
       const result = await pollLocalPayment(invoice.invoiceId);
+      if (stopped) return;
       // A failed poll is not a failed payment — the provider may just
       // be slow. Keep waiting; the timeout is the only give-up.
-      if (!result.success) return;
-
-      if (result.data === "paid") {
-        clearInterval(timer);
+      if (result.success && result.data === "paid") {
         setStep("paid");
-        setTimeout(() => onPaidRef.current(), 1200);
-      } else if (result.data === "failed") {
-        clearInterval(timer);
+        timer = setTimeout(() => {
+          if (!stopped) onPaidRef.current();
+        }, 1200);
+        return;
+      }
+      if (result.success && result.data === "failed") {
         setError(t("errors.declined"));
         setStep("failed");
+        return;
       }
-    }, pollIntervalMs);
+      timer = setTimeout(poll, pollIntervalMs);
+    };
+    timer = setTimeout(poll, pollIntervalMs);
 
-    return () => clearInterval(timer);
-  }, [step, invoice, t]);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [open, step, invoice, t]);
 
   const description =
     step === "creating"
@@ -135,10 +150,10 @@ export function LocalPaymentModal({
           <DialogTitle className="text-center">
             {t("title", {
               label,
+              // The currency's own decimals: 12.50 is not 13.
               amount: format.number(amount, {
                 style: "currency",
                 currency: CURRENCY,
-                maximumFractionDigits: 0,
               }),
             })}
           </DialogTitle>

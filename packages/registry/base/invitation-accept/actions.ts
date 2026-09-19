@@ -56,7 +56,7 @@ export async function acceptInvitation(
     };
   }
 
-  revalidatePath("/accept-invitation/[id]", "page");
+  revalidatePath("/[locale]/accept-invitation/[id]", "page");
   revalidatePath("/settings/team");
   revalidatePath("/");
   return { success: true };
@@ -75,6 +75,6 @@ export async function rejectInvitation(
     };
   }
 
-  revalidatePath("/accept-invitation/[id]", "page");
+  revalidatePath("/[locale]/accept-invitation/[id]", "page");
   return { success: true };
 }
