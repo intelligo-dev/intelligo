@@ -264,14 +264,13 @@
    button, ring/20 on an input — 1.7:1 and 1.3:1 on this page); a rule
    inside `@layer base` loses to that utility whatever its selector, which
    is how this one came to be dead code. Unlayered it wins, and --ring at
-   full strength is 4.7:1 light, 4.3:1 dark. */
-:is(a, button, input, textarea, select, summary, [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [tabindex]:not([tabindex="-1"])):focus-visible {
+   full strength is 4.7:1 light, 4.3:1 dark. The palette's field is left
+   out: it is its dialog's only control and takes focus as it opens, so
+   the caret and the dialog around it already say where focus is. */
+:is(a, button, input, textarea, select, summary, [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [tabindex]:not([tabindex="-1"])):focus-visible:not([cmdk-input]) {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
-/* the palette's field is the dialog's only control and takes focus as it
-   opens: the caret and the dialog around it say where focus is */
-[cmdk-input]:focus-visible { outline: none; }
 
 /* first thing in the tab order, on screen only once it is focused */
 .skip-link {
