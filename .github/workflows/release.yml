@@ -168,16 +168,13 @@ jobs:
         env:
           DATABASE_URL: ""
 
-      # The four checks below ran on every push until they were the
+      # The three checks below ran on every push until they were the
       # reason CI took twenty-two minutes. What they prove is that a
       # consumer can install this — the packed tarballs resolve, the
       # CLI scaffolds an app that boots, every registry item installs
       # into it, and the reference app is still exactly the CLI's
       # output. That is a question about publishing, so it is asked
       # here, where a failure stops the publish instead of a commit.
-      #
-      # Dummy values for modules that instantiate at import time; this
-      # workflow has no job-level env, unlike CI.
       - name: Packed-package compatibility
         if: steps.check.outputs.published != 'true'
         run: |
@@ -233,59 +230,6 @@ jobs:
           test -f "$out/scaffolded/lib/intelligo.ts"
           test -f "$out/scaffolded/intelligo.manifest.json"
 
-      - name: A generated app builds and boots
-        if: steps.check.outputs.published != 'true'
-        env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/unused
-          AUTH_SECRET: ci_dummy_secret_0000000000000000000000000000000000
-          BETTER_AUTH_SECRET: ci_dummy_secret_0000000000000000000000000000000000
-          CRON_SECRET: ci_dummy_secret_0000000000000000000000000000000000
-          NEXT_PUBLIC_APP_URL: http://localhost:3000
-          STRIPE_SECRET_KEY: sk_test_dummy
-          STRIPE_WEBHOOK_SECRET: whsec_dummy
-          RESEND_API_KEY: re_dummy
-          OPENAI_API_KEY: sk-dummy
-          ANTHROPIC_API_KEY: sk-ant-dummy
-          GOOGLE_GENERATIVE_AI_API_KEY: dummy
-        run: |
-          set -euo pipefail
-          rm -rf apps/generated-smoke
-
-          # --link-workspace because this generates inside the monorepo.
-          pnpm exec tsx packages/cli/src/bin.ts create apps/generated-smoke --link-workspace
-
-          # A new workspace member changes the lockfile, so this cannot
-          # be --frozen-lockfile. The runner is thrown away afterwards.
-          pnpm install --no-frozen-lockfile
-          pnpm --filter generated-smoke build
-
-          pnpm --filter generated-smoke start &
-
-          # Poll for any answer. A 401 is the expected one, and `curl -f`
-          # would treat it as a failure, so this waits on the status
-          # code being anything at all rather than on success.
-          code=000
-          for i in $(seq 1 30); do
-            code=$(curl -s -o /tmp/gen-body -w '%{http_code}' -X POST \
-              http://localhost:3000/api/assistant \
-              -H 'content-type: application/json' -d '{"prompt":"ping"}' || true)
-            [ "$code" != "000" ] && break
-            sleep 2
-          done
-
-          echo "generated app answered $code: $(cat /tmp/gen-body 2>/dev/null)"
-
-          # Unauthenticated is the correct answer, and getting it proves
-          # the whole chain ran: composition root, auth, the caller of
-          # the execution boundary.
-          test "$code" = "401"
-
-          # `kill %1` only reaches the pnpm wrapper, and killing the `next
-          # start` CLI orphans its `next-server` child, which kept :3000
-          # and answered the next step's probe with the wrong app.
-          kill %1 2>/dev/null || true
-          pkill -f "next-server|next start" 2>/dev/null || true
-
       # apps/app is generated, not written: `intelligo create` plus
       # `shadcn add` for every item, with only the files in
       # scripts/reference-app-owned.json kept. A diff here means a
@@ -294,77 +238,17 @@ jobs:
         if: steps.check.outputs.published != 'true'
         run: pnpm app:regenerate --check
 
-      - name: Registry items install into the generated app
+      # What npm will serve, installed the way a consumer installs it:
+      # the packed tarballs in an app the packed CLI scaffolds outside
+      # this workspace. The bare scaffold and the app with every
+      # registry item each type-check, build and answer; see the
+      # script's header for what each probe proves.
+      - name: A consumer outside the monorepo
         if: steps.check.outputs.published != 'true'
-        env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/unused
-          AUTH_SECRET: ci_dummy_secret_0000000000000000000000000000000000
-          BETTER_AUTH_SECRET: ci_dummy_secret_0000000000000000000000000000000000
-          CRON_SECRET: ci_dummy_secret_0000000000000000000000000000000000
-          NEXT_PUBLIC_APP_URL: http://localhost:3000
-          STRIPE_SECRET_KEY: sk_test_dummy
-          STRIPE_WEBHOOK_SECRET: whsec_dummy
-          RESEND_API_KEY: re_dummy
-          OPENAI_API_KEY: sk-dummy
-          ANTHROPIC_API_KEY: sk-ant-dummy
-          GOOGLE_GENERATIVE_AI_API_KEY: dummy
         run: |
           set -euo pipefail
           pnpm registry:build
-
-          cd apps/generated-smoke
-
-          # Install order is a topological sort of packages/registry/requires.json
-          # (an item after the items whose files it imports) — the same
-          # file the architecture suite proves matches the code.
-          ORDER=$(node -e '
-            const { items } = require(process.env.GITHUB_WORKSPACE + "/packages/registry/requires.json");
-            const out = [], done = new Set();
-            const visit = (n) => { if (done.has(n)) return; done.add(n); for (const d of items[n].items ?? []) visit(d); out.push(n); };
-            for (const n of Object.keys(items)) visit(n);
-            console.log(out.join(" "));
-          ')
-
-          # Items name Intelligo's own components as @intelligo/<name>. Serve
-          # the registry this run just built and point the namespace at it,
-          # so an item is tested against its siblings, not the deployed site.
-          npx --yes http-server@14.1.1 "$GITHUB_WORKSPACE/packages/registry/public/r" -p 8399 -s &
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8399/intelligo.json >/dev/null && break; sleep 1; done
-          node -e 'const fs=require("fs");const c=JSON.parse(fs.readFileSync("components.json","utf8"));c.registries={...c.registries,"@intelligo":"http://127.0.0.1:8399/{name}.json"};fs.writeFileSync("components.json",JSON.stringify(c,null,2))'
-
-          echo "installing: $ORDER"
-          for item in $ORDER; do
-            pnpm exec shadcn add "$GITHUB_WORKSPACE/packages/registry/public/r/$item.json" --yes --overwrite
-          done
-          cd "$GITHUB_WORKSPACE"
-          pnpm install --no-frozen-lockfile
-          pnpm --filter generated-smoke build
-
-          # Its own port, so a server left over from the boot step can
-          # never answer for this one. The default locale carries no URL
-          # prefix (localePrefix "as-needed"), so /registry-smoke is the
-          # canonical address; /en/registry-smoke would 307 to it.
-          # The scaffold's start script pins --port 3000, so PORT is not
-          # enough; invoke next directly on the other port.
-          pnpm --filter generated-smoke exec next start --port 3100 &
-          code=000
-          for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3100/registry-smoke || true)
-            [ "$code" != "000" ] && break
-            sleep 2
-          done
-          # A page that needs a session must redirect to login, not 404 or
-          # 500. The dashboard exists once the items are installed, and
-          # pages do not compose on their own — instrumentation.ts does,
-          # once per process — so a 500 means the request context was
-          # never bound and every signed-in page is broken.
-          page=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3100/dashboard || true)
-          echo "unauthenticated /dashboard answered $page"
-          kill %1 2>/dev/null || true
-          pkill -f "next-server|next start" 2>/dev/null || true
-          echo "registry smoke page answered $code"
-          test "$code" = "200"
-          case "$page" in 302|303|307|308) ;; *) echo "expected a redirect to login"; exit 1 ;; esac
+          scripts/consumer-smoke.sh "$RUNNER_TEMP/consumer-smoke"
 
       # `pnpm pack` rewrites workspace:* ranges to the version and swaps
       # in publishConfig; `npm publish` of the tarball is what speaks

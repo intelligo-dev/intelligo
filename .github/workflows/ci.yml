@@ -120,11 +120,11 @@ jobs:
             exit 1
           fi
 
-      # Four checks are deliberately absent here and live in
+      # Three checks are deliberately absent here and live in
       # .github/workflows/release.yml instead: packed-package
-      # compatibility, the generated app that builds and boots, the
-      # registry items installing into it, and the reference app being
-      # the CLI's output. They took eighteen of the twenty-two minutes
+      # compatibility, the reference app being the CLI's output, and a
+      # consumer outside the monorepo installing the tarballs and every
+      # registry item into an app that builds and boots. They took eighteen of the twenty-two minutes
       # this job used to run, and what they prove — that a consumer can
       # install what we publish — is a question about a release, not
       # about a commit. A release cannot publish without them.
