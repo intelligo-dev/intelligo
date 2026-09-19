@@ -65,3 +65,13 @@ export const REFERENCE_FEATURES: Record<string, readonly string[]> = {
   // ["pro"] if this deployment wants chat behind a paywall.
   chat: ["free", "pro"],
 };
+
+/**
+ * Seats per plan: how many members a workspace on each plan may hold,
+ * the owner included. -1 is unlimited. A plan left out gets one seat,
+ * which refuses every invitation.
+ */
+export const REFERENCE_TEAM_MEMBER_LIMITS: Record<string, number> = {
+  free: 3,
+  pro: 25,
+};

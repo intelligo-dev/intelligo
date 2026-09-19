@@ -137,7 +137,7 @@ export async function ensureFreeSubscription(workspaceId: string) {
 
   if (!freePlan[0]) {
     throw new Error(
-      "Free plan not found in database. Run seed script to create plans."
+      'No "free" row in the plans table. Call ensurePlanRows() from the composition root, after registerProductPlans().'
     );
   }
 

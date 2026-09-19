@@ -51,3 +51,13 @@ export const FEATURES: Record<string, readonly string[]> = {
   // chat behind a paywall.
   chat: ["free", "pro"],
 };
+
+/**
+ * Seats per plan: how many members a workspace on each plan may hold,
+ * the owner included. -1 is unlimited. A plan left out gets one seat,
+ * which refuses every invitation.
+ */
+export const TEAM_MEMBER_LIMITS: Record<string, number> = {
+  free: 3,
+  pro: 25,
+};

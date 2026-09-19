@@ -94,7 +94,8 @@ export function decideApply(
         `This database has the framework's tables but no migration records — ` +
         `it was provisioned with db:push. Baseline it before running migrate, ` +
         `otherwise all ${check.chain.length} migrations would be applied to ` +
-        `tables that already exist. See packages/core/src/db/migrations/README.md`,
+        `tables that already exist. See README.md in @intelligo-dev/core's ` +
+        `src/db/migrations.`,
     };
   }
 

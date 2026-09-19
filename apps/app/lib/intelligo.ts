@@ -13,6 +13,7 @@ import "server-only";
 
 import {
   ensureBillingSettingsRow,
+  ensurePlanRows,
   reserveQuota,
   recordTokenUsage,
   releaseReservation,
@@ -22,6 +23,7 @@ import { DEFAULT_MARGIN_BP } from "@intelligo-dev/executions/pricing";
 import {
   registerProductFeatures,
   registerProductPlans,
+  registerTeamMemberLimits,
   setDefaultProductSlug,
 } from "@intelligo-dev/billing/plans";
 import { assertEnv } from "@intelligo-dev/core/env";
@@ -33,7 +35,11 @@ import {
 } from "@intelligo-dev/executions";
 import { nextRequestContext } from "@intelligo-dev/next";
 
-import { REFERENCE_FEATURES, REFERENCE_PLANS } from "./plans";
+import {
+  REFERENCE_FEATURES,
+  REFERENCE_PLANS,
+  REFERENCE_TEAM_MEMBER_LIMITS,
+} from "./plans";
 
 export const PRODUCT_SLUG = "reference";
 
@@ -62,6 +68,12 @@ export function composeIntelligo(): void {
   setDefaultProductSlug(PRODUCT_SLUG);
   registerProductPlans(PRODUCT_SLUG, REFERENCE_PLANS);
   registerProductFeatures(PRODUCT_SLUG, REFERENCE_FEATURES);
+  registerTeamMemberLimits(PRODUCT_SLUG, REFERENCE_TEAM_MEMBER_LIMITS);
+
+  // The plans table is a copy of the catalogue above: a subscription
+  // row references its plan there, so the rows exist before the first
+  // checkout rather than being seeded by a migration.
+  void ensurePlanRows();
 
   // What each model costs. The catalogue the framework ships is data,
   // not a default: nothing self-registers, so a deployment always knows

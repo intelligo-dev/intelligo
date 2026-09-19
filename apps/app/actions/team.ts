@@ -26,8 +26,15 @@ export type TeamActionResult<T = undefined> =
 
 type Translator = Awaited<ReturnType<typeof getTranslations<"team-settings">>>;
 
-function friendlyMessage(t: Translator): Partial<Record<string, string>> {
+function friendlyMessage(
+  t: Translator,
+  limit: number | undefined
+): Partial<Record<string, string>> {
   return {
+    member_limit_reached:
+      limit === undefined
+        ? t("errors.memberLimitReached")
+        : t("errors.memberLimitReachedCount", { limit }),
     invitation_not_found: t("errors.invitationNotFound"),
     sole_owner: t("errors.soleOwner"),
     forbidden: t("errors.forbidden"),
@@ -40,7 +47,10 @@ function friendlyError(error: unknown, t: Translator): string {
   // Unknown errors deliberately map to the generic key — a raw
   // `Error#message` can carry internals (SQL, hostnames) to the UI.
   if (isTeamServiceError(error)) {
-    return friendlyMessage(t)[error.code] ?? t("errors.somethingWentWrong");
+    return (
+      friendlyMessage(t, error.meta?.limit)[error.code] ??
+      t("errors.somethingWentWrong")
+    );
   }
   return t("errors.somethingWentWrong");
 }

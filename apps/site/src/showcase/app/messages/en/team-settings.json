@@ -59,6 +59,8 @@
     "emptyHint": "Invitations you send appear here until they're accepted."
   },
   "errors": {
+    "memberLimitReached": "Your plan's seats are all taken. Upgrade to invite more people.",
+    "memberLimitReachedCount": "Your plan includes {limit, plural, one {# seat} other {# seats}}, and they're all taken. Upgrade to invite more people.",
     "invitationNotFound": "That invitation no longer exists.",
     "soleOwner": "You're the only owner of this workspace. Transfer ownership before leaving.",
     "forbidden": "You don't have permission to do that.",

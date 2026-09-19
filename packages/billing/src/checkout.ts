@@ -24,6 +24,7 @@ import {
 import { getBillingSettings } from "./billing-settings";
 import { getStripe } from "./stripe";
 import { getPlanBySlug } from "./plans";
+import { planRowId } from "./plan-rows";
 import { getOrCreateStripeCustomer, getWorkspaceBilling } from "./queries";
 
 /** Micros are millionths of one major unit; whole units × this. */
@@ -142,9 +143,7 @@ export async function createSubscriptionCheckout(
     locale ?? userRow?.preferredLanguage ?? "en"
   );
 
-  // The `plans` table carries one row per registered plan slug, keyed
-  // `plan_${slug}`.
-  const planId = `plan_${planSlug}`;
+  const planId = planRowId(planSlug);
 
   const stripe = getStripe();
   const session = await stripe.checkout.sessions.create({

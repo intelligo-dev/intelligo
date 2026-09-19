@@ -51,6 +51,9 @@ export {
 } from "./billing-settings";
 export type { ResolvedBillingSettings } from "./billing-settings";
 
+// The plans table, written from the registered catalogue
+export { ensurePlanRows } from "./plan-rows";
+
 // Quota enforcement engine
 export {
   checkQuota,

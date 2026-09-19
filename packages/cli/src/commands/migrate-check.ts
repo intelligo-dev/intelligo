@@ -142,8 +142,8 @@ export function formatMigrateCheck(r: MigrateCheckResult): string {
     lines.push(
       `! This database has no migration records. If it was provisioned with ` +
         `db:push, baseline it before running migrate — otherwise migrate will ` +
-        `try to apply all ${r.chain.length} migrations. See ` +
-        `packages/core/src/db/migrations/README.md`
+        `try to apply all ${r.chain.length} migrations. See README.md in ` +
+        `@intelligo-dev/core's src/db/migrations.`
     );
   }
 
