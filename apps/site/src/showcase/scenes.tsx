@@ -7,7 +7,7 @@
  * component (its page is a server component reading Stripe), so that
  * scene mirrors the page's JSX with the item's own messages.
  */
-import { useState, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { useFormatter, useTranslations } from "use-intl";
 import { CheckCircle2 } from "lucide-react";
 
@@ -44,9 +44,6 @@ import { LocalPaymentModal } from "@showcase/components/billing/local-payment-mo
 import { UsageSummaryCards } from "@showcase/components/usage/usage-summary-cards";
 import { UsageChart } from "@showcase/components/usage/usage-chart";
 import { NotificationList } from "@showcase/components/notifications/notification-list";
-import { MessageList } from "@showcase/components/chat/message-list";
-import { ChatInput } from "@showcase/components/chat/chat-input";
-import { DocumentList } from "@showcase/components/artifacts/document-list";
 import { TrialBanner } from "@showcase/components/trial/trial-banner";
 import { PaywallBlur } from "@showcase/components/billing/paywall-blur";
 import { UpgradePrompt } from "@showcase/components/billing/upgrade-prompt";
@@ -83,6 +80,25 @@ import {
   WORKSPACE,
   WORKSPACES,
 } from "./fixtures";
+
+// The chat and the artifacts library carry the markdown renderer, the
+// highlighter and the document editors: several times the weight of every
+// other scene together. They load when one of their scenes is shown.
+const MessageList = lazy(() =>
+  import("@showcase/components/chat/message-list").then((m) => ({
+    default: m.MessageList,
+  }))
+);
+const ChatInput = lazy(() =>
+  import("@showcase/components/chat/chat-input").then((m) => ({
+    default: m.ChatInput,
+  }))
+);
+const DocumentList = lazy(() =>
+  import("@showcase/components/artifacts/document-list").then((m) => ({
+    default: m.DocumentList,
+  }))
+);
 
 export type SceneId =
   | "login"
@@ -885,7 +901,9 @@ export function Showcase({
   return (
     <ScaledCanvas width={auth ? 960 : 1180}>
       <ShowcaseProvider pathname={ROUTE[scene]} toaster={toaster}>
-        <Scene />
+        <Suspense fallback={null}>
+          <Scene />
+        </Suspense>
       </ShowcaseProvider>
     </ScaledCanvas>
   );
