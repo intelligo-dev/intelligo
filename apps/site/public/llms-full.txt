@@ -130,12 +130,13 @@ Source: https://intelligo.dev/docs/getting-started/environment
 | Variable | What it is |
 | --- | --- |
 | `GOOGLE_CLIENT_ID`<br>`GOOGLE_CLIENT_SECRET`<br>`GITHUB_CLIENT_ID`<br>`GITHUB_CLIENT_SECRET` | Sign in with Google or GitHub. A provider's button appears once both of its values are set; the callback URL to register with the provider is NEXT_PUBLIC_APP_URL + /api/auth/callback/google (or /github). |
-| `RESEND_API_KEY`<br>`EMAIL_FROM` | Email. Without a provider, emails (verification, invitations, reset links) are printed to the server console, and sign-ups are not held for email verification. The scaffold sets `noreply@example.com`. |
+| `RESEND_API_KEY` | Email. Without a provider, emails (verification, invitations, reset links) are printed to the server console, and sign-ups are not held for email verification. |
+| `EMAIL_FROM` | The sender of every email, on a domain verified with Resend. Required with RESEND_API_KEY: there is no built-in sender, so sends fail without it. Loops ignores it and takes the sender from each template. The scaffold sets `Acme <noreply@example.com>`. |
 | `LOOPS_API_KEY` | Loops sends by template id instead of HTML: map each template with LOOPS_TRANSACTIONAL_ID_&lt;KEY>, e.g. LOOPS_TRANSACTIONAL_ID_VERIFY_EMAIL. |
 | `EMAIL_PROVIDER` | With both keys set Resend wins; force one with resend \| loops \| console. |
 | `STRIPE_SECRET_KEY`<br>`STRIPE_WEBHOOK_SECRET` | Stripe. Billing pages say "not configured" until these are set; the webhook at /api/webhooks/stripe verifies with the secret. |
 | `PAYMENT_MODE` | Which registered payment provider serves payments outside Stripe (registerPaymentProvider in the composition root). Defaults to the in-memory mock, which production refuses. |
-| `OPENAI_API_KEY`<br>`ANTHROPIC_API_KEY`<br>`GOOGLE_GENERATIVE_AI_API_KEY` | AI providers. Chat runs on a built-in stub model until lib/chat-model.ts names a real one. |
+| `OPENAI_API_KEY`<br>`ANTHROPIC_API_KEY`<br>`GOOGLE_GENERATIVE_AI_API_KEY` | AI providers. Chat runs on a built-in stub model until lib/chat-model.ts names a real one. Set only the key of the provider that model belongs to — the provider's SDK reads it, and the framework checks none of them. |
 | `CRON_SECRET` | Bearer token your scheduler sends to /api/cron/maintenance (`intelligo add maintenance`). At least 32 characters. |
 | `PLATFORM_ADMIN_EMAILS` | Comma-separated emails allowed to reach the Intelligo admin console. Closed by default: with no value, nobody is a platform admin. |
 
@@ -479,7 +480,7 @@ A workspace spends from three pools, all in the deployment's billing currency.
 
 Admission sums all three. Settlement charges the plan allowance first and sends whatever is left to exactly one other pool: the top-up balance, or the trial grant when the turn was admitted on trial credits and the grant still covers the remainder. The trial is the fallback, used only when allowance plus top-ups cannot cover a turn. `SettlementOutcome` reports the split, and `charged` always equals `plan` + `topup` + `trial`.
 
-The allowance is counted per calendar month. `monthly_usage` holds one row per workspace per month, a new month starts from zero, and unused allowance does not carry over. `resetMonthlyQuota`, which the Stripe webhook calls on `invoice.paid`, creates the current month's row when it is missing; it does not clear a row that exists. Top-ups and the trial grant do not reset.
+The allowance is counted per calendar month, in UTC, so every host agrees on where a month starts. `monthly_usage` holds one row per workspace per month, a new month starts from zero, and unused allowance does not carry over. `resetMonthlyQuota`, which the Stripe webhook calls on `invoice.paid`, creates the current month's row when it is missing; it does not clear a row that exists. Top-ups and the trial grant do not reset.
 
 A plan's `monthlyAllowance` must name the billing currency. If it names another, the allowance counts as zero, because converting it would mean inventing a rate.
 
@@ -507,7 +508,7 @@ export type QuotaRefusalCode =
 | ------------------------ | ---------------------------------------------------------------------------------- | ---------------------------- |
 | `insufficient_credits`   | Some balance remains, but less than the worst-case charge of one turn on the model | 402 `QUOTA_EXCEEDED`         |
 | `allowance_depleted`     | Nothing remains in any pool                                                        | 402 `QUOTA_EXCEEDED`         |
-| `unknown_model`          | The model id has no registered price, so the turn cannot be estimated              | 402 `QUOTA_EXCEEDED`         |
+| `unknown_model`          | The model id has no registered price, so the turn cannot be estimated              | 503 `MODEL_UNAVAILABLE`      |
 | `billing_not_configured` | No product or plans are registered                                                 | 503 `BILLING_NOT_CONFIGURED` |
 
 The chat transport puts the code in the response body as `reasonCode`. `estimateQuota` makes the same decision without locking or reserving; it is for banners and previews and must never gate a run.
@@ -534,7 +535,7 @@ export type BillingRate = {
 
 A turn of 2,000 input and 500 output tokens on `google/gemini-2.5-flash` costs the provider 1,850 micros. At 4× that is 7,400 micros, $0.0074 charged. A euro deployment at `920_000` charges 6,808 micros EUR.
 
-The rate is a fixed number you state, not a live feed. It lives in the single `billing_settings` row. `ensureBillingSettingsRow` in `composeIntelligo()` seeds that row and leaves an existing one alone, so editing the call after the first boot changes nothing: update the row itself. `getBillingSettings` caches it for 60 seconds per process. Each `usage_records` row stores the provider cost, margin and rate it was charged at, so a later change never rewrites history.
+The rate is a fixed number you state, not a live feed. It lives in the single `billing_settings` row. `ensureBillingSettingsRow` in `composeIntelligo()` seeds that row and leaves an existing one alone, so editing the call after the first boot changes nothing. To change them later, call `updateBillingSettings({ usdRateMicros, marginBp })` — from an admin action or a script; it validates the values and drops the cache. Changing `currency` does not convert the balances a ledger already holds. `getBillingSettings` caches it for 60 seconds per process. Each `usage_records` row stores the provider cost, margin and rate it was charged at, so a later change never rewrites history.
 
 ## What the workspace sees
 
@@ -623,7 +624,7 @@ pnpm dlx shadcn@latest add https://intelligo.dev/r/chat-share.json
 | Block | Needs these blocks | Imports these scaffold files | Gates on these features |
 | --- | --- | --- | --- |
 | [route-error](/blocks/route-error) | — | `i18n/navigation` | — |
-| [team-settings](/blocks/team-settings) | [route-error](/blocks/route-error) | — | — |
+| [team-settings](/blocks/team-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [pricing](/blocks/pricing) | — | `i18n/navigation` | — |
 | [usage](/blocks/usage) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [invitation-accept](/blocks/invitation-accept) | [team-settings](/blocks/team-settings) | `i18n/navigation` | — |
@@ -991,6 +992,13 @@ registered.
 To use a real provider: install its AI SDK package (e.g.
 `pnpm add @ai-sdk/anthropic` in this app) and replace the body of
 `getChatModel` — the commented example below is the whole change.
+
+Two strings are in play and they are not interchangeable. The
+registered id (`anthropic/claude-sonnet-4-6`) is what a turn is
+admitted and billed under. The provider's own id is often dated
+(`claude-sonnet-4-6-20260214`) and lives in the registry entry's
+`model` field. Read it from there; never derive it by trimming the
+prefix off the registered id, and never write it out a second time.
 
 ### `lib/chat-models.ts`
 
@@ -1519,6 +1527,20 @@ import { requireWorkspace } from "@intelligo-dev/auth";
 const { user, workspace, membership } = await requireWorkspace();
 ```
 
+A guard that refuses throws an `AuthGuardError`; `isAuthGuardError(error)`
+narrows it and `error.code` picks the status: `unauthenticated` (no session,
+401), `no_workspace` (signed in, member of no workspace) or `forbidden`
+(lacking the role, 403).
+
+`impersonateUser` checks that the caller is a platform admin and that the
+target is not one before it swaps the session. Products call
+`startImpersonation` from `@intelligo-dev/admin`, which adds the audit event
+and the mandatory reason.
+
+`hasSessionCookie(request)` from `@intelligo-dev/auth/edge` is for an optional
+optimistic redirect in a consumer's `proxy.ts`. It reads cookie presence only
+and is never authorization; the scaffold does not use it.
+
 Platform admin is a row (`users.role`), not an environment variable. The
 allowlist in `PLATFORM_ADMIN_EMAILS` is promoted into that column on first use,
 so the plugin and the guard cannot disagree.
@@ -1563,6 +1585,31 @@ expiry, and per-plan rate limits.
 The four are safe to reach from a client bundle or an edge runtime. An
 architecture test walks their imports so a Stripe or `server-only` import
 cannot creep in.
+
+## What a deployment bills in
+
+`ensureBillingSettingsRow` writes the currency, the USD rate and the margin on
+first boot and never touches an existing row again. After that the row changes
+through `updateBillingSettings({ currency?, usdRateMicros?, marginBp? })`, which
+refuses a non-positive rate or margin and an invalid currency code, and drops
+the cache. Changing the currency converts nothing: balances, trial grants and
+the period's allowance usage stay in the currency they were written in, and the
+engine refuses a write in another one until those rows are migrated.
+
+The plan allowance is money, so the 80% and 100% notices (in-app and email)
+state an amount used out of an amount allowed. The billing period is the
+calendar month in UTC (`getCurrentPeriodStart`, `getCurrentPeriodEnd`,
+`getCurrentPeriodKey`), whatever zone the host runs in.
+
+## Rate limits and the payment provider
+
+`checkRateLimit(workspaceId, planSlug, endpoint?)` counts in the `"chat"` bucket
+unless the caller names another; a route that should not spend chat's allowance
+passes its own name.
+
+`getPaymentProvider()` resolves `PAYMENT_MODE`, which defaults to `mock`.
+Outside production the in-memory mock needs no registration; in production it
+is refused, and any other mode must be registered from the composition root.
 
 ## The webhook receiver
 
@@ -1674,22 +1721,22 @@ the model that is about to run, and settles exactly once).
 Each optional field is something a real product needed and used to fork the
 route to get:
 
-| Field                         | What it decides                                                                                                                                               |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `resolveAgent(turn)`          | Which agent runs — from the body, the row, a table; prompt, tools, model                                                                                      |
-| `streamTurn(turn, prepared)`  | Another runtime than `streamText` — a Mastra agent, an eve session — returning the AI SDK's chunks and the run's usage; everything else stays the transport's |
-| `models`                      | The models a request may pick; anything else is `FEATURE_GATED` (`model_not_allowed`)                                                                         |
-| `prepareMessages(turn, msgs)` | What the model is shown — windowing, summaries, injected context                                                                                              |
-| `agent.generation`            | How the model samples — temperature, a token ceiling, a tool choice, a seed: an allowlist of the `streamText` options that do not touch settlement            |
-| `attachments`                 | Which file parts are accepted; `mode: "stored"` uploads them through the storage port and signs URLs for the model only                                       |
-| `reasoning`, `sources`        | Whether reasoning and source parts stream to the client                                                                                                       |
-| `messageMetadata`             | `{ modelId, usage, finishedAt }` on the reply (default on)                                                                                                    |
-| `cors`                        | Origins an embedded widget may call from                                                                                                                      |
-| `deriveTitle`                 | The conversation's title, sync or model-written                                                                                                               |
-| `persist`                     | Where the turn's messages go                                                                                                                                  |
-| `onTurn`                      | Telemetry: start, complete, fail, refuse, approval, feedback                                                                                                  |
-| `messages(request)`           | Refusal copy in the caller's locale                                                                                                                           |
-| `authenticate`, `rateLimit`   | The defaults are the framework's; a worker or a test can replace them                                                                                         |
+| Field                         | What it decides                                                                                                                                                                                                                     |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolveAgent(turn)`          | Which agent runs — from the body, the row, a table; prompt, tools, model                                                                                                                                                            |
+| `streamTurn(turn, prepared)`  | Another runtime than `streamText` — a Mastra agent, an eve session — returning the AI SDK's chunks and the run's usage; everything else stays the transport's                                                                       |
+| `models`                      | The models a request may pick; anything else is `FEATURE_GATED` (`model_not_allowed`)                                                                                                                                               |
+| `prepareMessages(turn, msgs)` | What the model is shown — windowing, summaries, injected context                                                                                                                                                                    |
+| `agent.generation`            | How the model samples — temperature, a token ceiling, a tool choice, a seed: an allowlist of the `streamText` options that do not touch settlement. `maxOutputTokens` defaults to the registered model's, the figure admission held |
+| `attachments`                 | Which file parts are accepted; `mode: "stored"` uploads them through the storage port and signs URLs for the model only                                                                                                             |
+| `reasoning`, `sources`        | Whether reasoning and source parts stream to the client                                                                                                                                                                             |
+| `messageMetadata`             | `{ modelId, usage, finishedAt }` on the reply (default on)                                                                                                                                                                          |
+| `cors`                        | Origins an embedded widget may call from                                                                                                                                                                                            |
+| `deriveTitle`                 | The conversation's title, sync or model-written                                                                                                                                                                                     |
+| `persist`                     | Where the turn's messages go                                                                                                                                                                                                        |
+| `onTurn`                      | Telemetry: start, complete, fail, refuse, approval, feedback                                                                                                                                                                        |
+| `messages(request)`           | Refusal copy in the caller's locale                                                                                                                                                                                                 |
+| `authenticate`, `rateLimit`   | The defaults are the framework's; a worker or a test can replace them                                                                                                                                                               |
 
 None carry product vocabulary; all close over the caller's tenancy, so the
 model is never told which workspace it is in.
@@ -1701,6 +1748,27 @@ deltas, `finish({ documentId })`. `sanitizeForShare` strips a transcript
 for a public page; `recordChatFeedback` records a vote and tells the hook.
 Stored attachments mount two more handlers, `createChatUploadHandler` and
 `createChatAttachmentHandler`.
+
+## Refusals
+
+Every non-2xx answer is `{ error, code, reasonCode? }` with one status per
+code (`CHAT_ERROR_CODES`, `parseChatError`). Admission's refusals split by
+who can fix them:
+
+| Admission code                               | Answer                       | Whose problem                               |
+| -------------------------------------------- | ---------------------------- | ------------------------------------------- |
+| `insufficient_credits`, `allowance_depleted` | 402 `QUOTA_EXCEEDED`         | The workspace's: upgrade or top up          |
+| `billing_not_configured`                     | 503 `BILLING_NOT_CONFIGURED` | The deployment's: no product or plans       |
+| `unknown_model`                              | 503 `MODEL_UNAVAILABLE`      | The deployment's: the model id has no price |
+
+The two 503s are logged at error level — `unknown_model` with the model id
+— and `MODEL_UNAVAILABLE` answers with neutral copy (`modelUnavailable`)
+rather than the engine's reason, which names the registry. `reasonCode`
+carries the admission code either way.
+
+`getChatQuotaState({ modelId })` is the same decision as a read, for a
+page that wants to say so before a turn is spent; `getChatQuotaStates({
+modelIds })` reads it once per model a picker offers.
 
 ## Subpaths
 
@@ -1906,7 +1974,8 @@ pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app,
 pnpm dlx @intelligo-dev/cli@beta create my-app --items chat,billing-settings --yes   # no questions
 intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance)
 intelligo doctor                       # what is misconfigured, and why it matters
-intelligo migrate [--check]            # apply the framework chain
+intelligo migrate                      # apply the framework chain
+intelligo migrate --check [--json]     # compare the chain with the database, change nothing
 intelligo upgrade --check              # what a template upgrade would change
 ```
 
@@ -1922,6 +1991,21 @@ It also **refuses** a database that has the schema but no records — the state
 `drizzle-kit push` leaves behind. Applying the chain to tables that already
 exist fails part-way; `--check` reports the database as unmanaged instead, to be
 baselined first.
+
+`migrate --check` exits 1 whenever anything is pending or the database is ahead,
+which an empty database and a stale one share. A deploy gate that must tell them
+apart reads `--json`: one object on stdout whose `state` is `up_to_date`,
+`pending`, `fresh` (empty database), `unmanaged`, `ahead` or `legacy`, beside
+`exitCode`, `chain`, `applied`, `pending`, `unknown`, `legacy` and `adoptable`.
+
+## `add maintenance` and its schedule
+
+The route reconciles executions that are ten minutes stale, so it is meant to
+run every five minutes. `add maintenance` writes that schedule to a new
+`vercel.json`; an existing one is never touched — the entry to add is printed
+instead. Vercel Hobby runs a cron at most once a day and refuses a deployment
+that asks for more: there, or on any other host, call the route from your own
+scheduler with `Authorization: Bearer $CRON_SECRET`.
 
 ## Entry points
 
@@ -1946,6 +2030,8 @@ intelligo create [dir]      Scaffold an app, then install the registry pages you
 intelligo doctor            Report configuration and migration-chain problems
 intelligo migrate           Apply the framework's migration chain to DATABASE_URL
 intelligo migrate --check   Compare the framework's migrations to a database
+                            (--json: one object whose `state` is up_to_date | pending |
+                            fresh | ahead | unmanaged | legacy)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
 intelligo upgrade --check   Show what a template upgrade would change
 ```
@@ -1984,7 +2070,7 @@ their own, and refuse to overwrite the latter.
 | Feature | What it generates |
 | --- | --- |
 | `admin-page` | Mount the Intelligo operational console at /admin — `app/admin/page.tsx` |
-| `maintenance` | A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs — schedule it every few minutes — `app/api/cron/maintenance/route.ts` |
+| `maintenance` | A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs — scheduled every five minutes, in vercel.json when the app has none — `app/api/cron/maintenance/route.ts` |
 
 ## doctor
 
@@ -2046,6 +2132,23 @@ chain holds its hashes, which `legacy-chain.json` (next to the
 journal) lists: they are reported as `legacy`, not as unknown, and a
 database holding all of them is `adoptable` — its schema is the
 baseline's, so `migrate` records the baseline without running it.
+
+The exit code is 1 whenever anything is pending or the database is
+ahead, which a brand-new database and a stale one share. A deploy
+gate that must tell them apart reads `migrate --check --json`: one
+JSON object on stdout, same exit code, whose `state` is
+
+  - `up_to_date` — every migration is applied;
+  - `pending`    — a migrated database is behind this checkout;
+  - `fresh`      — no migration records and none of the framework's
+                   tables: an empty database, `migrate` applies the chain;
+  - `unmanaged`  — the tables exist with no records (`db:push`);
+  - `ahead`      — applied migrations this checkout does not contain;
+  - `legacy`     — the pre-1.0 chain; `adoptable` says whether
+                   `migrate` can take it over.
+
+Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
+`unknown`, `legacy` and `adoptable`.
 
 [source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/migrate-check.ts)
 
@@ -2181,7 +2284,7 @@ export function getChatModel(modelId: string): LanguageModel {
 }
 ```
 
-Two strings are in play. `CHAT_MODEL_ID` is the registry key the turn is admitted and billed under. The string you pass to the provider is the provider's own id, which is often dated; the registry keeps it in the entry's `model` field. `lib/chat-server-config.ts` already binds both as `model: { defaultId: CHAT_MODEL_ID, resolve: getChatModel }`, and `lib/chat-quota.ts` prices the composer's credit banner against `CHAT_MODEL_ID`.
+Two strings are in play. `CHAT_MODEL_ID` is the registry key the turn is admitted and billed under. The string you pass to the provider is the provider's own id, which is often dated; the registry keeps it in the entry's `model` field. `lib/chat-server-config.ts` already binds both as `model: { defaultId: CHAT_MODEL_ID, resolve: getChatModel }`, and `lib/chat-quota.ts` prices the composer's credit banner against the model the reader picked, falling back to `CHAT_MODEL_ID`.
 
 Prompts, tools and other runtimes are covered in [Bring your agent](/docs/guides/bring-your-agent).
 
@@ -2235,7 +2338,7 @@ Prices are plain USD numbers here and nowhere else; everything computed from the
 
 Pricing never guesses. `providerCost`, `chargeFor` and `estimateWorstCaseCharge` throw `UnknownModelError`, whose message names the id and lists what is registered.
 
-In chat you see a refusal, not a crash. Admission catches the error and refuses the turn with code `unknown_model`. `createChatHandler` answers HTTP 402 with `code: "QUOTA_EXCEEDED"`, `reasonCode: "unknown_model"` and the error's message, before any provider tokens are spent.
+In chat you see a refusal, not a crash. Admission catches the error and refuses the turn with code `unknown_model`. `createChatHandler` answers HTTP 503 with `code: "MODEL_UNAVAILABLE"` and `reasonCode: "unknown_model"` before any provider tokens are spent. The reader sees that the assistant is temporarily unavailable, not an upgrade prompt, and the id is in your error log.
 
 `pnpm exec intelligo doctor` reports an error named `models` when `lib/intelligo.ts` contains no `registerModels()` or `registerModel()` call. It does not check individual ids. To fail at startup instead of on the first turn, assert the ids you ship after registering:
 
@@ -2293,7 +2396,7 @@ Every turn is priced twice, with the `BillingRate` your composition root declare
 1. **Admission.** `estimateWorstCaseCharge(modelId, rate)` prices a 16,000-token input budget plus the entry's `maxOutputTokens`, and that amount is held. If the workspace cannot cover it, the turn is refused with `insufficient_credits`.
 2. **Settlement.** `chargeFor(modelId, inputTokens, outputTokens, rate)` takes the run's actual usage and returns `providerCost` in USD and `charged` in your currency: provider cost × margin, converted at your rate, each step rounded up to a whole micro.
 
-On `anthropic/claude-sonnet-4-6`, a turn of 1,200 input and 400 output tokens costs 1,200 × 3 + 400 × 15 = 9,600 micros (USD 0.0096) and is charged 38,400 micros at 4×. Its worst case is 16,000 × 3 + 8,000 × 15 = 168,000 micros, held as USD 0.672. That is more than the scaffold's Free plan allowance of USD 0.50, so gate expensive models to a plan that can fund them, or register them with a lower `maxOutputTokens`. The registry value only sizes the hold; to cap what the model writes, set `agent.generation.maxOutputTokens` in `lib/chat-server-config.ts`.
+On `anthropic/claude-sonnet-4-6`, a turn of 1,200 input and 400 output tokens costs 1,200 × 3 + 400 × 15 = 9,600 micros (USD 0.0096) and is charged 38,400 micros at 4×. Its worst case is 16,000 × 3 + 8,000 × 15 = 168,000 micros, held as USD 0.672. That is more than the scaffold's Free plan allowance of USD 0.50, so gate expensive models to a plan that can fund them, or register them with a lower `maxOutputTokens`. The registry value also caps what the model may write in one step, so the hold is a real ceiling; `agent.generation.maxOutputTokens` in `lib/chat-server-config.ts` overrides it.
 
 ## Next
 
@@ -2378,7 +2481,7 @@ export async function exportConversations() {
 }
 ```
 
-`hasFeature(workspaceId, feature)` resolves the workspace's plan (its subscription's plan, `pro` during an active trial, `free` otherwise) and returns a boolean. `requireFeature` takes the same arguments and throws a plain `Error` instead. A key that is missing from the matrix is denied on every plan, so a registry item with a `featureKey` you have not added answers 403.
+`hasFeature(workspaceId, feature)` resolves the workspace's plan (its subscription's plan while the subscription is `active`, `trialing` or `past_due`; the trial's `planSlug`, `pro` by default, during an active trial; `free` otherwise) and returns a boolean. `requireFeature` takes the same arguments and throws a `FeatureNotAvailableError` instead, which names the feature, the current plan and the plans that grant it. A key that is missing from the matrix is denied on every plan, so a registry item with a `featureKey` you have not added answers 403.
 
 A row in the `feature_flags` table overrides the matrix for its feature name, and an inactive row turns the feature off for everyone. Answers are cached in-process for 60 seconds; `invalidateFeatureCache(workspaceId)` drops them.
 
@@ -2565,40 +2668,19 @@ export async function POST(request: Request) {
 
 The handler verifies the `stripe-signature` header against `STRIPE_WEBHOOK_SECRET` (400 when it is missing or wrong), writes the event to `finance_events` keyed by Stripe's event id, and claims it before processing. A repeated delivery answers 200 with `duplicate: true` and changes nothing. A handler error releases the claim and answers 500, so Stripe retries.
 
-| Event                           | What changes                                                                                                                                                                                                                                           |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `checkout.session.completed`    | Subscription: upserts the workspace's `subscriptions` row, marks a trial converted, clears the feature cache, emails the owner. Payment: when `payment_status` is `paid`, adds the grant to `credit_balances` and completes the `credit_purchases` row |
-| `invoice.paid`                  | Status `active`, the new period dates, and a fresh monthly usage row                                                                                                                                                                                   |
-| `invoice.payment_failed`        | Status `past_due`, and an email to the owner                                                                                                                                                                                                           |
-| `customer.subscription.updated` | Status, period and cancel-at-period-end                                                                                                                                                                                                                |
-| `customer.subscription.deleted` | Status `canceled`                                                                                                                                                                                                                                      |
+| Event                                      | What changes                                                                                                                                                                                                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `checkout.session.completed`               | Subscription: upserts the workspace's `subscriptions` row, marks a trial converted, clears the feature cache, emails the owner. Payment: when `payment_status` is `paid`, adds the grant to `credit_balances` and completes the `credit_purchases` row |
+| `invoice.paid`                             | Status `active`, the new period dates, and a fresh monthly usage row                                                                                                                                                                                   |
+| `invoice.payment_failed`                   | Status `past_due`, and an email to the owner                                                                                                                                                                                                           |
+| `customer.subscription.updated`            | Status, period, cancel-at-period-end, and the plan whose Stripe price the subscription now carries                                                                                                                                                     |
+| `customer.subscription.deleted`            | Status `canceled`, which resolves the workspace to the free plan                                                                                                                                                                                       |
+| `checkout.session.async_payment_succeeded` | A delayed payment method cleared: grants the bundle, once, even if `completed` already did                                                                                                                                                             |
+| `checkout.session.async_payment_failed`    | Marks the pending credit purchase failed                                                                                                                                                                                                               |
 
-Enable exactly these five on the dashboard endpoint. Other types are recorded and acknowledged.
+Enable exactly these seven on the dashboard endpoint. Other types are recorded and acknowledged.
 
-Entitlement reads the row's plan, not its status, so a cancelled subscription keeps its plan until you move it. `onEvent` runs after the built-in handler for every event; throw to make Stripe retry:
-
-```ts title="app/api/webhooks/stripe/route.ts"
-import { eq } from "drizzle-orm";
-
-import {
-  createStripeWebhookHandler,
-  invalidateFeatureCache,
-} from "@intelligo-dev/billing";
-import { db } from "@intelligo-dev/core/db";
-import { subscriptions } from "@intelligo-dev/core/db/schema";
-
-const handler = createStripeWebhookHandler({
-  async onEvent(event) {
-    if (event.type !== "customer.subscription.deleted") return;
-    const subscription = event.data.object;
-    await db
-      .update(subscriptions)
-      .set({ planId: "plan_free", updatedAt: new Date() })
-      .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
-    invalidateFeatureCache(subscription.metadata.workspaceId);
-  },
-});
-```
+Entitlement follows the subscription's status: `active`, `trialing` and `past_due` keep the plan — Stripe is still retrying the payment — and any other status resolves the workspace to the free plan. Pass `onEvent` to `createStripeWebhookHandler` for anything of your own; it runs after the built-in handler for every event, and throwing makes Stripe retry.
 
 Locally, forward events with the Stripe CLI and use the secret it prints:
 
@@ -2620,16 +2702,16 @@ Redirect URLs are built from `NEXT_PUBLIC_APP_URL`. Members and admins see a rea
 
 The [success page](/blocks/checkout) calls `getCheckoutSession`, which reads the session from Stripe rather than your database, so it shows the right plan even when the webhook has not arrived yet.
 
-The subscription handlers take the plan from the `planId` metadata that checkout sets, so a plan switched inside the portal does not change the workspace's plan. Leave plan switching off in the portal's configuration.
+The subscription handlers take the plan from the subscription's price id, looked up in your catalogue, so a plan switched inside the portal is followed. A workspace that already has a subscription is never sent through checkout again: the upgrade button opens the portal's confirm-update flow for the new price, so enable subscription updates in the portal's configuration.
 
 ## Going live
 
 - Set the live `STRIPE_SECRET_KEY` and live price ids. A `sk_test_` key under `NODE_ENV=production` logs `STRIPE_SECRET_KEY is a test key in production environment` at startup.
-- Add a dashboard endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` with the five events, and set its signing secret as `STRIPE_WEBHOOK_SECRET`.
+- Add a dashboard endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` with the seven events, and set its signing secret as `STRIPE_WEBHOOK_SECRET`.
 
 ## Payments outside Stripe
 
-`registerPaymentProvider(mode, provider)` from `@intelligo-dev/billing/payment` registers a `PaymentProvider` in the composition root, and `PAYMENT_MODE` selects which one `getPaymentProvider` returns. The mode defaults to `mock`: register `mockPaymentProvider` under that name for development, and expect production to refuse it. The [payment-poll block](/blocks/payment-poll) renders the invoice, QR code and polling flow; you bind it to your provider in `lib/local-payment.ts`.
+`registerPaymentProvider(mode, provider)` from `@intelligo-dev/billing/payment` registers a `PaymentProvider` in the composition root, and `PAYMENT_MODE` selects which one `getPaymentProvider` returns. The mode defaults to `mock`, which outside production resolves to the in-memory `mockPaymentProvider` with no registration; production refuses it. The [payment-poll block](/blocks/payment-poll) renders the invoice, QR code and polling flow; you bind it to your provider in `lib/local-payment.ts`.
 
 ## Next
 
@@ -2647,7 +2729,7 @@ A fresh install already signs users up, gives each one a personal workspace, and
 
 ## Guard first, then query
 
-Three guards from `@intelligo-dev/auth` cover every server entry point. Each throws a plain `Error`; none of them redirects.
+Three guards from `@intelligo-dev/auth` cover every server entry point. Each throws an `AuthGuardError` whose `code` is `unauthenticated`, `no_workspace` or `forbidden` — `isAuthGuardError(error)` narrows it, so a transport can answer 401, 404 or 403. None of them redirects.
 
 | Guard                | Returns                                    | Throws                       |
 | -------------------- | ------------------------------------------ | ---------------------------- |
@@ -2655,7 +2737,7 @@ Three guards from `@intelligo-dev/auth` cover every server entry point. Each thr
 | `requireWorkspace()` | `{ session, user, workspace, membership }` | `"No active workspace"`      |
 | `requireRole(roles)` | the same context                           | `"Insufficient permissions"` |
 
-`workspace` is `{ id, name, slug, logo }` and `membership` is `{ id, role }`. `requireWorkspace()` throws the same error when there is no session at all. `requireRole` takes an array, such as `requireRole(["owner", "admin"])`, and passes when the member holds any of them.
+`workspace` is `{ id, name, slug, logo }` and `membership` is `{ id, role }`. With no session at all, `requireWorkspace()` throws `unauthenticated`, the same as `requireAuth()`. `requireRole` takes an array, such as `requireRole(["owner", "admin"])`, and passes when the member holds any of them.
 
 A Server Action calls the guard, then filters by the workspace it returned:
 
@@ -2705,7 +2787,7 @@ Workspace roles are `owner`, `admin` and `member`; whoever creates a workspace i
 | Transfer ownership, delete the workspace        | yes   | no    | no     |
 | Leave the workspace                             | yes\* | yes   | yes    |
 
-\* The only owner cannot leave: `leaveWorkspace` throws `sole_owner` until `transferOwnership` has promoted another member. An invitation grants `admin` or `member`, never `owner`. The installed team page wires invite, cancel, remove and role change; `leaveWorkspace` and `transferOwnership` are service methods you call from your own action.
+\* The only owner cannot leave: `leaveWorkspace` throws `sole_owner` until `transferOwnership` has promoted another member. An invitation grants `admin` or `member`, never `owner`. The installed team page wires invite, cancel, remove, role change, leaving the workspace and transferring ownership. A transfer promotes the other member; you stay an owner until you leave.
 
 ## The proxy routes, the server checks
 
@@ -2762,7 +2844,7 @@ The first time a user gets a workspace, `ensureUserWorkspace` calls `onWorkspace
 
 A platform admin is a row, not a workspace role: `users.role` holds `platform-admin`. List emails in `PLATFORM_ADMIN_EMAILS`, comma-separated; `requirePlatformAdmin()` promotes a listed user into the column the first time it runs, and throws `"Insufficient permissions"` for anyone with neither. Never gate a cross-workspace surface on `owner`: every signup owns a workspace.
 
-Impersonation goes through `startImpersonation({ targetUserId, reason })` and `stopImpersonation({ targetUserId })` from `@intelligo-dev/admin`. Starting requires a platform admin and a reason, writes the audit event first and aborts if it cannot be written, lasts at most 30 minutes, and refuses another admin as the target; stopping is audited too. `impersonateUser` and `stopImpersonating` in `@intelligo-dev/auth` only swap the session cookie; do not call them directly.
+Impersonation goes through `startImpersonation({ targetUserId, reason })` and `stopImpersonation({ targetUserId })` from `@intelligo-dev/admin`. Starting requires a platform admin and a reason, writes the audit event first and aborts if it cannot be written, lasts at most 30 minutes, and refuses another admin as the target; stopping is audited too. `impersonateUser` in `@intelligo-dev/auth` verifies the caller is a platform admin and the target is not, but writes no audit event, so call the admin functions instead.
 
 ## Next
 
@@ -2857,7 +2939,7 @@ Every variable is listed in [Environment](/docs/getting-started/environment).
 
 ## Email
 
-Sign-ups are held for email verification only when a provider is configured. Without one, verification, invitation and reset links are printed to the server log. Set a provider key, and set `EMAIL_FROM` to an address on a domain your provider lets you send from — unset, mail is sent from the framework's placeholder address.
+Sign-ups are held for email verification only when a provider is configured. Without one, verification, invitation and reset links are printed to the server log. Set a provider key, and set `EMAIL_FROM` to an address on a domain your provider lets you send from — there is no built-in sender, so with Resend and no `EMAIL_FROM` every send fails and startup warns about it. Loops takes the sender from each template.
 
 ## The Stripe webhook
 
@@ -2883,7 +2965,7 @@ It does not drain the job queue: draining needs your handlers.
 
 The route requires `Authorization: Bearer $CRON_SECRET`. It answers 403 while `CRON_SECRET` is unset or shorter than 32 characters, 401 on a wrong token, and otherwise a JSON summary — 200, or 207 when a step failed.
 
-On Vercel, add the path to `crons` in `vercel.json` as the reference app does above; Vercel sends the header itself. The route recommends every five minutes (`0-59/5 * * * *`); the reference app runs daily. From any other scheduler:
+On Vercel, `intelligo add maintenance` writes the `crons` entry to `vercel.json` when the app has none, and prints it for you to add when one exists; Vercel sends the header itself. The entry runs every five minutes (`0-59/5 * * * *`). Vercel's Hobby plan only allows daily crons, which leaves a failed turn's credit hold in place for up to a day rather than ten minutes — the reference app runs daily for that reason. From any other scheduler:
 
 ```bash
 curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://app.example.com/api/cron/maintenance

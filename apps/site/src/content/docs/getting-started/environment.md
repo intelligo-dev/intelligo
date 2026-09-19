@@ -24,11 +24,12 @@ order: 2
 | Variable | What it is |
 | --- | --- |
 | `GOOGLE_CLIENT_ID`<br>`GOOGLE_CLIENT_SECRET`<br>`GITHUB_CLIENT_ID`<br>`GITHUB_CLIENT_SECRET` | Sign in with Google or GitHub. A provider's button appears once both of its values are set; the callback URL to register with the provider is NEXT_PUBLIC_APP_URL + /api/auth/callback/google (or /github). |
-| `RESEND_API_KEY`<br>`EMAIL_FROM` | Email. Without a provider, emails (verification, invitations, reset links) are printed to the server console, and sign-ups are not held for email verification. The scaffold sets `noreply@example.com`. |
+| `RESEND_API_KEY` | Email. Without a provider, emails (verification, invitations, reset links) are printed to the server console, and sign-ups are not held for email verification. |
+| `EMAIL_FROM` | The sender of every email, on a domain verified with Resend. Required with RESEND_API_KEY: there is no built-in sender, so sends fail without it. Loops ignores it and takes the sender from each template. The scaffold sets `Acme <noreply@example.com>`. |
 | `LOOPS_API_KEY` | Loops sends by template id instead of HTML: map each template with LOOPS_TRANSACTIONAL_ID_&lt;KEY>, e.g. LOOPS_TRANSACTIONAL_ID_VERIFY_EMAIL. |
 | `EMAIL_PROVIDER` | With both keys set Resend wins; force one with resend \| loops \| console. |
 | `STRIPE_SECRET_KEY`<br>`STRIPE_WEBHOOK_SECRET` | Stripe. Billing pages say "not configured" until these are set; the webhook at /api/webhooks/stripe verifies with the secret. |
 | `PAYMENT_MODE` | Which registered payment provider serves payments outside Stripe (registerPaymentProvider in the composition root). Defaults to the in-memory mock, which production refuses. |
-| `OPENAI_API_KEY`<br>`ANTHROPIC_API_KEY`<br>`GOOGLE_GENERATIVE_AI_API_KEY` | AI providers. Chat runs on a built-in stub model until lib/chat-model.ts names a real one. |
+| `OPENAI_API_KEY`<br>`ANTHROPIC_API_KEY`<br>`GOOGLE_GENERATIVE_AI_API_KEY` | AI providers. Chat runs on a built-in stub model until lib/chat-model.ts names a real one. Set only the key of the provider that model belongs to — the provider's SDK reads it, and the framework checks none of them. |
 | `CRON_SECRET` | Bearer token your scheduler sends to /api/cron/maintenance (`intelligo add maintenance`). At least 32 characters. |
 | `PLATFORM_ADMIN_EMAILS` | Comma-separated emails allowed to reach the Intelligo admin console. Closed by default: with no value, nobody is a platform admin. |

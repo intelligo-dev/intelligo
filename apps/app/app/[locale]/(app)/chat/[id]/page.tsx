@@ -7,7 +7,7 @@ import { ChatWorkspace } from "@/components/chat/chat-workspace";
 import { ConversationHeader } from "@/components/chat/conversation-header";
 import { loadConversationForChat } from "@/actions/chat";
 import { getChatModelOptions } from "@/lib/chat-models";
-import { getChatQuotaState } from "@/lib/chat-quota";
+import { getChatQuotaState, getChatQuotaStates } from "@/lib/chat-quota";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("chat");
@@ -35,11 +35,18 @@ export default async function ConversationPage({
 
   // In parallel: the quota read is an estimate that holds no credit,
   // so it cannot slow down or interfere with loading the conversation.
-  const [conversationResult, quotaState, models] = await Promise.all([
-    loadConversationForChat(id),
-    getChatQuotaState(),
-    getChatModelOptions(workspace.id),
-  ]);
+  // One estimate per offered model, because the pick lives in the
+  // browser and each model has its own worst case.
+  const modelOptions = getChatModelOptions(workspace.id);
+  const [conversationResult, quotaState, quotaStates, models] =
+    await Promise.all([
+      loadConversationForChat(id),
+      getChatQuotaState(),
+      modelOptions.then((options) =>
+        getChatQuotaStates(options.map((option) => option.id))
+      ),
+      modelOptions,
+    ]);
 
   if (!conversationResult.success) {
     return (
@@ -66,6 +73,7 @@ export default async function ConversationPage({
         conversationId={id}
         initialMessages={messages}
         quotaState={quotaState}
+        quotaStates={quotaStates}
         votes={votes}
         models={models}
       />

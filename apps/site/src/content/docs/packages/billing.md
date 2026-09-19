@@ -32,6 +32,31 @@ The four are safe to reach from a client bundle or an edge runtime. An
 architecture test walks their imports so a Stripe or `server-only` import
 cannot creep in.
 
+## What a deployment bills in
+
+`ensureBillingSettingsRow` writes the currency, the USD rate and the margin on
+first boot and never touches an existing row again. After that the row changes
+through `updateBillingSettings({ currency?, usdRateMicros?, marginBp? })`, which
+refuses a non-positive rate or margin and an invalid currency code, and drops
+the cache. Changing the currency converts nothing: balances, trial grants and
+the period's allowance usage stay in the currency they were written in, and the
+engine refuses a write in another one until those rows are migrated.
+
+The plan allowance is money, so the 80% and 100% notices (in-app and email)
+state an amount used out of an amount allowed. The billing period is the
+calendar month in UTC (`getCurrentPeriodStart`, `getCurrentPeriodEnd`,
+`getCurrentPeriodKey`), whatever zone the host runs in.
+
+## Rate limits and the payment provider
+
+`checkRateLimit(workspaceId, planSlug, endpoint?)` counts in the `"chat"` bucket
+unless the caller names another; a route that should not spend chat's allowance
+passes its own name.
+
+`getPaymentProvider()` resolves `PAYMENT_MODE`, which defaults to `mock`.
+Outside production the in-memory mock needs no registration; in production it
+is refused, and any other mode must be registered from the composition root.
+
 ## The webhook receiver
 
 `createStripeWebhookHandler` verifies the signature before anything else,

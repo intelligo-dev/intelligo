@@ -53,6 +53,7 @@ import { ChatErrorStrip } from "./chat-error-strip";
 import { ChatInput } from "./chat-input";
 import {
   CreditStatusBanner,
+  isDeploymentRefusal,
   type ChatBlock,
   type ChatQuotaState,
 } from "./credit-status-banner";
@@ -63,7 +64,9 @@ import type { MessageVote } from "./message-actions";
  * A refusal that blocks the composer, or nothing. Admission answers 402
  * with the entitlement port's own code (`insufficient_credits`,
  * `allowance_depleted`…), which is what the banner keys its copy on; a
- * feature gate is a block too. Anything else — a rate limit, a stream
+ * feature gate is a block too, and so is a 503 for what only the
+ * deployment can fix (`billing_not_configured`, `unknown_model`), which
+ * the banner words neutrally. Anything else — a rate limit, a stream
  * failure — is transient and belongs in the error strip.
  */
 function refusalFrom(chatError: Error): ChatBlock | null {
@@ -72,6 +75,7 @@ function refusalFrom(chatError: Error): ChatBlock | null {
   if (
     parsed.code !== "QUOTA_EXCEEDED" &&
     parsed.code !== "BILLING_NOT_CONFIGURED" &&
+    parsed.code !== "MODEL_UNAVAILABLE" &&
     (parsed.code !== "FEATURE_GATED" ||
       parsed.reasonCode === "model_not_allowed")
   ) {
@@ -112,6 +116,11 @@ export interface ChatThreadProps {
    * not wired billing renders the chat unchanged.
    */
   quotaState?: ChatQuotaState | null;
+  /**
+   * The same estimate for each offered model, by model id. The banner
+   * reads the picked model's entry and falls back to `quotaState`.
+   */
+  quotaStates?: Record<string, ChatQuotaState>;
   /** The reader's earlier votes, by message id. */
   votes?: Record<string, MessageVote>;
   /** Models the composer offers. One or none hides the picker. */
@@ -140,6 +149,7 @@ export function ChatThread({
   conversationId,
   initialMessages,
   quotaState = null,
+  quotaStates,
   votes = {},
   models = [],
   variant = "page",
@@ -278,7 +288,11 @@ export function ChatThread({
    * have to reload to be told.
    */
   const [block, setBlock] = useState<ChatBlock | null>(null);
-  const blocked = block !== null || quotaState?.allowed === false;
+  // Each model has its own worst case, so the estimate that counts is
+  // the picked model's.
+  const activeQuotaState =
+    (modelId ? quotaStates?.[modelId] : undefined) ?? quotaState;
+  const blocked = block !== null || activeQuotaState?.allowed === false;
 
   const starters = useMemo(
     () => (chatConfig.starters ?? []).map((key) => tAny(key)),
@@ -408,10 +422,19 @@ export function ChatThread({
       onEditLast={editLastUserMessage}
       isStreaming={isStreaming}
       disabled={blocked}
-      disabledPlaceholder={t("input.blockedPlaceholder")}
+      disabledPlaceholder={
+        isDeploymentRefusal(block?.code ?? activeQuotaState?.code)
+          ? t("input.unavailablePlaceholder")
+          : t("input.blockedPlaceholder")
+      }
       models={models}
       modelId={modelId}
-      onModelChange={setModelId}
+      onModelChange={(next) => {
+        // A refusal belongs to the model it was priced against.
+        setModelId(next);
+        setBlock(null);
+        clearError();
+      }}
       autoFocus={autoFocus}
       compact={compact}
     />
@@ -456,7 +479,7 @@ export function ChatThread({
           compact={compact}
         />
       )}
-      <CreditStatusBanner quotaState={quotaState} block={block} />
+      <CreditStatusBanner quotaState={activeQuotaState} block={block} />
       {error && !block ? (
         <ChatErrorStrip
           message={friendlyChatError(error)}

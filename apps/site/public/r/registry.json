@@ -1252,6 +1252,7 @@
       "title": "Team Settings",
       "description": "Workspace team management: invite members, change roles, remove members, and manage pending invitations, backed by the framework's team service.",
       "registryDependencies": [
+        "@intelligo/alert-dialog",
         "badge",
         "@intelligo/button",
         "card",
@@ -1301,6 +1302,11 @@
           "path": "base/team-settings/components/role-badge.tsx",
           "type": "registry:component",
           "target": "components/team/role-badge.tsx"
+        },
+        {
+          "path": "base/team-settings/components/leave-workspace.tsx",
+          "type": "registry:component",
+          "target": "components/team/leave-workspace.tsx"
         },
         {
           "path": "base/team-settings/actions.ts",

@@ -24,7 +24,8 @@
     "stop": "Stop generating",
     "send": "Send message",
     "blockedPlaceholder": "Add credits to keep chatting",
-    "hint": "Enter to send, Shift+Enter for a new line"
+    "hint": "Enter to send, Shift+Enter for a new line",
+    "unavailablePlaceholder": "Chat is temporarily unavailable"
   },
   "emptyState": {
     "title": "Start a conversation",
@@ -166,7 +167,8 @@
     "streamError": "Something went wrong while generating a response.",
     "attachmentRejected": "That attachment type isn't accepted.",
     "notFound": "That conversation no longer exists.",
-    "billingNotConfigured": "Billing is not configured for this deployment."
+    "billingNotConfigured": "Billing is not configured for this deployment.",
+    "modelUnavailable": "Chat is temporarily unavailable. Please try again later."
   },
   "deleteDialog": {
     "title": "Delete this conversation?",
@@ -267,7 +269,9 @@
     "upgradeRequired": "This needs a plan upgrade",
     "upgrade": "Upgrade",
     "runningLow": "{count, plural, one {{amount} credit left} other {{amount} credits left}}",
-    "topUp": "Top up"
+    "topUp": "Top up",
+    "unavailable": "Chat is temporarily unavailable",
+    "unavailableDescription": "Something on our side needs fixing. Please try again later."
   },
   "starters": {
     "explain": "Explain how credits and plans work in this workspace",

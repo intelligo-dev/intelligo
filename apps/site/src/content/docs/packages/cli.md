@@ -20,7 +20,8 @@ pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app,
 pnpm dlx @intelligo-dev/cli@beta create my-app --items chat,billing-settings --yes   # no questions
 intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance)
 intelligo doctor                       # what is misconfigured, and why it matters
-intelligo migrate [--check]            # apply the framework chain
+intelligo migrate                      # apply the framework chain
+intelligo migrate --check [--json]     # compare the chain with the database, change nothing
 intelligo upgrade --check              # what a template upgrade would change
 ```
 
@@ -36,6 +37,21 @@ It also **refuses** a database that has the schema but no records — the state
 `drizzle-kit push` leaves behind. Applying the chain to tables that already
 exist fails part-way; `--check` reports the database as unmanaged instead, to be
 baselined first.
+
+`migrate --check` exits 1 whenever anything is pending or the database is ahead,
+which an empty database and a stale one share. A deploy gate that must tell them
+apart reads `--json`: one object on stdout whose `state` is `up_to_date`,
+`pending`, `fresh` (empty database), `unmanaged`, `ahead` or `legacy`, beside
+`exitCode`, `chain`, `applied`, `pending`, `unknown`, `legacy` and `adoptable`.
+
+## `add maintenance` and its schedule
+
+The route reconciles executions that are ten minutes stale, so it is meant to
+run every five minutes. `add maintenance` writes that schedule to a new
+`vercel.json`; an existing one is never touched — the entry to add is printed
+instead. Vercel Hobby runs a cron at most once a day and refuses a deployment
+that asks for more: there, or on any other host, call the route from your own
+scheduler with `Authorization: Bearer $CRON_SECRET`.
 
 ## Entry points
 

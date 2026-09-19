@@ -18,7 +18,8 @@
     },
     "team-settings": {
       "marker": "app/[locale]/(app)/settings/team/page.tsx",
-      "items": ["route-error"]
+      "items": ["route-error"],
+      "files": ["i18n/navigation"]
     },
     "usage": {
       "marker": "app/[locale]/(app)/usage/page.tsx",

@@ -4,6 +4,7 @@ import { requireWorkspace } from "@intelligo-dev/auth";
 
 import { team } from "@/lib/team";
 import { InviteMemberForm } from "@/components/team/invite-member-form";
+import { LeaveWorkspace } from "@/components/team/leave-workspace";
 import { MemberList } from "@/components/team/member-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
 import {
@@ -18,10 +19,14 @@ export default async function TeamSettingsPage() {
   const { user, workspace, membership } = await requireWorkspace();
   const canManage = ["owner", "admin"].includes(membership.role);
 
-  const [members, invitations] = await Promise.all([
+  const [members, allInvitations] = await Promise.all([
     team.listMembers(),
     canManage ? team.listInvitations() : Promise.resolve([]),
   ]);
+  // The organization keeps accepted, rejected and canceled invitations too.
+  const invitations = allInvitations.filter(
+    (invitation) => invitation.status === "pending"
+  );
 
   return (
     <div className="space-y-8">
@@ -42,9 +47,14 @@ export default async function TeamSettingsPage() {
         members={members}
         currentUserId={user.id}
         canManage={canManage}
+        canTransfer={membership.role === "owner"}
       />
 
       {canManage && <PendingInvitations invitations={invitations} />}
+
+      <section className="border-t pt-8">
+        <LeaveWorkspace workspaceName={workspace.name} />
+      </section>
     </div>
   );
 }

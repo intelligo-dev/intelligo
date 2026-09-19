@@ -50,7 +50,7 @@ A workspace spends from three pools, all in the deployment's billing currency.
 
 Admission sums all three. Settlement charges the plan allowance first and sends whatever is left to exactly one other pool: the top-up balance, or the trial grant when the turn was admitted on trial credits and the grant still covers the remainder. The trial is the fallback, used only when allowance plus top-ups cannot cover a turn. `SettlementOutcome` reports the split, and `charged` always equals `plan` + `topup` + `trial`.
 
-The allowance is counted per calendar month. `monthly_usage` holds one row per workspace per month, a new month starts from zero, and unused allowance does not carry over. `resetMonthlyQuota`, which the Stripe webhook calls on `invoice.paid`, creates the current month's row when it is missing; it does not clear a row that exists. Top-ups and the trial grant do not reset.
+The allowance is counted per calendar month, in UTC, so every host agrees on where a month starts. `monthly_usage` holds one row per workspace per month, a new month starts from zero, and unused allowance does not carry over. `resetMonthlyQuota`, which the Stripe webhook calls on `invoice.paid`, creates the current month's row when it is missing; it does not clear a row that exists. Top-ups and the trial grant do not reset.
 
 A plan's `monthlyAllowance` must name the billing currency. If it names another, the allowance counts as zero, because converting it would mean inventing a rate.
 
@@ -78,7 +78,7 @@ export type QuotaRefusalCode =
 | ------------------------ | ---------------------------------------------------------------------------------- | ---------------------------- |
 | `insufficient_credits`   | Some balance remains, but less than the worst-case charge of one turn on the model | 402 `QUOTA_EXCEEDED`         |
 | `allowance_depleted`     | Nothing remains in any pool                                                        | 402 `QUOTA_EXCEEDED`         |
-| `unknown_model`          | The model id has no registered price, so the turn cannot be estimated              | 402 `QUOTA_EXCEEDED`         |
+| `unknown_model`          | The model id has no registered price, so the turn cannot be estimated              | 503 `MODEL_UNAVAILABLE`      |
 | `billing_not_configured` | No product or plans are registered                                                 | 503 `BILLING_NOT_CONFIGURED` |
 
 The chat transport puts the code in the response body as `reasonCode`. `estimateQuota` makes the same decision without locking or reserving; it is for banners and previews and must never gate a run.
@@ -105,7 +105,7 @@ export type BillingRate = {
 
 A turn of 2,000 input and 500 output tokens on `google/gemini-2.5-flash` costs the provider 1,850 micros. At 4× that is 7,400 micros, $0.0074 charged. A euro deployment at `920_000` charges 6,808 micros EUR.
 
-The rate is a fixed number you state, not a live feed. It lives in the single `billing_settings` row. `ensureBillingSettingsRow` in `composeIntelligo()` seeds that row and leaves an existing one alone, so editing the call after the first boot changes nothing: update the row itself. `getBillingSettings` caches it for 60 seconds per process. Each `usage_records` row stores the provider cost, margin and rate it was charged at, so a later change never rewrites history.
+The rate is a fixed number you state, not a live feed. It lives in the single `billing_settings` row. `ensureBillingSettingsRow` in `composeIntelligo()` seeds that row and leaves an existing one alone, so editing the call after the first boot changes nothing. To change them later, call `updateBillingSettings({ usdRateMicros, marginBp })` — from an admin action or a script; it validates the values and drops the cache. Changing `currency` does not convert the balances a ledger already holds. `getBillingSettings` caches it for 60 seconds per process. Each `usage_records` row stores the provider cost, margin and rate it was charged at, so a later change never rewrites history.
 
 ## What the workspace sees
 

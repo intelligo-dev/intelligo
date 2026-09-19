@@ -42,7 +42,7 @@ pnpm dlx shadcn@latest add https://intelligo.dev/r/chat-share.json
 | Block | Needs these blocks | Imports these scaffold files | Gates on these features |
 | --- | --- | --- | --- |
 | [route-error](/blocks/route-error) | — | `i18n/navigation` | — |
-| [team-settings](/blocks/team-settings) | [route-error](/blocks/route-error) | — | — |
+| [team-settings](/blocks/team-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [pricing](/blocks/pricing) | — | `i18n/navigation` | — |
 | [usage](/blocks/usage) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [invitation-accept](/blocks/invitation-accept) | [team-settings](/blocks/team-settings) | `i18n/navigation` | — |

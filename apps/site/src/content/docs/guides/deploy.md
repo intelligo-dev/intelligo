@@ -85,7 +85,7 @@ Every variable is listed in [Environment](/docs/getting-started/environment).
 
 ## Email
 
-Sign-ups are held for email verification only when a provider is configured. Without one, verification, invitation and reset links are printed to the server log. Set a provider key, and set `EMAIL_FROM` to an address on a domain your provider lets you send from — unset, mail is sent from the framework's placeholder address.
+Sign-ups are held for email verification only when a provider is configured. Without one, verification, invitation and reset links are printed to the server log. Set a provider key, and set `EMAIL_FROM` to an address on a domain your provider lets you send from — there is no built-in sender, so with Resend and no `EMAIL_FROM` every send fails and startup warns about it. Loops takes the sender from each template.
 
 ## The Stripe webhook
 
@@ -111,7 +111,7 @@ It does not drain the job queue: draining needs your handlers.
 
 The route requires `Authorization: Bearer $CRON_SECRET`. It answers 403 while `CRON_SECRET` is unset or shorter than 32 characters, 401 on a wrong token, and otherwise a JSON summary — 200, or 207 when a step failed.
 
-On Vercel, add the path to `crons` in `vercel.json` as the reference app does above; Vercel sends the header itself. The route recommends every five minutes (`0-59/5 * * * *`); the reference app runs daily. From any other scheduler:
+On Vercel, `intelligo add maintenance` writes the `crons` entry to `vercel.json` when the app has none, and prints it for you to add when one exists; Vercel sends the header itself. The entry runs every five minutes (`0-59/5 * * * *`). Vercel's Hobby plan only allows daily crons, which leaves a failed turn's credit hold in place for up to a day rather than ten minutes — the reference app runs daily for that reason. From any other scheduler:
 
 ```bash
 curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://app.example.com/api/cron/maintenance

@@ -83,40 +83,19 @@ export async function POST(request: Request) {
 
 The handler verifies the `stripe-signature` header against `STRIPE_WEBHOOK_SECRET` (400 when it is missing or wrong), writes the event to `finance_events` keyed by Stripe's event id, and claims it before processing. A repeated delivery answers 200 with `duplicate: true` and changes nothing. A handler error releases the claim and answers 500, so Stripe retries.
 
-| Event                           | What changes                                                                                                                                                                                                                                           |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `checkout.session.completed`    | Subscription: upserts the workspace's `subscriptions` row, marks a trial converted, clears the feature cache, emails the owner. Payment: when `payment_status` is `paid`, adds the grant to `credit_balances` and completes the `credit_purchases` row |
-| `invoice.paid`                  | Status `active`, the new period dates, and a fresh monthly usage row                                                                                                                                                                                   |
-| `invoice.payment_failed`        | Status `past_due`, and an email to the owner                                                                                                                                                                                                           |
-| `customer.subscription.updated` | Status, period and cancel-at-period-end                                                                                                                                                                                                                |
-| `customer.subscription.deleted` | Status `canceled`                                                                                                                                                                                                                                      |
+| Event                                      | What changes                                                                                                                                                                                                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `checkout.session.completed`               | Subscription: upserts the workspace's `subscriptions` row, marks a trial converted, clears the feature cache, emails the owner. Payment: when `payment_status` is `paid`, adds the grant to `credit_balances` and completes the `credit_purchases` row |
+| `invoice.paid`                             | Status `active`, the new period dates, and a fresh monthly usage row                                                                                                                                                                                   |
+| `invoice.payment_failed`                   | Status `past_due`, and an email to the owner                                                                                                                                                                                                           |
+| `customer.subscription.updated`            | Status, period, cancel-at-period-end, and the plan whose Stripe price the subscription now carries                                                                                                                                                     |
+| `customer.subscription.deleted`            | Status `canceled`, which resolves the workspace to the free plan                                                                                                                                                                                       |
+| `checkout.session.async_payment_succeeded` | A delayed payment method cleared: grants the bundle, once, even if `completed` already did                                                                                                                                                             |
+| `checkout.session.async_payment_failed`    | Marks the pending credit purchase failed                                                                                                                                                                                                               |
 
-Enable exactly these five on the dashboard endpoint. Other types are recorded and acknowledged.
+Enable exactly these seven on the dashboard endpoint. Other types are recorded and acknowledged.
 
-Entitlement reads the row's plan, not its status, so a cancelled subscription keeps its plan until you move it. `onEvent` runs after the built-in handler for every event; throw to make Stripe retry:
-
-```ts title="app/api/webhooks/stripe/route.ts"
-import { eq } from "drizzle-orm";
-
-import {
-  createStripeWebhookHandler,
-  invalidateFeatureCache,
-} from "@intelligo-dev/billing";
-import { db } from "@intelligo-dev/core/db";
-import { subscriptions } from "@intelligo-dev/core/db/schema";
-
-const handler = createStripeWebhookHandler({
-  async onEvent(event) {
-    if (event.type !== "customer.subscription.deleted") return;
-    const subscription = event.data.object;
-    await db
-      .update(subscriptions)
-      .set({ planId: "plan_free", updatedAt: new Date() })
-      .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
-    invalidateFeatureCache(subscription.metadata.workspaceId);
-  },
-});
-```
+Entitlement follows the subscription's status: `active`, `trialing` and `past_due` keep the plan — Stripe is still retrying the payment — and any other status resolves the workspace to the free plan. Pass `onEvent` to `createStripeWebhookHandler` for anything of your own; it runs after the built-in handler for every event, and throwing makes Stripe retry.
 
 Locally, forward events with the Stripe CLI and use the secret it prints:
 
@@ -138,16 +117,16 @@ Redirect URLs are built from `NEXT_PUBLIC_APP_URL`. Members and admins see a rea
 
 The [success page](/blocks/checkout) calls `getCheckoutSession`, which reads the session from Stripe rather than your database, so it shows the right plan even when the webhook has not arrived yet.
 
-The subscription handlers take the plan from the `planId` metadata that checkout sets, so a plan switched inside the portal does not change the workspace's plan. Leave plan switching off in the portal's configuration.
+The subscription handlers take the plan from the subscription's price id, looked up in your catalogue, so a plan switched inside the portal is followed. A workspace that already has a subscription is never sent through checkout again: the upgrade button opens the portal's confirm-update flow for the new price, so enable subscription updates in the portal's configuration.
 
 ## Going live
 
 - Set the live `STRIPE_SECRET_KEY` and live price ids. A `sk_test_` key under `NODE_ENV=production` logs `STRIPE_SECRET_KEY is a test key in production environment` at startup.
-- Add a dashboard endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` with the five events, and set its signing secret as `STRIPE_WEBHOOK_SECRET`.
+- Add a dashboard endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` with the seven events, and set its signing secret as `STRIPE_WEBHOOK_SECRET`.
 
 ## Payments outside Stripe
 
-`registerPaymentProvider(mode, provider)` from `@intelligo-dev/billing/payment` registers a `PaymentProvider` in the composition root, and `PAYMENT_MODE` selects which one `getPaymentProvider` returns. The mode defaults to `mock`: register `mockPaymentProvider` under that name for development, and expect production to refuse it. The [payment-poll block](/blocks/payment-poll) renders the invoice, QR code and polling flow; you bind it to your provider in `lib/local-payment.ts`.
+`registerPaymentProvider(mode, provider)` from `@intelligo-dev/billing/payment` registers a `PaymentProvider` in the composition root, and `PAYMENT_MODE` selects which one `getPaymentProvider` returns. The mode defaults to `mock`, which outside production resolves to the in-memory `mockPaymentProvider` with no registration; production refuses it. The [payment-poll block](/blocks/payment-poll) renders the invoice, QR code and polling flow; you bind it to your provider in `lib/local-payment.ts`.
 
 ## Next
 

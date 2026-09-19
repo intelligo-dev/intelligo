@@ -29,6 +29,7 @@ import {
   createStubLanguageModel,
   type StubPrompt,
 } from "@intelligo-dev/chat/testing";
+import { getModelPricing } from "@intelligo-dev/executions/pricing";
 import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 
@@ -77,18 +78,20 @@ function callsTool(userText: string, prompt: StubPrompt): boolean {
   );
 }
 
-const GOOGLE_PREFIX = "google/";
-
 /**
- * Resolves the language model for a chat turn. With a Gemini key the
- * registered id (`google/gemini-2.5-flash`) maps to the provider's model
- * string by dropping the prefix; an id from another provider falls back
- * to the default. Without a key, the stub.
+ * Resolves the language model for a chat turn. With a Gemini key, the
+ * registered entry's `model` is the string the provider expects; an id
+ * registered under another provider falls back to the default. Without
+ * a key, the stub.
  */
 export function getChatModel(modelId: string): LanguageModel {
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-    const id = modelId.startsWith(GOOGLE_PREFIX) ? modelId : CHAT_MODEL_ID;
-    return google(id.slice(GOOGLE_PREFIX.length));
+    const requested = getModelPricing(modelId);
+    const entry =
+      requested?.provider === "google"
+        ? requested
+        : getModelPricing(CHAT_MODEL_ID);
+    if (entry) return google(entry.model);
   }
   return createStubLanguageModel({
     modelId: CHAT_MODEL_ID,

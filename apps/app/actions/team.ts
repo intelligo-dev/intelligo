@@ -38,6 +38,7 @@ function friendlyMessage(
     invitation_not_found: t("errors.invitationNotFound"),
     sole_owner: t("errors.soleOwner"),
     forbidden: t("errors.forbidden"),
+    invalid_input: t("errors.invalidInput"),
     accept_verification_failed: t("errors.acceptVerificationFailed"),
     provider_error: t("errors.providerError"),
   };
@@ -117,6 +118,35 @@ export async function updateMemberRole(
   try {
     await team.updateMemberRole(parsed.data);
     revalidatePath("/settings/team");
+    return { success: true, data: undefined };
+  } catch (error) {
+    return { success: false, error: friendlyError(error, t) };
+  }
+}
+
+export async function transferOwnership(
+  memberId: string
+): Promise<TeamActionResult> {
+  const t = await getTranslations("team-settings");
+  if (typeof memberId !== "string" || memberId.length === 0) {
+    return { success: false, error: t("errors.invalidInput") };
+  }
+
+  try {
+    await team.transferOwnership(memberId);
+    revalidatePath("/settings/team");
+    return { success: true, data: undefined };
+  } catch (error) {
+    return { success: false, error: friendlyError(error, t) };
+  }
+}
+
+export async function leaveWorkspace(): Promise<TeamActionResult> {
+  const t = await getTranslations("team-settings");
+  try {
+    await team.leaveWorkspace();
+    // The active workspace changed, and every layout reads it.
+    revalidatePath("/", "layout");
     return { success: true, data: undefined };
   } catch (error) {
     return { success: false, error: friendlyError(error, t) };

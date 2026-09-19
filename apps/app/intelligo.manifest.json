@@ -7,7 +7,7 @@
       "files": [
         {
           "path": "package.json",
-          "hash": "c5212478db4cc5c3fd3958f812211a50b0c24b8ead24223f9aff9f20183c2d17"
+          "hash": "799ec8c884a81d054926242b094706faa50ebdedf7b0bc0d9e35ec615566cfc2"
         },
         {
           "path": "next.config.mjs",
@@ -19,7 +19,7 @@
         },
         {
           "path": ".env.example",
-          "hash": "efbbfb5e55bd2cc0cce73e779f3404e561aeb33f2744e2abc47992400320da7e"
+          "hash": "20e49e55640c13fd494ab7449dff583466622cc7f2ea982252b9a55b13476cdd"
         },
         {
           "path": "lib/intelligo.ts",
@@ -31,7 +31,7 @@
         },
         {
           "path": "lib/plans.ts",
-          "hash": "f70df278f211b0e47d0b5da5efc66de43c7174bce6e93bfb24a4445ff2c51753"
+          "hash": "21325ae314658f069c7414fb71b019f4c6b3f497b6e2e9802ad7b45050d7e8c1"
         },
         {
           "path": "app/api/auth/[...all]/route.ts",

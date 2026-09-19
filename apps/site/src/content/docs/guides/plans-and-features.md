@@ -75,7 +75,7 @@ export async function exportConversations() {
 }
 ```
 
-`hasFeature(workspaceId, feature)` resolves the workspace's plan (its subscription's plan, `pro` during an active trial, `free` otherwise) and returns a boolean. `requireFeature` takes the same arguments and throws a plain `Error` instead. A key that is missing from the matrix is denied on every plan, so a registry item with a `featureKey` you have not added answers 403.
+`hasFeature(workspaceId, feature)` resolves the workspace's plan (its subscription's plan while the subscription is `active`, `trialing` or `past_due`; the trial's `planSlug`, `pro` by default, during an active trial; `free` otherwise) and returns a boolean. `requireFeature` takes the same arguments and throws a `FeatureNotAvailableError` instead, which names the feature, the current plan and the plans that grant it. A key that is missing from the matrix is denied on every plan, so a registry item with a `featureKey` you have not added answers 403.
 
 A row in the `feature_flags` table overrides the matrix for its feature name, and an inactive row turns the feature off for everyone. Answers are cached in-process for 60 seconds; `invalidateFeatureCache(workspaceId)` drops them.
 

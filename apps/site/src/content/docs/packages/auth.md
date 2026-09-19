@@ -31,6 +31,20 @@ import { requireWorkspace } from "@intelligo-dev/auth";
 const { user, workspace, membership } = await requireWorkspace();
 ```
 
+A guard that refuses throws an `AuthGuardError`; `isAuthGuardError(error)`
+narrows it and `error.code` picks the status: `unauthenticated` (no session,
+401), `no_workspace` (signed in, member of no workspace) or `forbidden`
+(lacking the role, 403).
+
+`impersonateUser` checks that the caller is a platform admin and that the
+target is not one before it swaps the session. Products call
+`startImpersonation` from `@intelligo-dev/admin`, which adds the audit event
+and the mandatory reason.
+
+`hasSessionCookie(request)` from `@intelligo-dev/auth/edge` is for an optional
+optimistic redirect in a consumer's `proxy.ts`. It reads cookie presence only
+and is never authorization; the scaffold does not use it.
+
 Platform admin is a row (`users.role`), not an environment variable. The
 allowlist in `PLATFORM_ADMIN_EMAILS` is promoted into that column on first use,
 so the plugin and the guard cannot disagree.

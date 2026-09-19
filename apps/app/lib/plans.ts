@@ -29,7 +29,6 @@ export const REFERENCE_PLANS: Record<string, PlanConfig> = {
     // costs.
     monthlyAllowance: fromMajor(0.5, "USD"),
     limits: {
-      rolloverEnabled: false,
       chatMessages: 30,
     },
     features: ["30 messages a month"],
@@ -46,7 +45,6 @@ export const REFERENCE_PLANS: Record<string, PlanConfig> = {
     /** $15 of model time inside a $20 plan. */
     monthlyAllowance: fromMajor(15, "USD"),
     limits: {
-      rolloverEnabled: true,
       chatMessages: 1_000,
     },
     features: [

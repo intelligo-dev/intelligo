@@ -16,6 +16,8 @@ intelligo create [dir]      Scaffold an app, then install the registry pages you
 intelligo doctor            Report configuration and migration-chain problems
 intelligo migrate           Apply the framework's migration chain to DATABASE_URL
 intelligo migrate --check   Compare the framework's migrations to a database
+                            (--json: one object whose `state` is up_to_date | pending |
+                            fresh | ahead | unmanaged | legacy)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
 intelligo upgrade --check   Show what a template upgrade would change
 ```
@@ -54,7 +56,7 @@ their own, and refuse to overwrite the latter.
 | Feature | What it generates |
 | --- | --- |
 | `admin-page` | Mount the Intelligo operational console at /admin — `app/admin/page.tsx` |
-| `maintenance` | A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs — schedule it every few minutes — `app/api/cron/maintenance/route.ts` |
+| `maintenance` | A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs — scheduled every five minutes, in vercel.json when the app has none — `app/api/cron/maintenance/route.ts` |
 
 ## doctor
 
@@ -116,6 +118,23 @@ chain holds its hashes, which `legacy-chain.json` (next to the
 journal) lists: they are reported as `legacy`, not as unknown, and a
 database holding all of them is `adoptable` — its schema is the
 baseline's, so `migrate` records the baseline without running it.
+
+The exit code is 1 whenever anything is pending or the database is
+ahead, which a brand-new database and a stale one share. A deploy
+gate that must tell them apart reads `migrate --check --json`: one
+JSON object on stdout, same exit code, whose `state` is
+
+  - `up_to_date` — every migration is applied;
+  - `pending`    — a migrated database is behind this checkout;
+  - `fresh`      — no migration records and none of the framework's
+                   tables: an empty database, `migrate` applies the chain;
+  - `unmanaged`  — the tables exist with no records (`db:push`);
+  - `ahead`      — applied migrations this checkout does not contain;
+  - `legacy`     — the pre-1.0 chain; `adoptable` says whether
+                   `migrate` can take it over.
+
+Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
+`unknown`, `legacy` and `adoptable`.
 
 [source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/migrate-check.ts)
 

@@ -3,7 +3,8 @@
 /**
  * Member list — table of workspace members with role changes and
  * removal. Owner/admin only for the management controls; anyone else
- * sees a read-only table.
+ * sees a read-only table. An owner can also make another member an
+ * owner, behind a confirmation.
  */
 
 import { useState, useTransition } from "react";
@@ -12,7 +13,11 @@ import { toast } from "sonner";
 
 import type { OrgMember } from "@intelligo-dev/auth";
 
-import { removeMember, updateMemberRole } from "@showcase/actions/team";
+import {
+  removeMember,
+  transferOwnership,
+  updateMemberRole,
+} from "@showcase/actions/team";
 import { RoleBadge } from "./role-badge";
 import {
   Table,
@@ -30,6 +35,16 @@ import {
   SelectValue,
 } from "@showcase/components/ui/select";
 import { Button } from "@showcase/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@showcase/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -57,12 +72,15 @@ interface MemberListProps {
   members: TeamMember[];
   currentUserId: string;
   canManage: boolean;
+  /** Owners only: shows "Make owner" on every other non-owner member. */
+  canTransfer?: boolean;
 }
 
 export function MemberList({
   members,
   currentUserId,
   canManage,
+  canTransfer = false,
 }: MemberListProps) {
   const t = useTranslations("team-settings");
   // The labels SelectValue shows; Base UI renders the raw value without them.
@@ -73,6 +91,14 @@ export function MemberList({
   const format = useFormatter();
   const [isPending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
+  // The target outlives `transferOpen` so the name stays while the dialog exits.
+  const [transferTarget, setTransferTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const isTransferring =
+    isPending && transferTarget !== null && busyId === transferTarget.id;
 
   function handleRoleChange(memberId: string, role: string) {
     setBusyId(memberId);
@@ -100,6 +126,22 @@ export function MemberList({
         toast.success(t("memberList.memberRemoved", { name }));
       }
       setBusyId(null);
+    });
+  }
+
+  function handleTransfer() {
+    if (!transferTarget) return;
+    const { id, name } = transferTarget;
+    setBusyId(id);
+    startTransition(async () => {
+      const result = await transferOwnership(id);
+      if (!result.success) {
+        toast.error(result.error);
+      } else {
+        toast.success(t("memberList.ownershipTransferred", { name }));
+      }
+      setBusyId(null);
+      setTransferOpen(false);
     });
   }
 
@@ -197,6 +239,19 @@ export function MemberList({
                     </TableCell>
                     {canManage && (
                       <TableCell className="text-right">
+                        {canTransfer && !isOwner && !isCurrentUser && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isBusy}
+                            onClick={() => {
+                              setTransferTarget({ id: memberId, name });
+                              setTransferOpen(true);
+                            }}
+                          >
+                            {t("memberList.transferDialog.trigger")}
+                          </Button>
+                        )}
                         {!isCurrentUser && !isOwner && (
                           <Dialog>
                             <DialogTrigger
@@ -246,6 +301,43 @@ export function MemberList({
           </Table>
         </div>
       )}
+
+      {/* A request in flight keeps the dialog open until it settles. */}
+      <AlertDialog
+        open={transferOpen}
+        onOpenChange={(next) => {
+          if (!isTransferring) setTransferOpen(next);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("memberList.transferDialog.title", {
+                name: transferTarget?.name ?? "",
+              })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("memberList.transferDialog.description", {
+                name: transferTarget?.name ?? "",
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isTransferring}>
+              {t("memberList.transferDialog.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleTransfer}
+              disabled={isTransferring}
+              aria-busy={isTransferring}
+            >
+              {isTransferring
+                ? t("memberList.transferDialog.confirmPending")
+                : t("memberList.transferDialog.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

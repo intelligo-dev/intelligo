@@ -335,6 +335,13 @@ To use a real provider: install its AI SDK package (e.g.
 `pnpm add @ai-sdk/anthropic` in this app) and replace the body of
 `getChatModel` — the commented example below is the whole change.
 
+Two strings are in play and they are not interchangeable. The
+registered id (`anthropic/claude-sonnet-4-6`) is what a turn is
+admitted and billed under. The provider's own id is often dated
+(`claude-sonnet-4-6-20260214`) and lives in the registry entry's
+`model` field. Read it from there; never derive it by trimming the
+prefix off the registered id, and never write it out a second time.
+
 ### `lib/chat-models.ts`
 
 Exports `CHAT_MODELS`, `getChatModelOptions`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-models.ts)

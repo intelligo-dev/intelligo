@@ -30,3 +30,18 @@ export async function updateMemberRole(
   await wait();
   return { success: true, data: undefined };
 }
+export async function transferOwnership(
+  ..._args: unknown[]
+): Promise<TeamActionResult> {
+  await wait();
+  return { success: true, data: undefined };
+}
+export async function leaveWorkspace(
+  ..._args: unknown[]
+): Promise<TeamActionResult> {
+  await wait();
+  return {
+    success: false,
+    error: `You would leave the workspace here. ${PREVIEW_NOTE}`,
+  };
+}

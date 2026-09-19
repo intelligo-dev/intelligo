@@ -30,6 +30,7 @@ import { DashboardHero } from "@showcase/components/dashboard/dashboard-hero";
 import { PromptBar } from "@showcase/components/dashboard/prompt-bar";
 import { SettingsTabs } from "@showcase/components/settings/settings-tabs";
 import { InviteMemberForm } from "@showcase/components/team/invite-member-form";
+import { LeaveWorkspace } from "@showcase/components/team/leave-workspace";
 import { MemberList } from "@showcase/components/team/member-list";
 import { PendingInvitations } from "@showcase/components/team/pending-invitations";
 import { RoleBadge } from "@showcase/components/team/role-badge";
@@ -409,11 +410,19 @@ function Team() {
         <PageHeading ns="team-settings" title="page.title" compact />
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <div className="space-y-6">
-            <MemberList members={MEMBERS} currentUserId={USER.id} canManage />
+            <MemberList
+              members={MEMBERS}
+              currentUserId={USER.id}
+              canManage
+              canTransfer
+            />
             <PendingInvitations invitations={INVITATIONS} />
           </div>
           <InviteMemberForm />
         </div>
+        <section className="border-t pt-8">
+          <LeaveWorkspace workspaceName={WORKSPACE.name} />
+        </section>
       </div>
     </SettingsFrame>
   );

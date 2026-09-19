@@ -2,7 +2,7 @@
 
 /**
  * Pending invitations — table of outstanding workspace invitations
- * with a cancel action. Rendered for owner/admin only.
+ * with a confirmed cancel action. Rendered for owner/admin only.
  */
 
 import { useState, useTransition } from "react";
@@ -22,6 +22,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PendingInvitationsProps {
   invitations: OrgInvitation[];
@@ -32,17 +42,28 @@ export function PendingInvitations({ invitations }: PendingInvitationsProps) {
   const format = useFormatter();
   const [isPending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
+  // The target outlives `cancelOpen` so the email stays while the dialog exits.
+  const [cancelTarget, setCancelTarget] = useState<{
+    id: string;
+    email: string;
+  } | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const isCanceling =
+    isPending && cancelTarget !== null && busyId === cancelTarget.id;
 
-  function handleCancel(invitationId: string) {
-    setBusyId(invitationId);
+  function handleCancel() {
+    if (!cancelTarget) return;
+    const { id } = cancelTarget;
+    setBusyId(id);
     startTransition(async () => {
-      const result = await cancelInvitation(invitationId);
+      const result = await cancelInvitation(id);
       if (!result.success) {
         toast.error(result.error);
       } else {
         toast.success(t("pendingInvitations.canceled"));
       }
       setBusyId(null);
+      setCancelOpen(false);
     });
   }
 
@@ -96,8 +117,8 @@ export function PendingInvitations({ invitations }: PendingInvitationsProps) {
                           {t("pendingInvitations.expired")}
                         </span>
                       ) : (
-                        <span className="text-sm capitalize text-muted-foreground">
-                          {invitation.status}
+                        <span className="text-sm text-muted-foreground">
+                          {t("pendingInvitations.pending")}
                         </span>
                       )}
                     </TableCell>
@@ -110,7 +131,13 @@ export function PendingInvitations({ invitations }: PendingInvitationsProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleCancel(invitation.id)}
+                        onClick={() => {
+                          setCancelTarget({
+                            id: invitation.id,
+                            email: invitation.email,
+                          });
+                          setCancelOpen(true);
+                        }}
                         disabled={isBusy}
                       >
                         {isBusy
@@ -125,6 +152,42 @@ export function PendingInvitations({ invitations }: PendingInvitationsProps) {
           </Table>
         </div>
       )}
+
+      {/* A request in flight keeps the dialog open until it settles. */}
+      <AlertDialog
+        open={cancelOpen}
+        onOpenChange={(next) => {
+          if (!isCanceling) setCancelOpen(next);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("pendingInvitations.cancelDialog.title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("pendingInvitations.cancelDialog.description", {
+                email: cancelTarget?.email ?? "",
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCanceling}>
+              {t("pendingInvitations.cancelDialog.keep")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleCancel}
+              disabled={isCanceling}
+              aria-busy={isCanceling}
+            >
+              {isCanceling
+                ? t("pendingInvitations.cancelPending")
+                : t("pendingInvitations.cancelDialog.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

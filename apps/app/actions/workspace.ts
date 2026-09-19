@@ -29,6 +29,7 @@ type Translator = Awaited<
 function friendlyMessage(t: Translator): Partial<Record<string, string>> {
   return {
     forbidden: t("errors.forbidden"),
+    invalid_input: t("errors.invalidInput"),
     not_found: t("errors.notFound"),
     workspace_limit_reached: t("errors.workspaceLimitReached"),
     provider_error: t("errors.providerError"),
@@ -36,12 +37,12 @@ function friendlyMessage(t: Translator): Partial<Record<string, string>> {
 }
 
 function friendlyError(error: unknown, t: Translator): string {
+  // Unknown errors deliberately map to the generic key — a raw
+  // `Error#message` can carry internals (SQL, hostnames) to the UI.
   if (isWorkspaceServiceError(error)) {
-    return friendlyMessage(t)[error.code] ?? error.message;
+    return friendlyMessage(t)[error.code] ?? t("errors.somethingWentWrong");
   }
-  return error instanceof Error
-    ? error.message
-    : t("errors.somethingWentWrong");
+  return t("errors.somethingWentWrong");
 }
 
 export async function updateWorkspace(

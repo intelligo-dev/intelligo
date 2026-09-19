@@ -4,11 +4,15 @@
  * Tells the reader about their credit before they spend a message on
  * finding out.
  *
- * Two states, and both matter:
+ * Three states:
  *
  *   - **blocked** — the next turn will be refused. Server-rendered
  *     from `getChatQuotaState()`, or seeded from the route's own 402
  *     when the balance runs out mid-conversation.
+ *   - **unavailable** — refused for a reason only the deployment can
+ *     fix: no billing configured, or a model with no registered price.
+ *     Neutral copy and no upgrade button, because paying changes
+ *     nothing.
  *   - **running low** — allowed, but one more turn would take most of
  *     what is left. A warning nobody asked for beats a refusal nobody
  *     expected.
@@ -52,6 +56,21 @@ export type ChatBlock = {
   message: string;
 };
 
+const DEPLOYMENT_REFUSALS: ReadonlySet<string> = new Set([
+  "unknown_model",
+  "billing_not_configured",
+  "MODEL_UNAVAILABLE",
+  "BILLING_NOT_CONFIGURED",
+]);
+
+/**
+ * Whether a refusal is the deployment's to fix rather than the
+ * reader's. Takes the entitlement port's code or the transport's.
+ */
+export function isDeploymentRefusal(code: string | null | undefined): boolean {
+  return typeof code === "string" && DEPLOYMENT_REFUSALS.has(code);
+}
+
 interface CreditStatusBannerProps {
   quotaState: ChatQuotaState | null;
   block: ChatBlock | null;
@@ -72,6 +91,23 @@ export function CreditStatusBanner({
     (quotaState && !quotaState.allowed
       ? { code: quotaState.code ?? "", message: quotaState.reason ?? "" }
       : null);
+
+  if (refusal && isDeploymentRefusal(refusal.code)) {
+    // The refusal's own message names what is misconfigured; that is
+    // for the server log, not for the reader.
+    return (
+      <Alert
+        data-testid="chat-unavailable-banner"
+        className="mx-auto mb-2 w-full max-w-3xl"
+      >
+        <AlertTriangleIcon />
+        <AlertTitle>{t("creditBanner.unavailable")}</AlertTitle>
+        <AlertDescription>
+          {t("creditBanner.unavailableDescription")}
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (refusal) {
     return (

@@ -81,7 +81,6 @@ export const CHECKOUT_SESSION: CheckoutSessionSummary = {
 // `PlanConfig.monthlyAllowance`, an amount that names its currency.
 const limits = (monthlyCredits: number, members: number) => ({
   monthlyCredits,
-  rolloverEnabled: false,
   teamMembers: members,
 });
 

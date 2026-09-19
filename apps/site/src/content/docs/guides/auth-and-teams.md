@@ -8,7 +8,7 @@ A fresh install already signs users up, gives each one a personal workspace, and
 
 ## Guard first, then query
 
-Three guards from `@intelligo-dev/auth` cover every server entry point. Each throws a plain `Error`; none of them redirects.
+Three guards from `@intelligo-dev/auth` cover every server entry point. Each throws an `AuthGuardError` whose `code` is `unauthenticated`, `no_workspace` or `forbidden` — `isAuthGuardError(error)` narrows it, so a transport can answer 401, 404 or 403. None of them redirects.
 
 | Guard                | Returns                                    | Throws                       |
 | -------------------- | ------------------------------------------ | ---------------------------- |
@@ -16,7 +16,7 @@ Three guards from `@intelligo-dev/auth` cover every server entry point. Each thr
 | `requireWorkspace()` | `{ session, user, workspace, membership }` | `"No active workspace"`      |
 | `requireRole(roles)` | the same context                           | `"Insufficient permissions"` |
 
-`workspace` is `{ id, name, slug, logo }` and `membership` is `{ id, role }`. `requireWorkspace()` throws the same error when there is no session at all. `requireRole` takes an array, such as `requireRole(["owner", "admin"])`, and passes when the member holds any of them.
+`workspace` is `{ id, name, slug, logo }` and `membership` is `{ id, role }`. With no session at all, `requireWorkspace()` throws `unauthenticated`, the same as `requireAuth()`. `requireRole` takes an array, such as `requireRole(["owner", "admin"])`, and passes when the member holds any of them.
 
 A Server Action calls the guard, then filters by the workspace it returned:
 
@@ -66,7 +66,7 @@ Workspace roles are `owner`, `admin` and `member`; whoever creates a workspace i
 | Transfer ownership, delete the workspace        | yes   | no    | no     |
 | Leave the workspace                             | yes\* | yes   | yes    |
 
-\* The only owner cannot leave: `leaveWorkspace` throws `sole_owner` until `transferOwnership` has promoted another member. An invitation grants `admin` or `member`, never `owner`. The installed team page wires invite, cancel, remove and role change; `leaveWorkspace` and `transferOwnership` are service methods you call from your own action.
+\* The only owner cannot leave: `leaveWorkspace` throws `sole_owner` until `transferOwnership` has promoted another member. An invitation grants `admin` or `member`, never `owner`. The installed team page wires invite, cancel, remove, role change, leaving the workspace and transferring ownership. A transfer promotes the other member; you stay an owner until you leave.
 
 ## The proxy routes, the server checks
 
@@ -123,7 +123,7 @@ The first time a user gets a workspace, `ensureUserWorkspace` calls `onWorkspace
 
 A platform admin is a row, not a workspace role: `users.role` holds `platform-admin`. List emails in `PLATFORM_ADMIN_EMAILS`, comma-separated; `requirePlatformAdmin()` promotes a listed user into the column the first time it runs, and throws `"Insufficient permissions"` for anyone with neither. Never gate a cross-workspace surface on `owner`: every signup owns a workspace.
 
-Impersonation goes through `startImpersonation({ targetUserId, reason })` and `stopImpersonation({ targetUserId })` from `@intelligo-dev/admin`. Starting requires a platform admin and a reason, writes the audit event first and aborts if it cannot be written, lasts at most 30 minutes, and refuses another admin as the target; stopping is audited too. `impersonateUser` and `stopImpersonating` in `@intelligo-dev/auth` only swap the session cookie; do not call them directly.
+Impersonation goes through `startImpersonation({ targetUserId, reason })` and `stopImpersonation({ targetUserId })` from `@intelligo-dev/admin`. Starting requires a platform admin and a reason, writes the audit event first and aborts if it cannot be written, lasts at most 30 minutes, and refuses another admin as the target; stopping is audited too. `impersonateUser` in `@intelligo-dev/auth` verifies the caller is a platform admin and the target is not, but writes no audit event, so call the admin functions instead.
 
 ## Next
 

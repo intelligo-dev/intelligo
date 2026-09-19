@@ -33,7 +33,7 @@ export function getChatModel(modelId: string): LanguageModel {
 }
 ```
 
-Two strings are in play. `CHAT_MODEL_ID` is the registry key the turn is admitted and billed under. The string you pass to the provider is the provider's own id, which is often dated; the registry keeps it in the entry's `model` field. `lib/chat-server-config.ts` already binds both as `model: { defaultId: CHAT_MODEL_ID, resolve: getChatModel }`, and `lib/chat-quota.ts` prices the composer's credit banner against `CHAT_MODEL_ID`.
+Two strings are in play. `CHAT_MODEL_ID` is the registry key the turn is admitted and billed under. The string you pass to the provider is the provider's own id, which is often dated; the registry keeps it in the entry's `model` field. `lib/chat-server-config.ts` already binds both as `model: { defaultId: CHAT_MODEL_ID, resolve: getChatModel }`, and `lib/chat-quota.ts` prices the composer's credit banner against the model the reader picked, falling back to `CHAT_MODEL_ID`.
 
 Prompts, tools and other runtimes are covered in [Bring your agent](/docs/guides/bring-your-agent).
 
@@ -87,7 +87,7 @@ Prices are plain USD numbers here and nowhere else; everything computed from the
 
 Pricing never guesses. `providerCost`, `chargeFor` and `estimateWorstCaseCharge` throw `UnknownModelError`, whose message names the id and lists what is registered.
 
-In chat you see a refusal, not a crash. Admission catches the error and refuses the turn with code `unknown_model`. `createChatHandler` answers HTTP 402 with `code: "QUOTA_EXCEEDED"`, `reasonCode: "unknown_model"` and the error's message, before any provider tokens are spent.
+In chat you see a refusal, not a crash. Admission catches the error and refuses the turn with code `unknown_model`. `createChatHandler` answers HTTP 503 with `code: "MODEL_UNAVAILABLE"` and `reasonCode: "unknown_model"` before any provider tokens are spent. The reader sees that the assistant is temporarily unavailable, not an upgrade prompt, and the id is in your error log.
 
 `pnpm exec intelligo doctor` reports an error named `models` when `lib/intelligo.ts` contains no `registerModels()` or `registerModel()` call. It does not check individual ids. To fail at startup instead of on the first turn, assert the ids you ship after registering:
 
@@ -145,7 +145,7 @@ Every turn is priced twice, with the `BillingRate` your composition root declare
 1. **Admission.** `estimateWorstCaseCharge(modelId, rate)` prices a 16,000-token input budget plus the entry's `maxOutputTokens`, and that amount is held. If the workspace cannot cover it, the turn is refused with `insufficient_credits`.
 2. **Settlement.** `chargeFor(modelId, inputTokens, outputTokens, rate)` takes the run's actual usage and returns `providerCost` in USD and `charged` in your currency: provider cost × margin, converted at your rate, each step rounded up to a whole micro.
 
-On `anthropic/claude-sonnet-4-6`, a turn of 1,200 input and 400 output tokens costs 1,200 × 3 + 400 × 15 = 9,600 micros (USD 0.0096) and is charged 38,400 micros at 4×. Its worst case is 16,000 × 3 + 8,000 × 15 = 168,000 micros, held as USD 0.672. That is more than the scaffold's Free plan allowance of USD 0.50, so gate expensive models to a plan that can fund them, or register them with a lower `maxOutputTokens`. The registry value only sizes the hold; to cap what the model writes, set `agent.generation.maxOutputTokens` in `lib/chat-server-config.ts`.
+On `anthropic/claude-sonnet-4-6`, a turn of 1,200 input and 400 output tokens costs 1,200 × 3 + 400 × 15 = 9,600 micros (USD 0.0096) and is charged 38,400 micros at 4×. Its worst case is 16,000 × 3 + 8,000 × 15 = 168,000 micros, held as USD 0.672. That is more than the scaffold's Free plan allowance of USD 0.50, so gate expensive models to a plan that can fund them, or register them with a lower `maxOutputTokens`. The registry value also caps what the model may write in one step, so the hold is a real ceiling; `agent.generation.maxOutputTokens` in `lib/chat-server-config.ts` overrides it.
 
 ## Next
 

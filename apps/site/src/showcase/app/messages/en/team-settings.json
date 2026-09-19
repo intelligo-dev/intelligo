@@ -40,6 +40,15 @@
       "confirm": "Remove",
       "confirmPending": "Removing…"
     },
+    "ownershipTransferred": "{name} is now an owner",
+    "transferDialog": {
+      "trigger": "Make owner",
+      "title": "Make {name} an owner?",
+      "description": "{name} becomes an owner, with full control of this workspace, its billing and its members. You stay an owner until you leave. An owner can't be demoted or removed from this page.",
+      "cancel": "Cancel",
+      "confirm": "Make owner",
+      "confirmPending": "Making owner…"
+    },
     "emptyHint": "Invite someone above to share this workspace."
   },
   "pendingInvitations": {
@@ -52,17 +61,35 @@
       "expires": "Expires",
       "actions": "Actions"
     },
+    "pending": "Pending",
     "expired": "Expired",
     "cancel": "Cancel",
     "cancelPending": "Canceling…",
     "canceled": "Invitation canceled",
+    "cancelDialog": {
+      "title": "Cancel this invitation?",
+      "description": "The invitation link sent to {email} stops working. You can invite them again later.",
+      "keep": "Keep invitation",
+      "confirm": "Cancel invitation"
+    },
     "emptyHint": "Invitations you send appear here until they're accepted."
+  },
+  "leave": {
+    "title": "Leave workspace",
+    "description": "Give up your access to {workspace}. Someone there has to invite you again for you to come back.",
+    "trigger": "Leave workspace",
+    "dialogTitle": "Leave {workspace}?",
+    "dialogDescription": "You lose access to everything in this workspace right away. If you're its only owner, make another member an owner first.",
+    "cancel": "Cancel",
+    "confirm": "Leave workspace",
+    "confirmPending": "Leaving…",
+    "left": "You left {workspace}"
   },
   "errors": {
     "memberLimitReached": "Your plan's seats are all taken. Upgrade to invite more people.",
     "memberLimitReachedCount": "Your plan includes {limit, plural, one {# seat} other {# seats}}, and they're all taken. Upgrade to invite more people.",
     "invitationNotFound": "That invitation no longer exists.",
-    "soleOwner": "You're the only owner of this workspace. Transfer ownership before leaving.",
+    "soleOwner": "You're the only owner of this workspace. Make another member an owner before leaving.",
     "forbidden": "You don't have permission to do that.",
     "acceptVerificationFailed": "We couldn't confirm the invitation. Please try again.",
     "providerError": "Something went wrong. Please try again.",
