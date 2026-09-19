@@ -1,6 +1,6 @@
 ---
 title: "Environment variables"
-description: "Every variable an Intelligo app reads — the two it cannot boot without, and the ones that switch on email, OAuth, Stripe, the maintenance cron and the admin console."
+description: "Every variable an Intelligo app reads: the two it cannot boot without, and the ones that switch on email, OAuth, Stripe, the cron and the admin console."
 label: "Environment"
 order: 2
 ---

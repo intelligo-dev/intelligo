@@ -1,6 +1,6 @@
 ---
 title: "Config seams"
-description: "Every file a block ships for you to edit — navigation, banners, onboarding, credit bundles, the chat's identity, tools and canvas — with the documentation each file carries."
+description: "Every file a block ships for you to edit — navigation, banners, onboarding, credit bundles, the chat's identity, tools and canvas — and what each one controls."
 order: 2
 ---
 

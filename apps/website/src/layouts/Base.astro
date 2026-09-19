@@ -8,35 +8,50 @@ interface Props {
   description?: string;
   /**
    * Page-specific JSON-LD (one object, or several — a docs page pairs a
-   * `TechArticle` with a `BreadcrumbList`). Defaults to describing the
-   * framework itself, right for the homepage and every page that doesn't
-   * override it; a docs or catalog page should pass its own so a crawler
-   * gets a signal for what kind of page it actually is, not the same
-   * software-project schema everywhere.
+   * `TechArticle` with a `BreadcrumbList`). Defaults to the framework, its
+   * publisher and the site, which is the homepage; every other page passes
+   * what it is.
    */
   structuredData?: Record<string, unknown> | Record<string, unknown>[];
   /** A page that should not be indexed (the 404): no canonical either. */
   noindex?: boolean;
 }
 const { title = SITE.title, description = SITE.description, structuredData, noindex = false } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site).href;
+// A static build gives every page a trailing slash; the host serves it without one.
+const canonical = new URL(Astro.url.pathname.replace(/(.)\/$/, "$1"), Astro.site).href;
 const og = new URL("/og.png", Astro.site).href;
-const DEFAULT_STRUCTURED_DATA = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareSourceCode",
-  name: "Intelligo",
-  description: SITE.description,
+const organization = {
+  "@type": "Organization",
+  "@id": new URL("/#organization", Astro.site).href,
+  name: SITE.brand,
   url: Astro.site?.href,
-  codeRepository: SITE.github,
-  license: "https://www.apache.org/licenses/LICENSE-2.0",
-  programmingLanguage: "TypeScript",
-  runtimePlatform: "Node.js",
-  version: SITE.version,
+  logo: new URL("/icon-512.png", Astro.site).href,
+  sameAs: [SITE.github, SITE.npm],
 };
+const DEFAULT_STRUCTURED_DATA = [
+  {
+    "@type": "SoftwareSourceCode",
+    name: SITE.brand,
+    description: SITE.description,
+    url: Astro.site?.href,
+    codeRepository: SITE.github,
+    license: "https://www.apache.org/licenses/LICENSE-2.0",
+    programmingLanguage: "TypeScript",
+    runtimePlatform: "Node.js",
+    version: SITE.version,
+    author: { "@id": organization["@id"] },
+  },
+  organization,
+  {
+    "@type": "WebSite",
+    name: SITE.brand,
+    url: Astro.site?.href,
+    description: SITE.description,
+    publisher: { "@id": organization["@id"] },
+  },
+];
 const jsonLd = JSON.stringify(
-  structuredData
-    ? [structuredData].flat().map((d) => ({ "@context": "https://schema.org", ...d }))
-    : DEFAULT_STRUCTURED_DATA
+  [structuredData ?? DEFAULT_STRUCTURED_DATA].flat().map((d) => ({ "@context": "https://schema.org", ...d }))
 );
 ---
 <!doctype html>

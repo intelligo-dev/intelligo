@@ -1,6 +1,6 @@
 ---
 title: "@intelligo-dev/jobs"
-description: "A Postgres-backed job queue. No Redis."
+description: "A Postgres-backed job queue: enqueue, claim with SKIP LOCKED, retry with backoff and prune. No Redis."
 order: 8
 label: "jobs"
 ---

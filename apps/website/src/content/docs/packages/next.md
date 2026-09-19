@@ -1,6 +1,6 @@
 ---
 title: "@intelligo-dev/next"
-description: "The Next.js adapter: the one Intelligo package that imports next/*."
+description: "The Next.js adapter: the one Intelligo package that imports next/*, binding request context and auth routes."
 order: 6
 label: "next"
 ---

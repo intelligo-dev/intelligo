@@ -1,12 +1,12 @@
 # intelligo
 
-> Open-source framework for AI SaaS: sign-up, teams, plans, credits, per-run cost and an admin console. Pages you own, packages you upgrade. Your agent stays yours.
+> Open-source Next.js framework for AI SaaS: sign-up, teams, plans, credits, per-run cost and an admin console. Pages you own, packages you upgrade.
 
 ## Getting started
 
 - [Getting started](https://intelligo.dev/docs/getting-started): Create an application, connect PostgreSQL, install the pages and run the whole product against a stub model — before you configure an AI provider.
 - [Explore the reference app](https://intelligo.dev/docs/getting-started/reference-app): A complete workspace AI SaaS built from nothing but the public packages and registry blocks — clone the framework and run it.
-- [Environment variables](https://intelligo.dev/docs/getting-started/environment): Every variable an Intelligo app reads — the two it cannot boot without, and the ones that switch on email, OAuth, Stripe, the maintenance cron and the admin console.
+- [Environment variables](https://intelligo.dev/docs/getting-started/environment): Every variable an Intelligo app reads: the two it cannot boot without, and the ones that switch on email, OAuth, Stripe, the cron and the admin console.
 
 ## Concepts
 
@@ -21,28 +21,28 @@
 
 - [Installing blocks](https://intelligo.dev/docs/registry): Pages arrive through a shadcn-compatible registry as source you own — installed with the standard shadcn CLI, in dependency order.
 - [Install order](https://intelligo.dev/docs/registry/install-order): Which blocks need another block first, which scaffold files each imports and which feature keys each gates on — the order CI installs in.
-- [Config seams](https://intelligo.dev/docs/registry/config-seams): Every file a block ships for you to edit — navigation, banners, onboarding, credit bundles, the chat's identity, tools and canvas — with the documentation each file carries.
+- [Config seams](https://intelligo.dev/docs/registry/config-seams): Every file a block ships for you to edit — navigation, banners, onboarding, credit bundles, the chat's identity, tools and canvas — and what each one controls.
 - [Adding a language](https://intelligo.dev/docs/registry/i18n): Every block is i18n-native. A new language is a folder of message files — no component changes.
 - [Tool renderers](https://intelligo.dev/docs/registry/tool-renderers): A tool your agent calls renders as a row in the activity stream, or as its own card — inline or in the side canvas — through one object in source you own.
 
 ## Packages
 
-- [Packages](https://intelligo.dev/docs/packages): The 11 packages published under @intelligo-dev, at one version.
+- [Packages](https://intelligo.dev/docs/packages): The 11 packages published under @intelligo-dev, at one version: auth, billing, chat, executions, jobs and more.
 - [@intelligo-dev/core](https://intelligo.dev/docs/packages/core): Database schema, email, logging, notifications, and the conversation, document and identity contracts.
-- [@intelligo-dev/auth](https://intelligo.dev/docs/packages/auth): Multi-tenant authentication, workspaces and RBAC on Better-Auth.
+- [@intelligo-dev/auth](https://intelligo.dev/docs/packages/auth): Multi-tenant authentication on Better-Auth: sign-up, workspaces, invitations and role-based access control.
 - [@intelligo-dev/billing](https://intelligo.dev/docs/packages/billing): Quota engine, credits, Stripe, feature gates, trials and rate limiting.
 - [@intelligo-dev/executions](https://intelligo.dev/docs/packages/executions): The execution lifecycle (admission, running, settlement) and the model cost registry.
-- [@intelligo-dev/chat](https://intelligo.dev/docs/packages/chat): The AI-SDK-native chat transport: a Route Handler as a function.
-- [@intelligo-dev/next](https://intelligo.dev/docs/packages/next): The Next.js adapter: the one Intelligo package that imports next/*.
-- [@intelligo-dev/audit](https://intelligo.dev/docs/packages/audit): Append-only audit events, with a database trigger that means it.
-- [@intelligo-dev/jobs](https://intelligo.dev/docs/packages/jobs): A Postgres-backed job queue. No Redis.
+- [@intelligo-dev/chat](https://intelligo.dev/docs/packages/chat): The AI-SDK-native chat transport: one Route Handler with auth, rate limits, feature gates, credits and persistence.
+- [@intelligo-dev/next](https://intelligo.dev/docs/packages/next): The Next.js adapter: the one Intelligo package that imports next/*, binding request context and auth routes.
+- [@intelligo-dev/audit](https://intelligo.dev/docs/packages/audit): Append-only audit events for multi-tenant apps, with a Postgres trigger that refuses every update and delete.
+- [@intelligo-dev/jobs](https://intelligo.dev/docs/packages/jobs): A Postgres-backed job queue: enqueue, claim with SKIP LOCKED, retry with backoff and prune. No Redis.
 - [@intelligo-dev/admin](https://intelligo.dev/docs/packages/admin): The operational console: cross-tenant queries, health probes and impersonation.
 - [@intelligo-dev/mastra](https://intelligo.dev/docs/packages/mastra): An optional bridge from a native Mastra agent to the execution boundary.
-- [@intelligo-dev/cli](https://intelligo.dev/docs/packages/cli): The Intelligo CLI: create, add, doctor, migrate and upgrade.
+- [@intelligo-dev/cli](https://intelligo.dev/docs/packages/cli): The Intelligo CLI: scaffold an AI SaaS app, generate owned source, and check its migrations and upgrades.
 
 ## CLI
 
-- [CLI](https://intelligo.dev/docs/cli): The Intelligo CLI: create, add, doctor, migrate and upgrade. Every section below is the command's own source documentation.
+- [CLI](https://intelligo.dev/docs/cli): Every command of the Intelligo CLI — create, add, doctor, migrate and upgrade — documented from its own source.
 
 ## Guides
 
@@ -50,8 +50,8 @@
 - [Models and pricing](https://intelligo.dev/docs/guides/models-and-pricing): Run chat on a real provider model, register what it costs, offer a plan-gated model picker, and see how each turn's charge is computed.
 - [Plans, features and quotas](https://intelligo.dev/docs/guides/plans-and-features): Define your plans, gate a feature to a plan on the server, cap how often it runs, and show an upgrade prompt when a workspace hits the limit.
 - [Billing with Stripe](https://intelligo.dev/docs/guides/billing-stripe): Connect your plans and credit bundles to a Stripe account — keys, price ids, the webhook, checkout and the customer portal, locally and in production.
-- [Auth, workspaces and roles](https://intelligo.dev/docs/guides/auth-and-teams): Guard your own pages, Server Actions and route handlers by session, workspace and role — and see how sign-in, invitations, workspace switching and platform admins work.
-- [Deploying](https://intelligo.dev/docs/guides/deploy): Put the app on Vercel with Postgres and pgvector, apply both migration chains on every deploy, and get email, the Stripe webhook and the maintenance cron working.
+- [Auth, workspaces and roles](https://intelligo.dev/docs/guides/auth-and-teams): Guard pages, Server Actions and route handlers by session, workspace and role, and see how sign-in, invitations and workspace switching work.
+- [Deploying](https://intelligo.dev/docs/guides/deploy): Put the app on Vercel with Postgres and pgvector, apply both migration chains on every deploy, and get email, Stripe webhooks and the cron working.
 
 ## More
 

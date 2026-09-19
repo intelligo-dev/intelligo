@@ -4,10 +4,12 @@ const PUBLISHED = proof.published as string;
 
 export const SITE = {
   name: "intelligo",
-  title: "Intelligo — everything your AI product needs, except the AI",
+  /** The name in page titles, where search results show it. */
+  brand: "Intelligo",
+  title: "Intelligo — Open-source Next.js framework for AI SaaS",
   /** ≤160 characters: what search engines and link previews show. */
   description:
-    "Open-source framework for AI SaaS: sign-up, teams, plans, credits, per-run cost and an admin console. Pages you own, packages you upgrade. Your agent stays yours.",
+    "Open-source Next.js framework for AI SaaS: sign-up, teams, plans, credits, per-run cost and an admin console. Pages you own, packages you upgrade.",
   /** The long form, for the footer and the social card. */
   tagline:
     "You build the agent. Intelligo is everything around it — sign-up, teams, plans, credits, per-run cost and an admin console — as pages you own and packages you upgrade. Your AI framework stays native. Open source, Apache-2.0.",

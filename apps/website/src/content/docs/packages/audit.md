@@ -1,6 +1,6 @@
 ---
 title: "@intelligo-dev/audit"
-description: "Append-only audit events, with a database trigger that means it."
+description: "Append-only audit events for multi-tenant apps, with a Postgres trigger that refuses every update and delete."
 order: 7
 label: "audit"
 ---

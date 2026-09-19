@@ -231,7 +231,7 @@ function packagePages(root) {
   out["packages/index.md"] =
     frontmatter({
       title: "Packages",
-      description: `The ${pkgs.length} packages published under @intelligo-dev, at one version.`,
+      description: `The ${pkgs.length} packages published under @intelligo-dev, at one version: auth, billing, chat, executions, jobs and more.`,
       order: 0,
       label: "Overview",
     }) +
@@ -303,12 +303,12 @@ function cliPage(root) {
     return s;
   });
 
-  const pkg = JSON.parse(read(root, "packages/cli/package.json"));
   return {
     "cli/index.md":
       frontmatter({
         title: "CLI",
-        description: `${pkg.description} Every section below is the command's own source documentation.`,
+        description:
+          "Every command of the Intelligo CLI — create, add, doctor, migrate and upgrade — documented from its own source.",
         order: 0,
         label: "Commands",
       }) +
@@ -413,7 +413,7 @@ function registryPages(root) {
     frontmatter({
       title: "Config seams",
       description:
-        "Every file a block ships for you to edit — navigation, banners, onboarding, credit bundles, the chat's identity, tools and canvas — with the documentation each file carries.",
+        "Every file a block ships for you to edit — navigation, banners, onboarding, credit bundles, the chat's identity, tools and canvas — and what each one controls.",
       order: 2,
     }) +
     `${marker("packages/registry/registry.json and each seam file's doc comment")}\n\n` +
@@ -513,7 +513,7 @@ function environmentPage(root) {
       frontmatter({
         title: "Environment variables",
         description:
-          "Every variable an Intelligo app reads — the two it cannot boot without, and the ones that switch on email, OAuth, Stripe, the maintenance cron and the admin console.",
+          "Every variable an Intelligo app reads: the two it cannot boot without, and the ones that switch on email, OAuth, Stripe, the cron and the admin console.",
         label: "Environment",
         order: 2,
       }) +

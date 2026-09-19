@@ -1,6 +1,6 @@
 ---
 title: "@intelligo-dev/chat"
-description: "The AI-SDK-native chat transport: a Route Handler as a function."
+description: "The AI-SDK-native chat transport: one Route Handler with auth, rate limits, feature gates, credits and persistence."
 order: 5
 label: "chat"
 ---

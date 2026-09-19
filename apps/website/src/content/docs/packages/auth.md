@@ -1,6 +1,6 @@
 ---
 title: "@intelligo-dev/auth"
-description: "Multi-tenant authentication, workspaces and RBAC on Better-Auth."
+description: "Multi-tenant authentication on Better-Auth: sign-up, workspaces, invitations and role-based access control."
 order: 2
 label: "auth"
 ---

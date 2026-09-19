@@ -23,15 +23,30 @@ interface Props {
   compact?: boolean;
   /** The gallery this page is, which puts the two galleries' tabs in its header, under /ui. */
   gallery?: "pages" | "components";
+  /**
+   * The `<title>`, when the heading is not what a reader would search for.
+   * Without it the heading is the title, followed by the brand.
+   */
+  seoTitle?: string;
+  /** JSON-LD for what this page is; without it, a `WebPage`. */
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
 }
-const { path, tag, title, lede, description, noindex, compact, gallery } = Astro.props;
+const { path, tag, title, lede, description, noindex, compact, gallery, seoTitle, structuredData } = Astro.props;
 const GALLERIES = [
   { id: "pages", href: "/blocks", label: "Pages" },
   { id: "components", href: "/components", label: "Components" },
 ];
-const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
+const pageTitle = seoTitle ?? `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.brand}`;
+const pageDescription = description ?? lede ?? SITE.description;
+const pageData = structuredData ?? {
+  "@type": "WebPage",
+  name: pageTitle,
+  description: pageDescription,
+  url: new URL(path, Astro.site).href,
+  isPartOf: { "@type": "WebSite", name: SITE.brand, url: Astro.site?.href },
+};
 ---
-<Base title={pageTitle} description={description ?? lede ?? SITE.description} noindex={noindex}>
+<Base title={pageTitle} description={pageDescription} noindex={noindex} structuredData={pageData}>
   <Nav client:load current={path} />
   <main id="main" class="page-body rails-full">
     <header class="xline">

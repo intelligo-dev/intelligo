@@ -1,7 +1,7 @@
 {
   "name": "@intelligo-dev/cli",
   "version": "1.0.0-beta.9",
-  "description": "The Intelligo CLI: create, add, doctor, migrate and upgrade.",
+  "description": "The Intelligo CLI: scaffold an AI SaaS app, generate owned source, and check its migrations and upgrades.",
   "keywords": [
     "intelligo",
     "ai-saas",

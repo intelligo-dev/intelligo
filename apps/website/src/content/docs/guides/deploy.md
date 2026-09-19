@@ -1,6 +1,6 @@
 ---
 title: Deploying
-description: Put the app on Vercel with Postgres and pgvector, apply both migration chains on every deploy, and get email, the Stripe webhook and the maintenance cron working.
+description: Put the app on Vercel with Postgres and pgvector, apply both migration chains on every deploy, and get email, Stripe webhooks and the cron working.
 order: 6
 ---
 

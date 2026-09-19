@@ -14,6 +14,9 @@ import { codeFrame } from "./src/lib/markdown.mjs";
 export default defineConfig({
   output: "static",
   site: "https://intelligo.dev",
+  // One URL per page, without the slash: the form every link is written
+  // in, and the one wrangler.jsonc serves (it redirects `/foo/` to it).
+  trailingSlash: "never",
   integrations: [
     react(),
     sitemap({ filter: (page) => !page.endsWith("/404/") }),

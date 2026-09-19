@@ -1,6 +1,6 @@
 ---
 title: Auth, workspaces and roles
-description: Guard your own pages, Server Actions and route handlers by session, workspace and role — and see how sign-in, invitations, workspace switching and platform admins work.
+description: Guard pages, Server Actions and route handlers by session, workspace and role, and see how sign-in, invitations and workspace switching work.
 order: 5
 ---
 

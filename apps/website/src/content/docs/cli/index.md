@@ -1,6 +1,6 @@
 ---
 title: "CLI"
-description: "The Intelligo CLI: create, add, doctor, migrate and upgrade. Every section below is the command's own source documentation."
+description: "Every command of the Intelligo CLI — create, add, doctor, migrate and upgrade — documented from its own source."
 order: 0
 label: "Commands"
 ---

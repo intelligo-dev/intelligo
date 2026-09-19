@@ -40,20 +40,21 @@ const structuredData = [
     headline: title,
     description,
     url: canonical,
-    isPartOf: { "@type": "WebSite", name: SITE.name, url: Astro.site?.href },
+    isPartOf: { "@type": "WebSite", name: SITE.brand, url: Astro.site?.href },
   },
   {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Docs", item: new URL("/docs", Astro.site).href },
-      ...(section !== "Docs"
-        ? [{ "@type": "ListItem", position: 2, name: section }]
+      ...(path !== "/docs"
+        ? [{ "@type": "ListItem", position: 2, name: title, item: canonical }]
         : []),
     ],
   },
 ];
+const pageTitle = title.includes(SITE.brand) ? title : `${title} — ${SITE.brand} docs`;
 ---
-<Base title={`${title} — ${SITE.name} docs`} description={description} structuredData={structuredData}>
+<Base title={pageTitle} description={description} structuredData={structuredData}>
   <Nav client:load current={path} />
   <main id="main" class="rails-full">
     <div class="mx-auto grid max-w-7xl grid-cols-1 border-t border-border lg:grid-cols-[248px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)_216px] xl:border-x">

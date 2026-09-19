@@ -667,7 +667,10 @@ function PageHeaderDemo() {
     <div className="flex flex-col gap-8">
       <PageHeader>
         <PageHeaderContent>
-          <PageHeaderTitle>Team</PageHeaderTitle>
+          {/* The gallery page owns the h1: the page-title size, on an h2. */}
+          <PageHeaderTitle level={2} className="text-2xl">
+            Team
+          </PageHeaderTitle>
           <PageHeaderDescription>
             Invite people to the workspace and choose what each of them can do.
           </PageHeaderDescription>

@@ -11,6 +11,9 @@
   "compatibility_date": "2026-08-28",
   "assets": {
     "directory": "./dist",
+    // `dist/foo/index.html` is served at `/foo`; `/foo/` redirects there.
+    // Canonical URLs, the sitemap and every link use the same form.
+    "html_handling": "drop-trailing-slash",
     "not_found_handling": "404-page"
   }
 }

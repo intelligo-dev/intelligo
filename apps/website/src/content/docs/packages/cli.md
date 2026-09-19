@@ -1,6 +1,6 @@
 ---
 title: "@intelligo-dev/cli"
-description: "The Intelligo CLI: create, add, doctor, migrate and upgrade."
+description: "The Intelligo CLI: scaffold an AI SaaS app, generate owned source, and check its migrations and upgrades."
 order: 11
 label: "cli"
 ---

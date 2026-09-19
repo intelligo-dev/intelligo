@@ -53,14 +53,46 @@ const byKind = KINDS.map(([type, label]) => ({
   files: item.files.filter((f) => f.type === type).map((f) => f.target),
 })).filter((g) => g.files.length > 0);
 const messages = item.files.find((f) => f.target.startsWith("messages/"))?.target;
+
+/** What someone searching for this block would type: "Login page for Next.js". */
+const name = item.title.replace(/^Auth: /, "").replace(/\s*\(.*\)$/, "");
+const kind = item.files.some((f) => f.type === "page") ? "page" : "block";
+const seoTitle = [
+  `${name} ${kind} for Next.js and shadcn — ${SITE.brand}`,
+  `${name} ${kind} for Next.js — ${SITE.brand}`,
+].find((t) => t.length <= 60) ?? `${name} — ${SITE.brand}`;
+const description = truncate(`${item.title} — an Intelligo registry block, installed as source with the shadcn CLI. ${item.description}`);
+const url = new URL(blockHref(item.name), Astro.site).href;
+const structuredData = [
+  {
+    "@type": "SoftwareSourceCode",
+    name: `${item.title} (${SITE.brand} registry)`,
+    description,
+    url,
+    codeRepository: `${SITE.github}/tree/main/packages/registry/base/${item.name}`,
+    programmingLanguage: "TypeScript",
+    runtimePlatform: "Next.js",
+    license: "https://www.apache.org/licenses/LICENSE-2.0",
+  },
+  {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Intelligo UI", item: new URL("/ui", Astro.site).href },
+      { "@type": "ListItem", position: 2, name: "Pages", item: new URL("/blocks", Astro.site).href },
+      { "@type": "ListItem", position: 3, name: item.title, item: url },
+    ],
+  },
+];
 ---
 <Page
   path={blockHref(item.name)}
   compact
   tag={`<a href="/blocks" class="hover:text-foreground">Blocks</a> / <a href="/blocks?item=${item.name}" class="hover:text-foreground">${item.group}</a>`}
   title={item.title}
+  seoTitle={seoTitle}
   lede={item.description}
-  description={truncate(`${item.title} — an Intelligo registry block, installed as source with the shadcn CLI. ${item.description}`)}
+  description={description}
+  structuredData={structuredData}
 >
   <section class="xline">
     <div class="px-6 py-8 md:px-10">
