@@ -1,0 +1,150 @@
+---
+/**
+ * The long answer to "why not fork a SaaS boilerplate?", which /why gives
+ * in two lines: what each one is, row by row, and when the boilerplate is
+ * the better choice. Every Intelligo claim here names the command, package
+ * or doc that makes it true.
+ */
+import Page from "@/layouts/Page.astro";
+import { PROOF } from "@/lib/proof";
+import { SITE } from "@/lib/site";
+
+const ROWS: { topic: string; boilerplate: string; intelligo: string }[] = [
+  {
+    topic: "What you get",
+    boilerplate: "A repository to copy: auth, billing, a dashboard and a landing page, already wired together.",
+    intelligo: `${PROOF.packages} npm packages for the engine, and the pages installed into your app as source with the shadcn CLI.`,
+  },
+  {
+    topic: "Updates",
+    boilerplate: "The kit keeps moving after you fork it. Taking a fix means merging it into code you have changed.",
+    intelligo: "Packages upgrade by version. intelligo upgrade --check says which generated files changed upstream and which you edited, and overwrites nothing.",
+  },
+  {
+    topic: "Database changes",
+    boilerplate: "Migrations live in your fork; a new one from the kit is yours to reconcile.",
+    intelligo: "intelligo migrate applies the framework's schema by content hash in one transaction; migrate --check gates a deploy.",
+  },
+  {
+    topic: "What you edit",
+    boilerplate: "Everything — which is also why every later update is a merge.",
+    intelligo: "The pages, through config files and message files they ship; the packages never. Your agent is untouched.",
+  },
+  {
+    topic: "Workspaces and roles",
+    boilerplate: "Often included; how deep it goes varies by kit.",
+    intelligo: "Multi-tenant workspaces, invitations and role checks on Better-Auth, with every query scoped to a workspace.",
+  },
+  {
+    topic: "AI cost and credits",
+    boilerplate: "Some kits add a credit counter. Cost per run is usually yours to build.",
+    intelligo: "Every run is admitted, settled or failed once: entitlement checked, worst-case cost reserved, actual usage charged in credits.",
+  },
+  {
+    topic: "Audit and operations",
+    boilerplate: "Rarely included.",
+    intelligo: "Append-only audit events a Postgres trigger enforces, a Postgres job queue, and an admin console across tenants.",
+  },
+  {
+    topic: "Your AI framework",
+    boilerplate: "Whatever the kit chose, or none.",
+    intelligo: "Any, used natively. Intelligo has no agent abstraction; the chat route is the AI SDK's.",
+  },
+  {
+    topic: "Price and licence",
+    boilerplate: "Some are free; most complete kits are a one-time licence.",
+    intelligo: "Free. Apache-2.0, including the pages.",
+  },
+];
+
+const BETTER = [
+  ["You want a marketing site, blog and docs in the same repository.", "Intelligo ships the product's pages, not a landing page."],
+  ["Your stack is not Next.js and Postgres.", "The packages assume both; a kit for your stack will fit better."],
+  ["You will never take an update.", "If the fork is the finished product, a snapshot is simpler than a dependency."],
+  ["You need a stable 1.0 today.", `Intelligo is at ${SITE.version}; the API can still change before 1.0.`],
+];
+---
+<Page
+  path="/compare/boilerplates"
+  tag="compare"
+  title="A framework, or a SaaS boilerplate?"
+  seoTitle="AI SaaS boilerplate vs a framework — Intelligo compared"
+  lede="A boilerplate gives you a fast first day. Intelligo gives you the same first day and a way to take the next fix to auth, billing or credits without merging it by hand."
+  description="Intelligo vs forking a Next.js AI SaaS boilerplate: upgrades, migrations, AI cost and credits, audit — and when the boilerplate is the better choice."
+>
+  <section class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <div class="section-head">
+        <span class="tag">the difference in one line</span>
+        <h2>A boilerplate is a copy.<br />Intelligo is a dependency, plus source you own.</h2>
+        <p>
+          Both put working sign-up, teams and billing in front of you on the first day. The difference is who owns each file afterwards:
+          with a boilerplate, all of it is yours to maintain. With Intelligo, the engine stays an npm package you upgrade, and only the pages
+          become your source — <a href="/docs/concepts/ownership">four kinds of file, four owners</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <div class="section-head">
+        <span class="tag">row by row</span>
+        <h2>What changes, topic by topic</h2>
+      </div>
+      <div class="mt-8 overflow-x-auto rounded-xl border border-border">
+        <table class="w-full min-w-[640px] border-collapse text-left text-[0.9rem]">
+          <thead>
+            <tr class="border-b border-border bg-muted/50">
+              <th scope="col" class="w-[18%] px-4 py-3 font-medium">Topic</th>
+              <th scope="col" class="w-[41%] px-4 py-3 font-medium">A typical boilerplate</th>
+              <th scope="col" class="w-[41%] px-4 py-3 font-medium">Intelligo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ROWS.map((r) => (
+              <tr class="border-b border-border last:border-b-0 align-top">
+                <th scope="row" class="px-4 py-3 font-medium">{r.topic}</th>
+                <td class="px-4 py-3 text-foreground/70">{r.boilerplate}</td>
+                <td class="px-4 py-3 text-foreground">{r.intelligo}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-4 text-sm text-muted-foreground">
+        Boilerplates differ; the left column is what most of them share, not any one kit. The right column is what the <a href="/docs">docs</a> and the <a href={SITE.github}>source</a> show.
+      </p>
+    </div>
+  </section>
+
+  <section class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <div class="section-head">
+        <span class="tag">be fair</span>
+        <h2>When a boilerplate is the better choice</h2>
+      </div>
+      <dl class="mt-8 grid gap-6 md:grid-cols-2">
+        {BETTER.map(([when, why]) => (
+          <div class="border-t border-border pt-4">
+            <dt class="font-medium text-foreground">{when}</dt>
+            <dd class="mt-1 text-[0.92rem] text-foreground/70">{why}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="xline">
+    <div class="px-6 py-10 md:px-10 md:py-14">
+      <div class="section-head">
+        <span class="tag">see for yourself</span>
+        <h2>Run it before you decide</h2>
+        <p>
+          <a href={SITE.start}>Getting started</a> creates an app, connects Postgres and runs the whole product against a stub model, before you
+          configure an AI provider. The other alternatives — building in-house, an AI platform, prompting a coding agent from zero — are on <a href="/why#compare">/why</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+</Page>

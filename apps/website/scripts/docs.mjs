@@ -750,6 +750,7 @@ export function generateLlmsTxt(siteRoot) {
     "\n\n## More\n\n" +
     `- [Product](${SITE_URL}/product): every service and surface, under the job it takes off you.\n` +
     `- [Why Intelligo](${SITE_URL}/why): the half of every AI SaaS that is not the AI, and how Intelligo compares to a boilerplate or an agent platform.\n` +
+    `- [Intelligo vs a SaaS boilerplate](${SITE_URL}/compare/boilerplates): upgrades, migrations, AI cost and credits, audit, and when a boilerplate is the better choice.\n` +
     `- [Architecture](${SITE_URL}/architecture): the package graph, the rules the tests enforce, and who owns which file.\n` +
     `- [Hosted registry](${SITE_URL}/r/intelligo.json): install any item with the shadcn CLI.\n` +
     `- [Source](${GITHUB})\n`;
