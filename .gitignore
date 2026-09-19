@@ -63,3 +63,8 @@ packages/registry/tsconfig.paths.json
 # The private product vocabulary the publishability test reads
 # (tests/architecture/publishability.test.ts). Never committed.
 .private-vocabulary
+
+# Written by `next dev` when it detects a coding agent; the reference app
+# is the CLI's output and carries neither.
+apps/app/AGENTS.md
+apps/app/CLAUDE.md
