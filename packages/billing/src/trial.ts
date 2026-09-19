@@ -17,7 +17,11 @@ import { eq, and, gt, gte, lt } from "drizzle-orm";
 import type { TrialCredit } from "@intelligo-dev/core/db/schema";
 import { sendTrialExpiryEmail } from "@intelligo-dev/core/email";
 import { getBillingSettings } from "./billing-settings";
-import { getWorkspaceSubscription, ensureFreeSubscription } from "./queries";
+import {
+  getWorkspaceSubscription,
+  ensureFreeSubscription,
+  subscriptionEntitles,
+} from "./queries";
 import { getTrialConfig, type TrialStatus } from "./trial-types";
 import { normalizeEmailForAbuseCheck, checkTrialAbuse } from "./trial-abuse";
 import { deductTrialCredits } from "./trial-deduction";
@@ -249,7 +253,8 @@ export { checkTrialAbuse };
 /**
  * Check if workspace has active trial (both credit and time-based).
  * Returns true if trial credits are active AND trial hasn't expired.
- * Used by feature flag checks and quota enforcement to grant Pro access during trial.
+ * Used by plan resolution to put the workspace on the registered trial
+ * plan (`TrialConfig.planSlug`) while the trial runs.
  */
 export async function hasActiveTrial(workspaceId: string): Promise<boolean> {
   const status = await getTrialStatus(workspaceId);
@@ -312,14 +317,14 @@ export async function processTrialExpirations(): Promise<{
 
   const now = new Date();
 
-  const reminderDate = new Date();
-  reminderDate.setDate(
-    reminderDate.getDate() + getTrialConfig().reminderDaysBeforeExpiry
-  );
+  // The reminder day is a UTC day, so hosts in different time zones
+  // remind the same trials.
   const reminderDayStart = new Date(
-    reminderDate.getFullYear(),
-    reminderDate.getMonth(),
-    reminderDate.getDate()
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + getTrialConfig().reminderDaysBeforeExpiry
+    )
   );
   const reminderDayEnd = new Date(
     reminderDayStart.getTime() + 24 * 60 * 60 * 1000
@@ -399,7 +404,11 @@ export async function processTrialExpirations(): Promise<{
         .where(eq(trialCredits.id, trial.id));
 
       const sub = await getWorkspaceSubscription(trial.workspaceId);
-      if (sub && sub.plan?.slug !== "free") {
+      if (
+        sub &&
+        sub.plan?.slug !== "free" &&
+        subscriptionEntitles(sub.subscription.status)
+      ) {
         continue; // Paid workspaces: skip expiry email (already upgraded)
       }
 

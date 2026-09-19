@@ -16,6 +16,28 @@ import {
 import { eq } from "drizzle-orm";
 import { getStripe } from "./stripe";
 
+/**
+ * Whether a subscription in this status puts its plan in force.
+ *
+ * `active` and `trialing` do. So does `past_due`: the payment failed but
+ * Stripe is still retrying it, and the subscription moves to `canceled`
+ * or `unpaid` on its own when the retries run out. Every other status —
+ * `canceled`, `unpaid`, `incomplete`, `incomplete_expired`, `paused`, or
+ * one Stripe adds later — resolves to the free plan.
+ */
+export function subscriptionEntitles(status: string): boolean {
+  return status === "active" || status === "trialing" || status === "past_due";
+}
+
+async function getFreePlanRow() {
+  const rows = await db
+    .select()
+    .from(plans)
+    .where(eq(plans.slug, "free"))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 /** Plan limits; -1 = unlimited. */
 export type QueryPlanLimits = {
   tokens: number;
@@ -88,6 +110,11 @@ export async function getWorkspaceCreditBalance(workspaceId: string) {
 /**
  * Get complete workspace billing state
  * Combines subscription + plan + credit balance
+ *
+ * `plan` is the plan in force: the free plan when the subscription's
+ * status does not entitle (see `subscriptionEntitles`). `subscription`
+ * is the stored row either way, so a caller can still show its status
+ * and reach its Stripe customer.
  */
 export async function getWorkspaceBilling(workspaceId: string) {
   const subscriptionData = await getWorkspaceSubscription(workspaceId);
@@ -95,23 +122,21 @@ export async function getWorkspaceBilling(workspaceId: string) {
 
   // If no subscription exists, return virtual free subscription
   if (!subscriptionData) {
-    const freePlan = await db
-      .select()
-      .from(plans)
-      .where(eq(plans.slug, "free"))
-      .limit(1);
-
     return {
       subscription: null,
-      plan: freePlan[0] ?? null,
+      plan: await getFreePlanRow(),
       creditBalance,
       billingMode: "subscription" as const,
     };
   }
 
+  const plan = subscriptionEntitles(subscriptionData.subscription.status)
+    ? subscriptionData.plan
+    : await getFreePlanRow();
+
   return {
     subscription: subscriptionData.subscription,
-    plan: subscriptionData.plan,
+    plan,
     creditBalance,
     billingMode: subscriptionData.subscription.billingMode as
       "subscription" | "credit",
@@ -129,13 +154,9 @@ export async function ensureFreeSubscription(workspaceId: string) {
     return existing.subscription;
   }
 
-  const freePlan = await db
-    .select()
-    .from(plans)
-    .where(eq(plans.slug, "free"))
-    .limit(1);
+  const freePlan = await getFreePlanRow();
 
-  if (!freePlan[0]) {
+  if (!freePlan) {
     throw new Error(
       'No "free" row in the plans table. Call ensurePlanRows() from the composition root, after registerProductPlans().'
     );
@@ -146,7 +167,7 @@ export async function ensureFreeSubscription(workspaceId: string) {
     .values({
       id: `sub_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       workspaceId,
-      planId: freePlan[0].id,
+      planId: freePlan.id,
       status: "active",
       billingMode: "subscription",
     })
@@ -155,11 +176,16 @@ export async function ensureFreeSubscription(workspaceId: string) {
   return newSubscription[0];
 }
 
+/** A BCP 47 language tag with an optional region or script: `en`, `pt-BR`. */
+const LANGUAGE_TAG = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
+
 /**
  * Get or create the workspace's Stripe customer, storing its id.
  *
- * @param preferredLanguage - Locale for Stripe invoices, receipts and
- * payment UI
+ * @param preferredLanguage - Locale for Stripe invoices and receipts.
+ * Any language tag is passed through: Stripe takes the list as an
+ * ordered preference and falls back by itself for a language it does
+ * not write in.
  */
 export async function getOrCreateStripeCustomer(
   workspaceId: string,
@@ -173,8 +199,10 @@ export async function getOrCreateStripeCustomer(
     return subscriptionData.subscription.stripeCustomerId;
   }
 
-  // Stripe-generated emails and checkout pages use the customer's locale.
-  const stripeLocale = preferredLanguage === "mn" ? "mn" : "en";
+  const preferredLocales =
+    preferredLanguage && LANGUAGE_TAG.test(preferredLanguage)
+      ? [preferredLanguage]
+      : undefined;
 
   const stripe = getStripe();
   const customer = await stripe.customers.create({
@@ -183,7 +211,7 @@ export async function getOrCreateStripeCustomer(
     metadata: {
       workspaceId,
     },
-    preferred_locales: [stripeLocale],
+    ...(preferredLocales ? { preferred_locales: preferredLocales } : {}),
   });
 
   const subscription =

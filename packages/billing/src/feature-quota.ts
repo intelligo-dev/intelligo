@@ -5,6 +5,10 @@
  * per-action counters, incremented atomically, so a check is O(1)
  * rather than a SUM over usage records. Limits come from the plan
  * catalogue the product registered; this module knows no action names.
+ *
+ * The row carries no period, so a counter is a lifetime total: nothing
+ * here resets it, and a limit caps all use until the product clears
+ * `usage` itself.
  */
 
 import { db } from "@intelligo-dev/core/db";

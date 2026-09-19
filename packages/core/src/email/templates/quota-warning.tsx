@@ -2,13 +2,15 @@ import { Button, Text } from "@react-email/components";
 import * as React from "react";
 import { BaseLayout } from "./base-layout";
 
-// `isExceeded` switches between the 80% warning and the exceeded variant.
+// `isExceeded` switches between the 80% warning and the used-up variant.
+// `used` and `allowance` arrive formatted: the plan allowance is money in
+// the deployment's billing currency, and the sender owns the formatting.
 
 export interface QuotaWarningEmailProps {
   workspaceName: string;
   percentageUsed: number;
-  tokensUsed: number;
-  tokensLimit: number;
+  used: string;
+  allowance: string;
   upgradeUrl: string;
   isExceeded: boolean;
 }
@@ -16,27 +18,27 @@ export interface QuotaWarningEmailProps {
 export function QuotaWarningEmail({
   workspaceName,
   percentageUsed,
-  tokensUsed,
-  tokensLimit,
+  used,
+  allowance,
   upgradeUrl,
   isExceeded,
 }: QuotaWarningEmailProps) {
   const text = {
-    previewExceeded: "Your token quota is exceeded",
-    previewWarning: `You've used ${percentageUsed}% of your token quota`,
-    headingExceeded: "Quota Exceeded",
-    headingWarning: "Quota Warning",
+    previewExceeded: "Your monthly allowance is used up",
+    previewWarning: `You've used ${percentageUsed}% of your monthly allowance`,
+    headingExceeded: "Allowance Used Up",
+    headingWarning: "Allowance Warning",
     bodyExceeded1: "Your workspace",
-    bodyExceeded2: "has used all",
-    bodyExceeded3: "tokens this month.",
+    bodyExceeded2: "has used all of its",
+    bodyExceeded3: "monthly allowance.",
     warningText:
-      "AI features are currently restricted until your quota resets or you upgrade.",
+      "AI features are currently restricted until your allowance resets or you upgrade.",
     bodyWarning1: "Your workspace",
     bodyWarning2: "has used",
-    bodyWarning3: "of",
-    bodyWarning4: "tokens",
+    bodyWarning3: "of its",
+    bodyWarning4: "monthly allowance",
     button: "Upgrade Plan",
-    note: "Your quota resets at the start of your next billing period.",
+    note: "Your allowance resets at the start of next month.",
   };
 
   return (
@@ -51,16 +53,15 @@ export function QuotaWarningEmail({
         <>
           <Text style={bodyTextStyle}>
             {text.bodyExceeded1} &lsquo;{workspaceName}&rsquo;{" "}
-            {text.bodyExceeded2} {tokensLimit.toLocaleString()}{" "}
-            {text.bodyExceeded3}
+            {text.bodyExceeded2} {allowance} {text.bodyExceeded3}
           </Text>
           <Text style={warningTextStyle}>{text.warningText}</Text>
         </>
       ) : (
         <Text style={bodyTextStyle}>
           {text.bodyWarning1} &lsquo;{workspaceName}&rsquo; {text.bodyWarning2}{" "}
-          {tokensUsed.toLocaleString()} {text.bodyWarning3}{" "}
-          {tokensLimit.toLocaleString()} {text.bodyWarning4}({percentageUsed}%).
+          {used} {text.bodyWarning3} {allowance} {text.bodyWarning4} (
+          {percentageUsed}%).
         </Text>
       )}
 

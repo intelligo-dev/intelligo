@@ -26,8 +26,11 @@ vi.mock("@intelligo-dev/core/db/schema", () => ({
   featureFlags: { name: "name" },
 }));
 
-vi.mock("./queries", () => ({
+vi.mock("./queries", async () => ({
   getWorkspaceSubscription: mocks.getWorkspaceSubscription,
+  subscriptionEntitles: (
+    await vi.importActual<typeof import("./queries")>("./queries")
+  ).subscriptionEntitles,
 }));
 
 vi.mock("./trial", () => ({
@@ -38,11 +41,24 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn((col: unknown, val: unknown) => ({ op: "eq", col, val })),
 }));
 
-import { hasFeature, invalidateFeatureCache } from "./features";
 import {
+  getWorkspacePlan,
+  hasFeature,
+  invalidateFeatureCache,
+  isFeatureNotAvailableError,
+  requireFeature,
+} from "./features";
+import {
+  clearTrialConfig,
   registerProductFeatures,
+  registerTrialConfig,
   setDefaultProductSlug,
 } from "./plan-registry";
+
+const onPlan = (slug: string, status = "active") => ({
+  subscription: { status },
+  plan: { slug },
+});
 
 // The feature matrix is product-owned and registered by the
 // composition root, so the test registers what it asserts on.
@@ -67,9 +83,7 @@ beforeEach(() => {
   mocks.hasActiveTrial.mockResolvedValue(false);
 
   // Default: workspace is on the free plan.
-  mocks.getWorkspaceSubscription.mockResolvedValue({
-    plan: { slug: "free" },
-  });
+  mocks.getWorkspaceSubscription.mockResolvedValue(onPlan("free"));
 
   // Drop any cache entries left over from a previous test in this file.
   invalidateFeatureCache();
@@ -132,22 +146,105 @@ describe("hasFeature in-process cache", () => {
 
   it("post-upgrade webhook flow: tier flip is visible immediately after invalidation", async () => {
     // First read: workspace is free, asks for a paid-only feature.
-    mocks.getWorkspaceSubscription.mockResolvedValue({
-      plan: { slug: "free" },
-    });
+    mocks.getWorkspaceSubscription.mockResolvedValue(onPlan("free"));
     const before = await hasFeature("ws-1", "detailed_assessment");
     expect(before).toBe(false);
 
     // Stripe checkout completes; webhook flips the workspace to standard
     // and calls invalidateFeatureCache(workspaceId).
-    mocks.getWorkspaceSubscription.mockResolvedValue({
-      plan: { slug: "standard" },
-    });
+    mocks.getWorkspaceSubscription.mockResolvedValue(onPlan("standard"));
     invalidateFeatureCache("ws-1");
 
     const after = await hasFeature("ws-1", "detailed_assessment");
     expect(after).toBe(true);
     // Two cache misses total — pre-upgrade and post-invalidate.
     expect(mocks.getWorkspaceSubscription).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("getWorkspacePlan", () => {
+  it.each(["active", "trialing", "past_due"])(
+    "keeps the subscription's plan while its status is %s",
+    async (status) => {
+      mocks.getWorkspaceSubscription.mockResolvedValue(onPlan("pro", status));
+      expect(await getWorkspacePlan("ws-1")).toBe("pro");
+    }
+  );
+
+  it.each(["canceled", "unpaid", "incomplete", "incomplete_expired", "paused"])(
+    "resolves a %s subscription to the free plan",
+    async (status) => {
+      mocks.getWorkspaceSubscription.mockResolvedValue(onPlan("pro", status));
+      expect(await getWorkspacePlan("ws-1")).toBe("free");
+      expect(await hasFeature("ws-1", "web_search")).toBe(false);
+    }
+  );
+
+  describe("during an active trial", () => {
+    beforeEach(() => {
+      mocks.hasActiveTrial.mockResolvedValue(true);
+      clearTrialConfig();
+    });
+
+    const trial = {
+      initialCredits: 0,
+      grant: null,
+      durationDays: 14,
+      warningThreshold: 0.2,
+      reminderDaysBeforeExpiry: 3,
+    };
+
+    it("grants the plan the product's trial names", async () => {
+      registerTrialConfig("acme", { ...trial, planSlug: "standard" });
+      expect(await getWorkspacePlan("ws-1")).toBe("standard");
+    });
+
+    it('grants "pro" when the trial names no plan', async () => {
+      registerTrialConfig("acme", trial);
+      expect(await getWorkspacePlan("ws-1")).toBe("pro");
+    });
+
+    it("applies to a workspace with no subscription row and to one whose paid plan ended", async () => {
+      registerTrialConfig("acme", { ...trial, planSlug: "standard" });
+      mocks.getWorkspaceSubscription.mockResolvedValue(null);
+      expect(await getWorkspacePlan("ws-1")).toBe("standard");
+      mocks.getWorkspaceSubscription.mockResolvedValue(
+        onPlan("pro", "canceled")
+      );
+      expect(await getWorkspacePlan("ws-1")).toBe("standard");
+    });
+
+    it("never overrides a paid plan in force", async () => {
+      registerTrialConfig("acme", { ...trial, planSlug: "standard" });
+      mocks.getWorkspaceSubscription.mockResolvedValue(onPlan("pro"));
+      expect(await getWorkspacePlan("ws-1")).toBe("pro");
+      expect(mocks.hasActiveTrial).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe("requireFeature", () => {
+  it("resolves when the plan grants the feature", async () => {
+    await expect(requireFeature("ws-1", "advisor")).resolves.toBeUndefined();
+  });
+
+  it("throws a typed error naming the feature, the plan and the plans that grant it", async () => {
+    const error = await requireFeature("ws-1", "web_search").catch((e) => e);
+
+    expect(isFeatureNotAvailableError(error)).toBe(true);
+    expect(error).toMatchObject({
+      name: "FeatureNotAvailableError",
+      code: "feature_not_available",
+      feature: "web_search",
+      currentPlan: "free",
+      requiredPlans: ["pro"],
+      message:
+        'Feature "web_search" requires a plan upgrade. Current plan does not include this feature.',
+    });
+  });
+
+  it("reports no granting plans for a feature nobody registered", async () => {
+    const error = await requireFeature("ws-1", "unregistered").catch((e) => e);
+    expect(error.requiredPlans).toEqual([]);
   });
 });

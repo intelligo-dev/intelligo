@@ -9,13 +9,12 @@
 import type { Money } from "@intelligo-dev/core/money";
 
 /**
- * Per-plan limits. Two fields are named because the credit engine
- * itself reads them; everything else is whatever the vertical defines.
+ * Per-plan limits, keyed by whatever the vertical defines. The engine
+ * names none of them: feature quotas read a numeric limit by its action
+ * slug (or the key `registerActionLimitKeys` maps it to), `-1` meaning
+ * unlimited, and nothing else is interpreted here.
  */
-export type PlanLimits = {
-  /** Whether unused credits roll over into the next period. */
-  rolloverEnabled?: boolean;
-} & Record<string, number | boolean | string | undefined>;
+export type PlanLimits = Record<string, number | boolean | string | undefined>;
 
 export interface PlanConfig {
   name: string;
@@ -50,7 +49,7 @@ export interface PlanConfig {
  * prices, copy, per-plan limits — belongs to whichever vertical
  * registers it, not to this package.
  */
-export type PlanSlug = "free" | "standard" | "pro";
+export type PlanSlug = string;
 
 // Re-exports from the plan-registry so other billing modules can
 // import everything from "./plans".

@@ -38,7 +38,6 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
-    "db:seed-plans": "tsx src/seed-plans.ts",
     "build": "tsc -p tsconfig.build.json && node ../../scripts/fix-esm-extensions.mjs dist",
     "prepublishOnly": "pnpm build"
   },

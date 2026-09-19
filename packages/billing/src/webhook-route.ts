@@ -33,6 +33,8 @@ import { createLogger } from "@intelligo-dev/core/logger";
 import { getStripe } from "./stripe";
 import {
   handleCheckoutCompleted,
+  handleCheckoutAsyncPaymentSucceeded,
+  handleCheckoutAsyncPaymentFailed,
   handleInvoicePaid,
   handleInvoicePaymentFailed,
   handleSubscriptionUpdated,
@@ -104,6 +106,16 @@ export async function dispatchStripeEvent(event: Stripe.Event): Promise<void> {
   switch (event.type) {
     case "checkout.session.completed":
       await handleCheckoutCompleted(
+        event.data.object as Stripe.Checkout.Session
+      );
+      return;
+    case "checkout.session.async_payment_succeeded":
+      await handleCheckoutAsyncPaymentSucceeded(
+        event.data.object as Stripe.Checkout.Session
+      );
+      return;
+    case "checkout.session.async_payment_failed":
+      await handleCheckoutAsyncPaymentFailed(
         event.data.object as Stripe.Checkout.Session
       );
       return;

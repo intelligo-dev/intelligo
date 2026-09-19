@@ -35,6 +35,7 @@ import {
   getRegisteredProductSlugs,
   getTeamMemberLimit,
   getTrialConfig,
+  getTrialPlanSlug,
   getUpgradeMessage,
   registerActionLabels,
   registerActionLimitKeys,
@@ -159,6 +160,24 @@ describe("registered values", () => {
     expect(getTrialConfig().durationDays).toBe(14);
     expect(getTeamMemberLimit(undefined, "team")).toBe(10);
     expect(getRateLimit(undefined, "pro")).toBe(60);
+  });
+
+  it('names the plan a trial grants, and "pro" when the product names none', () => {
+    setDefaultProductSlug("alpha");
+    const trial = {
+      initialCredits: 100,
+      grant: money(500_000_000, "MNT"),
+      durationDays: 14,
+      warningThreshold: 0.2,
+      reminderDaysBeforeExpiry: 3,
+    };
+
+    expect(getTrialPlanSlug()).toBe("pro");
+    registerTrialConfig("alpha", trial);
+    expect(getTrialPlanSlug()).toBe("pro");
+    registerTrialConfig("alpha", { ...trial, planSlug: "team" });
+    expect(getTrialPlanSlug()).toBe("team");
+    expect(getTrialPlanSlug("beta")).toBe("pro");
   });
 
   it("falls back per key, not per product", () => {

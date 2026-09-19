@@ -39,10 +39,13 @@ export default async function CheckoutSuccessPage({
     return null; // redirect throws; this narrows sessionId for TS
   }
 
-  await requireWorkspace();
+  const { workspace } = await requireWorkspace();
 
   try {
-    const session = await getCheckoutSession({ sessionId });
+    const session = await getCheckoutSession({
+      sessionId,
+      workspaceId: workspace.id,
+    });
 
     if (session.status === "complete" && session.isSubscriptionActive) {
       return (

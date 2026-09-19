@@ -26,6 +26,9 @@ import { getRateLimit } from "./plan-registry";
 /** An unregistered plan gets `DEFAULT_REQUESTS_PER_MINUTE`. */
 export { DEFAULT_REQUESTS_PER_MINUTE } from "./plan-registry";
 
+/** The bucket `checkRateLimit` counts in when the caller names none. */
+export const DEFAULT_RATE_LIMIT_ENDPOINT = "chat";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -49,10 +52,15 @@ export type RateLimitResult = {
  * 2. Upsert the bucket row, incrementing `count` atomically
  * 3. The RETURNING count is this request's position in the bucket:
  *    allowed while `count <= limit`.
+ *
+ * `endpoint` names the bucket. Callers that pass the same name share
+ * one counter per workspace and minute; a route that should not eat
+ * into chat's allowance passes its own.
  */
 export async function checkRateLimit(
   workspaceId: string,
-  planSlug: string
+  planSlug: string,
+  endpoint: string = DEFAULT_RATE_LIMIT_ENDPOINT
 ): Promise<RateLimitResult> {
   const limit = getRateLimit(undefined, planSlug);
 
@@ -67,7 +75,7 @@ export async function checkRateLimit(
     .values({
       id: crypto.randomUUID(),
       workspaceId,
-      endpoint: "chat",
+      endpoint,
       requestedAt: new Date(now),
       minuteBucket,
     })

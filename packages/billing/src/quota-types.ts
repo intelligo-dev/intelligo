@@ -15,7 +15,8 @@ export const GRACE_OVERAGE_PERCENTAGE = 0.05;
  *   price. Admission cannot estimate what it would cost, so it refuses
  *   rather than admitting a request it has no way to bill. Like
  *   `billing_not_configured`, this is a deployment error surfaced as a
- *   refusal so the caller gets a 402 that says why, instead of a 500.
+ *   refusal, so a transport can answer that the service is unavailable
+ *   rather than ask the user to pay.
  */
 export type QuotaRefusalCode =
   | "insufficient_credits"

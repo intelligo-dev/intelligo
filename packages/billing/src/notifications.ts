@@ -3,6 +3,9 @@
  * sends email and in-app notifications. The notification_history table
  * prevents duplicate notifications per period.
  *
+ * The plan allowance is money in the deployment's billing currency, so
+ * the quota notices state amounts of it. Trial credits are a count.
+ *
  * Called fire-and-forget after recordTokenUsage.
  */
 
@@ -14,7 +17,10 @@ import {
   member,
 } from "@intelligo-dev/core/db/schema";
 import { eq, and } from "drizzle-orm";
+import { formatMoney, money } from "@intelligo-dev/core/money";
+import { getBillingSettings } from "./billing-settings";
 import { getQuotaThresholds } from "./quota";
+import { getCurrentPeriodKey } from "./quota-usage";
 import { getTrialStatus } from "./trial";
 import {
   triggerQuotaNotification,
@@ -35,6 +41,9 @@ export type QuotaNotification = {
   message: string;
   data: Record<string, unknown>;
 };
+
+/** The locale `QuotaNotification.message` is written in. */
+const MESSAGE_LOCALE = "en";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -88,20 +97,30 @@ export async function checkNotificationTriggers(
   // it come from getQuotaThresholds rather than being derived a second
   // time here.
   const thresholds = await getQuotaThresholds(workspaceId);
+  // The thresholds are micros of the billing currency, which
+  // getQuotaThresholds read from the same cached settings.
+  const { currency } = await getBillingSettings();
+  const used = money(thresholds.usedMicros, currency);
+  const allowance = money(thresholds.limitMicros, currency);
+  const quotaData = {
+    percentage: thresholds.percentage,
+    usedMicros: used.amount,
+    allowanceMicros: allowance.amount,
+    currency,
+  };
   if (thresholds.criticalThreshold) {
     notifications.push({
       type: "quota_warning_100",
       workspaceId,
-      message:
-        "Your monthly token quota is fully used. Upgrade your plan for more tokens.",
-      data: { percentage: thresholds.percentage },
+      message: `Your ${formatMoney(allowance, MESSAGE_LOCALE)} monthly allowance is fully used. Upgrade your plan for more.`,
+      data: quotaData,
     });
   } else if (thresholds.warningThreshold) {
     notifications.push({
       type: "quota_warning_80",
       workspaceId,
-      message: "You've used 80% of your monthly token quota.",
-      data: { percentage: thresholds.percentage },
+      message: `You've used ${formatMoney(used, MESSAGE_LOCALE)} of your ${formatMoney(allowance, MESSAGE_LOCALE)} monthly allowance (${thresholds.percentage}%).`,
+      data: quotaData,
     });
   }
 
@@ -128,8 +147,7 @@ export async function checkNotificationTriggers(
   }
 
   // Record notifications to history (deduplication + audit trail)
-  const now = new Date();
-  const monthlyPeriodKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const monthlyPeriodKey = getCurrentPeriodKey();
 
   for (const notification of notifications) {
     const periodKey = notification.type.startsWith("trial_")
@@ -164,8 +182,8 @@ export async function checkNotificationTriggers(
               workspaceId,
               workspaceName: owner.workspaceName,
               percentageUsed: thresholds.percentage,
-              tokensUsed: thresholds.usedMicros,
-              tokensLimit: thresholds.limitMicros,
+              used,
+              allowance,
               isExceeded: notification.type === "quota_warning_100",
             }).catch((err) =>
               console.error(

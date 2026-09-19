@@ -3,16 +3,23 @@ import { monthlyUsage } from "@intelligo-dev/core/db/schema";
 import { eq, and } from "drizzle-orm";
 
 /**
- * Get the current billing period start and end dates.
+ * The billing period is the calendar month in UTC, so every host agrees
+ * on the `monthly_usage` row a request belongs to whatever zone it runs
+ * in: the first instant of the month, and its last millisecond.
  */
-export function getCurrentPeriodStart(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1);
+export function getCurrentPeriodStart(now: Date = new Date()): Date {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
-export function getCurrentPeriodEnd(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+export function getCurrentPeriodEnd(now: Date = new Date()): Date {
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999)
+  );
+}
+
+/** The period as `YYYY-MM`, the key a once-per-period record is filed under. */
+export function getCurrentPeriodKey(now: Date = new Date()): string {
+  return getCurrentPeriodStart(now).toISOString().slice(0, 7);
 }
 
 /**

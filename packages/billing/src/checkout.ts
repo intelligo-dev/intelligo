@@ -9,6 +9,7 @@
  * trusts its caller on identity and authorization.
  */
 
+import type Stripe from "stripe";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 
@@ -22,10 +23,14 @@ import {
 } from "@intelligo-dev/core/money";
 
 import { getBillingSettings } from "./billing-settings";
-import { getStripe } from "./stripe";
+import { getStripe, toStripeLocale } from "./stripe";
 import { getPlanBySlug } from "./plans";
 import { planRowId } from "./plan-rows";
-import { getOrCreateStripeCustomer, getWorkspaceBilling } from "./queries";
+import {
+  getOrCreateStripeCustomer,
+  getWorkspaceBilling,
+  getWorkspaceSubscription,
+} from "./queries";
 
 /** Micros are millionths of one major unit; whole units × this. */
 const MICROS_PER_UNIT = 1_000_000;
@@ -74,6 +79,11 @@ const subscriptionCheckoutSchema = z.object({
   cancelUrl: z.string().url(),
   /** Overrides the caller's stored `users.preferredLanguage` for the Stripe checkout locale. */
   locale: z.string().min(1).optional(),
+  /**
+   * Where Stripe's portal returns to after a plan change on an existing
+   * subscription. Defaults to `cancelUrl` without its query string.
+   */
+  returnUrl: z.string().url().optional(),
 });
 
 export type CreateSubscriptionCheckoutInput = z.infer<
@@ -91,6 +101,13 @@ export type CheckoutSessionResult = { url: string };
  * `stripePriceIdYearly` set (the common dev-environment state, before
  * Stripe products are configured) throws `checkout_unavailable` rather
  * than reaching Stripe with an undefined price id.
+ *
+ * A workspace holds one Stripe subscription. When it already has one,
+ * no second checkout is opened: the returned URL is a customer-portal
+ * session instead — the portal's confirm-update flow for the new price
+ * (Stripe shows the proration and takes the customer's consent) while
+ * the subscription is `active` or `trialing`, the portal's home while a
+ * payment is outstanding, since that is what has to be settled first.
  */
 export async function createSubscriptionCheckout(
   input: CreateSubscriptionCheckoutInput
@@ -104,6 +121,7 @@ export async function createSubscriptionCheckout(
     successUrl,
     cancelUrl,
     locale,
+    returnUrl,
   } = subscriptionCheckoutSchema.parse(input);
 
   const planConfig = getPlanBySlug(planSlug, productSlug);
@@ -144,14 +162,38 @@ export async function createSubscriptionCheckout(
   );
 
   const planId = planRowId(planSlug);
+  const stripeLocale = toStripeLocale(
+    locale ?? userRow?.preferredLanguage ?? undefined
+  );
 
   const stripe = getStripe();
+
+  const existing = (await getWorkspaceSubscription(workspaceId))?.subscription;
+  if (
+    existing?.stripeSubscriptionId &&
+    STRIPE_SUBSCRIPTION_OPEN.has(existing.status)
+  ) {
+    const portal = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl ?? withoutQuery(cancelUrl),
+      locale: stripeLocale as PortalLocale,
+      ...(await planChangeFlow({
+        stripeSubscriptionId: existing.stripeSubscriptionId,
+        status: existing.status,
+        stripePriceId,
+        returnUrl: returnUrl ?? withoutQuery(cancelUrl),
+      })),
+    });
+    return { url: portal.url };
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: stripePriceId, quantity: 1 }],
     success_url: successUrl,
     cancel_url: cancelUrl,
+    locale: stripeLocale as CheckoutLocale,
     metadata: { workspaceId, planId },
     subscription_data: {
       metadata: { workspaceId, planId },
@@ -166,6 +208,63 @@ export async function createSubscriptionCheckout(
   }
 
   return { url: session.url };
+}
+
+type CheckoutLocale = Stripe.Checkout.SessionCreateParams.Locale;
+type PortalParams = Stripe.BillingPortal.SessionCreateParams;
+type PortalLocale = Stripe.BillingPortal.SessionCreateParams.Locale;
+
+/**
+ * Statuses in which the Stripe subscription still exists and bills.
+ * `canceled`, `incomplete` and `incomplete_expired` are absent: nothing
+ * is left to change, so those workspaces go through checkout again.
+ */
+const STRIPE_SUBSCRIPTION_OPEN: ReadonlySet<string> = new Set([
+  "active",
+  "trialing",
+  "past_due",
+  "unpaid",
+  "paused",
+]);
+
+function withoutQuery(url: string): string {
+  const parsed = new URL(url);
+  parsed.search = "";
+  return parsed.toString();
+}
+
+/**
+ * The portal flow for moving a subscription to another price. Empty —
+ * the portal's home — when the subscription is not in good standing, is
+ * already on that price, or has no item to move.
+ */
+async function planChangeFlow(params: {
+  stripeSubscriptionId: string;
+  status: string;
+  stripePriceId: string;
+  returnUrl: string;
+}): Promise<Pick<PortalParams, "flow_data">> {
+  if (params.status !== "active" && params.status !== "trialing") return {};
+
+  const subscription = await getStripe().subscriptions.retrieve(
+    params.stripeSubscriptionId
+  );
+  const item = subscription.items.data[0];
+  if (!item || item.price.id === params.stripePriceId) return {};
+
+  return {
+    flow_data: {
+      type: "subscription_update_confirm",
+      subscription_update_confirm: {
+        subscription: subscription.id,
+        items: [{ id: item.id, price: params.stripePriceId, quantity: 1 }],
+      },
+      after_completion: {
+        type: "redirect",
+        redirect: { return_url: params.returnUrl },
+      },
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -372,6 +471,8 @@ export type CheckoutSessionSummary = {
 
 const checkoutSessionReadSchema = z.object({
   sessionId: z.string().min(1),
+  /** The caller's workspace, from `requireWorkspace()`. */
+  workspaceId: z.string().min(1),
 });
 
 export type GetCheckoutSessionInput = z.infer<typeof checkoutSessionReadSchema>;
@@ -383,11 +484,16 @@ export type GetCheckoutSessionInput = z.infer<typeof checkoutSessionReadSchema>;
  * The webhook can arrive after the browser redirect to
  * `/checkout/success`, so this queries Stripe directly rather than
  * trusting the local `subscriptions` row.
+ *
+ * A session id is a bearer reference that travels in a URL, so the
+ * session must carry the caller's `workspaceId` in its metadata — both
+ * checkouts in this module write it. Another workspace's session reads
+ * as `session_not_found`, the same as one that does not exist.
  */
 export async function getCheckoutSession(
   input: GetCheckoutSessionInput
 ): Promise<CheckoutSessionSummary> {
-  const { sessionId } = checkoutSessionReadSchema.parse(input);
+  const { sessionId, workspaceId } = checkoutSessionReadSchema.parse(input);
 
   const stripe = getStripe();
 
@@ -402,6 +508,13 @@ export async function getCheckoutSession(
       error instanceof Error
         ? error.message
         : "Failed to retrieve the checkout session."
+    );
+  }
+
+  if (session.metadata?.workspaceId !== workspaceId) {
+    throw new BillingServiceError(
+      "session_not_found",
+      "No such checkout session."
     );
   }
 

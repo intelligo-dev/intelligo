@@ -10,7 +10,9 @@ const mocks = vi.hoisted(() => ({
   checkoutSessionsCreate: vi.fn(),
   checkoutSessionsRetrieve: vi.fn(),
   billingPortalSessionsCreate: vi.fn(),
+  subscriptionsRetrieve: vi.fn(),
   getStripe: vi.fn(),
+  getWorkspaceSubscription: vi.fn(),
 
   getPlanBySlug: vi.fn(),
 
@@ -27,8 +29,10 @@ const mocks = vi.hoisted(() => ({
   insert: vi.fn(),
 }));
 
-vi.mock("./stripe", () => ({
+vi.mock("./stripe", async () => ({
   getStripe: mocks.getStripe,
+  toStripeLocale: (await vi.importActual<typeof import("./stripe")>("./stripe"))
+    .toStripeLocale,
 }));
 
 vi.mock("./plans", () => ({
@@ -38,6 +42,7 @@ vi.mock("./plans", () => ({
 vi.mock("./queries", () => ({
   getOrCreateStripeCustomer: mocks.getOrCreateStripeCustomer,
   getWorkspaceBilling: mocks.getWorkspaceBilling,
+  getWorkspaceSubscription: mocks.getWorkspaceSubscription,
 }));
 
 vi.mock("./billing-settings", () => ({
@@ -98,9 +103,15 @@ beforeEach(() => {
     billingPortal: {
       sessions: { create: mocks.billingPortalSessionsCreate },
     },
+    subscriptions: { retrieve: mocks.subscriptionsRetrieve },
   });
 
   mocks.getOrCreateStripeCustomer.mockResolvedValue("cus_123");
+  // A workspace on the free row: no Stripe subscription yet.
+  mocks.getWorkspaceSubscription.mockResolvedValue({
+    subscription: { status: "active", stripeSubscriptionId: null },
+    plan: { slug: "free" },
+  });
 });
 
 describe("createSubscriptionCheckout", () => {
@@ -201,6 +212,141 @@ describe("createSubscriptionCheckout", () => {
     expect(isBillingServiceError(await call.catch((e) => e))).toBe(true);
     expect(mocks.checkoutSessionsCreate).not.toHaveBeenCalled();
   });
+
+  const upgrade = {
+    workspaceId: "ws_1",
+    userId: "user_1",
+    planSlug: "standard",
+    interval: "monthly" as const,
+    productSlug: "acme",
+    successUrl:
+      "https://app.example.com/checkout/success?session_id={CHECKOUT_SESSION_ID}",
+    cancelUrl: "https://app.example.com/pricing?canceled=true",
+  };
+
+  it("sends a workspace that already subscribes to the portal's confirm-update flow instead of a second checkout", async () => {
+    mocks.getPlanBySlug.mockReturnValue(basePlan);
+    mocks.getWorkspaceSubscription.mockResolvedValue({
+      subscription: { status: "active", stripeSubscriptionId: "sub_1" },
+      plan: { slug: "pro" },
+    });
+    mocks.subscriptionsRetrieve.mockResolvedValue({
+      id: "sub_1",
+      items: { data: [{ id: "si_1", price: { id: "price_pro_monthly" } }] },
+    });
+    mocks.billingPortalSessionsCreate.mockResolvedValue({
+      url: "https://billing.stripe.com/p/session_xyz",
+    });
+
+    const result = await createSubscriptionCheckout(upgrade);
+
+    expect(result).toEqual({ url: "https://billing.stripe.com/p/session_xyz" });
+    expect(mocks.checkoutSessionsCreate).not.toHaveBeenCalled();
+    expect(mocks.billingPortalSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customer: "cus_123",
+        return_url: "https://app.example.com/pricing",
+        flow_data: {
+          type: "subscription_update_confirm",
+          subscription_update_confirm: {
+            subscription: "sub_1",
+            items: [{ id: "si_1", price: "price_monthly_123", quantity: 1 }],
+          },
+          after_completion: {
+            type: "redirect",
+            redirect: { return_url: "https://app.example.com/pricing" },
+          },
+        },
+      })
+    );
+  });
+
+  it("opens the portal's home, with no plan change, while a payment is outstanding", async () => {
+    mocks.getPlanBySlug.mockReturnValue(basePlan);
+    mocks.getWorkspaceSubscription.mockResolvedValue({
+      subscription: { status: "past_due", stripeSubscriptionId: "sub_1" },
+      plan: { slug: "pro" },
+    });
+    mocks.billingPortalSessionsCreate.mockResolvedValue({
+      url: "https://billing.stripe.com/p/session_due",
+    });
+
+    const result = await createSubscriptionCheckout({
+      ...upgrade,
+      returnUrl: "https://app.example.com/settings/billing",
+    });
+
+    expect(result).toEqual({ url: "https://billing.stripe.com/p/session_due" });
+    expect(mocks.checkoutSessionsCreate).not.toHaveBeenCalled();
+    expect(mocks.subscriptionsRetrieve).not.toHaveBeenCalled();
+    const params = mocks.billingPortalSessionsCreate.mock.calls[0]![0];
+    expect(params.return_url).toBe("https://app.example.com/settings/billing");
+    expect(params).not.toHaveProperty("flow_data");
+  });
+
+  it("opens the portal's home when the subscription is already on the requested price", async () => {
+    mocks.getPlanBySlug.mockReturnValue(basePlan);
+    mocks.getWorkspaceSubscription.mockResolvedValue({
+      subscription: { status: "trialing", stripeSubscriptionId: "sub_1" },
+      plan: { slug: "standard" },
+    });
+    mocks.subscriptionsRetrieve.mockResolvedValue({
+      id: "sub_1",
+      items: { data: [{ id: "si_1", price: { id: "price_monthly_123" } }] },
+    });
+    mocks.billingPortalSessionsCreate.mockResolvedValue({
+      url: "https://billing.stripe.com/p/session_same",
+    });
+
+    await createSubscriptionCheckout(upgrade);
+
+    expect(
+      mocks.billingPortalSessionsCreate.mock.calls[0]![0]
+    ).not.toHaveProperty("flow_data");
+  });
+
+  it.each(["canceled", "incomplete", "incomplete_expired"])(
+    "opens a new checkout when the previous subscription is %s",
+    async (status) => {
+      mocks.getPlanBySlug.mockReturnValue(basePlan);
+      mocks.getWorkspaceSubscription.mockResolvedValue({
+        subscription: { status, stripeSubscriptionId: "sub_old" },
+        plan: { slug: "pro" },
+      });
+      mocks.checkoutSessionsCreate.mockResolvedValue({
+        url: "https://checkout.stripe.com/session_new",
+      });
+
+      const result = await createSubscriptionCheckout(upgrade);
+
+      expect(result).toEqual({
+        url: "https://checkout.stripe.com/session_new",
+      });
+      expect(mocks.billingPortalSessionsCreate).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    ["de", "de"],
+    ["pt-BR", "pt-BR"],
+    ["de-AT", "de"],
+    ["mn", "auto"],
+    ["xx-YY", "auto"],
+  ])(
+    "maps the app locale %s to the Stripe checkout locale %s",
+    async (locale, expected) => {
+      mocks.getPlanBySlug.mockReturnValue(basePlan);
+      mocks.checkoutSessionsCreate.mockResolvedValue({
+        url: "https://checkout.stripe.com/session_abc",
+      });
+
+      await createSubscriptionCheckout({ ...upgrade, locale });
+
+      expect(mocks.checkoutSessionsCreate.mock.calls[0]![0].locale).toBe(
+        expected
+      );
+    }
+  );
 });
 
 describe("createCreditCheckout", () => {
@@ -360,6 +506,7 @@ describe("getCheckoutSession", () => {
     mocks.checkoutSessionsRetrieve.mockResolvedValue({
       status: "complete",
       customer_email: "buyer@example.com",
+      metadata: { workspaceId: "ws_1" },
       subscription: {
         status: "active",
         items: {
@@ -375,7 +522,10 @@ describe("getCheckoutSession", () => {
       },
     });
 
-    const summary = await getCheckoutSession({ sessionId: "cs_123" });
+    const summary = await getCheckoutSession({
+      sessionId: "cs_123",
+      workspaceId: "ws_1",
+    });
 
     expect(summary).toEqual({
       status: "complete",
@@ -391,7 +541,29 @@ describe("getCheckoutSession", () => {
       new Error("no such session")
     );
 
-    const call = getCheckoutSession({ sessionId: "cs_missing" });
+    const call = getCheckoutSession({
+      sessionId: "cs_missing",
+      workspaceId: "ws_1",
+    });
+
+    await expect(call).rejects.toMatchObject({ code: "session_not_found" });
+  });
+
+  it.each([
+    ["another workspace's", { workspaceId: "ws_other" }],
+    ["an unattributed", undefined],
+  ])("reads %s session as session_not_found", async (_label, metadata) => {
+    mocks.checkoutSessionsRetrieve.mockResolvedValue({
+      status: "complete",
+      customer_email: "someone@example.com",
+      metadata,
+      subscription: null,
+    });
+
+    const call = getCheckoutSession({
+      sessionId: "cs_123",
+      workspaceId: "ws_1",
+    });
 
     await expect(call).rejects.toMatchObject({ code: "session_not_found" });
   });

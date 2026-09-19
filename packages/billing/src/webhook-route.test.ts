@@ -12,6 +12,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mocks = vi.hoisted(() => ({
   constructEvent: vi.fn(),
   handleCheckoutCompleted: vi.fn(),
+  handleCheckoutAsyncPaymentSucceeded: vi.fn(),
+  handleCheckoutAsyncPaymentFailed: vi.fn(),
   claimReturning: vi.fn(),
   insertValues: vi.fn(),
   updateSet: vi.fn(),
@@ -22,6 +24,9 @@ vi.mock("./stripe", () => ({
 }));
 vi.mock("./webhook-handlers", () => ({
   handleCheckoutCompleted: mocks.handleCheckoutCompleted,
+  handleCheckoutAsyncPaymentSucceeded:
+    mocks.handleCheckoutAsyncPaymentSucceeded,
+  handleCheckoutAsyncPaymentFailed: mocks.handleCheckoutAsyncPaymentFailed,
   handleInvoicePaid: vi.fn(),
   handleInvoicePaymentFailed: vi.fn(),
   handleSubscriptionUpdated: vi.fn(),
@@ -133,6 +138,29 @@ describe("createStripeWebhookHandler", () => {
     );
     expect(sets[0]!.processedAt).toBeInstanceOf(Date);
     expect(sets[1]!.processedAt).toBeNull();
+  });
+
+  it("dispatches the two delayed-payment outcomes to their handlers", async () => {
+    mocks.constructEvent.mockReturnValue({
+      ...event,
+      id: "evt_2",
+      type: "checkout.session.async_payment_succeeded",
+    });
+    expect((await handler(request())).status).toBe(200);
+    expect(mocks.handleCheckoutAsyncPaymentSucceeded).toHaveBeenCalledWith(
+      event.data.object
+    );
+
+    mocks.constructEvent.mockReturnValue({
+      ...event,
+      id: "evt_3",
+      type: "checkout.session.async_payment_failed",
+    });
+    expect((await handler(request())).status).toBe(200);
+    expect(mocks.handleCheckoutAsyncPaymentFailed).toHaveBeenCalledWith(
+      event.data.object
+    );
+    expect(mocks.handleCheckoutCompleted).not.toHaveBeenCalled();
   });
 
   it("refuses to serve without a webhook secret", async () => {

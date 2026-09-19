@@ -15,14 +15,24 @@ import {
 } from "drizzle-orm/pg-core";
 import { organization } from "./auth";
 
-/** Pricing plans per product, editable without a deploy. */
+/**
+ * The registered plan catalogue, copied into rows so a subscription can
+ * reference its plan. The catalogue is the source: the rows are written
+ * from it at boot, and an edit made here is overwritten by the next one.
+ */
 export const plans = pgTable("plans", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
-  priceMonthly: integer("price_monthly").notNull(), // cents, 0 for free
-  priceYearly: integer("price_yearly").notNull(), // cents
+  /**
+   * Whole major units — 29 is twenty-nine of the currency, not cents —
+   * rounded from the catalogue's price. 0 for free. The row names no
+   * currency; readers take the deployment's billing currency.
+   */
+  priceMonthly: integer("price_monthly").notNull(),
+  /** Whole major units, as `priceMonthly`. 0 when the plan has no yearly price. */
+  priceYearly: integer("price_yearly").notNull(),
   stripePriceIdMonthly: text("stripe_price_id_monthly"),
   stripePriceIdYearly: text("stripe_price_id_yearly"),
   features: text("features").notNull(), // JSON string array

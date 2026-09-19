@@ -9,32 +9,44 @@ import {
   sendTrialWarningEmail,
   sendPaymentFailedEmail,
 } from "../email/senders";
+import { formatMoney, type Money } from "../money";
 
+/** The locale the framework's own notification and email copy is written in. */
+const COPY_LOCALE = "en";
+
+/**
+ * The plan allowance is money, not tokens: `used` and `allowance` are
+ * amounts in the deployment's billing currency, and the copy prints
+ * them as such.
+ */
 export async function triggerQuotaNotification(params: {
   userId: string;
   userEmail: string;
   workspaceId: string;
   workspaceName: string;
   percentageUsed: number;
-  tokensUsed: number;
-  tokensLimit: number;
+  used: Money;
+  allowance: Money;
   isExceeded: boolean;
 }): Promise<void> {
   const upgradeUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/billing`;
+  const used = formatMoney(params.used, COPY_LOCALE);
+  const allowance = formatMoney(params.allowance, COPY_LOCALE);
 
   await createNotification({
     userId: params.userId,
     workspaceId: params.workspaceId,
     type: params.isExceeded ? "quota_warning_100" : "quota_warning_80",
-    title: params.isExceeded ? "Quota Exceeded" : "Quota Warning",
+    title: params.isExceeded ? "Allowance Used Up" : "Allowance Warning",
     message: params.isExceeded
-      ? `Your workspace "${params.workspaceName}" has used all ${params.tokensLimit.toLocaleString()} tokens this month. Upgrade your plan for more tokens.`
-      : `Your workspace "${params.workspaceName}" has used ${params.percentageUsed}% of its monthly token quota.`,
+      ? `Your workspace "${params.workspaceName}" has used all of its ${allowance} monthly allowance. Upgrade your plan for more.`
+      : `Your workspace "${params.workspaceName}" has used ${used} of its ${allowance} monthly allowance (${params.percentageUsed}%).`,
     metadata: {
       workspaceName: params.workspaceName,
       percentageUsed: params.percentageUsed,
-      tokensUsed: params.tokensUsed,
-      tokensLimit: params.tokensLimit,
+      usedMicros: params.used.amount,
+      allowanceMicros: params.allowance.amount,
+      currency: params.allowance.currency,
     },
   });
 
@@ -42,8 +54,8 @@ export async function triggerQuotaNotification(params: {
     to: params.userEmail,
     workspaceName: params.workspaceName,
     percentageUsed: params.percentageUsed,
-    tokensUsed: params.tokensUsed,
-    tokensLimit: params.tokensLimit,
+    used: params.used,
+    allowance: params.allowance,
     upgradeUrl,
     isExceeded: params.isExceeded,
   }).catch((err) =>

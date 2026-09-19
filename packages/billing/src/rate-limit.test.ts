@@ -88,6 +88,26 @@ describe("checkRateLimit", () => {
     expect(arg.set.count).toBeDefined();
   });
 
+  it("counts in the chat bucket when the caller names none", async () => {
+    mockBucketCount(1);
+    await checkRateLimit("ws-1", "free");
+
+    expect(mocks.insertValues.mock.calls[0]![0]).toMatchObject({
+      workspaceId: "ws-1",
+      endpoint: "chat",
+    });
+  });
+
+  it("counts a named endpoint in its own bucket", async () => {
+    mockBucketCount(1);
+    await checkRateLimit("ws-1", "free", "assistant");
+
+    expect(mocks.insertValues.mock.calls[0]![0]).toMatchObject({
+      workspaceId: "ws-1",
+      endpoint: "assistant",
+    });
+  });
+
   // Plan ceilings are registered per test; the package names no plans.
   it.each([
     ["free", 10],

@@ -247,7 +247,15 @@ export type TrialConfig = {
   /** Share remaining at which the UI starts warning. 0–1. */
   warningThreshold: number;
   reminderDaysBeforeExpiry: number;
+  /**
+   * The plan a workspace is on while its trial runs: a slug from the
+   * product's own catalogue. `DEFAULT_TRIAL_PLAN_SLUG` when omitted.
+   */
+  planSlug?: string;
 };
+
+/** The plan a trial grants when the product's `TrialConfig` names none. */
+export const DEFAULT_TRIAL_PLAN_SLUG = "pro";
 
 /**
  * No trial.
@@ -284,6 +292,11 @@ export function getTrialConfig(productSlug?: string): TrialConfig {
   // Stryker disable next-line ConditionalExpression: equivalent — the lookup below answers NO_TRIAL for an undefined slug too; the guard says so without making the reader prove it.
   if (!slug) return NO_TRIAL;
   return productTrialConfig.get(slug) ?? NO_TRIAL;
+}
+
+/** The plan slug a workspace resolves to during an active trial. */
+export function getTrialPlanSlug(productSlug?: string): string {
+  return getTrialConfig(productSlug).planSlug ?? DEFAULT_TRIAL_PLAN_SLUG;
 }
 
 export function clearTrialConfig(): void {

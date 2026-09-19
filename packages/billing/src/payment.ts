@@ -3,8 +3,9 @@
  *
  * The interface and an in-memory mock live here; real providers are
  * registered by the application's composition root. PAYMENT_MODE
- * selects among registered providers; "mock" is the default and is
- * refused in production.
+ * selects among registered providers. "mock" is the default: outside
+ * production it resolves to the in-memory mock with no registration,
+ * and in production it is refused.
  */
 
 import { createRegistry } from "@intelligo-dev/core/registry";
@@ -102,9 +103,9 @@ export function getMockPayment(invoiceId: string) {
 // ─── Provider Registry ───
 
 /**
- * Starts empty on purpose: the composition root is the only way a
- * provider exists, so a deployment that wired nothing cannot silently
- * resolve one.
+ * Starts empty on purpose: the composition root is the only way a real
+ * provider exists, so a production deployment that wired nothing cannot
+ * silently resolve one.
  */
 const providers = createRegistry<PaymentProvider>("billing/payment-providers");
 
@@ -131,6 +132,10 @@ export function clearPaymentProviders(): void {
 /**
  * Resolve the configured provider.
  *
+ * PAYMENT_MODE unset means "mock". Outside production that mode needs no
+ * registration: it resolves to `mockPaymentProvider`, unless the
+ * composition root registered its own provider under "mock".
+ *
  * @throws when PAYMENT_MODE names something unregistered, or when it
  * resolves to the in-memory mock in production — mock payments are
  * held in a Map that a restart empties, so silently using it in
@@ -147,7 +152,8 @@ export function getPaymentProvider(): PaymentProvider {
     );
   }
 
-  const provider = providers.get(mode);
+  const provider =
+    providers.get(mode) ?? (mode === "mock" ? mockPaymentProvider : undefined);
   if (!provider) {
     const registered = registeredPaymentModes();
     throw new Error(

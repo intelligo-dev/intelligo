@@ -2,10 +2,10 @@
  * The payment provider registry.
  *
  * Two properties are load-bearing and neither is obvious from the
- * types: the registry starts empty (so a deployment that wired nothing
- * cannot silently resolve a provider), and the in-memory mock is
- * refused in production (so a restart cannot quietly discard invoices
- * that reported success).
+ * types: the registry starts empty (so a production deployment that
+ * wired nothing cannot silently resolve a provider), and the in-memory
+ * mock — the default everywhere else — is refused in production (so a
+ * restart cannot quietly discard invoices that reported success).
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -65,10 +65,31 @@ describe("resolution", () => {
     expect(getPaymentProvider()).toBe(stub);
   });
 
-  it("defaults to mock when PAYMENT_MODE is unset", () => {
-    registerPaymentProvider("mock", mockPaymentProvider);
+  it("defaults to the mock, unregistered, when PAYMENT_MODE is unset", () => {
     vi.stubEnv("PAYMENT_MODE", undefined);
+    vi.stubEnv("NODE_ENV", "development");
     expect(getPaymentProvider()).toBe(mockPaymentProvider);
+    expect(registeredPaymentModes()).toEqual([]);
+  });
+
+  it("resolves the mock, unregistered, when PAYMENT_MODE names it", () => {
+    vi.stubEnv("PAYMENT_MODE", "mock");
+    vi.stubEnv("NODE_ENV", "test");
+    expect(getPaymentProvider()).toBe(mockPaymentProvider);
+  });
+
+  it("prefers a provider the composition root registered as mock", () => {
+    registerPaymentProvider("mock", stub);
+    vi.stubEnv("PAYMENT_MODE", "mock");
+    vi.stubEnv("NODE_ENV", "development");
+    expect(getPaymentProvider()).toBe(stub);
+  });
+
+  it("refuses the unregistered mock in production", () => {
+    vi.stubEnv("PAYMENT_MODE", undefined);
+    vi.stubEnv("NODE_ENV", "production");
+
+    expect(() => getPaymentProvider()).toThrow(/mock in production/);
   });
 
   it("refuses the in-memory mock in production", () => {

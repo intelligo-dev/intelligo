@@ -11,6 +11,7 @@
 
 import * as React from "react";
 import { sendEmail, type SendEmailResult } from "./send";
+import { formatMoney, type Money } from "../money";
 import {
   WelcomeEmail,
   VerifyEmailEmail,
@@ -22,6 +23,9 @@ import {
   PaymentFailedEmail,
   SubscriptionConfirmedEmail,
 } from "./templates";
+
+/** The locale the email copy is written in; amounts are formatted to match. */
+const EMAIL_LOCALE = "en";
 
 export async function sendWelcomeEmail(params: {
   to: string;
@@ -120,26 +124,33 @@ export async function sendInvitationEmail(params: {
   });
 }
 
-/** Send quota warning or exceeded email. */
+/**
+ * Send the allowance warning or used-up email. `used` and `allowance`
+ * are money in the deployment's billing currency; the template and the
+ * provider variables receive them formatted.
+ */
 export async function sendQuotaWarningEmail(params: {
   to: string;
   workspaceName: string;
   percentageUsed: number;
-  tokensUsed: number;
-  tokensLimit: number;
+  used: Money;
+  allowance: Money;
   upgradeUrl: string;
   isExceeded: boolean;
 }): Promise<SendEmailResult> {
+  const used = formatMoney(params.used, EMAIL_LOCALE);
+  const allowance = formatMoney(params.allowance, EMAIL_LOCALE);
+
   return sendEmail({
     to: params.to,
     subject: params.isExceeded
-      ? "Token quota exceeded"
-      : `Token quota at ${params.percentageUsed}%`,
+      ? "Monthly allowance used up"
+      : `Monthly allowance at ${params.percentageUsed}%`,
     react: React.createElement(QuotaWarningEmail, {
       workspaceName: params.workspaceName,
       percentageUsed: params.percentageUsed,
-      tokensUsed: params.tokensUsed,
-      tokensLimit: params.tokensLimit,
+      used,
+      allowance,
       upgradeUrl: params.upgradeUrl,
       isExceeded: params.isExceeded,
     }),
@@ -148,8 +159,9 @@ export async function sendQuotaWarningEmail(params: {
       variables: {
         workspaceName: params.workspaceName,
         percentageUsed: params.percentageUsed,
-        tokensUsed: params.tokensUsed,
-        tokensLimit: params.tokensLimit,
+        used,
+        allowance,
+        currency: params.allowance.currency,
         upgradeUrl: params.upgradeUrl,
       },
     },

@@ -74,16 +74,13 @@ d("money path (integration)", () => {
   }
 
   /**
-   * Period bounds computed exactly as quota-usage.ts computes them.
-   * Writing `date_trunc('month', now())` in SQL instead would agree
-   * only while Postgres and Node share a timezone.
+   * The engine's own period bounds. Writing `date_trunc('month', now())`
+   * in SQL instead would agree only while Postgres runs in UTC.
    */
-  function periodBounds(): { start: Date; end: Date } {
-    const now = new Date();
-    return {
-      start: new Date(now.getFullYear(), now.getMonth(), 1),
-      end: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999),
-    };
+  async function periodBounds(): Promise<{ start: Date; end: Date }> {
+    const { getCurrentPeriodStart, getCurrentPeriodEnd } =
+      await import("../quota-usage");
+    return { start: getCurrentPeriodStart(), end: getCurrentPeriodEnd() };
   }
 
   /**
@@ -98,7 +95,7 @@ d("money path (integration)", () => {
     date.toISOString().slice(0, 19).replace("T", " ");
 
   async function setAllowanceUsed(micros: number): Promise<void> {
-    const { start, end } = periodBounds();
+    const { start, end } = await periodBounds();
     await client.query(
       `INSERT INTO monthly_usage (id, workspace_id, period_start, period_end, allowance_used_micros, currency)
             VALUES ($1, $2, $3, $4, $5, 'MNT')
@@ -172,7 +169,6 @@ d("money path (integration)", () => {
         aiModelLabel: "",
         monthlyAllowance: money(FREE_ALLOWANCE * 1_000_000, "MNT"),
         limits: {
-          rolloverEnabled: false,
           chatMessages: 30,
         },
         features: [],

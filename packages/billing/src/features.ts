@@ -8,12 +8,13 @@
 import { db } from "@intelligo-dev/core/db";
 import { featureFlags } from "@intelligo-dev/core/db/schema";
 import { eq } from "drizzle-orm";
-import { getWorkspaceSubscription } from "./queries";
+import { getWorkspaceSubscription, subscriptionEntitles } from "./queries";
 import { hasActiveTrial } from "./trial";
 import {
   getDefaultProductSlug,
   getProductFeatures,
   getTeamMemberLimit,
+  getTrialPlanSlug,
   type ProductFeatureMatrix,
 } from "./plan-registry";
 
@@ -34,20 +35,27 @@ function featureMatrix(productSlug?: string): ProductFeatureMatrix {
 export type FeatureKey = string;
 
 /**
- * The workspace's plan slug: its subscription's plan, "pro" during an
- * active trial, "free" otherwise (and on error).
+ * The workspace's plan slug: its subscription's plan while the
+ * subscription's status entitles it (see `subscriptionEntitles`), the
+ * registered trial plan during an active trial, "free" otherwise (and
+ * on error).
  */
 export async function getWorkspacePlan(workspaceId: string): Promise<string> {
   try {
     const subscriptionData = await getWorkspaceSubscription(workspaceId);
-    if (subscriptionData?.plan?.slug) {
-      return subscriptionData.plan.slug;
+    const paidSlug =
+      subscriptionData?.plan?.slug &&
+      subscriptionEntitles(subscriptionData.subscription.status)
+        ? subscriptionData.plan.slug
+        : null;
+    if (paidSlug && paidSlug !== "free") {
+      return paidSlug;
     }
 
-    // An active trial grants Pro access.
-    const hasTrial = await hasActiveTrial(workspaceId);
-    if (hasTrial) {
-      return "pro";
+    // Every workspace carries a free subscription row, so the trial is
+    // checked for a free plan as well as for no row at all.
+    if (await hasActiveTrial(workspaceId)) {
+      return getTrialPlanSlug();
     }
 
     return "free";
@@ -166,10 +174,44 @@ async function computeHasFeature(
 }
 
 /**
+ * Thrown by `requireFeature`. `requiredPlans` is the registered matrix's
+ * answer to "which plans grant this" — empty when the feature is not
+ * registered, and not authoritative when a `feature_flags` row
+ * overrides the matrix.
+ */
+export class FeatureNotAvailableError extends Error {
+  readonly code = "feature_not_available";
+  readonly feature: string;
+  readonly currentPlan: string;
+  readonly requiredPlans: readonly string[];
+
+  constructor(
+    feature: string,
+    currentPlan: string,
+    requiredPlans: readonly string[]
+  ) {
+    super(
+      `Feature "${feature}" requires a plan upgrade. Current plan does not include this feature.`
+    );
+    this.name = "FeatureNotAvailableError";
+    this.feature = feature;
+    this.currentPlan = currentPlan;
+    this.requiredPlans = requiredPlans;
+  }
+}
+
+export function isFeatureNotAvailableError(
+  error: unknown
+): error is FeatureNotAvailableError {
+  return error instanceof FeatureNotAvailableError;
+}
+
+/**
  * Require feature access or throw, for server actions that gate on a
  * feature.
  *
- * @throws Error if the feature is not available on the workspace's plan
+ * @throws {FeatureNotAvailableError} if the feature is not available on
+ * the workspace's plan
  */
 export async function requireFeature(
   workspaceId: string,
@@ -177,8 +219,10 @@ export async function requireFeature(
 ): Promise<void> {
   const allowed = await hasFeature(workspaceId, feature);
   if (!allowed) {
-    throw new Error(
-      `Feature "${feature}" requires a plan upgrade. Current plan does not include this feature.`
+    throw new FeatureNotAvailableError(
+      feature,
+      await getWorkspacePlan(workspaceId),
+      featureMatrix()[feature] ?? []
     );
   }
 }

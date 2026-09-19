@@ -170,3 +170,38 @@ export type {
   BillingOverview,
   GetBillingOverviewInput,
 } from "./checkout";
+
+// Changing the billing settings after first boot, the rate-limit bucket
+// a caller gets by default, and the UTC billing period
+export {
+  updateBillingSettings,
+  BillingSettingsError,
+} from "./billing-settings";
+export type {
+  BillingSettingsUpdate,
+  BillingSettingsErrorCode,
+} from "./billing-settings";
+export { DEFAULT_RATE_LIMIT_ENDPOINT } from "./rate-limit";
+export {
+  getCurrentPeriodStart,
+  getCurrentPeriodEnd,
+  getCurrentPeriodKey,
+} from "./quota-usage";
+
+// Entitlement by subscription status, the typed feature refusal, the
+// trial's plan, the delayed-payment webhook handlers and the
+// version-tolerant Stripe readers they share.
+export { subscriptionEntitles } from "./queries";
+export {
+  FeatureNotAvailableError,
+  isFeatureNotAvailableError,
+} from "./features";
+export { getTrialPlanSlug, DEFAULT_TRIAL_PLAN_SLUG } from "./plan-registry";
+export {
+  handleCheckoutAsyncPaymentSucceeded,
+  handleCheckoutAsyncPaymentFailed,
+  subscriptionPeriod,
+  invoiceSubscriptionId,
+  planIdForPrice,
+} from "./webhook-handlers";
+export { toStripeLocale } from "./stripe";

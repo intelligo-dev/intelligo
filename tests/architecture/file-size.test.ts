@@ -70,8 +70,6 @@ const FUNCTION_EXEMPTIONS: Record<string, string> = {
     "admission: entitlement, the hold, the row and the handle. The handle is the part worth extracting.",
   "packages/billing/src/quota.ts recordTokenUsage":
     "settlement, and the reason `quota-settlement.test.ts` already exists as its own suite.",
-  "packages/billing/src/webhook-handlers.ts handleCheckoutCompleted":
-    "one Stripe event, whose branches are the product's billing rules rather than steps of an algorithm.",
 };
 
 /** Every line index a comment touches, so a span can be measured in code. */
