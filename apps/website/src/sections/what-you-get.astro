@@ -10,19 +10,21 @@ import { INTELLIGO } from "@/lib/primitives";
 import { PACKAGES } from "@/lib/packages";
 import { PROOF } from "@/lib/proof";
 
+const AI_PARTS = INTELLIGO.filter((c) => c.tier === "T3").length;
+
 const DOORS = [
   {
     n: String(REGISTRY_COUNT),
     title: "Blocks",
-    body: "Page families installed with the shadcn CLI as your own source — used as-is, varied through config and message files.",
+    body: "Pages, shells and drop-in surfaces installed with the shadcn CLI as your own source — used as-is, varied through config and message files.",
     chips: REGISTRY_GROUPS.map((g) => `${g.toLowerCase()} ${REGISTRY_ITEMS.filter((i) => i.group === g).length}`),
     href: "/blocks",
     cta: "see every block, live",
   },
   {
     n: String(INTELLIGO.length),
-    title: "AI components",
-    body: "Messages, reasoning, tool calls, approvals, citations, artifacts — the parts an agent's interface is made of, on base-nova and one token contract.",
+    title: "Components",
+    body: `${AI_PARTS} AI parts — messages, reasoning, tool calls, approvals, citations, artifacts — and ${INTELLIGO.length - AI_PARTS} patterns and motion pieces, on base-nova and one token contract.`,
     chips: INTELLIGO.filter((c) => c.tier === "T3").slice(0, 6).map((c) => c.name.replace(/^ai-/, "")),
     href: "/components",
     cta: "open the design system",

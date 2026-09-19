@@ -103,7 +103,7 @@ export function ScrollLedger() {
     <div ref={ref} className="grid gap-10 lg:grid-cols-[1fr_1.35fr] lg:gap-16">
       {/* your half — sticky */}
       <div className="lg:sticky lg:top-24 lg:self-start">
-        <div className="tag">your half — the 30%</div>
+        <div className="tag">your half</div>
         <ul className="mt-4 border-t border-foreground/15">
           {YOUR_HALF.map((y) => (
             <li key={y.title} className="border-b border-border py-4">

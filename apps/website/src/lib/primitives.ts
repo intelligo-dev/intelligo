@@ -14,7 +14,7 @@ export type Tier = "T1" | "T2" | "T3" | "T4";
 export const TIERS: Record<Tier, { title: string; lede: string }> = {
   T1: {
     title: "Primitives",
-    lede: "Stock shadcn base-nova components on Base UI. Blocks name them bare in registryDependencies.",
+    lede: "The interactive building blocks, on Base UI with shadcn's API kept. Blocks name them bare in registryDependencies.",
   },
   T2: {
     title: "Composites",

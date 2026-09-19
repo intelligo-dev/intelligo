@@ -52,7 +52,8 @@ export const PACKAGES: PackageInfo[] = [
     id: "auth",
     label: "auth",
     layer: "intelligo",
-    summary: "Workspaces, roles, invitations — the whole lifecycle.",
+    summary:
+      "Sign-in, workspaces, roles and invitations — and the team, profile and onboarding services behind those pages.",
     bullets: [
       "email/password and OAuth, verification, reset",
       "multi-tenant workspaces on Better-Auth's organization model",
@@ -117,7 +118,8 @@ export const PACKAGES: PackageInfo[] = [
     id: "core",
     label: "core",
     layer: "intelligo",
-    summary: "Conversations, documents, identity, notifications, email.",
+    summary:
+      "The database schema and migrations, plus conversations, documents, identity, notifications and email.",
     bullets: [
       "cursor-paginated history, votes, regeneration trimming",
       "documents with versions and ownership checks",

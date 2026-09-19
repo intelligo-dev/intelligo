@@ -11,7 +11,7 @@ export const ALTERNATIVES: Alternative[] = [
     id: "in-house",
     option: "Build it in-house",
     answer:
-      "The 70% — tenancy, entitlements, credits, billing, audit — arrives as typed services with the tests already around them.",
+      "The other half — tenancy, entitlements, credits, billing, audit — arrives as typed services with the tests already around them.",
     keep: ["your stack: Next.js, Drizzle, Postgres", "your pages, as source"],
     drop: ["months of auth and billing you'd maintain forever"],
   },
@@ -35,8 +35,8 @@ export const ALTERNATIVES: Alternative[] = [
     id: "prompt",
     option: "Prompt it from zero with Claude or Codex",
     answer:
-      "Auth and billing need senior judgment every time. Here it already shipped, tested — your agent only has to be good at the product.",
-    keep: ["the agent for the 30% that is yours"],
+      "Auth and billing need senior judgment every time. Here it already shipped, tested — your coding agent only has to be good at the product.",
+    keep: ["the coding agent, for the half that is yours"],
     drop: ["reviewing tenant isolation you didn't write"],
   },
   {

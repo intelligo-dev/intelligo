@@ -38,7 +38,7 @@ const idOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const LEDES: Record<string, string> = {
   Patterns: TIERS.T4.lede,
   Motion: "Interaction patterns on the shared motion vocabulary: morphing popups, stacks, lists, uploads and hold-to-confirm.",
-  Primitives: "The interactive building blocks, on Base UI with shadcn's API kept. Blocks name them bare in registryDependencies.",
+  Primitives: TIERS.T1.lede,
   Composites: TIERS.T2.lede,
 };
 const SECTIONS = GROUPS.map((g) => {
