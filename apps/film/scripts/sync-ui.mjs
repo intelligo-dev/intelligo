@@ -99,7 +99,10 @@ const FILES = [
     "packages/registry/base/dashboard/lib/dashboard-config.tsx",
     "lib/dashboard-config.tsx",
   ],
-  ["packages/registry/base/dashboard/lib/dashboard-data.ts", "lib/dashboard-data.ts"],
+  [
+    "packages/registry/base/dashboard/lib/dashboard-data.ts",
+    "lib/dashboard-data.ts",
+  ],
   [
     "packages/registry/base/dashboard/messages/en.json",
     "messages/en/dashboard.json",
@@ -118,7 +121,10 @@ const FILES = [
     "packages/registry/base/chat/components/chat-input.tsx",
     "components/chat/chat-input.tsx",
   ],
-  ["packages/registry/base/chat/components/message.tsx", "components/chat/message.tsx"],
+  [
+    "packages/registry/base/chat/components/message.tsx",
+    "components/chat/message.tsx",
+  ],
   [
     "packages/registry/base/chat/components/message-actions.tsx",
     "components/chat/message-actions.tsx",
@@ -148,12 +154,22 @@ const FILES = [
     "packages/registry/base/chat/lib/chat-canvas-config.tsx",
     "lib/chat-canvas-config.tsx",
   ],
-  ["packages/registry/base/chat/lib/chat-renderers.tsx", "lib/chat-renderers.tsx"],
-  ["packages/registry/base/chat/lib/chat-server-config.ts", "lib/chat-server-config.ts"],
+  [
+    "packages/registry/base/chat/lib/chat-renderers.tsx",
+    "lib/chat-renderers.tsx",
+  ],
+  [
+    "packages/registry/base/chat/lib/chat-server-config.ts",
+    "lib/chat-server-config.ts",
+  ],
   ["packages/registry/base/chat/lib/chat-model.ts", "lib/chat-model.ts"],
   ["packages/registry/base/chat/lib/chat-models.ts", "lib/chat-models.ts"],
   ["packages/registry/base/chat/lib/message-parts.ts", "lib/message-parts.ts"],
   ["packages/registry/base/chat/messages/en.json", "messages/en/chat.json"],
+
+  // ---- usage: the page and its records table are server components,
+  // so the film composes the same primitives with the page's own copy ----
+  ["packages/registry/base/usage/messages/en.json", "messages/en/usage.json"],
 
   // ---- T3: every AI part the closure above actually reaches ----
   [
@@ -204,7 +220,10 @@ const FILES = [
     "packages/registry/base/ui/ai-approval-card/ai-approval-card.tsx",
     "components/ui/ai-approval-card.tsx",
   ],
-  ["packages/registry/base/ui/ai-branch/ai-branch.tsx", "components/ui/ai-branch.tsx"],
+  [
+    "packages/registry/base/ui/ai-branch/ai-branch.tsx",
+    "components/ui/ai-branch.tsx",
+  ],
   [
     "packages/registry/base/ui/ai-citations/ai-citations.tsx",
     "components/ui/ai-citations.tsx",
@@ -239,6 +258,7 @@ const FILES = [
   ["apps/app/components/ui/attachment.tsx", "components/ui/attachment.tsx"],
   ["apps/app/components/ui/avatar.tsx", "components/ui/avatar.tsx"],
   ["apps/app/components/ui/button.tsx", "components/ui/button.tsx"],
+  ["apps/app/components/ui/card.tsx", "components/ui/card.tsx"],
   ["apps/app/components/ui/checkbox.tsx", "components/ui/checkbox.tsx"],
   ["apps/app/components/ui/collapsible.tsx", "components/ui/collapsible.tsx"],
   ["apps/app/components/ui/command.tsx", "components/ui/command.tsx"],
@@ -251,6 +271,7 @@ const FILES = [
   ["apps/app/components/ui/input.tsx", "components/ui/input.tsx"],
   ["apps/app/components/ui/input-group.tsx", "components/ui/input-group.tsx"],
   ["apps/app/components/ui/item.tsx", "components/ui/item.tsx"],
+  ["apps/app/components/ui/page-header.tsx", "components/ui/page-header.tsx"],
   ["apps/app/components/ui/radio-group.tsx", "components/ui/radio-group.tsx"],
   ["apps/app/components/ui/select.tsx", "components/ui/select.tsx"],
   ["apps/app/components/ui/separator.tsx", "components/ui/separator.tsx"],
@@ -258,6 +279,8 @@ const FILES = [
   ["apps/app/components/ui/sidebar.tsx", "components/ui/sidebar.tsx"],
   ["apps/app/components/ui/skeleton.tsx", "components/ui/skeleton.tsx"],
   ["apps/app/components/ui/spinner.tsx", "components/ui/spinner.tsx"],
+  ["apps/app/components/ui/stat-card.tsx", "components/ui/stat-card.tsx"],
+  ["apps/app/components/ui/table.tsx", "components/ui/table.tsx"],
   ["apps/app/components/ui/textarea.tsx", "components/ui/textarea.tsx"],
   ["apps/app/components/ui/tooltip.tsx", "components/ui/tooltip.tsx"],
   ["apps/app/hooks/use-mobile.ts", "hooks/use-mobile.ts"],
@@ -265,17 +288,19 @@ const FILES = [
 ];
 
 function rewrite(source) {
-  return source
-    .replace(/from "@\//g, 'from "@ui/')
-    .replace(/import\("@\//g, 'import("@ui/')
-    .replace(/from "next-intl"/g, 'from "use-intl"')
-    .replace(
-      /from "@intelligo-dev\/auth\/client"/g,
-      'from "@ui/shims/auth-client"'
-    )
-    // AppSidebar hardcodes the icon-collapse variant; a fixed canvas with
-    // no viewport to collapse against wants the non-collapsing one.
-    .replace(/<Sidebar collapsible="icon">/, '<Sidebar collapsible="none">');
+  return (
+    source
+      .replace(/from "@\//g, 'from "@ui/')
+      .replace(/import\("@\//g, 'import("@ui/')
+      .replace(/from "next-intl"/g, 'from "use-intl"')
+      .replace(
+        /from "@intelligo-dev\/auth\/client"/g,
+        'from "@ui/shims/auth-client"',
+      )
+      // AppSidebar hardcodes the icon-collapse variant; a fixed canvas with
+      // no viewport to collapse against wants the non-collapsing one.
+      .replace(/<Sidebar collapsible="icon">/, '<Sidebar collapsible="none">')
+  );
 }
 
 let copied = 0;
@@ -300,5 +325,5 @@ const overrides = join(FILM, "src/ui-overrides");
 if (existsSync(overrides)) cpSync(overrides, UI_ROOT, { recursive: true });
 
 console.log(
-  `sync-ui: ${copied} files from the registry + reference app into src/ui (${skipped} server-only skipped)`
+  `sync-ui: ${copied} files from the registry + reference app into src/ui (${skipped} server-only skipped)`,
 );

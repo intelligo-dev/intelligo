@@ -22,25 +22,46 @@ import { PromptBar } from "@ui/components/dashboard/prompt-bar";
 import { MessageList } from "@ui/components/chat/message-list";
 import { ChatInput } from "@ui/components/chat/chat-input";
 import { PathnameContext } from "@ui/i18n/navigation";
+import { useFormatter, useTranslations } from "use-intl";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@ui/components/ui/card";
+import {
+  PageHeader,
+  PageHeaderContent,
+  PageHeaderDescription,
+  PageHeaderTitle,
+} from "@ui/components/ui/page-header";
+import {
+  StatCard,
+  StatCardHeader,
+  StatCardLabel,
+  StatCardValue,
+} from "@ui/components/ui/stat-card";
+import { StatusBadge } from "@ui/components/ui/status-badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@ui/components/ui/table";
 import { chatConfig } from "@ui/lib/chat-config";
 
 /**
- * Ported from apps/site/src/components/film.tsx (the homepage's old
- * scroll-driven film), then redesigned twice: first so the sidebar,
- * header, dashboard and chat surfaces are the real registry/reference-app
- * components (see scripts/sync-ui.mjs) instead of a redrawing of them,
- * then so the story itself is richer than "dashboard, one exchange, time
- * passes" — seven acts now: the build, pages assembling, the real
- * dashboard, a first real exchange, customizing the agent mid-story, a
- * second exchange that shows off attachments/tool activity/a human
- * approval gate/cited sources/an artifact, and a closing card. See each
- * act's own comment for what changed and why.
+ * The project film: eight acts on one 0 → 1 track, silent, carried by the
+ * line in the lower third. The problem (an agent that works and is not a
+ * product), one command, the pages assembling as source, the running
+ * product, a message crossing the execution boundary, the usage page that
+ * run lands on, the config seam, and the closing card.
  *
- * Every `useTransform`/`MotionValue` from the original is a plain
- * `interp()` call on a plain number here — `p` was a scroll fraction
- * there, is `frame / durationInFrames` here, and Remotion re-evaluates
- * the whole tree every frame already, so no reactive value graph is
- * needed.
+ * The shell, dashboard, chat and usage surfaces are the registry's own
+ * components (src/ui — see scripts/sync-ui.mjs). Every value is a plain
+ * `interp()` of `frame / durationInFrames`, evaluated once per frame.
  */
 
 const W = 960;
@@ -49,26 +70,25 @@ const H = 600;
 /** The stage renders at this scale inside the 1920×1080 composition,
  * filling the frame's height edge to edge with a fixed side margin. */
 const SCALE = 1.5;
-/** Reserved band at the bottom of the composition for the caption, so it
- * never overlaps the stage's own bottom-anchored content (the tray). */
+/** Reserved band at the bottom of the composition for the script line,
+ * so it never overlaps the stage's own bottom-anchored content. */
 const CAPTION_BAND = 140;
 
 /**
- * Seven top-level acts on the 0 → 1 track. Each gets its own clamped
- * 0 → 1 local progress (see `Film()`) — components read whichever local
- * value is theirs and naturally freeze at 1 once their own act has
- * passed (interp clamps), which is what lets e.g. the assembled tray,
- * the chat1 exchange, or the customized agent identity just persist
- * into later acts with no extra plumbing.
+ * The acts. Each gets its own clamped 0 → 1 local progress (see
+ * `Film()`); a component reads the one that is its own and holds its end
+ * state once that act has passed, which is how the assembled tray or the
+ * finished exchange persist into later acts.
  */
 const SCENE = {
-  terminal: [0, 0.12] as [number, number],
-  blocks: [0.12, 0.36] as [number, number],
-  dashboard: [0.36, 0.44] as [number, number],
-  chat1: [0.44, 0.58] as [number, number],
-  customize: [0.58, 0.68] as [number, number],
-  chat2: [0.68, 0.92] as [number, number],
-  ending: [0.92, 1] as [number, number],
+  hook: [0, 0.12] as [number, number],
+  terminal: [0.12, 0.22] as [number, number],
+  blocks: [0.22, 0.42] as [number, number],
+  dashboard: [0.42, 0.5] as [number, number],
+  chat1: [0.5, 0.7] as [number, number],
+  ledger: [0.7, 0.8] as [number, number],
+  customize: [0.8, 0.9] as [number, number],
+  ending: [0.9, 1] as [number, number],
 };
 
 /** the tray fades out right at the blocks → dashboard handoff, so the
@@ -136,101 +156,145 @@ function momentWindow(k: number): [number, number] {
 }
 
 const SCENES = [
-  {
-    id: "terminal",
-    n: "01",
-    title: "The build begins",
-    note: "One command scaffolds the app, installs the framework packages, and pulls in every page as your own source.",
-  },
-  {
-    id: "blocks",
-    n: "02",
-    title: "Pages assemble",
-    note: "Auth, dashboard, chat, settings and billing — installed group by group, exactly as shadcn wrote them.",
-  },
-  {
-    id: "dashboard",
-    n: "03",
-    title: "Your product",
-    note: "One running application, ready to work — your agent lands in the seam it's built for.",
-  },
-  {
-    id: "chat1",
-    n: "04",
-    title: "Ask it something",
-    note: "A message goes in, your agent answers natively — Intelligo admits the run, watches for sources, settles the cost.",
-  },
-  {
-    id: "customize",
-    n: "05",
-    title: "Make it yours",
-    note: "Still your source. Change the agent's identity in lib/chat-config.tsx; the components never move.",
-  },
-  {
-    id: "chat2",
-    n: "06",
-    title: "Everything it can do",
-    note: "Attachments, tool activity, a human approval gate, cited sources — then the answer becomes a document.",
-  },
-  {
-    id: "ending",
-    n: "07",
-    title: "Now build yours",
-    note: "eve, Mastra, the AI SDK — whatever you bring, it lands in the same seam.",
-  },
+  { n: "01", title: "The other half" },
+  { n: "02", title: "One command" },
+  { n: "03", title: "Pages assemble" },
+  { n: "04", title: "Your product" },
+  { n: "05", title: "The execution boundary" },
+  { n: "06", title: "On the record" },
+  { n: "07", title: "Make it yours" },
+  { n: "08", title: "Now build yours" },
 ] as const;
 
-type Step = { scene: number; label: string; at: number };
+/**
+ * The script. `line` is the sentence a muted viewer reads — it holds
+ * across consecutive beats that share it; `label` is the small print
+ * under it, naming what is on screen right now.
+ */
+type Beat = { scene: number; at: number; line: string; label: string };
 const g = (win: [number, number], f: number) => win[0] + f * (win[1] - win[0]);
 
-const STEPS: Step[] = [
-  { scene: 0, label: "intelligo create", at: g(SCENE.terminal, 0) },
-  { scene: 0, label: "Packages installed", at: g(SCENE.terminal, 0.4) },
+const HOOK_BEATS = { missing: 0.33, same: 0.65 };
+
+const LINE = {
+  terminal: "Intelligo ships that half. One command.",
+  blocks: "Every page lands as your own source.",
+  dashboard: "A running product. Day one.",
+  chat1: "Your agent runs unmodified.",
+  ledger: "Every run, accounted for.",
+  customize: "Make it yours — config, not forks.",
+};
+
+const BEATS: Beat[] = [
   {
     scene: 0,
-    label: "Registry items installed",
+    at: g(SCENE.hook, 0),
+    line: "Your agent works.",
+    label: "prompts · tools · the domain only you know",
+  },
+  {
+    scene: 0,
+    at: g(SCENE.hook, HOOK_BEATS.missing),
+    line: "It isn't a product yet.",
+    label: "sign-up · workspaces · plans · credits · invoices · usage · audit",
+  },
+  {
+    scene: 0,
+    at: g(SCENE.hook, HOOK_BEATS.same),
+    line: "That half is the same in every AI SaaS.",
+    label: "and it is where the months go",
+  },
+  {
+    scene: 1,
+    at: g(SCENE.terminal, 0),
+    line: LINE.terminal,
+    label: "intelligo create",
+  },
+  {
+    scene: 1,
+    at: g(SCENE.terminal, 0.4),
+    line: LINE.terminal,
+    label: "Packages installed",
+  },
+  {
+    scene: 1,
     at: g(SCENE.terminal, 0.72),
+    line: LINE.terminal,
+    label: "Pages installed as source",
   },
   ...MOMENTS.map((m, k) => ({
-    scene: 1,
-    label: `${m.title} created`,
+    scene: 2,
     at: g(SCENE.blocks, momentWindow(k)[0]),
+    line: LINE.blocks,
+    label: `${m.title} — ${m.items.length} pages`,
   })),
-  { scene: 2, label: "Your product is running", at: g(SCENE.dashboard, 0) },
-  { scene: 2, label: "Your agent lands", at: g(SCENE.dashboard, 0.7) },
-  { scene: 3, label: "A message is typed", at: g(SCENE.chat1, 0) },
   {
     scene: 3,
-    label: "Admit — entitlement checked, credits reserved",
-    at: g(SCENE.chat1, 0.15),
+    at: g(SCENE.dashboard, 0),
+    line: LINE.dashboard,
+    label: "Shell, dashboard and chat — running",
   },
-  { scene: 3, label: "Run — your agent, unmodified", at: g(SCENE.chat1, 0.35) },
   {
     scene: 3,
-    label: "Settle — usage recorded, credits charged",
-    at: g(SCENE.chat1, 0.6),
-  },
-  { scene: 4, label: "Open lib/chat-config.tsx", at: g(SCENE.customize, 0) },
-  {
-    scene: 4,
-    label: "Edit the agent's identity",
-    at: g(SCENE.customize, 0.4),
+    at: g(SCENE.dashboard, 0.7),
+    line: LINE.dashboard,
+    label: "Your agent lands in its seam",
   },
   {
     scene: 4,
-    label: "Hot reload — components untouched",
-    at: g(SCENE.customize, 0.75),
+    at: g(SCENE.chat1, 0),
+    line: LINE.chat1,
+    label: "A message goes in",
+  },
+  {
+    scene: 4,
+    at: g(SCENE.chat1, 0.24),
+    line: LINE.chat1,
+    label: "Admit — plan checked, worst-case cost held",
+  },
+  {
+    scene: 4,
+    at: g(SCENE.chat1, 0.4),
+    line: LINE.chat1,
+    label: "Run — your framework, no wrapper",
+  },
+  {
+    scene: 4,
+    at: g(SCENE.chat1, 0.66),
+    line: LINE.chat1,
+    label: "Settle — tokens and cost recorded, once",
   },
   {
     scene: 5,
-    label: "A new question, with an attachment",
-    at: g(SCENE.chat2, 0),
+    at: g(SCENE.ledger, 0),
+    line: LINE.ledger,
+    label: "The run lands on the workspace's usage page",
   },
-  { scene: 5, label: "Searching the contract", at: g(SCENE.chat2, 0.13) },
-  { scene: 5, label: "Waiting on your approval", at: g(SCENE.chat2, 0.34) },
-  { scene: 5, label: "Approved — the send goes out", at: g(SCENE.chat2, 0.7) },
-  { scene: 5, label: "Saved as an artifact", at: g(SCENE.chat2, 0.93) },
-  { scene: 6, label: "Add your own feature", at: g(SCENE.ending, 0.1) },
+  {
+    scene: 5,
+    at: g(SCENE.ledger, 0.4),
+    line: LINE.ledger,
+    label: "Tokens, charge and plan quota — settled",
+  },
+  {
+    scene: 6,
+    at: g(SCENE.customize, 0),
+    line: LINE.customize,
+    label: "Open lib/chat-config.tsx",
+  },
+  {
+    scene: 6,
+    at: g(SCENE.customize, 0.4),
+    line: LINE.customize,
+    label: "Edit the agent's identity",
+  },
+  {
+    scene: 6,
+    at: g(SCENE.customize, 0.75),
+    line: LINE.customize,
+    label: "Hot reload — components untouched",
+  },
+  { scene: 7, at: g(SCENE.ending, 0), line: "", label: "" },
 ];
 
 /* ---------- a part that lands ---------- */
@@ -691,7 +755,108 @@ function Moments({ p, fade }: { p: number; fade: number }) {
   );
 }
 
-/* ---------- act 0: the terminal ---------- */
+/* ---------- the hook: an agent that works, and everything it lacks ---------- */
+
+const AGENT = { x: 310, y: 190, w: 340, h: 220 };
+
+const AGENT_CODE = [
+  "const agent = new Agent({",
+  "  model,",
+  "  tools: { searchContract },",
+  "  instructions: contractReview,",
+  "});",
+  "",
+  "await agent.generate(question);",
+];
+
+const AGENT_OUTPUT = "§4.2 renews in 90 days. §7 has no cap.";
+
+/** What a product needs around the agent, as the slots it leaves empty. */
+const MISSING: { label: string; x: number; y: number; w: number; h: number }[] =
+  [
+    { label: "sign-up & login", x: 50, y: 44, w: 270, h: 112 },
+    { label: "workspaces & roles", x: 345, y: 44, w: 270, h: 112 },
+    { label: "team invitations", x: 640, y: 44, w: 270, h: 112 },
+    { label: "plans & limits", x: 50, y: 190, w: 230, h: 220 },
+    { label: "credits", x: 680, y: 190, w: 230, h: 220 },
+    { label: "checkout & invoices", x: 50, y: 444, w: 270, h: 112 },
+    { label: "usage & cost", x: 345, y: 444, w: 270, h: 112 },
+    { label: "audit trail", x: 640, y: 444, w: 270, h: 112 },
+  ];
+
+function Hook({ p }: { p: number }) {
+  const opacity = interp(p, [0, 0.05, 0.92, 1], [0, 1, 1, 0]);
+  const scale = interp(p, [0.92, 1], [1, 0.97]);
+  const code = AGENT_CODE.join("\n");
+  const shown = typed(p, 0.04, 0.2, code);
+  const outputOp = interp(p, [0.22, 0.27], [0, 1]);
+  const same = interp(p, [HOOK_BEATS.same, HOOK_BEATS.same + 0.08], [0, 1]);
+  return (
+    <div
+      style={{ opacity, transform: `scale(${scale})` }}
+      className="absolute inset-0"
+    >
+      {MISSING.map((m, i) => {
+        const start = HOOK_BEATS.missing + (i / MISSING.length) * 0.24;
+        const op = interp(p, [start, start + 0.05], [0, 1]);
+        const rise = interp(p, [start, start + 0.05], [8, 0]);
+        return (
+          <div
+            key={m.label}
+            style={{
+              left: m.x,
+              top: m.y,
+              width: m.w,
+              height: m.h,
+              opacity: op,
+              transform: `translateY(${rise}px)`,
+              borderColor: `color-mix(in oklab, var(--foreground) ${Math.round(
+                22 + same * 28,
+              )}%, transparent)`,
+            }}
+            className="absolute flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed"
+          >
+            <span className="heading text-[15px] font-medium text-foreground">
+              {m.label}
+            </span>
+            <span className="mono text-[10px] text-muted-foreground">
+              {"// TODO"}
+            </span>
+          </div>
+        );
+      })}
+
+      <div
+        style={{
+          left: AGENT.x,
+          top: AGENT.y,
+          width: AGENT.w,
+          height: AGENT.h,
+        }}
+        className="absolute flex flex-col overflow-hidden rounded-lg border border-foreground/15 bg-background shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)]"
+      >
+        <div className="mono flex items-center justify-between border-b border-border px-3 py-1.5 text-[10px] text-muted-foreground">
+          <span>agent.ts</span>
+          <span style={{ opacity: same }} className="text-foreground">
+            your half
+          </span>
+        </div>
+        <pre className="mono m-0 flex-1 whitespace-pre px-3 py-2.5 text-[11px] leading-[1.6] text-foreground">
+          {shown}
+        </pre>
+        <div
+          style={{ opacity: outputOp }}
+          className="mono flex items-center gap-2 border-t border-border px-3 py-2 text-[10.5px]"
+        >
+          <span className="text-success">✓</span>
+          <span className="truncate text-foreground">{AGENT_OUTPUT}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- the terminal ---------- */
 
 type Line = { text: string; tone?: "cmd" | "ok" | "dim" | "amber" };
 
@@ -717,7 +882,7 @@ const LINES: Line[] = [
     text: `✓ ${REGISTRY_ITEMS.length} page families installed as source — app/[locale]/**, components/**, actions/**, messages/en/**`,
     tone: "ok",
   },
-  { text: "pnpm db:push && pnpm dev", tone: "cmd" },
+  { text: "pnpm db:migrate && pnpm dev", tone: "cmd" },
   { text: "▲ ready on http://localhost:3000", tone: "amber" },
 ];
 
@@ -800,22 +965,36 @@ function DashboardScreen() {
   );
 }
 
-/* ---- chat1: a first, simple exchange — thinking, one cited source ---- */
+/* ---- chat1: one exchange, paced by the boundary — the message is typed
+ * and sent, admitted, and only then does the agent stream its answer ---- */
+
+/** chat1's local timeline. */
+const RUN = {
+  sent: 0.1,
+  pullBack: [0.12, 0.2] as [number, number],
+  panelIn: [0.16, 0.24] as [number, number],
+  admit: 0.24,
+  run: 0.4,
+  settle: 0.66,
+  panelOut: [0.85, 0.89] as [number, number],
+  restore: [0.89, 0.97] as [number, number],
+};
 
 const ASK1 = "Which clauses expose us at renewal?";
 const ANSWER1 =
   "Two: the auto-renewal in §4.2 (90-day notice, already inside the window) and the price-escalator in §7 with no cap [1]. Recommend serving notice this week.";
 
 function chat1Messages(r: number): UIMessage[] {
+  if (r < RUN.sent) return [];
   const messages: UIMessage[] = [
     { id: "c1-u1", role: "user", parts: [{ type: "text", text: ASK1 }] },
   ];
-  if (r > 0.05) {
+  if (r > RUN.run) {
     // Fixture parts reach past the AI SDK's public UIMessage union for a
     // couple of experimental fields (source-url) message.tsx already
     // reads structurally — see lib/message-parts.ts's own `sourcesOf`.
     const parts: unknown[] = [];
-    if (r > 0.5) {
+    if (r > RUN.settle - 0.06) {
       parts.push({
         type: "source-url",
         sourceId: "c1-src-1",
@@ -823,7 +1002,10 @@ function chat1Messages(r: number): UIMessage[] {
         title: "Q3 Vendor Agreement · §7",
       });
     }
-    parts.push({ type: "text", text: typed(r, 0.12, 0.55, ANSWER1) });
+    parts.push({
+      type: "text",
+      text: typed(r, RUN.run + 0.02, RUN.settle, ANSWER1),
+    });
     messages.push({
       id: "c1-a1",
       role: "assistant",
@@ -833,99 +1015,171 @@ function chat1Messages(r: number): UIMessage[] {
   return messages;
 }
 
-/* ---- chat2: the feature showcase — attachment, tool activity, a human
- * approval gate, sources, and the answer becomes an artifact ---- */
+/* ---- usage: the page the settled run lands on ---- */
 
-const ASK2 =
-  "Draft a renewal notice and check whether legal needs to sign off first.";
-const ANSWER2 =
-  "Found the escalator clause and confirmed legal review is required over $50k [1]. Drafted the notice — approved below, so it's on its way.";
+type UsageRow = {
+  id: string;
+  startedAt: string;
+  status: "succeeded" | "settling" | "refused";
+  tokens: number | null;
+  charged: string | null;
+};
 
-/** A small inline placeholder — a scanned-clause look — so the fixture
- * needs no network access during a render. */
-const CLAUSE_IMAGE = `data:image/svg+xml,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160"><rect width="240" height="160" fill="#e2e2e2"/><rect x="16" y="16" width="180" height="10" fill="#9a9a9a"/><rect x="16" y="36" width="208" height="8" fill="#b8b8b8"/><rect x="16" y="52" width="190" height="8" fill="#b8b8b8"/><rect x="16" y="68" width="150" height="8" fill="#b8b8b8"/><rect x="16" y="96" width="208" height="8" fill="#b8b8b8"/><rect x="16" y="112" width="130" height="8" fill="#b8b8b8"/></svg>',
-)}`;
+const USAGE_MODEL = "google/gemini-2.5-flash";
 
-function chat2Messages(r: number): UIMessage[] {
-  const userParts: unknown[] = [
-    { type: "text", text: ASK2 },
+const EARLIER_ROWS: UsageRow[] = [
+  {
+    id: "run_127",
+    startedAt: "2026-08-29T08:41:00Z",
+    status: "succeeded",
+    tokens: 2310,
+    charged: "$0.0164",
+  },
+  {
+    id: "run_126",
+    startedAt: "2026-08-29T08:17:00Z",
+    status: "refused",
+    tokens: null,
+    charged: null,
+  },
+  {
+    id: "run_125",
+    startedAt: "2026-08-28T16:52:00Z",
+    status: "succeeded",
+    tokens: 1204,
+    charged: "$0.0086",
+  },
+];
+
+const STATUS_VARIANT = {
+  succeeded: "success",
+  settling: "warning",
+  refused: "neutral",
+} as const;
+
+/** The run the film just showed: settling first, then on the books. */
+const SETTLED_AT = 0.4;
+
+function UsageScreen({ r }: { r: number }) {
+  const t = useTranslations("usage");
+  const format = useFormatter();
+  const settled = r > SETTLED_AT;
+  const glow = interp(r, [0.05, 0.15, 0.8, 1], [0, 1, 1, 0]);
+  const rows: UsageRow[] = [
     {
-      type: "file",
-      url: CLAUSE_IMAGE,
-      mediaType: "image/svg+xml",
-      filename: "clause-4.2-screenshot.png",
+      id: "run_128",
+      startedAt: "2026-08-29T08:58:00Z",
+      status: settled ? "succeeded" : "settling",
+      tokens: settled ? 1842 : null,
+      charged: settled ? "$0.0131" : null,
+    },
+    ...EARLIER_ROWS,
+  ];
+  const stats = [
+    {
+      label: t("summaryCards.requests"),
+      value: format.number(settled ? 128 : 127),
+    },
+    {
+      label: t("summaryCards.tokensUsed"),
+      value: format.number(settled ? 216_232 : 214_390),
+    },
+    {
+      label: t("summaryCards.chargedAmount"),
+      value: settled ? "$1.54" : "$1.52",
     },
   ];
-  const messages: UIMessage[] = [
-    { id: "c2-u1", role: "user", parts: userParts as UIMessage["parts"] },
-  ];
-  if (r <= 0.05) return messages;
+  const empty = t("recordsTable.empty");
+  return (
+    <div className="space-y-5 px-6 py-6">
+      <PageHeader>
+        <PageHeaderContent>
+          <PageHeaderTitle>{t("page.title")}</PageHeaderTitle>
+          <PageHeaderDescription>{t("page.description")}</PageHeaderDescription>
+        </PageHeaderContent>
+      </PageHeader>
 
-  const parts: unknown[] = [];
+      <div className="grid grid-cols-3 gap-4">
+        {stats.map((stat) => (
+          <StatCard key={stat.label} size="sm">
+            <StatCardHeader>
+              <StatCardLabel>{stat.label}</StatCardLabel>
+              <StatCardValue>{stat.value}</StatCardValue>
+            </StatCardHeader>
+          </StatCard>
+        ))}
+      </div>
 
-  if (r > 0.1) {
-    parts.push({
-      type: "tool-searchContract",
-      toolCallId: "call-search",
-      state: r > 0.18 ? "output-available" : "input-available",
-      input: { query: "escalator clause legal review threshold" },
-      output:
-        r > 0.18
-          ? {
-              sources: [
-                {
-                  url: "https://acme.internal/contracts/q3-vendor.pdf",
-                  title: "Q3 Vendor Agreement · §7",
-                  index: 1,
-                },
-              ],
-            }
-          : undefined,
-    });
-  }
-
-  if (r > 0.32) {
-    const approved = r > 0.72;
-    parts.push({
-      type: "tool-sendRenewalNotice",
-      toolCallId: "call-send",
-      state: approved ? "output-available" : "approval-requested",
-      input: { to: "legal@acme.com", subject: "Renewal notice — §4.2" },
-      ...(approved
-        ? { output: { sent: true } }
-        : { approval: { id: "appr-1" } }),
-    });
-  }
-
-  if (r > 0.76) {
-    parts.push({ type: "text", text: typed(r, 0.76, 0.93, ANSWER2) });
-  }
-
-  if (r > 0.94) {
-    parts.push({
-      type: "tool-saveArtifact",
-      toolCallId: "call-save",
-      state: "output-available",
-      input: { title: "Renewal Notice — §4.2", kind: "text" },
-      output: { id: "doc-1", title: "Renewal Notice — §4.2", kind: "text" },
-    });
-  }
-
-  messages.push({
-    id: "c2-a1",
-    role: "assistant",
-    parts: parts as UIMessage["parts"],
-  });
-  return messages;
+      <Card size="sm">
+        <CardHeader>
+          <CardTitle>{t("recordsTable.title")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("recordsTable.columns.started")}</TableHead>
+                <TableHead>{t("recordsTable.columns.capability")}</TableHead>
+                <TableHead>{t("recordsTable.columns.model")}</TableHead>
+                <TableHead>{t("recordsTable.columns.status")}</TableHead>
+                <TableHead className="text-right">
+                  {t("recordsTable.columns.tokens")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("recordsTable.columns.chargedAmount")}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row, i) => (
+                <TableRow
+                  key={row.id}
+                  style={
+                    i === 0
+                      ? {
+                          background: `color-mix(in oklab, var(--muted) ${Math.round(
+                            glow * 100,
+                          )}%, transparent)`,
+                        }
+                      : undefined
+                  }
+                >
+                  <TableCell className="whitespace-nowrap text-muted-foreground">
+                    {format.dateTime(new Date(row.startedAt), {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </TableCell>
+                  <TableCell>chat.message</TableCell>
+                  <TableCell>{USAGE_MODEL}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={STATUS_VARIANT[row.status]} dot>
+                      {t(`recordsTable.status.${row.status}`)}
+                    </StatusBadge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {row.tokens !== null ? format.number(row.tokens) : empty}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {row.charged ?? empty}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
-type Screen = "dashboard" | "chat1" | "chat2";
+type Screen = "dashboard" | "chat" | "usage";
 
-function ChatScreen({ screen, r }: { screen: "chat1" | "chat2"; r: number }) {
-  const messages = screen === "chat1" ? chat1Messages(r) : chat2Messages(r);
-  const isStreaming =
-    screen === "chat1" ? r > 0.05 && r < 0.56 : r > 0.05 && r < 0.95;
+function ChatScreen({ r }: { r: number }) {
+  const messages = chat1Messages(r);
+  const isStreaming = r > RUN.sent && r < RUN.settle + 0.01;
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
@@ -937,7 +1191,7 @@ function ChatScreen({ screen, r }: { screen: "chat1" | "chat2"; r: number }) {
       </div>
       <ChatInput
         conversationId="conv_1"
-        value=""
+        value={r < RUN.sent ? typed(r, 0.01, RUN.sent - 0.015, ASK1) : ""}
         onChange={() => {}}
         onSend={() => {}}
         onStop={() => {}}
@@ -958,14 +1212,27 @@ function Stage({
   entrance,
   screen,
   chatProgress,
+  usageProgress,
   customized,
+  identityRing,
+  contentOpacity,
 }: {
   entrance: number;
   screen: Screen;
   chatProgress: number;
+  usageProgress: number;
   customized: boolean;
+  /** 0 → 1: how strongly the header's agent identity is ringed. */
+  identityRing: number;
+  /** Dips to 0 across a page swap, so the content changes unseen. */
+  contentOpacity: number;
 }) {
-  const pathname = screen === "dashboard" ? "/dashboard" : "/chat/conv_1";
+  const pathname =
+    screen === "dashboard"
+      ? "/dashboard"
+      : screen === "usage"
+        ? "/usage"
+        : "/chat/conv_1";
   const agentName = customized ? chatConfig.agent?.name : "Assistant";
   const agentIcon = customized ? chatConfig.agent?.icon : undefined;
 
@@ -1010,8 +1277,8 @@ function Stage({
           {/* header + page — the real ShellHeader, and the real dashboard
            * or chat page underneath it. The dashboard page doesn't portal
            * anything into the header's slot; the chat screens do, with
-           * the agent identity — "Assistant" until the customize act
-           * lands, then whatever `ui-overrides/lib/chat-config.tsx`
+           * the agent identity — "Assistant" until the customize act's
+           * hot reload, then whatever `ui-overrides/lib/chat-config.tsx`
            * carries, matching the Editor overlay's own edit. */}
           <Part
             p={entrance}
@@ -1022,18 +1289,30 @@ function Stage({
           >
             <div className="flex h-full flex-col">
               <ShellHeader>
-                {screen !== "dashboard" && (
-                  <span className="mr-1 flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                {screen === "chat" && (
+                  <span
+                    style={{
+                      boxShadow: `0 0 0 1.5px color-mix(in oklab, var(--foreground) ${Math.round(
+                        identityRing * 55,
+                      )}%, transparent)`,
+                    }}
+                    className="mr-1 flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground"
+                  >
                     {agentIcon && <span aria-hidden>{agentIcon}</span>}
                     <span className="max-w-32 truncate">{agentName}</span>
                   </span>
                 )}
               </ShellHeader>
-              <div className="min-h-0 flex-1 overflow-hidden">
+              <div
+                style={{ opacity: contentOpacity }}
+                className="min-h-0 flex-1 overflow-hidden"
+              >
                 {screen === "dashboard" ? (
                   <DashboardScreen />
+                ) : screen === "usage" ? (
+                  <UsageScreen r={usageProgress} />
                 ) : (
-                  <ChatScreen screen={screen} r={chatProgress} />
+                  <ChatScreen r={chatProgress} />
                 )}
               </div>
             </div>
@@ -1059,55 +1338,88 @@ const CODE: { text: string; step: "admit" | "run" | "settle" | "none" }[] = [
   { text: "// or, in catch: await run.fail({ error });", step: "settle" },
 ];
 
-/** A floating explainer, not a layout column — the real chat page has no
- * side panel to put this in, and it's explaining the framework boundary
- * underneath the page, not something any screen shows. Scoped to chat1
- * only — chat2 is already dense with real UI, a second explainer on top
- * of it would be too much at once. */
-const BOUNDARY = { w: 268, h: 196, top: 168 };
+/**
+ * The boundary underneath the page. While a message crosses it the app
+ * pulls back to the left (`APP_BACK`) and this panel takes the right of
+ * the stage: the route's code, the three steps, and the money moving.
+ */
+const APP_BACK = { scale: 0.57, x: 16, y: 129 };
+const BOUNDARY = { left: 578, top: 110, w: 370, h: 380 };
+
+const BOUNDARY_STEPS = ["admit", "run", "settle"] as const;
+type BoundaryStep = (typeof BOUNDARY_STEPS)[number];
+
+const BOUNDARY_NOTE: Record<BoundaryStep | "none", string> = {
+  none: "waiting for a message",
+  admit: "plan checked through a port · worst-case cost held",
+  run: "no wrapper, no agent API — the handle knows nothing about messages",
+  settle: "tokens and cost recorded, idempotent — no double billing",
+};
 
 function BoundaryPanel({ chat1 }: { chat1: number }) {
-  const x = interp(chat1, [0.04, 0.14], [BOUNDARY.w + 40, 0]);
-  const opacity = interp(chat1, [0.04, 0.12, 0.94, 1], [0, 1, 1, 0]);
-  const active =
-    chat1 < 0.2
+  const x = interp(chat1, RUN.panelIn, [BOUNDARY.w + 60, 0]);
+  const opacity = interp(
+    chat1,
+    [RUN.panelIn[0], RUN.panelIn[1], RUN.panelOut[0], RUN.panelOut[1]],
+    [0, 1, 1, 0],
+  );
+  const active: BoundaryStep | "none" =
+    chat1 < RUN.admit
       ? "none"
-      : chat1 < 0.42
+      : chat1 < RUN.run
         ? "admit"
-        : chat1 < 0.68
+        : chat1 < RUN.settle
           ? "run"
           : "settle";
-  const note =
-    active === "admit"
-      ? "ADMIT · plan checked through a port, worst-case cost held"
-      : active === "run"
-        ? "RUN · no wrapper, no agent API — the handle knows nothing about messages"
-        : active === "settle"
-          ? "SETTLE · tokens and cost recorded, idempotent — no double billing"
-          : "waiting for a message";
+  const reached = BOUNDARY_STEPS.indexOf(active as BoundaryStep);
+  const money =
+    active === "settle"
+      ? "charged $0.0131 · 1,842 tokens"
+      : active === "none"
+        ? "—"
+        : "held $0.0400 · worst case";
   return (
     <div
       style={{
         transform: `translateX(${x}px)`,
         opacity,
-        left: W - BOUNDARY.w - 20,
+        left: BOUNDARY.left,
         top: BOUNDARY.top,
         width: BOUNDARY.w,
         height: BOUNDARY.h,
       }}
-      className="absolute flex flex-col overflow-hidden rounded-md border border-foreground/15 bg-background shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)]"
+      className="absolute flex flex-col overflow-hidden rounded-lg border border-foreground/15 bg-background shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)]"
     >
-      <div className="mono flex items-center justify-between border-b border-border px-2.5 py-1.5 text-[9px] text-muted-foreground">
+      <div className="mono flex items-center justify-between border-b border-border px-3 py-2 text-[10px] text-muted-foreground">
         <span>app/api/chat/route.ts</span>
         <span>the execution boundary</span>
       </div>
-      <div className="mono flex-1 overflow-hidden p-2.5 text-[9px] leading-[1.6]">
+      <div className="mono flex-1 overflow-hidden px-3 py-3 text-[11.5px] leading-[1.75]">
         {CODE.map((l, i) => (
           <CodeLine key={i} l={l} active={active} />
         ))}
       </div>
-      <div className="mono border-t border-border px-2.5 py-1.5 text-[8.5px] text-muted-foreground">
-        <span>{note}</span>
+      <div className="grid grid-cols-3 gap-1.5 border-t border-border px-3 py-2">
+        {BOUNDARY_STEPS.map((step, i) => (
+          <div
+            key={step}
+            className={cn(
+              "mono flex items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-[11px] uppercase tracking-[0.06em]",
+              i === reached
+                ? "border-foreground bg-foreground text-background"
+                : i < reached
+                  ? "border-border text-foreground"
+                  : "border-border text-muted-foreground",
+            )}
+          >
+            {i < reached && <span className="text-success">✓</span>}
+            {step}
+          </div>
+        ))}
+      </div>
+      <div className="mono space-y-0.5 border-t border-border px-3 py-2.5 text-[10.5px]">
+        <div className="text-foreground">{money}</div>
+        <div className="text-muted-foreground">{BOUNDARY_NOTE[active]}</div>
       </div>
     </div>
   );
@@ -1131,6 +1443,9 @@ function CodeLine({ l, active }: { l: (typeof CODE)[number]; active: string }) {
 
 /* ---------- customize act overlay: the installed page, as source ---------- */
 
+/** Where in the customize act the saved config hot-reloads the header. */
+const RELOAD_AT = 0.75;
+
 const TREE = [
   ["app/[locale]/(app)/chat/page.tsx", false],
   ["components/chat/chat-panel.tsx", false],
@@ -1141,10 +1456,9 @@ const TREE = [
 ] as const;
 
 /**
- * The VS Code-like moment — editing the agent's identity mid-story, not
- * before the product ever appears. Opens during the customize act,
- * closes as `chat2` begins (`closesWith` — the next act after
- * customize, so the naming stays honest about what's driving it).
+ * The editor moment — the agent's identity edited in the consumer's own
+ * config while the product runs behind it. Opens during the customize
+ * act and leaves as the next act (`closesWith`) begins.
  */
 function Editor({
   customize,
@@ -1153,7 +1467,7 @@ function Editor({
   customize: number;
   closesWith: number;
 }) {
-  const EW = 390;
+  const EW = 430;
   const xIn = interp(customize, [0.02, 0.14], [-EW - 40, 0]);
   const xOut = interp(closesWith, [0, 0.2], [0, -EW - 40]);
   const x = xIn + xOut;
@@ -1165,6 +1479,7 @@ function Editor({
   );
   const iconOp = interp(customize, [0.52, 0.58], [0, 1]);
   const modified = interp(customize, [0.6, 0.64], [0, 1]);
+  const saved = customize > RELOAD_AT;
   return (
     <div
       style={{
@@ -1191,8 +1506,11 @@ function Editor({
           >
             <span className="truncate">{f}</span>
             {hot && (
-              <span style={{ opacity: modified }} className="text-foreground">
-                M
+              <span
+                style={{ opacity: modified }}
+                className={saved ? "text-success" : "text-foreground"}
+              >
+                {saved ? "✓" : "M"}
               </span>
             )}
           </div>
@@ -1201,7 +1519,7 @@ function Editor({
           consumer-owned · not a dependency
         </div>
       </div>
-      <div className="mono flex-1 p-3 text-[10px] leading-[1.65] text-foreground">
+      <div className="mono flex-1 p-3 text-[11px] leading-[1.65] text-foreground">
         <div className="mb-2 text-muted-foreground">lib/chat-config.tsx</div>
         <div>
           <span className="text-foreground">export const</span> chatConfig ={" "}
@@ -1243,34 +1561,41 @@ function Editor({
 
 /* ---------- the closing card ---------- */
 
-const ENDING_BOX = { w: 520, h: 210 };
+const CREATE_COMMAND = "pnpm dlx @intelligo-dev/cli@beta create my-app";
 
 function Ending({ ending }: { ending: number }) {
-  const opacity = interp(ending, [0.06, 0.24], [0, 1]);
-  const scale = interp(ending, [0.06, 0.24], [0.96, 1]);
+  const veil = interp(ending, [0, 0.18], [0, 0.94]);
+  const first = interp(ending, [0.08, 0.2], [0, 1]);
+  const second = interp(ending, [0.22, 0.34], [0, 1]);
+  const rest = interp(ending, [0.38, 0.5], [0, 1]);
+  const rise = (v: number) => `translateY(${(1 - v) * 10}px)`;
   return (
-    <div
-      style={{
-        opacity,
-        transform: `scale(${scale})`,
-        left: (W - ENDING_BOX.w) / 2,
-        top: (H - ENDING_BOX.h) / 2,
-        width: ENDING_BOX.w,
-        height: ENDING_BOX.h,
-      }}
-      className="absolute flex flex-col items-center justify-center gap-3 rounded-xl border border-foreground/15 bg-background px-10 text-center shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)]"
-    >
-      <span className="mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-        eve · Mastra · the AI SDK
-      </span>
-      <div className="heading text-[26px] font-semibold text-foreground">
-        Now add your own feature
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 pt-12 text-center">
+      <div
+        style={{ opacity: veil }}
+        className="absolute inset-0 rounded-xl bg-background"
+      />
+      <div className="heading relative text-[42px] font-semibold leading-[1.12] text-foreground">
+        <div style={{ opacity: first, transform: rise(first) }}>
+          You build the agent.
+        </div>
+        <div style={{ opacity: second, transform: rise(second) }}>
+          Intelligo is everything around it.
+        </div>
       </div>
-      <p className="max-w-sm text-[12.5px] text-muted-foreground">
-        Every part above is on npm or in the registry. Bring your own agent into
-        the one seam it's built for — upgrades never touch what you've
-        customized.
-      </p>
+      <div
+        style={{ opacity: rest, transform: rise(rest) }}
+        className="relative flex flex-col items-center gap-3"
+      >
+        <div className="mono rounded-lg border border-foreground/15 bg-muted px-4 py-2.5 text-[14px] text-foreground">
+          <span className="text-muted-foreground">$ </span>
+          {CREATE_COMMAND}
+        </div>
+        <div className="mono text-[12px] text-muted-foreground">
+          intelligo.dev · open source, Apache-2.0 · Mastra, the AI SDK, eve —
+          bring your own
+        </div>
+      </div>
     </div>
   );
 }
@@ -1281,28 +1606,53 @@ function App({
   entrance,
   screen,
   chat1,
-  chat2,
+  ledger,
+  customize,
   ending,
+  contentOpacity,
 }: {
   entrance: number;
   screen: Screen;
   chat1: number;
-  chat2: number;
+  ledger: number;
+  customize: number;
   ending: number;
+  contentOpacity: number;
 }) {
   const opacity = interp(entrance, [0, 0.04], [0, 1]);
-  const chatProgress = screen === "chat2" ? chat2 : chat1;
-  const customized = chat2 > 0;
+  const back = interp(
+    chat1,
+    [RUN.pullBack[0], RUN.pullBack[1], RUN.restore[0], RUN.restore[1]],
+    [0, 1, 1, 0],
+  );
+  const scale = 1 - (1 - APP_BACK.scale) * back;
+  const reloaded = customize > RELOAD_AT;
+  const identityRing = interp(
+    customize,
+    [RELOAD_AT, RELOAD_AT + 0.05, 0.96, 1],
+    [0, 1, 1, 0],
+  );
   return (
     <div style={{ opacity }} className="absolute inset-0">
-      <Stage
-        entrance={entrance}
-        screen={screen}
-        chatProgress={chatProgress}
-        customized={customized}
-      />
+      <div
+        style={{
+          transform: `translate(${APP_BACK.x * back}px, ${APP_BACK.y * back}px) scale(${scale})`,
+          transformOrigin: "top left",
+        }}
+        className="absolute left-0 top-0"
+      >
+        <Stage
+          entrance={entrance}
+          screen={screen}
+          chatProgress={chat1}
+          usageProgress={ledger}
+          customized={reloaded}
+          identityRing={identityRing}
+          contentOpacity={contentOpacity}
+        />
+      </div>
       <BoundaryPanel chat1={chat1} />
-      <Ending ending={ending} />
+      {ending > 0 && <Ending ending={ending} />}
     </div>
   );
 }
@@ -1325,6 +1675,11 @@ const HEADING_FONT = loadOutfit("normal", {
 
 /* ---------- the composition ---------- */
 
+/** Half-width of the opacity dip around a page swap, on the 0 → 1 track. */
+const SWAP_DIP = 0.005;
+/** How long a script line takes to arrive or leave, on the 0 → 1 track. */
+const LINE_FADE = 0.007;
+
 export type FilmProps = { theme?: "light" | "dark" };
 
 export function Film({ theme = "light" }: FilmProps) {
@@ -1332,29 +1687,49 @@ export function Film({ theme = "light" }: FilmProps) {
   const { durationInFrames, width, height } = useVideoConfig();
   const p = clamp01(frame / (durationInFrames - 1));
 
-  // seven acts, each a clamped 0 → 1 local progress — once `p` moves
-  // past an act's own window, `interp` clamps it at 1, so anything
-  // driven by an earlier act (the parked tray, the customized agent
-  // identity) just holds its end state through every later act with no
-  // extra plumbing.
+  // Each act's clamped 0 → 1 local progress: past its own window an act
+  // holds at 1, so what it built stays built through every later act.
+  const hook = interp(p, SCENE.hook, [0, 1]);
   const terminal = interp(p, SCENE.terminal, [0, 1]);
   const blocks = interp(p, SCENE.blocks, [0, 1]);
   const dashboard = interp(p, SCENE.dashboard, [0, 1]);
   const chat1 = interp(p, SCENE.chat1, [0, 1]);
+  const ledger = interp(p, SCENE.ledger, [0, 1]);
   const customize = interp(p, SCENE.customize, [0, 1]);
-  const chat2 = interp(p, SCENE.chat2, [0, 1]);
   const ending = interp(p, SCENE.ending, [0, 1]);
   const trayFade = interp(p, TRAY_CLEAR, [1, 0]);
 
   const screen: Screen =
-    chat2 > 0 ? "chat2" : chat1 > 0 ? "chat1" : "dashboard";
+    customize > 0
+      ? "chat"
+      : ledger > 0
+        ? "usage"
+        : chat1 > 0
+          ? "chat"
+          : "dashboard";
+  const contentOpacity = Math.min(
+    ...[SCENE.chat1[0], SCENE.ledger[0], SCENE.customize[0]].map((swap) =>
+      interp(Math.abs(p - swap), [0, SWAP_DIP], [0, 1]),
+    ),
+  );
 
-  let step = 0;
-  STEPS.forEach((s, n) => {
-    if (p >= s.at) step = n;
+  let beat = 0;
+  BEATS.forEach((b, n) => {
+    if (p >= b.at) beat = n;
   });
-  const scene = STEPS[step]!.scene;
-  const pct = Math.round(p * 100);
+  const { scene, line, label } = BEATS[beat]!;
+  const lineStart = BEATS.find((b) => b.line === line)!.at;
+  const lineEnd = BEATS.find((b) => b.at > lineStart && b.line !== line)?.at;
+  const lineIn = interp(p, [lineStart, lineStart + LINE_FADE], [0, 1]);
+  const lineOut =
+    lineEnd === undefined
+      ? 1
+      : interp(p, [lineEnd - LINE_FADE, lineEnd], [1, 0]);
+  const labelIn = interp(
+    p,
+    [BEATS[beat]!.at, BEATS[beat]!.at + LINE_FADE],
+    [0, 1],
+  );
 
   const stageW = W * SCALE;
   const stageH = H * SCALE;
@@ -1394,44 +1769,61 @@ export function Film({ theme = "light" }: FilmProps) {
               className="film-stage relative overflow-hidden rounded-xl"
               style={{ width: W, height: H }}
             >
+              <Hook p={hook} />
               <Moments p={blocks} fade={trayFade} />
               <Terminal p={terminal} />
               <App
                 entrance={dashboard}
                 screen={screen}
                 chat1={chat1}
-                chat2={chat2}
+                ledger={ledger}
+                customize={customize}
                 ending={ending}
+                contentOpacity={contentOpacity}
               />
-              {/* Editor paints after App now — unlike the old timeline
-               * (customize fully before the product ever appeared, so the
-               * app was invisible while Editor was on screen), the app is
-               * already up and opaque behind this overlay, and DOM order
-               * is paint order with no z-index in play. */}
-              <Editor customize={customize} closesWith={chat2} />
+              {/* Painted after App: the app is already up behind this
+               * overlay, and DOM order is paint order with no z-index. */}
+              <Editor customize={customize} closesWith={ending} />
             </div>
           </div>
         </div>
 
-        {/* lower-third: the same scene/step context the site's Rail gives a scroller.
-         * Lives in the reserved CAPTION_BAND strip below the stage, never over it. */}
-        <div
-          className="mono absolute left-16 text-foreground"
-          style={{
-            bottom: (CAPTION_BAND - 92) / 2,
-            textShadow: "0 1px 12px var(--background)",
-          }}
-        >
-          <div className="text-[13px] uppercase tracking-[0.08em] text-muted-foreground">
-            scene {SCENES[scene]!.n} / 07 · {pct}%
+        {/* The lower third, in the reserved CAPTION_BAND below the stage:
+         * the script line a muted viewer reads, the small print under it,
+         * and where in the film this is. The closing card carries its own
+         * words, so the band empties as that act begins. */}
+        {line !== "" && (
+          <div
+            className="absolute inset-x-16 flex items-end justify-between gap-12"
+            style={{ bottom: 26 }}
+          >
+            <div>
+              <div
+                style={{
+                  opacity: lineIn * lineOut,
+                  transform: `translateY(${(1 - lineIn) * 10}px)`,
+                }}
+                className="heading text-[40px] font-medium leading-[1.15] text-foreground"
+              >
+                {line}
+              </div>
+              <div
+                style={{ opacity: labelIn * lineOut }}
+                className="mono mt-2 text-[17px] text-muted-foreground"
+              >
+                {label}
+              </div>
+            </div>
+            <div className="mono shrink-0 pb-1 text-right text-[14px] uppercase tracking-[0.08em] text-muted-foreground">
+              <div>
+                {SCENES[scene]!.n} / {String(SCENES.length).padStart(2, "0")}
+              </div>
+              <div className="mt-1 text-foreground/80">
+                {SCENES[scene]!.title}
+              </div>
+            </div>
           </div>
-          <div className="heading mt-1 text-[22px] font-medium text-foreground">
-            {SCENES[scene]!.title}
-          </div>
-          <div className="mt-1 text-[14px] text-foreground/80">
-            {STEPS[step]!.label}
-          </div>
-        </div>
+        )}
       </AbsoluteFill>
     </FilmProviders>
   );

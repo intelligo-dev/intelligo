@@ -1,16 +1,32 @@
 # film
 
-The homepage's "film" — terminal, pages assembling, make it yours, your
-product, the run, time passes — as a rendered video instead of the
-scroll-driven interactive version that used to live at
-`apps/site/src/components/film.tsx`. `src/Film.tsx` started as a faithful
-port of that component (`p` became `frame / durationInFrames`, every
-`useTransform` a plain `interp()` call — `src/interp.ts` — evaluated once
-per frame instead of a reactive value graph) and was then redesigned: a
-new act order, and sidebar/topbar/dashboard wireframes corrected against
-the real `app-shell`/`dashboard` registry items instead of the original's
-invented ones. See the file's own top-of-file comment for what changed
-and why.
+The project film — one minute, silent, rendered with Remotion. It plays
+muted wherever it is embedded (the README, the homepage), so the story is
+carried by the line in the lower third; the stage shows the registry's
+own shell, dashboard, chat and usage components (`src/ui`, see
+`scripts/sync-ui.mjs`), not drawings of them.
+
+## The script
+
+Problem → promise → proof → ownership → call to action. `BEATS` in
+`src/Film.tsx` is the source; this table is its reading copy.
+
+| #   | Seconds | On the stage                                                 | The line                                                                                    |
+| --- | ------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| 01  | 0–7     | An agent that works, then the empty slots a product needs    | _Your agent works._ → _It isn't a product yet._ → _That half is the same in every AI SaaS._ |
+| 02  | 7–13    | The terminal: `create`, the packages, the pages              | _Intelligo ships that half. One command._                                                   |
+| 03  | 13–25   | Auth, dashboard, chat, settings and billing assemble         | _Every page lands as your own source._                                                      |
+| 04  | 25–30   | The real shell and dashboard                                 | _A running product. Day one._                                                               |
+| 05  | 30–42   | A message crosses the execution boundary: admit, run, settle | _Your agent runs unmodified._                                                               |
+| 06  | 42–48   | The usage page: that run settling onto the books             | _Every run, accounted for._                                                                 |
+| 07  | 48–54   | `lib/chat-config.tsx` edited, the header hot-reloads         | _Make it yours — config, not forks._                                                        |
+| 08  | 54–60   | The closing card, with the `create` command                  | _You build the agent. Intelligo is everything around it._                                   |
+
+Acts 01–02 stand alone as the short cut (`pnpm --filter film
+render:teaser`): the problem, then "One command".
+
+Everything on screen exists today; a beat that needs a feature the
+framework does not have does not go in the film.
 
 Not deployed, not published, no CI job renders it — this is a one-off
 production tool. Its `out/` (rendered video) and `build/` (bundled)
@@ -22,6 +38,7 @@ directories are gitignored.
 pnpm --filter film dev          # Remotion Studio — scrub the timeline, inspect any frame
 pnpm --filter film render       # renders out/film-light.mp4
 pnpm --filter film render:dark  # renders out/film-dark.mp4
+pnpm --filter film render:teaser # the first two acts, out/teaser-light.mp4
 pnpm --filter film lint
 pnpm --filter film type-check
 ```

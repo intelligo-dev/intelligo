@@ -65,4 +65,4 @@ export const PACKAGES = [
 ];
 
 /** The published version, from packages/core/package.json. */
-export const PACKAGE_VERSION = "1.0.0-beta.7";
+export const PACKAGE_VERSION = "1.0.0-beta.8";

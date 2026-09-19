@@ -5,10 +5,11 @@ import type { Workspace } from "@ui/components/shell/workspace-switcher";
 import appShellMessages from "@ui/messages/en/app-shell.json";
 import dashboardMessages from "@ui/messages/en/dashboard.json";
 import chatMessages from "@ui/messages/en/chat.json";
+import usageMessages from "@ui/messages/en/usage.json";
 
 /**
- * Everything the real app-shell/dashboard/chat surface (src/ui — see
- * scripts/sync-ui.mjs) needs mounted above it: all three namespaces'
+ * Everything the real app-shell/dashboard/chat/usage surface (src/ui —
+ * see scripts/sync-ui.mjs) needs mounted above it: their namespaces'
  * translations and a pathname for the sidebar's active-item state. One
  * fixture "acme" workspace and one "Maya" user, matching the names the
  * original hand-drawn sidebar/topbar already used.
@@ -31,6 +32,7 @@ export function FilmProviders({ children }: { children: ReactNode }) {
         "app-shell": appShellMessages,
         dashboard: dashboardMessages,
         chat: chatMessages,
+        usage: usageMessages,
       }}
       onError={() => {}}
       getMessageFallback={({ key }) => key.split(".").pop() ?? key}
