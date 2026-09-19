@@ -15,7 +15,7 @@ pnpm registry:build                       # → packages/registry/public/r/*.jso
 pnpm --filter @intelligo-dev/registry lint
 ```
 
-`apps/site` publishes the built items at `https://intelligo.dev/r/<item>.json`;
+`apps/website` publishes the built items at `https://intelligo.dev/r/<item>.json`;
 a checkout can install straight from the built artifacts:
 
 ```bash

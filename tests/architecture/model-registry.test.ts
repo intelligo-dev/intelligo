@@ -50,11 +50,11 @@ const IGNORED_DIRS = new Set([
 
 /**
  * Trees that are prose about the framework rather than code that calls
- * a provider. apps/site quotes this rule's own failure output — with a
+ * a provider. apps/website quotes this rule's own failure output — with a
  * deliberately unregistered id — to show what the rule catches; scanning
  * it would make the demonstration the violation.
  */
-const IGNORED_TREES = ["apps/site"];
+const IGNORED_TREES = ["apps/website"];
 
 /**
  * A provider-prefixed model id. Matching the shape rather than a list

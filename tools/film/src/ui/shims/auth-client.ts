@@ -1,6 +1,6 @@
 /**
  * Stand-in for `@intelligo-dev/auth/client` — adapted from
- * apps/site/src/showcase/app/shims/auth-client.ts. Only referenced from
+ * apps/website/src/showcase/app/shims/auth-client.ts. Only referenced from
  * event handlers (sign out, switch workspace) that a rendered video
  * never fires, so it needs no real behavior — just a shape that
  * type-checks against what UserMenu/WorkspaceSwitcher call.

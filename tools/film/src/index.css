@@ -1,6 +1,6 @@
 /*
  * The token contract's light and dark values, copied from
- * apps/site/src/styles/global.css (the same CSS `shadcn add
+ * apps/website/src/styles/global.css (the same CSS `shadcn add
  * https://intelligo.dev/r/intelligo.json` writes into a consumer) — the
  * full set now, not the trimmed one this file used to carry: the Stage
  * renders real registry/base-ui components (src/ui, see
@@ -166,7 +166,7 @@
 
 /* The real shell components (src/ui) size themselves against a viewport
  * (min-h-svh, fixed inset containers) that doesn't exist inside the
- * Stage's fixed 960×600 box. apps/site/src/styles/global.css solves the
+ * Stage's fixed 960×600 box. apps/website/src/styles/global.css solves the
  * identical problem for its own ScaledCanvas previews the same way —
  * the sidebar fits the box it's actually given instead of the screen. */
 .film-stage [data-slot="sidebar-wrapper"] { min-height: 100%; height: 100%; }

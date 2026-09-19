@@ -312,7 +312,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  apps/site:
+  apps/website:
     dependencies:
       '@ai-sdk/react':
         specifier: ^4.0.106
@@ -960,12 +960,6 @@ importers:
         specifier: ^4.6.5
         version: 4.6.5
 
-packages:
-
-  '@a2a-js/sdk@0.3.14':
-    resolution: {integrity: sha512-F6Ew1AtPzCLhTn8h9yiqTe7DiDf6XVrSnq9V1YqSl9eWqPm6anMveTiKdCSb/76cW0YiJc24rNaUrVezFFHbqQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
   tools/film:
     dependencies:
       '@base-ui/react':
@@ -1069,6 +1063,12 @@ packages:
         specifier: 5.9.3
         version: 5.9.3
 
+packages:
+
+  '@a2a-js/sdk@0.3.14':
+    resolution: {integrity: sha512-F6Ew1AtPzCLhTn8h9yiqTe7DiDf6XVrSnq9V1YqSl9eWqPm6anMveTiKdCSb/76cW0YiJc24rNaUrVezFFHbqQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
       '@bufbuild/protobuf': ^2.10.2
       '@grpc/grpc-js': ^1.11.0
       express: ^4.21.2 || ^5.1.0

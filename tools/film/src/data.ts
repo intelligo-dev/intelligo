@@ -3,7 +3,7 @@
  * groups, the framework package ids `pnpm add` lists, and the version
  * that types into the terminal. Source of truth if this ever needs a
  * refresh: packages/registry/registry.json (item names/groups, via
- * apps/site/src/lib/registry-items.ts's GROUPS map) and
+ * apps/website/src/lib/registry-items.ts's GROUPS map) and
  * packages/core/package.json's version. Not auto-synced — a rendered
  * video is a snapshot, not a live page.
  */

@@ -49,16 +49,16 @@ render prop (`--props={"theme":"..."}`), not two separate compositions.
 ## After rendering
 
 `out/` is gitignored; what ships is the copy under
-`apps/site/public/film/`, which `SITE.film` (`apps/site/src/lib/site.ts`)
+`apps/website/public/film/`, which `SITE.film` (`apps/website/src/lib/site.ts`)
 points the homepage at — the light render on the light theme, the dark
 one on the dark — and which the repository README links its teaser from.
 After a re-render, refresh all of it:
 
 ```bash
 for t in light dark; do
-  cp tools/film/out/film-$t.mp4 apps/site/public/film/film-$t.mp4
-  ffmpeg -y -ss 6.85 -i tools/film/out/film-$t.mp4 -frames:v 1 -q:v 4 apps/site/public/film/poster-$t.jpg
-  ffmpeg -y -t 12.5 -i tools/film/out/film-$t.mp4 -vf "fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=48:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" apps/site/public/film/teaser-$t.gif
+  cp tools/film/out/film-$t.mp4 apps/website/public/film/film-$t.mp4
+  ffmpeg -y -ss 6.85 -i tools/film/out/film-$t.mp4 -frames:v 1 -q:v 4 apps/website/public/film/poster-$t.jpg
+  ffmpeg -y -t 12.5 -i tools/film/out/film-$t.mp4 -vf "fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=48:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" apps/website/public/film/teaser-$t.gif
 done
 ```
 
@@ -71,14 +71,14 @@ teaser GIF is acts 01–02, the README's autoplaying cut.
 registry item groups, the framework package ids the terminal's `pnpm add`
 line lists, and the version that types into it. It isn't synced from
 `packages/registry/registry.json` automatically (unlike everything
-`apps/site` shows about the framework) — a rendered video is a snapshot,
+`apps/website` shows about the framework) — a rendered video is a snapshot,
 not a live page. Update it by hand, from that file and
 `packages/core/package.json`'s version, if the story ever needs a refresh.
 
 ## Design tokens
 
 `src/index.css` carries the light _and_ dark halves of the token
-contract (`apps/site/src/styles/global.css` — the same CSS `shadcn add
+contract (`apps/website/src/styles/global.css` — the same CSS `shadcn add
 https://intelligo.dev/r/intelligo.json` writes into a consumer), trimmed
 to what this film's classNames use. `Film`'s `theme` prop toggles a
 `dark` class on the composition root, exactly the way the site stamps it

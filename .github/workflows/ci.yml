@@ -128,7 +128,7 @@ jobs:
       # this job used to run, and what they prove — that a consumer can
       # install what we publish — is a question about a release, not
       # about a commit. A release cannot publish without them.
-      # apps/site serves packages/registry/public/r as intelligo.dev/r and renders
+      # apps/website serves packages/registry/public/r as intelligo.dev/r and renders
       # the items' real components, both as committed copies made by
       # `sync`. A registry change without a re-sync would deploy a stale
       # registry. proof.json is excluded: its sampled date is refreshed
@@ -137,9 +137,9 @@ jobs:
         run: |
           set -euo pipefail
           pnpm sync
-          git checkout -- apps/site/src/data/proof.json
-          git status --porcelain -- apps/site/public/r apps/site/src/data/registry.json apps/site/src/showcase/app
-          test -z "$(git status --porcelain -- apps/site/public/r apps/site/src/data/registry.json apps/site/src/showcase/app)"
+          git checkout -- apps/website/src/data/proof.json
+          git status --porcelain -- apps/website/public/r apps/website/src/data/registry.json apps/website/src/showcase/app
+          test -z "$(git status --porcelain -- apps/website/public/r apps/website/src/data/registry.json apps/website/src/showcase/app)"
 
       - name: Check formatting
         run: pnpm format:check

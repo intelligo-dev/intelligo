@@ -4,7 +4,7 @@
  * surface the Stage renders with — not a live dependency. Copied
  * straight from the framework's own source (the registry, and the
  * reference app's installed shadcn primitives), the same rewrites
- * apps/site/scripts/sync-framework.mjs uses to run registry components
+ * apps/website/scripts/sync-framework.mjs uses to run registry components
  * outside Next.js: `@/` → `@ui/`, `next-intl` → `use-intl`,
  * `@intelligo-dev/auth/client` → a shim, server-only files dropped
  * entirely (the same `SERVER_MARKERS` check, ported verbatim — it's
@@ -17,7 +17,7 @@
  * doesn't expose it as a prop) — the "always expanded" fit for the
  * wrapper's `min-h-svh` chain lives in src/index.css instead
  * (`.film-stage [data-slot=...]`), reusing the exact technique
- * apps/site/src/styles/global.css already applies for its own
+ * apps/website/src/styles/global.css already applies for its own
  * ScaledCanvas previews.
  *
  * The file list below is the traced import closure from six roots

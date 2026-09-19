@@ -1,0 +1,2988 @@
+# Getting started
+
+Source: https://intelligo.dev/docs/getting-started
+
+## Requirements
+
+- Node 22.14 or newer and pnpm 9
+- A PostgreSQL database — Neon works well; locally, any Postgres with the `pgvector` extension
+
+## Create the application
+
+```bash
+pnpm dlx @intelligo-dev/cli@beta create my-app
+```
+
+`create` asks which pages you want — the shell, sign-in, the dashboard and the chat are ticked to start with — adds the pages they build on, and shows you the commands that install them: `pnpm install` (shadcn is one of the scaffold's dev dependencies), then `shadcn add` for the design-system base and your pages, in the order they need. Nothing runs until you approve. `--items chat,billing-settings` or `--all` answers the question up front, `--yes` approves the commands, and `--no-install` stops after the scaffold.
+
+`create` writes a Next.js 16 application with shadcn (base-nova), Tailwind 4 and next-intl already wired, plus the files that make it an Intelligo app:
+
+| File                               | What it is                                                                                                                         |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `lib/intelligo.ts`                 | The [composition root](/docs/concepts/composition-root): plans, models, the request context and the execution boundary, bound once |
+| `lib/plans.ts`                     | Your plans and which features each grants                                                                                          |
+| `instrumentation.ts`               | Runs the composition root once per server process                                                                                  |
+| `app/api/auth/[...all]/route.ts`   | Better-Auth's handlers, from `@intelligo-dev/next/auth`                                                                            |
+| `app/api/webhooks/stripe/route.ts` | The Stripe webhook receiver                                                                                                        |
+| `intelligo.manifest.json`          | A hash of every generated file, so `doctor` and `upgrade --check` know what you changed                                            |
+
+Every one of these is yours from the first commit. Intelligo never overwrites them.
+
+## Configure the environment
+
+```bash
+cp .env.example .env.local
+```
+
+Two values are required before the app boots:
+
+```ini title=".env.local"
+DATABASE_URL=postgres://…
+BETTER_AUTH_SECRET=…   # any long random string
+```
+
+`NEXT_PUBLIC_APP_URL` defaults to `http://localhost:3000`. Stripe keys, `CRON_SECRET` and `PLATFORM_ADMIN_EMAILS` can wait until you need billing, maintenance or the admin console.
+
+## Create the tables
+
+```bash
+pnpm db:migrate
+```
+
+This runs `intelligo migrate` — the framework's migration chain, selected by content hash and applied in one transaction — and then `drizzle-kit migrate` for tables you add yourself. Don't provision with `drizzle-kit push`: a pushed database has the schema but no migration records, and the migrator refuses it rather than half-applying the chain.
+
+## Add pages later
+
+Pages arrive through the registry as source you own. Anything you did not pick at `create` installs with the shadcn CLI, from the `@intelligo` registry the scaffold's `components.json` already names:
+
+```bash
+pnpm exec shadcn add @intelligo/billing-settings
+```
+
+Some blocks import files another block ships, so the order matters. [Installing blocks](/docs/registry) has the full order, and [/blocks](/blocks) shows every block live.
+
+## Run it
+
+```bash
+pnpm dev
+```
+
+Open `http://localhost:3000`, sign up and start a chat. The chat streams against a built-in stub model, so sign-up, workspaces, team, billing, usage, chat and artifacts all work before you add an API key.
+
+```bash
+pnpm exec intelligo doctor
+```
+
+`doctor` reports what is still missing: environment, migrations, billing registration, the auth mount, unregistered models, and generated files you have customised.
+
+## Next
+
+- [The boundary](/docs/concepts/boundary) — what Intelligo owns and what stays yours
+- [Bring your agent](/docs/guides/bring-your-agent) — replace the stub with your model, prompt and tools
+- [Config seams](/docs/registry/config-seams) — change what the installed pages show without editing them
+
+---
+
+# Explore the reference app
+
+Source: https://intelligo.dev/docs/getting-started/reference-app
+
+The framework repository contains `apps/app`: a generic workspace AI product — sign-up, verification, login, the app shell, dashboard, team, billing, usage, notifications, chat with a stub model, and artifacts — built **only** from the published packages and installed registry items.
+
+```bash
+git clone https://github.com/intelligo-mn/framework
+cd framework
+docker compose up -d   # local PostgreSQL with pgvector
+pnpm install
+pnpm dev               # the reference app on :4002
+```
+
+Configure `DATABASE_URL` once in the repository-root `.env`; every workspace app reads it as a fallback.
+
+## Generated, not written
+
+The reference app is not maintained by hand. `pnpm app:regenerate` runs `intelligo create` and `shadcn add` for every item, then keeps only the files listed — each with a reason — in `scripts/reference-app-owned.json`. CI regenerates it on every run and fails on drift outside those seams.
+
+That makes it the executable answer to "what does an installed Intelligo app look like": if a framework change needs a product-specific edit to this app to keep working, the boundary moved, and the change is wrong.
+
+---
+
+# Environment variables
+
+Source: https://intelligo.dev/docs/getting-started/environment
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/cli/templates/app-scaffold/env.example.tpl — the `.env.example` every new app gets. Edit that, then run `pnpm sync`. -->
+
+`intelligo create` writes these to `.env.example`; copy it to `.env.local` and fill it in. `intelligo doctor` reports what is still missing, and the app refuses to boot without the required ones rather than failing when a feature is first used. `AUTH_SECRET` is accepted as a legacy alias of `BETTER_AUTH_SECRET`.
+
+## Required — the app will not boot without these
+
+| Variable | What it is |
+| --- | --- |
+| `DATABASE_URL` | Postgres with the pgvector extension (Neon, Supabase, RDS, or local). |
+| `INTELLIGO_DB_DRIVER` | Driver is chosen from the URL (Neon hosts get the WebSocket driver, everything else node-postgres). Force it with pg \| neon-serverless. |
+| `BETTER_AUTH_SECRET` | At least 32 characters. Generate with: openssl rand -base64 32 |
+| `NEXT_PUBLIC_APP_URL` | Where users reach the app. Auth callbacks, email links and redirects are built from it, so production needs the public https URL. The scaffold sets `http://localhost:3000`. |
+| `INTELLIGO_BILLING_PRODUCT` | Which product's plans the billing engine bills against. Your composition root also sets this via setDefaultProductSlug(); the variable is here so CLI tooling can check it without booting the app. The scaffold sets `your-app`. |
+
+## Optional — everything works locally without these
+
+| Variable | What it is |
+| --- | --- |
+| `GOOGLE_CLIENT_ID`<br>`GOOGLE_CLIENT_SECRET`<br>`GITHUB_CLIENT_ID`<br>`GITHUB_CLIENT_SECRET` | Sign in with Google or GitHub. A provider's button appears once both of its values are set; the callback URL to register with the provider is NEXT_PUBLIC_APP_URL + /api/auth/callback/google (or /github). |
+| `RESEND_API_KEY` | Email. Without a provider, emails (verification, invitations, reset links) are printed to the server console, and sign-ups are not held for email verification. |
+| `EMAIL_FROM` | The sender of every email, on a domain verified with Resend. Required with RESEND_API_KEY: there is no built-in sender, so sends fail without it. Loops ignores it and takes the sender from each template. The scaffold sets `Acme <noreply@example.com>`. |
+| `LOOPS_API_KEY` | Loops sends by template id instead of HTML: map each template with LOOPS_TRANSACTIONAL_ID_&lt;KEY>, e.g. LOOPS_TRANSACTIONAL_ID_VERIFY_EMAIL. |
+| `EMAIL_PROVIDER` | With both keys set Resend wins; force one with resend \| loops \| console. |
+| `STRIPE_SECRET_KEY`<br>`STRIPE_WEBHOOK_SECRET` | Stripe. Billing pages say "not configured" until these are set; the webhook at /api/webhooks/stripe verifies with the secret. |
+| `PAYMENT_MODE` | Which registered payment provider serves payments outside Stripe (registerPaymentProvider in the composition root). Defaults to the in-memory mock, which production refuses. |
+| `OPENAI_API_KEY`<br>`ANTHROPIC_API_KEY`<br>`GOOGLE_GENERATIVE_AI_API_KEY` | AI providers. Chat runs on a built-in stub model until lib/chat-model.ts names a real one. Set only the key of the provider that model belongs to — the provider's SDK reads it, and the framework checks none of them. |
+| `CRON_SECRET` | Bearer token your scheduler sends to /api/cron/maintenance (`intelligo add maintenance`). At least 32 characters. |
+| `PLATFORM_ADMIN_EMAILS` | Comma-separated emails allowed to reach the Intelligo admin console. Closed by default: with no value, nobody is a platform admin. |
+
+---
+
+# The boundary
+
+Source: https://intelligo.dev/docs/concepts/boundary
+
+An AI product is two halves. The interesting half is your agent: the prompts, the tools, the domain knowledge nobody else has. The other half is the same in every AI SaaS — who is signed in, which workspace they belong to, whether their plan allows this request, what it cost, who to bill, and what to tell an auditor later.
+
+Intelligo ships the second half and stays out of the first.
+
+## What Intelligo owns
+
+- **Identity and tenancy** — sessions, workspaces, roles, invitations, platform admin
+- **Commerce** — plans, feature gates, quotas, credits with reservations, trials, Stripe and regional payment providers
+- **Execution accounting** — every AI run admitted, settled or failed, with usage, cost and audit records
+- **Persistence contracts** — conversations, documents, identity facts, notifications
+- **Operations** — a Postgres job queue, append-only audit events, the admin console, the CLI
+- **The page registry** — the pages for all of the above, installed as your source
+
+## What stays yours
+
+- **The AI framework**, used natively: Mastra, the Vercel AI SDK, or anything else
+- **Prompts, tools, workflows, memory, retrieval and evals**
+- **Product data** — your own tables beside the framework's
+- **Every installed page** — consumer-owned source from the moment it lands
+
+## No agent abstraction, on purpose
+
+There is no `IntelligoAgent`, no `IntelligoTool`, no wrapper around your model calls. Intelligo records only the narrow boundary of a run — actor, workspace, capability, entitlement, status, usage, cost — through a lifecycle you call from your own code:
+
+```ts
+const run = await executions.begin({ workspaceId, userId, capability: "support.reply" });
+if (!run.allowed) return refuse(run.reason);
+try {
+  const result = await supportAgent.generate(messages); // native, untouched
+  await run.complete({ usage: result.usage, model: result.model });
+} catch (error) {
+  await run.fail({ error });
+  throw error;
+}
+```
+
+Competing with agent frameworks on abstractions would couple every product to the framework's runtime limits. Bracketing a run couples it to nothing.
+
+## Rules that keep the boundary
+
+- **No product vocabulary in a framework package.** A change that needs one is a missing port or registry — and that is the better change.
+- **Business logic lives in package services behind ports.** Server Actions and Route Handlers are thin callers.
+- **Tenant scoping is inside the service.** Every query filters `workspaceId`, and `userId` where the data is user-private; transports gate with `requireWorkspace` / `requireRole` first.
+- **Middleware only redirects.** The authoritative checks are server-side, and middleware never touches the database.
+- **The rules are tests.** Dependency direction, tenant scoping, registry hygiene and model-id registration fail the build when violated.
+
+---
+
+# Composition root and ports
+
+Source: https://intelligo.dev/docs/concepts/composition-root
+
+## One composition root
+
+`lib/intelligo.ts` is the single place an application wires itself together. `create` generates it once; after that it is yours.
+
+<!-- snippet: packages/cli/templates/app-scaffold/intelligo.ts.tpl#composeIntelligo -->
+
+```ts title="lib/intelligo.ts"
+export function composeIntelligo(): void {
+  if (composed) return;
+  composed = true;
+
+  // Fail on the first request rather than on the first query: a
+  // missing DATABASE_URL or auth secret is a configuration error, not
+  // something to discover deep inside a handler.
+  assertEnv();
+
+  // Where the framework reads the incoming request's headers from.
+  // Only this line knows the app is a Next.js one; `@intelligo-dev/auth`
+  // asks `@intelligo-dev/core/request-context` and stays usable from a
+  // worker or a test.
+  setRequestContextSource(nextRequestContext);
+
+  setDefaultProductSlug(PRODUCT_SLUG);
+  registerProductPlans(PRODUCT_SLUG, PLANS);
+  registerProductFeatures(PRODUCT_SLUG, FEATURES);
+  registerTeamMemberLimits(PRODUCT_SLUG, TEAM_MEMBER_LIMITS);
+
+  // The plans table is a copy of the catalogue above: a subscription
+  // row references its plan there, so the rows exist before the first
+  // checkout rather than being seeded by a migration.
+  void ensurePlanRows();
+
+  // What each model costs. The framework ships a catalogue as data and
+  // registers none of it: an id with no registered price throws where
+  // the price is needed, rather than being guessed. Swap in your own
+  // contracted rates, or add a model the framework has never heard of,
+  // by passing your own array here.
+  registerModels(DEFAULT_MODELS);
+
+  // What you bill in. Provider prices are USD, so a USD deployment
+  // converts at exactly 1.0; selling in another currency means stating
+  // its rate per USD here, in micros. There is no default rate — a
+  // framework that guesses one is inventing money. Seeds the row once;
+  // an existing row is left alone, because changing the currency under
+  // a ledger that holds balances is your decision, not a deploy's.
+  void ensureBillingSettingsRow({
+    currency: "USD",
+    usdRateMicros: 1_000_000,
+    marginBp: DEFAULT_MARGIN_BP,
+  });
+}
+```
+
+`instrumentation.ts` calls it once per server process.
+
+## Import side effects are banned
+
+A registration that silently does not happen looks exactly like one that did. So no package populates a registry when it is imported — plans, features, models, renderers and document patterns are all registered explicitly, from the root.
+
+## Ports over dependencies
+
+Packages never reach sideways. `@intelligo-dev/auth` does not import billing; `@intelligo-dev/executions` does not either, and its `/pricing` subpath imports nothing at all. Instead a service takes **ports** — functions it calls — and the composition root binds them:
+
+<!-- snippet: packages/cli/templates/app-scaffold/intelligo.ts.tpl#executions -->
+
+```ts title="lib/intelligo.ts"
+export const executions = createExecutions({
+  async checkEntitlement({ workspaceId, requestId, model }) {
+    // Passing requestId makes admission atomic: the worst-case cost is
+    // reserved in the same transaction that reads the balance, so
+    // concurrent requests cannot all pass.
+    const quota = await reserveQuota(workspaceId, { modelId: model, requestId });
+    return {
+      allowed: quota.allowed,
+      code: quota.code,
+      reason: quota.reason,
+      // The hold, as an amount with its currency.
+      estimated: quota.estimated,
+      usingTrialCredits: quota.usingTrialCredits,
+    };
+  },
+
+  async settleUsage(s) {
+    // Returns what was charged and which pool funded it; the lifecycle
+    // records the amount and its currency on the execution row.
+    return recordTokenUsage({
+      workspaceId: s.workspaceId,
+      userId: s.userId ?? "",
+      model: s.model ?? "unknown",
+      agent: s.capability,
+      inputTokens: s.inputTokens,
+      outputTokens: s.outputTokens,
+      totalTokens: s.totalTokens,
+      usingTrialCredits: s.usingTrialCredits,
+      requestId: s.requestId,
+      metadata: s.metadata,
+    });
+  },
+
+  async releaseHold({ requestId }) {
+    await releaseReservation(requestId);
+  },
+
+  // Lets executions.reconcile() tell a settling row whose charge
+  // committed from one whose charge never happened.
+  findSettlement: ({ workspaceId, requestId }) =>
+    findSettlementByRequestId(workspaceId, requestId),
+});
+```
+
+The same pattern binds `checkMemberLimit` for the team service, `onAccountDeleted` for the profile service, and so on. Swap a port and the service follows; no package has to change.
+
+## One package imports Next.js
+
+Only `@intelligo-dev/next` imports `next/*`. The framework reads a request's headers through `@intelligo-dev/core/request-context`, and the root binds where they come from — `setRequestContextSource(nextRequestContext)`. Everything else stays usable from a queue worker, a Hono API or a test.
+
+## Two thin transports
+
+- **Server Actions** for internal UI mutations: parse → call a service → map its typed error to the UI's shape → revalidate.
+- **Route Handlers** for streaming, auth, webhooks, uploads, cron and external clients.
+
+Neither holds business rules. Those live in the package services, tested against a real database.
+
+---
+
+# The execution boundary
+
+Source: https://intelligo.dev/docs/concepts/execution-boundary
+
+`@intelligo-dev/executions` turns an AI run into a record the rest of the SaaS can trust: who ran what, in which workspace, whether it was allowed, what it used and what it cost.
+
+## The lifecycle
+
+```ts
+const run = await executions.begin({
+  workspaceId,
+  userId,
+  capability: "support.reply", // your vocabulary
+  model: "google/gemini-2.5-flash",
+});
+if (!run.allowed) return refuse(run.reason);
+// … your framework, your code …
+await run.complete({ usage, model }); // or run.fail({ error })
+```
+
+**Admit.** `begin` writes the execution row and asks the `checkEntitlement` port. With the scaffold's binding that reserves the worst-case cost of the model in the same transaction that reads the balance, so concurrent requests cannot all pass.
+
+**Settle.** `complete` records actual tokens and cost and charges credits through `settleUsage`. Each terminal transition is claimed with a compare-and-swap, so a second `complete`, or a `fail` racing it, cannot bill twice.
+
+**Fail.** `fail` releases the hold and records the error. A refusal leaves `allowed: false`, a stable `code` and an audit event; `complete` and `fail` are then no-ops.
+
+**Reconcile.** `executions.reconcile()` uses `findSettlement` to tell a run whose charge committed from one abandoned mid-way. The `maintenance` feature runs it on a schedule.
+
+## Model ids are registry keys
+
+Every provider-prefixed model id must be registered with its per-token pricing and output budget (`@intelligo-dev/executions/pricing`). An unregistered id has no price and throws where the price is needed — guessing would run a model on one provider and bill it at another's rate. An architecture test fails the build on an unregistered literal.
+
+## Money carries its currency
+
+Provider prices are USD. A deployment declares the currency it bills in and its rate per USD in micros, once, through `ensureBillingSettingsRow`; costs convert through that rate plus a configurable margin, and every amount on a row says which currency it is.
+
+## Where you call it
+
+- **Chat** — `createChatHandler` from `@intelligo-dev/chat` calls `begin` and settles for every turn; you don't.
+- **Mastra** — `runWithExecution` from `@intelligo-dev/mastra` brackets a native agent call.
+- **Anything else** — call `begin`, `complete` and `fail` directly, as above.
+
+---
+
+# Who owns which file
+
+Source: https://intelligo.dev/docs/concepts/ownership
+
+## Four kinds of file
+
+| Kind                 | Where it comes from                  | Who owns it | How it updates                                                      |
+| -------------------- | ------------------------------------ | ----------- | ------------------------------------------------------------------- |
+| **Packages**         | npm, `@intelligo-dev/*`              | Intelligo   | SemVer upgrades; never edited in place                              |
+| **Generated source** | `intelligo create` / `intelligo add` | You         | `upgrade --check` reports what changed upstream and what you edited |
+| **Installed pages**  | `shadcn add` from the registry       | You         | Re-install to take an update                                        |
+| **Your agent**       | Your AI framework                    | You         | Intelligo has no import into it                                     |
+
+## Generated files are hashed, not locked
+
+`create` and `add` record every file they write, with its hash, in `intelligo.manifest.json`. `intelligo upgrade --check` compares three things — the file on disk, the hash it was written with, and the current template — and reports each as:
+
+- `current` — matches the current template
+- `outdated` — the template changed and you haven't touched the file, so regenerating is safe
+- `conflict` — the template changed **and** you edited the file; your decision
+- `customized` — you edited it; the template is unchanged
+- `deleted` — you removed it
+
+Nothing is overwritten by an upgrade.
+
+## Installed pages are used verbatim
+
+Registry blocks are yours, but the standard is to use them unmodified. What a deployment varies — navigation, banners, onboarding steps, credit bundles, the chat's agent identity and tool renderers, copy and language — flows through the config files and message files the blocks ship. See [config seams](/docs/registry/config-seams).
+
+Editing an installed component works, but it forks you from every later improvement to that block. If a product needs something a seam doesn't offer, the better change is a new seam in the registry.
+
+## The admin console is the exception
+
+`@intelligo-dev/admin` is Intelligo-owned and not in the registry: what an operator can see across every tenant is not a per-product decision. `intelligo add admin-page` mounts it under `/admin`.
+
+---
+
+# Package topology
+
+Source: https://intelligo.dev/docs/concepts/package-topology
+
+The [package list](/docs/packages) is generated from the repository. The rules behind it are not; they change only deliberately.
+
+## One package per runtime target
+
+A package exists when it has a runtime target, a peer dependency or an adapter of its own. `next` is a package because it is the only code that imports `next/*`; `mastra` is a package because it has Mastra as an optional peer; `cli` is a package because it is a binary.
+
+Shared pure-TypeScript modules are **subpaths**, not packages. That is why money, prompt sanitisation and request context are `@intelligo-dev/core/money`, `/prompt` and `/request-context`, and why billing's `/plans`, `/plan-registry`, `/payment` and `/quota-types` can reach a client bundle without pulling in Stripe or `server-only`. An architecture test walks those subpaths' imports.
+
+## Imports point one way
+
+`core` imports no other framework package. `auth` never imports `billing`, and `executions` reaches only `core` and `audit`: services meet through ports bound in your [composition root](/docs/concepts/composition-root). Only `next` imports `next/*`, so every other package runs from a worker, a test or a non-Next server. The dependency-direction test fails the build otherwise; [/architecture](/architecture) draws the real graph.
+
+## No product vocabulary
+
+A publishability test audits every published package for licence metadata, credentials and product-specific language. A change that needs a product's words inside a package is a missing port or registry.
+
+## Everything publishes together
+
+Every package under `packages/` is published at one version by one release commit, except `packages/registry`, a private workspace whose items reach you through the [registry](/docs/registry) instead.
+
+---
+
+# Credits and money
+
+Source: https://intelligo.dev/docs/concepts/credits-and-money
+
+A credit is money: an integer number of micros in the one currency your deployment bills in. After this page you can follow a single AI turn from the provider's price to the workspace's balance. The scaffold already bills in USD at four times provider cost, with the allowances in `lib/plans.ts`.
+
+## Money is micros with a currency
+
+`@intelligo-dev/core/money` represents every amount as a `Money`: an integer count of millionths of one major unit, and the ISO-4217 code it is denominated in. Micros, because one turn on a cheap model costs a fraction of a cent. The currency travels with the amount, so `add`, `subtract` and `compare` throw a `MoneyError` with code `currency_mismatch` rather than treat euros as dollars.
+
+```ts title="lib/example.ts"
+import {
+  add,
+  convert,
+  formatMoney,
+  fromMajor,
+  toMinor,
+} from "@intelligo-dev/core/money";
+
+const total = add(fromMajor(15, "USD"), fromMajor(5, "USD"));
+// { amount: 20_000_000, currency: "USD" }
+
+formatMoney(total, "en-US"); // "$20.00"
+toMinor(total); // 2000, the integer a payment provider takes
+
+add(total, fromMajor(10, "EUR")); // throws MoneyError: currency_mismatch
+convert(total, "EUR", 920_000); // 18_400_000 micros EUR, at a rate you state
+```
+
+| Function                          | What it does                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------------ |
+| `money`, `fromMajor`, `fromMinor` | Build an amount from micros, major units (`12.34`) or minor units (`1234`)     |
+| `toMajor`, `toMinor`              | Read it back; `toMinor` rounds up and knows zero- and three-decimal currencies |
+| `add`, `subtract`, `compare`      | Same-currency arithmetic; a mismatch throws                                    |
+| `multiply`                        | Scale by a plain factor, rounding up                                           |
+| `convert`                         | Change currency at an explicit rate in micros; there is no default rate        |
+| `formatMoney`                     | Format for a locale; sub-cent amounts keep two significant digits              |
+
+## The three pools
+
+A workspace spends from three pools, all in the deployment's billing currency.
+
+| Pool           | Where it comes from                                                                                                                     | Stored in                        |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Plan allowance | `monthlyAllowance` on the workspace's plan in `lib/plans.ts`                                                                            | `monthly_usage`, one row a month |
+| Top-up balance | Credit bundles bought through checkout; the Stripe webhook adds each bundle's `grant`                                                   | `credit_balances`                |
+| Trial grant    | `registerTrialConfig` in the composition root, provisioned by `provisionTrialCredits` from `lib/workspace-bootstrap.ts`; off by default | `trial_credits`                  |
+
+Admission sums all three. Settlement charges the plan allowance first and sends whatever is left to exactly one other pool: the top-up balance, or the trial grant when the turn was admitted on trial credits and the grant still covers the remainder. The trial is the fallback, used only when allowance plus top-ups cannot cover a turn. `SettlementOutcome` reports the split, and `charged` always equals `plan` + `topup` + `trial`.
+
+The allowance is counted per calendar month, in UTC, so every host agrees on where a month starts. `monthly_usage` holds one row per workspace per month, a new month starts from zero, and unused allowance does not carry over. `resetMonthlyQuota`, which the Stripe webhook calls on `invoice.paid`, creates the current month's row when it is missing; it does not clear a row that exists. Top-ups and the trial grant do not reset.
+
+A plan's `monthlyAllowance` must name the billing currency. If it names another, the allowance counts as zero, because converting it would mean inventing a rate.
+
+## One turn, in money
+
+[The execution boundary](/docs/concepts/execution-boundary) describes the lifecycle. In money terms, with the scaffold's bindings:
+
+1. **Admit.** `checkEntitlement` calls `reserveQuota`. Under a per-workspace lock it reads the pools, subtracts other active reservations, and compares what remains with `estimateWorstCaseCharge`: the model's `maxOutputTokens` against a 16,000-token input budget. If the turn fits, it inserts a reservation for that amount. On `google/gemini-2.5-flash` at the defaults the hold is about $0.10.
+2. **Settle.** `settleUsage` calls `recordTokenUsage`, which prices the real tokens with `chargeFor`, writes a `usage_records` row, debits the pools and settles the reservation in one transaction.
+3. **Fail.** `releaseHold` calls `releaseReservation`. Nothing is charged. A reservation nobody settles stops counting after ten minutes (`RESERVATION_TTL_MS`).
+
+A refusal carries a stable code:
+
+<!-- snippet: packages/billing/src/quota-types.ts#QuotaRefusalCode -->
+
+```ts
+export type QuotaRefusalCode =
+  | "insufficient_credits"
+  | "allowance_depleted"
+  | "billing_not_configured"
+  | "unknown_model";
+```
+
+| Code                     | Meaning                                                                            | From `/api/chat`             |
+| ------------------------ | ---------------------------------------------------------------------------------- | ---------------------------- |
+| `insufficient_credits`   | Some balance remains, but less than the worst-case charge of one turn on the model | 402 `QUOTA_EXCEEDED`         |
+| `allowance_depleted`     | Nothing remains in any pool                                                        | 402 `QUOTA_EXCEEDED`         |
+| `unknown_model`          | The model id has no registered price, so the turn cannot be estimated              | 503 `MODEL_UNAVAILABLE`      |
+| `billing_not_configured` | No product or plans are registered                                                 | 503 `BILLING_NOT_CONFIGURED` |
+
+The chat transport puts the code in the response body as `reasonCode`. `estimateQuota` makes the same decision without locking or reserving; it is for banners and previews and must never gate a run.
+
+## From provider cost to charge
+
+Providers quote USD per million tokens. `chargeFor` multiplies tokens by the registered price, applies the margin, then converts into the billing currency. Both steps round up.
+
+<!-- snippet: packages/executions/src/pricing.ts#BillingRate -->
+
+```ts
+export type BillingRate = {
+  currency: CurrencyCode;
+  usdRateMicros: number;
+  marginBp: number;
+};
+```
+
+| Field           | Meaning                                                           | Scaffold value                 |
+| --------------- | ----------------------------------------------------------------- | ------------------------------ |
+| `currency`      | What every ledger row is denominated in                           | `"USD"`                        |
+| `usdRateMicros` | What one USD costs in that currency, in micros; `920_000` is 0.92 | `1_000_000`                    |
+| `marginBp`      | Multiplier over provider cost, in basis points; `40_000` is 4×    | `DEFAULT_MARGIN_BP` (`40_000`) |
+
+A turn of 2,000 input and 500 output tokens on `google/gemini-2.5-flash` costs the provider 1,850 micros. At 4× that is 7,400 micros, $0.0074 charged. A euro deployment at `920_000` charges 6,808 micros EUR.
+
+The rate is a fixed number you state, not a live feed. It lives in the single `billing_settings` row. `ensureBillingSettingsRow` in `composeIntelligo()` seeds that row and leaves an existing one alone, so editing the call after the first boot changes nothing. To change them later, call `updateBillingSettings({ usdRateMicros, marginBp })` — from an admin action or a script; it validates the values and drops the cache. Changing `currency` does not convert the balances a ledger already holds. `getBillingSettings` caches it for 60 seconds per process. Each `usage_records` row stores the provider cost, margin and rate it was charged at, so a later change never rewrites history.
+
+## What the workspace sees
+
+- The [usage block](/blocks/usage) shows the period's charge, tokens and runs from `summarizeExecutions`, the share of the allowance used from `getQuotaThresholds`, and the trial state. The [billing settings block](/blocks/billing-settings) shows the top-up balance and sells bundles.
+- The chat page calls `getChatQuotaState`, an estimate, to show a banner before a turn would be refused.
+- After each settlement `checkNotificationTriggers` runs. At 80% and 100% of the allowance, and at 20% left or depletion of a trial, the workspace owner gets an in-app notification and an email, once per period.
+- `getUsageSummary` returns tokens and request counts by model, agent and day, for a dashboard of your own.
+
+## Next
+
+- [Models and pricing](/docs/guides/models-and-pricing): register per-model prices.
+- [Plans and features](/docs/guides/plans-and-features): set the allowance each plan grants.
+- [Billing with Stripe](/docs/guides/billing-stripe): sell subscriptions and top-ups.
+
+---
+
+# Installing blocks
+
+Source: https://intelligo.dev/docs/registry
+
+Intelligo's pages are not a runtime UI package. They are **registry blocks**: shadcn-schema items hosted at `https://intelligo.dev/r/<item>.json`, installed with the standard shadcn CLI into your repository. Each brings its routes, components, loading, empty and error states, thin Server Actions, config files and English messages. [/blocks](/blocks) renders every one of them live.
+
+```bash
+pnpm dlx shadcn@latest add https://intelligo.dev/r/team-settings.json
+```
+
+The app `intelligo create` scaffolds is already registry-ready: shadcn base-nova, Tailwind 4, the `intelligo` design tokens, next-intl routing under `app/[locale]` and the `@/i18n/navigation` helpers the blocks import.
+
+## Install order
+
+Some blocks import files another block ships, so install the dependency first — `route-error` before any page, `auth-login` before the other auth flows, `pricing` before the commerce blocks, `chat` before the other chat surfaces. [Install order](/docs/registry/install-order) is the full list with the scaffold files and feature keys each block needs, generated from `packages/registry/requires.json` — the same file CI installs from and `intelligo doctor` checks against.
+
+A block that gates on a feature needs that key granted to a plan in `lib/plans.ts`; an unregistered feature is denied, so `chat` returns 403 until `chat` is granted. The scaffold grants it to every plan.
+
+## Three rules
+
+1. **Installed components are used as-is.** What a deployment varies arrives through the [config files](/docs/registry/config-seams) the blocks ship.
+2. **Copy is translation, not code.** Every block reads its strings from its own next-intl namespace; [adding a language](/docs/registry/i18n) means adding message files.
+3. **Business rules live behind the pages.** An installed action parses, calls a typed service, maps the error and revalidates. The invariants are in the packages, tested against a real database.
+
+## Taking an update
+
+A block is yours once installed. To take a newer version, commit first and run `shadcn add` for the block again; it asks before overwriting each file that already exists. Components you never edited can be overwritten safely. Your config and message files are where your changes live, so keep yours or merge them from the diff.
+
+---
+
+# Install order
+
+Source: https://intelligo.dev/docs/registry/install-order
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/registry/requires.json. Edit that, then run `pnpm sync`. -->
+
+Install top to bottom and every block finds what it imports. `intelligo doctor` checks an installed app against the same requirements.
+
+```bash
+pnpm dlx shadcn@latest add https://intelligo.dev/r/route-error.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/team-settings.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/pricing.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/usage.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/invitation-accept.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/app-shell.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/settings-shell.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/workspace-settings.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/auth-login.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/auth-signup.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/auth-password-reset.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/auth-email-verification.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/language-switcher.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/trial-banner.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/notifications.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/checkout.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/billing-settings.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/feature-gating.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/payment-poll.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/profile-settings.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/onboarding.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/dashboard.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/artifacts.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/privacy-settings.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/chat.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/chat-panel.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/chat-widget.json
+pnpm dlx shadcn@latest add https://intelligo.dev/r/chat-share.json
+```
+
+| Block | Needs these blocks | Imports these scaffold files | Gates on these features |
+| --- | --- | --- | --- |
+| [route-error](/blocks/route-error) | — | `i18n/navigation` | — |
+| [team-settings](/blocks/team-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
+| [pricing](/blocks/pricing) | — | `i18n/navigation` | — |
+| [usage](/blocks/usage) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
+| [invitation-accept](/blocks/invitation-accept) | [team-settings](/blocks/team-settings) | `i18n/navigation` | — |
+| [app-shell](/blocks/app-shell) | — | `i18n/navigation`, `lib/utils` | — |
+| [settings-shell](/blocks/settings-shell) | — | `i18n/navigation` | — |
+| [workspace-settings](/blocks/workspace-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
+| [auth-login](/blocks/auth-login) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
+| [auth-signup](/blocks/auth-signup) | [auth-login](/blocks/auth-login) | `i18n/navigation` | — |
+| [auth-password-reset](/blocks/auth-password-reset) | [auth-login](/blocks/auth-login) | `i18n/navigation` | — |
+| [auth-email-verification](/blocks/auth-email-verification) | [auth-login](/blocks/auth-login) | `i18n/navigation` | — |
+| [language-switcher](/blocks/language-switcher) | — | `i18n/navigation`, `i18n/routing` | — |
+| [trial-banner](/blocks/trial-banner) | — | `i18n/navigation` | — |
+| [notifications](/blocks/notifications) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
+| [checkout](/blocks/checkout) | — | `i18n/navigation` | — |
+| [billing-settings](/blocks/billing-settings) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
+| [feature-gating](/blocks/feature-gating) | [pricing](/blocks/pricing) | `i18n/navigation`, `lib/utils` | — |
+| [payment-poll](/blocks/payment-poll) | [pricing](/blocks/pricing) | — | — |
+| [profile-settings](/blocks/profile-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
+| [onboarding](/blocks/onboarding) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
+| [dashboard](/blocks/dashboard) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
+| [artifacts](/blocks/artifacts) | — | `i18n/navigation` | — |
+| [privacy-settings](/blocks/privacy-settings) | [route-error](/blocks/route-error) | — | — |
+| [chat](/blocks/chat) | [route-error](/blocks/route-error) | `hooks/use-mobile`, `i18n/navigation`, `i18n/routing`, `lib/intelligo`, `lib/utils` | `chat` |
+| [chat-panel](/blocks/chat-panel) | [chat](/blocks/chat) | `lib/utils` | — |
+| [chat-widget](/blocks/chat-widget) | [chat](/blocks/chat) | `i18n/navigation`, `lib/utils` | — |
+| [chat-share](/blocks/chat-share) | [chat](/blocks/chat) | `i18n/navigation` | — |
+
+A feature key must be granted to a plan in `lib/plans.ts`; an unregistered feature is denied on every request.
+
+Scaffold files a block may import, all written by `intelligo create`: `lib/intelligo`, `lib/plans`, `lib/utils`, `hooks/use-mobile`, `i18n/routing`, `i18n/navigation`.
+
+---
+
+# Config seams
+
+Source: https://intelligo.dev/docs/registry/config-seams
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/registry/registry.json and each seam file's doc comment. Edit that, then run `pnpm sync`. -->
+
+Installed components are used verbatim. What a deployment varies lives in these files: they are consumer-owned, and each explains itself in the comment it ships with, reproduced here. If a product needs something no seam offers, the change belongs in the registry as a new seam — editing an installed component forks you from every later improvement to it.
+
+## [route-error](/blocks/route-error)
+
+### `lib/error-reporting.ts`
+
+Exports `RouteErrorContext`, `reportRouteError`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/route-error/lib/error-reporting.ts)
+
+Error-reporting seam — consumer-owned.
+
+`RouteError` calls this from every route-level error boundary. The
+default is a no-op on purpose: registry items never depend on an
+error-reporting SDK, so a fresh install has nothing to configure and
+nothing to pay for. Bind your own reporter here and every boundary
+in the app starts reporting, with no component edit.
+
+With Sentry, for example:
+
+```ts
+import * as Sentry from "@sentry/nextjs";
+
+export function reportRouteError(
+  error: Error & { digest?: string },
+  context: RouteErrorContext
+) {
+  Sentry.captureException(error, { tags: { scope: context.scope } });
+}
+```
+
+This runs inside a `useEffect` in a client component, so it must not
+throw — a reporter that fails should swallow its own failure rather
+than take the error screen down with it.
+
+## [app-shell](/blocks/app-shell)
+
+### `lib/workspace-bootstrap.ts`
+
+Exports `onWorkspaceCreated`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/workspace-bootstrap.ts)
+
+Runs once, when `ensureUserWorkspace` creates a user's first workspace:
+the place for trial credits, referral bonuses or any other one-time
+provisioning. It lives here so `@intelligo-dev/auth` never imports
+billing.
+
+### `lib/shell-config.tsx`
+
+Exports `ShellConfig`, `shellConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/shell-config.tsx)
+
+What your product adds around the app shell, without editing
+`layout.tsx` or `components/shell/*`. Every slot is optional and takes
+a component with no props; one that needs data fetches it itself.
+
+ - `bannerTop`: above the page content on every authenticated page
+   (a trial banner, an incident notice).
+ - `headerRight`: the right end of the header (a notification bell,
+   a language switcher).
+ - `sidebarContent`: the sidebar under the navigation (conversation
+   history). May be an async server component; it refreshes with the
+   page. Hiding itself when the sidebar collapses is its own call.
+
+For example:
+
+```ts
+import { TrialBanner } from "@/components/trial/trial-banner";
+
+export const shellConfig: ShellConfig = {
+  bannerTop: TrialBanner,
+};
+```
+
+### `lib/nav-config.ts`
+
+Exports `navItems`, `accountItems`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/app-shell/lib/nav-config.ts)
+
+Shell navigation. Imported directly by client components, never passed
+from a Server Component: icons are components and cannot cross the
+server/client boundary.
+
+`navItems` fills the sidebar; `accountItems` fills the user menu.
+`titleKey`s are keys in `messages/<locale>/app-shell.json`. Remove the
+entries whose routes you did not install; they would 404.
+
+## [settings-shell](/blocks/settings-shell)
+
+### `lib/settings-nav.ts`
+
+Exports `SettingsTab`, `settingsTabs`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/settings-shell/lib/settings-nav.ts)
+
+Settings tab configuration — consumer-owned (same contract as
+`lib/nav-config.ts` for the app sidebar).
+
+`settings-tabs.tsx` renders exactly this list, in this order. Add a
+product tab (`{ value: "ai", href: "/settings/ai", titleKey:
+"settings.tabAI", icon: Brain }`), remove one your product doesn't
+sell, or reorder — no component edit needed.
+
+`titleKey` is a fully-qualified message key resolved through a
+namespace-less `useTranslations()` (the `chatConfig.starters`
+contract): the defaults point into this item's `settings-shell`
+namespace (`messages/<locale>/settings-shell.json`), and a tab you
+add can point into any namespace you own.
+
+Icons are Lucide components. They live here — a client-imported
+config file — rather than being passed from a server layout, because
+component values can't cross the RSC boundary as props (see
+`nav-config.ts`).
+
+## [trial-banner](/blocks/trial-banner)
+
+### `lib/trial-banner-config.ts`
+
+Exports `TrialBannerConfig`, `trialBannerConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/trial-banner/lib/trial-banner-config.ts)
+
+Trial banner config — consumer-owned.
+
+`hideOnPaths`: locale-less route prefixes where the banner never
+renders (matched against `@/i18n/navigation`'s `usePathname`, exact
+or as a path-segment prefix). The default keeps it off the chat
+surface — a persistent strip over a conversation is where a banner
+costs the most. Empty the list to show it everywhere.
+
+`upgradeHref`: where the CTA sends the user.
+
+## [pricing](/blocks/pricing)
+
+### `lib/billing-config.ts`
+
+Exports `CURRENCY`, `CREDIT_BUNDLES`, `getCreditBundle`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/pricing/lib/billing-config.ts)
+
+Client-safe billing configuration, kept apart from the `server-only`
+`lib/billing.ts` so client components can read it without pulling
+Stripe into the browser bundle. A bundle is validated server-side by
+`createCreditCheckout`.
+
+`CREDIT_BUNDLES` is the one-time credit packs you sell; edit or empty
+it. A bundle's `name` is rendered verbatim, not translated.
+
+## [feature-gating](/blocks/feature-gating)
+
+### `lib/feature-catalog.ts`
+
+Exports `FeatureDescriptor`, `featureCatalog`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/feature-gating/lib/feature-catalog.ts)
+
+Feature catalogue — consumer-owned.
+
+Which features exist, what to call them, and which plan unlocks them
+is product data, not framework data: `@intelligo-dev/billing` answers
+"is this workspace entitled to feature X" (`hasFeature`), and this
+file answers "what should we say when it isn't".
+
+`labelKey` and `descriptionKey` are fully-qualified message keys
+resolved namespace-less (the `chatConfig.starters` contract), so a
+feature's copy lives in your own message files. `requiredPlan` is
+the plan slug that unlocks it — rendered through the plan catalogue
+registered by your composition root, so the name a user sees stays
+in one place.
+
+A feature missing from this map still gates correctly; it just falls
+back to generic copy.
+
+### `lib/feature-gating-config.ts`
+
+Exports `FeatureGatingConfig`, `featureGatingConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/feature-gating/lib/feature-gating-config.ts)
+
+Feature-gating configuration — consumer-owned.
+
+`upgradeHref`: where every gating surface sends the user. Defaults
+to the billing settings page (the `billing-settings` item's route),
+which is where a plan change actually happens; point it at
+`/pricing` if your product prefers the comparison first.
+
+`warnAtPercent` / `urgentAtPercent`: when `QuotaWarning` starts
+showing, and when it escalates. Below the first, it renders nothing.
+
+## [payment-poll](/blocks/payment-poll)
+
+### `lib/local-payment.ts`
+
+Exports `LocalPaymentInvoice`, `LocalPaymentStatus`, `LocalPaymentRequest`, `createLocalPayment`, `checkLocalPaymentStatus`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/payment-poll/lib/local-payment.ts)
+
+Local payment provider binding — consumer-owned.
+
+Card checkout is a redirect: you send the user to the processor and
+they come back. Most of the world's payment methods are not that.
+QR-and-poll — QPay and SocialPay in Mongolia, PIX in Brazil, UPI in
+India, PromptPay in Thailand — issues an invoice, shows a code the
+user scans in their own banking app, and waits for the provider to
+say it was paid. `LocalPaymentModal` renders that flow; this file is
+where you bind it to an actual provider.
+
+Both functions run on the server, and neither takes a user id: the
+caller is resolved from the session inside your implementation. A
+client-supplied user id on a payment call is an invitation to
+charge someone else's plan to a stranger's account.
+
+The default throws rather than returning a fake invoice — a payment
+flow that silently no-ops is worse than one that is obviously
+unbound.
+
+### `lib/payment-poll-config.ts`
+
+Exports `PaymentPollConfig`, `paymentPollConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/payment-poll/lib/payment-poll-config.ts)
+
+Polling behaviour for the QR payment modal — consumer-owned.
+
+`pollIntervalMs`: how often to ask the provider whether the invoice
+settled. Three seconds is a compromise: fast enough that the success
+screen feels immediate, slow enough not to hammer a provider that
+rate-limits status reads.
+
+`timeoutMs`: when to stop asking and offer a retry instead. Five
+minutes is long enough for someone to switch apps, log into their
+bank, and confirm — the common case that a shorter timeout would
+cut off mid-payment.
+
+## [onboarding](/blocks/onboarding)
+
+### `lib/onboarding-steps.ts`
+
+Exports `OnboardingFieldType`, `OnboardingSelectOption`, `OnboardingField`, `OnboardingStepConfig`, `OnboardingCompleteConfig`, `OnboardingAnswers`, `OnboardingConfig`, `onboardingConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/onboarding/lib/onboarding-steps.ts)
+
+The onboarding wizard: its steps, their fields, the completion screen
+and `onStepSubmit`.
+
+Copy is referenced by fully-qualified message key (`titleKey`,
+`labelKey`, `ctaLabelKey`…), resolved through a namespace-less
+`useTranslations()`; a step you add can point at any namespace.
+
+The framework persists only which step the caller is on. Field
+answers are kept only if `onStepSubmit` saves them; it runs
+server-side each time the wizard advances past a step, and by default
+writes `displayName` to the profile.
+
+The client wizard imports this file too, so it must stay client-safe:
+persist through a server action, never a service imported here.
+
+## [dashboard](/blocks/dashboard)
+
+### `lib/dashboard-config.tsx`
+
+Exports `DashboardConfig`, `dashboardConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/dashboard/lib/dashboard-config.tsx)
+
+Dashboard configuration — consumer-owned, imported by client
+components (so, like `nav-config.ts`, it may hold React/Lucide
+component values that must never cross the RSC boundary as props).
+
+The defaults render a hero from this item's own messages, a composer
+that opens a new conversation, and starter chips that fill it. Every
+part is replaceable here rather than in a component:
+
+ - `hero`: icon plus fully-qualified message keys for the title and
+   subtitle. Point them at your product's namespace to say what this
+   workspace is actually for.
+ - `starters`: fully-qualified message keys (the `chatConfig.starters`
+   contract). Each renders as a chip under the composer that opens a
+   new conversation prefilled with that text. Empty hides the row.
+ - `chatBasePath`: where the composer and the starters send the user.
+   Defaults to the `chat` item's `/chat`; change it if your chat
+   surface lives elsewhere, and note that the whole composer
+   affordance only makes sense with a chat surface installed.
+
+### `lib/dashboard-data.ts`
+
+Exports `ResumeActor`, `ResumeTarget`, `getResume`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/dashboard/lib/dashboard-data.ts)
+
+Dashboard data seam — consumer-owned, read on the server.
+
+`getResume` answers "what was this person in the middle of?" The
+default is the most recently updated conversation, which is right for
+a generic AI workspace. A product whose work has real structure —
+a multi-phase assessment, a wizard, a review queue — binds its own
+notion of progress here and the hero's resume pill picks it up with
+no component edit:
+
+```ts
+export async function getResume(actor: ResumeActor) {
+  const run = await getActiveAssessment(actor.workspaceId, actor.userId);
+  if (!run) return null;
+  return {
+    label: `Phase ${run.phase} of ${run.totalPhases}`,
+    href: `/chat/${run.conversationId}`,
+  };
+}
+```
+
+Return `null` when there is nothing to resume — the pill is hidden
+rather than rendered empty.
+
+## [artifacts](/blocks/artifacts)
+
+### `lib/document-patterns.ts`
+
+Exports `registerDefaultDocumentPatterns`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/artifacts/lib/document-patterns.ts)
+
+Title patterns that map a document to an agent label (shown on its
+card) and to the "Reports" tab. With none registered, every document
+gets the generic "AI Assistant" label.
+
+Call this exactly once, from your composition root: calling it from a
+request-scoped file (an action, a page) would push duplicate entries
+onto the same in-memory registry.
+
+## [chat](/blocks/chat)
+
+### `lib/chat-model.ts`
+
+Exports `CHAT_MODEL_ID`, `getChatModel`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-model.ts)
+
+Consumer-owned model resolution for the chat transport.
+
+A fresh install has no AI provider keys, so `getChatModel` returns
+the framework's deterministic stub (`@intelligo-dev/chat/testing`): it
+echoes the last user message back through a real token-by-token
+stream. No network call, no API key, and the app still builds,
+boots and streams a real `createUIMessageStream` response end to end.
+
+`CHAT_MODEL_ID` is deliberately a real, registered id
+(`@intelligo-dev/executions/pricing`) even though the stub never calls
+that provider: the execution boundary bills whatever id the transport
+settles with, and an id with no registered price is
+refused at admission. Using a real id here means a clean install
+exercises the *correct* pricing path — swap in your own model id the
+moment you swap in a real provider below, and keep it one that is
+registered.
+
+To use a real provider: install its AI SDK package (e.g.
+`pnpm add @ai-sdk/anthropic` in this app) and replace the body of
+`getChatModel` — the commented example below is the whole change.
+
+Two strings are in play and they are not interchangeable. The
+registered id (`anthropic/claude-sonnet-4-6`) is what a turn is
+admitted and billed under. The provider's own id is often dated
+(`claude-sonnet-4-6-20260214`) and lives in the registry entry's
+`model` field. Read it from there; never derive it by trimming the
+prefix off the registered id, and never write it out a second time.
+
+### `lib/chat-models.ts`
+
+Exports `CHAT_MODELS`, `getChatModelOptions`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-models.ts)
+
+The models the composer offers — consumer-owned.
+
+Empty (the default) means the picker is hidden and every turn runs
+on `lib/chat-model.ts`'s default. List two or more and the composer
+shows a picker; the transport refuses anything not on the list, and
+a model with a `featureKey` only to plans that have it. Every id
+must be registered in `@intelligo-dev/executions/pricing` — an
+architecture test holds this file to that.
+
+```ts
+export const CHAT_MODELS: ChatModelOption[] = [
+  { id: "google/gemini-2.5-flash", label: "Fast" },
+  { id: "anthropic/claude-sonnet-4-6", label: "Smart", featureKey: PRO_MODELS },
+];
+```
+
+Bind the same list in `lib/chat-server-config.ts` (`models`), which
+is what makes the server's answer match the composer's offer.
+
+### `lib/chat-renderers.tsx`
+
+Exports `ToolPartState`, `CanvasRef`, `ToolRendererActions`, `ToolRendererProps`, `ToolActivityRow`, `ToolRenderer`, `DataRendererProps`, `TOOL_RENDERERS`, `DATA_RENDERERS`, `resolveToolRenderer`, `hasToolRenderer`, `hasToolCard`, `getToolRenderer`, `getDataRenderer`, `toolLabel`, `DefaultToolCard`, `ArtifactLinkCard`, `parseUnifiedDiff`, `FileDiffCard`, `ImageGenerationCard`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-renderers.tsx)
+
+How a tool, and any runtime's data part, shows up in the chat.
+
+This is the extension point a product uses most. Adding a tool to
+the agent is one entry in `TOOL_RENDERERS` below — a plain object
+literal in source you own; there is no `register()` call, nothing
+runs as an import side effect, and a product package's
+card compiles against the structural props here rather than against
+the AI SDK's types.
+
+A tool call is either a row in the activity stream — the one-line
+"Searched the web ▸" the agent's work folds into — or its own card.
+A tool with no entry is a row. An entry is a component (a card), or
+`{ component?, label?, activity?, sources?, canvas? }`:
+
+  - `component` draws the call as its own card, in every state the
+    SDK has (`input-streaming` → `output-available`, and the approval
+    states of a gated tool). Without one the call is a row.
+  - `label` is a message key naming the call in its row and in the
+    stream's status line, in place of the tool's raw name
+    ("Generating report…").
+  - `activity` builds the call's row when the default is not enough.
+    The default reads the input's first string as the target, and a
+    call whose input has a `query` renders as a search, its results
+    from `sources`.
+  - `sources` reads the sources the call's output carries, which
+    become the answer's citations. The default reads `output.sources`
+    (`{ url, title?, domain?, snippet?, index? }[]`).
+  - `canvas` says the tool's output also lives in the side panel
+    (`lib/chat-canvas-config.tsx` decides how a `kind` renders). A
+    document the tool streams with `createArtifactWriter` opens the
+    canvas by itself; a card's Open reopens it.
+
+`actions` is what a card can do back to the conversation: send the
+next user turn (a quiz option, a suggested reply), answer a tool
+that runs client-side, approve or deny a gated call, open or close
+the canvas.
+
+`DATA_RENDERERS` is the same seam for `data-*` parts — what a
+Mastra workflow, an eve subagent or a product's own `turn.write`
+emits. The framework's `data-chat-*` parts have renderers in
+`components/chat/data-parts.tsx`; Mastra's arrive under their own
+names and render on the activity timeline.
+
+### `lib/chat-canvas-config.tsx`
+
+Exports `CanvasContentProps`, `CanvasActionContext`, `CanvasAction`, `CanvasToolbarItem`, `CanvasKind`, `fileNameOf`, `DEFAULT_CANVAS_KINDS`, `CANVAS_KINDS`, `resolveCanvasKind`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-canvas-config.tsx)
+
+Canvas kinds — how a document opened beside the chat is shown and
+edited, by `kind`. Consumer-owned, a plain object literal.
+
+A kind is the content component plus, optionally, its glyph and name
+(on the transcript's card and the panel's header), a rendered
+`preview` beside the source for content that has one, the extension
+a download gets, actions in the panel's header (run, publish) and
+toolbar items that send a message about the document ("Polish the
+wording"). The framework ships `text` (ProseMirror over markdown),
+`code` (CodeMirror, with a live preview for HTML and SVG), `sheet`
+(a CSV grid) and `image`; a product adds its own — a `report` kind
+that renders its JSON as a designed page, a `diagram` kind on a graph
+library — by adding an entry here:
+
+```ts
+import { ReportCanvas } from "@/components/reports/report-canvas";
+
+export const CANVAS_KINDS: Record<string, CanvasKind> = {
+  ...DEFAULT_CANVAS_KINDS,
+  report: { content: ReportCanvas, icon: ChartIcon, labelKey: "reports.kind" },
+};
+```
+
+The editors load lazily: a document that is still streaming, or one
+the reader may not edit, renders on the light viewers below and
+never pulls the editor bundle. The chat's `saveArtifact` tool and
+`createArtifactWriter` name a kind; the canvas looks it up here and
+falls back to `text` for one it does not know, so nothing renders
+blank.
+
+### `lib/chat-config.tsx`
+
+Exports `ChatHeaderRightProps`, `ChatAgentIdentity`, `ChatAttachmentsConfig`, `ChatCommand`, `ChatMention`, `ChatMentionsConfig`, `ChatConfig`, `chatConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-config.tsx)
+
+Chat composition config — the consumer-owned extension point for
+everything a product adds to the chat surface without editing an
+installed component.
+
+Every seam is optional — a fresh install ships this file with an
+empty `chatConfig`, so the chat surface renders its baseline UI:
+
+ - `agent`: the identity shown in the conversation header — a
+   name and optional icon/emoji. Omit it (the default) and the
+   header falls back to this item's own translated "Assistant"
+   label (`messages/en/chat.json`'s `agent.defaultName`). `name`
+   and `icon` are plain strings rather than message keys because
+   an agent's display name is product copy, not framework copy.
+ - `starters`: conversation-starter prompts shown on an empty
+   conversation, as *message keys* — not literal strings — resolved
+   against your app's full message tree via next-intl's
+   namespace-less `useTranslations()`. E.g. `"support.starters.refund"`
+   resolves `t("support.starters.refund")` from your own
+   `messages/<locale>/support.json`. Keeping this to keys is what
+   keeps starters translatable without editing `chat-thread.tsx`.
+ - `headerRight`: a component the header renders on its right side,
+   next to the History/New/Delete controls — a progress indicator,
+   an export button reading product state for `conversationId`.
+ - `attachments`: what the composer lets the reader attach. Unset,
+   the "+" control is hidden. Mirror the server's policy in
+   `lib/chat-server-config.ts` (`attachments.accept`, `maxBytes`,
+   `mode`): the composer keeps the reader from picking a file the
+   route would refuse, and in `stored` mode uploads it first.
+ - `activity`: how reasoning, tool calls and runtime steps read in
+   the transcript — `inline` (each as its own card, the default) or
+   `timeline` (grouped into one collapsible activity block per
+   reply, the way an agent's work is usually shown).
+ - `commands`: slash commands the composer offers when a message
+   starts with `/`. Each names a message key for its label and either
+   inserts text or runs a callback.
+ - `mentions`: an `@` picker — files, pages, knowledge bases — with a
+   search you bind; the pick lands in the message as `@label` and in
+   the turn's `body.mentions` for `resolveAgent`.
+ - `sendAutomaticallyWhen`: an auto-continuation predicate, passed to
+   `useChat`. Default: continue after tool results and after approval
+   answers, which is what a tool loop and a gated tool need.
+
+Edit this file directly to point at your product's own components —
+this is consumer-owned source, not a package import:
+
+```ts
+import { ExportReportButton } from "@/components/support/export-report-button";
+
+export const chatConfig: ChatConfig = {
+  agent: { id: "support-assistant", name: "Support Assistant", icon: "🎧" },
+  starters: ["support.starters.refund", "support.starters.shipping"],
+  headerRight: ExportReportButton,
+  attachments: { accept: ["image/png", "image/jpeg", "application/pdf"], maxBytes: 5_000_000 },
+};
+```
+
+### `lib/chat-server-config.ts`
+
+Exports `chatServerConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-server-config.ts)
+
+Server-side chat config — consumer-owned, read by
+`app/api/chat/route.ts` through `createChatHandler`.
+
+Separate from `lib/chat-config.tsx` on purpose: that file is
+client-facing (it binds React components — a header slot, starter
+keys, an agent identity), and importing it from the Route Handler
+would drag client modules into the server bundle. Everything the
+transport needs and the browser must never see lives here instead.
+
+Two fields are required — the execution boundary and a way to turn
+a model id into a model — because those are the two things the
+framework must never guess. Everything else has a default that gives
+a fresh install a working chat with no API keys: one agent, one
+prompt, no tools, a forty-message window, a truncated first line as
+the title.
+
+The seam that matters most is `agent.tools`. Without it the model
+runs with no tools, which makes the tool-renderer seam in
+`lib/chat-renderers.tsx` unreachable — you could register a renderer
+but nothing would ever call a tool for it to render. Bind tools here
+and the whole path works without editing a shipped file:
+
+```ts
+import { tool } from "ai";
+import { z } from "zod";
+
+agent: {
+  systemPrompt: "…",
+  tools: ({ workspaceId }) => ({
+    searchDocs: tool({
+      description: "Search the workspace's documents",
+      inputSchema: z.object({ query: z.string() }),
+      execute: async ({ query }) => search(workspaceId, query),
+    }),
+  }),
+},
+```
+
+`tools` may be a plain `ToolSet` or a function of the turn (workspace,
+user, conversation) — the function form is what lets a tool close
+over the caller's tenancy instead of taking it as a model argument
+the model could get wrong.
+
+Past one agent, bind `resolveAgent` instead of `agent`: it receives
+the turn (the transport's extra body fields such as `agentId`, the
+existing conversation row) and returns the prompt, tools and model
+for this turn. `prepareMessages` decides what the model is shown —
+windowing is the default; a product that summarises pruned history
+or injects profile context does it there. See `ChatServerConfig` in
+`@intelligo-dev/chat` for every seam.
+
+How the model samples is `agent.generation` — temperature, a token
+ceiling, a tool choice, a seed, a retry count:
+
+```ts
+agent: {
+  systemPrompt: "…",
+  generation: { temperature: 0.2, maxOutputTokens: 1024 },
+},
+```
+
+Nothing is set below on purpose. A sampling default is a product
+decision, not a framework one, so the transport ships none and passes
+only what you write here. It is an allowlist: the options that decide
+what the model writes go through, and the ones settlement depends on
+— the abort signal, the finish handler, the model itself, the step
+cap — stay the transport's and cannot be overridden from here.
+`providerOptions` is the neighbouring seam for a provider's own knobs
+(a thinking budget, say), passed through untouched.
+
+Another runtime than `streamText` — a Mastra agent, an eve session —
+binds `streamTurn` and keeps everything else: auth, the rate limit,
+the gate, admission, persistence and settlement stay the transport's
+(the framework carries no helper for any AI framework; the
+binding is yours, here). Mastra, natively, through `@mastra/ai-sdk`:
+
+```ts
+import { handleChatStream } from "@mastra/ai-sdk";
+import { mastra } from "@/lib/mastra";
+
+streamTurn: async (turn, prepared, { abortSignal }) => {
+  const stream = await handleChatStream({
+    mastra,
+    agentId: turn.agent.id,
+    version: "v6",
+    params: {
+      messages: prepared.messages,
+      memory: { thread: turn.conversationId, resource: turn.userId },
+      abortSignal,
+    },
+  });
+  // `usage`: settle from the agent's whole-run totals. Mastra reports
+  // them on its finish chunk; read them off the stream, or run
+  // `agent.stream()` yourself and resolve `result.totalUsage`.
+  return { stream, usage };
+},
+```
+
+eve: install the `chat-eve` item and bind `eveStreamTurn` from
+`@/lib/chat-eve` — the session id and cursor live in the
+conversation's metadata, approvals and questions round-trip as eve
+input responses, and its events render as this chat's parts.
+
+A tool that produces a document streams it into the canvas with
+`createArtifactWriter(turn, { kind, title })` from `@intelligo-dev/chat`
+— `append` deltas, `finish({ documentId })` — and any tool writes a
+status line or a plan with `turn.write({ type: "data-chat-status", … })`.
+
+i18n: the route lives at `app/api/chat/route.ts`, outside the
+`[locale]` segment, so there is no URL segment to read a
+locale from. `messages` below reads the `NEXT_LOCALE` cookie
+next-intl's middleware already sets on every page navigation, then
+falls back to the configured default locale — the same "works with
+nothing extra" guarantee a single-locale deployment gets everywhere
+else.
+
+## [chat-widget](/blocks/chat-widget)
+
+### `lib/chat-widget-config.tsx`
+
+Exports `ChatWidgetConfig`, `chatWidgetConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat-widget/lib/chat-widget-config.tsx)
+
+Chat widget config — the consumer-owned seam for the floating
+assistant (composition through a config you own, never a
+component edit).
+
+ - `position`: which corner the launcher sits in.
+ - `agent`: which agent the widget's conversations run as, when it
+   differs from the chat page's (`chatConfig.agent`).
+ - `body`: sent with every turn — a static product context. For
+   per-page context pass `body` to `<ChatWidget>` where it mounts.
+ - `hideOn`: pathname prefixes where the launcher is not shown (the
+   chat page itself, auth pages).
+
+Mount the widget once, in your app layout:
+
+```ts
+import { ChatWidget } from "@/components/chat/chat-widget";
+…
+<ChatWidget />
+```
+
+---
+
+# Adding a language
+
+Source: https://intelligo.dev/docs/registry/i18n
+
+Each block reads its copy through next-intl under a namespace named after the block, and ships `messages/en/<block>.json`. The scaffold's `i18n/request.ts` merges every file in `messages/<locale>/` by filename, so the namespace is the filename.
+
+## Add a locale
+
+1. Add it to `i18n/routing.ts`. The scaffold writes:
+
+   <!-- snippet: packages/cli/templates/app-scaffold/i18n-routing.ts.tpl#routing -->
+
+   ```ts title="i18n/routing.ts"
+   export const routing = defineRouting({
+     locales: ["en"],
+     defaultLocale: "en",
+     // Locale prefix only appears in the URL when it isn't the default
+     // locale (e.g. /dashboard, not /en/dashboard) — a single-locale
+     // deployment needs nothing beyond this config and the shipped
+     // English messages to work.
+     localePrefix: "as-needed",
+   });
+   ```
+
+   Add the locale to `locales`, for example `["en", "de"]`.
+
+2. Copy `messages/en/` to `messages/de/` and translate the values. Keep the keys.
+
+3. Install the `language-switcher` block and put it in a shell slot:
+
+   ```tsx
+   // lib/shell-config.tsx
+   export const shellConfig: ShellConfig = { headerRight: LanguageSwitcher };
+   ```
+
+A missing file or key falls back to what next-intl is configured to do; `messages/en` stays the reference.
+
+## Your own strings
+
+Add keys for your own routes to the relevant namespace — navigation labels go in `messages/<locale>/app-shell.json`, chat starters in `chat.json` — or add a new namespace file for a page of your own.
+
+## Links
+
+Blocks navigate through `@/i18n/navigation`, so links keep the active locale. Use the same helpers in your own pages instead of `next/link`.
+
+---
+
+# Tool renderers
+
+Source: https://intelligo.dev/docs/registry/tool-renderers
+
+The chat speaks the AI SDK's `UIMessage` — text, reasoning, tool calls with their approval states, sources, files, data parts — and renders all of it through one switch. What a product adds is an entry in `lib/chat-renderers.tsx`.
+
+## Rows and cards
+
+A tool with no entry renders as a **row** in the agent's activity stream ("Searched the web ▸"). An entry turns it into a **card**, or refines the row:
+
+```tsx title="lib/chat-renderers.tsx"
+export const TOOL_RENDERERS: Record<string, ToolRenderer | ComponentType<ToolRendererProps>> = {
+  saveArtifact: { component: ArtifactLinkCard, canvas: { kind: "text" } },
+  getWeather: WeatherCard,
+  lookupInvoice: { label: "invoices.lookingUp" },
+  generateReport: { component: ReportCard, label: "reports.generating", canvas: { kind: "text" } },
+};
+```
+
+| Field       | What it does                                                                                                                |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `component` | Draws the call as its own card, in every state: input streaming → output available, and the approval states of a gated tool |
+| `label`     | A message key naming the call in its row and in the status line, instead of the raw tool name                               |
+| `activity`  | Builds the row when the default isn't enough                                                                                |
+| `sources`   | Reads citations from the tool's output; the default reads `output.sources`                                                  |
+| `canvas`    | The output also lives in the side panel; `lib/chat-canvas-config.tsx` decides how its `kind` renders                        |
+
+There is no `register()` call: the object is plain source, populated at build time.
+
+## Cards can act
+
+A card receives `actions`: send the next user turn (a quiz option, a suggested reply), answer a tool that runs client-side, approve or deny a gated call, open or close the canvas.
+
+## Data parts
+
+`DATA_RENDERERS` is the same seam for `data-*` parts — what a Mastra workflow, another runtime or your own `turn.write()` emits. The framework's `data-chat-*` parts (status, plan, artifact, question and others) already have renderers.
+
+## Streaming a document
+
+A server tool can stream a document straight into the canvas:
+
+```ts
+const writer = createArtifactWriter(turn, { kind: "text", title: "Quarterly report" });
+writer.append(delta);
+await writer.finish({ documentId });
+```
+
+The canvas opens by itself; a card's Open reopens it.
+
+---
+
+# Packages
+
+Source: https://intelligo.dev/docs/packages
+
+<!-- Generated by apps/website/scripts/docs.mjs from each package's package.json. Edit that, then run `pnpm sync`. -->
+
+Every package is published at the same version, by one release commit. `intelligo create` adds the set an application needs. How the set is cut, and which package may import which: [package topology](/docs/concepts/package-topology).
+
+| Package | What it is |
+| --- | --- |
+| [core](/docs/packages/core) | Database schema, email, logging, notifications, and the conversation, document and identity contracts. |
+| [auth](/docs/packages/auth) | Multi-tenant authentication, workspaces and RBAC on Better-Auth. |
+| [billing](/docs/packages/billing) | Quota engine, credits, Stripe, feature gates, trials and rate limiting. |
+| [executions](/docs/packages/executions) | The execution lifecycle (admission, running, settlement) and the model cost registry. |
+| [chat](/docs/packages/chat) | The AI-SDK-native chat transport: a Route Handler as a function. |
+| [next](/docs/packages/next) | The Next.js adapter: the one Intelligo package that imports next/*. |
+| [audit](/docs/packages/audit) | Append-only audit events, with a database trigger that means it. |
+| [jobs](/docs/packages/jobs) | A Postgres-backed job queue. No Redis. |
+| [admin](/docs/packages/admin) | The operational console: cross-tenant queries, health probes and impersonation. |
+| [mastra](/docs/packages/mastra) | An optional bridge from a native Mastra agent to the execution boundary. |
+| [cli](/docs/packages/cli) | The Intelligo CLI: create, add, doctor, migrate and upgrade. |
+
+---
+
+# @intelligo-dev/core
+
+Source: https://intelligo.dev/docs/packages/core
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/core/README.md and package.json. Edit that, then run `pnpm sync`. -->
+
+## Install
+
+```bash
+pnpm add @intelligo-dev/core@beta
+```
+
+## Exports
+
+| Subpath            | What                                                                                   |
+| ------------------ | -------------------------------------------------------------------------------------- |
+| `/db`              | Drizzle client and the workspace-scoped query helpers                                  |
+| `/db/schema`       | Every framework table                                                                  |
+| `/conversations`   | Conversation and message persistence                                                   |
+| `/documents`       | Document persistence and the title classifier                                          |
+| `/identity`        | The identity graph: facts, memories, profile snapshots                                 |
+| `/email`           | Transactional email and its templates                                                  |
+| `/notifications`   | In-app notification records and triggers                                               |
+| `/logger`          | Structured logging with credential redaction                                           |
+| `/registry`        | Registries that survive a bundler duplicating a module                                 |
+| `/money`           | Amount-plus-currency value object in micros; imports nothing                           |
+| `/request-context` | Where the framework reads the request's headers from; bound by the adapter             |
+| `/prompt`          | Prompt-injection sanitisation for user text bound for a system prompt; imports nothing |
+| `/env`             | Environment validation                                                                 |
+
+## Migrations
+
+The framework migration chain ships inside this package
+(`src/db/migrations`) and is applied by `intelligo migrate` from
+[`@intelligo-dev/cli`](https://www.npmjs.com/package/@intelligo-dev/cli).
+
+Do not provision with `drizzle-kit push`. A pushed database has the schema and
+no migration records, and the migrator refuses it rather than half-applying the
+chain to tables that already exist.
+
+## Entry points
+
+- `@intelligo-dev/core`
+- `@intelligo-dev/core/db`
+- `@intelligo-dev/core/db/schema`
+- `@intelligo-dev/core/email`
+- `@intelligo-dev/core/notifications`
+- `@intelligo-dev/core/conversations`
+- `@intelligo-dev/core/documents`
+- `@intelligo-dev/core/identity`
+- `@intelligo-dev/core/attachments`
+- `@intelligo-dev/core/storage`
+- `@intelligo-dev/core/env`
+- `@intelligo-dev/core/registry`
+- `@intelligo-dev/core/money`
+- `@intelligo-dev/core/request-context`
+- `@intelligo-dev/core/prompt`
+- `@intelligo-dev/core/logger`
+
+[npm](https://www.npmjs.com/package/@intelligo-dev/core) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/core)
+
+---
+
+# @intelligo-dev/auth
+
+Source: https://intelligo.dev/docs/packages/auth
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/auth/README.md and package.json. Edit that, then run `pnpm sync`. -->
+
+## Install
+
+```bash
+pnpm add @intelligo-dev/auth@beta
+```
+
+## What it owns
+
+Sessions and accounts, organizations as workspaces, membership roles
+(`owner` / `admin` / `member`), invitations, platform-admin impersonation, and
+the guards every transport starts with: `requireAuth`, `requireWorkspace`,
+`requireRole`, `requirePlatformAdmin`.
+
+The team, workspace, profile and onboarding services live here too, behind
+ports the composition root binds — auth never imports billing.
+
+## Use
+
+```ts
+import { requireWorkspace } from "@intelligo-dev/auth";
+
+const { user, workspace, membership } = await requireWorkspace();
+```
+
+A guard that refuses throws an `AuthGuardError`; `isAuthGuardError(error)`
+narrows it and `error.code` picks the status: `unauthenticated` (no session,
+401), `no_workspace` (signed in, member of no workspace) or `forbidden`
+(lacking the role, 403).
+
+`impersonateUser` checks that the caller is a platform admin and that the
+target is not one before it swaps the session. Products call
+`startImpersonation` from `@intelligo-dev/admin`, which adds the audit event
+and the mandatory reason.
+
+`hasSessionCookie(request)` from `@intelligo-dev/auth/edge` is for an optional
+optimistic redirect in a consumer's `proxy.ts`. It reads cookie presence only
+and is never authorization; the scaffold does not use it.
+
+Platform admin is a row (`users.role`), not an environment variable. The
+allowlist in `PLATFORM_ADMIN_EMAILS` is promoted into that column on first use,
+so the plugin and the guard cannot disagree.
+
+## Entry points
+
+- `@intelligo-dev/auth`
+- `@intelligo-dev/auth/client`
+- `@intelligo-dev/auth/edge`
+
+[npm](https://www.npmjs.com/package/@intelligo-dev/auth) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/auth)
+
+---
+
+# @intelligo-dev/billing
+
+Source: https://intelligo.dev/docs/packages/billing
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/billing/README.md and package.json. Edit that, then run `pnpm sync`. -->
+
+## Install
+
+```bash
+pnpm add @intelligo-dev/billing@beta
+```
+
+## What it owns
+
+Admission (`estimateQuota` / `reserveQuota`) and settlement, the credit ledger,
+Stripe checkout and the webhook receiver, feature gating, trial grants and
+expiry, and per-plan rate limits.
+
+## Subpaths that import neither Stripe nor `server-only`
+
+| Subpath          | What                                                                          |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `/plans`         | Plan types and the per-product plan helpers                                   |
+| `/plan-registry` | Every register/clear pair: plans, features, upgrade copy, trials, rate limits |
+| `/payment`       | The payment provider contract and the mock provider                           |
+| `/quota-types`   | Quota result and admission types, no enforcement                              |
+
+The four are safe to reach from a client bundle or an edge runtime. An
+architecture test walks their imports so a Stripe or `server-only` import
+cannot creep in.
+
+## What a deployment bills in
+
+`ensureBillingSettingsRow` writes the currency, the USD rate and the margin on
+first boot and never touches an existing row again. After that the row changes
+through `updateBillingSettings({ currency?, usdRateMicros?, marginBp? })`, which
+refuses a non-positive rate or margin and an invalid currency code, and drops
+the cache. Changing the currency converts nothing: balances, trial grants and
+the period's allowance usage stay in the currency they were written in, and the
+engine refuses a write in another one until those rows are migrated.
+
+The plan allowance is money, so the 80% and 100% notices (in-app and email)
+state an amount used out of an amount allowed. The billing period is the
+calendar month in UTC (`getCurrentPeriodStart`, `getCurrentPeriodEnd`,
+`getCurrentPeriodKey`), whatever zone the host runs in.
+
+## Rate limits and the payment provider
+
+`checkRateLimit(workspaceId, planSlug, endpoint?)` counts in the `"chat"` bucket
+unless the caller names another; a route that should not spend chat's allowance
+passes its own name.
+
+`getPaymentProvider()` resolves `PAYMENT_MODE`, which defaults to `mock`.
+Outside production the in-memory mock needs no registration; in production it
+is refused, and any other mode must be registered from the composition root.
+
+## The webhook receiver
+
+`createStripeWebhookHandler` verifies the signature before anything else,
+writes the receipt before running handlers, claims the event with
+`UPDATE … WHERE processed_at IS NULL` so two concurrent deliveries cannot both
+run, and answers 500 on a handler error so Stripe retries. Answering 202 to an
+error tells Stripe the event was handled and silently drops it.
+
+## Entry points
+
+- `@intelligo-dev/billing`
+- `@intelligo-dev/billing/plans`
+- `@intelligo-dev/billing/payment`
+- `@intelligo-dev/billing/plan-registry`
+- `@intelligo-dev/billing/quota-types`
+- `@intelligo-dev/billing/rate-limit`
+- `@intelligo-dev/billing/quota`
+
+[npm](https://www.npmjs.com/package/@intelligo-dev/billing) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/billing)
+
+---
+
+# @intelligo-dev/executions
+
+Source: https://intelligo.dev/docs/packages/executions
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/executions/README.md and package.json. Edit that, then run `pnpm sync`. -->
+
+## Install
+
+```bash
+pnpm add @intelligo-dev/executions@beta
+```
+
+## The boundary
+
+Intelligo records what an AI execution cost and whether it was allowed. It does
+not wrap the AI framework: prompts, tools and orchestration stay native.
+
+`createExecutions(ports)` takes four optional ports — `checkEntitlement`,
+`settleUsage`, `findSettlement`, `releaseHold` — so this package never imports
+billing. The lifecycle claims each transition with a compare-and-swap before
+money is spent, and `reconcile` uses `findSettlement` to tell an abandoned run
+from a settled one.
+
+## Model pricing
+
+`@intelligo-dev/executions/pricing` is a deliberate zero-import leaf that
+client bundles can reach. Model ids are registry keys: an unregistered id has
+no price, and guessing one is how a model runs on the cheapest provider and
+bills at the most expensive rate.
+
+## Entry points
+
+- `@intelligo-dev/executions`
+- `@intelligo-dev/executions/pricing`
+- `@intelligo-dev/executions/db`
+
+[npm](https://www.npmjs.com/package/@intelligo-dev/executions) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/executions)
+
+---
+
+# @intelligo-dev/chat
+
+Source: https://intelligo.dev/docs/packages/chat
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/chat/README.md and package.json. Edit that, then run `pnpm sync`. -->
+
+## Install
+
+```bash
+pnpm add @intelligo-dev/chat@beta ai
+```
+
+`ai` (the Vercel AI SDK) is a peer: the transport takes its tools, its models
+and its stop conditions natively, and never wraps them.
+
+## Use
+
+```ts
+// app/api/chat/route.ts
+import { createChatHandler } from "@intelligo-dev/chat";
+import { chatServerConfig } from "@/lib/chat-server-config";
+
+export const { POST, DELETE } = createChatHandler(chatServerConfig);
+```
+
+```ts
+// lib/chat-server-config.ts
+import type { ChatServerConfig } from "@intelligo-dev/chat";
+import { composeIntelligo, executions } from "@/lib/intelligo";
+
+export const chatServerConfig: ChatServerConfig = {
+  executions,
+  onRequest: composeIntelligo,
+  model: { defaultId: "google/gemini-2.5-flash", resolve: getChatModel },
+  agent: { id: "assistant", systemPrompt: "You are a helpful assistant." },
+};
+```
+
+That is a working chat. Every turn goes through auth, the plan's rate limit,
+the feature gate, conversation persistence (`@intelligo-dev/core/conversations`)
+and the execution boundary (`executions.begin()` decides entitlement against
+the model that is about to run, and settles exactly once).
+
+## The seams
+
+Each optional field is something a real product needed and used to fork the
+route to get:
+
+| Field                         | What it decides                                                                                                                                                                                                                     |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolveAgent(turn)`          | Which agent runs — from the body, the row, a table; prompt, tools, model                                                                                                                                                            |
+| `streamTurn(turn, prepared)`  | Another runtime than `streamText` — a Mastra agent, an eve session — returning the AI SDK's chunks and the run's usage; everything else stays the transport's                                                                       |
+| `models`                      | The models a request may pick; anything else is `FEATURE_GATED` (`model_not_allowed`)                                                                                                                                               |
+| `prepareMessages(turn, msgs)` | What the model is shown — windowing, summaries, injected context                                                                                                                                                                    |
+| `agent.generation`            | How the model samples — temperature, a token ceiling, a tool choice, a seed: an allowlist of the `streamText` options that do not touch settlement. `maxOutputTokens` defaults to the registered model's, the figure admission held |
+| `attachments`                 | Which file parts are accepted; `mode: "stored"` uploads them through the storage port and signs URLs for the model only                                                                                                             |
+| `reasoning`, `sources`        | Whether reasoning and source parts stream to the client                                                                                                                                                                             |
+| `messageMetadata`             | `{ modelId, usage, finishedAt }` on the reply (default on)                                                                                                                                                                          |
+| `cors`                        | Origins an embedded widget may call from                                                                                                                                                                                            |
+| `deriveTitle`                 | The conversation's title, sync or model-written                                                                                                                                                                                     |
+| `persist`                     | Where the turn's messages go                                                                                                                                                                                                        |
+| `onTurn`                      | Telemetry: start, complete, fail, refuse, approval, feedback                                                                                                                                                                        |
+| `messages(request)`           | Refusal copy in the caller's locale                                                                                                                                                                                                 |
+| `authenticate`, `rateLimit`   | The defaults are the framework's; a worker or a test can replace them                                                                                                                                                               |
+
+None carry product vocabulary; all close over the caller's tenancy, so the
+model is never told which workspace it is in.
+
+A tool reaches the client mid-turn through the turn: `turn.write()` sends a
+`data-chat-*` part (a status line, a plan), and `createArtifactWriter(turn,
+{ kind, title })` streams a document into the chat's canvas — `append`
+deltas, `finish({ documentId })`. `sanitizeForShare` strips a transcript
+for a public page; `recordChatFeedback` records a vote and tells the hook.
+Stored attachments mount two more handlers, `createChatUploadHandler` and
+`createChatAttachmentHandler`.
+
+## Refusals
+
+Every non-2xx answer is `{ error, code, reasonCode? }` with one status per
+code (`CHAT_ERROR_CODES`, `parseChatError`). Admission's refusals split by
+who can fix them:
+
+| Admission code                               | Answer                       | Whose problem                               |
+| -------------------------------------------- | ---------------------------- | ------------------------------------------- |
+| `insufficient_credits`, `allowance_depleted` | 402 `QUOTA_EXCEEDED`         | The workspace's: upgrade or top up          |
+| `billing_not_configured`                     | 503 `BILLING_NOT_CONFIGURED` | The deployment's: no product or plans       |
+| `unknown_model`                              | 503 `MODEL_UNAVAILABLE`      | The deployment's: the model id has no price |
+
+The two 503s are logged at error level — `unknown_model` with the model id
+— and `MODEL_UNAVAILABLE` answers with neutral copy (`modelUnavailable`)
+rather than the engine's reason, which names the registry. `reasonCode`
+carries the admission code either way.
+
+`getChatQuotaState({ modelId })` is the same decision as a read, for a
+page that wants to say so before a turn is spent; `getChatQuotaStates({
+modelIds })` reads it once per model a picker offers.
+
+## Subpaths
+
+- `@intelligo-dev/chat/client` — error codes, the quota-state shape,
+  `parseChatError`, the `data-chat-*` parts vocabulary (`ChatUIMessage`,
+  `isChatDataPart`) and `ChatModelOption`, for a client bundle. Imports
+  nothing at runtime.
+- `@intelligo-dev/chat/testing` — `createStubLanguageModel`, a deterministic
+  model that streams with no API key.
+
+## Entry points
+
+- `@intelligo-dev/chat`
+- `@intelligo-dev/chat/client`
+- `@intelligo-dev/chat/testing`
+
+[npm](https://www.npmjs.com/package/@intelligo-dev/chat) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/chat)
+
+---
+
+# @intelligo-dev/next
+
+Source: https://intelligo.dev/docs/packages/next
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/next/README.md and package.json. Edit that, then run `pnpm sync`. -->
+
+## Install
+
+```bash
+pnpm add @intelligo-dev/next@beta
+```
+
+`next` and `better-auth` are peers: the adapter binds into the copies your
+application already has.
+
+## Use
+
+Tell the framework where a request's headers come from — once, from the
+composition root:
+
+```ts
+// lib/intelligo.ts
+import { setRequestContextSource } from "@intelligo-dev/core/request-context";
+import { nextRequestContext } from "@intelligo-dev/next";
+
+setRequestContextSource(nextRequestContext);
+```
+
+Mount Better-Auth's HTTP handlers:
+
+```ts
+// app/api/auth/[...all]/route.ts
+export { GET, POST } from "@intelligo-dev/next/auth";
+```
+
+The two subpaths are separate so that binding the request context does not
+load the configured Better-Auth server instance.
+
+## Why a package
+
+Every other `@intelligo-dev/*` package has to be usable from a queue worker, a
+Hono API, a test, or a product built on something that is not Next. Keeping
+every `next/*` import in one package — and having an architecture test refuse
+it anywhere else — is what makes that true.
+
+## Entry points
+
+- `@intelligo-dev/next`
+- `@intelligo-dev/next/auth`
+
+[npm](https://www.npmjs.com/package/@intelligo-dev/next) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/next)
+
+---
+
+# @intelligo-dev/audit
+
+Source: https://intelligo.dev/docs/packages/audit
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/audit/README.md and package.json. Edit that, then run `pnpm sync`. -->
+
+## Install
+
+```bash
+pnpm add @intelligo-dev/audit@beta
+```
+
+`audit_events` refuses `UPDATE` and `DELETE` at the database level, with one
+exception: the `ON DELETE SET NULL` the foreign keys perform, so deleting a
+workspace does not require deleting its trail.
+
+`recordAuditEvent` never throws — an audit failure must not fail the action it
+records. `recordAuditEventOrThrow` exists for the callers where the record _is_
+the action.
+
+Sinks registered with `registerAuditSink` receive every event with failure
+isolation, which is how a closed-source tamper-evidence module attaches without
+this package knowing about it.
+
+## Entry points
+
+- `@intelligo-dev/audit`
+- `@intelligo-dev/audit/db`
+
+[npm](https://www.npmjs.com/package/@intelligo-dev/audit) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/audit)
+
+---
+
+# @intelligo-dev/jobs
+
+Source: https://intelligo.dev/docs/packages/jobs
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/jobs/README.md and package.json. Edit that, then run `pnpm sync`. -->
+
+## Install
+
+```bash
+pnpm add @intelligo-dev/jobs@beta
+```
+
+Enqueue, claim with `FOR UPDATE SKIP LOCKED`, retry with backoff, prune. One
+fewer moving part in an operational stack that already has Postgres.
+
+## Entry points
+
+- `@intelligo-dev/jobs`
+- `@intelligo-dev/jobs/db`
+
+[npm](https://www.npmjs.com/package/@intelligo-dev/jobs) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/jobs)
+
+---
+
+# @intelligo-dev/admin
+
+Source: https://intelligo.dev/docs/packages/admin
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/admin/README.md and package.json. Edit that, then run `pnpm sync`. -->
+
+## Install
+
+```bash
+pnpm add @intelligo-dev/admin@beta
+```
+
+Intelligo-owned rather than consumer-owned source, and deliberately excluded
+from the page registry: what an operator can see across every tenant is not a
+per-product decision.
+
+Every query is gated behind `requireAdmin`, which reads `users.role` rather
+than an environment variable. Products contribute their own integration checks
+with `registerIntegrationProbe`.
+
+## Entry points
+
+- `@intelligo-dev/admin`
+- `@intelligo-dev/admin/views`
+- `@intelligo-dev/admin/health`
+
+[npm](https://www.npmjs.com/package/@intelligo-dev/admin) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/admin)
+
+---
+
+# @intelligo-dev/mastra
+
+Source: https://intelligo.dev/docs/packages/mastra
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/mastra/README.md and package.json. Edit that, then run `pnpm sync`. -->
+
+## Install
+
+```bash
+pnpm add @intelligo-dev/mastra@beta
+```
+
+`@mastra/core` is an optional peer dependency and **nothing here imports it** —
+the bridge stays removable and the agent stays native. What this
+package adds is the recording: `runWithExecution` opens an execution, runs the
+agent, and settles what it cost.
+
+## Entry points
+
+- `@intelligo-dev/mastra`
+
+[npm](https://www.npmjs.com/package/@intelligo-dev/mastra) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/mastra)
+
+---
+
+# @intelligo-dev/cli
+
+Source: https://intelligo.dev/docs/packages/cli
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/cli/README.md and package.json. Edit that, then run `pnpm sync`. -->
+
+## Install
+
+```bash
+pnpm add @intelligo-dev/cli@beta
+```
+
+## Commands
+
+```bash
+pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app, plus the pages you pick
+pnpm dlx @intelligo-dev/cli@beta create my-app --items chat,billing-settings --yes   # no questions
+intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance)
+intelligo doctor                       # what is misconfigured, and why it matters
+intelligo migrate                      # apply the framework chain
+intelligo migrate --check [--json]     # compare the chain with the database, change nothing
+intelligo upgrade --check              # what a template upgrade would change
+```
+
+## Why `migrate` is not `drizzle-kit migrate`
+
+Drizzle applies migrations in journal-timestamp order and skips anything
+numbered out of sequence, so a migration published behind the last applied
+timestamp would never run and nothing would say so. `intelligo
+migrate` selects pending work by content hash, applies it in one transaction,
+and records it in the same table drizzle uses so both tools agree afterwards.
+
+It also **refuses** a database that has the schema but no records — the state
+`drizzle-kit push` leaves behind. Applying the chain to tables that already
+exist fails part-way; `--check` reports the database as unmanaged instead, to be
+baselined first.
+
+`migrate --check` exits 1 whenever anything is pending or the database is ahead,
+which an empty database and a stale one share. A deploy gate that must tell them
+apart reads `--json`: one object on stdout whose `state` is `up_to_date`,
+`pending`, `fresh` (empty database), `unmanaged`, `ahead` or `legacy`, beside
+`exitCode`, `chain`, `applied`, `pending`, `unknown`, `legacy` and `adoptable`.
+
+## `add maintenance` and its schedule
+
+The route reconciles executions that are ten minutes stale, so it is meant to
+run every five minutes. `add maintenance` writes that schedule to a new
+`vercel.json`; an existing one is never touched — the entry to add is printed
+instead. Vercel Hobby runs a cron at most once a day and refuses a deployment
+that asks for more: there, or on any other host, call the route from your own
+scheduler with `Authorization: Bearer $CRON_SECRET`.
+
+## Entry points
+
+- `@intelligo-dev/cli`
+
+[npm](https://www.npmjs.com/package/@intelligo-dev/cli) · [source](https://github.com/intelligo-mn/framework/tree/main/packages/cli)
+
+---
+
+# CLI
+
+Source: https://intelligo.dev/docs/cli
+
+<!-- Generated by apps/website/scripts/docs.mjs from packages/cli/src (usage and command doc comments) and packages/cli/templates/manifest.json. Edit that, then run `pnpm sync`. -->
+
+A scaffolded app has `@intelligo-dev/cli` as a dev dependency; run it with `pnpm exec intelligo`.
+
+```text
+intelligo <command>
+intelligo create [dir]      Scaffold an app, then install the registry pages you pick
+                            (--items a,b | --all, --yes, --no-install)
+intelligo doctor            Report configuration and migration-chain problems
+intelligo migrate           Apply the framework's migration chain to DATABASE_URL
+intelligo migrate --check   Compare the framework's migrations to a database
+                            (--json: one object whose `state` is up_to_date | pending |
+                            fresh | ahead | unmanaged | legacy)
+intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
+intelligo upgrade --check   Show what a template upgrade would change
+```
+
+## create
+
+A new application on the framework.
+
+This is onboarding, not the product boundary: what it writes is the
+consumer's from the moment it lands, and the enduring relationship is the versioned packages, not this
+scaffold. So it generates through the same manifest machinery as
+`add`, which means the very first upgrade already knows which files
+you have since edited.
+
+In a terminal it asks for the project name when none is given, then
+which registry pages to install (`--items a,b` or `--all` answer that
+without asking). The pages are installed by the shadcn CLI the scaffold
+declares, after the dependencies — and only once you approve the exact
+commands, or pass `--yes`. `--no-install` stops after the scaffold and
+prints them instead.
+
+[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/create.ts)
+
+## add
+
+Generate consumer-owned source.
+
+"Owned" is the operative word: the files land in the
+consumer's repository and Intelligo stops deciding what is in them.
+The manifest records what was written and its hash so a later
+upgrade can tell an untouched file from one the consumer has made
+their own, and refuse to overwrite the latter.
+
+[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/add.ts)
+
+| Feature | What it generates |
+| --- | --- |
+| `admin-page` | Mount the Intelligo operational console at /admin — `app/admin/page.tsx` |
+| `maintenance` | A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs — scheduled every five minutes, in vercel.json when the app has none — `app/api/cron/maintenance/route.ts` |
+
+## doctor
+
+Report the problems that are invisible until
+they are an incident.
+
+[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/doctor.ts)
+
+## migrate
+
+Apply the framework's migration chain.
+
+A consumer application has two migration chains in one database:
+the framework's, shipped inside `@intelligo-dev/core` (its `.sql`
+files and journal are in the package's `files`), and its own, which
+drizzle-kit generates from the tables the application owns. They
+must not share a journal — drizzle-kit applies by timestamp, so a
+framework migration published after the consumer generated one of
+theirs would be silently skipped — and a consumer cannot write into
+`node_modules` anyway. So the framework chain is applied by this
+command, into drizzle's default `drizzle.__drizzle_migrations`
+table, and the consumer's chain by `drizzle-kit migrate` from their
+own `drizzle.config.ts`, into a table of its own (the scaffold sets
+`migrations.table` to `__app_migrations`).
+
+Migrations are selected by content hash (what `migrate --check`
+compares), not by drizzle's journal-timestamp rule, and are recorded
+in the same table drizzle's migrator writes — see
+`readPendingMigrations` for why.
+
+The one thing this refuses to do is guess. A database with the
+framework's tables but no migration records was provisioned with
+`db:push`; applying the whole chain to it would fail part-way (not
+every migration is `IF NOT EXISTS`-guarded) and leave the records
+half-written. Baselining is the fix, and it is deliberately a manual
+step — see `packages/core/src/db/migrations/README.md`.
+
+[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/migrate.ts)
+
+## migrate --check
+
+Answers "would deploying this code against that database work?"
+without changing anything. Two failure modes matter and neither is
+visible from the code alone:
+
+  - migrations the database has not applied yet (deploying now runs
+    code against an older schema);
+  - migrations the database has applied that this checkout does not
+    contain (the database is ahead — usually a rollback in progress).
+
+Drizzle records applied migrations in `drizzle.__drizzle_migrations`
+by content hash. A database provisioned with `db:push` has the
+schema but no rows there at all, which this reports distinctly:
+"unmanaged" is a different problem from "behind", and baselining is
+the fix (see the migrations README).
+
+The framework's chain is one baseline. A database that ran the pre-1.0
+chain holds its hashes, which `legacy-chain.json` (next to the
+journal) lists: they are reported as `legacy`, not as unknown, and a
+database holding all of them is `adoptable` — its schema is the
+baseline's, so `migrate` records the baseline without running it.
+
+The exit code is 1 whenever anything is pending or the database is
+ahead, which a brand-new database and a stale one share. A deploy
+gate that must tell them apart reads `migrate --check --json`: one
+JSON object on stdout, same exit code, whose `state` is
+
+  - `up_to_date` — every migration is applied;
+  - `pending`    — a migrated database is behind this checkout;
+  - `fresh`      — no migration records and none of the framework's
+                   tables: an empty database, `migrate` applies the chain;
+  - `unmanaged`  — the tables exist with no records (`db:push`);
+  - `ahead`      — applied migrations this checkout does not contain;
+  - `legacy`     — the pre-1.0 chain; `adoptable` says whether
+                   `migrate` can take it over.
+
+Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
+`unknown`, `legacy` and `adoptable`.
+
+[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/migrate-check.ts)
+
+## upgrade --check
+
+Reports what a template upgrade would do, and does nothing. Upgrades
+never overwrite consumer source, so the interesting output is not
+"these templates changed" but "these changed AND you have edited
+them" — the set where the consumer has to make a decision.
+
+[source](https://github.com/intelligo-mn/framework/blob/main/packages/cli/src/commands/upgrade-check.ts)
+
+---
+
+# Bring your agent
+
+Source: https://intelligo.dev/docs/guides/bring-your-agent
+
+A fresh install chats against a deterministic stub model. Everything that makes it your agent lives in files you own.
+
+## In the chat
+
+`app/api/chat/route.ts` is two lines and stays that way:
+
+<!-- snippet: packages/registry/base/chat/route.ts -->
+
+```ts title="app/api/chat/route.ts"
+import { createChatHandler } from "@intelligo-dev/chat";
+
+import { chatServerConfig } from "@/lib/chat-server-config";
+
+export const maxDuration = 300;
+
+export const { POST, DELETE } = createChatHandler(chatServerConfig);
+```
+
+Every turn goes through auth, the plan's rate limit, the feature gate, conversation persistence and the execution boundary inside `createChatHandler`. You change what the turn _does_ in `lib/chat-server-config.ts`:
+
+```ts title="lib/chat-server-config.ts"
+import { tool } from "ai";
+import { z } from "zod";
+
+export const chatServerConfig: ChatServerConfig = {
+  executions,
+  onRequest: composeIntelligo,
+  model: { defaultId: "google/gemini-2.5-flash", resolve: getChatModel },
+  agent: {
+    id: "support",
+    systemPrompt: "You answer from the workspace's documents.",
+    tools: ({ workspaceId }) => ({
+      searchDocs: tool({
+        description: "Search the workspace's documents",
+        inputSchema: z.object({ query: z.string() }),
+        execute: async ({ query }) => search(workspaceId, query),
+      }),
+    }),
+  },
+};
+```
+
+Tools are native AI SDK tools. The function form closes over the caller's tenancy, so the model is never told — and can never get wrong — which workspace it is in. Give a tool a card with a [tool renderer](/docs/registry/tool-renderers).
+
+### Register the model
+
+Every model id must be registered with its pricing before it runs. `registerModels(DEFAULT_MODELS)` in the composition root covers the built-in catalogue; pass your own entries for contracted rates or a model it doesn't know. An unregistered id has no price, so the chat refuses the turn rather than guess a rate, and an architecture test catches literals at build time. [Models and pricing](/docs/guides/models-and-pricing) covers swapping the stub for a provider model, the pricing fields and the model picker.
+
+### More seams
+
+| Field                         | Use it when                                                         |
+| ----------------------------- | ------------------------------------------------------------------- |
+| `resolveAgent(turn)`          | More than one agent — pick prompt, tools and model per conversation |
+| `streamTurn(turn, prepared)`  | Another runtime than `streamText`, such as a Mastra agent           |
+| `models`                      | Letting the reader pick among allowed models                        |
+| `prepareMessages(turn, msgs)` | Windowing, summaries or injected context                            |
+| `agent.generation`            | Temperature, a token ceiling, a tool choice, a seed                 |
+| `attachments`                 | Accepting files, optionally stored and signed for the model only    |
+| `deriveTitle`                 | A model-written conversation title                                  |
+| `onTurn`                      | Telemetry for start, complete, fail, refuse, approval and feedback  |
+
+Anything user-authored that reaches a system prompt — a stored summary, profile context — goes through `sanitizeForSystemPrompt()` from `@intelligo-dev/core/prompt` first.
+
+## With Mastra
+
+`@intelligo-dev/mastra` brackets a native Mastra call without importing Mastra:
+
+```ts
+import { runWithExecution } from "@intelligo-dev/mastra";
+
+const result = await runWithExecution(
+  { executions, workspaceId, userId, capability: "support.reply" },
+  () => supportAgent.generate(messages), // native Mastra, untouched
+);
+```
+
+A refusal throws `ExecutionRefusedError`, so it can't be mistaken for an empty result. `streamWithExecution` does the same for streams.
+
+## Anywhere else
+
+A background job, a webhook, another framework: call the [execution boundary](/docs/concepts/execution-boundary) directly — `begin`, then `complete` or `fail`.
+
+---
+
+# Models and pricing
+
+Source: https://intelligo.dev/docs/guides/models-and-pricing
+
+A fresh install streams from a stub model and already bills it under a real, registered id, so admission, settlement and the usage page work before you have a provider key. At the end of this page chat runs on your provider, every model you offer has a price, and the composer has a picker.
+
+## Swap the stub for a provider
+
+Install the AI SDK provider you use. The framework ships none of them.
+
+```bash
+pnpm add @ai-sdk/anthropic
+```
+
+Set its key in `.env`. The scaffold's `.env.example` lists the three names the AI SDK providers read: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`.
+
+Then replace the body of `getChatModel` in `lib/chat-model.ts` and point `CHAT_MODEL_ID` at the matching registered id:
+
+```ts title="lib/chat-model.ts"
+import "server-only";
+
+import { anthropic } from "@ai-sdk/anthropic";
+import type { LanguageModel } from "ai";
+
+/** Must be a registered model id in `@intelligo-dev/executions/pricing`. */
+export const CHAT_MODEL_ID = "anthropic/claude-sonnet-4-6";
+
+export function getChatModel(modelId: string): LanguageModel {
+  void modelId;
+  return anthropic("claude-sonnet-4-6-20260214");
+}
+```
+
+Two strings are in play. `CHAT_MODEL_ID` is the registry key the turn is admitted and billed under. The string you pass to the provider is the provider's own id, which is often dated; the registry keeps it in the entry's `model` field. `lib/chat-server-config.ts` already binds both as `model: { defaultId: CHAT_MODEL_ID, resolve: getChatModel }`, and `lib/chat-quota.ts` prices the composer's credit banner against the model the reader picked, falling back to `CHAT_MODEL_ID`.
+
+Prompts, tools and other runtimes are covered in [Bring your agent](/docs/guides/bring-your-agent).
+
+## Register every model you run
+
+A model id is a key into a price registry. Nothing registers itself: your [composition root](/docs/concepts/composition-root) does it. The scaffold's `composeIntelligo()` in `lib/intelligo.ts` calls `registerModels(DEFAULT_MODELS)`. The shipped catalogue holds six entries: `google/gemini-2.5-flash`, `google/gemini-2.5-pro`, `openai/gpt-5-mini`, `openai/gpt-5.4-mini`, `openai/o4-mini` and `anthropic/claude-sonnet-4-6`. Its prices are the providers' published USD rates and go stale. Register your own entry for a contracted rate or a model the catalogue does not know; `registerModel` replaces an entry with the same `id`.
+
+```ts title="lib/intelligo.ts"
+import {
+  DEFAULT_MODELS,
+  registerModel,
+  registerModels,
+} from "@intelligo-dev/executions";
+
+registerModels(DEFAULT_MODELS);
+// Example rates. Use the ones your provider quotes you.
+registerModel({
+  id: "mistral/mistral-small",
+  provider: "mistral",
+  model: "mistral-small-latest",
+  displayName: "Mistral Small",
+  costPerMInputTokens: 0.1,
+  costPerMOutputTokens: 0.3,
+  maxOutputTokens: 4_000,
+  capabilities: {
+    thinking: false,
+    toolCall: true,
+    vision: false,
+    webSearch: false,
+    codeExec: false,
+  },
+});
+```
+
+Every field of `ModelPricing` is required:
+
+| Field                  | Meaning                                                                  |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `id`                   | Provider-prefixed registry key, such as `google/gemini-2.5-flash`        |
+| `provider`             | Provider name                                                            |
+| `model`                | The id the provider's SDK expects                                        |
+| `displayName`          | Human-readable name                                                      |
+| `costPerMInputTokens`  | USD per million input tokens, as the provider quotes it                  |
+| `costPerMOutputTokens` | USD per million output tokens                                            |
+| `maxOutputTokens`      | Output ceiling used for the worst-case estimate at admission             |
+| `capabilities`         | Five booleans: `thinking`, `toolCall`, `vision`, `webSearch`, `codeExec` |
+
+Prices are plain USD numbers here and nowhere else; everything computed from them is micros with a currency. `isModelRegistered(id)` answers whether an id has a price, `getModelPricing(id)` returns the entry, and `listModels()` returns all of them. They are also exported from `@intelligo-dev/executions/pricing`, a dependency-free subpath a client bundle can import.
+
+## What an unregistered id does
+
+Pricing never guesses. `providerCost`, `chargeFor` and `estimateWorstCaseCharge` throw `UnknownModelError`, whose message names the id and lists what is registered.
+
+In chat you see a refusal, not a crash. Admission catches the error and refuses the turn with code `unknown_model`. `createChatHandler` answers HTTP 503 with `code: "MODEL_UNAVAILABLE"` and `reasonCode: "unknown_model"` before any provider tokens are spent. The reader sees that the assistant is temporarily unavailable, not an upgrade prompt, and the id is in your error log.
+
+`pnpm exec intelligo doctor` reports an error named `models` when `lib/intelligo.ts` contains no `registerModels()` or `registerModel()` call. It does not check individual ids. To fail at startup instead of on the first turn, assert the ids you ship after registering:
+
+```ts title="lib/intelligo.ts"
+for (const id of [CHAT_MODEL_ID, ...CHAT_MODELS.map((m) => m.id)]) {
+  if (!isModelRegistered(id)) throw new Error(`No price for ${id}`);
+}
+```
+
+## Offer a model picker
+
+`lib/chat-models.ts` exports `CHAT_MODELS`, empty by default: no picker, every turn runs on `CHAT_MODEL_ID`. List two or more options and the composer shows a picker. An option is:
+
+<!-- snippet: packages/chat/src/client.ts#ChatModelOption -->
+
+```ts
+export type ChatModelOption = {
+  id: string;
+  label: string;
+  description?: string;
+  /** Plan feature the workspace needs for this model; unset means every plan. */
+  featureKey?: string;
+};
+```
+
+```ts title="lib/chat-models.ts"
+export const CHAT_MODELS: ChatModelOption[] = [
+  { id: "google/gemini-2.5-flash", label: "Fast" },
+  {
+    id: "anthropic/claude-sonnet-4-6",
+    label: "Smart",
+    featureKey: "pro-models",
+  },
+];
+```
+
+Grant the feature in `lib/plans.ts` by adding `"pro-models": ["pro"]` to `FEATURES`. A feature no plan lists is denied to everyone.
+
+`getChatModelOptions(workspaceId)` filters the list by the workspace's plan, so a Free workspace never sees "Smart". The first option is preselected, and the choice is sent as `modelId` with each turn. The server checks again: a `modelId` that is not in `CHAT_MODELS`, or whose `featureKey` the plan lacks, is refused with HTTP 403, `code: "FEATURE_GATED"` and `reasonCode: "model_not_allowed"`. A model set by `resolveAgent` wins over the request's choice.
+
+`getChatModel` now receives ids from more than one provider, so switch on the id:
+
+```ts title="lib/chat-model.ts"
+export function getChatModel(modelId: string): LanguageModel {
+  const entry = getModelPricing(modelId);
+  if (entry?.provider === "anthropic") return anthropic(entry.model);
+  return google(entry?.model ?? "gemini-2.5-flash");
+}
+```
+
+## How a turn is charged
+
+Every turn is priced twice, with the `BillingRate` your composition root declared through `ensureBillingSettingsRow`: `currency`, `usdRateMicros` (what one USD costs in that currency) and `marginBp`, where `DEFAULT_MARGIN_BP` is `40_000`, meaning 4× provider cost.
+
+1. **Admission.** `estimateWorstCaseCharge(modelId, rate)` prices a 16,000-token input budget plus the entry's `maxOutputTokens`, and that amount is held. If the workspace cannot cover it, the turn is refused with `insufficient_credits`.
+2. **Settlement.** `chargeFor(modelId, inputTokens, outputTokens, rate)` takes the run's actual usage and returns `providerCost` in USD and `charged` in your currency: provider cost × margin, converted at your rate, each step rounded up to a whole micro.
+
+On `anthropic/claude-sonnet-4-6`, a turn of 1,200 input and 400 output tokens costs 1,200 × 3 + 400 × 15 = 9,600 micros (USD 0.0096) and is charged 38,400 micros at 4×. Its worst case is 16,000 × 3 + 8,000 × 15 = 168,000 micros, held as USD 0.672. That is more than the scaffold's Free plan allowance of USD 0.50, so gate expensive models to a plan that can fund them, or register them with a lower `maxOutputTokens`. The registry value also caps what the model may write in one step, so the hold is a real ceiling; `agent.generation.maxOutputTokens` in `lib/chat-server-config.ts` overrides it.
+
+## Next
+
+- [Credits and money](/docs/concepts/credits-and-money) — micros, currencies, allowances and top-ups
+- [The execution boundary](/docs/concepts/execution-boundary) — admit, settle, fail, reconcile
+- [Plans and features](/docs/guides/plans-and-features) — the feature keys that gate a model
+
+---
+
+# Plans, features and quotas
+
+Source: https://intelligo.dev/docs/guides/plans-and-features
+
+A new app already has a `free` and a `pro` plan in `lib/plans.ts`, registered by the composition root, and the chat route is gated on the `chat` feature. By the end of this page a feature of your own is gated, capped and wrapped in an upgrade prompt.
+
+## Define your plans
+
+`lib/plans.ts` exports two objects: the plan catalogue and the feature matrix. `composeIntelligo()` in `lib/intelligo.ts` hands both to the billing engine with `registerProductPlans` and `registerProductFeatures`, after `setDefaultProductSlug` names the product they belong to. Setting `INTELLIGO_BILLING_PRODUCT` does the same as that call. With neither, billing throws `BillingNotConfiguredError`.
+
+```ts title="lib/plans.ts"
+export const PLANS: Record<string, PlanConfig> = {
+  free: {
+    // ...
+    limits: { summaries: 5 },
+  },
+  pro: {
+    name: "Pro",
+    slug: "pro",
+    description: "For daily use",
+    priceOneTime: 20,
+    priceMonthly: 20,
+    priceYearly: 192,
+    targetAudience: "Teams",
+    aiModelLabel: "Advanced",
+    monthlyAllowance: fromMajor(15, "USD"),
+    limits: { summaries: -1 },
+    features: ["Unlimited summaries", "Exports"],
+  },
+};
+```
+
+| Field                                         | What it is                                                                                                                                              |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `slug`, `name`, `description`                 | Identity and card copy. Keep a plan with the slug `free`: a workspace with no subscription resolves to it.                                              |
+| `priceOneTime`, `priceMonthly`, `priceYearly` | Display prices as plain numbers in the `CURRENCY` of `lib/billing-config.ts`. Declaring an interval price shows the pricing page's toggle.              |
+| `monthlyAllowance`                            | What the plan grants each period, as money with its currency. The credit engine enforces it: see [Credits and money](/docs/concepts/credits-and-money). |
+| `limits`                                      | Your own keys, numeric caps. `-1` is unlimited; a missing key is `0`.                                                                                   |
+| `features`                                    | Bullet copy for the pricing card, rendered verbatim. These are not feature keys.                                                                        |
+| `targetAudience`, `aiModelLabel`              | Card copy, in your product's words.                                                                                                                     |
+| `stripePriceIdMonthly`, `stripePriceIdYearly` | The Stripe prices checkout charges. See [Billing with Stripe](/docs/guides/billing-stripe).                                                             |
+
+## Gate a feature on the server
+
+A feature key is a string you choose. The matrix says which plan slugs grant it:
+
+<!-- snippet: packages/cli/templates/app-scaffold/plans.ts.tpl#FEATURES -->
+
+```ts title="lib/plans.ts"
+export const FEATURES: Record<string, readonly string[]> = {
+  assistant: ["free", "pro"],
+  // POST /api/chat (the `chat` registry item). Every plan, so a clean
+  // install can chat with no configuration; tighten to ["pro"] to put
+  // chat behind a paywall.
+  chat: ["free", "pro"],
+};
+```
+
+Add `exports: ["pro"]` and check it wherever the feature runs, after `requireWorkspace` has resolved the tenant:
+
+```ts title="actions/exports.ts"
+"use server";
+
+import { requireWorkspace } from "@intelligo-dev/auth";
+import { hasFeature } from "@intelligo-dev/billing";
+
+export async function exportConversations() {
+  const { workspace } = await requireWorkspace();
+  if (!(await hasFeature(workspace.id, "exports"))) {
+    return { success: false as const, error: "upgrade_required" };
+  }
+  // ...
+}
+```
+
+`hasFeature(workspaceId, feature)` resolves the workspace's plan (its subscription's plan while the subscription is `active`, `trialing` or `past_due`; the trial's `planSlug`, `pro` by default, during an active trial; `free` otherwise) and returns a boolean. `requireFeature` takes the same arguments and throws a `FeatureNotAvailableError` instead, which names the feature, the current plan and the plans that grant it. A key that is missing from the matrix is denied on every plan, so a registry item with a `featureKey` you have not added answers 403.
+
+A row in the `feature_flags` table overrides the matrix for its feature name, and an inactive row turns the feature off for everyone. Answers are cached in-process for 60 seconds; `invalidateFeatureCache(workspaceId)` drops them.
+
+## Cap how often a feature runs
+
+`checkFeatureQuota(userId, workspaceId, plan, action)` compares a counter with the plan's limit. The limit is the key in `limits` named after the action — `summaries` above — unless `registerActionLimitKeys` maps the action to another key. `recordFeatureUsage(userId, workspaceId, action)` increments the counter in one SQL statement.
+
+```ts title="actions/summaries.ts"
+const { workspace, user } = await requireWorkspace();
+const plan = await getWorkspacePlan(workspace.id);
+
+const quota = await checkFeatureQuota(user.id, workspace.id, plan, "summaries");
+if (!quota.allowed) return { success: false as const, quota };
+
+const summary = await summarize(input);
+await recordFeatureUsage(user.id, workspace.id, "summaries");
+```
+
+The result is a `FeatureQuotaResult`: `allowed`, `used`, `limit`, `remaining`, `percentage`, `nearingLimit` from 80 percent, and on refusal the `upgradeMessage` you registered with `registerUpgradeMessages`.
+
+Counters are per user per workspace, and nothing resets them. They are lifetime caps until you clear the `usage` column of `user_quotas` yourself, for example from a monthly job.
+
+## Limit team size
+
+Seats per plan are their own map in `lib/plans.ts`, registered by the composition root with `registerTeamMemberLimits`. A seat count includes the owner, `-1` is unlimited, and a plan left out of the map has one seat, which refuses every invitation.
+
+<!-- snippet: packages/cli/templates/app-scaffold/plans.ts.tpl#TEAM_MEMBER_LIMITS -->
+
+```ts title="lib/plans.ts"
+export const TEAM_MEMBER_LIMITS: Record<string, number> = {
+  free: 3,
+  pro: 25,
+};
+```
+
+That call, like the trial and rate-limit calls below, is imported from `@intelligo-dev/billing/plans` and lives inside `composeIntelligo()`. `@intelligo-dev/auth` never imports billing: the `team-settings` block binds `checkTeamMemberLimit` as a port, and the team service calls it before it sends an invitation.
+
+<!-- snippet: packages/registry/base/team-settings/lib/team.ts#team -->
+
+```ts title="lib/team.ts"
+export const team = createTeamService({
+  checkMemberLimit: checkTeamMemberLimit,
+  notifyMemberJoined: ({ workspaceId, memberName, memberEmail, ownerId }) =>
+    triggerTeamMemberJoinedNotification({
+      userId: ownerId,
+      workspaceId,
+      memberName,
+      memberEmail,
+    }),
+});
+```
+
+## Show the upgrade prompt
+
+Install [feature-gating](/blocks/feature-gating). `FeatureGate` is a server component, so gated content never reaches an unentitled browser:
+
+```tsx title="app/[locale]/(app)/exports/page.tsx"
+<FeatureGate workspaceId={workspace.id} feature="exports">
+  <ExportsPanel />
+</FeatureGate>
+```
+
+When the gate closes it renders `UpgradePrompt` (`variant="full"` or `"compact"`), or your `fallback`. `InlineUpgradeBanner` annotates a disabled control, `PaywallBlur` previews content, and `QuotaWarning` and `QuotaLimitDialog` take the `FeatureQuotaResult` from the previous section. The gate is not authorization: keep the check in the action.
+
+| File                           | You set                                                                                                          |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `lib/feature-catalog.ts`       | Per feature key: `labelKey`, `descriptionKey` (message keys) and `requiredPlan`. Unlisted keys get generic copy. |
+| `lib/feature-gating-config.ts` | `upgradeHref` (default `/settings/billing`), `warnAtPercent` (80), `urgentAtPercent` (95).                       |
+
+The [pricing](/blocks/pricing) block reads the same catalogue through `getPlans()` in `lib/billing.ts`, so a plan edited in `lib/plans.ts` changes the cards and the prompts together.
+
+## Offer a trial
+
+No template registers a trial, so none is granted. Register one:
+
+```ts title="lib/intelligo.ts"
+registerTrialConfig(PRODUCT_SLUG, {
+  initialCredits: 100_000,
+  grant: fromMajor(2, "USD"),
+  durationDays: 14,
+  warningThreshold: 0.2,
+  reminderDaysBeforeExpiry: 3,
+});
+```
+
+`grant` funds execution and must be in your billing currency; `initialCredits` is a display figure. Then grant it in `lib/workspace-bootstrap.ts`: replace the body of `onWorkspaceCreated` with `await provisionTrialCredits({ workspaceId, email })`.
+
+## Set rate limits
+
+`createChatHandler` limits each workspace to its plan's requests per minute. An unregistered plan gets 10.
+
+```ts title="lib/intelligo.ts"
+registerRateLimits(PRODUCT_SLUG, { free: 10, pro: 60 });
+```
+
+## Next
+
+- [Billing with Stripe](/docs/guides/billing-stripe)
+- [Credits and money](/docs/concepts/credits-and-money)
+- [Composition root and ports](/docs/concepts/composition-root)
+
+---
+
+# Billing with Stripe
+
+Source: https://intelligo.dev/docs/guides/billing-stripe
+
+At the end of this guide a workspace owner can subscribe to a plan, buy a credit bundle and open Stripe's customer portal, and your database follows every change through one webhook. Before you start, everything except payment already works.
+
+## Before Stripe is configured
+
+Plans, allowances and feature gates run from `lib/plans.ts` and need no Stripe account. A workspace with no subscription row is on the free plan: `getBillingOverview` reports `Free`, and the quota engine spends the free plan's `monthlyAllowance`.
+
+[`/pricing`](/blocks/pricing) lists your registered plans and [`/settings/billing`](/blocks/billing-settings) shows the plan, the credit balance and your bundles. Pressing an upgrade button returns `checkout_unavailable`, because no plan has a Stripe price yet. The Stripe client is created on first use (`getStripe`), so the app boots without a key.
+
+`BillingNotConfiguredError` is a different condition: no product slug was registered. The scaffolded composition root calls `setDefaultProductSlug`, so you only meet it if you remove that line.
+
+## Add the keys
+
+```bash title=".env"
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+Both are optional to `assertEnv`; see [Environment](/docs/getting-started/environment). Checkout is a redirect to Stripe's hosted page, so the browser needs no key.
+
+## Connect plans to Stripe prices
+
+Create one product per paid plan in Stripe, with a recurring price per interval you sell. Put the price ids on the plan. Test mode and live mode have different ids, so read them from the environment:
+
+```ts title="lib/plans.ts"
+pro: {
+  name: "Pro",
+  slug: "pro",
+  // …
+  priceMonthly: 20,
+  priceYearly: 200,
+  stripePriceIdMonthly: process.env.STRIPE_PRICE_PRO_MONTHLY,
+  stripePriceIdYearly: process.env.STRIPE_PRICE_PRO_YEARLY,
+},
+```
+
+The pricing page shows its monthly/yearly toggle once a plan declares `priceMonthly` or `priceYearly`. An interval with no price id answers `checkout_unavailable`. Everything else about a plan is covered in [Plans and features](/docs/guides/plans-and-features).
+
+## The plan rows
+
+A subscription row references the `plans` table by id, and checkout writes `plan_<slug>`. The scaffolded composition root keeps that table in step with your catalogue: `ensurePlanRows()` runs after `registerProductPlans` and writes one row per plan, updating a row whose plan you edited. A migration never seeds them, so an app whose composition root predates the call adds it next to `ensureBillingSettingsRow`.
+
+## Credit bundles
+
+A bundle is a one-time purchase. It has a `price`, charged through Stripe, and a `grant`, added to the workspace's credit ledger:
+
+```ts title="lib/billing-config.ts"
+export const CREDIT_BUNDLES: CreditBundle[] = [
+  {
+    id: "credits-small",
+    name: "Small credit pack",
+    grant: fromMajor(5, CURRENCY),
+    price: fromMajor(5, "USD"),
+  },
+];
+```
+
+Both amounts are micros with a currency, built by `fromMajor`. The browser sends only the bundle id; the action resolves it with `getCreditBundle`. Bundles need nothing in the Stripe dashboard: `createCreditCheckout` sends the name and amount inline. `grant` must be in the currency you passed to `ensureBillingSettingsRow`, or the purchase is refused as `invalid_bundle`. How the balance is spent is in [Credits and money](/docs/concepts/credits-and-money).
+
+## The webhook
+
+The scaffold already has the route:
+
+<!-- snippet: packages/cli/templates/app-scaffold/stripe-webhook-route.ts.tpl -->
+
+```ts title="app/api/webhooks/stripe/route.ts"
+import { createStripeWebhookHandler } from "@intelligo-dev/billing";
+
+import { composeIntelligo } from "@/lib/intelligo";
+
+const handler = createStripeWebhookHandler();
+
+export async function POST(request: Request) {
+  composeIntelligo();
+  return handler(request);
+}
+```
+
+The handler verifies the `stripe-signature` header against `STRIPE_WEBHOOK_SECRET` (400 when it is missing or wrong), writes the event to `finance_events` keyed by Stripe's event id, and claims it before processing. A repeated delivery answers 200 with `duplicate: true` and changes nothing. A handler error releases the claim and answers 500, so Stripe retries.
+
+| Event                                      | What changes                                                                                                                                                                                                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `checkout.session.completed`               | Subscription: upserts the workspace's `subscriptions` row, marks a trial converted, clears the feature cache, emails the owner. Payment: when `payment_status` is `paid`, adds the grant to `credit_balances` and completes the `credit_purchases` row |
+| `invoice.paid`                             | Status `active`, the new period dates, and a fresh monthly usage row                                                                                                                                                                                   |
+| `invoice.payment_failed`                   | Status `past_due`, and an email to the owner                                                                                                                                                                                                           |
+| `customer.subscription.updated`            | Status, period, cancel-at-period-end, and the plan whose Stripe price the subscription now carries                                                                                                                                                     |
+| `customer.subscription.deleted`            | Status `canceled`, which resolves the workspace to the free plan                                                                                                                                                                                       |
+| `checkout.session.async_payment_succeeded` | A delayed payment method cleared: grants the bundle, once, even if `completed` already did                                                                                                                                                             |
+| `checkout.session.async_payment_failed`    | Marks the pending credit purchase failed                                                                                                                                                                                                               |
+
+Enable exactly these seven on the dashboard endpoint. Other types are recorded and acknowledged.
+
+Entitlement follows the subscription's status: `active`, `trialing` and `past_due` keep the plan — Stripe is still retrying the payment — and any other status resolves the workspace to the free plan. Pass `onEvent` to `createStripeWebhookHandler` for anything of your own; it runs after the built-in handler for every event, and throwing makes Stripe retry.
+
+Locally, forward events with the Stripe CLI and use the secret it prints:
+
+```bash
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+```
+
+## Checkout and the portal
+
+The installed `actions/billing.ts` holds three Server Actions. Each calls `requireRole(["owner"])` first, then one service function, and maps a `BillingServiceError` code to a translated message.
+
+| Action                        | Service                      | Returns to                          |
+| ----------------------------- | ---------------------------- | ----------------------------------- |
+| `createCheckoutSession`       | `createSubscriptionCheckout` | `/checkout/success?session_id=…`    |
+| `createCreditPurchaseSession` | `createCreditCheckout`       | `/settings/billing?credits=success` |
+| `createPortalSession`         | `createBillingPortal`        | `/settings/billing`                 |
+
+Redirect URLs are built from `NEXT_PUBLIC_APP_URL`. Members and admins see a read-only plan summary; only the owner sees the balance, bundles and portal button, and the button appears once the workspace has a Stripe customer.
+
+The [success page](/blocks/checkout) calls `getCheckoutSession`, which reads the session from Stripe rather than your database, so it shows the right plan even when the webhook has not arrived yet.
+
+The subscription handlers take the plan from the subscription's price id, looked up in your catalogue, so a plan switched inside the portal is followed. A workspace that already has a subscription is never sent through checkout again: the upgrade button opens the portal's confirm-update flow for the new price, so enable subscription updates in the portal's configuration.
+
+## Going live
+
+- Set the live `STRIPE_SECRET_KEY` and live price ids. A `sk_test_` key under `NODE_ENV=production` logs `STRIPE_SECRET_KEY is a test key in production environment` at startup.
+- Add a dashboard endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` with the seven events, and set its signing secret as `STRIPE_WEBHOOK_SECRET`.
+
+## Payments outside Stripe
+
+`registerPaymentProvider(mode, provider)` from `@intelligo-dev/billing/payment` registers a `PaymentProvider` in the composition root, and `PAYMENT_MODE` selects which one `getPaymentProvider` returns. The mode defaults to `mock`, which outside production resolves to the in-memory `mockPaymentProvider` with no registration; production refuses it. The [payment-poll block](/blocks/payment-poll) renders the invoice, QR code and polling flow; you bind it to your provider in `lib/local-payment.ts`.
+
+## Next
+
+- [Plans and features](/docs/guides/plans-and-features)
+- [Credits and money](/docs/concepts/credits-and-money)
+- [Deploy](/docs/guides/deploy)
+
+---
+
+# Auth, workspaces and roles
+
+Source: https://intelligo.dev/docs/guides/auth-and-teams
+
+A fresh install already signs users up, gives each one a personal workspace, and keeps every page under `(app)` behind a session. By the end of this page your own code knows who is calling, which workspace they are in, and whether their role allows the action.
+
+## Guard first, then query
+
+Three guards from `@intelligo-dev/auth` cover every server entry point. Each throws an `AuthGuardError` whose `code` is `unauthenticated`, `no_workspace` or `forbidden` — `isAuthGuardError(error)` narrows it, so a transport can answer 401, 404 or 403. None of them redirects.
+
+| Guard                | Returns                                    | Throws                       |
+| -------------------- | ------------------------------------------ | ---------------------------- |
+| `requireAuth()`      | `{ session, user }`                        | `"Unauthorized"`             |
+| `requireWorkspace()` | `{ session, user, workspace, membership }` | `"No active workspace"`      |
+| `requireRole(roles)` | the same context                           | `"Insufficient permissions"` |
+
+`workspace` is `{ id, name, slug, logo }` and `membership` is `{ id, role }`. With no session at all, `requireWorkspace()` throws `unauthenticated`, the same as `requireAuth()`. `requireRole` takes an array, such as `requireRole(["owner", "admin"])`, and passes when the member holds any of them.
+
+A Server Action calls the guard, then filters by the workspace it returned:
+
+```ts title="actions/reports.ts"
+"use server";
+
+import { requireWorkspace } from "@intelligo-dev/auth";
+import { db, workspaceEq } from "@intelligo-dev/core/db";
+
+import { reports } from "@/lib/db/schema";
+
+export async function listReports() {
+  const { workspace } = await requireWorkspace();
+
+  return db
+    .select()
+    .from(reports)
+    .where(workspaceEq(reports.workspaceId, workspace.id));
+}
+```
+
+Every query on a workspace-owned table filters by `workspaceId`, and by `userId` too when the rows are private to one user. `withWorkspaceFilter(column, workspaceId, ...conditions)` adds your other conditions to the scope. The workspace id comes from the guard, never from the request body.
+
+`getAuthSession()` and `getWorkspaceContext()` are the same reads without the throw: they return `null`. Use them where you choose the response yourself, such as a page that redirects or a route handler:
+
+```ts title="app/api/reports/route.ts"
+import { getWorkspaceContext } from "@intelligo-dev/auth";
+
+export async function GET() {
+  const context = await getWorkspaceContext();
+  if (!context) return Response.json({ error: "unauthorized" }, { status: 401 });
+  // query with context.workspace.id
+}
+```
+
+## What each role may do
+
+Workspace roles are `owner`, `admin` and `member`; whoever creates a workspace is its owner. The shipped services and actions enforce this:
+
+| Action                                          | owner | admin | member |
+| ----------------------------------------------- | ----- | ----- | ------ |
+| List members and pending invitations            | yes   | yes   | yes    |
+| Invite, cancel an invitation, remove a member   | yes   | yes   | no     |
+| Change a member's role (to `admin` or `member`) | yes   | yes   | no     |
+| Rename the workspace, change its slug or logo   | yes   | yes   | no     |
+| Checkout, buy credits, open the billing portal  | yes   | no    | no     |
+| Transfer ownership, delete the workspace        | yes   | no    | no     |
+| Leave the workspace                             | yes\* | yes   | yes    |
+
+\* The only owner cannot leave: `leaveWorkspace` throws `sole_owner` until `transferOwnership` has promoted another member. An invitation grants `admin` or `member`, never `owner`. The installed team page wires invite, cancel, remove, role change, leaving the workspace and transferring ownership. A transfer promotes the other member; you stay an owner until you leave.
+
+## The proxy routes, the server checks
+
+The scaffolded `proxy.ts` is next-intl's locale middleware and nothing else. The session check for everything under `(app)` runs in `app/[locale]/(app)/layout.tsx`: no session redirects to `/login`, unfinished onboarding to `/onboarding`.
+
+For an earlier redirect, `hasSessionCookie(request)` from `@intelligo-dev/auth/edge` tells the proxy whether a session cookie is present. It neither verifies the cookie nor touches the database, so it picks a redirect and nothing more. A forged cookie gets past it and is rejected by the guards, which is why every action and route handler still calls one.
+
+## Sign-in options
+
+| Option             | On when                                                                 |
+| ------------------ | ----------------------------------------------------------------------- |
+| Email and password | Always                                                                  |
+| Email verification | An email provider is configured; with none, sign-up does not require it |
+| Password reset     | Always; the link goes through the same email provider                   |
+| Google             | `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set                   |
+| GitHub             | `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set                   |
+
+Without an email provider the verification link only reaches the server console, which is why it is not required then. The login and signup pages show a provider's button only when its variables are set; [Environment](/docs/getting-started/environment) lists them. Sessions last seven days and extend while in use.
+
+In client components, import from `@intelligo-dev/auth/client`: `authClient`, plus `useSession`, `signIn`, `signUp` and `signOut` taken from it. Server code never imports this subpath.
+
+## Invitations and the team service
+
+`createTeamService(ports)` owns membership: `inviteMember`, `cancelInvitation`, `removeMember`, `updateMemberRole`, `acceptInvitation`, `rejectInvitation` and the lists. Each method authorizes itself. What the auth package must not know arrives as a port, bound in a file you own:
+
+<!-- snippet: packages/registry/base/team-settings/lib/team.ts#team -->
+
+```ts title="lib/team.ts"
+export const team = createTeamService({
+  checkMemberLimit: checkTeamMemberLimit,
+  notifyMemberJoined: ({ workspaceId, memberName, memberEmail, ownerId }) =>
+    triggerTeamMemberJoinedNotification({
+      userId: ownerId,
+      workspaceId,
+      memberName,
+      memberEmail,
+    }),
+});
+```
+
+`checkMemberLimit` is how a plan's seat count reaches invitations without `@intelligo-dev/auth` importing billing. The counts are `TEAM_MEMBER_LIMITS` in `lib/plans.ts`, which the [composition root](/docs/concepts/composition-root) registers with `registerTeamMemberLimits`; a plan left out of that map has one seat, so every invitation on it is refused.
+
+[Plans and features](/docs/guides/plans-and-features) covers the rest of a plan. Leave `sendInvitationEmail` unbound: the auth server already sends the email, with a link to `/accept-invitation/<id>` that is valid for seven days.
+
+Every failure is a `TeamServiceError` with a `code`: `member_limit_reached` (with `meta.limit`), `invitation_not_found`, `sole_owner`, `forbidden`, `invalid_input`, `accept_verification_failed` or `provider_error`. The installed `actions/team.ts` checks `isTeamServiceError(error)`, maps the code to a message in `messages/en/team-settings.json` and returns `{ success: false, error }`; anything unmapped gets the generic message, so internals never reach the UI. The pages are [team-settings](/blocks/team-settings) and [invitation-accept](/blocks/invitation-accept).
+
+## Switching workspaces
+
+The installed switcher calls `authClient.organization.setActive({ organizationId })`; on the server, `switchWorkspace(organizationId)` on the workspace service does the same. The choice persists in `sessions.activeOrganizationId`, and `requireWorkspace()` falls back to the user's first workspace when it is empty or no longer valid. When you call Better-Auth's organization API yourself, pass the `organizationId` from the guard rather than relying on the active one.
+
+The first time a user gets a workspace, `ensureUserWorkspace` calls `onWorkspaceCreated` from `lib/workspace-bootstrap.ts` — the place for trial credits or a welcome notification. See [Config seams](/docs/registry/config-seams).
+
+## Platform admins
+
+A platform admin is a row, not a workspace role: `users.role` holds `platform-admin`. List emails in `PLATFORM_ADMIN_EMAILS`, comma-separated; `requirePlatformAdmin()` promotes a listed user into the column the first time it runs, and throws `"Insufficient permissions"` for anyone with neither. Never gate a cross-workspace surface on `owner`: every signup owns a workspace.
+
+Impersonation goes through `startImpersonation({ targetUserId, reason })` and `stopImpersonation({ targetUserId })` from `@intelligo-dev/admin`. Starting requires a platform admin and a reason, writes the audit event first and aborts if it cannot be written, lasts at most 30 minutes, and refuses another admin as the target; stopping is audited too. `impersonateUser` in `@intelligo-dev/auth` verifies the caller is a platform admin and the target is not, but writes no audit event, so call the admin functions instead.
+
+## Next
+
+- [Plans and features](/docs/guides/plans-and-features) — seat counts and workspace limits per plan
+- [Composition root](/docs/concepts/composition-root) — where ports are bound
+- [Environment](/docs/getting-started/environment) — OAuth, email and admin variables
+
+---
+
+# Deploying
+
+Source: https://intelligo.dev/docs/guides/deploy
+
+At the end of this page the app runs in production, migrates its database on every deploy and does its periodic work on a schedule. Nothing in the scaffold is local-only: the same `lib/intelligo.ts` composes production, and only the environment changes.
+
+## The database
+
+You need Postgres with the `pgvector` extension available: the baseline migration runs `CREATE EXTENSION IF NOT EXISTS vector`.
+
+The driver is chosen from the URL by `selectDriver`:
+
+| `DATABASE_URL`                                 | Driver                                   |
+| ---------------------------------------------- | ---------------------------------------- |
+| Contains `neon.tech` or an `@ep-…` endpoint id | `neon-serverless` — Neon over WebSockets |
+| Anything else                                  | `pg` — node-postgres                     |
+
+Set `INTELLIGO_DB_DRIVER` to `pg` or `neon-serverless` to force one. Neon's HTTP driver is not an option: it cannot run transactions, and quota admission and usage settlement are transactions.
+
+Both drivers open one pool per server process, on the first query, so `next build` needs no database. On a serverless host every function instance holds its own pool; a long-running server holds one. The WebSocket driver uses the global `WebSocket` of Node 22 and newer. The framework does not distinguish a pooled connection string from a direct one: the app, `intelligo migrate` and `drizzle.config.ts` all read `DATABASE_URL`.
+
+## Migrations on every deploy
+
+One database holds two migration chains, and the scaffold's `db:migrate` script applies them in order: `intelligo migrate && drizzle-kit migrate`.
+
+- `intelligo migrate` applies the framework's chain from `@intelligo-dev/core`. It selects pending migrations by content hash and runs them in one transaction, so a failure leaves neither statements nor records behind.
+- `drizzle-kit migrate` applies the tables you own (`lib/db/schema.ts`), recorded separately in `drizzle.__app_migrations`.
+
+Run it in the build, before `next build`:
+
+```json title="vercel.json"
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "pnpm db:migrate && pnpm build"
+}
+```
+
+A refused or failed migration exits 1 and fails the build, so the previous deployment keeps serving. The build migrates whatever database its `DATABASE_URL` names — give preview environments their own.
+
+The reference app does the same from inside the monorepo, where the CLI is a workspace package it has to build and run by path:
+
+<!-- snippet: apps/app/vercel.json -->
+
+```json title="apps/app/vercel.json"
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "pnpm --filter @intelligo-dev/cli build && node ../../packages/cli/dist/bin.js migrate && pnpm exec drizzle-kit migrate && pnpm build",
+  "crons": [{ "path": "/api/cron/maintenance", "schedule": "0 3 * * *" }]
+}
+```
+
+### The deploy gate
+
+`pnpm db:check` runs `intelligo migrate --check`, which compares the framework chain with the database and changes nothing. Use it where a separate step applies migrations, or before a rollback.
+
+| It prints                                  | Meaning                                                                              | Exit |
+| ------------------------------------------ | ------------------------------------------------------------------------------------ | ---- |
+| `✓ Up to date (n/n applied)`               | Code and schema agree                                                                | 0    |
+| `✗ n migration(s) pending`                 | Deploying now runs code against an older schema                                      | 1    |
+| `✗ Database is ahead`                      | The database applied migrations this checkout lacks — a rollback, or an older `core` | 1    |
+| `! This database has no migration records` | Empty, or provisioned with `drizzle-kit push`; printed with the pending line         | 1    |
+| `! … ran the framework's pre-1.0 chain`    | `migrate` records the baseline without running it, then applies the rest             | 1    |
+
+`intelligo migrate` refuses, with exit 1, a database that is ahead, one that ran part of the pre-1.0 chain, and one that has the framework's tables but no records. The last needs baselining once; the steps are in `node_modules/@intelligo-dev/core/src/db/migrations/README.md`.
+
+## Environment
+
+`instrumentation.ts` runs `composeIntelligo()` once per server process, and its first line is `assertEnv()`. A missing `DATABASE_URL`, `BETTER_AUTH_SECRET` (32 characters or more) or `NEXT_PUBLIC_APP_URL` throws at startup with the list of what is missing.
+
+`NEXT_PUBLIC_APP_URL` must be the public `https://` URL: auth callbacks, email links and redirects are built from it.
+
+With `NODE_ENV=production`, `assertEnv()` also logs an `[Env]` warning for each of these:
+
+| Warning                                    | Consequence                                               |
+| ------------------------------------------ | --------------------------------------------------------- |
+| No `RESEND_API_KEY` or `LOOPS_API_KEY`     | Sign-ups are not email-verified; mail goes to the console |
+| `STRIPE_SECRET_KEY` starts with `sk_test_` | Production is running on a Stripe test key                |
+| `CRON_SECRET` unset or under 32 characters | The maintenance route answers 403                         |
+
+Every variable is listed in [Environment](/docs/getting-started/environment).
+
+## Email
+
+Sign-ups are held for email verification only when a provider is configured. Without one, verification, invitation and reset links are printed to the server log. Set a provider key, and set `EMAIL_FROM` to an address on a domain your provider lets you send from — there is no built-in sender, so with Resend and no `EMAIL_FROM` every send fails and startup warns about it. Loops takes the sender from each template.
+
+## The Stripe webhook
+
+In Stripe, add an endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` and put its signing secret in `STRIPE_WEBHOOK_SECRET`. The scaffolded route verifies the signature, records each event before handling it and answers 500 on a handler error so Stripe retries. [Billing with Stripe](/docs/guides/billing-stripe) covers the events and plans.
+
+## The maintenance cron
+
+```bash
+pnpm exec intelligo add maintenance
+```
+
+This writes `app/api/cron/maintenance/route.ts`, which is yours to extend. One `GET` does five things:
+
+| Step                                                 | Effect                                                                                              |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `findStaleExecutions`, then `executions.reconcile()` | Runs unfinished after 10 minutes are settled from recorded usage, or failed and their hold released |
+| `cleanupExpiredReservations`                         | Table hygiene; admission already ignores them                                                       |
+| `cleanupRateLimitEntries`                            | Table hygiene                                                                                       |
+| `processTrialExpirations`                            | Expires trials and sends the reminder emails                                                        |
+| `pruneJobs`                                          | Deletes finished jobs older than a week                                                             |
+
+It does not drain the job queue: draining needs your handlers.
+
+The route requires `Authorization: Bearer $CRON_SECRET`. It answers 403 while `CRON_SECRET` is unset or shorter than 32 characters, 401 on a wrong token, and otherwise a JSON summary — 200, or 207 when a step failed.
+
+On Vercel, `intelligo add maintenance` writes the `crons` entry to `vercel.json` when the app has none, and prints it for you to add when one exists; Vercel sends the header itself. The entry runs every five minutes (`0-59/5 * * * *`). Vercel's Hobby plan only allows daily crons, which leaves a failed turn's credit hold in place for up to a day rather than ten minutes — the reference app runs daily for that reason. From any other scheduler:
+
+```bash
+curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://app.example.com/api/cron/maintenance
+```
+
+## Pre-flight
+
+Run `pnpm exec intelligo doctor` with the production variables before the first deploy. It exits non-zero on any error from these checks: `migrations` (journal and `.sql` files agree), `env` (the three required variables), `billing` (`INTELLIGO_BILLING_PRODUCT`), `item:<name>` (each installed page's files, exports and feature keys), `maintenance` (`CRON_SECRET` when the route exists), `auth-mount` (`/api/auth` is mounted), `models` (the composition root calls `registerModels`) and `generated` (the manifest).
+
+After bumping `@intelligo-dev/*` versions, run `pnpm exec intelligo upgrade --check`. It lists generated files whose template changed and exits 1 only on a conflict — a file that both you and the template changed. The [CLI reference](/docs/cli) describes both.
+
+## Not on Vercel
+
+The app is a standard Next.js 16 server: `pnpm db:migrate`, `pnpm build`, `pnpm start`, plus a scheduler for the maintenance route. Only `@intelligo-dev/next` imports `next/*`; it supplies `nextRequestContext` and the auth route handlers. Nothing in the framework depends on Vercel.
+
+## Next
+
+- [Environment](/docs/getting-started/environment)
+- [Billing with Stripe](/docs/guides/billing-stripe)
+- [The composition root](/docs/concepts/composition-root)

@@ -1,6 +1,6 @@
 /**
  * Stand-in for the consumer's `@/i18n/navigation` (next-intl's typed
- * Link/router) — adapted from apps/site/src/showcase/app/i18n/navigation.tsx,
+ * Link/router) — adapted from apps/website/src/showcase/app/i18n/navigation.tsx,
  * which proved this same shim outside Next.js. The film has one route it
  * ever shows ("/dashboard"), so navigation is a no-op: a click on a
  * sidebar item cannot happen in a rendered video anyway.

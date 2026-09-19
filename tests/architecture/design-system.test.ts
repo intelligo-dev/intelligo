@@ -169,7 +169,7 @@ describe("motion honours prefers-reduced-motion", () => {
 describe("the site follows the radius scale", () => {
   it("sets no corner above xl in its own pages and components", () => {
     const radius = RULES.find((rule) => rule.id === "radius-scale")!.pattern;
-    const site = path.join(ROOT, "apps/site/src");
+    const site = path.join(ROOT, "apps/website/src");
     // Generated copies, and the stock shadcn primitives the site installs.
     const skip = [
       path.join(site, "showcase/app"),
@@ -410,8 +410,8 @@ describe("the intelligo token contract", () => {
 const SURFACES = [
   {
     name: "intelligo.dev",
-    components: "apps/site/components.json",
-    css: "apps/site/src/styles/global.css",
+    components: "apps/website/components.json",
+    css: "apps/website/src/styles/global.css",
   },
   {
     name: "the reference app",

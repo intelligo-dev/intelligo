@@ -18,8 +18,8 @@ Intelligo is everything around it — tested, typed, and yours.
 
 <a href="https://intelligo.dev/#film">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="apps/site/public/film/teaser-dark.gif" />
-    <img src="apps/site/public/film/teaser-light.gif" width="860" alt="Your agent works. It isn't a product yet: sign-up, workspaces, plans, credits, invoices, usage and audit are still to do. That half is the same in every AI SaaS — Intelligo ships it with one command." />
+    <source media="(prefers-color-scheme: dark)" srcset="apps/website/public/film/teaser-dark.gif" />
+    <img src="apps/website/public/film/teaser-light.gif" width="860" alt="Your agent works. It isn't a product yet: sign-up, workspaces, plans, credits, invoices, usage and audit are still to do. That half is the same in every AI SaaS — Intelligo ships it with one command." />
   </picture>
 </a>
 
@@ -175,7 +175,7 @@ Three rules make installed pages hold up over time:
 packages/registry/ page registry: registry.json + item source, a private workspace (built with `pnpm registry:build`)
 packages/          core · auth · next · billing · chat · executions · audit · jobs · admin · mastra · cli
 apps/app           the reference application — the registry's canonical installed result
-apps/site          intelligo.dev — the public site, which also serves the registry at /r
+apps/website          intelligo.dev — the public site, which also serves the registry at /r
 docs/adr/          the decisions, as ADRs
 tests/architecture the rules, as tests
 ```
@@ -206,7 +206,7 @@ Recorded as ADRs in [docs/adr](docs/adr/README.md):
 
 ## What it is not
 
-Not an AI framework, and not a wrapper over one. Not a component library — the registry ships pages; primitives come from shadcn's own registry. Not a hosted platform; you deploy it like any Next.js application. There is no runtime plugin system — composition is build-time, on purpose. The registry is served at `https://intelligo.dev/r/<item>.json` by `apps/site`; a checkout can also install from the locally built artifacts.
+Not an AI framework, and not a wrapper over one. Not a component library — the registry ships pages; primitives come from shadcn's own registry. Not a hosted platform; you deploy it like any Next.js application. There is no runtime plugin system — composition is build-time, on purpose. The registry is served at `https://intelligo.dev/r/<item>.json` by `apps/website`; a checkout can also install from the locally built artifacts.
 
 ## Development
 
@@ -218,7 +218,7 @@ pnpm registry:build   # rebuild the page registry artifacts
 pnpm db:migrate       # apply the framework's schema (intelligo migrate)
 ```
 
-Releases: one commit bumps every published package and heads `CHANGELOG.md` with its section; merging it to main publishes to npm, tags, and creates the GitHub release (`.github/workflows/release.yml`). The site and the hosted registry deploy from `apps/site`. See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [SUPPORT.md](SUPPORT.md). Working on the framework itself from a clone, `pnpm exec tsx packages/cli/src/bin.ts create apps/my-app --link-workspace` scaffolds an app against the workspace packages and `pnpm registry:build` installs items from `packages/registry/public/r`.
+Releases: one commit bumps every published package and heads `CHANGELOG.md` with its section; merging it to main publishes to npm, tags, and creates the GitHub release (`.github/workflows/release.yml`). The site and the hosted registry deploy from `apps/website`. See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [SUPPORT.md](SUPPORT.md). Working on the framework itself from a clone, `pnpm exec tsx packages/cli/src/bin.ts create apps/my-app --link-workspace` scaffolds an app against the workspace packages and `pnpm registry:build` installs items from `packages/registry/public/r`.
 
 ## License
 

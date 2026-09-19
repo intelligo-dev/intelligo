@@ -7,7 +7,7 @@
   "useTabs": false,
   "overrides": [
     {
-      "files": "apps/site/src/content/docs/**/*.md",
+      "files": "apps/website/src/content/docs/**/*.md",
       "options": {
         "embeddedLanguageFormatting": "off"
       }
