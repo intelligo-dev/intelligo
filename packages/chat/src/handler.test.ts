@@ -10,6 +10,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { UIMessage } from "ai";
 
 import type { Executions } from "@intelligo-dev/executions";
+import {
+  DEFAULT_MODELS,
+  clearModels,
+  registerModel,
+} from "@intelligo-dev/executions/pricing";
 
 import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
 
@@ -23,6 +28,7 @@ const mocks = vi.hoisted(() => ({
   checkRateLimit: vi.fn(),
   hasFeature: vi.fn(),
   estimateQuota: vi.fn(),
+  logError: vi.fn(),
 }));
 
 vi.mock("@intelligo-dev/auth", () => ({
@@ -39,7 +45,7 @@ vi.mock("@intelligo-dev/core/logger", () => ({
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
-    error: vi.fn(),
+    error: mocks.logError,
   }),
 }));
 
@@ -270,7 +276,10 @@ beforeEach(() => {
   mocks.hasFeature.mockResolvedValue(true);
 });
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => {
+  vi.clearAllMocks();
+  clearModels();
+});
 
 describe("POST refusals", () => {
   it("answers 400 to a body that is not a chat turn", async () => {
@@ -372,6 +381,45 @@ describe("POST refusals", () => {
     const response = await POST(turn());
     expect(response.status).toBe(503);
     expect((await response.json()).code).toBe("BILLING_NOT_CONFIGURED");
+  });
+
+  it("answers 503 with neutral copy when the model has no registered price", async () => {
+    const refused = fakeExecutions({
+      allowed: false,
+      code: "unknown_model",
+      reason: 'Model "acme/ghost" is not registered.',
+    });
+    const refuse = vi.fn();
+    const { POST } = createChatHandler(
+      baseConfig(refused.executions, {
+        onTurn: { refuse },
+        model: {
+          defaultId: "acme/ghost",
+          resolve: () => stub(),
+        },
+      })
+    );
+    const response = await POST(turn());
+    expect(response.status).toBe(503);
+    // The engine's reason names the registry; the reader never sees it.
+    expect(await response.json()).toEqual({
+      error: "Chat is temporarily unavailable. Please try again later.",
+      code: "MODEL_UNAVAILABLE",
+      reasonCode: "unknown_model",
+    });
+    expect(mocks.logError).toHaveBeenCalledWith(
+      "Model has no registered price",
+      expect.objectContaining({ modelId: "acme/ghost" })
+    );
+    await vi.waitFor(() =>
+      expect(refuse).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: "MODEL_UNAVAILABLE",
+          status: 503,
+          reasonCode: "unknown_model",
+        })
+      )
+    );
   });
 
   it("does not confirm another tenant's conversation exists", async () => {
@@ -758,6 +806,59 @@ describe("POST streaming", () => {
       stopSequences: ["STOP"],
       headers: { "x-trace": "abc" },
     });
+  });
+
+  it("caps a step at the registered model's output ceiling by default", async () => {
+    registerModel({
+      ...DEFAULT_MODELS[0]!,
+      id: MODEL_ID,
+      maxOutputTokens: 4_000,
+    });
+    const model = recordingModel();
+    const { POST } = createChatHandler(
+      baseConfig(fakeExecutions().executions, {
+        agent: { systemPrompt: "Be brief.", generation: { temperature: 0.2 } },
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    await (await POST(turn("go"))).text();
+
+    // The figure admission sized its hold with.
+    expect(model.doStreamCalls[0]!.maxOutputTokens).toBe(4_000);
+    expect(model.doStreamCalls[0]!.temperature).toBe(0.2);
+  });
+
+  it("lets the agent's own output ceiling replace the registered one", async () => {
+    registerModel({
+      ...DEFAULT_MODELS[0]!,
+      id: MODEL_ID,
+      maxOutputTokens: 4_000,
+    });
+    const model = recordingModel();
+    const { POST } = createChatHandler(
+      baseConfig(fakeExecutions().executions, {
+        agent: {
+          systemPrompt: "Be brief.",
+          generation: { maxOutputTokens: 256 },
+        },
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    await (await POST(turn("go"))).text();
+
+    expect(model.doStreamCalls[0]!.maxOutputTokens).toBe(256);
+  });
+
+  it("sets no output ceiling for a model the registry does not hold", async () => {
+    const model = recordingModel();
+    const { POST } = createChatHandler(
+      baseConfig(fakeExecutions().executions, {
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    await (await POST(turn("go"))).text();
+
+    expect(model.doStreamCalls[0]!.maxOutputTokens).toBeUndefined();
   });
 
   it("does not let a generation setting displace the transport's own", async () => {

@@ -18,6 +18,7 @@ export const CHAT_ERROR_STATUS: Readonly<Record<ChatErrorCode, number>> = {
   RATE_LIMITED: 429,
   INTERNAL: 500,
   BILLING_NOT_CONFIGURED: 503,
+  MODEL_UNAVAILABLE: 503,
 };
 
 /**
@@ -34,6 +35,7 @@ export type ChatMessageKey =
   | "notFound"
   | "quotaExceeded"
   | "billingNotConfigured"
+  | "modelUnavailable"
   | "internalError"
   | "streamError";
 
@@ -55,6 +57,7 @@ const ENGLISH: Readonly<Record<ChatMessageKey, string>> = {
   notFound: "That conversation no longer exists.",
   quotaExceeded: "Usage quota exceeded. Upgrade your plan or purchase credits.",
   billingNotConfigured: "Billing is not configured for this deployment.",
+  modelUnavailable: "Chat is temporarily unavailable. Please try again later.",
   internalError: "Something went wrong.",
   streamError: "Something went wrong while generating a response.",
 };

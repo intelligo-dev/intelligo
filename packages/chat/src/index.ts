@@ -34,7 +34,7 @@ export { CHAT_ERROR_STATUS, DEFAULT_CHAT_MESSAGES } from "./errors";
 export { parseChatBody } from "./body";
 export type { ChatBody, ParsedChatBody } from "./body";
 
-export { getChatQuotaState } from "./quota";
+export { getChatQuotaState, getChatQuotaStates } from "./quota";
 export { lastUserMessage, toUIMessages } from "./messages";
 export { pickUsage, sumStepUsage } from "./usage";
 export type { TokenUsage } from "./usage";

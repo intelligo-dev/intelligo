@@ -15,6 +15,7 @@ export const CHAT_ERROR_CODES = [
   "RATE_LIMITED",
   "INTERNAL",
   "BILLING_NOT_CONFIGURED",
+  "MODEL_UNAVAILABLE",
 ] as const;
 
 export type ChatErrorCode = (typeof CHAT_ERROR_CODES)[number];
@@ -26,8 +27,8 @@ export type ChatErrorBody = {
   code: ChatErrorCode;
   /**
    * The entitlement port's own refusal code (`insufficient_credits`,
-   * `allowance_depleted`, …) when `code` is `QUOTA_EXCEEDED` or
-   * `BILLING_NOT_CONFIGURED`.
+   * `allowance_depleted`, …) when `code` is `QUOTA_EXCEEDED`,
+   * `BILLING_NOT_CONFIGURED` or `MODEL_UNAVAILABLE` (`unknown_model`).
    */
   reasonCode?: string;
   /** Set on `RATE_LIMITED`. */

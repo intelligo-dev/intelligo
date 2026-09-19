@@ -47,6 +47,8 @@ interface ChatWorkspaceProps {
   conversationId: string;
   initialMessages: UIMessage[];
   quotaState?: ChatQuotaState | null;
+  /** The same estimate per offered model, by model id. */
+  quotaStates?: Record<string, ChatQuotaState>;
   votes?: Record<string, MessageVote>;
   models?: ChatModelOption[];
 }
@@ -58,6 +60,7 @@ export function ChatWorkspace({
   conversationId,
   initialMessages,
   quotaState = null,
+  quotaStates,
   votes = {},
   models = [],
 }: ChatWorkspaceProps) {
@@ -154,6 +157,7 @@ export function ChatWorkspace({
       conversationId={conversationId}
       initialMessages={initialMessages}
       quotaState={quotaState}
+      quotaStates={quotaStates}
       votes={votes}
       models={models}
       variant="page"

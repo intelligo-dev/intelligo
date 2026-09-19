@@ -60,6 +60,7 @@ import {
 import type { Conversation } from "@intelligo-dev/core/conversations";
 import { createLogger } from "@intelligo-dev/core/logger";
 import { getStorageAdapter } from "@intelligo-dev/core/storage";
+import { getModelPricing } from "@intelligo-dev/executions/pricing";
 
 import { attachmentIdFromUrl, parseChatBody } from "./body";
 import type { ChatAttachmentPolicy } from "./body";
@@ -662,9 +663,34 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     });
 
     if (!run.allowed) {
-      // 402 for anything the workspace can fix by paying; 503 when this
-      // deployment has no billing configured at all.
+      // 402 for anything the workspace can fix by paying; 503 for what
+      // only the deployment can fix — no billing configured, or a model
+      // id with no registered price.
+      if (run.code === "unknown_model") {
+        log.error("Model has no registered price", {
+          conversationId: body.id,
+          modelId,
+          reason: run.reason,
+        });
+        // The engine's reason names the registry and the id. That is
+        // the operator's to read in the log; the reader gets neutral
+        // copy, since nothing they can do changes the answer.
+        return refusal(
+          t,
+          "MODEL_UNAVAILABLE",
+          t("modelUnavailable"),
+          where,
+          { reasonCode: run.code },
+          limitHeaders
+        );
+      }
       const notConfigured = run.code === "billing_not_configured";
+      if (notConfigured) {
+        log.error("Billing is not configured", {
+          conversationId: body.id,
+          reason: run.reason,
+        });
+      }
       return refusal(
         t,
         notConfigured ? "BILLING_NOT_CONFIGURED" : "QUOTA_EXCEEDED",
@@ -832,7 +858,14 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         }
 
         const model = await config.model.resolve!(modelId, context);
+        const outputCeiling = getModelPricing(modelId)?.maxOutputTokens;
         const result = streamText({
+          // Admission held the registered model's `maxOutputTokens`;
+          // the same number caps what a step may write unless the
+          // agent's own setting, spread next, replaces it.
+          ...(outputCeiling !== undefined
+            ? { maxOutputTokens: outputCeiling }
+            : {}),
           // The agent's sampling settings, copied by name from the
           // allowlist. First in the literal on purpose: every key the
           // transport sets below is written after it and wins, so a

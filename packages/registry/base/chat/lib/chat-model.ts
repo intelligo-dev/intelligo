@@ -21,6 +21,13 @@ import "server-only";
  * To use a real provider: install its AI SDK package (e.g.
  * `pnpm add @ai-sdk/anthropic` in this app) and replace the body of
  * `getChatModel` — the commented example below is the whole change.
+ *
+ * Two strings are in play and they are not interchangeable. The
+ * registered id (`anthropic/claude-sonnet-4-6`) is what a turn is
+ * admitted and billed under. The provider's own id is often dated
+ * (`claude-sonnet-4-6-20260214`) and lives in the registry entry's
+ * `model` field. Read it from there; never derive it by trimming the
+ * prefix off the registered id, and never write it out a second time.
  */
 
 import type { LanguageModel } from "ai";
@@ -50,18 +57,32 @@ async function resolveLocale(): Promise<string> {
 
 /**
  * Resolves the language model for a chat turn. `modelId` is unused by
- * the stub (it only ever returns one model) — a real implementation
- * switches on it, e.g.:
+ * the stub (it only ever returns one model). A real implementation
+ * looks the id up in the registry, picks the SDK by the entry's
+ * `provider`, and hands that SDK the entry's `model`:
  *
  *   import { anthropic } from "@ai-sdk/anthropic";
+ *   import { google } from "@ai-sdk/google";
+ *   import { getModelPricing } from "@intelligo-dev/executions/pricing";
  *
  *   export function getChatModel(modelId: string): LanguageModel {
- *     if (modelId === CHAT_MODEL_ID) return anthropic("claude-sonnet-4-6-20260214");
- *     return anthropic("claude-sonnet-4-6-20260214");
+ *     const entry = getModelPricing(modelId);
+ *     if (!entry) throw new Error(`Model "${modelId}" is not registered.`);
+ *     switch (entry.provider) {
+ *       case "anthropic":
+ *         return anthropic(entry.model);
+ *       case "google":
+ *         return google(entry.model);
+ *       default:
+ *         throw new Error(`No AI SDK provider is bound for "${entry.provider}".`);
+ *     }
  *   }
  *
- * and `CHAT_MODEL_ID` above becomes whatever registered id matches the
- * provider model string you pass.
+ * One `case` per provider whose package this app installed. The
+ * transport only calls this with an id admission already priced, so
+ * the first `throw` is for callers outside the chat route. Set
+ * `CHAT_MODEL_ID` above to the registered id turns run on by default;
+ * a model registered with `registerModel` resolves the same way.
  */
 export function getChatModel(modelId: string): LanguageModel {
   void modelId;

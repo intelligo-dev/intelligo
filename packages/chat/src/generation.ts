@@ -61,7 +61,12 @@ import type { streamText } from "ai";
  * one name collision away from a framework field.
  */
 export interface ChatGenerationOptions {
-  /** Ceiling on the tokens the model may produce. */
+  /**
+   * Ceiling on the tokens one step may produce. Unset, the transport
+   * uses the registered model's `maxOutputTokens` — the figure admission
+   * sized its hold with. A larger value here lets a step cost more than
+   * was held.
+   */
   maxOutputTokens?: LanguageModelCallOptions["maxOutputTokens"];
   temperature?: LanguageModelCallOptions["temperature"];
   topP?: LanguageModelCallOptions["topP"];
