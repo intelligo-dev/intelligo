@@ -18,7 +18,7 @@ export function Quickstart() {
               key={st.title}
               className={cn(
                 "flex items-start gap-1 border-b border-border pr-2 transition-colors",
-                n === i && "bg-card"
+                n === i && "bg-background"
               )}
             >
               <button
@@ -53,7 +53,7 @@ export function Quickstart() {
           ))}
         </ol>
 
-        <div className="rounded-xl border border-border bg-muted">
+        <div className="rounded-xl border border-border bg-background">
           <div className="flex h-8 items-center gap-1.5 border-b border-border px-3">
             <span className="size-2 rounded-full bg-foreground/15" />
             <span className="size-2 rounded-full bg-foreground/15" />

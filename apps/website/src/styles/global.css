@@ -314,8 +314,8 @@
 @media (max-width: 1303px) {
   .xline::before, .xline::after { display: none; }
 }
-/* at the inverted band the glyph's backing square is the wrong colour for
-   one side of the line or the other */
+/* at the band the glyph's backing square is the wrong colour for one side
+   of the line or the other */
 .band.xline::before, .band.xline::after, .band + .xline::before, .band + .xline::after { display: none; }
 /* no rail to sit on at the viewport edge */
 .rails-full .xline::before, .rails-full .xline::after { display: none; }
@@ -357,11 +357,9 @@
 }
 @keyframes pulse { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(1.6); opacity: 0; } }
 
-/* an inverted band: `dark` on the section turns the tokens over on a light
-   page. On a dark page that is a no-op, so the band is lifted a step
-   instead — it stays the one section that is not the page. */
-.band { background: var(--background); color: var(--foreground); }
-.dark .band.dark { background: var(--secondary); }
+/* a band: the one section lifted a step off the page, in the reader's
+   theme */
+.band { background: var(--secondary); color: var(--foreground); }
 
 /* numbered eyebrow: "01 · the reference app" */
 .eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; }
