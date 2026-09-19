@@ -75,6 +75,7 @@ import {
 } from "@showcase/components/ui/ai-sidebar";
 import { Button } from "@showcase/components/ui/button";
 import { CopyButton } from "@showcase/components/ui/copy-button";
+import { Markdown } from "@showcase/components/ui/ai-markdown";
 import { DocumentView } from "@showcase/components/ui/document-viewer";
 import {
   PageHeader,
@@ -544,6 +545,57 @@ function MotionDemo() {
 }
 
 /* ----------------------------------------------------------------------------
+ * ai-markdown
+ * ------------------------------------------------------------------------- */
+
+const MARKDOWN = {
+  prose: `### Refund policy
+
+Refunds are **prorated** to the day. A workspace on the yearly plan that
+cancels in month four gets eight months back.
+
+| Plan    | Window  |
+| ------- | ------- |
+| Monthly | 14 days |
+| Yearly  | 30 days |`,
+  maths: `The prorated refund for a plan of price $$P$$ cancelled after $$d$$ of $$D$$ days:
+
+$$
+R = P \\cdot \\frac{D - d}{D}
+$$`,
+  diagram: `\`\`\`mermaid
+flowchart LR
+  request --> admit{quota?}
+  admit -- yes --> run --> settle
+  admit -- no --> refuse
+\`\`\``,
+} as const;
+
+type MarkdownSample = keyof typeof MARKDOWN;
+
+function MarkdownDemo() {
+  const [sample, setSample] = useState<MarkdownSample>("prose");
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Tabs
+        value={sample}
+        onValueChange={(value) => setSample(value as MarkdownSample)}
+      >
+        <TabsList>
+          <TabsTrigger value="prose">Prose</TabsTrigger>
+          <TabsTrigger value="maths">Maths</TabsTrigger>
+          <TabsTrigger value="diagram">Diagram</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      <div className="prose prose-sm max-w-none dark:prose-invert">
+        <Markdown>{MARKDOWN[sample]}</Markdown>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------------
  * document-viewer
  * ------------------------------------------------------------------------- */
 
@@ -787,6 +839,7 @@ function CopyButtonDemo() {
 export const OUTPUT_DEMOS: Record<string, () => ReactNode> = {
   "ai-citations": () => <CitationsDemo />,
   "ai-code-block": () => <CodeBlockDemo />,
+  "ai-markdown": () => <MarkdownDemo />,
   "ai-artifact": () => <ArtifactDemo />,
   "ai-image-generation": () => <ImageGenerationDemo />,
   "ai-sidebar": () => <SidebarDemo />,

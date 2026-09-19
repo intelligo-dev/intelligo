@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "ai-markdown",
+  "title": "AI Markdown",
+  "description": "Markdown as a model writes it — GFM, highlighted code, CJK emphasis — with maths and diagrams fetched only when the text contains them.",
+  "dependencies": [
+    "streamdown",
+    "@streamdown/code",
+    "@streamdown/math",
+    "@streamdown/mermaid",
+    "@streamdown/cjk",
+    "katex"
+  ],
+  "files": [
+    {
+      "path": "base/ui/ai-markdown/ai-markdown.tsx",
+      "content": "\"use client\";\n\n/**\n * Markdown as a model writes it: GFM, highlighted code, CJK-friendly\n * emphasis and, when the text calls for them, maths and diagrams.\n *\n * KaTeX and Mermaid weigh over a megabyte between them, so neither ships\n * with the page. Each is fetched the first time a `$$` block or a\n * `mermaid` fence appears in any rendered text, and every `Markdown` on\n * the page picks it up once it lands; until then the source shows as\n * plain text or a code block.\n */\n\nimport * as React from \"react\";\nimport { Streamdown } from \"streamdown\";\nimport { cjk } from \"@streamdown/cjk\";\nimport { code } from \"@streamdown/code\";\nimport \"katex/dist/katex.min.css\";\n\ntype StreamdownProps = React.ComponentProps<typeof Streamdown>;\ntype Plugins = NonNullable<StreamdownProps[\"plugins\"]>;\ntype OptionalPlugin = \"math\" | \"mermaid\";\n\nconst NEEDS: Record<OptionalPlugin, RegExp> = {\n  math: /\\$\\$|```math/,\n  mermaid: /```mermaid/,\n};\n\nconst LOADERS: Record<OptionalPlugin, () => Promise<unknown>> = {\n  math: () => import(\"@streamdown/math\").then((m) => m.math),\n  mermaid: () => import(\"@streamdown/mermaid\").then((m) => m.mermaid),\n};\n\nconst loaded: Partial<Record<OptionalPlugin, unknown>> = {};\nconst requested = new Set<OptionalPlugin>();\nconst listeners = new Set<() => void>();\nlet version = 0;\n\nfunction request(name: OptionalPlugin) {\n  if (requested.has(name)) return;\n  requested.add(name);\n  LOADERS[name]()\n    .then((plugin) => {\n      loaded[name] = plugin;\n      version += 1;\n      for (const notify of listeners) notify();\n    })\n    // A failed fetch leaves the source readable as text; the next\n    // render that needs the plugin asks again.\n    .catch(() => requested.delete(name));\n}\n\nfunction subscribe(notify: () => void) {\n  listeners.add(notify);\n  return () => {\n    listeners.delete(notify);\n  };\n}\n\nconst getVersion = () => version;\nconst getServerVersion = () => 0;\n\n// One object per combination, so Streamdown sees the same `plugins`\n// across renders and only reparses when a plugin actually arrives.\nconst combinations = new Map<string, Plugins>();\n\nfunction pluginsFor(math: boolean, mermaid: boolean): Plugins {\n  const key = `${math}:${mermaid}`;\n  let plugins = combinations.get(key);\n  if (!plugins) {\n    // The plugin packages type `Pluggable` against their own `unified`\n    // copy; the shapes are the ones Streamdown expects.\n    plugins = {\n      code,\n      cjk,\n      ...(math ? { math: loaded.math } : {}),\n      ...(mermaid ? { mermaid: loaded.mermaid } : {}),\n    } as unknown as Plugins;\n    combinations.set(key, plugins);\n  }\n  return plugins;\n}\n\nexport type MarkdownProps = Omit<StreamdownProps, \"plugins\">;\n\nexport function Markdown({ children, ...props }: MarkdownProps) {\n  const text = typeof children === \"string\" ? children : \"\";\n  const needsMath = NEEDS.math.test(text);\n  const needsMermaid = NEEDS.mermaid.test(text);\n\n  React.useEffect(() => {\n    if (needsMath) request(\"math\");\n    if (needsMermaid) request(\"mermaid\");\n  }, [needsMath, needsMermaid]);\n\n  React.useSyncExternalStore(subscribe, getVersion, getServerVersion);\n\n  return (\n    <Streamdown\n      plugins={pluginsFor(\n        needsMath && \"math\" in loaded,\n        needsMermaid && \"mermaid\" in loaded\n      )}\n      {...props}\n    >\n      {children}\n    </Streamdown>\n  );\n}\n",
+      "type": "registry:ui",
+      "target": "components/ui/ai-markdown.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

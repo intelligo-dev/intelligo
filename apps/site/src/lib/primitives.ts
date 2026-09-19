@@ -162,6 +162,7 @@ const AI_GROUPS: Record<string, string[]> = {
   "What it produces": [
     "ai-citations",
     "ai-code-block",
+    "ai-markdown",
     "ai-artifact",
     "ai-image-generation",
     "ai-sidebar",
@@ -283,7 +284,9 @@ const installed = Object.keys(import.meta.glob("../components/ui/*.tsx"))
       .replace(/\.tsx$/, "")
   )
   .filter((n) => !SITE_EFFECTS.has(n));
-const undocumented = installed.filter((n) => !(n in INSTALLED));
+const undocumented = installed.filter(
+  (n) => !(n in INSTALLED) && !INTELLIGO_UI.has(n)
+);
 const missing = Object.keys(INSTALLED).filter((n) => !installed.includes(n));
 const unknownDeps = [
   ...new Set(blocks.flatMap((b) => b.registryDependencies ?? [])),

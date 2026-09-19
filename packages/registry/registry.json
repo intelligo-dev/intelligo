@@ -586,6 +586,27 @@
       ]
     },
     {
+      "name": "ai-markdown",
+      "type": "registry:ui",
+      "title": "AI Markdown",
+      "description": "Markdown as a model writes it — GFM, highlighted code, CJK emphasis — with maths and diagrams fetched only when the text contains them.",
+      "dependencies": [
+        "streamdown",
+        "@streamdown/code",
+        "@streamdown/math",
+        "@streamdown/mermaid",
+        "@streamdown/cjk",
+        "katex"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-markdown/ai-markdown.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-markdown.tsx"
+        }
+      ]
+    },
+    {
       "name": "ai-reasoning",
       "type": "registry:ui",
       "title": "AI Reasoning",
@@ -998,16 +1019,11 @@
       "type": "registry:ui",
       "title": "Document Viewer",
       "description": "How a saved document reads when nobody is editing it: markdown with maths and diagrams, highlighted code, a sheet's rows, an image, and a sandboxed HTML preview — plus the title-to-language and kind-glyph helpers the chat canvas and the artifacts library share.",
-      "dependencies": [
-        "streamdown",
-        "@streamdown/code",
-        "@streamdown/math",
-        "@streamdown/mermaid",
-        "@streamdown/cjk",
-        "katex",
-        "lucide-react"
+      "dependencies": ["lucide-react"],
+      "registryDependencies": [
+        "@intelligo/ai-code-block",
+        "@intelligo/ai-markdown"
       ],
-      "registryDependencies": ["@intelligo/ai-code-block"],
       "files": [
         {
           "path": "base/ui/document-viewer/document-viewer.tsx",
@@ -2408,13 +2424,7 @@
         "lucide-react",
         "sonner",
         "server-only",
-        "next-intl",
-        "streamdown",
-        "@streamdown/code",
-        "@streamdown/math",
-        "@streamdown/mermaid",
-        "@streamdown/cjk",
-        "katex"
+        "next-intl"
       ],
       "files": [
         {
@@ -2544,6 +2554,7 @@
         "@intelligo/ai-citations",
         "@intelligo/ai-code-block",
         "@intelligo/ai-composer-menu",
+        "@intelligo/ai-markdown",
         "@intelligo/ai-message",
         "@intelligo/ai-message-bubble",
         "@intelligo/ai-message-scroller",
@@ -2578,11 +2589,6 @@
         "@intelligo-dev/chat",
         "@intelligo-dev/core",
         "next-intl",
-        "@streamdown/code",
-        "@streamdown/math",
-        "@streamdown/mermaid",
-        "@streamdown/cjk",
-        "katex",
         "next-themes",
         "prosemirror-state",
         "prosemirror-view",

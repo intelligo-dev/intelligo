@@ -9,13 +9,7 @@
     "lucide-react",
     "sonner",
     "server-only",
-    "next-intl",
-    "streamdown",
-    "@streamdown/code",
-    "@streamdown/math",
-    "@streamdown/mermaid",
-    "@streamdown/cjk",
-    "katex"
+    "next-intl"
   ],
   "registryDependencies": [
     "alert",

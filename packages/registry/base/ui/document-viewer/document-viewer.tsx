@@ -15,20 +15,9 @@ import {
   SheetIcon,
   type LucideIcon,
 } from "lucide-react";
-import { Streamdown } from "streamdown";
-import { cjk } from "@streamdown/cjk";
-import { code } from "@streamdown/code";
-import { math } from "@streamdown/math";
-import { mermaid } from "@streamdown/mermaid";
-import "katex/dist/katex.min.css";
 
 import { CodeBlock } from "@/components/ui/ai-code-block";
-
-// The plugin packages type `Pluggable` against their own `unified`
-// copy; the shapes are the ones Streamdown expects.
-const MARKDOWN_PLUGINS = { code, math, mermaid, cjk } as unknown as NonNullable<
-  ComponentProps<typeof Streamdown>["plugins"]
->;
+import { Markdown } from "@/components/ui/ai-markdown";
 
 const LANGUAGE_BY_EXTENSION: Record<string, string> = {
   ts: "typescript",
@@ -125,12 +114,7 @@ export interface DocumentViewProps {
 export function TextView({ content, streaming }: DocumentViewProps) {
   return (
     <div className="prose prose-sm max-w-none dark:prose-invert">
-      <Streamdown
-        mode={streaming ? "streaming" : "static"}
-        plugins={MARKDOWN_PLUGINS}
-      >
-        {content}
-      </Streamdown>
+      <Markdown mode={streaming ? "streaming" : "static"}>{content}</Markdown>
     </div>
   );
 }
