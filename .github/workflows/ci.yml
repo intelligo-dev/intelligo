@@ -241,13 +241,16 @@ jobs:
       # observe it) and the execution lifecycle rests on a
       # compare-and-swap whose behaviour under concurrent writers a mock
       # proves nothing about. Against the replayed database, because the
-      # trigger and the tables come from migrations.
+      # trigger and the tables come from migrations. One file at a time:
+      # the suites share one database, and billing_settings is a single
+      # row that billing-settings.int.test.ts deletes and rewrites while
+      # money-path.int.test.ts depends on its currency.
       - name: Database integration tests
         env:
           TEST_PG_URL: postgresql://ci:ci@localhost:5432/migration_replay
           DATABASE_URL: postgresql://ci:ci@localhost:5432/migration_replay
         run: |
-          pnpm vitest run \
+          pnpm vitest run --no-file-parallelism \
             packages/core/src/db/__tests__ \
             packages/executions/src/__tests__ \
             packages/jobs/src/__tests__ \
