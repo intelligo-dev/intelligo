@@ -1,19 +1,18 @@
 ---
 /**
- * The homepage, problem to install: a title card; the two halves of an
- * AI product; the film — a rendered minute, from the problem to the
- * install command; the same product, live; what you take home; the
- * boundary in code; the count; the quickstart; the questions. Each
- * section is a door into /why, /blocks, /components, /architecture or
- * /docs.
+ * The homepage, in the order a reader asks: what is it (the title
+ * card); what does it look like (the film, then the same pages live);
+ * how does it work and why trust it (the two halves, what you take
+ * home, the boundary in code, the count); how do I start (the
+ * quickstart); the questions. Each section is a door into /why,
+ * /blocks, /components, /architecture or /docs.
  */
 import Base from "@/layouts/Base.astro";
 import Footer from "@/components/footer.astro";
 import { Nav } from "@/components/nav";
 import Hero from "@/sections/hero.astro";
+import SeeIt from "@/sections/see-it.astro";
 import Halves from "@/sections/halves.astro";
-import Film from "@/sections/film.astro";
-import Preview from "@/sections/preview.astro";
 import WhatYouGet from "@/sections/what-you-get.astro";
 import Code from "@/sections/code.astro";
 import Proof from "@/sections/proof.astro";
@@ -24,9 +23,8 @@ import Faq from "@/sections/faq.astro";
   <Nav client:load current="/" />
   <main id="main" class="rails">
     <Hero />
+    <SeeIt />
     <Halves />
-    <Film />
-    <Preview />
     <WhatYouGet />
     <Code />
     <Proof />

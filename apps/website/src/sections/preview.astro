@@ -1,6 +1,6 @@
 ---
 /**
- * After the film: the same product, live.
+ * Under the film, in the same section: the same product, live.
  * The pages are the registry blocks a new app installs, running on
  * fixture data in place of the packages' reads.
  */
@@ -8,15 +8,13 @@ import SectionHead from "@/components/section-head.astro";
 import { HomePreview } from "@/components/home-preview";
 import { REGISTRY_COUNT } from "@/lib/registry-items";
 ---
-<section id="product" class="xline">
-  <div class="px-6 py-14 md:px-10 md:py-20">
-    <SectionHead
-      tag="what runs before you write the agent"
-      title="A whole product,<br />on the first run."
-      lede={`Sign-in, workspaces, billing, usage and a streaming chat are already pages in your app. Each tab is one of the ${REGISTRY_COUNT} registry blocks itself, running on fixture data — the source the shadcn CLI installs, not a screenshot.`}
-    />
-    <div class="mt-10">
-      <HomePreview client:visible />
-    </div>
+<div id="product" class="scroll-mt-16">
+  <SectionHead
+    tag="or drive it yourself"
+    title="A whole product,<br />on the first run."
+    lede={`Sign-in, workspaces, billing, usage and a streaming chat are already pages in your app. Each tab is one of the ${REGISTRY_COUNT} registry blocks itself, running on fixture data — the source the shadcn CLI installs, not a screenshot.`}
+  />
+  <div class="mt-10">
+    <HomePreview client:visible />
   </div>
-</section>
+</div>

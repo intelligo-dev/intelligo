@@ -54,3 +54,29 @@ export const OTHER_HALF = [
     pkg: "admin",
   },
 ];
+
+/**
+ * The same half at a glance, one line per package, for the homepage;
+ * /why walks `OTHER_HALF` line by line.
+ */
+export const OTHER_HALF_SUMMARY = [
+  {
+    pkg: "auth",
+    text: "sign-in, verification and reset; workspaces, roles, invitations, ownership transfer",
+  },
+  {
+    pkg: "billing",
+    text: "plans as data, gates and quotas; credits with reservations; trials; Stripe behind an idempotent ledger",
+  },
+  {
+    pkg: "executions",
+    text: "every run admitted, settled and recorded, against a model registry with per-token pricing",
+  },
+  {
+    pkg: "core",
+    text: "conversations, versioned documents, notifications; data export and per-fact deletion",
+  },
+  { pkg: "audit", text: "append-only audit events" },
+  { pkg: "jobs", text: "a Postgres job queue, no Redis" },
+  { pkg: "admin", text: "an operator's console with audited impersonation" },
+];
