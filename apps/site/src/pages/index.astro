@@ -2,7 +2,8 @@
 /**
  * The homepage, problem to install: a title card; the two halves of an
  * AI product; the film — a rendered video, four scenes (the build ·
- * the run · make it yours · time passes); what you take home; the
+ * the run · make it yours · time passes), or the live product until
+ * it is rendered; what you take home; the
  * boundary in code; the count; the quickstart; the questions. Each
  * section is a door into /why, /blocks, /components, /architecture or
  * /docs.
@@ -13,6 +14,7 @@ import { Nav } from "@/components/nav";
 import Hero from "@/sections/hero.astro";
 import Halves from "@/sections/halves.astro";
 import Film from "@/sections/film.astro";
+import Preview from "@/sections/preview.astro";
 import WhatYouGet from "@/sections/what-you-get.astro";
 import Code from "@/sections/code.astro";
 import Proof from "@/sections/proof.astro";
@@ -25,7 +27,7 @@ import { SITE } from "@/lib/site";
   <main id="main" class="rails">
     <Hero />
     <Halves />
-    {SITE.filmVideoUrl && <Film />}
+    {SITE.filmVideoUrl ? <Film /> : <Preview />}
     <WhatYouGet />
     <Code />
     <Proof />
