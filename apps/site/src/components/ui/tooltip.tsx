@@ -3,11 +3,18 @@
 /*
  * The tooltip: a light surface that grows out of its trigger and blurs in;
  * once one has shown, the provider opens neighbouring tooltips instantly.
+ * It springs open with motion; the root is kept controlled so the exit
+ * plays.
  */
 
+import * as React from "react";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
+import { popupMotion, useOpenState } from "@/components/ui/ai-motion";
 import { cn } from "@/lib/utils";
+
+const TooltipOpenContext = React.createContext<boolean | null>(null);
 
 function TooltipProvider({
   delay = 120,
@@ -22,8 +29,23 @@ function TooltipProvider({
   );
 }
 
-function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
-  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
+function Tooltip({
+  open: openProp,
+  defaultOpen,
+  onOpenChange,
+  ...props
+}: TooltipPrimitive.Root.Props) {
+  const [open, setOpen] = useOpenState(openProp, defaultOpen, onOpenChange);
+  return (
+    <TooltipOpenContext.Provider value={open}>
+      <TooltipPrimitive.Root
+        data-slot="tooltip"
+        open={open}
+        onOpenChange={setOpen}
+        {...props}
+      />
+    </TooltipOpenContext.Provider>
+  );
 }
 
 function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
@@ -43,27 +65,35 @@ function TooltipContent({
     TooltipPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
+  const open = React.useContext(TooltipOpenContext) ?? true;
+  const reduced = useReducedMotion() ?? false;
+
   return (
-    <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Positioner
-        align={align}
-        alignOffset={alignOffset}
-        side={side}
-        sideOffset={sideOffset}
-        className="isolate z-popover"
-      >
-        <TooltipPrimitive.Popup
-          data-slot="tooltip-content"
-          className={cn(
-            "inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-lg border border-border bg-popover px-2.5 py-1 text-xs font-medium text-popover-foreground shadow-lg transition-[opacity,scale,filter] duration-normal ease-standard has-data-[slot=kbd]:pr-1 data-instant:duration-0 data-starting-style:scale-90 data-starting-style:opacity-0 data-starting-style:blur-xs data-ending-style:scale-95 data-ending-style:opacity-0 data-ending-style:duration-fast",
-            className
-          )}
-          {...props}
-        >
-          {children}
-        </TooltipPrimitive.Popup>
-      </TooltipPrimitive.Positioner>
-    </TooltipPrimitive.Portal>
+    <AnimatePresence>
+      {open && (
+        <TooltipPrimitive.Portal keepMounted>
+          <TooltipPrimitive.Positioner
+            align={align}
+            alignOffset={alignOffset}
+            side={side}
+            sideOffset={sideOffset}
+            className="isolate z-popover"
+          >
+            <TooltipPrimitive.Popup
+              data-slot="tooltip-content"
+              render={<motion.div {...popupMotion(reduced, 0.88)} />}
+              className={cn(
+                "inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-lg border border-border bg-popover px-2.5 py-1 text-xs font-medium text-popover-foreground shadow-lg has-data-[slot=kbd]:pr-1",
+                className
+              )}
+              {...props}
+            >
+              {children}
+            </TooltipPrimitive.Popup>
+          </TooltipPrimitive.Positioner>
+        </TooltipPrimitive.Portal>
+      )}
+    </AnimatePresence>
   );
 }
 

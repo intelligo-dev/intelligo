@@ -1,16 +1,36 @@
 "use client";
 
 /*
- * The popover: a rounded panel that scales out of its trigger.
+ * The popover: a rounded panel that scales out of its trigger. The panel
+ * springs open with motion; the root is kept controlled so the exit plays.
  */
 
 import * as React from "react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
+import { popupMotion, useOpenState } from "@/components/ui/ai-motion";
 import { cn } from "@/lib/utils";
 
-function Popover({ ...props }: PopoverPrimitive.Root.Props) {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />;
+const PopoverOpenContext = React.createContext<boolean | null>(null);
+
+function Popover({
+  open: openProp,
+  defaultOpen,
+  onOpenChange,
+  ...props
+}: PopoverPrimitive.Root.Props) {
+  const [open, setOpen] = useOpenState(openProp, defaultOpen, onOpenChange);
+  return (
+    <PopoverOpenContext.Provider value={open}>
+      <PopoverPrimitive.Root
+        data-slot="popover"
+        open={open}
+        onOpenChange={setOpen}
+        {...props}
+      />
+    </PopoverOpenContext.Provider>
+  );
 }
 
 function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
@@ -29,25 +49,33 @@ function PopoverContent({
     PopoverPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
+  const open = React.useContext(PopoverOpenContext) ?? true;
+  const reduced = useReducedMotion() ?? false;
+
   return (
-    <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Positioner
-        align={align}
-        alignOffset={alignOffset}
-        side={side}
-        sideOffset={sideOffset}
-        className="isolate z-popover"
-      >
-        <PopoverPrimitive.Popup
-          data-slot="popover-content"
-          className={cn(
-            "flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-xl border border-border bg-popover p-3 text-sm text-popover-foreground shadow-lg outline-hidden transition-[opacity,scale,filter] duration-normal ease-standard data-starting-style:scale-95 data-starting-style:opacity-0 data-starting-style:blur-xs data-ending-style:scale-95 data-ending-style:opacity-0 data-ending-style:duration-fast",
-            className
-          )}
-          {...props}
-        />
-      </PopoverPrimitive.Positioner>
-    </PopoverPrimitive.Portal>
+    <AnimatePresence>
+      {open && (
+        <PopoverPrimitive.Portal keepMounted>
+          <PopoverPrimitive.Positioner
+            align={align}
+            alignOffset={alignOffset}
+            side={side}
+            sideOffset={sideOffset}
+            className="isolate z-popover"
+          >
+            <PopoverPrimitive.Popup
+              data-slot="popover-content"
+              render={<motion.div {...popupMotion(reduced)} />}
+              className={cn(
+                "flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-lg outline-hidden",
+                className
+              )}
+              {...props}
+            />
+          </PopoverPrimitive.Positioner>
+        </PopoverPrimitive.Portal>
+      )}
+    </AnimatePresence>
   );
 }
 

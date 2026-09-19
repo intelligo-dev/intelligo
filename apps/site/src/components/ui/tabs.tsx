@@ -8,7 +8,9 @@
 
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { cva, type VariantProps } from "class-variance-authority";
+import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
 
+import { SPRING_LAYOUT } from "@/components/ui/ai-motion";
 import { cn } from "@/lib/utils";
 
 function Tabs({
@@ -30,7 +32,7 @@ function Tabs({
 }
 
 const tabsListVariants = cva(
-  "group/tabs-list relative isolate inline-flex w-fit items-center justify-center rounded-full p-1 text-muted-foreground group-data-horizontal/tabs:h-9 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col group-data-vertical/tabs:rounded-xl data-[variant=line]:rounded-none",
+  "group/tabs-list relative isolate inline-flex w-fit items-center justify-center rounded-lg p-1 text-muted-foreground group-data-horizontal/tabs:h-9 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col group-data-vertical/tabs:rounded-lg data-[variant=line]:rounded-none",
   {
     variants: {
       variant: {
@@ -50,6 +52,8 @@ function TabsList({
   children,
   ...props
 }: TabsPrimitive.List.Props & VariantProps<typeof tabsListVariants>) {
+  const reduced = useReducedMotion() ?? false;
+
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
@@ -61,11 +65,38 @@ function TabsList({
       <TabsPrimitive.Indicator
         data-slot="tabs-indicator"
         className={cn(
-          "absolute -z-1 transition-[left,top,width,height] duration-slow ease-standard",
+          "absolute -z-1",
           variant === "line"
-            ? "bg-foreground group-data-horizontal/tabs:bottom-0 group-data-horizontal/tabs:left-(--active-tab-left) group-data-horizontal/tabs:h-0.5 group-data-horizontal/tabs:w-(--active-tab-width) group-data-vertical/tabs:top-(--active-tab-top) group-data-vertical/tabs:right-0 group-data-vertical/tabs:h-(--active-tab-height) group-data-vertical/tabs:w-0.5"
-            : "top-(--active-tab-top) left-(--active-tab-left) h-(--active-tab-height) w-(--active-tab-width) rounded-full bg-background shadow-sm group-data-vertical/tabs:rounded-lg dark:bg-accent"
+            ? "bg-foreground group-data-horizontal/tabs:bottom-0 group-data-horizontal/tabs:h-0.5 group-data-vertical/tabs:right-0 group-data-vertical/tabs:w-0.5"
+            : "rounded-md bg-background shadow-sm group-data-vertical/tabs:rounded-lg dark:bg-accent"
         )}
+        render={(indicatorProps, state) => {
+          const position = state.activeTabPosition;
+          const size = state.activeTabSize;
+          const vertical = state.orientation === "vertical";
+          // The pill covers the tab; the underline tracks one axis only.
+          const box =
+            position && size
+              ? variant === "line"
+                ? vertical
+                  ? { top: position.top, height: size.height }
+                  : { left: position.left, width: size.width }
+                : {
+                    top: position.top,
+                    left: position.left,
+                    width: size.width,
+                    height: size.height,
+                  }
+              : { opacity: 0 };
+          return (
+            <motion.span
+              {...(indicatorProps as HTMLMotionProps<"span">)}
+              initial={false}
+              animate={box}
+              transition={reduced ? { duration: 0 } : SPRING_LAYOUT}
+            />
+          );
+        }}
       />
     </TabsPrimitive.List>
   );
@@ -76,7 +107,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        "relative inline-flex h-full flex-1 items-center justify-center gap-1.5 rounded-full border border-transparent px-3 py-0.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-[color,box-shadow] duration-normal ease-standard group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start group-data-vertical/tabs:rounded-lg hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:text-foreground group-data-[variant=line]/tabs-list:rounded-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative inline-flex h-full flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-0.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-[color,box-shadow] duration-normal ease-standard group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start group-data-vertical/tabs:rounded-lg hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:text-foreground group-data-[variant=line]/tabs-list:rounded-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}

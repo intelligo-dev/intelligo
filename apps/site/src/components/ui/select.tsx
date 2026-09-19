@@ -2,16 +2,50 @@
 
 /*
  * The select: the input's field as a trigger and the menu's panel as its
- * list.
+ * list. The list springs open with motion; the root is kept controlled so
+ * the exit plays.
  */
 
 import * as React from "react";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
+import { popupMotion, useOpenState } from "@/components/ui/ai-motion";
 import { cn } from "@/lib/utils";
 
-const Select = SelectPrimitive.Root;
+// A select's popup mounts on first open and then stays in the DOM, so the
+// content animates with presence until then and with open state after.
+type SelectPresence = {
+  open: boolean;
+  mounted: boolean;
+  markMounted: () => void;
+};
+
+const SelectPresenceContext = React.createContext<SelectPresence | null>(
+  null
+);
+
+function Select<Value, Multiple extends boolean | undefined = false>({
+  open: openProp,
+  defaultOpen,
+  onOpenChange,
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
+  const [open, setOpen] = useOpenState(openProp, defaultOpen, onOpenChange);
+  const [mounted, setMounted] = React.useState(false);
+  const markMounted = React.useCallback(() => setMounted(true), []);
+  const presence = React.useMemo(
+    () => ({ open, mounted, markMounted }),
+    [open, mounted, markMounted]
+  );
+
+  return (
+    <SelectPresenceContext.Provider value={presence}>
+      <SelectPrimitive.Root open={open} onOpenChange={setOpen} {...props} />
+    </SelectPresenceContext.Provider>
+  );
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -75,31 +109,55 @@ function SelectContent({
     SelectPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
   >) {
+  const presence = React.useContext(SelectPresenceContext);
+  const open = presence?.open ?? true;
+  const mounted = presence?.mounted ?? false;
+  const markMounted = presence?.markMounted;
+  const positionerRef = React.useCallback(() => markMounted?.(), [markMounted]);
+  const reduced = useReducedMotion() ?? false;
+  // Laid over the trigger, the list only fades; below it, it grows.
+  const motionProps = popupMotion(reduced, alignItemWithTrigger ? 1 : 0.92);
+
   return (
-    <SelectPrimitive.Portal>
-      <SelectPrimitive.Positioner
-        side={side}
-        sideOffset={sideOffset}
-        align={align}
-        alignOffset={alignOffset}
-        alignItemWithTrigger={alignItemWithTrigger}
-        className="isolate z-popover"
-      >
-        <SelectPrimitive.Popup
-          data-slot="select-content"
-          data-align-trigger={alignItemWithTrigger}
-          className={cn(
-            "relative isolate max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-popover text-popover-foreground shadow-lg transition-[opacity,scale,filter] duration-normal ease-standard data-starting-style:scale-95 data-starting-style:opacity-0 data-starting-style:blur-xs data-ending-style:scale-95 data-ending-style:opacity-0 data-ending-style:duration-fast data-[align-trigger=true]:data-starting-style:scale-100",
-            className
-          )}
-          {...props}
-        >
-          <SelectScrollUpButton />
-          <SelectPrimitive.List>{children}</SelectPrimitive.List>
-          <SelectScrollDownButton />
-        </SelectPrimitive.Popup>
-      </SelectPrimitive.Positioner>
-    </SelectPrimitive.Portal>
+    <AnimatePresence>
+      {(open || mounted) && (
+        <SelectPrimitive.Portal>
+          <SelectPrimitive.Positioner
+            ref={positionerRef}
+            side={side}
+            sideOffset={sideOffset}
+            align={align}
+            alignOffset={alignOffset}
+            alignItemWithTrigger={alignItemWithTrigger}
+            className="isolate z-popover"
+          >
+            <SelectPrimitive.Popup
+              data-slot="select-content"
+              data-align-trigger={alignItemWithTrigger}
+              render={
+                mounted ? (
+                  <motion.div
+                    initial={false}
+                    animate={open ? motionProps.animate : motionProps.exit}
+                  />
+                ) : (
+                  <motion.div {...motionProps} />
+                )
+              }
+              className={cn(
+                "relative isolate max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-lg",
+                className
+              )}
+              {...props}
+            >
+              <SelectScrollUpButton />
+              <SelectPrimitive.List>{children}</SelectPrimitive.List>
+              <SelectScrollDownButton />
+            </SelectPrimitive.Popup>
+          </SelectPrimitive.Positioner>
+        </SelectPrimitive.Portal>
+      )}
+    </AnimatePresence>
   );
 }
 

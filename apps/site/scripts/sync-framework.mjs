@@ -272,6 +272,17 @@ for (const item of registry.items.filter((i) => i.type === "registry:ui")) {
   }
 }
 
+// The site's own chrome renders the same components: a copy in
+// src/components/ui that is an Intelligo item follows its registry source.
+const chrome = join(SITE, "src/components/ui");
+for (const item of registry.items.filter((i) => i.type === "registry:ui")) {
+  for (const { path: relPath, target } of item.files ?? []) {
+    const dest = join(chrome, target.replace(/^components\/ui\//, ""));
+    if (existsSync(dest))
+      cpSync(join(FRAMEWORK, "packages/registry", relPath), dest);
+  }
+}
+
 // Hand-written stubs and mocks, copied last so they win.
 const overrides = join(SITE, "src/showcase/overrides");
 if (existsSync(overrides)) cpSync(overrides, showcaseRoot, { recursive: true });

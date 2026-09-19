@@ -1,17 +1,20 @@
 /*
- * The button: a pill that presses in and settles back, over Base UI's
- * Button so `render` keeps working for links and triggers. Motion is CSS
- * on the `--ease-*` and `--duration-*` tokens, which the base collapses
- * under reduced motion.
+ * The button: a control that presses in and settles back, over Base UI's
+ * Button so `render` keeps working for links and triggers. The press is a
+ * spring (`Press` from ai-motion, a client component) with an optional
+ * ripple; a button given its own `render` — a link, a trigger's element —
+ * keeps the CSS press. This module stays free of "use client" so a server
+ * component can import `buttonVariants`.
  */
 
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
 
+import { Press } from "@/components/ui/ai-motion";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,scale,opacity] duration-fast ease-standard outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 active:not-aria-[haspopup]:scale-97 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 in-data-[slot=button-group]:rounded-lg in-data-[slot=button-group]:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,scale,opacity] duration-fast ease-standard outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 active:not-aria-[haspopup]:scale-97 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 in-data-[slot=button-group]:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -49,12 +52,32 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  ripple = false,
+  render,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    /** Spread a ripple from the press point (spring-pressed buttons only). */
+    ripple?: boolean;
+  }) {
+  const springs = render === undefined;
+
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      render={
+        springs ? (
+          <Press ripple={ripple} pressScale={variant === "link" ? 1 : 0.97} />
+        ) : (
+          render
+        )
+      }
+      className={cn(
+        buttonVariants({ variant, size }),
+        // The spring owns the press; the CSS one stays for custom elements.
+        springs && "active:not-aria-[haspopup]:scale-100",
+        className
+      )}
       {...props}
     />
   );
