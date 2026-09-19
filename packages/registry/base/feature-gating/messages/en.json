@@ -11,8 +11,8 @@
     "cta": "Upgrade"
   },
   "quota": {
-    "remaining": "{count, plural, one {# use left this period} other {# uses left this period}}",
-    "exhausted": "You've used everything included this period."
+    "remaining": "{count, plural, one {# use left} other {# uses left}}",
+    "exhausted": "You've used everything included in your plan."
   },
   "paywall": {
     "title": "See the full version",
@@ -22,7 +22,7 @@
   "limitDialog": {
     "title": "You've used all your {action}",
     "genericAction": "included usage",
-    "description": "You've used {used} of {limit} this period. Upgrading raises the limit right away.",
+    "description": "You've used {used} of {limit}. Upgrading raises the limit right away.",
     "planCta": "Upgrade to {plan} — {price}",
     "planCtaNoPrice": "Upgrade to {plan}",
     "dismiss": "Not now"
