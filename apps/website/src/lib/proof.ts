@@ -18,29 +18,3 @@ export const PROOF = {
   architectureTests: proof.architectureTests as number,
   registryItems: proof.registryItems as number,
 };
-
-export type ProofStat = { value: string; label: string; note: string };
-
-/** Only the numbers that tell a buyer how mature the product is. */
-export const PROOF_STATS: ProofStat[] = [
-  {
-    value: String(PROOF.testCases),
-    label: "tests",
-    note: `unit, real-database and ${PROOF.architectureTests} architecture suites`,
-  },
-  {
-    value: String(PROOF.registryItems),
-    label: "blocks",
-    note: "pages, shells and drop-in surfaces, installed as source",
-  },
-  {
-    value: String(PROOF.packages),
-    label: "packages",
-    note: "ESM, TypeScript strict, Apache-2.0",
-  },
-  {
-    value: "npm",
-    label: "published",
-    note: `@intelligo-dev/* ${PROOF.published}`,
-  },
-];

@@ -1,9 +1,7 @@
 import { EXAMPLE } from "@/lib/example";
-import { PROOF } from "@/lib/proof";
 
 /**
  * The questions a developer asks before clicking GitHub — trust first.
- * Numbers come from proof.json so they never drift from the repository.
  */
 export const FAQ = [
   {
@@ -32,7 +30,7 @@ export const FAQ = [
   },
   {
     q: "Why trust a small open-source project with auth and billing?",
-    a: `Because the risky parts are not hand-rolled: sessions and organizations are Better-Auth, payments are Stripe behind an idempotent finance ledger. Around them are ${PROOF.testCases} tests, real-database suites, and ${PROOF.architectureTests} architecture suites that fail the build. Every release scaffolds an app from the packed CLI, builds it and boots it before npm sees it.`,
+    a: `Because the risky parts are not hand-rolled: sessions and organizations are Better-Auth, payments are Stripe behind an idempotent finance ledger. Around them are unit tests, suites that run against a real database, and architecture rules that fail the build. Every release scaffolds an app from the packed CLI, builds it and boots it before npm sees it.`,
   },
   {
     q: "What if the maintainer disappears?",
