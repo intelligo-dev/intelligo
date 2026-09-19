@@ -31,12 +31,6 @@ import { getToolName, isTextUIPart, isToolUIPart } from "ai";
 import type { FileUIPart, UIMessage } from "ai";
 import { useTranslations } from "next-intl";
 import { PaperclipIcon } from "lucide-react";
-import { Streamdown } from "streamdown";
-import { cjk } from "@streamdown/cjk";
-import { code } from "@streamdown/code";
-import { math } from "@streamdown/math";
-import { mermaid } from "@streamdown/mermaid";
-import "katex/dist/katex.min.css";
 
 import { ToolApproval } from "@/components/ui/ai-tool-approval";
 import {
@@ -47,6 +41,7 @@ import {
 } from "@/components/ui/ai-branch";
 import { CitationPill, type CitationItem } from "@/components/ui/ai-citations";
 import { ImageGeneration } from "@/components/ui/ai-image-generation";
+import { Markdown } from "@/components/ui/ai-markdown";
 import { ReasoningText } from "@/components/ui/ai-reasoning-text";
 import { StreamingResponse } from "@/components/ui/ai-streaming-response";
 import {
@@ -120,12 +115,6 @@ type Part = UIMessage["parts"][number];
 function isFilePart(part: unknown): part is FileUIPart {
   return (part as { type?: unknown }).type === "file";
 }
-
-// The plugin packages type `Pluggable` against their own `unified`
-// copy; the shapes are the ones Streamdown expects.
-const MARKDOWN_PLUGINS = { code, math, mermaid, cjk } as unknown as NonNullable<
-  React.ComponentProps<typeof Streamdown>["plugins"]
->;
 
 /** The message's plain text, for copying, editing and artifact content. */
 function messageText(message: UIMessage): string {
@@ -310,15 +299,14 @@ export function Message({
       return (
         <MessageBubble key={key} variant="ghost">
           <MessageBubbleContent>
-            <Streamdown
+            <Markdown
               className={streamingText ? STREAMING_CARET : undefined}
               mode={streamingText ? "streaming" : "static"}
               isAnimating={streamingText}
-              plugins={MARKDOWN_PLUGINS}
               components={markdownComponents}
             >
               {linkCitations(part.text, new Set(citations.keys()))}
-            </Streamdown>
+            </Markdown>
           </MessageBubbleContent>
         </MessageBubble>
       );
