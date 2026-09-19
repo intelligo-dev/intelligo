@@ -132,6 +132,8 @@ describe("hand-written docs", () => {
   ) as { items: { name: string; type: string }[] };
   const routes = new Set([
     "/",
+    "/product",
+    "/ui",
     "/blocks",
     "/components",
     "/architecture",

@@ -1,6 +1,6 @@
 ---
 /**
- * A secondary page (/blocks, /components, /architecture, /why): same
+ * A secondary page (/product, /why, /ui and its galleries, /architecture): same
  * nav, a page header instead of the hero, and hairlines that run the full
  * width while every section's content sits in one centred 1280px column
  * (`.page-body` in global.css). Docs have their own layout.
@@ -21,8 +21,14 @@ interface Props {
   noindex?: boolean;
   /** A one-line title in place of the large header, for a page whose content is the point (/blocks, /components). */
   compact?: boolean;
+  /** The gallery this page is, which puts the two galleries' tabs in its header, under /ui. */
+  gallery?: "pages" | "components";
 }
-const { path, tag, title, lede, description, noindex, compact } = Astro.props;
+const { path, tag, title, lede, description, noindex, compact, gallery } = Astro.props;
+const GALLERIES = [
+  { id: "pages", href: "/blocks", label: "Pages" },
+  { id: "components", href: "/components", label: "Components" },
+];
 const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
 ---
 <Base title={pageTitle} description={description ?? lede ?? SITE.description} noindex={noindex}>
@@ -31,6 +37,18 @@ const pageTitle = `${title.replace(/<br\s*\/?>/g, " ")} — ${SITE.name}`;
     <header class="xline">
       {compact ? (
         <div class="px-6 py-6 md:px-10">
+          {gallery && (
+            <nav aria-label="Intelligo UI" class="mb-3 flex items-center gap-1 text-[0.8rem]">
+              <a href="/ui" class="mono mr-2 text-muted-foreground no-underline hover:text-foreground">intelligo ui /</a>
+              {GALLERIES.map((g) => (
+                <a
+                  href={g.href}
+                  aria-current={g.id === gallery ? "page" : undefined}
+                  class:list={["rounded-lg px-2.5 py-1 no-underline transition-colors hover:bg-accent hover:text-foreground", g.id === gallery ? "bg-accent font-medium text-foreground" : "text-muted-foreground"]}
+                >{g.label}</a>
+              ))}
+            </nav>
+          )}
           {tag && <p class="tag mb-1" set:html={tag} />}
           <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <h1 class="heading text-2xl font-medium tracking-[-0.01em]" set:html={title} />

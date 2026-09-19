@@ -1,0 +1,86 @@
+---
+/**
+ * What the product does, by the job it takes off the reader: every line
+ * of the ledger (lib/ledger.ts) under the job it belongs to, then the
+ * pages that put those services in front of a customer.
+ */
+import Page from "@/layouts/Page.astro";
+import { JOBS, OTHER_HALF } from "@/lib/ledger";
+import { REGISTRY_COUNT, REGISTRY_GROUPS, REGISTRY_ITEMS } from "@/lib/registry-items";
+
+const jobs = JOBS.map((job) => ({
+  ...job,
+  lines: OTHER_HALF.filter((l) => l.job === job.id),
+}));
+const groups = REGISTRY_GROUPS.map((g) => ({
+  name: g,
+  items: REGISTRY_ITEMS.filter((i) => i.group === g),
+}));
+---
+<Page
+  path="/product"
+  tag="product"
+  title="Everything around your agent,<br />job by job."
+  lede={`The part of an AI product that is not the AI is the same in every one of them. Here it is, finished: ${OTHER_HALF.length} services and surfaces that exist in the packages today, under the job each one takes off you.`}
+  description="What Intelligo does for an AI product: sign-up and teams, plans and credits, per-run cost, product data and operations — every service, under the job it takes off you."
+>
+  <nav aria-label="On this page" class="xline">
+    <div class="flex flex-wrap gap-x-6 px-6 py-2.5 md:px-10">
+      {jobs.map((j) => (
+        <a href={`#${j.id}`} class="mono py-2.5 text-[0.78rem] lowercase text-foreground/70 no-underline hover:text-foreground">{j.title}</a>
+      ))}
+      <a href="#pages" class="mono py-2.5 text-[0.78rem] text-foreground/70 no-underline hover:text-foreground">the pages</a>
+    </div>
+  </nav>
+
+  {jobs.map((j, i) => (
+    <section id={j.id} class="xline scroll-mt-28">
+      <div class="grid gap-x-12 gap-y-8 px-6 py-10 md:px-10 md:py-14 lg:grid-cols-[1fr_2fr]">
+        <div class="section-head">
+          <span class="tag eyebrow"><span class="n">{String(i + 1).padStart(2, "0")}</span>{j.lines.length} shipped</span>
+          <h2>{j.title}</h2>
+          <p>{j.lede}</p>
+        </div>
+        <ul class="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
+          {j.lines.map((l) => (
+            <li class="grid gap-x-4 px-5 py-3 sm:grid-cols-[6rem_1fr]">
+              <span class="mono text-[0.72rem] leading-6 text-muted-foreground">{l.pkg}</span>
+              <span class="text-[0.92rem] leading-snug text-foreground/85">{l.text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  ))}
+
+  <section id="pages" class="xline scroll-mt-28">
+    <div class="grid gap-x-12 gap-y-8 px-6 py-10 md:px-10 md:py-14 lg:grid-cols-[1fr_2fr]">
+      <div class="section-head">
+        <span class="tag eyebrow"><span class="n">{String(jobs.length + 1).padStart(2, "0")}</span>{REGISTRY_COUNT} installed as source</span>
+        <h2>The pages in front of it</h2>
+        <p>Every service above already has its screen. They land in your repository as your own code, and you vary them through config and message files rather than forks.</p>
+        <p class="mono mt-4 text-[0.75rem]"><a href="/ui" class="text-muted-foreground hover:text-foreground">see them running →</a></p>
+      </div>
+      <ul class="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
+        {groups.map((g) => (
+          <li class="grid gap-x-4 px-5 py-3 sm:grid-cols-[6rem_1fr]">
+            <span class="mono text-[0.72rem] lowercase leading-6 text-muted-foreground">{g.name}</span>
+            <span class="flex flex-wrap gap-x-3 gap-y-1 text-[0.92rem] leading-snug">
+              {g.items.map((item) => (
+                <a href={`/blocks/${item.name}`} class="text-foreground/85 no-underline hover:text-foreground hover:underline">{item.title}</a>
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="xline">
+    <div class="mono flex flex-wrap gap-x-6 gap-y-2 px-6 py-6 text-[0.75rem] text-muted-foreground md:px-10">
+      <a href="/why#agents" class="hover:text-foreground">why a good coding agent still gets this wrong →</a>
+      <a href="/why#compare" class="hover:text-foreground">compared to a boilerplate, or wiring it yourself →</a>
+      <a href="/architecture" class="hover:text-foreground">how the packages fit →</a>
+    </div>
+  </section>
+</Page>
