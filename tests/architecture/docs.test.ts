@@ -244,3 +244,79 @@ describe("hand-written docs", () => {
     expect(missing).toEqual([]);
   });
 });
+
+/**
+ * /architecture and /why show test titles and installed paths as
+ * evidence. A title is evidence only while a test carries it, and a path
+ * only while the block writes it.
+ */
+describe("quoted evidence", async () => {
+  const { RULES } = (await import(path.join(SITE, "src/lib/rules.ts"))) as {
+    RULES: { id: string; file: string; passing: string; output: string[] }[];
+  };
+  const { BLOCKERS } = (await import(
+    path.join(SITE, "src/lib/blockers.ts")
+  )) as { BLOCKERS: { tag: string; evidence: string[] }[] };
+
+  const isTest = (name: string) => /\.test\.tsx?$/.test(name);
+  /** A test or suite title, as the source spells it. */
+  const titled = (source: string, title: string) =>
+    source.includes(`("${title}"`);
+  const checked = (line: string) => line.replace(/^✓\s*/, "");
+
+  it("every rule quotes a title its test file carries", () => {
+    const missing = RULES.flatMap((rule) => {
+      const abs = path.join(ROOT, rule.file);
+      if (!existsSync(abs)) return [`${rule.id}: ${rule.file} does not exist`];
+      const source = readFileSync(abs, "utf8");
+      const title = checked(rule.passing);
+      const failing = rule.output.find((l) => l.startsWith("× ")) ?? "";
+      return [
+        ...(titled(source, title) ? [] : [`${rule.id}: "${title}"`]),
+        ...(failing.endsWith(` › ${title}`)
+          ? []
+          : [`${rule.id}: the failing line names another test`]),
+      ];
+    });
+    expect(missing).toEqual([]);
+  });
+
+  it("every test a card ticks exists under the path it runs", () => {
+    const missing = BLOCKERS.flatMap((card) => {
+      const run = /^\$ pnpm vitest run (\S+)$/.exec(card.evidence[0] ?? "");
+      if (!run) return [];
+      const sources = walk(path.join(ROOT, run[1]!), isTest).map((f) =>
+        readFileSync(f, "utf8")
+      );
+      return card.evidence
+        .slice(1)
+        .map(checked)
+        .filter((title) => !sources.some((s) => titled(s, title)))
+        .map((title) => `${card.tag}: "${title}" under ${run[1]}`);
+    });
+    expect(missing).toEqual([]);
+  });
+
+  it("every path a card installs is a target of the blocks it adds", () => {
+    const registry = JSON.parse(
+      readFileSync(path.join(PACKAGES_DIR, "registry/registry.json"), "utf8")
+    ) as { items: { name: string; files: { target?: string }[] }[] };
+
+    const missing = BLOCKERS.flatMap((card) => {
+      const add = /^\$ pnpm exec shadcn add (.+)$/.exec(card.evidence[0] ?? "");
+      if (!add) return [];
+      const names = add[1]!.split(/\s+/).map((n) => n.replace("@intelligo/", ""));
+      const targets = new Set(
+        registry.items
+          .filter((item) => names.includes(item.name))
+          .flatMap((item) => item.files.map((file) => file.target))
+      );
+      return card.evidence
+        .slice(1)
+        .map(checked)
+        .filter((target) => !targets.has(target))
+        .map((target) => `${card.tag}: ${target}`);
+    });
+    expect(missing).toEqual([]);
+  });
+});

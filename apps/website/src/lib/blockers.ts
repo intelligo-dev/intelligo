@@ -1,13 +1,19 @@
+/**
+ * Every `✓` line under a `pnpm vitest run <path>` command is the title
+ * of a test under that path, word for word; the paths under `shadcn add`
+ * are targets the named blocks write. tests/architecture/docs.test.ts
+ * holds both to it.
+ */
 export const BLOCKERS = [
   {
     tag: "verification",
     title: "You can't review code you didn't write.",
     body: "Tenancy bugs don't show up in a demo. They show up when a second workspace sees the first one's data.",
     evidence: [
-      "$ pnpm vitest run packages/core/src/identity",
-      "✓ refuses a read for another workspace's userId",
-      "✓ scopes every query by workspaceId inside the service",
-      "✓ deletes a fact only for its owner",
+      "$ pnpm vitest run packages/core/src/documents",
+      "✓ getDocument throws not_found for another workspace/user's document",
+      "✓ saveDocument throws forbidden when a different user owns the id",
+      "✓ deleteDocumentVersions throws not_found for an id outside the actor's scope",
     ],
   },
   {
@@ -15,10 +21,10 @@ export const BLOCKERS = [
     title: "The same login page, rebuilt from zero.",
     body: "Days and millions of tokens on infrastructure that has nothing to do with what makes your product yours.",
     evidence: [
-      "$ intelligo add auth-login auth-signup",
+      "$ pnpm exec shadcn add @intelligo/auth-login @intelligo/auth-signup",
       "✓ app/[locale]/(auth)/login/page.tsx",
       "✓ components/auth/auth-card.tsx",
-      "✓ messages/en/auth-login.json — 0 tokens spent",
+      "✓ messages/en/auth-login.json",
     ],
   },
   {
@@ -28,8 +34,8 @@ export const BLOCKERS = [
     evidence: [
       "$ pnpm vitest run tests/architecture",
       "✓ package dependency direction",
-      "✓ every model id used in the source is registered",
-      "✓ no private import inside a registry item",
+      "✓ every model id used in the source is in the shipped catalogue",
+      "✓ imports no unpublished, dissolved, or @intelligo-dev/ui path",
     ],
   },
 ];
