@@ -113,6 +113,7 @@ type RawItem = {
   type: string;
   title?: string;
   description?: string;
+  dependencies?: string[];
   registryDependencies?: string[];
 };
 const rawItems = (registry as { items: RawItem[] }).items;
@@ -267,6 +268,27 @@ export const GROUPS = GROUP_ORDER.filter((g) =>
 export const INTELLIGO = COMPONENTS.filter(
   (e) => e.tier === "T3" || e.tier === "T4"
 );
+
+/** The components installed from intelligo.dev/r: each has its own page. */
+export const COMPONENT_PAGES = COMPONENTS.filter((e) => e.intelligo);
+
+/** A component's page on this site, or its place in the catalog when it has none. */
+export const componentHref = (name: string) =>
+  INTELLIGO_UI.has(name) ? `/components/${name}` : `/components#${name}`;
+
+/** What a component's page lists beside the demo, from its registry item. */
+export function componentDetails(name: string) {
+  const item = INTELLIGO_UI.get(name);
+  return {
+    dependencies: item?.dependencies ?? [],
+    builtOn: (item?.registryDependencies ?? [])
+      .filter((d) => d.startsWith("@intelligo/"))
+      .map((d) => d.replace(/^@intelligo\//, "")),
+    usedBy: blocks
+      .filter((b) => b.registryDependencies?.includes(`@intelligo/${name}`))
+      .map((b) => ({ name: b.name, title: b.title ?? b.name })),
+  };
+}
 
 /** The shadcn tiers underneath (T1/T2). */
 export const CATALOG = COMPONENTS.filter(

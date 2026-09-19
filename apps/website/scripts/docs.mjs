@@ -746,7 +746,7 @@ export function generateLlmsTxt(siteRoot) {
     listItems("registry:block", (name) => `${SITE_URL}/blocks/${name}`) +
     "\n\n## Components\n\n" +
     "The design system and AI components, installable in any shadcn project the same way.\n\n" +
-    listItems("registry:ui", (name) => `${SITE_URL}/components#${name}`) +
+    listItems("registry:ui", (name) => `${SITE_URL}/components/${name}`) +
     "\n\n## More\n\n" +
     `- [Product](${SITE_URL}/product): every service and surface, under the job it takes off you.\n` +
     `- [Why Intelligo](${SITE_URL}/why): the half of every AI SaaS that is not the AI, and how Intelligo compares to a boilerplate or an agent platform.\n` +

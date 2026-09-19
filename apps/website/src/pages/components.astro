@@ -9,7 +9,7 @@ import CopyLine from "@/components/copy-line.astro";
 import { installCommand } from "@/lib/install";
 import Page from "@/layouts/Page.astro";
 import { ComponentDemo } from "@/showcase/intelligo-demos";
-import { CATALOG, COMPONENTS, GROUPS, INTELLIGO, TIERS, type ComponentEntry } from "@/lib/primitives";
+import { CATALOG, COMPONENTS, GROUPS, INTELLIGO, TIERS, componentHref, type ComponentEntry } from "@/lib/primitives";
 import { CONTRAST_PAIRS, DURATIONS, EASINGS, LAYERS, TOKENS } from "@/lib/design-tokens";
 
 const COLORS: [string, string[]][] = [
@@ -120,7 +120,9 @@ const install = (e: ComponentEntry) => installCommand(e.name, { stock: !e.intell
             <div class="mt-10 space-y-12">
               {g.entries.map((e) => (
                 <article id={e.name} class="scroll-mt-20">
-                  <h3 class="text-base font-semibold">{e.title}</h3>
+                  <h3 class="text-base font-semibold">
+                    {e.intelligo ? <a href={componentHref(e.name)} class="no-underline hover:underline">{e.title}</a> : e.title}
+                  </h3>
                   {e.description && <p class="mt-1 max-w-[65ch] text-sm text-muted-foreground">{e.description}</p>}
                   <div class="mt-4">
                     <ComponentDemo client:visible name={e.name} />

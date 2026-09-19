@@ -1,0 +1,154 @@
+---
+/**
+ * One Intelligo component: the live demo, the command that installs it,
+ * what it is built on and which blocks use it, and the source itself —
+ * the file `shadcn add` writes, read from the copy the sync keeps in
+ * src/showcase/app. Everything comes from registry.json.
+ */
+import { Code } from "astro:components";
+
+import CopyLine from "@/components/copy-line.astro";
+import Page from "@/layouts/Page.astro";
+import { installCommand } from "@/lib/install";
+import { blockHref } from "@/lib/registry-items";
+import { COMPONENT_PAGES, COMPONENTS, componentDetails, componentHref, type ComponentEntry } from "@/lib/primitives";
+import { truncate } from "@/lib/seo";
+import { SITE } from "@/lib/site";
+import { ComponentDemo } from "@/showcase/intelligo-demos";
+
+const SOURCES = import.meta.glob<string>("../../showcase/app/components/ui/*.tsx", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
+export function getStaticPaths() {
+  return COMPONENT_PAGES.map((entry, i) => ({
+    params: { name: entry.name },
+    props: { entry, prev: COMPONENT_PAGES[i - 1], next: COMPONENT_PAGES[i + 1] },
+  }));
+}
+
+interface Props {
+  entry: ComponentEntry;
+  prev?: ComponentEntry;
+  next?: ComponentEntry;
+}
+const { entry, prev, next } = Astro.props;
+
+const source = SOURCES[`../../showcase/app/components/ui/${entry.name}.tsx`];
+if (!source) throw new Error(`components/${entry.name}: no source in src/showcase/app/components/ui`);
+const { dependencies, builtOn, usedBy } = componentDetails(entry.name);
+const related = COMPONENTS.filter((e) => e.group === entry.group && e.name !== entry.name && e.intelligo);
+const cmd = installCommand(entry.name);
+
+/** What someone searching for it would type: "AI prompt input component for shadcn/ui". */
+const ai = entry.tier === "T3" ? "AI " : "";
+const noun = `${ai}${ai ? entry.title.toLowerCase() : entry.title}`;
+const seoTitle =
+  [`${noun} component for shadcn/ui — Intelligo UI`, `${noun} for shadcn/ui — Intelligo UI`].find((t) => t.length <= 60) ??
+  `${entry.title} — ${SITE.brand} UI`;
+const description = truncate(`${entry.description} A React component for shadcn/ui, installed as your own source.`);
+const url = new URL(componentHref(entry.name), Astro.site).href;
+const structuredData = [
+  {
+    "@type": "SoftwareSourceCode",
+    name: `${entry.title} (${SITE.brand} UI)`,
+    description,
+    url,
+    codeRepository: `${SITE.github}/tree/main/packages/registry/base/ui/${entry.name}`,
+    programmingLanguage: "TypeScript",
+    runtimePlatform: "React",
+    license: "https://www.apache.org/licenses/LICENSE-2.0",
+  },
+  {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Intelligo UI", item: new URL("/ui", Astro.site).href },
+      { "@type": "ListItem", position: 2, name: "Components", item: new URL("/components", Astro.site).href },
+      { "@type": "ListItem", position: 3, name: entry.title, item: url },
+    ],
+  },
+];
+---
+<Page
+  path={componentHref(entry.name)}
+  compact
+  gallery="components"
+  tag={`<a href="/components" class="hover:text-foreground">Components</a> / <a href="/components#${entry.name}" class="hover:text-foreground">${entry.group}</a>`}
+  title={entry.title}
+  seoTitle={seoTitle}
+  lede={entry.description}
+  description={description}
+  structuredData={structuredData}
+>
+  <section class="xline">
+    <div class="px-6 py-8 md:px-10">
+      <ComponentDemo client:visible name={entry.name} />
+      <CopyLine cmd={cmd} class="mt-4 w-fit" />
+      <p class="mono mt-2 text-[0.72rem] text-muted-foreground">Inside an app made by <code>intelligo create</code>, or any shadcn project that <a href="/docs/registry" class="text-foreground/80 hover:text-foreground">names the registry</a>.</p>
+    </div>
+  </section>
+
+  <section class="xline">
+    <div class="grid md:grid-cols-3">
+      <div class="px-6 py-8 md:px-10">
+        <div class="tag mb-2">built on</div>
+        {builtOn.length > 0 ? (
+          <p class="text-[0.86rem] leading-relaxed text-foreground/70">
+            {builtOn.map((n, i) => <>{i > 0 && ", "}<a href={componentHref(n)} class="text-foreground/80 hover:text-foreground">{n}</a></>)}
+          </p>
+        ) : <p class="text-[0.86rem] text-foreground/70">Nothing else from the registry.</p>}
+        {dependencies.length > 0 && (
+          <>
+            <div class="tag mb-2 mt-6">npm packages it adds</div>
+            <p class="mono break-words text-[0.75rem] text-foreground/70">{dependencies.join(" · ")}</p>
+          </>
+        )}
+      </div>
+      <div class="border-t border-border px-6 py-8 md:border-l md:border-t-0 md:px-10">
+        <div class="tag mb-2">used by these pages</div>
+        {usedBy.length > 0 ? (
+          <p class="text-[0.86rem] leading-relaxed text-foreground/70">
+            {usedBy.map((b, i) => <>{i > 0 && ", "}<a href={blockHref(b.name)} class="text-foreground/80 hover:text-foreground">{b.title}</a></>)}
+          </p>
+        ) : <p class="text-[0.86rem] text-foreground/70">No block installs it yet; it is there for your own screens.</p>}
+      </div>
+      <div class="border-t border-border px-6 py-8 md:border-l md:border-t-0 md:px-10">
+        <div class="tag mb-2">more in {entry.group.toLowerCase()}</div>
+        <p class="text-[0.86rem] leading-relaxed text-foreground/70">
+          {related.map((e, i) => <>{i > 0 && ", "}<a href={componentHref(e.name)} class="text-foreground/80 hover:text-foreground">{e.title}</a></>)}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="xline">
+    <div class="px-6 py-8 md:px-10">
+      <h2 class="heading text-lg font-medium">Source</h2>
+      <p class="mt-1 text-sm text-muted-foreground">
+        What <code class="mono">shadcn add</code> writes to <code class="mono">components/ui/{entry.name}.tsx</code>. It is yours from then on.
+      </p>
+      <div class="code-frame mt-4 max-h-[36rem] overflow-auto rounded-xl border border-border text-[0.8rem]">
+        <Code code={source} lang="tsx" themes={{ light: "github-light", dark: "github-dark" }} defaultColor={false} />
+      </div>
+    </div>
+  </section>
+
+  <nav aria-label="Other components" class="xline">
+    <div class="grid grid-cols-1 sm:grid-cols-2">
+      {prev ? (
+        <a href={componentHref(prev.name)} class="px-6 py-6 no-underline hover:bg-accent md:px-10">
+          <span class="mono block text-[0.68rem] text-muted-foreground">← previous</span>
+          <span class="block text-[0.95rem] text-foreground">{prev.title}</span>
+        </a>
+      ) : <a href="/components" class="px-6 py-6 no-underline hover:bg-accent md:px-10"><span class="mono block text-[0.68rem] text-muted-foreground">← all components</span></a>}
+      {next ? (
+        <a href={componentHref(next.name)} class="border-t border-border px-6 py-6 no-underline sm:border-l sm:border-t-0 sm:text-right hover:bg-accent md:px-10">
+          <span class="mono block text-[0.68rem] text-muted-foreground">next →</span>
+          <span class="block text-[0.95rem] text-foreground">{next.title}</span>
+        </a>
+      ) : <a href="/components" class="border-t border-border px-6 py-6 no-underline sm:border-l sm:border-t-0 sm:text-right hover:bg-accent md:px-10"><span class="mono block text-[0.68rem] text-muted-foreground">all components →</span></a>}
+    </div>
+  </nav>
+</Page>

@@ -13,6 +13,7 @@ import { Toaster } from "sonner";
 import { REGISTRY_ITEMS, blockHref, type RegistryItem } from "@/lib/registry-items";
 import { SITE } from "@/lib/site";
 import { truncate } from "@/lib/seo";
+import { componentHref } from "@/lib/primitives";
 
 export function getStaticPaths() {
   return REGISTRY_ITEMS.map((item, i) => ({
@@ -37,7 +38,7 @@ const components = item.primitives
   .filter((p) => p !== "utils" && !p.startsWith("font-"))
   .map((p) => {
     const name = p.replace(/^@intelligo\//, "");
-    return { label: name, href: `/components#${name}` };
+    return { label: name, href: componentHref(name) };
   });
 
 /** Installed files, grouped by what shadcn calls them. */
