@@ -503,6 +503,37 @@ Source: https://intelligo.dev/docs/registry/config-seams
 
 Installed components are used verbatim. What a deployment varies lives in these files: they are consumer-owned, and each explains itself in the comment it ships with, reproduced here. If a product needs something no seam offers, the change belongs in the registry as a new seam — editing an installed component forks you from every later improvement to it.
 
+## [route-error](/blocks/route-error)
+
+### `lib/error-reporting.ts`
+
+Exports `RouteErrorContext`, `reportRouteError`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/route-error/lib/error-reporting.ts)
+
+Error-reporting seam — consumer-owned.
+
+`RouteError` calls this from every route-level error boundary. The
+default is a no-op on purpose: registry items never depend on an
+error-reporting SDK, so a fresh install has nothing to configure and
+nothing to pay for. Bind your own reporter here and every boundary
+in the app starts reporting, with no component edit.
+
+With Sentry, for example:
+
+```ts
+import * as Sentry from "@sentry/nextjs";
+
+export function reportRouteError(
+  error: Error & { digest?: string },
+  context: RouteErrorContext
+) {
+  Sentry.captureException(error, { tags: { scope: context.scope } });
+}
+```
+
+This runs inside a `useEffect` in a client component, so it must not
+throw — a reporter that fails should swallow its own failure rather
+than take the error screen down with it.
+
 ## [app-shell](/blocks/app-shell)
 
 ### `lib/workspace-bootstrap.ts`
@@ -552,6 +583,31 @@ server/client boundary.
 `titleKey`s are keys in `messages/<locale>/app-shell.json`. Remove the
 entries whose routes you did not install; they would 404.
 
+## [settings-shell](/blocks/settings-shell)
+
+### `lib/settings-nav.ts`
+
+Exports `SettingsTab`, `settingsTabs`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/settings-shell/lib/settings-nav.ts)
+
+Settings tab configuration — consumer-owned (same contract as
+`lib/nav-config.ts` for the app sidebar).
+
+`settings-tabs.tsx` renders exactly this list, in this order. Add a
+product tab (`{ value: "ai", href: "/settings/ai", titleKey:
+"settings.tabAI", icon: Brain }`), remove one your product doesn't
+sell, or reorder — no component edit needed.
+
+`titleKey` is a fully-qualified message key resolved through a
+namespace-less `useTranslations()` (the `chatConfig.starters`
+contract): the defaults point into this item's `settings-shell`
+namespace (`messages/<locale>/settings-shell.json`), and a tab you
+add can point into any namespace you own.
+
+Icons are Lucide components. They live here — a client-imported
+config file — rather than being passed from a server layout, because
+component values can't cross the RSC boundary as props (see
+`nav-config.ts`).
+
 ## [trial-banner](/blocks/trial-banner)
 
 ### `lib/trial-banner-config.ts`
@@ -584,6 +640,27 @@ it. A bundle's `name` is rendered verbatim, not translated.
 
 ## [feature-gating](/blocks/feature-gating)
 
+### `lib/feature-catalog.ts`
+
+Exports `FeatureDescriptor`, `featureCatalog`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/feature-gating/lib/feature-catalog.ts)
+
+Feature catalogue — consumer-owned.
+
+Which features exist, what to call them, and which plan unlocks them
+is product data, not framework data: `@intelligo-dev/billing` answers
+"is this workspace entitled to feature X" (`hasFeature`), and this
+file answers "what should we say when it isn't".
+
+`labelKey` and `descriptionKey` are fully-qualified message keys
+resolved namespace-less (the `chatConfig.starters` contract), so a
+feature's copy lives in your own message files. `requiredPlan` is
+the plan slug that unlocks it — rendered through the plan catalogue
+registered by your composition root, so the name a user sees stays
+in one place.
+
+A feature missing from this map still gates correctly; it just falls
+back to generic copy.
+
 ### `lib/feature-gating-config.ts`
 
 Exports `FeatureGatingConfig`, `featureGatingConfig`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/feature-gating/lib/feature-gating-config.ts)
@@ -599,6 +676,29 @@ which is where a plan change actually happens; point it at
 showing, and when it escalates. Below the first, it renders nothing.
 
 ## [payment-poll](/blocks/payment-poll)
+
+### `lib/local-payment.ts`
+
+Exports `LocalPaymentInvoice`, `LocalPaymentStatus`, `LocalPaymentRequest`, `createLocalPayment`, `checkLocalPaymentStatus`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/payment-poll/lib/local-payment.ts)
+
+Local payment provider binding — consumer-owned.
+
+Card checkout is a redirect: you send the user to the processor and
+they come back. Most of the world's payment methods are not that.
+QR-and-poll — QPay and SocialPay in Mongolia, PIX in Brazil, UPI in
+India, PromptPay in Thailand — issues an invoice, shows a code the
+user scans in their own banking app, and waits for the provider to
+say it was paid. `LocalPaymentModal` renders that flow; this file is
+where you bind it to an actual provider.
+
+Both functions run on the server, and neither takes a user id: the
+caller is resolved from the session inside your implementation. A
+client-supplied user id on a payment call is an invitation to
+charge someone else's plan to a stranger's account.
+
+The default throws rather than returning a fake invoice — a payment
+flow that silently no-ops is worse than one that is obviously
+unbound.
 
 ### `lib/payment-poll-config.ts`
 
@@ -662,6 +762,33 @@ part is replaceable here rather than in a component:
    surface lives elsewhere, and note that the whole composer
    affordance only makes sense with a chat surface installed.
 
+### `lib/dashboard-data.ts`
+
+Exports `ResumeActor`, `ResumeTarget`, `getResume`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/dashboard/lib/dashboard-data.ts)
+
+Dashboard data seam — consumer-owned, read on the server.
+
+`getResume` answers "what was this person in the middle of?" The
+default is the most recently updated conversation, which is right for
+a generic AI workspace. A product whose work has real structure —
+a multi-phase assessment, a wizard, a review queue — binds its own
+notion of progress here and the hero's resume pill picks it up with
+no component edit:
+
+```ts
+export async function getResume(actor: ResumeActor) {
+  const run = await getActiveAssessment(actor.workspaceId, actor.userId);
+  if (!run) return null;
+  return {
+    label: `Phase ${run.phase} of ${run.totalPhases}`,
+    href: `/chat/${run.conversationId}`,
+  };
+}
+```
+
+Return `null` when there is nothing to resume — the pill is hidden
+rather than rendered empty.
+
 ## [artifacts](/blocks/artifacts)
 
 ### `lib/document-patterns.ts`
@@ -677,6 +804,54 @@ request-scoped file (an action, a page) would push duplicate entries
 onto the same in-memory registry.
 
 ## [chat](/blocks/chat)
+
+### `lib/chat-model.ts`
+
+Exports `CHAT_MODEL_ID`, `getChatModel`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-model.ts)
+
+Consumer-owned model resolution for the chat transport.
+
+A fresh install has no AI provider keys, so `getChatModel` returns
+the framework's deterministic stub (`@intelligo-dev/chat/testing`): it
+echoes the last user message back through a real token-by-token
+stream. No network call, no API key, and the app still builds,
+boots and streams a real `createUIMessageStream` response end to end.
+
+`CHAT_MODEL_ID` is deliberately a real, registered id
+(`@intelligo-dev/executions/pricing`) even though the stub never calls
+that provider: the execution boundary bills whatever id the transport
+settles with, and an id with no registered price is
+refused at admission. Using a real id here means a clean install
+exercises the *correct* pricing path — swap in your own model id the
+moment you swap in a real provider below, and keep it one that is
+registered.
+
+To use a real provider: install its AI SDK package (e.g.
+`pnpm add @ai-sdk/anthropic` in this app) and replace the body of
+`getChatModel` — the commented example below is the whole change.
+
+### `lib/chat-models.ts`
+
+Exports `CHAT_MODELS`, `getChatModelOptions`. [source](https://github.com/intelligo-mn/framework/blob/main/packages/registry/base/chat/lib/chat-models.ts)
+
+The models the composer offers — consumer-owned.
+
+Empty (the default) means the picker is hidden and every turn runs
+on `lib/chat-model.ts`'s default. List two or more and the composer
+shows a picker; the transport refuses anything not on the list, and
+a model with a `featureKey` only to plans that have it. Every id
+must be registered in `@intelligo-dev/executions/pricing` — an
+architecture test holds this file to that.
+
+```ts
+export const CHAT_MODELS: ChatModelOption[] = [
+  { id: "google/gemini-2.5-flash", label: "Fast" },
+  { id: "anthropic/claude-sonnet-4-6", label: "Smart", featureKey: PRO_MODELS },
+];
+```
+
+Bind the same list in `lib/chat-server-config.ts` (`models`), which
+is what makes the server's answer match the composer's offer.
 
 ### `lib/chat-renderers.tsx`
 

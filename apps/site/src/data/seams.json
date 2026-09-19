@@ -1,5 +1,7 @@
 {
-  "route-error": [],
+  "route-error": [
+    "lib/error-reporting.ts"
+  ],
   "team-settings": [],
   "usage": [],
   "invitation-accept": [],
@@ -8,7 +10,9 @@
     "lib/shell-config.tsx",
     "lib/nav-config.ts"
   ],
-  "settings-shell": [],
+  "settings-shell": [
+    "lib/settings-nav.ts"
+  ],
   "workspace-settings": [],
   "auth-login": [],
   "auth-signup": [],
@@ -25,9 +29,11 @@
   "checkout": [],
   "billing-settings": [],
   "feature-gating": [
+    "lib/feature-catalog.ts",
     "lib/feature-gating-config.ts"
   ],
   "payment-poll": [
+    "lib/local-payment.ts",
     "lib/payment-poll-config.ts"
   ],
   "profile-settings": [],
@@ -35,13 +41,16 @@
     "lib/onboarding-steps.ts"
   ],
   "dashboard": [
-    "lib/dashboard-config.tsx"
+    "lib/dashboard-config.tsx",
+    "lib/dashboard-data.ts"
   ],
   "artifacts": [
     "lib/document-patterns.ts"
   ],
   "privacy-settings": [],
   "chat": [
+    "lib/chat-model.ts",
+    "lib/chat-models.ts",
     "lib/chat-renderers.tsx",
     "lib/chat-canvas-config.tsx",
     "lib/chat-config.tsx",
