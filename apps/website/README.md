@@ -33,7 +33,7 @@ Static assets on Cloudflare Workers (`wrangler.jsonc`: assets only, no Worker sc
 - `/why-intelligo` — the other half counted in full, and the agent objection.
 - `/compare` — the alternatives.
 - `/r/<item>.json` — the hosted registry.
-- `/og.png`, `/favicon.svg`, `/robots.txt`, `/sitemap-index.xml` — the social card, icon, crawler hints and the sitemap `@astrojs/sitemap` writes at build time. The card is rendered from `scripts/og.html`; regenerate it after a copy or version change with `npx playwright screenshot --viewport-size=1200,630 scripts/og.html public/og.png`.
+- `/og/<path>.png`, `/favicon.svg`, `/robots.txt`, `/sitemap-index.xml` — a social card per page, the icon, crawler hints and the sitemap `@astrojs/sitemap` writes at build time. The cards are drawn after the build from each page's heading and description (`src/lib/og-images.mjs`), so there is nothing to regenerate by hand.
 
 Every command the homepage shows is verified against the published packages: `pnpm dlx @intelligo-dev/cli@beta create`, `pnpm exec shadcn add https://intelligo.dev/r/<item>.json`, `pnpm dev`. The scaffold's `components.json` ships an empty `registries` map, so the URL form is the one that works — do not document `shadcn add @intelligo-dev/<item>` until a namespace is configured.
 

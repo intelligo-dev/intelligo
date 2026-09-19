@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, fontProviders } from "astro/config";
 
 import { codeFrame } from "./src/lib/markdown.mjs";
+import ogImages from "./src/lib/og-images.mjs";
 
 // intelligo.dev — the framework's public site. Its own repository, no
 // `@intelligo-dev/*` dependency: what it shows about the framework
@@ -19,7 +20,8 @@ export default defineConfig({
   trailingSlash: "never",
   integrations: [
     react(),
-    sitemap({ filter: (page) => !page.endsWith("/404/") }),
+    sitemap({ filter: (page) => !/\/404\/?$/.test(page) }),
+    ogImages(),
   ],
   // Docs code blocks carry both themes (global.css switches under .dark),
   // and a frame with a label and a copy button (src/lib/markdown.mjs).

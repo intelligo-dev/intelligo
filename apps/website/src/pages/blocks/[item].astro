@@ -61,7 +61,7 @@ const seoTitle = [
   `${name} ${kind} for Next.js and shadcn — ${SITE.brand}`,
   `${name} ${kind} for Next.js — ${SITE.brand}`,
 ].find((t) => t.length <= 60) ?? `${name} — ${SITE.brand}`;
-const description = truncate(`${item.title} — an Intelligo registry block, installed as source with the shadcn CLI. ${item.description}`);
+const description = truncate(`${item.description} A Next.js ${kind} installed as your own source with the shadcn CLI.`);
 const url = new URL(blockHref(item.name), Astro.site).href;
 const structuredData = [
   {

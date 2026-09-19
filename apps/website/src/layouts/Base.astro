@@ -2,6 +2,7 @@
 import { Font } from "astro:assets";
 import "../styles/global.css";
 import { SITE } from "@/lib/site";
+import { ogImagePath } from "@/lib/og-path.mjs";
 
 interface Props {
   title?: string;
@@ -18,8 +19,10 @@ interface Props {
 }
 const { title = SITE.title, description = SITE.description, structuredData, noindex = false } = Astro.props;
 // A static build gives every page a trailing slash; the host serves it without one.
-const canonical = new URL(Astro.url.pathname.replace(/(.)\/$/, "$1"), Astro.site).href;
-const og = new URL("/og.png", Astro.site).href;
+const route = Astro.url.pathname.replace(/(.)\/$/, "$1");
+const canonical = new URL(route, Astro.site).href;
+// Drawn per page after the build (src/lib/og-images.mjs).
+const og = new URL(ogImagePath(route), Astro.site).href;
 const organization = {
   "@type": "Organization",
   "@id": new URL("/#organization", Astro.site).href,
@@ -71,6 +74,7 @@ const jsonLd = JSON.stringify(
     <meta property="og:image" content={og} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={title} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />

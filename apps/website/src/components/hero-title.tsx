@@ -10,7 +10,7 @@ export function HeroTitle() {
     <h1 className="heading text-[clamp(2.2rem,4.6vw,3.5rem)] font-bold leading-[1.05] tracking-tight">
       <span className="block text-foreground">
         <TextReveal text="Everything your AI product needs." />
-      </span>
+      </span>{" "}
       <span className="block text-muted-foreground">
         <TextReveal text="Except " delay={0.4} />
         <TextReveal text="the AI." delay={0.48} className="text-foreground" />
