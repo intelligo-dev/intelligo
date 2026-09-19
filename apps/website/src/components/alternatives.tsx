@@ -51,8 +51,6 @@ export function Alternatives() {
     list.current?.querySelector<HTMLElement>(`#alt-tab-${next}`)?.focus();
   };
 
-  const a = ALTERNATIVES.find((x) => x.id === id)!;
-
   return (
     <div className="grid gap-5 md:grid-cols-[300px_1fr]">
       <div>
@@ -72,7 +70,7 @@ export function Alternatives() {
               type="button"
               role="tab"
               aria-selected={x.id === id}
-              aria-controls="alt-panel"
+              aria-controls={`alt-panel-${x.id}`}
               tabIndex={x.id === id ? 0 : -1}
               onClick={() => pick(x.id)}
               className={cn(
@@ -97,51 +95,57 @@ export function Alternatives() {
         </div>
       </div>
 
-      {/* the new answer fades in over a panel that never empties: nothing
-          below it moves twice, and the keyed fade is CSS, so it is already
-          still for a reader who asked for less motion */}
-      <div
-        id="alt-panel"
-        role="tabpanel"
-        aria-labelledby={`alt-tab-${a.id}`}
-        tabIndex={0}
-        className="rounded-xl border border-border bg-card p-5 md:min-h-[19rem] md:p-6"
-      >
-        <div key={a.id} className="animate-in fade-in duration-normal">
-          <div className="tag">what's different here</div>
-          <p className="mt-2 max-w-[60ch] text-[1.05rem] leading-relaxed text-foreground">
-            {a.answer}
-          </p>
-          <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
-            <div>
-              <div className="mono text-[0.68rem] tracking-wide text-success">
-                what you keep
+      {/* every answer is in the page, the unchosen ones hidden, so a
+          reader without scripts and a crawler get all of them; the chosen
+          one fades in over a panel of fixed height, and the keyed fade is
+          CSS, so it is already still for a reader who asked for less motion */}
+      {ALTERNATIVES.map((a) => (
+        <div
+          key={a.id}
+          id={`alt-panel-${a.id}`}
+          role="tabpanel"
+          aria-labelledby={`alt-tab-${a.id}`}
+          hidden={a.id !== id}
+          tabIndex={0}
+          className="rounded-xl border border-border bg-card p-5 md:min-h-[19rem] md:p-6"
+        >
+          <div className="animate-in fade-in duration-normal">
+            <h3 className="sr-only">{a.option}</h3>
+            <div className="tag">what's different here</div>
+            <p className="mt-2 max-w-[60ch] text-[1.05rem] leading-relaxed text-foreground">
+              {a.answer}
+            </p>
+            <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
+              <div>
+                <div className="mono text-[0.68rem] tracking-wide text-success">
+                  what you keep
+                </div>
+                <ul className="mt-1.5 space-y-1 text-[0.88rem] text-foreground/70">
+                  {a.keep.map((k) => (
+                    <li key={k} className="flex gap-2">
+                      <span className="text-success">✓</span>
+                      {k}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="mt-1.5 space-y-1 text-[0.88rem] text-foreground/70">
-                {a.keep.map((k) => (
-                  <li key={k} className="flex gap-2">
-                    <span className="text-success">✓</span>
-                    {k}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <div className="mono text-[0.68rem] tracking-wide text-destructive">
-                what you drop
+              <div>
+                <div className="mono text-[0.68rem] tracking-wide text-destructive">
+                  what you drop
+                </div>
+                <ul className="mt-1.5 space-y-1 text-[0.88rem] text-foreground/70">
+                  {a.drop.map((k) => (
+                    <li key={k} className="flex gap-2">
+                      <span className="text-destructive">−</span>
+                      {k}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="mt-1.5 space-y-1 text-[0.88rem] text-foreground/70">
-                {a.drop.map((k) => (
-                  <li key={k} className="flex gap-2">
-                    <span className="text-destructive">−</span>
-                    {k}
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 }
