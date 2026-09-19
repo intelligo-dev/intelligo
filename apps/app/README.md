@@ -1,4 +1,21 @@
-# app
+# The reference application (`apps/app`)
+
+What you get when you run `intelligo create` and then `shadcn add` for
+every registry item — committed, so it can be read, run and checked.
+
+- **It is generated, not written.** `pnpm app:regenerate` (from the
+  repository root) wipes it and rebuilds it from the CLI and the
+  registry; CI fails if the result differs from what is committed.
+- **Do not develop in it.** A page that needs changing changes in
+  `packages/registry/base/`, a service in its package; the few files
+  that are this app's own are listed, each with its reason, in
+  `scripts/reference-app-owned.json`.
+- **Your product does not start here.** It starts with `create` in your
+  own repository and consumes the npm packages.
+
+Run it with `pnpm --filter app dev` (port 4002).
+
+## Why it exists
 
 The executable specification for Intelligo, and the one consumer of
 the packages that lives in this repository. It exists to answer one
@@ -28,7 +45,7 @@ produces is itself a defect this app exists to catch.
 - usage and execution history read back through the packages' own
   query APIs
 - real registry items — pages, components, actions — installed
-  verbatim from `registry/`, wired to this app's own backend
+  verbatim from `packages/registry/`, wired to this app's own backend
   composition
 
 ## Consuming the registry
@@ -48,7 +65,7 @@ consumer-owned; re-value them to re-theme every installed page.
 
 The dependency-direction test enforces the first; the registry
 architecture test enforces the no-orphans/no-private-imports checks on
-`registry/`; review enforces the rest.
+`packages/registry/`; review enforces the rest.
 
 ## Deploying (Vercel + Neon)
 

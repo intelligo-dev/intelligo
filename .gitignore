@@ -46,7 +46,6 @@ docs/handover/
 .playwright-mcp/
 .claude/
 playwright-report/
-apps/web/tsconfig.tsbuildinfo
 
 # Scaffolded by the CLI gate (CI) or by hand; never committed.
 apps/generated-smoke/

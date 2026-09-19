@@ -36,7 +36,7 @@ pnpm lint
 
 Every app and package reads the repository root `.env`; an app-local
 `.env` or the shell wins over it. `pnpm dev` runs every workspace app;
-`pnpm --filter @intelligo-dev/app dev` runs only the reference app.
+`pnpm --filter app dev` runs only the reference app.
 
 ## What a good pull request looks like
 
