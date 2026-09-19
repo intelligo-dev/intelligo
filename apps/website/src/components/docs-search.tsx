@@ -49,13 +49,13 @@ export function DocsSearch({ className }: { className?: string }) {
         aria-label="Search docs"
         aria-keyshortcuts="Meta+K Control+K /"
         className={cn(
-          "flex size-9 items-center justify-center gap-2 rounded-lg border border-transparent text-[0.82rem] text-muted-foreground transition-colors duration-fast hover:bg-accent hover:text-foreground lg:w-auto lg:justify-start lg:border-input lg:bg-background lg:px-3 lg:hover:border-foreground/30 lg:hover:bg-background",
+          "flex size-9 items-center justify-center gap-2 rounded-lg border border-transparent text-[0.82rem] text-muted-foreground transition-colors duration-fast hover:bg-accent hover:text-foreground lg:w-64 lg:justify-start lg:border-input lg:bg-background lg:px-3 lg:hover:border-foreground/30 lg:hover:bg-background",
           className
         )}
       >
         <SearchIcon aria-hidden="true" className="size-4 lg:size-3.5" />
         <span className="hidden lg:inline">Search docs</span>
-        <kbd className="mono ml-2 hidden rounded border border-border px-1.5 text-[0.7rem] text-muted-foreground lg:inline">
+        <kbd className="mono ml-auto hidden rounded border border-border px-1.5 text-[0.7rem] text-muted-foreground lg:inline">
           {mac ? "⌘K" : "Ctrl K"}
         </kbd>
       </button>

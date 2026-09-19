@@ -1,26 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { MenuIcon, MoonIcon, SunIcon, XIcon } from "lucide-react";
+import { MenuIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { NAV, SITE } from "@/lib/site";
 import { DocsSearch } from "@/components/docs-search";
 import { GitHubStarButton } from "@/components/elements/github-star-button";
-
-/**
- * The theme is the `dark` class on <html>, stamped before first paint by
- * Base.astro. The toggle flips it and nothing here holds it as state:
- * both icons are in the markup and CSS shows the one that applies, so the
- * server's HTML is right for either theme and nothing swaps on hydrate.
- */
-function toggleTheme() {
-  const next = document.documentElement.classList.contains("dark")
-    ? "light"
-    : "dark";
-  document.documentElement.classList.toggle("dark", next === "dark");
-  try {
-    localStorage.setItem("theme", next);
-  } catch {}
-}
 
 /**
  * How far down the page we are, for the hairline under the nav. Written
@@ -130,24 +114,6 @@ export function Nav({ current }: { current?: string }) {
             <span className="mx-2 h-5 w-px bg-border" aria-hidden="true" />
           </div>
           <DocsSearch />
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label="Switch between light and dark theme"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "icon" }),
-              "relative size-9 overflow-hidden"
-            )}
-          >
-            <SunIcon
-              aria-hidden="true"
-              className="absolute scale-100 rotate-0 opacity-100 transition-[rotate,scale,opacity] duration-slow ease-standard dark:scale-50 dark:-rotate-90 dark:opacity-0"
-            />
-            <MoonIcon
-              aria-hidden="true"
-              className="absolute scale-50 rotate-90 opacity-0 transition-[rotate,scale,opacity] duration-slow ease-standard dark:scale-100 dark:rotate-0 dark:opacity-100"
-            />
-          </button>
           {SITE.githubPublic ? (
             <GitHubStarButton owner={SITE.githubOwner} repo={SITE.githubRepo} />
           ) : (
