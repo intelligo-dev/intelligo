@@ -29,16 +29,6 @@ Intelligo is everything around it — and it is tested, typed, and yours.
 
 > **Status: 1.0 beta.** On npm under the `beta` dist-tag (`@intelligo-dev/*@beta`); APIs are settling until 1.0. Everything on this page exists and runs today.
 
-## In one product
-
-**[Ignite](https://app.ignite.mn)** is a career advisor for Mongolian students, in beta with its first users — and an ordinary consumer of these packages from npm.
-
-1. Its team wrote the advisor: the prompts, the tools over their career data, their own tables.
-2. `create` and the registry gave it sign-up, workspaces, the shell, chat, billing and usage, as source in its repository.
-3. Plans, credits, metering and audit are `@intelligo-dev/*` versions it bumps.
-4. The two meet in config files — the agent's identity, its tools, the navigation, the plans. No installed page is edited.
-5. Every advisor turn is admitted against the workspace's plan, settled once, and recorded.
-
 ## The other half
 
 An AI product is two halves.

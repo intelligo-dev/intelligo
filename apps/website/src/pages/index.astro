@@ -1,7 +1,7 @@
 ---
 /**
  * The homepage, in the order a reader asks: what is it (the title
- * card, then one product built on it); what does it look like (the film, then the same pages live);
+ * card); what does it look like (the film, then the same pages live);
  * how does it work and why trust it (the two halves, what you take
  * home, the boundary in code); how do I start (the
  * quickstart); the questions. Each section is a door into /why,
@@ -11,7 +11,6 @@ import Base from "@/layouts/Base.astro";
 import Footer from "@/components/footer.astro";
 import { Nav } from "@/components/nav";
 import Hero from "@/sections/hero.astro";
-import Example from "@/sections/example.astro";
 import SeeIt from "@/sections/see-it.astro";
 import Halves from "@/sections/halves.astro";
 import WhatYouGet from "@/sections/what-you-get.astro";
@@ -23,7 +22,6 @@ import Faq from "@/sections/faq.astro";
   <Nav client:load current="/" />
   <main id="main" class="rails">
     <Hero />
-    <Example />
     <SeeIt />
     <Halves />
     <WhatYouGet />

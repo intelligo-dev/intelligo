@@ -170,20 +170,13 @@ const PRIVATE_VOCABULARY = [...GENERIC_VOCABULARY, ...PRIVATE_ENTRIES];
  *   - `packages/registry/public`: build output of `packages/registry/base`,
  *     already scanned.
  *   - this file, which describes the rule.
- *   - `apps/website/src/lib/example.ts`: the one product the homepage
- *     names as built on the framework. The README tells the same five
- *     lines under `README_PRODUCT_SECTION`, and only that section of
- *     it is skipped.
  */
 const VOCABULARY_EXEMPT = [
   "packages/core/src/db/migrations/",
   "packages/registry/public/",
   "tests/architecture/publishability.test.ts",
-  "apps/website/src/lib/example.ts",
   "pnpm-lock.yaml",
 ];
-
-const README_PRODUCT_SECTION = /^## In one product\n[\s\S]*?(?=^## )/m;
 
 const TEXT_FILE =
   /\.(ts|tsx|mts|cts|js|mjs|cjs|jsx|json|md|mdx|css|sql|ya?ml|tpl|astro|txt)$/;
@@ -579,13 +572,7 @@ describe("publishability", () => {
 
       const hits: string[] = [];
       for (const { file, text } of files) {
-        const scanned =
-          file === "README.md"
-            ? text.replace(README_PRODUCT_SECTION, (section) =>
-                section.replace(/[^\n]/g, "")
-              )
-            : text;
-        const lines = scanned.split("\n");
+        const lines = text.split("\n");
         for (const { re } of PRIVATE_VOCABULARY) {
           const index = lines.findIndex((line) => re.test(line));
           if (index !== -1) {
