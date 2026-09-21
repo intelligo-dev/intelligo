@@ -163,10 +163,14 @@ jobs:
 
       # Every package's tests, not only the packed-package check: a
       # release is the one place a red suite must not be argued past.
+      # The vocabulary list comes with it, as in CI: a hand-pushed tag
+      # is a push build, where the publishability test refuses to run
+      # without the list.
       - if: steps.check.outputs.published != 'true'
         run: pnpm test
         env:
           DATABASE_URL: ""
+          INTELLIGO_PRIVATE_VOCABULARY: ${{ secrets.PRIVATE_VOCABULARY }}
 
       # The three checks below ran on every push until they were the
       # reason CI took twenty-two minutes. What they prove is that a
