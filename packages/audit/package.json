@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/audit",
-  "version": "1.0.0-beta.12",
+  "version": "1.0.0-beta.13",
   "description": "Append-only audit events for multi-tenant apps, with a Postgres trigger that refuses every update and delete.",
   "keywords": [
     "intelligo",

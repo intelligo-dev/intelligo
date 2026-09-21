@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/auth",
-  "version": "1.0.0-beta.12",
+  "version": "1.0.0-beta.13",
   "description": "Multi-tenant authentication on Better-Auth: sign-up, workspaces, invitations and role-based access control.",
   "keywords": [
     "intelligo",
