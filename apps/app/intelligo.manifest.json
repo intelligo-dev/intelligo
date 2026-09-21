@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "frameworkVersion": "1.0.0-beta.11",
+  "frameworkVersion": "1.0.0-beta.12",
   "features": {
     "app-scaffold": {
       "templateVersion": "1.14.0",

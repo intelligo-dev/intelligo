@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/mastra",
-  "version": "1.0.0-beta.11",
+  "version": "1.0.0-beta.12",
   "description": "An optional bridge from a native Mastra agent to the execution boundary.",
   "keywords": [
     "intelligo",

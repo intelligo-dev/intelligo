@@ -14,11 +14,21 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
-## [1.0.0-beta.11] — 2026-09-21
+## [1.0.0-beta.12] — 2026-09-21
 
 The first version on npm since `1.0.0-beta.6`. `1.0.0-beta.7` to
-`1.0.0-beta.10` were versioned but never published, and their sections
+`1.0.0-beta.11` were versioned but never published, and their sections
 below are part of this release. The code is `1.0.0-beta.10`'s.
+
+### Fixed
+
+- The release workflow runs the packed CLI with the dependencies its
+  manifest declares; `1.0.0-beta.11` stopped where `create` imports its
+  prompt library from a tarball extracted without them.
+
+## [1.0.0-beta.11] — 2026-09-21
+
+Versioned but never published; it reached npm as `1.0.0-beta.12`.
 
 ### Fixed
 
@@ -28,7 +38,7 @@ below are part of this release. The code is `1.0.0-beta.10`'s.
 
 ## [1.0.0-beta.10] — 2026-09-21
 
-Versioned but never published; it reached npm as `1.0.0-beta.11`.
+Versioned but never published; it reached npm as `1.0.0-beta.12`.
 `1.0.0-beta.7`, `1.0.0-beta.8` and `1.0.0-beta.9` were not published
 either — the public repository's CI lacked a secret, so no release ran.
 The code is `1.0.0-beta.9`'s; what this version adds is how the
@@ -50,7 +60,7 @@ packages present themselves.
 
 ## [1.0.0-beta.9] — 2026-09-20
 
-Versioned but never published; it reached npm as `1.0.0-beta.11`.
+Versioned but never published; it reached npm as `1.0.0-beta.12`.
 `1.0.0-beta.7` and `1.0.0-beta.8` were not published either: their
 sections below belong with this one, which is what the tree became
 while their releases were failing. The repository is now public at
