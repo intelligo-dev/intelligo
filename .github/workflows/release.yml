@@ -225,10 +225,13 @@ jobs:
           done
 
           # The CLI additionally has to run from the tarball, since it
-          # is executed by Node rather than bundled.
+          # is executed by Node rather than bundled — with the
+          # dependencies its packed manifest declares and nothing else,
+          # so one it imports without declaring fails here.
           (cd packages/cli && pnpm pack --pack-destination "$out" >/dev/null)
           tar -xzf "$out"/*.tgz -C "$out"
           cd "$out/package"
+          npm install --omit=dev --no-package-lock --ignore-scripts --no-audit --no-fund
           node dist/bin.js help
           node dist/bin.js create "$out/scaffolded"
           test -f "$out/scaffolded/lib/intelligo.ts"
