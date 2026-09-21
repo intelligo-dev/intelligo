@@ -43,16 +43,16 @@
     "@intelligo-dev/jobs": "workspace:*",
     "server-only": "^0.0.1"
   },
+  "peerDependencies": {
+    "drizzle-orm": "^0.45.1",
+    "react": ">=19"
+  },
   "devDependencies": {
     "@types/node": "^26.6.1",
     "@types/react": "19.2.18",
     "drizzle-orm": "^0.45.2",
     "react": "^19.3.0",
     "typescript": "^5.9.3"
-  },
-  "peerDependencies": {
-    "drizzle-orm": "^0.45.1",
-    "react": ">=19"
   },
   "files": [
     "dist",

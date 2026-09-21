@@ -40,6 +40,9 @@
     "@intelligo-dev/audit": "workspace:*",
     "@intelligo-dev/core": "workspace:*"
   },
+  "peerDependencies": {
+    "drizzle-orm": "^0.45.1"
+  },
   "devDependencies": {
     "@types/node": "^26.6.1",
     "@types/pg": "^8.23.1",
@@ -74,9 +77,6 @@
         "default": "./dist/db/schema.js"
       }
     }
-  },
-  "peerDependencies": {
-    "drizzle-orm": "^0.45.1"
   },
   "engines": {
     "node": ">=22.14"

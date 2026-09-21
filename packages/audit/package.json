@@ -36,6 +36,9 @@
   "dependencies": {
     "@intelligo-dev/core": "workspace:*"
   },
+  "peerDependencies": {
+    "drizzle-orm": "^0.45.1"
+  },
   "devDependencies": {
     "@types/node": "^26.6.1",
     "drizzle-orm": "^0.45.2",
@@ -64,9 +67,6 @@
         "default": "./dist/db/schema.js"
       }
     }
-  },
-  "peerDependencies": {
-    "drizzle-orm": "^0.45.1"
   },
   "engines": {
     "node": ">=22.14"
