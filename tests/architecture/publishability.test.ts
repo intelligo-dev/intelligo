@@ -29,6 +29,8 @@ import {
 } from "./tree";
 
 type PackageManifest = {
+  name?: string;
+  version?: string;
   private?: boolean;
   description?: string;
   keywords?: string[];
@@ -38,6 +40,8 @@ type PackageManifest = {
   sideEffects?: false | string[];
   exports?: Record<string, unknown>;
   publishConfig?: { exports?: Record<string, unknown> };
+  peerDependencies?: Record<string, string>;
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
 };
 
 function manifest(pkg: string): PackageManifest {
@@ -365,6 +369,50 @@ describe("publishability", () => {
         manifest(pkg).engines?.node,
         `packages/${pkg} declares no Node floor`
       ).toBe(">=22.14");
+    }
+  });
+
+  it("opens every README with the manifest's description, and installs what the version releases as", () => {
+    for (const pkg of PUBLISHED) {
+      const m = manifest(pkg);
+      const readme = readFileSync(
+        path.join(PACKAGES_DIR, pkg, "README.md"),
+        "utf8"
+      );
+      const [title, , lead] = readme.split("\n");
+      expect(title, `packages/${pkg}/README.md title`).toBe(`# ${m.name}`);
+      expect(lead, `packages/${pkg}/README.md lead sentence`).toBe(
+        m.description
+      );
+
+      // A prerelease publishes under `beta`, and a bare install resolves
+      // `latest`: the README has to name the tag the release workflow
+      // will use, and stop naming it at the first stable version.
+      const tag = /-beta\./.test(m.version ?? "") ? "@beta" : "";
+      const install = readme.slice(
+        readme.indexOf("\n## Install\n"),
+        readme.indexOf("\n## ", readme.indexOf("\n## Install\n") + 1)
+      );
+      expect(
+        install,
+        `packages/${pkg}/README.md has no Install section`
+      ).toContain(`${m.name}${tag}`);
+      for (const [spelling] of readme.matchAll(
+        /@intelligo-dev\/[\w-]+@[\w.-]+/g
+      ))
+        expect(
+          spelling.endsWith(tag) && tag !== "",
+          `packages/${pkg}/README.md installs ${spelling}, and ${m.version} releases as "${tag || "latest"}"`
+        ).toBe(true);
+
+      const optional = m.peerDependenciesMeta ?? {};
+      for (const peer of Object.keys(m.peerDependencies ?? {})) {
+        if (optional[peer]?.optional) continue;
+        expect(
+          install,
+          `packages/${pkg}/README.md does not name the peer ${peer} under Install`
+        ).toContain(peer);
+      }
     }
   });
 

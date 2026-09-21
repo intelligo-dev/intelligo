@@ -245,6 +245,38 @@ describe("hand-written docs", () => {
     );
     expect(missing).toEqual([]);
   });
+
+  it("every import a package README shows is a real export of a published subpath", () => {
+    const missing = listPublishedWorkspaces(PACKAGES_DIR).flatMap((pkg) =>
+      [
+        ...readFileSync(
+          path.join(PACKAGES_DIR, pkg, "README.md"),
+          "utf8"
+        ).matchAll(
+          /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*"@intelligo-dev\/([\w-]+)((?:\/[\w-]+)*)"/g
+        ),
+      ].flatMap((m) => {
+        const source = `@intelligo-dev/${m[2]}${m[3]}`;
+        const manifest = JSON.parse(
+          readFileSync(path.join(PACKAGES_DIR, m[2]!, "package.json"), "utf8")
+        ) as { exports?: Record<string, unknown> };
+        if (!Object.keys(manifest.exports ?? {}).includes(`.${m[3]}`))
+          return [`packages/${pkg}/README.md: ${source} is not published`];
+        return m[1]!
+          .split(",")
+          .map(
+            (p) =>
+              p
+                .trim()
+                .replace(/^type\s+/, "")
+                .split(/\s+as\s+/)[0]!
+          )
+          .filter((name) => name && !exportsOf.get(m[2]!)?.has(name))
+          .map((name) => `packages/${pkg}/README.md: ${name} from ${source}`);
+      })
+    );
+    expect(missing).toEqual([]);
+  });
 });
 
 /**

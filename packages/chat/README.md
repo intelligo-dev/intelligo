@@ -1,10 +1,13 @@
 # @intelligo-dev/chat
 
-The AI-SDK-native chat transport: a Route Handler as a function.
+The AI-SDK-native chat transport: one Route Handler with auth, rate limits, feature gates, credits and persistence.
 
-Part of [Intelligo](https://github.com/intelligo-dev/intelligo), an application
-framework and operational platform for vertical AI SaaS products. This package
-is published from that repository and is not meant to be used on its own.
+Part of [Intelligo](https://intelligo.dev), an application framework and
+operational platform for vertical AI SaaS products. Every `@intelligo-dev/*`
+package is released at one version and shares one database schema;
+`pnpm dlx @intelligo-dev/cli@beta create my-app` installs the set an
+application needs. Documentation:
+[intelligo.dev/docs/packages/chat](https://intelligo.dev/docs/packages/chat).
 
 ## Install
 

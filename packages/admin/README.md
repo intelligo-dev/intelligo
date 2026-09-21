@@ -2,23 +2,96 @@
 
 The operational console: cross-tenant queries, health probes and impersonation.
 
-Part of [Intelligo](https://github.com/intelligo-dev/intelligo), an application
-framework and operational platform for vertical AI SaaS products. This package
-is published from that repository and is not meant to be used on its own.
+Part of [Intelligo](https://intelligo.dev), an application framework and
+operational platform for vertical AI SaaS products. Every `@intelligo-dev/*`
+package is released at one version and shares one database schema;
+`pnpm dlx @intelligo-dev/cli@beta create my-app` installs the set an
+application needs. Documentation:
+[intelligo.dev/docs/packages/admin](https://intelligo.dev/docs/packages/admin).
 
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/admin@beta
+pnpm add @intelligo-dev/admin@beta drizzle-orm react
 ```
 
-Intelligo-owned rather than consumer-owned source, and deliberately excluded
-from the page registry: what an operator can see across every tenant is not a
-per-product decision.
+`drizzle-orm` and `react` (19 or later) are peers. `intelligo add admin-page`
+from [`@intelligo-dev/cli`](https://www.npmjs.com/package/@intelligo-dev/cli)
+generates the mount below as source the application owns.
 
-Every query is gated behind `requireAdmin`, which reads `users.role` rather
-than an environment variable. Products contribute their own integration checks
-with `registerIntegrationProbe`.
+## Use
+
+```tsx
+// app/[locale]/admin/page.tsx
+import {
+  getPlatformOverview,
+  listUnsettledExecutions,
+  listWorkspaces,
+  requireAdmin,
+} from "@intelligo-dev/admin";
+import { PlatformOverviewView } from "@intelligo-dev/admin/views";
+
+export default async function AdminPage() {
+  await requireAdmin("admin.overview.viewed");
+
+  const [overview, workspaces, unsettled] = await Promise.all([
+    getPlatformOverview(),
+    listWorkspaces(20),
+    listUnsettledExecutions(),
+  ]);
+
+  return (
+    <PlatformOverviewView
+      overview={overview}
+      workspaces={workspaces}
+      unsettled={unsettled}
+    />
+  );
+}
+```
+
+The console is Intelligo-owned rather than consumer-owned source, and
+deliberately excluded from the page registry: what an operator can see across
+every tenant is not a per-product decision, and a fork could quietly stop
+showing unsettled executions. The application owns the route and the page
+chrome around the views.
+
+## The gate
+
+Every query sits behind `requireAdmin(action, resource?)`, which checks the
+platform admin role — `users.role`, a row rather than an environment variable,
+and never a workspace role: every signup owns a workspace. Each call writes an
+audit event with `actorKind: "support"`, so looking is on the record too.
+
+`requireAdminOrRefuse` is the gate for anything destructive: it refuses the
+action when the audit event cannot be written. Reading a customer's data
+unrecorded is bad; acting as them unrecorded leaves no answer to "who did
+this".
+
+## Impersonation
+
+`startImpersonation({ targetUserId, reason })` swaps the caller's session for
+the target's. The reason is mandatory and recorded, the audit write is part of
+the contract, and another platform admin cannot be impersonated.
+`stopImpersonation({ targetUserId })` ends it and records the end first, so the
+trail does not depend on the happy path completing.
+
+## Health probes
+
+`getIntegrationHealth()` reports the database, the job queue and execution
+settlement as `ok`, `degraded`, `down` or `unconfigured`, each with one line
+saying what to do about it. A product adds
+its own from the composition root:
+
+```ts
+import { registerIntegrationProbe } from "@intelligo-dev/admin/health";
+
+registerIntegrationProbe({
+  key: "search",
+  label: "Search index",
+  check: async () => ({ status: "ok", detail: "Reachable" }),
+});
+```
 
 ## Licence
 

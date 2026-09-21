@@ -1391,7 +1391,52 @@ Source: https://intelligo.dev/docs/packages/core
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/core@beta
+pnpm add @intelligo-dev/core@beta drizzle-orm
+```
+
+`drizzle-orm` is a peer; `react` 19 is an optional one, needed only by the
+email templates. Every other `@intelligo-dev/*` package depends on this one,
+and this one imports none of them.
+
+## Use
+
+```ts
+import { db, withWorkspaceFilter } from "@intelligo-dev/core/db";
+import { conversations } from "@intelligo-dev/core/db/schema";
+import { createLogger } from "@intelligo-dev/core/logger";
+import { eq } from "drizzle-orm";
+
+const log = createLogger("Inbox");
+
+const mine = await db
+  .select()
+  .from(conversations)
+  .where(
+    withWorkspaceFilter(
+      conversations.workspaceId,
+      workspace.id,
+      eq(conversations.userId, user.id)
+    )
+  );
+log.info("Loaded conversations", { count: String(mine.length) });
+```
+
+`db` connects on first use from `DATABASE_URL`: a Neon host takes the
+WebSocket driver and anything else takes node-postgres, unless
+`INTELLIGO_DB_DRIVER` says `pg` or `neon-serverless`. Every tenant-scoped query
+filters on `workspaceId`; `workspaceEq` and `withWorkspaceFilter` make that the
+short way to write one.
+
+The leaves import nothing, so a client bundle, an edge runtime or another
+package can reach them without pulling in the database:
+
+```ts
+import { formatMoney, fromMajor } from "@intelligo-dev/core/money";
+import { sanitizeForSystemPrompt } from "@intelligo-dev/core/prompt";
+
+formatMoney(fromMajor(12.5, "USD"), "en-US"); // "$12.50", held as 12_500_000 micros
+
+const system = `${basePrompt}\n\nAbout the user: ${sanitizeForSystemPrompt(profile)}`;
 ```
 
 ## Exports
@@ -1403,6 +1448,8 @@ pnpm add @intelligo-dev/core@beta
 | `/conversations`   | Conversation and message persistence                                                   |
 | `/documents`       | Document persistence and the title classifier                                          |
 | `/identity`        | The identity graph: facts, memories, profile snapshots                                 |
+| `/attachments`     | Rows for the files users put into conversations                                        |
+| `/storage`         | Where those files' bytes live: one adapter (S3, R2, disk) bound by the application     |
 | `/email`           | Transactional email and its templates                                                  |
 | `/notifications`   | In-app notification records and triggers                                               |
 | `/logger`          | Structured logging with credential redaction                                           |
@@ -1411,6 +1458,13 @@ pnpm add @intelligo-dev/core@beta
 | `/request-context` | Where the framework reads the request's headers from; bound by the adapter             |
 | `/prompt`          | Prompt-injection sanitisation for user text bound for a system prompt; imports nothing |
 | `/env`             | Environment validation                                                                 |
+
+## Environment
+
+`assertEnv()` from `/env` fails at boot rather than at the first query when
+`DATABASE_URL`, `BETTER_AUTH_SECRET` or `NEXT_PUBLIC_APP_URL` is missing;
+`validateEnv()` returns the same findings, with warnings for the optional
+Stripe, email and `CRON_SECRET` values. The composition root calls it once.
 
 ## Migrations
 
@@ -1452,8 +1506,11 @@ Source: https://intelligo.dev/docs/packages/auth
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/auth@beta
+pnpm add @intelligo-dev/auth@beta better-auth drizzle-orm zod
 ```
+
+`better-auth`, `drizzle-orm` and `zod` are peers: the guards read the
+Better-Auth instance and the database client the application already has.
 
 ## What it owns
 
@@ -1508,14 +1565,62 @@ Source: https://intelligo.dev/docs/packages/billing
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/billing@beta
+pnpm add @intelligo-dev/billing@beta drizzle-orm stripe zod
 ```
+
+`drizzle-orm`, `stripe` and `zod` are peers.
 
 ## What it owns
 
 Admission (`estimateQuota` / `reserveQuota`) and settlement, the credit ledger,
 Stripe checkout and the webhook receiver, feature gating, trial grants and
 expiry, and per-plan rate limits.
+
+## Use
+
+The plan catalogue is the product's, registered from the composition root:
+
+```ts
+// lib/intelligo.ts
+import {
+  registerProductFeatures,
+  registerProductPlans,
+  setDefaultProductSlug,
+} from "@intelligo-dev/billing/plans";
+import { fromMajor } from "@intelligo-dev/core/money";
+
+setDefaultProductSlug("acme");
+registerProductPlans("acme", {
+  free: {
+    name: "Free",
+    slug: "free",
+    description: "Try it",
+    priceOneTime: 0,
+    targetAudience: "Everyone",
+    aiModelLabel: "Base",
+    monthlyAllowance: fromMajor(0.5, "USD"),
+    limits: { chatMessages: 30 },
+    features: ["30 messages a month"],
+  },
+});
+registerProductFeatures("acme", { exports: ["pro"] });
+```
+
+A transport then gates on the workspace's plan:
+
+```ts
+import { requireFeature } from "@intelligo-dev/billing";
+
+await requireFeature(workspace.id, "exports"); // throws FeatureNotAvailableError
+```
+
+A row in `feature_flags` overrides the registered matrix — `isActive: false`
+is a kill switch for every plan. AI spend goes through the execution boundary
+instead: the composition root binds `reserveQuota`, `recordTokenUsage` and
+`releaseReservation` to the ports of
+[`@intelligo-dev/executions`](https://www.npmjs.com/package/@intelligo-dev/executions),
+so a run is admitted against the plan's allowance and the credit balance, and
+settled exactly once.
 
 ## Subpaths that import neither Stripe nor `server-only`
 
@@ -1584,26 +1689,109 @@ Source: https://intelligo.dev/docs/packages/executions
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/executions@beta
+pnpm add @intelligo-dev/executions@beta drizzle-orm
 ```
+
+`drizzle-orm` is a peer. The `executions` table is part of the framework's
+schema, which `intelligo migrate` from
+[`@intelligo-dev/cli`](https://www.npmjs.com/package/@intelligo-dev/cli)
+applies.
 
 ## The boundary
 
 Intelligo records what an AI execution cost and whether it was allowed. It does
 not wrap the AI framework: prompts, tools and orchestration stay native.
 
-`createExecutions(ports)` takes four optional ports — `checkEntitlement`,
-`settleUsage`, `findSettlement`, `releaseHold` — so this package never imports
-billing. The lifecycle claims each transition with a compare-and-swap before
-money is spent, and `reconcile` uses `findSettlement` to tell an abandoned run
-from a settled one.
+## Use
+
+The composition root builds one instance, with the ports bound:
+
+```ts
+// lib/intelligo.ts
+import {
+  DEFAULT_MODELS,
+  createExecutions,
+  registerModels,
+} from "@intelligo-dev/executions";
+
+registerModels(DEFAULT_MODELS);
+
+export const executions = createExecutions({
+  checkEntitlement, // may this workspace run this model? takes the hold
+  settleUsage, // charge what the run used
+  findSettlement, // did that charge already commit?
+  releaseHold, // the run failed: give the hold back
+});
+```
+
+A run is one `begin`, then exactly one `complete` or `fail`:
+
+```ts
+const run = await executions.begin({
+  workspaceId,
+  userId,
+  capability: "support.reply",
+  model: "google/gemini-2.5-flash",
+});
+if (!run.allowed) return refuse(run.code, run.reason);
+
+try {
+  const result = await agent.generate(messages); // your framework, natively
+  await run.complete({ usage: result.usage, model: "google/gemini-2.5-flash" });
+} catch (error) {
+  await run.fail({ error });
+  throw error;
+}
+```
+
+All four ports are optional, so this package never imports billing; the
+reference composition root binds them to `@intelligo-dev/billing`. The
+lifecycle claims each transition with a compare-and-swap before money is
+spent, so a late `complete` racing a `fail` cannot charge twice or release
+twice.
+
+`executions.reconcile(executionId, { abandonRunningAfterMs? })` repairs a run
+whose process died: it asks `findSettlement` whether the charge committed,
+confirms it onto the row or re-runs settlement from the recorded usage, and
+fails a `running` row that outlived the threshold. `findStaleExecutions` finds
+the candidates; `listExecutions`, `summarizeExecutions` and
+`summarizeExecutionsByDay` read the record for a usage page.
 
 ## Model pricing
 
 `@intelligo-dev/executions/pricing` is a deliberate zero-import leaf that
 client bundles can reach. Model ids are registry keys: an unregistered id has
 no price, and guessing one is how a model runs on the cheapest provider and
-bills at the most expensive rate.
+bills at the most expensive rate. Pricing throws `UnknownModelError` instead.
+
+Nothing self-registers. `DEFAULT_MODELS` is the catalogue the framework ships,
+as data; a deployment registers it, its own contracted rates, or a model the
+framework has never heard of:
+
+```ts
+import { registerModel } from "@intelligo-dev/executions/pricing";
+
+registerModel({
+  id: "acme/large-1",
+  provider: "acme",
+  model: "large-1-2026-08",
+  displayName: "Acme Large",
+  costPerMInputTokens: 1.25, // USD per million, as the provider quotes it
+  costPerMOutputTokens: 5,
+  maxOutputTokens: 8_192, // sizes the worst-case hold at admission
+  capabilities: {
+    thinking: false,
+    toolCall: true,
+    vision: false,
+    webSearch: false,
+    codeExec: false,
+  },
+});
+```
+
+`providerCost` is what a run cost the deployment; `chargeFor` applies the
+deployment's currency, rate and margin (`BillingRate`) and returns both
+figures as money in micros.
 
 ## Entry points
 
@@ -1790,20 +1978,61 @@ Source: https://intelligo.dev/docs/packages/audit
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/audit@beta
+pnpm add @intelligo-dev/audit@beta drizzle-orm
 ```
+
+`drizzle-orm` is a peer. The `audit_events` table and its trigger are part of
+the framework's schema, which `intelligo migrate` from
+[`@intelligo-dev/cli`](https://www.npmjs.com/package/@intelligo-dev/cli)
+applies.
+
+## Use
+
+```ts
+import { recordAuditEvent } from "@intelligo-dev/audit";
+
+await recordAuditEvent({
+  workspaceId,
+  actorId: user.id,
+  action: "member.removed",
+  resourceKind: "member",
+  resourceId: memberId,
+  metadata: { role: "admin" },
+});
+```
+
+An event with no `actorId` is a system actor's — a cron, a webhook, the job
+runner; `actorKind: "support"` marks an operator acting on a tenant. `outcome`
+is `"ok"` unless the caller says `"failed"`.
+
+`recordAuditEvent` never throws — an audit failure must not fail the action it
+records. `recordAuditEventOrThrow` exists for the callers where the record _is_
+the action: impersonation, a destructive support operation.
+
+`queryAuditEvents({ workspaceId, action, resourceKind, resourceId, before, limit })`
+reads the trail most recent first, paginated by `before`.
+
+## Append-only, in the database
 
 `audit_events` refuses `UPDATE` and `DELETE` at the database level, with one
 exception: the `ON DELETE SET NULL` the foreign keys perform, so deleting a
 workspace does not require deleting its trail.
 
-`recordAuditEvent` never throws — an audit failure must not fail the action it
-records. `recordAuditEventOrThrow` exists for the callers where the record _is_
-the action.
+## Sinks
 
-Sinks registered with `registerAuditSink` receive every event with failure
-isolation, which is how a closed-source tamper-evidence module attaches without
-this package knowing about it.
+```ts
+import { registerAuditSink } from "@intelligo-dev/audit";
+
+registerAuditSink("siem", async (event) => {
+  await ship(event);
+});
+```
+
+A sink registered from the composition root receives every event after it is
+durably recorded, with failure isolation: an exporter with an expired
+credential breaks neither the audited operation nor the other sinks. It is how
+tamper-evidence, a retention policy or a SIEM export attaches without this
+package knowing about it.
 
 ## Entry points
 
@@ -1821,11 +2050,66 @@ Source: https://intelligo.dev/docs/packages/jobs
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/jobs@beta
+pnpm add @intelligo-dev/jobs@beta drizzle-orm
 ```
 
-Enqueue, claim with `FOR UPDATE SKIP LOCKED`, retry with backoff, prune. One
-fewer moving part in an operational stack that already has Postgres.
+`drizzle-orm` is a peer. The queue is one table, `jobs`, in the framework's
+schema: `intelligo migrate` from
+[`@intelligo-dev/cli`](https://www.npmjs.com/package/@intelligo-dev/cli)
+creates it, and the connection is the `DATABASE_URL` that
+`@intelligo-dev/core` reads.
+
+## Use
+
+Enqueue from anywhere that can reach the database:
+
+```ts
+import { enqueue } from "@intelligo-dev/jobs";
+
+await enqueue({
+  kind: "digest.send",
+  workspaceId,
+  payload: { userId },
+  runAt: new Date(Date.now() + 60_000), // optional: not before
+  maxAttempts: 5, // optional: 3 by default
+});
+```
+
+Drain from a cron route, a long-running worker or a script — handlers are
+keyed by `kind`:
+
+```ts
+import { drain } from "@intelligo-dev/jobs";
+
+const result = await drain(
+  {
+    "digest.send": async (job) => {
+      await sendDigest(job.payload);
+    },
+  },
+  { limit: 25 }
+);
+// { claimed, succeeded, failed, unhandled }
+```
+
+## What the queue guarantees
+
+- **No double-processing.** Claiming is `FOR UPDATE SKIP LOCKED`, so several
+  workers drain the same queue and each takes different rows.
+- **Retry with backoff.** A handler that throws puts the job back, one more
+  minute later per attempt; after `maxAttempts` it is `failed` and keeps its
+  last error. `listFailedJobs()` reads them, newest first.
+- **A dead worker does not strand a job.** One still `running` thirty minutes
+  after its handler started is claimed again, so a handler must finish well
+  inside that.
+- **An unknown kind costs nothing.** A job with no handler in this worker goes
+  back without spending an attempt, a minute behind the jobs the worker can
+  run — another deployment may know it.
+
+`pruneJobs(before)` deletes succeeded jobs older than the cutoff and returns
+how many. `postgresJobQueue` is the same `enqueue` and `drain` as one
+`JobQueue` value; a different queue implements that type, and call sites stay
+as they are.
 
 ## Entry points
 
@@ -1843,16 +2127,86 @@ Source: https://intelligo.dev/docs/packages/admin
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/admin@beta
+pnpm add @intelligo-dev/admin@beta drizzle-orm react
 ```
 
-Intelligo-owned rather than consumer-owned source, and deliberately excluded
-from the page registry: what an operator can see across every tenant is not a
-per-product decision.
+`drizzle-orm` and `react` (19 or later) are peers. `intelligo add admin-page`
+from [`@intelligo-dev/cli`](https://www.npmjs.com/package/@intelligo-dev/cli)
+generates the mount below as source the application owns.
 
-Every query is gated behind `requireAdmin`, which reads `users.role` rather
-than an environment variable. Products contribute their own integration checks
-with `registerIntegrationProbe`.
+## Use
+
+```tsx
+// app/[locale]/admin/page.tsx
+import {
+  getPlatformOverview,
+  listUnsettledExecutions,
+  listWorkspaces,
+  requireAdmin,
+} from "@intelligo-dev/admin";
+import { PlatformOverviewView } from "@intelligo-dev/admin/views";
+
+export default async function AdminPage() {
+  await requireAdmin("admin.overview.viewed");
+
+  const [overview, workspaces, unsettled] = await Promise.all([
+    getPlatformOverview(),
+    listWorkspaces(20),
+    listUnsettledExecutions(),
+  ]);
+
+  return (
+    <PlatformOverviewView
+      overview={overview}
+      workspaces={workspaces}
+      unsettled={unsettled}
+    />
+  );
+}
+```
+
+The console is Intelligo-owned rather than consumer-owned source, and
+deliberately excluded from the page registry: what an operator can see across
+every tenant is not a per-product decision, and a fork could quietly stop
+showing unsettled executions. The application owns the route and the page
+chrome around the views.
+
+## The gate
+
+Every query sits behind `requireAdmin(action, resource?)`, which checks the
+platform admin role — `users.role`, a row rather than an environment variable,
+and never a workspace role: every signup owns a workspace. Each call writes an
+audit event with `actorKind: "support"`, so looking is on the record too.
+
+`requireAdminOrRefuse` is the gate for anything destructive: it refuses the
+action when the audit event cannot be written. Reading a customer's data
+unrecorded is bad; acting as them unrecorded leaves no answer to "who did
+this".
+
+## Impersonation
+
+`startImpersonation({ targetUserId, reason })` swaps the caller's session for
+the target's. The reason is mandatory and recorded, the audit write is part of
+the contract, and another platform admin cannot be impersonated.
+`stopImpersonation({ targetUserId })` ends it and records the end first, so the
+trail does not depend on the happy path completing.
+
+## Health probes
+
+`getIntegrationHealth()` reports the database, the job queue and execution
+settlement as `ok`, `degraded`, `down` or `unconfigured`, each with one line
+saying what to do about it. A product adds
+its own from the composition root:
+
+```ts
+import { registerIntegrationProbe } from "@intelligo-dev/admin/health";
+
+registerIntegrationProbe({
+  key: "search",
+  label: "Search index",
+  check: async () => ({ status: "ok", detail: "Reachable" }),
+});
+```
 
 ## Entry points
 
@@ -1874,10 +2228,53 @@ Source: https://intelligo.dev/docs/packages/mastra
 pnpm add @intelligo-dev/mastra@beta
 ```
 
-`@mastra/core` is an optional peer dependency and **nothing here imports it** —
-the bridge stays removable and the agent stays native. What this
-package adds is the recording: `runWithExecution` opens an execution, runs the
-agent, and settles what it cost.
+`@mastra/core` 1.x is an optional peer dependency and **nothing here imports
+it** — the agent is typed structurally, so the bridge stays removable and the
+agent stays native. What this package adds is the recording.
+
+## Use
+
+```ts
+import { runWithExecution } from "@intelligo-dev/mastra";
+import { executions } from "@/lib/intelligo";
+
+const result = await runWithExecution(
+  { executions, workspaceId, userId, capability: "support.reply" },
+  () => supportAgent.generate(messages) // native Mastra, untouched
+);
+```
+
+`runWithExecution` opens an execution, runs the agent and settles what it
+cost, reading usage and the model from whatever shape the provider reported.
+`executions` is the instance the composition root builds with
+`createExecutions` from
+[`@intelligo-dev/executions`](https://www.npmjs.com/package/@intelligo-dev/executions);
+naming the `model` sizes the credit hold admission takes.
+
+When entitlement refuses, it throws an `ExecutionRefusedError` carrying the
+`executionId` and the port's `reasonCode`, so a refusal cannot be mistaken for
+an empty result. An error from the run itself is recorded, the hold is
+released, and the error is rethrown unchanged — the caller still sees Mastra's
+own.
+
+## Streaming
+
+A stream's usage is known only once it ends, so `streamWithExecution` returns
+the native stream at once, with the two ways a stream finishes:
+
+```ts
+import { streamWithExecution } from "@intelligo-dev/mastra";
+
+const { stream, settle, abort } = await streamWithExecution(
+  { executions, workspaceId, userId, capability: "support.reply" },
+  () => supportAgent.stream(messages)
+);
+```
+
+`settle(result?)` records usage when the stream finishes; `abort(error?)` is
+for a client disconnect or a timeout. Both are idempotent through the
+execution, so a route can wire every one of its finish, error and abort hooks
+without racing itself.
 
 ## Entry points
 
@@ -1894,8 +2291,11 @@ Source: https://intelligo.dev/docs/packages/cli
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/cli@beta
+pnpm add -D @intelligo-dev/cli@beta
 ```
+
+`create` needs no install — run it with `pnpm dlx`. The scaffold adds the CLI
+to the new application, which is where `intelligo` comes from afterwards.
 
 ## Commands
 

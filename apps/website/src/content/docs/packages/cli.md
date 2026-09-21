@@ -10,8 +10,11 @@ label: "cli"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/cli@beta
+pnpm add -D @intelligo-dev/cli@beta
 ```
+
+`create` needs no install — run it with `pnpm dlx`. The scaffold adds the CLI
+to the new application, which is where `intelligo` comes from afterwards.
 
 ## Commands
 

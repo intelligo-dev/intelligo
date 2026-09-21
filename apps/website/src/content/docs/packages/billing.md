@@ -10,14 +10,62 @@ label: "billing"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/billing@beta
+pnpm add @intelligo-dev/billing@beta drizzle-orm stripe zod
 ```
+
+`drizzle-orm`, `stripe` and `zod` are peers.
 
 ## What it owns
 
 Admission (`estimateQuota` / `reserveQuota`) and settlement, the credit ledger,
 Stripe checkout and the webhook receiver, feature gating, trial grants and
 expiry, and per-plan rate limits.
+
+## Use
+
+The plan catalogue is the product's, registered from the composition root:
+
+```ts
+// lib/intelligo.ts
+import {
+  registerProductFeatures,
+  registerProductPlans,
+  setDefaultProductSlug,
+} from "@intelligo-dev/billing/plans";
+import { fromMajor } from "@intelligo-dev/core/money";
+
+setDefaultProductSlug("acme");
+registerProductPlans("acme", {
+  free: {
+    name: "Free",
+    slug: "free",
+    description: "Try it",
+    priceOneTime: 0,
+    targetAudience: "Everyone",
+    aiModelLabel: "Base",
+    monthlyAllowance: fromMajor(0.5, "USD"),
+    limits: { chatMessages: 30 },
+    features: ["30 messages a month"],
+  },
+});
+registerProductFeatures("acme", { exports: ["pro"] });
+```
+
+A transport then gates on the workspace's plan:
+
+```ts
+import { requireFeature } from "@intelligo-dev/billing";
+
+await requireFeature(workspace.id, "exports"); // throws FeatureNotAvailableError
+```
+
+A row in `feature_flags` overrides the registered matrix — `isActive: false`
+is a kill switch for every plan. AI spend goes through the execution boundary
+instead: the composition root binds `reserveQuota`, `recordTokenUsage` and
+`releaseReservation` to the ports of
+[`@intelligo-dev/executions`](https://www.npmjs.com/package/@intelligo-dev/executions),
+so a run is admitted against the plan's allowance and the credit balance, and
+settled exactly once.
 
 ## Subpaths that import neither Stripe nor `server-only`
 
