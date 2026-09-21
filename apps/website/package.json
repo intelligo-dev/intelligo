@@ -83,7 +83,7 @@
     "react-data-grid": "7.0.0-beta.61",
     "react-resizable-panels": "^4.12.4",
     "satori": "^0.33.4",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "wrangler": "^4.132.0"
   }
 }

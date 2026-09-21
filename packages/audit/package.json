@@ -42,7 +42,7 @@
   "devDependencies": {
     "@types/node": "^26.6.1",
     "drizzle-orm": "^0.45.2",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "files": [
     "dist",

@@ -49,7 +49,7 @@
     "@types/react": "19.2.18",
     "better-auth": "~1.6.33",
     "drizzle-orm": "^0.45.2",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "zod": "^4.6.5"
   },
   "files": [

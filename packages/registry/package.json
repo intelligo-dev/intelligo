@@ -62,7 +62,7 @@
     "shiki": "^4.4.3",
     "sonner": "^2.0.8",
     "streamdown": "^2.6.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "zod": "^4.6.5"
   }
 }
