@@ -14,13 +14,36 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [1.0.0-beta.10] — 2026-09-21
+
+The first version on npm since `1.0.0-beta.6`. `1.0.0-beta.7`,
+`1.0.0-beta.8` and `1.0.0-beta.9` were versioned but never published —
+the public repository's CI lacked a secret, so no release ran — and
+their sections below are part of this release. The code is
+`1.0.0-beta.9`'s; what this version adds is how the packages present
+themselves.
+
+### Changed
+
+- Every package's README shows the package in use: a working call, what
+  it guarantees, and the peers and tables it needs. Each opens with the
+  manifest's description and links its page on `intelligo.dev/docs`,
+  which is also the package's npm homepage.
+- `@intelligo-dev/core`'s README lists `/attachments` and `/storage`,
+  and the environment check.
+
+### Fixed
+
+- `@intelligo-dev/billing` no longer calls `Array.prototype.at`, which
+  the ES2020 library the packages compile against does not declare.
+
 ## [1.0.0-beta.9] — 2026-09-20
 
-The first version on npm since `1.0.0-beta.6`. `1.0.0-beta.7` and
-`1.0.0-beta.8` were versioned but never published; their sections
-below are part of this release, and so is everything here, which is
-what the tree became while their releases were failing. The
-repository is now public at `intelligo-dev/intelligo`.
+Versioned but never published; it reached npm as `1.0.0-beta.10`.
+`1.0.0-beta.7` and `1.0.0-beta.8` were not published either: their
+sections below belong with this one, which is what the tree became
+while their releases were failing. The repository is now public at
+`intelligo-dev/intelligo`.
 
 ### Breaking
 
