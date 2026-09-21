@@ -88,6 +88,9 @@ const yaml = [
 ];
 fs.writeFileSync("pnpm-workspace.yaml", yaml.join("\n") + "\n");
 EOF
+# That file makes the app a workspace root to pnpm 9 and 10, which
+# refuse the plain `pnpm add` the shadcn CLI runs there.
+echo "ignore-workspace-root-check=true" >> .npmrc
 pnpm install --no-frozen-lockfile
 
 # The installed packages must be the tarballs, not what npm serves.
