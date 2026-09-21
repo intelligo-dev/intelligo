@@ -106,9 +106,12 @@ if $CHECK; then
     git diff --stat -- pnpm-lock.yaml
     exit 1
   fi
-  if [ -n "$(git status --porcelain -- apps/app)" ]; then
+  # next-env.d.ts is Next's: `next dev` and `next build` each write their
+  # own, so which one is on disk says only which command ran last.
+  DRIFT="$(git status --porcelain -- apps/app ':!apps/app/next-env.d.ts')"
+  if [ -n "$DRIFT" ]; then
     echo "apps/app is not the CLI's output — a generated file was edited by hand:"
-    git status --porcelain -- apps/app | head -40
+    echo "$DRIFT" | head -40
     exit 1
   fi
   echo "✓ apps/app is exactly the CLI's output plus its owned files"

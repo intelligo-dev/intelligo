@@ -23,11 +23,11 @@
         },
         {
           "path": "lib/intelligo.ts",
-          "hash": "61d46228d0498e9cbbfcc8dcb659229731d637e85fb51b41bf67107f876301c1"
+          "hash": "29c9e2b32064ae570ab9b27a147e508c1d6abe1b791cc83eaa309698fd3ce05d"
         },
         {
           "path": "instrumentation.ts",
-          "hash": "a5468d38ffb0c59ad016a5f7191451cdde7846193628505eb57705b37e1a1f83"
+          "hash": "999f0125f259e561bfe243bb9024805b0fe274123fe1982057cb016123f8a751"
         },
         {
           "path": "lib/plans.ts",
