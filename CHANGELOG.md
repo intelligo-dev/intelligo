@@ -65,6 +65,18 @@ it explains a framework decision.
   `app-scaffold` entry's `handedOver` list, so `upgrade --check` stops
   reporting them `customized` and `add app-scaffold` leaves them alone.
 
+### Fixed
+
+- `intelligo doctor` reads what an app exports the way the compiler
+  would: comments are stripped before matching, `export type` /
+  `export interface`, `export { a as b }` and `export { x } from "…"`
+  count, and `export * from "…"` is followed into the module it
+  resolves to (relative, `@/`, or a package through node resolution
+  from the app root) — one it cannot read is a warning, not an error.
+  Feature keys match `key:` or `"key":` only outside comments, and a
+  `lib/plans.ts` that re-exports its catalogue from a workspace package
+  is checked against that package's file.
+
 ## [1.0.0-beta.13] — 2026-09-21
 
 The first version on npm since `1.0.0-beta.6`. `1.0.0-beta.7` to
