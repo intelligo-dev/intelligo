@@ -176,7 +176,9 @@ describe("template catalogue", () => {
       path.join(TEMPLATES_DIR, "vitest/vitest.config.ts.tpl"),
       "utf8"
     );
-    expect(config).toContain('"server-only": path.join(root, "tests/stubs/server-only.ts")');
+    expect(config).toContain(
+      '"server-only": path.join(root, "tests/stubs/server-only.ts")'
+    );
     expect(config).toContain('"@": root');
     expect(config).toContain("inline: [/node_modules\\/@intelligo-dev\\//]");
     expect(spec.nextSteps?.join("\n")).toMatch(/add -D vitest/);

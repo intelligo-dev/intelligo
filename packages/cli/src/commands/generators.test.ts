@@ -320,10 +320,13 @@ describe("addFeature vitest", () => {
       frameworkVersion: "0.0.0",
     });
 
-    expect(r.written).toEqual(["vitest.config.ts", "tests/stubs/server-only.ts"]);
-    expect(readFileSync(path.join(appRoot, "tests/stubs/server-only.ts"), "utf8")).toContain(
-      "export {};"
-    );
+    expect(r.written).toEqual([
+      "vitest.config.ts",
+      "tests/stubs/server-only.ts",
+    ]);
+    expect(
+      readFileSync(path.join(appRoot, "tests/stubs/server-only.ts"), "utf8")
+    ).toContain("export {};");
     const printed = formatAddResult(r);
     expect(printed).toContain("pnpm add -D vitest");
     expect(printed).toContain('"test": "vitest run"');

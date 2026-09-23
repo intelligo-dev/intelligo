@@ -124,7 +124,9 @@ function pickCondition(entry: unknown): string | null {
 /** A package's module file from its package.json `exports`, `module` or `main`. */
 function packageFile(specifier: string, appRoot: string): string | null {
   const parts = specifier.split("/");
-  const name = specifier.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0]!;
+  const name = specifier.startsWith("@")
+    ? parts.slice(0, 2).join("/")
+    : parts[0]!;
   const subpath = `.${specifier.slice(name.length)}`;
   let dir = path.resolve(appRoot);
   for (;;) {
@@ -142,9 +144,12 @@ function packageFile(specifier: string, appRoot: string): string | null {
       else if (exp && typeof exp === "object") {
         const map = exp as Record<string, unknown>;
         const keyed = Object.keys(map).some((k) => k.startsWith("."));
-        target = pickCondition(keyed ? map[subpath] : subpath === "." ? map : null);
+        target = pickCondition(
+          keyed ? map[subpath] : subpath === "." ? map : null
+        );
       }
-      if (!target && subpath === ".") target = manifest.module ?? manifest.main ?? "index";
+      if (!target && subpath === ".")
+        target = manifest.module ?? manifest.main ?? "index";
       if (!target && subpath !== ".") target = subpath;
       return target ? resolveFile(path.join(pkgDir, target)) : null;
     }

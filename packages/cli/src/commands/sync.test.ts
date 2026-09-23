@@ -57,7 +57,10 @@ beforeEach(() => {
     registryDir,
     "button.json",
     item("button", "registry:ui", [
-      { target: "components/ui/button.tsx", content: "export const Button = 1;\n" },
+      {
+        target: "components/ui/button.tsx",
+        content: "export const Button = 1;\n",
+      },
     ])
   );
   write(
@@ -104,7 +107,10 @@ afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe("selectItems", () => {
   it("takes named items, and refuses unknown ones", () => {
-    expect(selectItems(["usage"], context)).toEqual({ ok: true, items: ["usage"] });
+    expect(selectItems(["usage"], context)).toEqual({
+      ok: true,
+      items: ["usage"],
+    });
     const bad = selectItems(["usage", "nope"], context);
     expect(bad.ok).toBe(false);
     expect(!bad.ok && bad.message).toContain("nope");
@@ -114,7 +120,9 @@ describe("selectItems", () => {
     write(context.appRoot, "app/usage/page.tsx", PAGE);
     const none = selectItems([], context);
     expect(none.ok).toBe(false);
-    expect(!none.ok && none.message).toContain("intelligo sync intelligo usage");
+    expect(!none.ok && none.message).toContain(
+      "intelligo sync intelligo usage"
+    );
 
     writeManifest(context.appRoot, {
       schemaVersion: 1,
@@ -165,7 +173,9 @@ describe("syncCheck", () => {
   it("covers the item's Intelligo components, not shadcn's own", () => {
     const report = syncCheck(["usage"], context);
     expect(report.items).toEqual(["button", "usage"]);
-    expect(report.entries.map((e) => e.path)).toContain("components/ui/button.tsx");
+    expect(report.entries.map((e) => e.path)).toContain(
+      "components/ui/button.tsx"
+    );
   });
 
   it("reports missing files, and passes once everything is the registry's", () => {
@@ -173,8 +183,16 @@ describe("syncCheck", () => {
     expect(syncCheckExitCode(syncCheck(["usage"], context))).toBe(1);
 
     // shadcn drops a file's opening comment; that is not drift.
-    write(context.appRoot, "app/usage/page.tsx", "export default function Page() {}\n");
-    write(context.appRoot, "components/ui/button.tsx", "export const Button = 1;\n");
+    write(
+      context.appRoot,
+      "app/usage/page.tsx",
+      "export default function Page() {}\n"
+    );
+    write(
+      context.appRoot,
+      "components/ui/button.tsx",
+      "export const Button = 1;\n"
+    );
     write(context.appRoot, "lib/usage-config.ts", "export const x = 'mine';\n");
     write(
       context.appRoot,
@@ -207,12 +225,20 @@ describe("syncCheck", () => {
     });
     expect(states()["components/ui/button.tsx"]).toBe("outdated");
 
-    write(context.appRoot, "components/ui/button.tsx", "export const Button = 2;\n");
+    write(
+      context.appRoot,
+      "components/ui/button.tsx",
+      "export const Button = 2;\n"
+    );
     expect(states()["components/ui/button.tsx"]).toBe("edited");
   });
 
   it("reports a message file missing registry keys", () => {
-    write(context.appRoot, "messages/en/usage.json", JSON.stringify({ title: "Mine" }));
+    write(
+      context.appRoot,
+      "messages/en/usage.json",
+      JSON.stringify({ title: "Mine" })
+    );
     const entry = syncCheck(["usage"], context).entries.find(
       (e) => e.path === "messages/en/usage.json"
     )!;
@@ -232,7 +258,11 @@ describe("other locales", () => {
     write(
       context.appRoot,
       "messages/en/usage.json",
-      JSON.stringify({ title: "Usage", empty: { title: "None" }, product: "Ours" })
+      JSON.stringify({
+        title: "Usage",
+        empty: { title: "None" },
+        product: "Ours",
+      })
     );
   const entry = (rel: string) =>
     syncCheck(["usage"], context).entries.find((e) => e.path === rel);
@@ -251,7 +281,11 @@ describe("other locales", () => {
   it("reports a locale missing keys the English file on disk has, product keys included", () => {
     routing(`"en", "mn"`);
     english();
-    write(context.appRoot, "messages/mn/usage.json", JSON.stringify({ title: "Хэрэглээ" }));
+    write(
+      context.appRoot,
+      "messages/mn/usage.json",
+      JSON.stringify({ title: "Хэрэглээ" })
+    );
 
     const mn = entry("messages/mn/usage.json")!;
     expect(mn.state).toBe("locale-behind");
@@ -295,7 +329,10 @@ describe("scaffoldHandover", () => {
       scaffoldHandover({
         scaffold,
         changed: new Set(["lib/utils.ts", "package.json", "components.json"]),
-        shipped: new Set(["components/shell/theme-provider.tsx", "lib/usage-config.ts"]),
+        shipped: new Set([
+          "components/shell/theme-provider.tsx",
+          "lib/usage-config.ts",
+        ]),
         seams: context.requires.seams!,
         css: "app/globals.css",
       })

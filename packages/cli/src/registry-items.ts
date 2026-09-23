@@ -214,7 +214,9 @@ export function installPlan(
   }
 ): InstallPlan | null {
   if (items.length === 0) return null;
-  const packageManager = options.workspaceRoot ? "pnpm" : options.packageManager;
+  const packageManager = options.workspaceRoot
+    ? "pnpm"
+    : options.packageManager;
   const [command, ...exec] = EXEC[packageManager];
   const synced = [BASE, ...items.filter((n) => n !== BASE)];
   return {

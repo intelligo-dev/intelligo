@@ -257,10 +257,12 @@ describe("runChecks", () => {
             "export function composeIntelligo() {}\nexport const executions = {};",
           "lib/plans.ts": plans,
         }).status;
-      expect(withPlans('export const FEATURES = { "chat": ["free"] };')).toBe("ok");
-      expect(withPlans("export const FEATURES = {\n  // chat: ['free'],\n};")).toBe(
-        "error"
+      expect(withPlans('export const FEATURES = { "chat": ["free"] };')).toBe(
+        "ok"
       );
+      expect(
+        withPlans("export const FEATURES = {\n  // chat: ['free'],\n};")
+      ).toBe("error");
       expect(withPlans("export const FEATURES = { mychat: ['free'] };")).toBe(
         "error"
       );

@@ -187,7 +187,10 @@ describe("migrateState", () => {
       })
     );
 
-    const r = await migrateCheck(dir, async () => [{ hash: "h0" }, { hash: "h2" }]);
+    const r = await migrateCheck(dir, async () => [
+      { hash: "h0" },
+      { hash: "h2" },
+    ]);
     expect(r.legacyMissing).toEqual(["0001_old"]);
 
     const printed = formatMigrateCheck(r, true);

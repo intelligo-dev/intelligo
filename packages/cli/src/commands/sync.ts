@@ -85,8 +85,7 @@ export type SyncReport = {
 };
 
 export type SyncSelection =
-  | { ok: true; items: string[] }
-  | { ok: false; message: string };
+  { ok: true; items: string[] } | { ok: false; message: string };
 
 export type SyncContext = {
   appRoot: string;
@@ -133,9 +132,7 @@ export function selectItems(
   if (recorded && recorded.length > 0) return { ok: true, items: recorded };
 
   const looksInstalled = Object.entries(context.requires.items)
-    .filter(([, item]) =>
-      existsSync(path.join(context.appRoot, item.marker))
-    )
+    .filter(([, item]) => existsSync(path.join(context.appRoot, item.marker)))
     .map(([name]) => name);
   return {
     ok: false,
@@ -172,7 +169,11 @@ const isObject = (v: unknown): v is Json =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
 /** Dotted paths of every leaf in `registry` that `app` lacks. */
-export function missingMessageKeys(registry: Json, app: Json, prefix = ""): string[] {
+export function missingMessageKeys(
+  registry: Json,
+  app: Json,
+  prefix = ""
+): string[] {
   return Object.entries(registry).flatMap(([key, value]) => {
     const at = prefix ? `${prefix}.${key}` : key;
     if (!(key in app)) return [at];
@@ -218,9 +219,7 @@ const SOURCE_LOCALE = "en";
 export function appLocales(appRoot: string): string[] {
   const file = path.join(appRoot, "i18n", "routing.ts");
   if (!existsSync(file)) return [SOURCE_LOCALE];
-  const list = /\blocales\s*:\s*\[([^\]]*)\]/.exec(
-    readFileSync(file, "utf8")
-  );
+  const list = /\blocales\s*:\s*\[([^\]]*)\]/.exec(readFileSync(file, "utf8"));
   const locales = [...(list?.[1] ?? "").matchAll(/["'`]([^"'`]+)["'`]/g)].map(
     (m) => m[1]!
   );
@@ -265,7 +264,10 @@ function localeEntries(
 
 type ShippedFile = { item: string; target: string; content: string };
 
-function shippedFiles(context: SyncContext, items: readonly string[]): {
+function shippedFiles(
+  context: SyncContext,
+  items: readonly string[]
+): {
   closure: string[];
   files: ShippedFile[];
 } {
@@ -338,7 +340,8 @@ export function formatSyncReport(report: SyncReport): string {
   ];
   const HINT: Partial<Record<SyncFileState, string>> = {
     outdated: "a newer registry version — `intelligo sync` replaces it",
-    edited: "edited by hand — move the change into a seam, or ask for one upstream",
+    edited:
+      "edited by hand — move the change into a seam, or ask for one upstream",
     differs: "not what the registry ships, and never synced",
     missing: "not installed",
     "messages-behind": "lacks registry keys — `intelligo sync` adds them",
@@ -454,9 +457,7 @@ export function scaffoldHandover(input: {
     (file) =>
       !(file in input.seams) &&
       !EDITED_IN_PLACE.has(file) &&
-      (input.shipped.has(file) ||
-        file === input.css ||
-        input.changed.has(file))
+      (input.shipped.has(file) || file === input.css || input.changed.has(file))
   );
 }
 
@@ -593,7 +594,9 @@ export async function syncApply(
   }
 
   if (failed) {
-    log(`shadcn add ${failed.item} failed:\n${failed.output.trim().split("\n").slice(-20).join("\n")}`);
+    log(
+      `shadcn add ${failed.item} failed:\n${failed.output.trim().split("\n").slice(-20).join("\n")}`
+    );
     return 1;
   }
 

@@ -24,9 +24,9 @@ it explains a framework decision.
   the packages — in `requires.json` order, puts the item's seams back,
   merges message files key by key (the app's copy wins), and records
   each installed file's hash in `intelligo.manifest.json`. It refuses to
-  overwrite a hand-edited file without `--force`. `intelligo sync
-  --check` installs nothing and exits 1 on any file that is missing,
-  edited, outdated or lacks registry message keys. An existing app
+  overwrite a hand-edited file without `--force`.
+  `intelligo sync --check` installs nothing and exits 1 on any file that
+  is missing, edited, outdated or lacks registry message keys. An existing app
   adopts it by naming its items once.
 - `@intelligo-dev/cli` ships the built registry (`templates/registry`).
 - `requires.json` names every item's `seams`: the files an item ships
@@ -71,8 +71,8 @@ it explains a framework decision.
   `instrumentation.ts` is enough: registries live on `globalThis` per
   process, so no module needs an "ensure composed" import; the Edge
   runtime is its own scope and composes separately.
-- `intelligo create` installs the pages it offers through `intelligo
-  sync`: one `shadcn add` per item, dependencies first, from the
+- `intelligo create` installs the pages it offers through
+  `intelligo sync`: one `shadcn add` per item, dependencies first, from the
   registry bundled with the CLI rather than the hosted one, recorded in
   `intelligo.manifest.json`. A failure leaves a known set installed and
   prints the sync to re-run.

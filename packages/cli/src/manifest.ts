@@ -138,7 +138,9 @@ export function handOver(
       [feature]: {
         ...entry,
         files: entry.files.filter((f) => !moved.has(f.path)),
-        handedOver: [...new Set([...(entry.handedOver ?? []), ...paths])].sort(),
+        handedOver: [
+          ...new Set([...(entry.handedOver ?? []), ...paths]),
+        ].sort(),
       },
     },
   };

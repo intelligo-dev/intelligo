@@ -38,7 +38,12 @@ describe("parseCreateFlags", () => {
 });
 
 describe("runCreate --no-install", () => {
-  const templatesDir = path.resolve(import.meta.dirname, "..", "..", "templates");
+  const templatesDir = path.resolve(
+    import.meta.dirname,
+    "..",
+    "..",
+    "templates"
+  );
   let root: string;
   let out: string[];
 
@@ -55,10 +60,11 @@ describe("runCreate --no-install", () => {
   });
 
   const create = (target: string) =>
-    runCreate(
-      parseCreateFlags([target, "--items", "usage", "--no-install"]),
-      { templatesDir, frameworkVersion: "1.2.3", interactive: false }
-    );
+    runCreate(parseCreateFlags([target, "--items", "usage", "--no-install"]), {
+      templatesDir,
+      frameworkVersion: "1.2.3",
+      interactive: false,
+    });
 
   it("prints the install, then one sync of the base and every item", async () => {
     expect(await create(path.join(root, "acme"))).toBe(0);

@@ -124,7 +124,9 @@ describe("installPlan", () => {
     expect(formatCommand(plan.install!, appRoot)).toBe(
       "(cd .. && pnpm install)"
     );
-    expect(formatCommand(plan.sync, appRoot)).toMatch(/^pnpm exec intelligo sync/);
+    expect(formatCommand(plan.sync, appRoot)).toMatch(
+      /^pnpm exec intelligo sync/
+    );
   });
 });
 
