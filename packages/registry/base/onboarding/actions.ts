@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
 import { isOnboardingServiceError } from "@intelligo-dev/auth";
+import type { ActionResult } from "@intelligo-dev/next";
 
 import { profile } from "@/lib/onboarding-profile";
 import { onboarding } from "@/lib/onboarding";
@@ -18,8 +19,7 @@ import {
   type OnboardingAnswers,
 } from "@/lib/onboarding-steps";
 
-export type OnboardingActionResult<T = undefined> =
-  { success: true; data: T } | { success: false; error: string };
+export type OnboardingActionResult<T = undefined> = ActionResult<T>;
 
 async function friendlyError(error: unknown): Promise<string> {
   if (isOnboardingServiceError(error)) {

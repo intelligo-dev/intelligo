@@ -19,9 +19,9 @@ import {
   markAsRead,
   markAllAsRead,
 } from "@intelligo-dev/core/notifications";
+import type { ActionResult as BaseActionResult } from "@intelligo-dev/next";
 
-export type ActionResult<T> =
-  { success: true; data: T } | { success: false; error: string };
+export type ActionResult<T> = BaseActionResult<T>;
 
 export type NotificationData = {
   id: string;

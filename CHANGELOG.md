@@ -62,6 +62,13 @@ it explains a framework decision.
   item's `lib/plan-copy.ts` and fall back to the catalogue's strings for
   any key a locale leaves out. The pricing item ships an empty
   `messages/en/plans.json`.
+- `@intelligo-dev/next` ships the transport toolkit: `ActionResult<T>`,
+  the `{ success, data } | { success, error }` shape a Server Action
+  returns, and the `./route` subpath's Route Handler guards `withAuth`,
+  `withWorkspace` and `withRole(roles, …)`, which resolve the caller
+  through `requireAuth` / `requireWorkspace` / `requireRole` and answer
+  a failed check as JSON (`401` unauthenticated, `403` no workspace or
+  forbidden) without catching anything the handler throws.
 
 ### Changed
 
@@ -73,6 +80,11 @@ it explains a framework decision.
   workspace with no plan instead of the English `"Free"`; `planSlug`
   stays `"free"`. The `billing-settings` item renders its own translated
   `freePlan` label.
+- Every registry item's actions type their results with
+  `ActionResult` from `@intelligo-dev/next` and declare the package; the
+  item-specific names (`ProfileActionResult`, `TeamActionResult`, …)
+  remain as aliases. `InvitationActionResult`'s success carries
+  `data: undefined` like the others.
 
 - `apps/app` is regenerated with `intelligo sync` instead of a
   hand-written `shadcn add` loop.

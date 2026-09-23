@@ -39,11 +39,11 @@ import {
   setConversationVisibility,
   updateConversationMetadata,
 } from "@intelligo-dev/core/conversations";
+import type { ActionResult } from "@intelligo-dev/next";
 
 import { chatServerConfig } from "@/lib/chat-server-config";
 
-export type ChatActionResult<T> =
-  { success: true; data: T } | { success: false; error: string };
+export type ChatActionResult<T> = ActionResult<T>;
 
 type Translator = Awaited<ReturnType<typeof getTranslations>>;
 

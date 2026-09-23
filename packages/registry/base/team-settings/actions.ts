@@ -18,11 +18,11 @@ import {
   type InviteMemberInput,
   type UpdateRoleInput,
 } from "@intelligo-dev/auth";
+import type { ActionResult } from "@intelligo-dev/next";
 
 import { team } from "@/lib/team";
 
-export type TeamActionResult<T = undefined> =
-  { success: true; data: T } | { success: false; error: string };
+export type TeamActionResult<T = undefined> = ActionResult<T>;
 
 type Translator = Awaited<ReturnType<typeof getTranslations<"team-settings">>>;
 

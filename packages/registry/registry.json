@@ -1268,6 +1268,7 @@
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
         "@intelligo-dev/billing",
+        "@intelligo-dev/next",
         "sonner",
         "server-only",
         "next-intl"
@@ -1352,6 +1353,7 @@
         "@intelligo-dev/billing",
         "@intelligo-dev/core",
         "@intelligo-dev/executions",
+        "@intelligo-dev/next",
         "lucide-react",
         "next-intl"
       ],
@@ -1417,6 +1419,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "sonner",
         "next-intl"
       ],
@@ -1593,6 +1596,7 @@
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
         "@intelligo-dev/billing",
+        "@intelligo-dev/next",
         "drizzle-orm",
         "sonner",
         "server-only",
@@ -1889,6 +1893,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "lucide-react",
         "next-intl"
       ],
@@ -1962,6 +1967,7 @@
         "@intelligo-dev/core",
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
+        "@intelligo-dev/next",
         "zod@^4.6.5",
         "lucide-react",
         "server-only",
@@ -2200,6 +2206,7 @@
       ],
       "dependencies": [
         "@intelligo-dev/auth",
+        "@intelligo-dev/next",
         "lucide-react",
         "server-only",
         "next-intl"
@@ -2249,6 +2256,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "sonner",
         "server-only",
         "next-intl"
@@ -2304,6 +2312,7 @@
       ],
       "dependencies": [
         "@intelligo-dev/auth",
+        "@intelligo-dev/next",
         "lucide-react",
         "server-only",
         "next-intl",
@@ -2443,6 +2452,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "lucide-react",
         "sonner",
         "server-only",
@@ -2508,6 +2518,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "lucide-react",
         "sonner",
         "next-intl"
@@ -2610,6 +2621,7 @@
         "@intelligo-dev/billing",
         "@intelligo-dev/chat",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "next-intl",
         "next-themes",
         "prosemirror-state",

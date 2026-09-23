@@ -18,11 +18,11 @@ import {
   isBillingServiceError,
 } from "@intelligo-dev/billing";
 import { getDefaultProductSlug } from "@intelligo-dev/billing/plans";
+import type { ActionResult } from "@intelligo-dev/next";
 
 import { getCreditBundle } from "@/lib/billing";
 
-export type BillingActionResult<T = { url: string }> =
-  { success: true; data: T } | { success: false; error: string };
+export type BillingActionResult<T = { url: string }> = ActionResult<T>;
 
 type Translator = Awaited<ReturnType<typeof getTranslations<"pricing">>>;
 

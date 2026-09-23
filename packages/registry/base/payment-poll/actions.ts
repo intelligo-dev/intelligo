@@ -15,6 +15,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { requireAuth } from "@intelligo-dev/auth";
+import type { ActionResult } from "@intelligo-dev/next";
 
 import {
   checkLocalPaymentStatus,
@@ -23,8 +24,7 @@ import {
   type LocalPaymentStatus,
 } from "@/lib/local-payment";
 
-export type PaymentActionResult<T> =
-  { success: true; data: T } | { success: false; error: string };
+export type PaymentActionResult<T> = ActionResult<T>;
 
 export async function startLocalPayment(
   reference: string

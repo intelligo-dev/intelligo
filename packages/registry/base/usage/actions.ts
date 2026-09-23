@@ -26,6 +26,7 @@ import {
   summarizeExecutions,
   summarizeExecutionsByDay,
 } from "@intelligo-dev/executions";
+import type { ActionResult as BaseActionResult } from "@intelligo-dev/next";
 
 import type { MoneyLike } from "@/lib/format-money";
 import { planName } from "@/lib/plan-copy";
@@ -91,8 +92,7 @@ export type UsageOverview = {
   records: UsageRecord[];
 };
 
-export type ActionResult<T> =
-  { success: true; data: T } | { success: false; error: string };
+export type ActionResult<T> = BaseActionResult<T>;
 
 /**
  * The reader's own time zone, from the cookie the app shell writes.
