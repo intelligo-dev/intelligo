@@ -23,6 +23,7 @@ export interface PaymentCheckResult {
   invoiceId: string;
   status: PaymentStatus;
   paidAt?: Date;
+  /** Minor units, as `createPayment`'s `amount`. */
   amount: number;
 }
 
@@ -129,6 +130,11 @@ export function clearPaymentProviders(): void {
   providers.clear();
 }
 
+/** The PAYMENT_MODE this process runs under; "mock" when unset. */
+export function currentPaymentMode(): string {
+  return process.env.PAYMENT_MODE ?? "mock";
+}
+
 /**
  * Resolve the configured provider.
  *
@@ -142,8 +148,15 @@ export function clearPaymentProviders(): void {
  * production would report successful payments that never happened.
  */
 export function getPaymentProvider(): PaymentProvider {
-  const mode = process.env.PAYMENT_MODE ?? "mock";
+  return getPaymentProviderFor(currentPaymentMode());
+}
 
+/**
+ * Resolve the provider registered under `mode`, by the same rules as
+ * `getPaymentProvider`. An invoice is settled by the provider that
+ * issued it, which is not necessarily the one PAYMENT_MODE names now.
+ */
+export function getPaymentProviderFor(mode: string): PaymentProvider {
   if (mode === "mock" && process.env.NODE_ENV === "production") {
     throw new Error(
       "PAYMENT_MODE=mock in production. The mock provider keeps invoices " +

@@ -91,6 +91,25 @@ it explains a framework decision.
   through `requireAuth` / `requireWorkspace` / `requireRole` and answer
   a failed check as JSON (`401` unauthenticated, `403` no workspace or
   forbidden) without catching anything the handler throws.
+- `openLocalInvoice({ workspaceId, userId, reference, price })` and
+  `settleLocalInvoice({ invoiceId, workspaceId, fulfil })` in
+  `@intelligo-dev/billing`: a QR-and-poll payment through the registered
+  `PaymentProvider`, recorded in the new `payments` table at the price
+  the server decided. Settling asks the provider that issued the
+  invoice; a paid one is marked fulfilled and its grant (`{ plan }` or
+  `{ credits: Money }`) applied in one transaction, once however many
+  polls see it. Another workspace's invoice is `payment_not_found`; a
+  paid amount other than the invoiced one is `payment_mismatch`.
+  `getPaymentProviderFor(mode)` and `currentPaymentMode()` resolve the
+  provider an invoice was opened with.
+- `@intelligo-dev/core`: the `payments` table (migration
+  `0003_local_payments`; `intelligo migrate` applies it).
+- `getRevenue()` in `@intelligo-dev/admin`: gross revenue per currency
+  as `Money[]` — every paid Stripe invoice, every paid one-time Stripe
+  checkout (a delayed method by its `async_payment_succeeded`), and
+  every paid local invoice. A subscription's checkout is counted
+  through its first invoice, not twice; refunds and fees are not
+  subtracted.
 
 ### Changed
 
@@ -120,6 +139,21 @@ it explains a framework decision.
   zod 4's `{ error }`, which zod 3 — still inside the peer range —
   ignored. An architecture test keeps zod-4-only params out of packages
   whose peer range admits zod 3.
+- The `payment-poll` item's seam `lib/local-payment.ts` answers one
+  question: `priceLocalPayment(reference)` returns `{ price, grant }`
+  (or null for a reference not sold this way). It replaces
+  `createLocalPayment` and `checkLocalPaymentStatus`; the item's actions
+  call `openLocalInvoice` / `settleLocalInvoice` themselves, and resolve
+  the caller's workspace with `requireWorkspace`. An installed seam
+  keeps compiling only once it exports `priceLocalPayment`.
+
+### Fixed
+
+- A local (QR-and-poll) payment that completed granted nothing and was
+  recorded nowhere: `pollLocalPayment` reported `paid` and the modal
+  called a client-side `onPaid`, so what was bought depended on the
+  browser. The grant now happens on the server when a poll sees the
+  invoice paid, and the payment is a `payments` row.
 
 ## [1.0.0-beta.13] — 2026-09-21
 

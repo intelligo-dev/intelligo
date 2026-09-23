@@ -10,12 +10,10 @@
 
 import type Stripe from "stripe";
 import { db } from "@intelligo-dev/core/db";
-import {
-  subscriptions,
-  creditPurchases,
-  creditBalances,
-} from "@intelligo-dev/core/db/schema";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { subscriptions, creditPurchases } from "@intelligo-dev/core/db/schema";
+import { money } from "@intelligo-dev/core/money";
+import { and, eq, ne } from "drizzle-orm";
+import { creditPurchasedBalance } from "./credit-ledger";
 import { getStripe } from "./stripe";
 import { getProductPlans, getRegisteredProductSlugs } from "./plan-registry";
 import { planRowId } from "./plan-rows";
@@ -372,32 +370,15 @@ async function grantCreditPurchase(
         .returning({ id: creditPurchases.id });
       if (claimed.length === 0) return false;
 
-      const credited = await tx
-        .insert(creditBalances)
-        .values({
-          id: crypto.randomUUID(),
-          workspaceId,
-          balanceMicros: grantedMicros,
-          totalPurchasedMicros: grantedMicros,
-          currency: grantedCurrency,
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: creditBalances.workspaceId,
-          set: {
-            balanceMicros: sql`${creditBalances.balanceMicros} + ${grantedMicros}`,
-            totalPurchasedMicros: sql`${creditBalances.totalPurchasedMicros} + ${grantedMicros}`,
-            updatedAt: new Date(),
-          },
-          // A ledger already denominated in something else is not this
-          // purchase's to add to.
-          setWhere: sql`${creditBalances.currency} = ${grantedCurrency}`,
-        })
-        .returning({ id: creditBalances.id });
+      const credited = await creditPurchasedBalance(
+        tx,
+        workspaceId,
+        money(grantedMicros, grantedCurrency)
+      );
 
       // Nothing credited: roll the claim back so the purchase stays
       // pending for an operator.
-      if (credited.length === 0) throw new LedgerCurrencyMismatch();
+      if (!credited) throw new LedgerCurrencyMismatch();
       return true;
     });
   } catch (error) {

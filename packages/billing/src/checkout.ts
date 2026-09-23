@@ -45,7 +45,10 @@ export type BillingServiceErrorCode =
   | "invalid_bundle"
   | "no_billing_account"
   | "session_not_found"
-  | "provider_error";
+  | "provider_error"
+  | "payment_not_found"
+  | "payment_mismatch"
+  | "currency_mismatch";
 
 /** Typed error every function in this module throws instead of a bare `Error`. */
 export class BillingServiceError extends Error {
