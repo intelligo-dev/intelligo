@@ -79,6 +79,7 @@ describe("decideApply", () => {
     unmanaged: true,
     legacy: [],
     legacyChainLength: 0,
+    legacyMissing: [],
     adoptable: false,
     ...over,
   });
@@ -134,12 +135,18 @@ describe("decideApply", () => {
       check({
         legacy: ["0000_old"],
         legacyChainLength: 2,
+        legacyMissing: ["0001_old"],
         unmanaged: false,
       }),
       true
     );
     expect(d.action).toBe("refuse");
-    if (d.action === "refuse") expect(d.reason).toContain("1 of the 2");
+    if (d.action === "refuse") {
+      expect(d.reason).toContain("1 of the 2");
+      expect(d.reason).toContain("has not run 0001_old");
+      expect(d.reason).toContain('"Databases from before 1.0"');
+      expect(d.reason).not.toMatch(/beta\.7/);
+    }
   });
 
   it("refuses a database that is ahead of this checkout", () => {

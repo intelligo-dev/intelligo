@@ -85,7 +85,8 @@ baselined first.
 which an empty database and a stale one share. A deploy gate that must tell them
 apart reads `--json`: one object on stdout whose `state` is `up_to_date`,
 `pending`, `fresh` (empty database), `unmanaged`, `ahead` or `legacy`, beside
-`exitCode`, `chain`, `applied`, `pending`, `unknown`, `legacy` and `adoptable`.
+`exitCode`, `chain`, `applied`, `pending`, `unknown`, `legacy`, `legacyMissing`
+and `adoptable`.
 
 ## `add maintenance` and its schedule
 

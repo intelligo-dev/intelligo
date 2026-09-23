@@ -81,6 +81,14 @@ it explains a framework decision.
   Feature keys match `key:` or `"key":` only outside comments, and a
   `lib/plans.ts` that re-exports its catalogue from a workspace package
   is checked against that package's file.
+- `intelligo migrate`, `migrate --check` and the core migrations README
+  no longer tell a database that ran part of the pre-1.0 chain to finish
+  it with `@intelligo-dev/core@1.0.0-beta.7`, a version that was never
+  published. The messages name the migrations it has not run (also
+  `legacyMissing` in `--json`), say that `1.0.0-beta.6` ships the chain
+  only through `0042`, and point at the README's three ways forward:
+  apply the missing SQL from your own copy, bring the schema to the
+  baseline and record it, or start from the baseline.
 
 ## [1.0.0-beta.13] — 2026-09-21
 
