@@ -2,7 +2,8 @@
  * What `create` installs is decided here, so the behaviours worth
  * pinning are the ones a developer would otherwise discover as a broken
  * app: a sibling item missing or installed too late, a typo installing
- * less than was asked for, shadcn run before it exists.
+ * less than was asked for, shadcn run before it exists, a nested
+ * install in a workspace member.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -12,11 +13,13 @@ import path from "node:path";
 
 import {
   detectPackageManager,
+  findWorkspaceRoot,
   formatCommand,
   installPlan,
   readRegistryCatalogue,
   shortDescription,
   withDependencies,
+  workspaceGlobs,
 } from "./registry-items.js";
 import type { RegistryRequires } from "./commands/doctor.js";
 
@@ -79,32 +82,91 @@ describe("installPlan", () => {
   afterEach(() => rmSync(appRoot, { recursive: true, force: true }));
 
   it("is empty when nothing was picked", () => {
-    expect(installPlan([], { appRoot, packageManager: "pnpm" })).toEqual([]);
+    expect(installPlan([], { appRoot, packageManager: "pnpm" })).toBeNull();
   });
 
-  it("installs the dependencies first when shadcn is not there yet", () => {
+  it("installs the dependencies first when shadcn is not there yet, then syncs the base and every item", () => {
     const plan = installPlan(["route-error", "chat"], {
       appRoot,
       packageManager: "pnpm",
-    }).map(formatCommand);
+    })!;
 
-    expect(plan).toEqual([
-      "pnpm install",
-      "pnpm exec shadcn add @intelligo/intelligo --yes --overwrite",
-      "pnpm exec shadcn add @intelligo/route-error @intelligo/chat --yes --overwrite",
-    ]);
+    expect(plan.install && formatCommand(plan.install, appRoot)).toBe(
+      "pnpm install"
+    );
+    expect(plan.items).toEqual(["intelligo", "route-error", "chat"]);
+    expect(formatCommand(plan.sync, appRoot)).toBe(
+      "pnpm exec intelligo sync intelligo route-error chat --force"
+    );
   });
 
   it("skips the install when the app already has shadcn", () => {
     mkdirSync(path.join(appRoot, "node_modules", ".bin"), { recursive: true });
     writeFileSync(path.join(appRoot, "node_modules", ".bin", "shadcn"), "");
 
-    const plan = installPlan(["chat"], { appRoot, packageManager: "npm" });
+    const plan = installPlan(["chat"], { appRoot, packageManager: "npm" })!;
 
-    expect(plan.map(formatCommand)).toEqual([
-      "npx shadcn add @intelligo/intelligo --yes --overwrite",
-      "npx shadcn add @intelligo/chat --yes --overwrite",
-    ]);
+    expect(plan.install).toBeNull();
+    expect(formatCommand(plan.sync)).toBe(
+      "npx intelligo sync intelligo chat --force"
+    );
+  });
+
+  it("installs from a parent workspace's root, with pnpm", () => {
+    const root = path.dirname(appRoot);
+    const plan = installPlan(["chat"], {
+      appRoot,
+      packageManager: "npm",
+      workspaceRoot: root,
+    })!;
+
+    expect(plan.install?.cwd).toBe(root);
+    expect(formatCommand(plan.install!, appRoot)).toBe(
+      "(cd .. && pnpm install)"
+    );
+    expect(formatCommand(plan.sync, appRoot)).toMatch(/^pnpm exec intelligo sync/);
+  });
+});
+
+describe("findWorkspaceRoot", () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), "intelligo-ws-"));
+  });
+  afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+  const workspace = (yaml: string) =>
+    writeFileSync(path.join(root, "pnpm-workspace.yaml"), yaml);
+
+  it("finds the workspace whose packages globs include the app", () => {
+    workspace('packages:\n  - "apps/*"\n  - packages/**\n');
+    expect(findWorkspaceRoot(path.join(root, "apps", "web"))).toBe(root);
+    expect(findWorkspaceRoot(path.join(root, "packages", "a", "b"))).toBe(root);
+  });
+
+  it("is null when the nearest workspace does not include the app", () => {
+    workspace("packages:\n  - apps/*\n  - '!apps/legacy'\n");
+    expect(findWorkspaceRoot(path.join(root, "tools", "x"))).toBeNull();
+    expect(findWorkspaceRoot(path.join(root, "apps", "legacy"))).toBeNull();
+  });
+
+  it("reads the flow-style list too", () => {
+    workspace('packages: ["apps/*"]\n');
+    expect(findWorkspaceRoot(path.join(root, "apps", "web"))).toBe(root);
+  });
+
+  it("is null outside any workspace", () => {
+    expect(findWorkspaceRoot(path.join(root, "app"))).toBeNull();
+  });
+});
+
+describe("workspaceGlobs", () => {
+  it("stops at the next top-level key and drops comments", () => {
+    expect(
+      workspaceGlobs(
+        "packages:\n  - apps/* # the apps\n  - packages/*\ncatalog:\n  - nope\n"
+      )
+    ).toEqual(["apps/*", "packages/*"]);
   });
 });
 

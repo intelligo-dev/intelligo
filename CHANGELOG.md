@@ -52,6 +52,18 @@ it explains a framework decision.
 
 - `apps/app` is regenerated with `intelligo sync` instead of a
   hand-written `shadcn add` loop.
+- `intelligo create` installs the pages it offers through `intelligo
+  sync`: one `shadcn add` per item, dependencies first, from the
+  registry bundled with the CLI rather than the hosted one, recorded in
+  `intelligo.manifest.json`. A failure leaves a known set installed and
+  prints the sync to re-run.
+- `intelligo create` inside a pnpm workspace that includes the new app
+  runs the dependency install from the workspace root instead of
+  starting a nested lockfile in the app.
+- Scaffold files a registry install replaces (`app/globals.css`,
+  `components/shell/theme-provider.tsx`, `lib/utils.ts`…) move to the
+  `app-scaffold` entry's `handedOver` list, so `upgrade --check` stops
+  reporting them `customized` and `add app-scaffold` leaves them alone.
 
 ## [1.0.0-beta.13] — 2026-09-21
 

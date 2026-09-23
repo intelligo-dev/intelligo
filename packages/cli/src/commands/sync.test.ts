@@ -16,6 +16,7 @@ import {
   installOrder,
   mergeMessages,
   missingMessageKeys,
+  scaffoldHandover,
   selectItems,
   syncCheck,
   syncCheckExitCode,
@@ -215,5 +216,45 @@ describe("syncCheck", () => {
     )!;
     expect(entry.state).toBe("messages-behind");
     expect(entry.missingKeys).toEqual(["empty"]);
+  });
+});
+
+describe("scaffoldHandover", () => {
+  const scaffold = [
+    "package.json",
+    "components.json",
+    "app/globals.css",
+    "components/shell/theme-provider.tsx",
+    "lib/utils.ts",
+    "lib/usage-config.ts",
+    "lib/plans.ts",
+  ];
+
+  it("hands the registry what an item ships, the stylesheet and what the install changed", () => {
+    expect(
+      scaffoldHandover({
+        scaffold,
+        changed: new Set(["lib/utils.ts", "package.json", "components.json"]),
+        shipped: new Set(["components/shell/theme-provider.tsx", "lib/usage-config.ts"]),
+        seams: context.requires.seams!,
+        css: "app/globals.css",
+      })
+    ).toEqual([
+      "app/globals.css",
+      "components/shell/theme-provider.tsx",
+      "lib/utils.ts",
+    ]);
+  });
+
+  it("keeps the stylesheet when the base was not installed", () => {
+    expect(
+      scaffoldHandover({
+        scaffold,
+        changed: new Set(),
+        shipped: new Set(),
+        seams: {},
+        css: null,
+      })
+    ).toEqual([]);
   });
 });

@@ -15,7 +15,9 @@
  *   files are merged key by key, the app's copy winning;
  * - the record: intelligo.manifest.json keeps each installed file's
  *   hash, so `--check` can tell a file edited by hand from one a newer
- *   registry replaced.
+ *   registry replaced. Scaffold files an install replaces (globals.css,
+ *   the theme provider) leave the `app-scaffold` record for this one,
+ *   so `upgrade --check` stops calling them customized.
  *
  * `--check` installs nothing and exits 1 when any installed file is
  * missing, edited or behind the registry — the gate CI runs.
@@ -30,6 +32,7 @@ import path from "node:path";
 import type { RegistryRequires } from "./doctor.js";
 import {
   emptyManifest,
+  handOver,
   hashContents,
   readManifest,
   writeManifest,
@@ -358,6 +361,48 @@ function run(
   });
 }
 
+/** The `intelligo create` feature whose files an install may replace. */
+export const SCAFFOLD_FEATURE = "app-scaffold";
+
+/**
+ * Scaffold files the install extends in place rather than replaces:
+ * shadcn adds dependencies to package.json and style fields to
+ * components.json, and both stay the app's.
+ */
+const EDITED_IN_PLACE: ReadonlySet<string> = new Set([
+  "package.json",
+  "components.json",
+]);
+
+/**
+ * The scaffold files an install has made the registry's: a file an
+ * installed item ships, the Tailwind stylesheet once the design-system
+ * base is in (it rewrites the tokens), or any scaffold file the install
+ * changed (shadcn's own `utils`, `sonner`). Seams stay the app's, and
+ * so do the files shadcn only extends. Left in the scaffold's record,
+ * each would read `customized` in `upgrade --check` forever.
+ */
+export function scaffoldHandover(input: {
+  scaffold: readonly string[];
+  changed: ReadonlySet<string>;
+  shipped: ReadonlySet<string>;
+  seams: Readonly<Record<string, string>>;
+  css: string | null;
+}): string[] {
+  return input.scaffold.filter(
+    (file) =>
+      !(file in input.seams) &&
+      !EDITED_IN_PLACE.has(file) &&
+      (input.shipped.has(file) ||
+        file === input.css ||
+        input.changed.has(file))
+  );
+}
+
+function readIfExists(file: string): string | null {
+  return existsSync(file) ? readFileSync(file, "utf8") : null;
+}
+
 export type SyncApplyOptions = {
   force?: boolean;
   log?: (line: string) => void;
@@ -419,7 +464,15 @@ export async function syncApply(
 
   const componentsBefore = JSON.parse(readFileSync(componentsPath, "utf8")) as {
     registries?: Record<string, string>;
+    tailwind?: { css?: string };
   };
+  // The scaffold's files as they are now, to see which the install replaces.
+  const scaffoldFiles = (
+    readManifest(appRoot)?.features[SCAFFOLD_FEATURE]?.files ?? []
+  ).map((f) => f.path);
+  const scaffoldBefore = new Map(
+    scaffoldFiles.map((f) => [f, readIfExists(path.join(appRoot, f))])
+  );
   const originalRegistry = componentsBefore.registries?.["@intelligo"];
   const { server, url } = await serveRegistry(context.registryDir);
 
@@ -491,8 +544,24 @@ export async function syncApply(
       asInstalled(readFileSync(path.join(appRoot, e.path), "utf8"))
     );
   }
-  const manifest: Manifest =
-    readManifest(appRoot) ?? emptyManifest(context.frameworkVersion);
+  const changed = new Set(
+    scaffoldFiles.filter(
+      (f) => readIfExists(path.join(appRoot, f)) !== scaffoldBefore.get(f)
+    )
+  );
+  const manifest: Manifest = handOver(
+    readManifest(appRoot) ?? emptyManifest(context.frameworkVersion),
+    SCAFFOLD_FEATURE,
+    scaffoldHandover({
+      scaffold: scaffoldFiles,
+      changed,
+      shipped: new Set(shipped.keys()),
+      seams,
+      css: items.includes(BASE_ITEM)
+        ? (componentsBefore.tailwind?.css ?? null)
+        : null,
+    })
+  );
   const recordedItems = new Set([
     ...(manifest.registry?.items ?? []),
     ...names,

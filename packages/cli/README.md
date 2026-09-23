@@ -50,6 +50,14 @@ first. `intelligo sync --check` installs nothing, lists every file that is
 `missing`, `edited`, `outdated` or `messages-behind`, and exits 1 on any —
 the gate to run in CI.
 
+`create` installs the pages you pick the same way: the dependencies first
+(from the root of a parent pnpm workspace when the new app is one of its
+members, so the workspace keeps one lockfile), then `intelligo sync` of the
+design-system base and every item, one `shadcn add` each. Scaffold files an
+item replaces — `app/globals.css`, the theme provider, `lib/utils.ts` — move
+from the `app-scaffold` record to the registry's (the feature's `handedOver`
+list), so `upgrade --check` does not report them as yours forever.
+
 ## Why `migrate` is not `drizzle-kit migrate`
 
 Drizzle applies migrations in journal-timestamp order and skips anything

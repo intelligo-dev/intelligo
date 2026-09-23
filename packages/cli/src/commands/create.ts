@@ -9,10 +9,12 @@
  *
  * In a terminal it asks for the project name when none is given, then
  * which registry pages to install (`--items a,b` or `--all` answer that
- * without asking). The pages are installed by the shadcn CLI the scaffold
- * declares, after the dependencies — and only once you approve the exact
- * commands, or pass `--yes`. `--no-install` stops after the scaffold and
- * prints them instead.
+ * without asking). The pages are installed by `intelligo sync` — one
+ * `shadcn add` per item, from the registry this CLI carries — after the
+ * dependencies (from the root of a parent pnpm workspace when the app is
+ * a member of one), and only once you approve the exact commands, or
+ * pass `--yes`. `--no-install` stops after the scaffold and prints them
+ * instead.
  */
 
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
@@ -98,6 +100,8 @@ export type NextSteps = {
   installed: boolean;
   /** Install commands the developer declined, or that did not get to run. */
   pending?: Command[];
+  /** The parent pnpm workspace the app is a member of, installed from its root. */
+  workspaceRoot?: string | null;
 };
 
 /** A path the reader can paste into a shell, spaces and quotes included. */
@@ -109,14 +113,20 @@ function shellQuote(value: string): string {
 
 export function formatNextSteps(target: string, next: NextSteps): string {
   const pm = next.packageManager;
+  const appRoot = path.resolve(target);
+  const install: Command = {
+    command: pm,
+    args: ["install"],
+    cwd: next.workspaceRoot ?? appRoot,
+  };
   return [
-    `cd ${shellQuote(path.relative(process.cwd(), path.resolve(target)) || ".")}`,
+    `cd ${shellQuote(path.relative(process.cwd(), appRoot) || ".")}`,
     "cp .env.example .env.local   # then fill it in",
     ...(next.pending?.length
-      ? next.pending.map(formatCommand)
+      ? next.pending.map((c) => formatCommand(c, appRoot))
       : next.installed
         ? []
-        : [`${pm} install`]),
+        : [formatCommand(install, appRoot)]),
     `${pm === "npm" ? "npm run" : pm} dev`,
   ].join("\n");
 }

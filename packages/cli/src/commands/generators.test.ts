@@ -19,7 +19,7 @@ import path from "node:path";
 
 import { addExitCode, addFeature, formatAddResult } from "./add.js";
 import { upgradeCheck, upgradeCheckExitCode } from "./upgrade-check.js";
-import { readManifest } from "../manifest.js";
+import { handOver, readManifest, writeManifest } from "../manifest.js";
 
 let appRoot: string;
 let templatesDir: string;
@@ -278,5 +278,34 @@ describe("upgradeCheck", () => {
     rmSync(target());
 
     expect(check().items[0]!.state).toBe("deleted");
+  });
+});
+
+describe("a file handed over to the registry", () => {
+  const handOverDemo = () => {
+    const manifest = readManifest(appRoot)!;
+    writeManifest(appRoot, handOver(manifest, "demo", ["app/demo/page.tsx"]));
+  };
+
+  it("leaves upgrade --check: neither customized nor new", () => {
+    add();
+    writeFileSync(target(), "// the registry's now\n");
+    handOverDemo();
+
+    const report = upgradeCheck({ appRoot, templatesDir });
+    expect(report.items).toEqual([]);
+  });
+
+  it("is not written back by add, and stays handed over when add re-records", () => {
+    add();
+    writeFileSync(target(), "// the registry's now\n");
+    handOverDemo();
+
+    const r = add(true);
+    expect(r.written).toEqual([]);
+    expect(readFileSync(target(), "utf8")).toBe("// the registry's now\n");
+    expect(readManifest(appRoot)!.features.demo!.handedOver).toEqual([
+      "app/demo/page.tsx",
+    ]);
   });
 });

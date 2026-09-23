@@ -138,8 +138,11 @@ export function addFeature(feature: string, options: AddOptions): AddResult {
   };
   if (spec.deprecated) result.deprecated = spec.deprecated;
   const recorded: GeneratedFile[] = [];
+  const handedOver = new Set(previous?.handedOver ?? []);
 
   for (const file of spec.files) {
+    // A registry item replaced it; `intelligo sync` keeps it now.
+    if (handedOver.has(file.target)) continue;
     const source = path.join(options.templatesDir, file.template);
     const target = path.join(options.appRoot, file.target);
     const contents = substitute(

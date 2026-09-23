@@ -1,7 +1,10 @@
 /**
  * The conversation around `createApp`: ask what the flags did not say,
  * scaffold, and install the chosen registry items once the developer
- * has approved the commands that do it.
+ * has approved the commands that do it. The items go in through
+ * `intelligo sync` — one `shadcn add` per item from the registry this
+ * CLI carries, recorded in the manifest — exactly as a later sync
+ * would put them back.
  *
  * Nothing runs on the developer's machine without their say-so. In a
  * terminal the commands are shown and confirmed; without one (CI, a
@@ -21,10 +24,12 @@ import {
   formatNextSteps,
   isOccupied,
 } from "./create.js";
+import { syncApply, type SyncContext } from "./sync.js";
+import { resolveRegistryDir } from "../registry-bundle.js";
 import {
   detectPackageManager,
+  findWorkspaceRoot,
   formatCommand,
-  hasLocalShadcn,
   installPlan,
   readRegistryCatalogue,
   shortDescription,
@@ -178,14 +183,24 @@ export async function runCreate(
   }
 
   // 4. The pages — only with approval.
-  const plan = installPlan(items, { appRoot, packageManager });
-  let approved = plan.length > 0 && flags.install && flags.yes;
-  if (plan.length > 0 && flags.install && !flags.yes && interactive) {
-    const needsInstall = !hasLocalShadcn(appRoot);
-    p.note(plan.map(formatCommand).join("\n"), "Commands to run in " + target);
+  const workspaceRoot = findWorkspaceRoot(appRoot);
+  const plan = installPlan(items, { appRoot, packageManager, workspaceRoot });
+  const commands: Command[] = plan
+    ? [...(plan.install ? [plan.install] : []), plan.sync]
+    : [];
+  const show = (c: Command) => formatCommand(c, appRoot);
+  const registryDir = resolveRegistryDir(context.templatesDir);
+  if (plan && flags.install && !registryDir) {
+    console.error(
+      "This CLI has no bundled registry to install pages from — in the framework repository, run `pnpm registry:build` first."
+    );
+  }
+  let approved = plan !== null && flags.install && flags.yes && !!registryDir;
+  if (plan && flags.install && registryDir && !flags.yes && interactive) {
+    p.note(commands.map(show).join("\n"), "Commands to run in " + target);
     const answer = await p.confirm({
-      message: needsInstall
-        ? `shadcn is not installed yet — install the dependencies (shadcn included) with ${packageManager} and add ${items.length} page(s)?`
+      message: plan.install
+        ? `shadcn is not installed yet — install the dependencies (shadcn included) with ${plan.install.command}${workspaceRoot ? " from the workspace root" : ""} and add ${items.length} page(s)?`
         : `Add ${items.length} page(s) with shadcn?`,
     });
     if (bail(answer, `The scaffold is in ${target}; nothing was installed.`))
@@ -194,26 +209,50 @@ export async function runCreate(
   }
 
   let pending: Command[] = [];
-  if (approved) {
-    for (const [i, command] of plan.entries()) {
-      if (interactive) p.log.step(formatCommand(command));
-      else console.log(`› ${formatCommand(command)}`);
-      if (!run(command, appRoot)) {
-        pending = plan.slice(i);
-        const message = `\`${formatCommand(command)}\` failed — the scaffold is in place; run the rest by hand.`;
-        if (interactive) p.log.error(message);
-        else console.error(message);
-        break;
+  if (approved && plan && registryDir) {
+    const say = (line: string) =>
+      interactive ? p.log.step(line) : console.log(line);
+    const fail = (message: string) =>
+      interactive ? p.log.error(message) : console.error(message);
+    let ok = true;
+    if (plan.install) {
+      say(`› ${show(plan.install)}`);
+      if (!run(plan.install, plan.install.cwd ?? appRoot)) {
+        fail(
+          `\`${show(plan.install)}\` failed — the scaffold is in place; run the rest by hand.`
+        );
+        pending = commands;
+        ok = false;
+      }
+    }
+    if (ok) {
+      say(`› ${show(plan.sync)}`);
+      const syncContext: SyncContext = {
+        appRoot,
+        registryDir,
+        requires: catalogue.requires,
+        frameworkVersion: context.frameworkVersion,
+      };
+      const code = await syncApply(plan.items, syncContext, {
+        force: true,
+        log: say,
+      });
+      if (code !== 0) {
+        fail(
+          "The pages did not all install — the scaffold is in place; re-run the sync by hand."
+        );
+        pending = [plan.sync];
       }
     }
   } else {
-    pending = plan;
+    pending = commands;
   }
 
   const next = {
-    packageManager,
+    packageManager: workspaceRoot ? ("pnpm" as const) : packageManager,
     installed: approved && pending.length === 0,
     pending,
+    workspaceRoot,
   };
   if (interactive) {
     p.note(formatNextSteps(target, next), "Next");

@@ -39,6 +39,14 @@ export type FeatureEntry = {
    * would make every substituted file look permanently outdated.
    */
   variables?: Record<string, string>;
+  /**
+   * Files this feature wrote that a registry install has since replaced
+   * (the scaffold's globals.css once the design-system base lands):
+   * `intelligo sync` owns them now, so `upgrade --check` neither
+   * compares them nor offers them as new, and `add` does not write them
+   * back.
+   */
+  handedOver?: string[];
 };
 
 /**
@@ -96,13 +104,42 @@ export function recordFeature(
   files: GeneratedFile[],
   variables?: Record<string, string>
 ): Manifest {
+  const handedOver = manifest.features[feature]?.handedOver;
   return {
     ...manifest,
     features: {
       ...manifest.features,
-      [feature]: variables
-        ? { templateVersion, files, variables }
-        : { templateVersion, files },
+      [feature]: {
+        templateVersion,
+        files,
+        ...(variables ? { variables } : {}),
+        ...(handedOver?.length ? { handedOver } : {}),
+      },
+    },
+  };
+}
+
+/**
+ * Move `paths` out of a feature's generated files into its `handedOver`
+ * list. A no-op for a feature the manifest does not record.
+ */
+export function handOver(
+  manifest: Manifest,
+  feature: string,
+  paths: readonly string[]
+): Manifest {
+  const entry = manifest.features[feature];
+  if (!entry || paths.length === 0) return manifest;
+  const moved = new Set(paths);
+  return {
+    ...manifest,
+    features: {
+      ...manifest.features,
+      [feature]: {
+        ...entry,
+        files: entry.files.filter((f) => !moved.has(f.path)),
+        handedOver: [...new Set([...(entry.handedOver ?? []), ...paths])].sort(),
+      },
     },
   };
 }
