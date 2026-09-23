@@ -16,11 +16,11 @@ import {
   updateWorkspaceSchema,
   type UpdateWorkspaceInput,
 } from "@intelligo-dev/auth";
+import type { ActionResult } from "@intelligo-dev/next";
 
 import { workspace } from "@/lib/workspace";
 
-export type WorkspaceActionResult<T = undefined> =
-  { success: true; data: T } | { success: false; error: string };
+export type WorkspaceActionResult<T = undefined> = ActionResult<T>;
 
 type Translator = Awaited<
   ReturnType<typeof getTranslations<"workspace-settings">>

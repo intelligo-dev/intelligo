@@ -69,8 +69,44 @@ it explains a framework decision.
   stores a synthesized profile in `user_profile_snapshots`, one row per
   user per workspace, bumping `version` atomically and writing a
   `snapshot` audit row in the same transaction.
+- A "Skip to content" link, visible only when focused, is the first
+  focusable element of the `app-shell`, `auth-login` and `onboarding`
+  layouts; each wraps its page in a `main#main-content` landmark
+  (`tabIndex={-1}`) and carries the copy as `skipToContent`.
+- The `notifications` item ships a new seam, `lib/notification-types.tsx`:
+  a map from a product's notification `type` to its `{ icon, className }`,
+  empty by default and consulted before the built-in types.
+  `workspace_invitation` notifications get their own icon.
+- Plan copy is translatable. A deployment names each plan's `name`,
+  `description` and `features` per locale in a `plans` message namespace
+  (`messages/<locale>/plans.json`, keyed by plan slug); the `pricing`,
+  `billing-settings` and `usage` items read it through the pricing
+  item's `lib/plan-copy.ts` and fall back to the catalogue's strings for
+  any key a locale leaves out. The pricing item ships an empty
+  `messages/en/plans.json`.
+- `@intelligo-dev/next` ships the transport toolkit: `ActionResult<T>`,
+  the `{ success, data } | { success, error }` shape a Server Action
+  returns, and the `./route` subpath's Route Handler guards `withAuth`,
+  `withWorkspace` and `withRole(roles, …)`, which resolve the caller
+  through `requireAuth` / `requireWorkspace` / `requireRole` and answer
+  a failed check as JSON (`401` unauthenticated, `403` no workspace or
+  forbidden) without catching anything the handler throws.
 
 ### Changed
+
+- `NotificationType` in `@intelligo-dev/core/notifications` is open:
+  `BuiltInNotificationType | (string & {})`, so a product creates its
+  own notification types without a cast. `BuiltInNotificationType` names
+  the framework's own.
+- **Breaking:** `getBillingOverview()` returns `planName: null` for a
+  workspace with no plan instead of the English `"Free"`; `planSlug`
+  stays `"free"`. The `billing-settings` item renders its own translated
+  `freePlan` label.
+- Every registry item's actions type their results with
+  `ActionResult` from `@intelligo-dev/next` and declare the package; the
+  item-specific names (`ProfileActionResult`, `TeamActionResult`, …)
+  remain as aliases. `InvitationActionResult`'s success carries
+  `data: undefined` like the others.
 
 - `apps/app` is regenerated with `intelligo sync` instead of a
   hand-written `shadcn add` loop.

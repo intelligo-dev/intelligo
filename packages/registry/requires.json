@@ -29,7 +29,8 @@
     "lib/chat-canvas-config.tsx": "canvas editors per document kind",
     "lib/chat-config.tsx": "agent identity, starters, header slot",
     "lib/chat-server-config.ts": "the chat transport's configuration",
-    "lib/chat-widget-config.tsx": "the embedded widget"
+    "lib/chat-widget-config.tsx": "the embedded widget",
+    "lib/notification-types.tsx": "icons for the product's notification types"
   },
   "items": {
     "smoke": {

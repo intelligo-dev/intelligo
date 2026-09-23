@@ -1,7 +1,7 @@
 {
   "name": "@intelligo-dev/next",
   "version": "1.0.0-beta.13",
-  "description": "The Next.js adapter: the one Intelligo package that imports next/*, binding request context and auth routes.",
+  "description": "The Next.js adapter: the one Intelligo package that imports next/*, binding request context, auth routes and Route Handler guards.",
   "keywords": [
     "intelligo",
     "ai-saas",
@@ -25,7 +25,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./auth": "./src/auth.ts"
+    "./auth": "./src/auth.ts",
+    "./route": "./src/route.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
@@ -69,6 +70,10 @@
       "./auth": {
         "types": "./dist/auth.d.ts",
         "default": "./dist/auth.js"
+      },
+      "./route": {
+        "types": "./dist/route.d.ts",
+        "default": "./dist/route.js"
       }
     }
   },

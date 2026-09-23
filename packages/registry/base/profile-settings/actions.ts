@@ -16,12 +16,12 @@ import {
   updateProfileSchema,
   type UpdateProfileInput,
 } from "@intelligo-dev/auth";
+import type { ActionResult } from "@intelligo-dev/next";
 
 import { routing } from "@/i18n/routing";
 import { profile } from "@/lib/profile";
 
-export type ProfileActionResult<T = undefined> =
-  { success: true; data: T } | { success: false; error: string };
+export type ProfileActionResult<T = undefined> = ActionResult<T>;
 
 type Translator = Awaited<
   ReturnType<typeof getTranslations<"profile-settings">>
