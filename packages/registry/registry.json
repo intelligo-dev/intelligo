@@ -2177,7 +2177,7 @@
       "name": "payment-poll",
       "type": "registry:block",
       "title": "QR Payment (poll)",
-      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
+      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — with the invoice recorded and a paid one granted on the server; lib/local-payment.ts says what each reference costs and grants. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
       "registryDependencies": [
         "@intelligo/button",
         "@intelligo/dialog",
@@ -2185,6 +2185,7 @@
       ],
       "dependencies": [
         "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
         "lucide-react",
         "server-only",
         "next-intl"
