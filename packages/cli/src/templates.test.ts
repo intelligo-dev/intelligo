@@ -167,6 +167,21 @@ describe("template catalogue", () => {
     expect(catalogue.maintenance!.description).toContain("five minutes");
   });
 
+  it("the vitest feature aliases server-only to the stub it writes, and inlines the framework", () => {
+    const spec = catalogue.vitest!;
+    const targets = spec.files.map((f) => f.target);
+    expect(targets).toEqual(["vitest.config.ts", "tests/stubs/server-only.ts"]);
+
+    const config = readFileSync(
+      path.join(TEMPLATES_DIR, "vitest/vitest.config.ts.tpl"),
+      "utf8"
+    );
+    expect(config).toContain('"server-only": path.join(root, "tests/stubs/server-only.ts")');
+    expect(config).toContain('"@": root');
+    expect(config).toContain("inline: [/node_modules\\/@intelligo-dev\\//]");
+    expect(spec.nextSteps?.join("\n")).toMatch(/add -D vitest/);
+  });
+
   it("no two features write to the same path", () => {
     // Two features claiming one file would make `add` order-dependent
     // and the manifest ambiguous about which template owns it.

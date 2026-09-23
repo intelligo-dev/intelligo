@@ -52,11 +52,25 @@ it explains a framework decision.
   `messages/<locale>/<item>.json` is compared with the app's English
   file on disk, and a missing file or missing keys fail the check with
   the keys named.
+- `intelligo add vitest`: a `vitest.config.ts` with the `@` alias, a
+  `server-only` stub at `tests/stubs/server-only.ts`, and
+  `test.server.deps.inline` for the `@intelligo-dev/*` packages, whose
+  compiled ESM imports `server-only` where a Vite alias cannot reach it
+  otherwise. It prints the devDependency and script to add. A feature in
+  `templates/manifest.json` can now carry `nextSteps`, printed by `add`.
+- Docs: a "Testing your app" guide, and `docs/migrations/1.0.0-beta.14.md`
+  — the upgrade from `1.0.0-beta.6`, in the order it is executed,
+  including the features that left the framework and where each now
+  lives in the app.
 
 ### Changed
 
 - `apps/app` is regenerated with `intelligo sync` instead of a
   hand-written `shadcn add` loop.
+- The composition-root concept page says why composing once in
+  `instrumentation.ts` is enough: registries live on `globalThis` per
+  process, so no module needs an "ensure composed" import; the Edge
+  runtime is its own scope and composes separately.
 - `intelligo create` installs the pages it offers through `intelligo
   sync`: one `shadcn add` per item, dependencies first, from the
   registry bundled with the CLI rather than the hosted one, recorded in
