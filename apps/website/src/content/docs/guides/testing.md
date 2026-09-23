@@ -1,6 +1,6 @@
 ---
 title: Testing your app
-description: Run Vitest against an app built on the framework — the server-only stub, why the framework packages are inlined, mocking the model, and what is worth testing in an app whose pages are installed.
+description: Run Vitest on an app built on the framework — the server-only stub, why the framework packages are inlined, keeping models out of CI, and what to test.
 order: 7
 ---
 
