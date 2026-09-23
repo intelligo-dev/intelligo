@@ -8,7 +8,11 @@ import { notifications } from "../db/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 import type { CreateNotificationParams } from "./types";
 
-export type { NotificationType, CreateNotificationParams } from "./types";
+export type {
+  BuiltInNotificationType,
+  NotificationType,
+  CreateNotificationParams,
+} from "./types";
 
 export {
   triggerQuotaNotification,

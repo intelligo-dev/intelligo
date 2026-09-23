@@ -1929,6 +1929,11 @@
           "target": "actions/notifications.ts"
         },
         {
+          "path": "base/notifications/lib/notification-types.tsx",
+          "type": "registry:file",
+          "target": "lib/notification-types.tsx"
+        },
+        {
           "path": "base/notifications/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/notifications.json"

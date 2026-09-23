@@ -51,8 +51,17 @@ it explains a framework decision.
   focusable element of the `app-shell`, `auth-login` and `onboarding`
   layouts; each wraps its page in a `main#main-content` landmark
   (`tabIndex={-1}`) and carries the copy as `skipToContent`.
+- The `notifications` item ships a new seam, `lib/notification-types.tsx`:
+  a map from a product's notification `type` to its `{ icon, className }`,
+  empty by default and consulted before the built-in types.
+  `workspace_invitation` notifications get their own icon.
 
 ### Changed
+
+- `NotificationType` in `@intelligo-dev/core/notifications` is open:
+  `BuiltInNotificationType | (string & {})`, so a product creates its
+  own notification types without a cast. `BuiltInNotificationType` names
+  the framework's own.
 
 - `apps/app` is regenerated with `intelligo sync` instead of a
   hand-written `shadcn add` loop.
