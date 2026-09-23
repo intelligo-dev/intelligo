@@ -13,6 +13,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { hashContents, writeManifest } from "../manifest.js";
 import {
+  appLocales,
+  formatSyncReport,
   installOrder,
   mergeMessages,
   missingMessageKeys,
@@ -216,6 +218,64 @@ describe("syncCheck", () => {
     )!;
     expect(entry.state).toBe("messages-behind");
     expect(entry.missingKeys).toEqual(["empty"]);
+  });
+});
+
+describe("other locales", () => {
+  const routing = (locales: string) =>
+    write(
+      context.appRoot,
+      "i18n/routing.ts",
+      `export const routing = defineRouting({\n  locales: [${locales}],\n  defaultLocale: "en",\n});\n`
+    );
+  const english = () =>
+    write(
+      context.appRoot,
+      "messages/en/usage.json",
+      JSON.stringify({ title: "Usage", empty: { title: "None" }, product: "Ours" })
+    );
+  const entry = (rel: string) =>
+    syncCheck(["usage"], context).entries.find((e) => e.path === rel);
+
+  it("reads the app's locales, English alone without a routing file", () => {
+    expect(appLocales(context.appRoot)).toEqual(["en"]);
+    routing(`"en", 'mn'`);
+    expect(appLocales(context.appRoot)).toEqual(["en", "mn"]);
+  });
+
+  it("checks nothing extra for an English-only app", () => {
+    english();
+    expect(entry("messages/mn/usage.json")).toBeUndefined();
+  });
+
+  it("reports a locale missing keys the English file on disk has, product keys included", () => {
+    routing(`"en", "mn"`);
+    english();
+    write(context.appRoot, "messages/mn/usage.json", JSON.stringify({ title: "Хэрэглээ" }));
+
+    const mn = entry("messages/mn/usage.json")!;
+    expect(mn.state).toBe("locale-behind");
+    expect(mn.missingKeys).toEqual(["empty", "product"]);
+    expect(syncCheckExitCode(syncCheck(["usage"], context))).toBe(1);
+    expect(formatSyncReport(syncCheck(["usage"], context))).toContain(
+      "locale-behind (lacks keys the app's English copy has"
+    );
+  });
+
+  it("reports a locale with no file at all, and passes a complete one", () => {
+    routing(`"en", "mn"`);
+    english();
+    expect(entry("messages/mn/usage.json")).toMatchObject({
+      state: "locale-behind",
+      missingKeys: ["title", "empty", "product"],
+    });
+
+    write(
+      context.appRoot,
+      "messages/mn/usage.json",
+      JSON.stringify({ title: "Х", empty: { title: "Х" }, product: "Х" })
+    );
+    expect(entry("messages/mn/usage.json")!.state).toBe("current");
   });
 });
 

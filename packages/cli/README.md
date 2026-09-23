@@ -47,8 +47,18 @@ Name the items once — `intelligo sync intelligo app-shell chat …` — and
 afterwards a bare `intelligo sync` updates them. It refuses to overwrite a file
 you edited by hand unless you pass `--force`: move the change into a seam
 first. `intelligo sync --check` installs nothing, lists every file that is
-`missing`, `edited`, `outdated` or `messages-behind`, and exits 1 on any —
-the gate to run in CI.
+`missing`, `edited`, `outdated`, `messages-behind` or `locale-behind`, and
+exits 1 on any — the gate to run in CI.
+
+### Other locales
+
+The registry ships English (`messages/en/<item>.json`). When the app's
+`i18n/routing.ts` lists more `locales`, `sync --check` compares each other
+locale's copy of every shipped namespace — `messages/<locale>/<item>.json` —
+with the app's English file on disk (the merged copy, your own keys
+included) and reports a missing file or missing keys as `locale-behind`,
+with the keys. `sync` never writes another locale: after it adds English
+keys, translate them, and the check passes again.
 
 `create` installs the pages you pick the same way: the dependencies first
 (from the root of a parent pnpm workspace when the new app is one of its

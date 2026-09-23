@@ -64,13 +64,15 @@ export type SyncFileState =
   /** a seam: the app's own from the first install on */
   | "seam"
   /** a message file that lacks keys the registry's has */
-  | "messages-behind";
+  | "messages-behind"
+  /** another locale's copy of a shipped namespace lacks keys the app's English has */
+  | "locale-behind";
 
 export type SyncEntry = {
   item: string;
   path: string;
   state: SyncFileState;
-  /** For `messages-behind`: the dotted keys the app's copy lacks. */
+  /** For `messages-behind` / `locale-behind`: the dotted keys the copy lacks. */
   missingKeys?: string[];
 };
 
@@ -99,6 +101,7 @@ const FAILING: ReadonlySet<SyncFileState> = new Set([
   "differs",
   "missing",
   "messages-behind",
+  "locale-behind",
 ]);
 
 /**
@@ -205,6 +208,61 @@ export function mergeMessages(registry: Json, app: Json): Json {
 const isMessages = (target: string) =>
   target.startsWith("messages/") && target.endsWith(".json");
 
+/** The locale the registry ships messages in. */
+const SOURCE_LOCALE = "en";
+
+/**
+ * The app's locales, from `locales: [...]` in i18n/routing.ts — the
+ * source locale alone when there is no such file or list.
+ */
+export function appLocales(appRoot: string): string[] {
+  const file = path.join(appRoot, "i18n", "routing.ts");
+  if (!existsSync(file)) return [SOURCE_LOCALE];
+  const list = /\blocales\s*:\s*\[([^\]]*)\]/.exec(
+    readFileSync(file, "utf8")
+  );
+  const locales = [...(list?.[1] ?? "").matchAll(/["'`]([^"'`]+)["'`]/g)].map(
+    (m) => m[1]!
+  );
+  return locales.length > 0 ? locales : [SOURCE_LOCALE];
+}
+
+/**
+ * Every other locale's copy of the namespaces the registry ships,
+ * against the app's English file on disk — the merged copy, product
+ * keys included, which is what the other locales translate. A missing
+ * file lacks every key.
+ */
+function localeEntries(
+  context: SyncContext,
+  files: readonly ShippedFile[]
+): SyncEntry[] {
+  const others = appLocales(context.appRoot).filter((l) => l !== SOURCE_LOCALE);
+  if (others.length === 0) return [];
+  const prefix = `messages/${SOURCE_LOCALE}/`;
+  const entries: SyncEntry[] = [];
+  for (const { item, target } of files) {
+    if (!target.startsWith(prefix) || !target.endsWith(".json")) continue;
+    const english = path.join(context.appRoot, target);
+    if (!existsSync(english)) continue;
+    const source = JSON.parse(readFileSync(english, "utf8")) as Json;
+    for (const locale of others) {
+      const rel = `messages/${locale}/${target.slice(prefix.length)}`;
+      const abs = path.join(context.appRoot, rel);
+      const missingKeys = missingMessageKeys(
+        source,
+        existsSync(abs) ? (JSON.parse(readFileSync(abs, "utf8")) as Json) : {}
+      );
+      entries.push(
+        missingKeys.length > 0
+          ? { item, path: rel, state: "locale-behind", missingKeys }
+          : { item, path: rel, state: "current" }
+      );
+    }
+  }
+  return entries;
+}
+
 type ShippedFile = { item: string; target: string; content: string };
 
 function shippedFiles(context: SyncContext, items: readonly string[]): {
@@ -261,6 +319,7 @@ export function syncCheck(
     };
   });
 
+  entries.push(...localeEntries(context, files));
   return { version: context.frameworkVersion, items: closure, entries };
 }
 
@@ -283,6 +342,8 @@ export function formatSyncReport(report: SyncReport): string {
     differs: "not what the registry ships, and never synced",
     missing: "not installed",
     "messages-behind": "lacks registry keys — `intelligo sync` adds them",
+    "locale-behind":
+      "lacks keys the app's English copy has — translate them; sync never writes another locale",
   };
   for (const state of FAILING) {
     const group = report.entries.filter((e) => e.state === state);
@@ -436,6 +497,9 @@ export async function syncApply(
 
   const items = installOrder(names, context.requires);
   const before = syncCheck(items, context);
+  const shippedTargets = new Set(
+    shippedFiles(context, items).files.map((f) => f.target)
+  );
   const edited = before.entries.filter(
     (e) => e.state === "edited" || e.state === "differs"
   );
@@ -456,7 +520,7 @@ export async function syncApply(
   const seams = context.requires.seams ?? {};
   const kept = new Map<string, string>();
   for (const e of before.entries) {
-    if (e.state === "missing") continue;
+    if (e.state === "missing" || !shippedTargets.has(e.path)) continue;
     if (e.path in seams || isMessages(e.path)) {
       kept.set(e.path, readFileSync(path.join(appRoot, e.path), "utf8"));
     }

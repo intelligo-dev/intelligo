@@ -47,6 +47,11 @@ it explains a framework decision.
 - `profile.setPreferredLanguage(locale)` in `@intelligo-dev/auth`, and
   the `profile-settings` item's `updatePreferredLanguage` action,
   checked against `routing.locales`.
+- `intelligo sync --check` reports `locale-behind`: for every locale
+  in `i18n/routing.ts` besides `en`, each shipped namespace's
+  `messages/<locale>/<item>.json` is compared with the app's English
+  file on disk, and a missing file or missing keys fail the check with
+  the keys named.
 
 ### Changed
 
