@@ -14,12 +14,14 @@ import {
   CheckCircle,
   Clock,
   CreditCard,
+  Mail,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import type { NotificationData } from "@/actions/notifications";
+import { notificationTypes } from "@/lib/notification-types";
 
 export interface NotificationItemProps {
   notification: NotificationData;
@@ -47,13 +49,18 @@ export function RelativeTime({ iso }: { iso: string }) {
 }
 
 /**
- * Icon and colour for a built-in notification `type`; any other type
- * falls back to a plain bell.
+ * Icon and colour for a notification `type`: the product's own entry in
+ * `lib/notification-types.tsx` first, then the built-in types; any other
+ * type falls back to a plain bell.
  */
 export function notificationIcon(type: string): {
   Icon: LucideIcon;
   color: string;
 } {
+  if (Object.hasOwn(notificationTypes, type)) {
+    const { icon, className } = notificationTypes[type]!;
+    return { Icon: icon, color: className ?? "text-muted-foreground" };
+  }
   switch (type) {
     case "quota_warning_80":
       return { Icon: AlertTriangle, color: "text-warning" };
@@ -69,6 +76,8 @@ export function notificationIcon(type: string): {
       return { Icon: UserPlus, color: "text-success" };
     case "subscription_confirmed":
       return { Icon: CheckCircle, color: "text-success" };
+    case "workspace_invitation":
+      return { Icon: Mail, color: "text-primary" };
     default:
       return { Icon: Bell, color: "text-muted-foreground" };
   }

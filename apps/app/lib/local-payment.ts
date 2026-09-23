@@ -1,62 +1,52 @@
 import "server-only";
 
 /**
- * Local payment provider binding — consumer-owned.
+ * What a local payment buys — consumer-owned.
  *
  * Card checkout is a redirect: you send the user to the processor and
  * they come back. Most of the world's payment methods are not that.
  * QR-and-poll — QPay and SocialPay in Mongolia, PIX in Brazil, UPI in
  * India, PromptPay in Thailand — issues an invoice, shows a code the
  * user scans in their own banking app, and waits for the provider to
- * say it was paid. `LocalPaymentModal` renders that flow; this file is
- * where you bind it to an actual provider.
+ * say it was paid. `LocalPaymentModal` renders that flow.
  *
- * Both functions run on the server, and neither takes a user id: the
- * caller is resolved from the session inside your implementation. A
- * client-supplied user id on a payment call is an invitation to
- * charge someone else's plan to a stranger's account.
+ * The framework does the rest: `@intelligo-dev/billing` issues the
+ * invoice through the provider your composition root registered
+ * (`registerPaymentProvider`, selected by PAYMENT_MODE; outside
+ * production an unset PAYMENT_MODE is an in-memory mock), records it
+ * against the caller's workspace, and when the provider reports it
+ * paid, grants what you return here once, on the server.
  *
- * The default throws rather than returning a fake invoice — a payment
- * flow that silently no-ops is worse than one that is obviously
- * unbound.
+ * This file answers one question: what does `reference` cost, and what
+ * does paying it grant? It is asked when the invoice is opened and again
+ * when it is settled. Price it here, never from anything the browser
+ * sent: an amount that arrives as an argument is an amount the buyer
+ * chose. Return null for a reference you do not sell this way.
+ *
+ * The default throws rather than pricing anything — a payment flow that
+ * silently no-ops is worse than one that is obviously unbound.
+ *
+ * An implementation, over the plan catalogue:
+ *
+ *   const plan = getPlanBySlug(reference);
+ *   if (!plan) return null;
+ *   return {
+ *     price: fromMajor(plan.priceOneTime, CURRENCY),
+ *     grant: { plan: plan.slug },
+ *     description: plan.name,
+ *   };
+ *
+ * or a credit bundle: `grant: { credits: fromMajor(5, "USD") }`, in the
+ * deployment's billing currency.
  */
 
-export interface LocalPaymentInvoice {
-  /** Provider's invoice id; passed back to `checkLocalPaymentStatus`. */
-  invoiceId: string;
-  /** QR image as a data: URI or an absolute URL. */
-  qrCode?: string;
-  /** Banking apps that can settle this invoice directly. */
-  deeplinks?: { app: string; url: string }[];
-}
+import type { LocalPaymentOffer } from "@intelligo-dev/billing";
 
-export type LocalPaymentStatus = "pending" | "paid" | "failed";
-
-export interface LocalPaymentRequest {
-  /**
-   * What is being bought — a plan slug, a credit bundle id, an order.
-   *
-   * Your implementation prices it server-side. The browser says what it
-   * wants, never what it costs: an amount that arrives as an argument
-   * is an amount the buyer chose.
-   */
-  reference: string;
-}
-
-export async function createLocalPayment(
-  _request: LocalPaymentRequest
-): Promise<LocalPaymentInvoice> {
+export async function priceLocalPayment(
+  _reference: string
+): Promise<LocalPaymentOffer | null> {
   throw new Error(
-    "createLocalPayment is not bound. Implement it in lib/local-payment.ts " +
-      "against your payment provider, or remove the payment-poll item."
-  );
-}
-
-export async function checkLocalPaymentStatus(
-  _invoiceId: string
-): Promise<LocalPaymentStatus> {
-  throw new Error(
-    "checkLocalPaymentStatus is not bound. Implement it in lib/local-payment.ts " +
-      "against your payment provider, or remove the payment-poll item."
+    "priceLocalPayment is not bound. Implement it in lib/local-payment.ts " +
+      "with what each reference costs and grants, or remove the payment-poll item."
   );
 }

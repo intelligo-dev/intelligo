@@ -1,4 +1,4 @@
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 /**
  * The layout for every route under `(app)`. Checks, in order:
  *
@@ -32,6 +32,9 @@ import { TimeZoneCookie } from "@/components/shell/time-zone-cookie";
 import { AISidebarInset, AISidebarProvider } from "@/components/ui/ai-sidebar";
 import { redirect } from "@/i18n/navigation";
 import { shellConfig } from "@/lib/shell-config";
+
+const SKIP_LINK_CLASS =
+  "sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:border focus:border-ring focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md focus:outline-none focus:ring-3 focus:ring-ring/40";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await getAuthSession();
@@ -77,8 +80,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // composer — or scrolls its own region — the transcript — has no
   // height to work in.
   const SidebarContent = shellConfig.sidebarContent;
+  const t = await getTranslations("app-shell");
   return (
     <AISidebarProvider className="h-svh min-h-0 overflow-hidden">
+      {/* The first focusable element: keyboard users jump past the sidebar. */}
+      <a href="#main-content" className={SKIP_LINK_CLASS}>
+        {t("skipToContent")}
+      </a>
       {/* Renders nothing; tells the server which day it is here. */}
       <TimeZoneCookie />
       <AppSidebar
@@ -92,7 +100,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       >
         {SidebarContent ? <SidebarContent /> : null}
       </AppSidebar>
-      <AISidebarInset className="min-h-0 overflow-hidden">
+      <AISidebarInset
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-0 overflow-hidden outline-none"
+      >
         <ShellHeader>
           {shellConfig.headerRight && (
             <div className="ml-auto flex items-center gap-2">

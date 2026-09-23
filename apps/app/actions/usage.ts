@@ -26,8 +26,10 @@ import {
   summarizeExecutions,
   summarizeExecutionsByDay,
 } from "@intelligo-dev/executions";
+import type { ActionResult as BaseActionResult } from "@intelligo-dev/next";
 
 import type { MoneyLike } from "@/lib/format-money";
+import { planName } from "@/lib/plan-copy";
 
 export type UsagePeriod = "7d" | "30d" | "current";
 
@@ -90,8 +92,7 @@ export type UsageOverview = {
   records: UsageRecord[];
 };
 
-export type ActionResult<T> =
-  { success: true; data: T } | { success: false; error: string };
+export type ActionResult<T> = BaseActionResult<T>;
 
 /**
  * The reader's own time zone, from the cookie the app shell writes.
@@ -272,12 +273,21 @@ export async function getUsageOverview(): Promise<ActionResult<UsageOverview>> {
         summarizeExecutionsByDay(workspace.id, window, { timeZone }),
       ]);
 
+    // The plan's name in the reader's language, when the deployment's
+    // `plans` messages translate it (lib/plan-copy.ts).
+    const tPlans = await getTranslations("plans");
+    const planSlug = billing.plan?.slug ?? "free";
+
     return {
       success: true,
       data: {
         plan: {
-          name: billing.plan?.name ?? t("summaryCards.noPlan"),
-          slug: billing.plan?.slug ?? "free",
+          name: planName(
+            tPlans,
+            planSlug,
+            billing.plan?.name ?? t("summaryCards.noPlan")
+          ),
+          slug: planSlug,
         },
         billingMode: billing.billingMode,
         currentPeriod,
