@@ -138,6 +138,8 @@ export type { QuotaAction, FeatureQuotaResult } from "./feature-quota";
 // Payment providers — the contract, the registry, and the mock
 export {
   getPaymentProvider,
+  getPaymentProviderFor,
+  currentPaymentMode,
   mockCompletePayment,
   getMockPayment,
 } from "./payment";
@@ -147,6 +149,17 @@ export type {
   CreatePaymentResult,
   PaymentCheckResult,
 } from "./payment";
+
+// Invoices from a registered payment provider, recorded and granted on
+// the server
+export { openLocalInvoice, settleLocalInvoice } from "./local-payments";
+export type {
+  LocalPaymentGrant,
+  LocalPaymentOffer,
+  LocalPaymentStatus,
+  OpenLocalInvoiceInput,
+  SettleLocalInvoiceInput,
+} from "./local-payments";
 
 // Checkout & billing overview service. Transports call
 // requireWorkspace/requireRole first and pass resolved ids/role in.
