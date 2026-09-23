@@ -273,14 +273,14 @@ describe("runChecks", () => {
         "lib/intelligo.ts":
           "export function composeIntelligo() {}\nexport const executions = {};",
         "lib/plans.ts":
-          'export { PLANS, FEATURES } from "@acme/career/config";',
-        "node_modules/@acme/career/package.json": JSON.stringify({
-          name: "@acme/career",
+          'export { PLANS, FEATURES } from "@acme/product/config";',
+        "node_modules/@acme/product/package.json": JSON.stringify({
+          name: "@acme/product",
           exports: { "./config": { import: "./src/config/index.ts" } },
         }),
-        "node_modules/@acme/career/src/config/index.ts":
+        "node_modules/@acme/product/src/config/index.ts":
           'export * from "./features";',
-        "node_modules/@acme/career/src/config/features.ts":
+        "node_modules/@acme/product/src/config/features.ts":
           "export const FEATURES = { chat: ['free'] };\nexport const PLANS = [];",
       }).status;
       expect(status).toBe("ok");
