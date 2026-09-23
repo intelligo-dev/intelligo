@@ -12,8 +12,10 @@ import type { UIMessage } from "ai";
 import type { Executions } from "@intelligo-dev/executions";
 import {
   DEFAULT_MODELS,
+  UnknownModelError,
   clearModels,
   registerModel,
+  registerModels,
 } from "@intelligo-dev/executions/pricing";
 
 import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
@@ -852,6 +854,189 @@ describe("POST streaming", () => {
         usage: { inputTokens: 12, outputTokens: 5, totalTokens: 17 },
       })
     );
+  });
+
+  it("folds usage named for the turn's own model into the turn", async () => {
+    registerModels(DEFAULT_MODELS);
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler({
+      executions: fake.executions,
+      model: { defaultId: MODEL_ID },
+      streamTurn: (turn) => {
+        turn.addUsage({ inputTokens: 5, outputTokens: 2 }, { model: MODEL_ID });
+        return {
+          stream: uiChunks([{ type: "finish" }]),
+          usage: Promise.resolve({ inputTokens: 7, outputTokens: 3 }),
+        };
+      },
+    });
+    await (await POST(turn("search something"))).text();
+    await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+    expect(fake.begin).toHaveBeenCalledTimes(1);
+    expect(fake.complete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: MODEL_ID,
+        usage: { inputTokens: 12, outputTokens: 5, totalTokens: 17 },
+      })
+    );
+  });
+
+  it("settles usage on another model as that model's own execution", async () => {
+    registerModels(DEFAULT_MODELS);
+    const fake = fakeExecutions();
+    const childComplete = vi.fn().mockResolvedValue(undefined);
+    const turnRun = await fake.begin();
+    fake.begin.mockClear();
+    fake.begin.mockResolvedValueOnce(turnRun).mockResolvedValueOnce({
+      id: "e-child",
+      requestId: "req-child",
+      allowed: true,
+      usingTrialCredits: false,
+      complete: childComplete,
+      fail: vi.fn(),
+    });
+    const EMBEDDER = "openai/text-embedding-3-small";
+    const { POST } = createChatHandler({
+      executions: fake.executions,
+      model: { defaultId: MODEL_ID },
+      streamTurn: (turn) => {
+        // Two retrieval calls: one execution, their sum.
+        turn.addUsage({ inputTokens: 300 }, { model: EMBEDDER });
+        turn.addUsage({ inputTokens: 200 }, { model: EMBEDDER });
+        return {
+          stream: uiChunks([{ type: "finish" }]),
+          usage: Promise.resolve({ inputTokens: 7, outputTokens: 3 }),
+        };
+      },
+    });
+    await (await POST(turn("search something"))).text();
+    await vi.waitFor(() => expect(childComplete).toHaveBeenCalledTimes(1));
+
+    // The turn is billed for its own tokens only, at its own model.
+    expect(fake.complete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: MODEL_ID,
+        usage: expect.objectContaining({ inputTokens: 7, outputTokens: 3 }),
+      })
+    );
+    expect(fake.begin).toHaveBeenCalledTimes(2);
+    expect(fake.begin).toHaveBeenLastCalledWith({
+      workspaceId: "ws-1",
+      userId: "u-1",
+      capability: "chat.embedding",
+      model: EMBEDDER,
+      metadata: expect.objectContaining({
+        conversationId: CONVERSATION_ID,
+        parentExecutionId: "e-1",
+        parentRequestId: "req-1",
+      }),
+    });
+    expect(childComplete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: EMBEDDER,
+        usage: { inputTokens: 500, outputTokens: 0, totalTokens: 500 },
+      })
+    );
+  });
+
+  it("records another model under the capability the tool names", async () => {
+    registerModels(DEFAULT_MODELS);
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler({
+      executions: fake.executions,
+      model: { defaultId: MODEL_ID },
+      streamTurn: (turn) => {
+        turn.addUsage(
+          { inputTokens: 40, outputTokens: 10 },
+          { model: "openai/gpt-5-mini", capability: "chat.subagent" }
+        );
+        return {
+          stream: uiChunks([{ type: "finish" }]),
+          usage: Promise.resolve({ inputTokens: 1, outputTokens: 1 }),
+        };
+      },
+    });
+    await (await POST(turn())).text();
+    await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(2));
+    expect(fake.begin).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        capability: "chat.subagent",
+        model: "openai/gpt-5-mini",
+      })
+    );
+  });
+
+  it("throws at addUsage for a model with no registered price", async () => {
+    registerModels(DEFAULT_MODELS);
+    const fake = fakeExecutions();
+    let thrown: unknown;
+    const { POST } = createChatHandler({
+      executions: fake.executions,
+      model: { defaultId: MODEL_ID },
+      streamTurn: (turn) => {
+        try {
+          turn.addUsage({ inputTokens: 5 }, { model: "acme/embed-9" });
+        } catch (error) {
+          thrown = error;
+        }
+        return {
+          stream: uiChunks([{ type: "finish" }]),
+          usage: Promise.resolve({ inputTokens: 1, outputTokens: 1 }),
+        };
+      },
+    });
+    await (await POST(turn())).text();
+    await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+    expect(thrown).toBeInstanceOf(UnknownModelError);
+    expect((thrown as Error).message).toContain('"acme/embed-9"');
+    expect(fake.begin).toHaveBeenCalledTimes(1);
+  });
+
+  it("shares one state map across the seams of a turn", async () => {
+    const fake = fakeExecutions();
+    const seen: unknown[] = [];
+    let resolvedState: Map<string, unknown> | undefined;
+    const { POST } = createChatHandler({
+      executions: fake.executions,
+      model: { defaultId: MODEL_ID },
+      resolveAgent: async (context) => {
+        context.state.set("profile", { grade: 11 });
+        resolvedState = context.state;
+        return { id: "assistant", systemPrompt: "Help." };
+      },
+      prepareMessages: async (turn, incoming) => {
+        seen.push(turn.state.get("profile"));
+        expect(turn.state).toBe(resolvedState);
+        return { messages: incoming };
+      },
+      streamTurn: (turn) => {
+        seen.push(turn.state.get("profile"));
+        return {
+          stream: uiChunks([{ type: "finish" }]),
+          usage: Promise.resolve({ inputTokens: 1, outputTokens: 1 }),
+        };
+      },
+    });
+    await (await POST(turn())).text();
+    expect(seen).toEqual([{ grade: 11 }, { grade: 11 }]);
+
+    // A new request starts empty.
+    let second: Map<string, unknown> | undefined;
+    const again = createChatHandler({
+      executions: fakeExecutions().executions,
+      model: { defaultId: MODEL_ID },
+      resolveAgent: async (context) => {
+        second = context.state;
+        return { id: "assistant", systemPrompt: "Help." };
+      },
+      streamTurn: () => ({
+        stream: uiChunks([{ type: "finish" }]),
+        usage: Promise.resolve({ inputTokens: 1, outputTokens: 1 }),
+      }),
+    });
+    await (await again.POST(turn())).text();
+    expect(second).not.toBe(resolvedState);
+    expect(second?.size).toBe(0);
   });
 
   it("limits the model to the tools activeTools names", async () => {

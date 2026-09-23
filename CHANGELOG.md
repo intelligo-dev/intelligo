@@ -25,7 +25,7 @@ it explains a framework decision.
   merges message files key by key (the app's copy wins), and records
   each installed file's hash in `intelligo.manifest.json`. It refuses to
   overwrite a hand-edited file without `--force`. `intelligo sync
-  --check` installs nothing and exits 1 on any file that is missing,
+--check` installs nothing and exits 1 on any file that is missing,
   edited, outdated or lacks registry message keys. An existing app
   adopts it by naming its items once.
 - `@intelligo-dev/cli` ships the built registry (`templates/registry`).
@@ -47,11 +47,43 @@ it explains a framework decision.
 - `profile.setPreferredLanguage(locale)` in `@intelligo-dev/auth`, and
   the `profile-settings` item's `updatePreferredLanguage` action,
   checked against `routing.locales`.
+- `turn.state` in `@intelligo-dev/chat`: a `Map` that lives for one
+  request and is shared by every seam that receives the turn
+  (`resolveAgent`, `prepareMessages`, tools, `streamTurn`, `persist`,
+  `onTurn`), so what one seam reads the next can reuse.
+- `turn.addUsage(usage, { model, capability })`: tokens a tool spent on
+  another registered model are summed per model and recorded as that
+  model's own execution (`capability` `"chat.embedding"` for an embedding
+  model, `parentExecutionId` in its metadata) when the turn settles or
+  fails. Without `model`, or with the turn's own, usage folds into the
+  turn as before. An unregistered `model` throws `UnknownModelError` at
+  the call.
+- `ModelPricing.kind` (`"chat" | "embedding"`, default chat) and
+  `modelKind()` in `@intelligo-dev/executions/pricing`. Admission for an
+  embedding model holds only the input budget.
+- `DEFAULT_MODELS` prices three embedding models:
+  `openai/text-embedding-3-small` ($0.02/M input tokens),
+  `openai/text-embedding-3-large` ($0.13/M) and
+  `google/gemini-embedding-001` ($0.15/M).
+- `saveProfileSnapshot(actor, input)` in `@intelligo-dev/core/identity`:
+  stores a synthesized profile in `user_profile_snapshots`, one row per
+  user per workspace, bumping `version` atomically and writing a
+  `snapshot` audit row in the same transaction.
 
 ### Changed
 
 - `apps/app` is regenerated with `intelligo sync` instead of a
   hand-written `shadcn add` loop.
+- The reference app's web-search tool reports its tokens against the
+  model it ran on, so a turn on another model no longer prices them at
+  the turn's rate.
+
+### Fixed
+
+- `@intelligo-dev/auth`'s invite schema uses `{ message }` instead of
+  zod 4's `{ error }`, which zod 3 — still inside the peer range —
+  ignored. An architecture test keeps zod-4-only params out of packages
+  whose peer range admits zod 3.
 
 ## [1.0.0-beta.13] — 2026-09-21
 

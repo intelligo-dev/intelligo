@@ -651,3 +651,131 @@ describe("ported code carries its licence", () => {
     expect(text).toContain("Apache License, Version 2.0");
   });
 });
+
+/**
+ * A package whose `zod` peer range admits zod 3 runs against whichever
+ * major the consumer installed, so its source may use only the schema
+ * syntax both majors accept. The params option `{ error: "…" }` is zod
+ * 4's alone: zod 3 ignores the key and answers with its default message.
+ * `{ message: "…" }` is read by both.
+ *
+ * The detection is deliberately small. It follows every call chain that
+ * starts at `z.` — `z.enum([...], { … })`, `z.string().min(1, { … })` —
+ * and flags an object literal passed after a call's first argument whose
+ * own top-level keys include `error`. The first argument is skipped
+ * because there an object is a shape (`z.object({ error: z.string() })`)
+ * as often as params; a params object in first position, as in
+ * `z.string({ error })`, is not caught.
+ */
+describe("zod 3 compatibility", () => {
+  function admitsZod3(range: string): boolean {
+    return range
+      .split("||")
+      .some((part) => /^[\s^~>=]*3(\.|$|\s)/.test(part.trim()));
+  }
+
+  function stripComments(code: string): string {
+    return code.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+  }
+
+  /** Index just past the bracket that closes the one at `open`. */
+  function closing(code: string, open: number): number {
+    let depth = 0;
+    for (let i = open; i < code.length; i++) {
+      const c = code[i]!;
+      if (c === "(" || c === "[" || c === "{") depth++;
+      else if (c === ")" || c === "]" || c === "}") {
+        depth--;
+        if (depth === 0) return i + 1;
+      }
+    }
+    return code.length;
+  }
+
+  /** The arguments of a call, split at its top-level commas. */
+  function args(inner: string): string[] {
+    const out: string[] = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < inner.length; i++) {
+      const c = inner[i]!;
+      if (c === "(" || c === "[" || c === "{") depth++;
+      else if (c === ")" || c === "]" || c === "}") depth--;
+      else if (c === "," && depth === 0) {
+        out.push(inner.slice(start, i));
+        start = i + 1;
+      }
+    }
+    out.push(inner.slice(start));
+    return out.map((arg) => arg.trim());
+  }
+
+  /** True when an object literal's own keys include `error`. */
+  function hasErrorKey(literal: string): boolean {
+    if (!literal.startsWith("{")) return false;
+    return args(literal.slice(1, -1)).some((entry) =>
+      /^error\s*:|^error$/.test(entry)
+    );
+  }
+
+  function zod4OnlyParams(source: string): string[] {
+    const code = stripComments(source);
+    const hits: string[] = [];
+    const chain = /\bz\.\w+\s*\(/g;
+    for (let match = chain.exec(code); match; match = chain.exec(code)) {
+      let open = match.index + match[0].length - 1;
+      for (;;) {
+        const end = closing(code, open);
+        const [, ...rest] = args(code.slice(open + 1, end - 1));
+        if (rest.some(hasErrorKey)) {
+          hits.push(code.slice(match.index, end).replace(/\s+/g, " "));
+        }
+        const next = /^\s*\.\s*\w+\s*\(/.exec(code.slice(end));
+        if (!next) break;
+        open = end + next[0].length - 1;
+      }
+    }
+    return hits;
+  }
+
+  it("recognises the zod-4-only params option and nothing else", () => {
+    expect(
+      zod4OnlyParams(`z.enum(["a"], {\n  // why\n  error: "Pick one",\n})`)
+    ).toHaveLength(1);
+    expect(
+      zod4OnlyParams(`z.string().min(1, { error: "Required" })`)
+    ).toHaveLength(1);
+    expect(zod4OnlyParams(`z.enum(["a"], { message: "Pick one" })`)).toEqual(
+      []
+    );
+    expect(zod4OnlyParams(`z.object({ error: z.string() })`)).toEqual([]);
+    expect(zod4OnlyParams(`log.error("x", { error: e })`)).toEqual([]);
+    expect(admitsZod3("^3.25.76 || ^4.0.0")).toBe(true);
+    expect(admitsZod3("^4.0.0")).toBe(false);
+  });
+
+  it("uses only syntax both majors accept where the peer range admits zod 3", () => {
+    const covered = PUBLISHED.filter((pkg) => {
+      const range = manifest(pkg).peerDependencies?.zod;
+      return range !== undefined && admitsZod3(range);
+    });
+    expect(covered).toContain("auth");
+
+    const hits: string[] = [];
+    for (const pkg of covered) {
+      const files = walk(
+        path.join(PACKAGES_DIR, pkg, "src"),
+        (name) => /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name)
+      );
+      for (const file of files) {
+        for (const hit of zod4OnlyParams(readFileSync(file, "utf8"))) {
+          hits.push(`${path.relative(ROOT, file)}: ${hit}`);
+        }
+      }
+    }
+    expect(
+      hits,
+      `zod-4-only { error } params in a package that admits zod 3 — use { message }:\n  ${hits.join("\n  ")}`
+    ).toEqual([]);
+  });
+});
