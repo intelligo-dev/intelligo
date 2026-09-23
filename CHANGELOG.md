@@ -27,6 +27,9 @@ it explains a framework decision.
   overwrite a hand-edited file without `--force`. `intelligo sync
 --check` installs nothing and exits 1 on any file that is missing,
   edited, outdated or lacks registry message keys. An existing app
+  overwrite a hand-edited file without `--force`.
+  `intelligo sync --check` installs nothing and exits 1 on any file that
+  is missing, edited, outdated or lacks registry message keys. An existing app
   adopts it by naming its items once.
 - `@intelligo-dev/cli` ships the built registry (`templates/registry`).
 - `requires.json` names every item's `seams`: the files an item ships
@@ -110,6 +113,21 @@ it explains a framework decision.
   every paid local invoice. A subscription's checkout is counted
   through its first invoice, not twice; refunds and fees are not
   subtracted.
+- `intelligo sync --check` reports `locale-behind`: for every locale
+  in `i18n/routing.ts` besides `en`, each shipped namespace's
+  `messages/<locale>/<item>.json` is compared with the app's English
+  file on disk, and a missing file or missing keys fail the check with
+  the keys named.
+- `intelligo add vitest`: a `vitest.config.ts` with the `@` alias, a
+  `server-only` stub at `tests/stubs/server-only.ts`, and
+  `test.server.deps.inline` for the `@intelligo-dev/*` packages, whose
+  compiled ESM imports `server-only` where a Vite alias cannot reach it
+  otherwise. It prints the devDependency and script to add. A feature in
+  `templates/manifest.json` can now carry `nextSteps`, printed by `add`.
+- Docs: a "Testing your app" guide, and `docs/migrations/1.0.0-beta.14.md`
+  — the upgrade from `1.0.0-beta.6`, in the order it is executed,
+  including the features that left the framework and where each now
+  lives in the app.
 
 ### Changed
 
@@ -154,6 +172,42 @@ it explains a framework decision.
   called a client-side `onPaid`, so what was bought depended on the
   browser. The grant now happens on the server when a poll sees the
   invoice paid, and the payment is a `payments` row.
+- The composition-root concept page says why composing once in
+  `instrumentation.ts` is enough: registries live on `globalThis` per
+  process, so no module needs an "ensure composed" import; the Edge
+  runtime is its own scope and composes separately.
+- `intelligo create` installs the pages it offers through
+  `intelligo sync`: one `shadcn add` per item, dependencies first, from the
+  registry bundled with the CLI rather than the hosted one, recorded in
+  `intelligo.manifest.json`. A failure leaves a known set installed and
+  prints the sync to re-run.
+- `intelligo create` inside a pnpm workspace that includes the new app
+  runs the dependency install from the workspace root instead of
+  starting a nested lockfile in the app.
+- Scaffold files a registry install replaces (`app/globals.css`,
+  `components/shell/theme-provider.tsx`, `lib/utils.ts`…) move to the
+  `app-scaffold` entry's `handedOver` list, so `upgrade --check` stops
+  reporting them `customized` and `add app-scaffold` leaves them alone.
+
+### Fixed
+
+- `intelligo doctor` reads what an app exports the way the compiler
+  would: comments are stripped before matching, `export type` /
+  `export interface`, `export { a as b }` and `export { x } from "…"`
+  count, and `export * from "…"` is followed into the module it
+  resolves to (relative, `@/`, or a package through node resolution
+  from the app root) — one it cannot read is a warning, not an error.
+  Feature keys match `key:` or `"key":` only outside comments, and a
+  `lib/plans.ts` that re-exports its catalogue from a workspace package
+  is checked against that package's file.
+- `intelligo migrate`, `migrate --check` and the core migrations README
+  no longer tell a database that ran part of the pre-1.0 chain to finish
+  it with `@intelligo-dev/core@1.0.0-beta.7`, a version that was never
+  published. The messages name the migrations it has not run (also
+  `legacyMissing` in `--json`), say that `1.0.0-beta.6` ships the chain
+  only through `0042`, and point at the README's three ways forward:
+  apply the missing SQL from your own copy, bring the schema to the
+  baseline and record it, or start from the baseline.
 
 ## [1.0.0-beta.13] — 2026-09-21
 

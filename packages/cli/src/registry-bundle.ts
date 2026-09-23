@@ -42,7 +42,9 @@ export function resolveRegistryDir(templatesDir: string): string | null {
 }
 
 export function hasRegistryItem(dir: string, name: string): boolean {
-  return /^[a-z0-9-]+$/.test(name) && existsSync(path.join(dir, `${name}.json`));
+  return (
+    /^[a-z0-9-]+$/.test(name) && existsSync(path.join(dir, `${name}.json`))
+  );
 }
 
 export function readRegistryItem(dir: string, name: string): RegistryItemJson {
@@ -81,7 +83,10 @@ export function asInstalled(source: string): string {
  * namespace (shadcn's own `utils`, `skeleton`…) are not this registry's
  * to check.
  */
-export function registryClosure(dir: string, names: readonly string[]): string[] {
+export function registryClosure(
+  dir: string,
+  names: readonly string[]
+): string[] {
   const order: string[] = [];
   const seen = new Set<string>();
   const visit = (name: string) => {

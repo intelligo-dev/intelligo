@@ -182,6 +182,121 @@ describe("runChecks", () => {
       expect(results.find((r) => r.name === "item:chat")!.status).toBe("ok");
     });
 
+    const installed = {
+      "app/chat/page.tsx": "// chat",
+      "components/errors/route-error.tsx": "// route-error",
+      "i18n/navigation.ts": "// nav",
+    };
+    const chatResult = (files: Record<string, string>) =>
+      runChecks({
+        root: app({ ...installed, ...files }),
+        env: fullEnv,
+        requires,
+      }).find((r) => r.name === "item:chat")!;
+
+    it("accepts type exports, aliases and named re-exports", () => {
+      expect(
+        chatResult({
+          "lib/intelligo.ts": [
+            "export type composeIntelligo = () => void;",
+            'export { executionsImpl as executions } from "./impl";',
+          ].join("\n"),
+          "lib/plans.ts": "export const FEATURES = { chat: ['free'] };",
+        }).status
+      ).toBe("ok");
+      expect(
+        chatResult({
+          "lib/intelligo.ts":
+            "export interface composeIntelligo {}\nconst e = 1;\nexport { e as executions };",
+          "lib/plans.ts": "export const FEATURES = { chat: ['free'] };",
+        }).status
+      ).toBe("ok");
+    });
+
+    it("is not satisfied by an export named in a comment", () => {
+      const chat = chatResult({
+        "lib/intelligo.ts":
+          "export function composeIntelligo() {}\n// export const executions = {};\n/* export { executions } */",
+        "lib/plans.ts": "export const FEATURES = { chat: ['free'] };",
+      });
+      expect(chat.status).toBe("error");
+      expect(chat.detail).toContain("must export executions");
+    });
+
+    it("follows export * into a module it can resolve", () => {
+      const ok = chatResult({
+        "lib/intelligo.ts": 'export * from "./root";',
+        "lib/root/index.ts":
+          "export function composeIntelligo() {}\nexport const executions = {};",
+        "lib/plans.ts": "export const FEATURES = { chat: ['free'] };",
+      });
+      expect(ok.status).toBe("ok");
+
+      const missing = chatResult({
+        "lib/intelligo.ts": 'export * from "@/lib/root";',
+        "lib/root.ts": "export function composeIntelligo() {}",
+        "lib/plans.ts": "export const FEATURES = { chat: ['free'] };",
+      });
+      expect(missing.status).toBe("error");
+      expect(missing.detail).toContain("must export executions");
+    });
+
+    it("warns, not errors, when export * leads somewhere it cannot read", () => {
+      const chat = chatResult({
+        "lib/intelligo.ts": 'export * from "@acme/not-installed";',
+        "lib/plans.ts": "export const FEATURES = { chat: ['free'] };",
+      });
+      expect(chat.status).toBe("warn");
+      expect(chat.detail).toContain("@acme/not-installed");
+    });
+
+    it("reads feature keys quoted or bare, and never from a comment", () => {
+      const withPlans = (plans: string) =>
+        chatResult({
+          "lib/intelligo.ts":
+            "export function composeIntelligo() {}\nexport const executions = {};",
+          "lib/plans.ts": plans,
+        }).status;
+      expect(withPlans('export const FEATURES = { "chat": ["free"] };')).toBe(
+        "ok"
+      );
+      expect(
+        withPlans("export const FEATURES = {\n  // chat: ['free'],\n};")
+      ).toBe("error");
+      expect(withPlans("export const FEATURES = { mychat: ['free'] };")).toBe(
+        "error"
+      );
+    });
+
+    it("finds feature keys in the package lib/plans.ts re-exports", () => {
+      const status = chatResult({
+        "lib/intelligo.ts":
+          "export function composeIntelligo() {}\nexport const executions = {};",
+        "lib/plans.ts":
+          'export { PLANS, FEATURES } from "@acme/career/config";',
+        "node_modules/@acme/career/package.json": JSON.stringify({
+          name: "@acme/career",
+          exports: { "./config": { import: "./src/config/index.ts" } },
+        }),
+        "node_modules/@acme/career/src/config/index.ts":
+          'export * from "./features";',
+        "node_modules/@acme/career/src/config/features.ts":
+          "export const FEATURES = { chat: ['free'] };\nexport const PLANS = [];",
+      }).status;
+      expect(status).toBe("ok");
+    });
+
+    it("finds them through an import a bare export list passes on", () => {
+      const status = chatResult({
+        "lib/intelligo.ts":
+          "export function composeIntelligo() {}\nexport const executions = {};",
+        "lib/plans.ts":
+          'import { FEATURES } from "./catalogue";\nexport { FEATURES };',
+        "lib/catalogue.ts": "export const FEATURES = { chat: ['free'] };",
+      }).status;
+      expect(status).toBe("ok");
+    });
+
     it("is silent for items whose marker file is absent", () => {
       const results = runChecks({ root: app({}), env: fullEnv, requires });
       expect(results.some((r) => r.name.startsWith("item:"))).toBe(false);

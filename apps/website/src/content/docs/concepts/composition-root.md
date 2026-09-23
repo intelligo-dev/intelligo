@@ -27,7 +27,27 @@ export function composeIntelligo(): void {
 }
 ```
 
-`instrumentation.ts` calls it once per server process.
+`instrumentation.ts` calls it once per server process:
+
+<!-- snippet: packages/cli/templates/app-scaffold/instrumentation.ts.tpl#register -->
+
+```ts
+export async function register() {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { composeIntelligo, seedIntelligo } = await import("./lib/intelligo");
+    composeIntelligo();
+    // The first request finds the plan and billing-settings rows in
+    // place. A failure is already logged, and the next request retries.
+    await seedIntelligo().catch(() => undefined);
+  }
+}
+```
+
+### Once per process is enough
+
+Every framework registry — plans, features, model prices, the request-context source, the workspace bootstrap — lives on `globalThis`, keyed by a global symbol. A bundler that loads a package or `lib/intelligo.ts` twice still reaches the same maps, so what `register()` bound is what every page, Server Action and Route Handler in that process reads. An app needs no "ensure composed" import at the top of each module that reads a registry; composing in `instrumentation.ts` covers them all. Calling `composeIntelligo()` again is harmless — it binds once — which is why a Route Handler that a test or a worker may invoke without the instrumentation hook still calls it.
+
+`globalThis` is per runtime, though. The Edge runtime is a separate global scope that `register()` does not compose (the scaffold composes only when `NEXT_RUNTIME` is `nodejs`), so code that runs on the Edge and reads a registry has to compose there itself. The scaffold's middleware reads none: it only redirects.
 
 ## Import side effects are banned
 

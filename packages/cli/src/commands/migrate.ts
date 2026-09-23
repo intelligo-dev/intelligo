@@ -34,6 +34,7 @@ import {
   hashMigration,
   isPartialLegacy,
   migrateCheck,
+  partialLegacyMessage,
   type MigrateCheckResult,
 } from "./migrate-check.js";
 
@@ -68,14 +69,7 @@ export function decideApply(
   }
 
   if (isPartialLegacy(check)) {
-    return {
-      action: "refuse",
-      reason:
-        `This database ran ${check.legacy.length} of the ` +
-        `${check.legacyChainLength} pre-1.0 migrations. Finish that chain ` +
-        `with @intelligo-dev/core 1.0.0-beta.7 (\`intelligo migrate\`) ` +
-        `before upgrading.`,
-    };
+    return { action: "refuse", reason: partialLegacyMessage(check) };
   }
 
   if (check.adoptable) {

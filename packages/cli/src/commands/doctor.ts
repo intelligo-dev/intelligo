@@ -11,6 +11,12 @@ import { parseEnv } from "node:util";
 import { inspectMigrationChain, readMigrationChain } from "../migrations.js";
 import { readManifest } from "../manifest.js";
 import {
+  checkExports,
+  hasObjectKey,
+  reexportedSource,
+  stripComments,
+} from "../module-exports.js";
+import {
   MODEL_CATALOGUE_LOCATIONS,
   readCatalogueModelIds,
 } from "../model-catalogue.js";
@@ -37,17 +43,6 @@ export type RegistryRequires = {
   scaffold: string[];
   items: Record<string, ItemRequires>;
 };
-
-/**
- * Block and line comments removed, so a check cannot be satisfied — or
- * defeated — by prose. The composition root's own doc comment names
- * `registerModels` in several of the templates.
- */
-function stripComments(text: string): string {
-  return text
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|[^:])\/\/.*$/gm, "$1");
-}
 
 /**
  * templates/registry-requires.json is a build-time copy of
@@ -328,13 +323,17 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
       [".ts", ".tsx", ".js", ".jsx", ".json", ""].some((ext) =>
         existsSync(path.join(root, rel + ext))
       );
-    const plansSource = existsSync(path.join(root, "lib/plans.ts"))
-      ? readFileSync(path.join(root, "lib/plans.ts"), "utf8")
-      : null;
+    // lib/plans.ts and whatever it re-exports — a catalogue defined in
+    // a workspace package counts — comments stripped.
+    const plansFile = ["lib/plans.ts", "lib/plans.tsx"]
+      .map((rel) => path.join(root, rel))
+      .find((file) => existsSync(file));
+    const plans = plansFile ? reexportedSource(plansFile, root) : null;
 
     for (const [name, item] of Object.entries(requires.items)) {
       if (!existsSync(path.join(root, item.marker))) continue;
       const problems: string[] = [];
+      const notes: string[] = [];
 
       for (const dep of item.items ?? []) {
         const marker = requires.items[dep]?.marker;
@@ -350,23 +349,22 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
           .map((ext) => path.join(root, file + ext))
           .find((p) => existsSync(p));
         if (!abs) continue; // reported above as a missing file
-        const source = readFileSync(abs, "utf8");
-        const missing = names.filter(
-          (n) =>
-            !new RegExp(
-              `export\\s+(?:default\\s+)?(?:async\\s+)?(?:const|function\\*?|let|var|class)\\s+${n}\\b`
-            ).test(source) &&
-            !new RegExp(`export\\s*\\{[^}]*\\b${n}\\b`).test(source)
-        );
+        const { missing, unresolved } = checkExports(abs, names, root);
         if (missing.length) {
           problems.push(`${file} must export ${missing.join(", ")}`);
+        } else if (unresolved.length) {
+          notes.push(
+            `${file}: could not read ${unresolved.map((u) => `\`export * from "${u}"\``).join(", ")} — assumed to provide ${names.join(", ")}`
+          );
         }
       }
       for (const feature of item.features ?? []) {
-        if (
-          plansSource !== null &&
-          !new RegExp(`\\b${feature}\\b\\s*:`).test(plansSource)
-        ) {
+        if (!plans || hasObjectKey(plans.text, feature)) continue;
+        if (plans.unresolved.length) {
+          notes.push(
+            `the "${feature}" feature key is not in lib/plans.ts, and ${plans.unresolved.join(", ")} could not be read to confirm it`
+          );
+        } else {
           problems.push(
             `register the "${feature}" feature key in lib/plans.ts — an unregistered key is denied (403)`
           );
@@ -375,7 +373,9 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
 
       results.push(
         problems.length === 0
-          ? { name: `item:${name}`, status: "ok", detail: "requirements met" }
+          ? notes.length === 0
+            ? { name: `item:${name}`, status: "ok", detail: "requirements met" }
+            : { name: `item:${name}`, status: "warn", detail: notes.join("; ") }
           : {
               name: `item:${name}`,
               status: "error",

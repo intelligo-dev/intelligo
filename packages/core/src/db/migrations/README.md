@@ -63,8 +63,37 @@ the few places where the old chain and the schema disagreed into line
 created that the framework no longer defines are left untouched; a
 product that still uses them keeps them in its own migrations.
 
-A database that ran only part of the old chain is refused: finish it
-with `@intelligo-dev/core@1.0.0-beta.7` first.
+A database that ran only part of the old chain is refused, and
+`intelligo migrate --check` names the migrations it has not run
+(`legacyMissing` in `--json`). No published version finishes the old
+chain: `@intelligo-dev/core@1.0.0-beta.6`, the last one on npm before the
+baseline, ships it through `0042_sessions_active_organization_id`, and
+the versions that carried `0043_attachments`, `0044_money_micros`,
+`0045_drop_legacy_money_columns` and `0046_user_quotas_per_workspace`
+never reached npm. Their SQL is not in the public repository either:
+its last revision before the baseline, `fdc6c3d`, lists all 48 in the
+journal but carries no `.sql` files. That leaves three ways forward;
+try each on a restored copy first.
+
+1. **You have the missing SQL** — a source checkout of the pre-1.0
+   framework that contains the files. Apply each missing migration in
+   chain order and record it in `drizzle.__drizzle_migrations`: `hash`
+   is the sha256 of the file's contents, which must be the one
+   `legacy-chain.json` lists, and `created_at` its journal `when`. Once
+   the database holds the whole chain, `intelligo migrate` adopts it.
+2. **You do not** — bring the schema to the baseline by hand, then
+   record the baseline as applied the way a push-provisioned database is
+   (next section). Create an empty database, run `intelligo migrate`
+   there, and compare the two schemas (`pg_dump --schema-only`); what
+   differs is what `0043`–`0046` would have done. Mind the data, not
+   only the columns: `0044` backfilled every money amount into
+   `*_micros` columns (MNT at ×1,000,000) with a currency, and `0045`
+   dropped the old `*_mnt` and cents columns only after that copy.
+   Clear the old chain's rows from `drizzle.__drizzle_migrations` and
+   insert the current chain's before the first `intelligo migrate`.
+3. **Start over** — create the database from the baseline and move the
+   rows you keep across. For a deployment whose data is disposable this
+   is the shortest path.
 
 ## Baselining a push-provisioned database
 

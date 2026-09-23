@@ -19,7 +19,7 @@ import path from "node:path";
 
 import { addExitCode, addFeature, formatAddResult } from "./add.js";
 import { upgradeCheck, upgradeCheckExitCode } from "./upgrade-check.js";
-import { readManifest } from "../manifest.js";
+import { handOver, readManifest, writeManifest } from "../manifest.js";
 
 let appRoot: string;
 let templatesDir: string;
@@ -278,5 +278,58 @@ describe("upgradeCheck", () => {
     rmSync(target());
 
     expect(check().items[0]!.state).toBe("deleted");
+  });
+});
+
+describe("a file handed over to the registry", () => {
+  const handOverDemo = () => {
+    const manifest = readManifest(appRoot)!;
+    writeManifest(appRoot, handOver(manifest, "demo", ["app/demo/page.tsx"]));
+  };
+
+  it("leaves upgrade --check: neither customized nor new", () => {
+    add();
+    writeFileSync(target(), "// the registry's now\n");
+    handOverDemo();
+
+    const report = upgradeCheck({ appRoot, templatesDir });
+    expect(report.items).toEqual([]);
+  });
+
+  it("is not written back by add, and stays handed over when add re-records", () => {
+    add();
+    writeFileSync(target(), "// the registry's now\n");
+    handOverDemo();
+
+    const r = add(true);
+    expect(r.written).toEqual([]);
+    expect(readFileSync(target(), "utf8")).toBe("// the registry's now\n");
+    expect(readManifest(appRoot)!.features.demo!.handedOver).toEqual([
+      "app/demo/page.tsx",
+    ]);
+  });
+});
+
+describe("addFeature vitest", () => {
+  const TEMPLATES = path.resolve(import.meta.dirname, "..", "..", "templates");
+
+  it("writes the config and the stub, and says what is left to do", () => {
+    const r = addFeature("vitest", {
+      appRoot,
+      templatesDir: TEMPLATES,
+      frameworkVersion: "0.0.0",
+    });
+
+    expect(r.written).toEqual([
+      "vitest.config.ts",
+      "tests/stubs/server-only.ts",
+    ]);
+    expect(
+      readFileSync(path.join(appRoot, "tests/stubs/server-only.ts"), "utf8")
+    ).toContain("export {};");
+    const printed = formatAddResult(r);
+    expect(printed).toContain("pnpm add -D vitest");
+    expect(printed).toContain('"test": "vitest run"');
+    expect(readManifest(appRoot)!.features.vitest!.files).toHaveLength(2);
   });
 });

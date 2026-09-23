@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
-import { parseCreateFlags } from "./create-flow.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { parseCreateFlags, runCreate } from "./create-flow.js";
 
 describe("parseCreateFlags", () => {
   it("asks for everything when given nothing", () => {
@@ -30,5 +34,54 @@ describe("parseCreateFlags", () => {
       yes: true,
       install: false,
     });
+  });
+});
+
+describe("runCreate --no-install", () => {
+  const templatesDir = path.resolve(
+    import.meta.dirname,
+    "..",
+    "..",
+    "templates"
+  );
+  let root: string;
+  let out: string[];
+
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), "intelligo-create-flow-"));
+    out = [];
+    vi.spyOn(console, "log").mockImplementation((line: string) => {
+      out.push(String(line));
+    });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  const create = (target: string) =>
+    runCreate(parseCreateFlags([target, "--items", "usage", "--no-install"]), {
+      templatesDir,
+      frameworkVersion: "1.2.3",
+      interactive: false,
+    });
+
+  it("prints the install, then one sync of the base and every item", async () => {
+    expect(await create(path.join(root, "acme"))).toBe(0);
+    const printed = out.join("\n");
+    expect(printed).toMatch(/^ {2}pnpm install$/m);
+    expect(printed).toMatch(
+      /pnpm exec intelligo sync intelligo pricing route-error usage --force/
+    );
+  });
+
+  it("installs from the root of a parent pnpm workspace that includes the app", async () => {
+    writeFileSync(
+      path.join(root, "pnpm-workspace.yaml"),
+      "packages:\n  - apps/*\n"
+    );
+    mkdirSync(path.join(root, "apps"));
+    expect(await create(path.join(root, "apps", "acme"))).toBe(0);
+    expect(out.join("\n")).toContain("(cd ../.. && pnpm install)");
   });
 });

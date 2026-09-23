@@ -23,7 +23,7 @@ to the new application, which is where `intelligo` comes from afterwards.
 ```bash
 pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app, plus the pages you pick
 pnpm dlx @intelligo-dev/cli@beta create my-app --items chat,billing-settings --yes   # no questions
-intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance)
+intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance, vitest)
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate                      # apply the framework chain
 intelligo migrate --check [--json]     # compare the chain with the database, change nothing
@@ -47,8 +47,26 @@ Name the items once — `intelligo sync intelligo app-shell chat …` — and
 afterwards a bare `intelligo sync` updates them. It refuses to overwrite a file
 you edited by hand unless you pass `--force`: move the change into a seam
 first. `intelligo sync --check` installs nothing, lists every file that is
-`missing`, `edited`, `outdated` or `messages-behind`, and exits 1 on any —
-the gate to run in CI.
+`missing`, `edited`, `outdated`, `messages-behind` or `locale-behind`, and
+exits 1 on any — the gate to run in CI.
+
+### Other locales
+
+The registry ships English (`messages/en/<item>.json`). When the app's
+`i18n/routing.ts` lists more `locales`, `sync --check` compares each other
+locale's copy of every shipped namespace — `messages/<locale>/<item>.json` —
+with the app's English file on disk (the merged copy, your own keys
+included) and reports a missing file or missing keys as `locale-behind`,
+with the keys. `sync` never writes another locale: after it adds English
+keys, translate them, and the check passes again.
+
+`create` installs the pages you pick the same way: the dependencies first
+(from the root of a parent pnpm workspace when the new app is one of its
+members, so the workspace keeps one lockfile), then `intelligo sync` of the
+design-system base and every item, one `shadcn add` each. Scaffold files an
+item replaces — `app/globals.css`, the theme provider, `lib/utils.ts` — move
+from the `app-scaffold` record to the registry's (the feature's `handedOver`
+list), so `upgrade --check` does not report them as yours forever.
 
 ## Why `migrate` is not `drizzle-kit migrate`
 
@@ -67,7 +85,8 @@ baselined first.
 which an empty database and a stale one share. A deploy gate that must tell them
 apart reads `--json`: one object on stdout whose `state` is `up_to_date`,
 `pending`, `fresh` (empty database), `unmanaged`, `ahead` or `legacy`, beside
-`exitCode`, `chain`, `applied`, `pending`, `unknown`, `legacy` and `adoptable`.
+`exitCode`, `chain`, `applied`, `pending`, `unknown`, `legacy`, `legacyMissing`
+and `adoptable`.
 
 ## `add maintenance` and its schedule
 
