@@ -22,6 +22,7 @@ export type {
   ChatTurn,
   ChatTurnContext,
   ChatTurnEvents,
+  ChatUsageOptions,
   PreparedTurn,
   ProviderOptions,
   RateLimitDecision,

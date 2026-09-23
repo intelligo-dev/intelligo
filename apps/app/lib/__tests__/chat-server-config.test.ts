@@ -54,6 +54,7 @@ describe("chat server config", () => {
             trigger: undefined,
             write: () => {},
             updateMetadata: async () => {},
+            state: new Map(),
             addUsage: () => {},
           })
         : tools;
