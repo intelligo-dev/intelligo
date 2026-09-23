@@ -118,13 +118,14 @@
       ]
     },
     "@intelligo-dev/cli#build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "@intelligo-dev/registry#build"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/packages/registry/requires.json",
-        "$TURBO_ROOT$/packages/registry/registry.json"
+        "$TURBO_ROOT$/packages/registry/registry.json",
+        "$TURBO_ROOT$/packages/registry/base/**"
       ],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", "templates/registry/**"]
     },
     "film#build": {
       "dependsOn": [],

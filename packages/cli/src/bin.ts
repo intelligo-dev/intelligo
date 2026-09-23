@@ -36,12 +36,23 @@ import {
   formatApplyResult,
 } from "./commands/migrate.js";
 import {
+  formatSyncReport,
+  installedFrameworkVersion,
+  selectItems,
+  syncApply,
+  syncCheck,
+  syncCheckExitCode,
+  type SyncContext,
+} from "./commands/sync.js";
+import {
   formatUpgradeReport,
   upgradeCheck,
   upgradeCheckExitCode,
 } from "./commands/upgrade-check.js";
 
 import { loadAppEnv } from "./env-files.js";
+import { resolveRegistryDir } from "./registry-bundle.js";
+import { readRegistryCatalogue } from "./registry-items.js";
 import { MIGRATION_LOCATIONS, resolveMigrationsDir } from "./migrations-dir.js";
 
 /**
@@ -82,6 +93,9 @@ function usage(): string {
     "                    fresh | ahead | unmanaged | legacy)",
     "  add <feature>     Generate consumer-owned source (--force to overwrite)",
     "  upgrade --check   Show what a template upgrade would change",
+    "  sync [items…]     Install registry pages from this release's registry,",
+    "                    keeping seams and merging messages (--force replaces",
+    "                    hand-edited files; --check only reports, exit 1 on drift)",
     "",
   ].join("\n");
 }
@@ -244,6 +258,44 @@ async function main(): Promise<number> {
       });
       console.log(formatUpgradeReport(report));
       return upgradeCheckExitCode(report);
+    }
+    case "sync": {
+      const registryDir = resolveRegistryDir(TEMPLATES_DIR);
+      if (!registryDir) {
+        console.error(
+          "This CLI has no bundled registry — in the framework repository, run `pnpm registry:build` first."
+        );
+        return 1;
+      }
+      const context: SyncContext = {
+        appRoot: process.cwd(),
+        registryDir,
+        requires: readRegistryCatalogue(TEMPLATES_DIR).requires,
+        frameworkVersion: FRAMEWORK_VERSION,
+      };
+      const installed = installedFrameworkVersion(context.appRoot);
+      if (installed && installed !== FRAMEWORK_VERSION) {
+        console.error(
+          `! @intelligo-dev/core is ${installed} but this CLI carries the ${FRAMEWORK_VERSION} registry — ` +
+            "run the CLI of the same version (`pnpm exec intelligo`), or pages and packages will disagree."
+        );
+      }
+      const selection = selectItems(
+        rest.filter((a) => !a.startsWith("-")),
+        context
+      );
+      if (!selection.ok) {
+        console.error(selection.message);
+        return 1;
+      }
+      if (rest.includes("--check")) {
+        const report = syncCheck(selection.items, context);
+        console.log(formatSyncReport(report));
+        return syncCheckExitCode(report);
+      }
+      return syncApply(selection.items, context, {
+        force: rest.includes("--force"),
+      });
     }
     case "help":
       console.log(usage());

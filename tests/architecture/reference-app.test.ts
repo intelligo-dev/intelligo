@@ -16,25 +16,15 @@ import { ROOT } from "./tree";
 const APP = path.join(ROOT, "apps/app");
 const REGISTRY = path.join(ROOT, "packages/registry");
 
-/** Consumer-owned configuration an item ships for the deployment to edit, each with its reason. */
-const SEAMS: [RegExp, string][] = [
-  [/^messages\//, "copy and locales are the deployment's"],
-  [/^lib\/shell-config\.tsx$/, "shell banner and header slots"],
-  [/^lib\/nav-config\.ts$/, "navigation"],
-  [/^lib\/settings-nav\.ts$/, "settings tabs"],
-  [/^lib\/chat-config\.tsx$/, "agent identity, starters, header slot"],
-  [/^lib\/chat-renderers\.tsx$/, "tool-call renderers"],
-  [/^lib\/chat-model\.ts$/, "the deployment's model"],
-  [/^lib\/chat-models\.ts$/, "the models the composer offers"],
-  [/^lib\/chat-server-config\.ts$/, "the chat transport's seams"],
-  [/^lib\/onboarding-steps\.ts$/, "onboarding steps"],
-  [/^lib\/billing-config\.ts$/, "product slug, currency, credit bundles"],
-  [/^lib\/workspace-bootstrap\.ts$/, "what a new workspace starts with"],
-  [/^lib\/document-patterns\.ts$/, "artifact detection"],
-  [/^lib\/dashboard-(config|data)\.tsx?$/, "dashboard copy and resume data"],
-  [/^lib\/feature-catalog\.ts$/, "feature names and plans"],
-  [/^lib\/[\w-]+-config\.tsx?$/, "an item's config seam"],
-];
+/**
+ * Consumer-owned configuration an item ships for the deployment to edit:
+ * message files, and the seams requires.json names, each with its reason.
+ */
+const requires = JSON.parse(
+  readFileSync(path.join(REGISTRY, "requires.json"), "utf8")
+) as { seams: Record<string, string> };
+const isSeam = (target: string) =>
+  target.startsWith("messages/") || target in requires.seams;
 
 type Item = {
   name: string;
@@ -115,7 +105,7 @@ describe("the reference app is the registry, installed", () => {
 
   it("keeps every installed file identical to its source, seams aside", () => {
     const drift = shipped
-      .filter((f) => !SEAMS.some(([pattern]) => pattern.test(f.target)))
+      .filter((f) => !isSeam(f.target))
       .filter((f) => existsSync(path.join(APP, f.target)))
       .filter(
         (f) =>

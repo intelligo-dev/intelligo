@@ -17,7 +17,14 @@
  * the application cannot boot. Outside the monorepo — a packed
  * tarball — the source is absent and the committed copy stands.
  */
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  cpSync,
+  existsSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -47,4 +54,10 @@ if (existsSync(resolve(registryDir, "requires.json"))) {
     resolve(templatesDir, "registry-items.json"),
     JSON.stringify(registryItems(registry), null, 2) + "\n"
   );
+}
+
+const built = resolve(registryDir, "public/r");
+if (existsSync(resolve(built, "intelligo.json"))) {
+  rmSync(resolve(templatesDir, "registry"), { recursive: true, force: true });
+  cpSync(built, resolve(templatesDir, "registry"), { recursive: true });
 }

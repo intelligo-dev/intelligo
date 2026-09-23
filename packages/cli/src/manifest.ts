@@ -41,10 +41,25 @@ export type FeatureEntry = {
   variables?: Record<string, string>;
 };
 
+/**
+ * Registry items `intelligo sync` installed: which items the app keeps
+ * in sync, the framework version they came from, and — per installed
+ * file that is not a seam or a message file — the hash of the file as
+ * written (after shadcn's normalisation, see `asInstalled`). A file
+ * whose hash still matches was not edited since, so a newer registry
+ * may replace it; one that differs was edited by hand.
+ */
+export type RegistryEntry = {
+  version: string;
+  items: string[];
+  files: Record<string, string>;
+};
+
 export type Manifest = {
   schemaVersion: 1;
   frameworkVersion: string;
   features: Record<string, FeatureEntry>;
+  registry?: RegistryEntry;
 };
 
 export function hashContents(contents: string): string {

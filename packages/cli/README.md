@@ -28,7 +28,27 @@ intelligo doctor                       # what is misconfigured, and why it matte
 intelligo migrate                      # apply the framework chain
 intelligo migrate --check [--json]     # compare the chain with the database, change nothing
 intelligo upgrade --check              # what a template upgrade would change
+intelligo sync [items…]                # install registry pages from this release, seams kept
+intelligo sync --check                 # exit 1 when an installed page drifted from the registry
 ```
+
+## `sync`: installed pages stay the registry's
+
+A page arrives as source, through `shadcn add`, and nothing stops it drifting
+afterwards — an edit here, a release skipped there. `intelligo sync` installs
+items from the registry bundled with this CLI, so the pages match the
+`@intelligo-dev/*` packages of the same version, in dependency order. Files an
+item ships once for you to own (`lib/*-config`, `lib/nav-config.ts`… — the
+`seams` in the registry's `requires.json`) are put back after the install, and
+message files are merged key by key with your copy winning. The result is
+recorded in `intelligo.manifest.json`.
+
+Name the items once — `intelligo sync intelligo app-shell chat …` — and
+afterwards a bare `intelligo sync` updates them. It refuses to overwrite a file
+you edited by hand unless you pass `--force`: move the change into a seam
+first. `intelligo sync --check` installs nothing, lists every file that is
+`missing`, `edited`, `outdated` or `messages-behind`, and exits 1 on any —
+the gate to run in CI.
 
 ## Why `migrate` is not `drizzle-kit migrate`
 

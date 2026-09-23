@@ -103,6 +103,7 @@ function readSourceItems(): RegistryJson {
 
 type Requires = {
   scaffold: string[];
+  seams: Record<string, string>;
   items: Record<
     string,
     {
@@ -666,6 +667,31 @@ describe("registry", () => {
           `${item.name}: marker ${entry.marker} is not one of its targets`
         ).toBe(true);
       });
+    });
+
+    it("names every consumer-owned file an item ships as a seam, and nothing else", () => {
+      // `intelligo sync` keeps a seam and overwrites everything else, so
+      // a config file missing here would be lost on the next sync. A
+      // seam is known by its name or by its doc comment saying so.
+      const byName = /^lib\/[^/]*(config|steps|renderers|patterns|bootstrap)\.tsx?$/;
+      const shipped = new Set<string>();
+      const owned = new Set<string>();
+      for (const item of registry.items) {
+        for (const file of item.files) {
+          if (typeof file.target !== "string") continue;
+          shipped.add(file.target);
+          if (byName.test(file.target)) owned.add(file.target);
+          else if (/^lib\/.*\.tsx?$/.test(file.target)) {
+            const source = readFileSync(path.join(REGISTRY_DIR, file.path), "utf8");
+            const doc = source.match(/\/\*\*[\s\S]*?\*\//)?.[0] ?? "";
+            if (/consumer-owned/i.test(doc)) owned.add(file.target);
+          }
+        }
+      }
+      expect(Object.keys(requires.seams).sort()).toEqual([...owned].sort());
+      for (const seam of Object.keys(requires.seams)) {
+        expect(shipped.has(seam), `${seam} is not a file any item ships`).toBe(true);
+      }
     });
 
     it("has no dependency cycles, so an install order exists", () => {
