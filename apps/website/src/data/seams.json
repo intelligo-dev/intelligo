@@ -21,7 +21,9 @@
   "trial-banner": [
     "lib/trial-banner-config.ts"
   ],
-  "notifications": [],
+  "notifications": [
+    "lib/notification-types.tsx"
+  ],
   "pricing": [
     "lib/billing-config.ts"
   ],

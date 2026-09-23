@@ -3,8 +3,8 @@
   "version": "1.0.0-beta.13",
   "published": "1.0.0-beta.13",
   "packages": 11,
-  "testFiles": 108,
-  "testCases": 1132,
+  "testFiles": 112,
+  "testCases": 1193,
   "architectureTests": 15,
   "registryItems": 28
 }

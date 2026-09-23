@@ -105,6 +105,18 @@ passes its own name.
 Outside production the in-memory mock needs no registration; in production it
 is refused, and any other mode must be registered from the composition root.
 
+## Local payments
+
+A QR-and-poll payment (QPay, PIX, UPI…) goes through two calls.
+`openLocalInvoice({ workspaceId, userId, reference, price })` issues the
+invoice through the provider and records it in `payments` at the price the
+server decided. `settleLocalInvoice({ invoiceId, workspaceId, fulfil })` asks
+the provider that issued it; when it is paid, the row is marked fulfilled and
+the grant `fulfil` returns — `{ plan: slug }` or `{ credits: Money }` — is
+applied in the same transaction, so concurrent polls grant once. An invoice of
+another workspace is `payment_not_found`. The `payment-poll` registry item is
+the transport over both.
+
 ## The webhook receiver
 
 `createStripeWebhookHandler` verifies the signature before anything else,

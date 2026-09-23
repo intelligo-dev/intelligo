@@ -35,7 +35,7 @@ Every docs page below is also served as Markdown: the same URL with `.md` append
 - [@intelligo-dev/billing](https://intelligo.dev/docs/packages/billing): Quota engine, credits, Stripe, feature gates, trials and rate limiting.
 - [@intelligo-dev/executions](https://intelligo.dev/docs/packages/executions): The execution lifecycle (admission, running, settlement) and the model cost registry.
 - [@intelligo-dev/chat](https://intelligo.dev/docs/packages/chat): The AI-SDK-native chat transport: one Route Handler with auth, rate limits, feature gates, credits and persistence.
-- [@intelligo-dev/next](https://intelligo.dev/docs/packages/next): The Next.js adapter: the one Intelligo package that imports next/*, binding request context and auth routes.
+- [@intelligo-dev/next](https://intelligo.dev/docs/packages/next): The Next.js adapter: the one Intelligo package that imports next/*, binding request context, auth routes and Route Handler guards.
 - [@intelligo-dev/audit](https://intelligo.dev/docs/packages/audit): Append-only audit events for multi-tenant apps, with a Postgres trigger that refuses every update and delete.
 - [@intelligo-dev/jobs](https://intelligo.dev/docs/packages/jobs): A Postgres-backed job queue: enqueue, claim with SKIP LOCKED, retry with backoff and prune. No Redis.
 - [@intelligo-dev/admin](https://intelligo.dev/docs/packages/admin): The operational console: cross-tenant queries, health probes and impersonation.
@@ -54,6 +54,7 @@ Every docs page below is also served as Markdown: the same URL with `.md` append
 - [Billing with Stripe](https://intelligo.dev/docs/guides/billing-stripe): Connect your plans and credit bundles to a Stripe account — keys, price ids, the webhook, checkout and the customer portal, locally and in production.
 - [Auth, workspaces and roles](https://intelligo.dev/docs/guides/auth-and-teams): Guard pages, Server Actions and route handlers by session, workspace and role, and see how sign-in, invitations and workspace switching work.
 - [Deploying](https://intelligo.dev/docs/guides/deploy): Put the app on Vercel with Postgres and pgvector, apply both migration chains on every deploy, and get email, Stripe webhooks and the cron working.
+- [Testing your app](https://intelligo.dev/docs/guides/testing): Run Vitest on an app built on the framework — the server-only stub, why the framework packages are inlined, keeping models out of CI, and what to test.
 
 ## Pages
 
