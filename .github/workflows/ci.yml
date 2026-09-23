@@ -235,7 +235,8 @@ jobs:
             -c 'SELECT active_organization_id, impersonated_by FROM sessions LIMIT 0;' \
             -c 'SELECT id, request_id, expires_at FROM credit_reservations LIMIT 0;' \
             -c 'SELECT id, action, resource_kind FROM audit_events LIMIT 0;' \
-            -c 'SELECT execution_id FROM usage_records LIMIT 0;'
+            -c 'SELECT execution_id FROM usage_records LIMIT 0;' \
+            -c 'SELECT invoice_id, fulfilled_at FROM payments LIMIT 0;'
 
       # The append-only audit guard is a Postgres trigger (no mock can
       # observe it) and the execution lifecycle rests on a

@@ -1,6 +1,7 @@
 /**
- * Plans, subscriptions, credit ledgers, purchases and Stripe events.
- * Amounts in the credit ledgers are micros of their currency.
+ * Plans, subscriptions, credit ledgers, purchases, local payments and
+ * Stripe events. Amounts in the credit ledgers are micros of their
+ * currency; amounts a buyer paid are minor units of theirs.
  */
 
 import {
@@ -13,7 +14,7 @@ import {
   index,
   unique,
 } from "drizzle-orm/pg-core";
-import { organization } from "./auth";
+import { organization, users } from "./auth";
 
 /**
  * The registered plan catalogue, copied into rows so a subscription can
@@ -135,6 +136,39 @@ export const creditPurchases = pgTable(
   (table) => [index("credit_purchases_workspace_id_idx").on(table.workspaceId)]
 );
 
+/**
+ * Invoices issued through a registered payment provider (QR-and-poll
+ * methods such as QPay, PIX or UPI), one row per invoice. The row is
+ * written when the invoice is opened, so settlement knows who pays and
+ * what was priced without trusting the browser; `fulfilled_at` is set
+ * in the same transaction that grants what was bought, so a payment is
+ * granted once however many polls see it paid.
+ */
+export const payments = pgTable(
+  "payments",
+  {
+    id: text("id").primaryKey(),
+    /** The PAYMENT_MODE the invoice was opened under; settlement asks the same provider. */
+    provider: text("provider").notNull(),
+    invoiceId: text("invoice_id").notNull().unique(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    /** What was bought, in the product's words: a plan slug, a bundle id. */
+    reference: text("reference").notNull(),
+    /** The price, in minor units of `currency`. */
+    amountMinor: integer("amount_minor").notNull(),
+    currency: text("currency").notNull(),
+    status: text("status").notNull().default("pending"), // pending|paid|failed
+    fulfilledAt: timestamp("fulfilled_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("payments_workspace_id_idx").on(table.workspaceId)]
+);
+
 /** Every Stripe event, for idempotent webhook processing and audit. */
 export const financeEvents = pgTable("finance_events", {
   id: text("id").primaryKey(),
@@ -201,6 +235,8 @@ export type CreditBalance = typeof creditBalances.$inferSelect;
 export type InsertCreditBalance = typeof creditBalances.$inferInsert;
 export type CreditPurchase = typeof creditPurchases.$inferSelect;
 export type InsertCreditPurchase = typeof creditPurchases.$inferInsert;
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = typeof payments.$inferInsert;
 export type FinanceEvent = typeof financeEvents.$inferSelect;
 export type InsertFinanceEvent = typeof financeEvents.$inferInsert;
 export type BillingSettings = typeof billingSettings.$inferSelect;
