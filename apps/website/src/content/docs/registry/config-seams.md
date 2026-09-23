@@ -120,6 +120,31 @@ costs the most. Empty the list to show it everywhere.
 
 `upgradeHref`: where the CTA sends the user.
 
+## [notifications](/blocks/notifications)
+
+### `lib/notification-types.tsx`
+
+Exports `NotificationTypeStyle`, `NotificationTypeMap`, `notificationTypes`. [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/registry/base/notifications/lib/notification-types.tsx)
+
+Icons for the product's own notification types. Consumer-owned:
+`intelligo sync` never overwrites this file.
+
+`createNotification` accepts any `type` string; a type listed here is
+drawn with its `icon` and `className` (a semantic text colour), and
+this map is consulted before the built-in types, so an entry can also
+restyle one of those. Any other type falls back to a plain bell.
+
+```ts
+import { FileText } from "lucide-react";
+
+export const notificationTypes: NotificationTypeMap = {
+  report_ready: { icon: FileText, className: "text-success" },
+};
+```
+
+Imported only by client components: an icon is a component, which
+cannot cross from a server component to a client one as a prop.
+
 ## [pricing](/blocks/pricing)
 
 ### `lib/billing-config.ts`
@@ -175,26 +200,47 @@ showing, and when it escalates. Below the first, it renders nothing.
 
 ### `lib/local-payment.ts`
 
-Exports `LocalPaymentInvoice`, `LocalPaymentStatus`, `LocalPaymentRequest`, `createLocalPayment`, `checkLocalPaymentStatus`. [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/registry/base/payment-poll/lib/local-payment.ts)
+Exports `priceLocalPayment`. [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/registry/base/payment-poll/lib/local-payment.ts)
 
-Local payment provider binding — consumer-owned.
+What a local payment buys — consumer-owned.
 
 Card checkout is a redirect: you send the user to the processor and
 they come back. Most of the world's payment methods are not that.
 QR-and-poll — QPay and SocialPay in Mongolia, PIX in Brazil, UPI in
 India, PromptPay in Thailand — issues an invoice, shows a code the
 user scans in their own banking app, and waits for the provider to
-say it was paid. `LocalPaymentModal` renders that flow; this file is
-where you bind it to an actual provider.
+say it was paid. `LocalPaymentModal` renders that flow.
 
-Both functions run on the server, and neither takes a user id: the
-caller is resolved from the session inside your implementation. A
-client-supplied user id on a payment call is an invitation to
-charge someone else's plan to a stranger's account.
+The framework does the rest: `@intelligo-dev/billing` issues the
+invoice through the provider your composition root registered
+(`registerPaymentProvider`, selected by PAYMENT_MODE; outside
+production an unset PAYMENT_MODE is an in-memory mock), records it
+against the caller's workspace, and when the provider reports it
+paid, grants what you return here once, on the server.
 
-The default throws rather than returning a fake invoice — a payment
-flow that silently no-ops is worse than one that is obviously
-unbound.
+This file answers one question: what does `reference` cost, and what
+does paying it grant? It is asked when the invoice is opened and again
+when it is settled. Price it here, never from anything the browser
+sent: an amount that arrives as an argument is an amount the buyer
+chose. Return null for a reference you do not sell this way.
+
+The default throws rather than pricing anything — a payment flow that
+silently no-ops is worse than one that is obviously unbound.
+
+An implementation, over the plan catalogue:
+
+```ts
+const plan = getPlanBySlug(reference);
+if (!plan) return null;
+return {
+  price: fromMajor(plan.priceOneTime, CURRENCY),
+  grant: { plan: plan.slug },
+  description: plan.name,
+};
+```
+
+or a credit bundle: `grant: { credits: fromMajor(5, "USD") }`, in the
+deployment's billing currency.
 
 ### `lib/payment-poll-config.ts`
 

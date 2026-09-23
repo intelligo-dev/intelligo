@@ -219,7 +219,27 @@ export function composeIntelligo(): void {
 }
 ```
 
-`instrumentation.ts` calls it once per server process.
+`instrumentation.ts` calls it once per server process:
+
+<!-- snippet: packages/cli/templates/app-scaffold/instrumentation.ts.tpl#register -->
+
+```ts
+export async function register() {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { composeIntelligo, seedIntelligo } = await import("./lib/intelligo");
+    composeIntelligo();
+    // The first request finds the plan and billing-settings rows in
+    // place. A failure is already logged, and the next request retries.
+    await seedIntelligo().catch(() => undefined);
+  }
+}
+```
+
+### Once per process is enough
+
+Every framework registry — plans, features, model prices, the request-context source, the workspace bootstrap — lives on `globalThis`, keyed by a global symbol. A bundler that loads a package or `lib/intelligo.ts` twice still reaches the same maps, so what `register()` bound is what every page, Server Action and Route Handler in that process reads. An app needs no "ensure composed" import at the top of each module that reads a registry; composing in `instrumentation.ts` covers them all. Calling `composeIntelligo()` again is harmless — it binds once — which is why a Route Handler that a test or a worker may invoke without the instrumentation hook still calls it.
+
+`globalThis` is per runtime, though. The Edge runtime is a separate global scope that `register()` does not compose (the scaffold composes only when `NEXT_RUNTIME` is `nodejs`), so code that runs on the Edge and reads a registry has to compose there itself. The scaffold's middleware reads none: it only redirects.
 
 ## Import side effects are banned
 
@@ -232,48 +252,7 @@ Packages never reach sideways. `@intelligo-dev/auth` does not import billing; `@
 <!-- snippet: packages/cli/templates/app-scaffold/intelligo.ts.tpl#executions -->
 
 ```ts title="lib/intelligo.ts"
-export const executions = createExecutions({
-  async checkEntitlement({ workspaceId, requestId, model }) {
-    // Passing requestId makes admission atomic: the worst-case cost is
-    // reserved in the same transaction that reads the balance, so
-    // concurrent requests cannot all pass.
-    const quota = await reserveQuota(workspaceId, { modelId: model, requestId });
-    return {
-      allowed: quota.allowed,
-      code: quota.code,
-      reason: quota.reason,
-      // The hold, as an amount with its currency.
-      estimated: quota.estimated,
-      usingTrialCredits: quota.usingTrialCredits,
-    };
-  },
-
-  async settleUsage(s) {
-    // Returns what was charged and which pool funded it; the lifecycle
-    // records the amount and its currency on the execution row.
-    return recordTokenUsage({
-      workspaceId: s.workspaceId,
-      userId: s.userId ?? "",
-      model: s.model ?? "unknown",
-      agent: s.capability,
-      inputTokens: s.inputTokens,
-      outputTokens: s.outputTokens,
-      totalTokens: s.totalTokens,
-      usingTrialCredits: s.usingTrialCredits,
-      requestId: s.requestId,
-      metadata: s.metadata,
-    });
-  },
-
-  async releaseHold({ requestId }) {
-    await releaseReservation(requestId);
-  },
-
-  // Lets executions.reconcile() tell a settling row whose charge
-  // committed from one whose charge never happened.
-  findSettlement: ({ workspaceId, requestId }) =>
-    findSettlementByRequestId(workspaceId, requestId),
-});
+export const executions = createBillingExecutions();
 ```
 
 The same pattern binds `checkMemberLimit` for the team service, `onAccountDeleted` for the profile service, and so on. Swap a port and the service follows; no package has to change.
@@ -609,7 +588,7 @@ pnpm exec shadcn add @intelligo/chat-share
 | [billing-settings](/blocks/billing-settings) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [feature-gating](/blocks/feature-gating) | [pricing](/blocks/pricing) | `i18n/navigation`, `lib/utils` | — |
 | [payment-poll](/blocks/payment-poll) | [pricing](/blocks/pricing) | — | — |
-| [profile-settings](/blocks/profile-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
+| [profile-settings](/blocks/profile-settings) | [route-error](/blocks/route-error) | `i18n/navigation`, `i18n/routing` | — |
 | [onboarding](/blocks/onboarding) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [dashboard](/blocks/dashboard) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [artifacts](/blocks/artifacts) | — | `i18n/navigation` | — |
@@ -743,6 +722,31 @@ costs the most. Empty the list to show it everywhere.
 
 `upgradeHref`: where the CTA sends the user.
 
+## [notifications](/blocks/notifications)
+
+### `lib/notification-types.tsx`
+
+Exports `NotificationTypeStyle`, `NotificationTypeMap`, `notificationTypes`. [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/registry/base/notifications/lib/notification-types.tsx)
+
+Icons for the product's own notification types. Consumer-owned:
+`intelligo sync` never overwrites this file.
+
+`createNotification` accepts any `type` string; a type listed here is
+drawn with its `icon` and `className` (a semantic text colour), and
+this map is consulted before the built-in types, so an entry can also
+restyle one of those. Any other type falls back to a plain bell.
+
+```ts
+import { FileText } from "lucide-react";
+
+export const notificationTypes: NotificationTypeMap = {
+  report_ready: { icon: FileText, className: "text-success" },
+};
+```
+
+Imported only by client components: an icon is a component, which
+cannot cross from a server component to a client one as a prop.
+
 ## [pricing](/blocks/pricing)
 
 ### `lib/billing-config.ts`
@@ -798,26 +802,47 @@ showing, and when it escalates. Below the first, it renders nothing.
 
 ### `lib/local-payment.ts`
 
-Exports `LocalPaymentInvoice`, `LocalPaymentStatus`, `LocalPaymentRequest`, `createLocalPayment`, `checkLocalPaymentStatus`. [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/registry/base/payment-poll/lib/local-payment.ts)
+Exports `priceLocalPayment`. [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/registry/base/payment-poll/lib/local-payment.ts)
 
-Local payment provider binding — consumer-owned.
+What a local payment buys — consumer-owned.
 
 Card checkout is a redirect: you send the user to the processor and
 they come back. Most of the world's payment methods are not that.
 QR-and-poll — QPay and SocialPay in Mongolia, PIX in Brazil, UPI in
 India, PromptPay in Thailand — issues an invoice, shows a code the
 user scans in their own banking app, and waits for the provider to
-say it was paid. `LocalPaymentModal` renders that flow; this file is
-where you bind it to an actual provider.
+say it was paid. `LocalPaymentModal` renders that flow.
 
-Both functions run on the server, and neither takes a user id: the
-caller is resolved from the session inside your implementation. A
-client-supplied user id on a payment call is an invitation to
-charge someone else's plan to a stranger's account.
+The framework does the rest: `@intelligo-dev/billing` issues the
+invoice through the provider your composition root registered
+(`registerPaymentProvider`, selected by PAYMENT_MODE; outside
+production an unset PAYMENT_MODE is an in-memory mock), records it
+against the caller's workspace, and when the provider reports it
+paid, grants what you return here once, on the server.
 
-The default throws rather than returning a fake invoice — a payment
-flow that silently no-ops is worse than one that is obviously
-unbound.
+This file answers one question: what does `reference` cost, and what
+does paying it grant? It is asked when the invoice is opened and again
+when it is settled. Price it here, never from anything the browser
+sent: an amount that arrives as an argument is an amount the buyer
+chose. Return null for a reference you do not sell this way.
+
+The default throws rather than pricing anything — a payment flow that
+silently no-ops is worse than one that is obviously unbound.
+
+An implementation, over the plan catalogue:
+
+```ts
+const plan = getPlanBySlug(reference);
+if (!plan) return null;
+return {
+  price: fromMajor(plan.priceOneTime, CURRENCY),
+  grant: { plan: plan.slug },
+  description: plan.name,
+};
+```
+
+or a credit bundle: `grant: { credits: fromMajor(5, "USD") }`, in the
+deployment's billing currency.
 
 ### `lib/payment-poll-config.ts`
 
@@ -1375,7 +1400,7 @@ Every package is published at the same version, by one release commit. `intellig
 | [billing](/docs/packages/billing) | Quota engine, credits, Stripe, feature gates, trials and rate limiting. |
 | [executions](/docs/packages/executions) | The execution lifecycle (admission, running, settlement) and the model cost registry. |
 | [chat](/docs/packages/chat) | The AI-SDK-native chat transport: one Route Handler with auth, rate limits, feature gates, credits and persistence. |
-| [next](/docs/packages/next) | The Next.js adapter: the one Intelligo package that imports next/*, binding request context and auth routes. |
+| [next](/docs/packages/next) | The Next.js adapter: the one Intelligo package that imports next/*, binding request context, auth routes and Route Handler guards. |
 | [audit](/docs/packages/audit) | Append-only audit events for multi-tenant apps, with a Postgres trigger that refuses every update and delete. |
 | [jobs](/docs/packages/jobs) | A Postgres-backed job queue: enqueue, claim with SKIP LOCKED, retry with backoff and prune. No Redis. |
 | [admin](/docs/packages/admin) | The operational console: cross-tenant queries, health probes and impersonation. |
@@ -1660,6 +1685,18 @@ passes its own name.
 Outside production the in-memory mock needs no registration; in production it
 is refused, and any other mode must be registered from the composition root.
 
+## Local payments
+
+A QR-and-poll payment (QPay, PIX, UPI…) goes through two calls.
+`openLocalInvoice({ workspaceId, userId, reference, price })` issues the
+invoice through the provider and records it in `payments` at the price the
+server decided. `settleLocalInvoice({ invoiceId, workspaceId, fulfil })` asks
+the provider that issued it; when it is paid, the row is marked fulfilled and
+the grant `fulfil` returns — `{ plan: slug }` or `{ credits: Money }` — is
+applied in the same transaction, so concurrent polls grant once. An invoice of
+another workspace is `payment_not_found`. The `payment-poll` registry item is
+the transport over both.
+
 ## The webhook receiver
 
 `createStripeWebhookHandler` verifies the signature before anything else,
@@ -1873,8 +1910,20 @@ A tool reaches the client mid-turn through the turn: `turn.write()` sends a
 `data-chat-*` part (a status line, a plan), and `createArtifactWriter(turn,
 { kind, title })` streams a document into the chat's canvas — `append`
 deltas, `finish({ documentId })`. A tool that calls a model itself — a
-grounded search, a sub-agent on the same model — hands its tokens to
-`turn.addUsage()`, and the turn settles them with its own. `sanitizeForShare` strips a transcript
+grounded search, a sub-agent, an embedding for retrieval — hands its tokens
+to `turn.addUsage(usage, { model })`. Tokens on the turn's own model (or
+with no `model`) settle with the turn's; tokens on another registered model
+are summed per model and recorded as that model's own execution
+(`capability` `"chat.embedding"` for an embedding model, `parentExecutionId`
+in its metadata) when the turn settles. An unregistered `model` throws
+`UnknownModelError` at the call rather than bill at another model's price.
+
+`turn.state` is a `Map` that lives for one request and is shared by every
+seam that receives the turn — `resolveAgent`, `prepareMessages`, tools,
+`streamTurn`, `persist`, the `onTurn` events — so what one of them reads
+(a profile, a retrieval result) the next can use without a second query.
+
+`sanitizeForShare` strips a transcript
 for a public page; `recordChatFeedback` records a vote and tells the hook.
 Stored attachments mount two more handlers, `createChatUploadHandler` and
 `createChatAttachmentHandler`.
@@ -1952,8 +2001,34 @@ Mount Better-Auth's HTTP handlers:
 export { GET, POST } from "@intelligo-dev/next/auth";
 ```
 
-The two subpaths are separate so that binding the request context does not
-load the configured Better-Auth server instance.
+Guard a Route Handler. The wrapper resolves the caller first and answers a
+failed check itself — `401` without a session, `403` without a workspace or
+the role, with `{ "error": <code> }` as the body. What the handler throws
+propagates unchanged:
+
+```ts
+// app/api/invoices/route.ts
+import { withRole } from "@intelligo-dev/next/route";
+
+export const GET = withRole(
+  ["owner", "admin"],
+  async (request, { workspace }) =>
+    Response.json(await listInvoices(workspace.id))
+);
+```
+
+`withAuth` needs only a session, `withWorkspace` an active workspace.
+
+`ActionResult<T>` is the shape a Server Action returns to its form —
+`{ success: true, data }` or `{ success: false, error }` — shared by every
+registry item's actions:
+
+```ts
+import type { ActionResult } from "@intelligo-dev/next";
+```
+
+The subpaths are separate so that binding the request context does not load
+the configured Better-Auth server instance.
 
 ## Why a package
 
@@ -1966,6 +2041,7 @@ it anywhere else — is what makes that true.
 
 - `@intelligo-dev/next`
 - `@intelligo-dev/next/auth`
+- `@intelligo-dev/next/route`
 
 [npm](https://www.npmjs.com/package/@intelligo-dev/next) · [source](https://github.com/intelligo-dev/intelligo/tree/main/packages/next)
 
@@ -2302,12 +2378,50 @@ to the new application, which is where `intelligo` comes from afterwards.
 ```bash
 pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app, plus the pages you pick
 pnpm dlx @intelligo-dev/cli@beta create my-app --items chat,billing-settings --yes   # no questions
-intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance)
+intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance, vitest)
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate                      # apply the framework chain
 intelligo migrate --check [--json]     # compare the chain with the database, change nothing
 intelligo upgrade --check              # what a template upgrade would change
+intelligo sync [items…]                # install registry pages from this release, seams kept
+intelligo sync --check                 # exit 1 when an installed page drifted from the registry
 ```
+
+## `sync`: installed pages stay the registry's
+
+A page arrives as source, through `shadcn add`, and nothing stops it drifting
+afterwards — an edit here, a release skipped there. `intelligo sync` installs
+items from the registry bundled with this CLI, so the pages match the
+`@intelligo-dev/*` packages of the same version, in dependency order. Files an
+item ships once for you to own (`lib/*-config`, `lib/nav-config.ts`… — the
+`seams` in the registry's `requires.json`) are put back after the install, and
+message files are merged key by key with your copy winning. The result is
+recorded in `intelligo.manifest.json`.
+
+Name the items once — `intelligo sync intelligo app-shell chat …` — and
+afterwards a bare `intelligo sync` updates them. It refuses to overwrite a file
+you edited by hand unless you pass `--force`: move the change into a seam
+first. `intelligo sync --check` installs nothing, lists every file that is
+`missing`, `edited`, `outdated`, `messages-behind` or `locale-behind`, and
+exits 1 on any — the gate to run in CI.
+
+### Other locales
+
+The registry ships English (`messages/en/<item>.json`). When the app's
+`i18n/routing.ts` lists more `locales`, `sync --check` compares each other
+locale's copy of every shipped namespace — `messages/<locale>/<item>.json` —
+with the app's English file on disk (the merged copy, your own keys
+included) and reports a missing file or missing keys as `locale-behind`,
+with the keys. `sync` never writes another locale: after it adds English
+keys, translate them, and the check passes again.
+
+`create` installs the pages you pick the same way: the dependencies first
+(from the root of a parent pnpm workspace when the new app is one of its
+members, so the workspace keeps one lockfile), then `intelligo sync` of the
+design-system base and every item, one `shadcn add` each. Scaffold files an
+item replaces — `app/globals.css`, the theme provider, `lib/utils.ts` — move
+from the `app-scaffold` record to the registry's (the feature's `handedOver`
+list), so `upgrade --check` does not report them as yours forever.
 
 ## Why `migrate` is not `drizzle-kit migrate`
 
@@ -2326,7 +2440,8 @@ baselined first.
 which an empty database and a stale one share. A deploy gate that must tell them
 apart reads `--json`: one object on stdout whose `state` is `up_to_date`,
 `pending`, `fresh` (empty database), `unmanaged`, `ahead` or `legacy`, beside
-`exitCode`, `chain`, `applied`, `pending`, `unknown`, `legacy` and `adoptable`.
+`exitCode`, `chain`, `applied`, `pending`, `unknown`, `legacy`, `legacyMissing`
+and `adoptable`.
 
 ## `add maintenance` and its schedule
 
@@ -2362,6 +2477,9 @@ intelligo migrate --check   Compare the framework's migrations to a database
                             fresh | ahead | unmanaged | legacy)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
 intelligo upgrade --check   Show what a template upgrade would change
+intelligo sync [items…]     Install registry pages from this release's registry,
+                            keeping seams and merging messages (--force replaces
+                            hand-edited files; --check only reports, exit 1 on drift)
 ```
 
 ## create
@@ -2376,10 +2494,12 @@ you have since edited.
 
 In a terminal it asks for the project name when none is given, then
 which registry pages to install (`--items a,b` or `--all` answer that
-without asking). The pages are installed by the shadcn CLI the scaffold
-declares, after the dependencies — and only once you approve the exact
-commands, or pass `--yes`. `--no-install` stops after the scaffold and
-prints them instead.
+without asking). The pages are installed by `intelligo sync` — one
+`shadcn add` per item, from the registry this CLI carries — after the
+dependencies (from the root of a parent pnpm workspace when the app is
+a member of one), and only once you approve the exact commands, or
+pass `--yes`. `--no-install` stops after the scaffold and prints them
+instead.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/create.ts)
 
@@ -2399,6 +2519,7 @@ their own, and refuse to overwrite the latter.
 | --- | --- |
 | `admin-page` | Mount the Intelligo operational console at /admin — `app/[locale]/admin/page.tsx` |
 | `maintenance` | A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs — scheduled every five minutes, in vercel.json when the app has none — `app/api/cron/maintenance/route.ts` |
+| `vitest` | A Vitest setup for the app's own tests: the `@` alias, a `server-only` stub, and the `@intelligo-dev/*` packages inlined so the stub reaches them — `vitest.config.ts`, `tests/stubs/server-only.ts` |
 
 ## doctor
 
@@ -2476,7 +2597,7 @@ JSON object on stdout, same exit code, whose `state` is
                    `migrate` can take it over.
 
 Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
-`unknown`, `legacy` and `adoptable`.
+`unknown`, `legacy`, `legacyMissing` and `adoptable`.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/migrate-check.ts)
 
@@ -2488,6 +2609,31 @@ never overwrite consumer source, so the interesting output is not
 them" — the set where the consumer has to make a decision.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/upgrade-check.ts)
+
+## sync
+
+Keeps an app's installed registry pages exactly what the framework
+ships. Installing stays the shadcn CLI's job — every item goes in with
+`shadcn add <item> --yes --overwrite` — and this command adds what
+shadcn cannot know:
+
+- the version: items come from the registry bundled with this CLI, so
+  they match the `@intelligo-dev/*` packages of the same release;
+- the order: an item that imports a sibling's files lands after it
+  (requires.json `items`);
+- the seams: files an item ships once for the deployment to own
+  (requires.json `seams`) are put back after the install, and message
+  files are merged key by key, the app's copy winning;
+- the record: intelligo.manifest.json keeps each installed file's
+  hash, so `--check` can tell a file edited by hand from one a newer
+  registry replaced. Scaffold files an install replaces (globals.css,
+  the theme provider) leave the `app-scaffold` record for this one,
+  so `upgrade --check` stops calling them customized.
+
+`--check` installs nothing and exits 1 when any installed file is
+missing, edited or behind the registry — the gate CI runs.
+
+[source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/sync.ts)
 
 ---
 
@@ -3314,3 +3460,111 @@ The app is a standard Next.js 16 server: `pnpm db:migrate`, `pnpm build`, `pnpm 
 - [Environment](/docs/getting-started/environment)
 - [Billing with Stripe](/docs/guides/billing-stripe)
 - [The composition root](/docs/concepts/composition-root)
+
+---
+
+# Testing your app
+
+Source: https://intelligo.dev/docs/guides/testing
+
+At the end of this page `pnpm test` runs your app's own tests: the seams you bind, your tools and your server actions, with no model calls and no browser.
+
+## Add the setup
+
+```bash
+intelligo add vitest
+pnpm add -D vitest
+```
+
+Then add `"test": "vitest run"` to the scripts in `package.json`. `intelligo add vitest` writes two files and records them in `intelligo.manifest.json` like every other generated file, so `upgrade --check` can tell you when the template moves.
+
+<!-- snippet: packages/cli/templates/vitest/vitest.config.ts.tpl -->
+
+```ts
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { defineConfig } from "vitest/config";
+
+const root = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * The app's test runner.
+ *
+ * - `@` resolves the way the app's tsconfig resolves it.
+ * - `server-only` throws unless the bundler applies React's
+ *   `react-server` condition, which a test does not; the stub stands in
+ *   for it so a test can import server code.
+ * - The `@intelligo-dev/*` packages ship compiled ESM that imports
+ *   `server-only` itself. Vitest leaves node_modules to Node, where the
+ *   alias above never applies, so they are inlined: transformed by
+ *   Vitest like the app's own source, with the alias in effect.
+ */
+export default defineConfig({
+  resolve: {
+    alias: {
+      "@": root,
+      "server-only": path.join(root, "tests/stubs/server-only.ts"),
+    },
+  },
+  test: {
+    environment: "node",
+    include: ["**/*.test.{ts,tsx}"],
+    exclude: ["node_modules/**", ".next/**"],
+    server: {
+      deps: {
+        inline: [/node_modules\/@intelligo-dev\//],
+      },
+    },
+  },
+});
+```
+
+The second file, `tests/stubs/server-only.ts`, is an empty module.
+
+## Why the framework packages are inlined
+
+The framework's server modules begin with `import "server-only"`, the guard that fails a build which pulls server code into the browser. Outside a `react-server` build the real package throws on import. An alias to the stub fixes that for your own files — but Vitest hands anything under `node_modules` to Node untransformed, and Node never sees a Vite alias. The first test that imports `lib/intelligo.ts` would then fail inside `@intelligo-dev/billing` on the guard, not on anything it tests.
+
+`server.deps.inline` makes Vitest transform the `@intelligo-dev/*` packages itself, so the alias reaches their imports too. Mock a package by its specifier (`vi.mock("@intelligo-dev/core/documents")`), never by a path inside `node_modules`: the packages ship compiled ESM, and the file layout is not part of their contract.
+
+## No model calls in CI
+
+Mock the AI SDK provider you use, so a test never needs a key and never spends one:
+
+```ts
+import { vi } from "vitest";
+
+vi.mock("@ai-sdk/anthropic", () => ({
+  anthropic: vi.fn(() => ({ modelId: "anthropic/claude-sonnet-4-6" })),
+}));
+```
+
+For a whole chat turn, `@intelligo-dev/chat/testing` exports `createStubLanguageModel`: a language model that answers from a function of the last user message, can emit a tool call, and reports token usage like a real one. The scaffold's chat streams from it until you configure a provider.
+
+## Environment read at import time
+
+A module that reads the environment when it loads — a config object, a provider client built at the top of a file — sees whatever was set before the import. Stub the variables first and import afterwards, with a fresh module registry per test:
+
+```ts
+import { beforeEach, expect, it, vi } from "vitest";
+
+beforeEach(() => {
+  vi.resetModules();
+  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.example.com");
+});
+
+it("builds links from the public URL", async () => {
+  const { appUrl } = await import("@/lib/app-url");
+  expect(appUrl("/login")).toBe("https://app.example.com/login");
+});
+```
+
+## What is worth testing
+
+Most of an app built on the framework is installed source the registry already tests, and `intelligo sync --check` keeps it the registry's. What only your tests reach is what you decided:
+
+- **The seams you bind** — `lib/chat-server-config.ts` runs on a registered model id and gates on a feature key your plans declare; `lib/chat-config.tsx` names starters your messages define. The reference app's `lib/__tests__` has one of each.
+- **Your tools and prompts** — the functions an agent calls, with the model mocked.
+- **Your Server Actions** — parse, call the service, map its typed error. Mock the service's package and assert the mapping.
+- **Your own tables** — against a real Postgres, skipped when there is none: `describe.skipIf(!process.env.TEST_DATABASE_URL)`.

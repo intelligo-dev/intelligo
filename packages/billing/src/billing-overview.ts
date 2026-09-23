@@ -16,21 +16,28 @@ export type BillingRole = "member" | "admin" | "owner";
 
 export type BillingOverviewMember = {
   role: "member";
-  planName: string;
-  /** Which plan is current, so a pricing page can mark it. */
+  /**
+   * The catalogue name of the workspace's plan, `null` when it has none.
+   * Copy for the no-plan case is the page's, in the reader's language.
+   */
+  planName: string | null;
+  /**
+   * Which plan is current, so a pricing page can mark it and a page can
+   * look up its translated name; `"free"` when the workspace has none.
+   */
   planSlug: string;
   status: string;
 };
 
 export type BillingOverviewAdmin = {
   role: "admin";
-  planName: string;
+  planName: string | null;
   planSlug: string;
 };
 
 export type BillingOverviewOwner = {
   role: "owner";
-  planName: string;
+  planName: string | null;
   planSlug: string;
   subscription: {
     status: string;
@@ -68,7 +75,7 @@ export async function getBillingOverview(
   const { workspaceId, role } = billingOverviewSchema.parse(input);
 
   const billing = await getWorkspaceBilling(workspaceId);
-  const planName = billing.plan?.name ?? "Free";
+  const planName = billing.plan?.name ?? null;
   const planSlug = billing.plan?.slug ?? "free";
 
   if (role === "member") {

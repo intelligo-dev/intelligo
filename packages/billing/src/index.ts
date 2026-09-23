@@ -54,6 +54,13 @@ export type { ResolvedBillingSettings } from "./billing-settings";
 // The plans table, written from the registered catalogue
 export { ensurePlanRows } from "./plan-rows";
 
+// The execution boundary bound to the quota engine
+export { billingExecutionPorts, createBillingExecutions } from "./executions";
+
+// A plan as a product decision (a reward, a grant), not a payment
+export { grantPlan } from "./plan-grant";
+export type { GrantPlanInput, GrantPlanResult } from "./plan-grant";
+
 // Quota enforcement engine
 export {
   checkQuota,
@@ -131,6 +138,8 @@ export type { QuotaAction, FeatureQuotaResult } from "./feature-quota";
 // Payment providers — the contract, the registry, and the mock
 export {
   getPaymentProvider,
+  getPaymentProviderFor,
+  currentPaymentMode,
   mockCompletePayment,
   getMockPayment,
 } from "./payment";
@@ -140,6 +149,17 @@ export type {
   CreatePaymentResult,
   PaymentCheckResult,
 } from "./payment";
+
+// Invoices from a registered payment provider, recorded and granted on
+// the server
+export { openLocalInvoice, settleLocalInvoice } from "./local-payments";
+export type {
+  LocalPaymentGrant,
+  LocalPaymentOffer,
+  LocalPaymentStatus,
+  OpenLocalInvoiceInput,
+  SettleLocalInvoiceInput,
+} from "./local-payments";
 
 // Checkout & billing overview service. Transports call
 // requireWorkspace/requireRole first and pass resolved ids/role in.

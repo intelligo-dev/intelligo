@@ -20,6 +20,9 @@ intelligo migrate --check   Compare the framework's migrations to a database
                             fresh | ahead | unmanaged | legacy)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
 intelligo upgrade --check   Show what a template upgrade would change
+intelligo sync [items…]     Install registry pages from this release's registry,
+                            keeping seams and merging messages (--force replaces
+                            hand-edited files; --check only reports, exit 1 on drift)
 ```
 
 ## create
@@ -34,10 +37,12 @@ you have since edited.
 
 In a terminal it asks for the project name when none is given, then
 which registry pages to install (`--items a,b` or `--all` answer that
-without asking). The pages are installed by the shadcn CLI the scaffold
-declares, after the dependencies — and only once you approve the exact
-commands, or pass `--yes`. `--no-install` stops after the scaffold and
-prints them instead.
+without asking). The pages are installed by `intelligo sync` — one
+`shadcn add` per item, from the registry this CLI carries — after the
+dependencies (from the root of a parent pnpm workspace when the app is
+a member of one), and only once you approve the exact commands, or
+pass `--yes`. `--no-install` stops after the scaffold and prints them
+instead.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/create.ts)
 
@@ -57,6 +62,7 @@ their own, and refuse to overwrite the latter.
 | --- | --- |
 | `admin-page` | Mount the Intelligo operational console at /admin — `app/[locale]/admin/page.tsx` |
 | `maintenance` | A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs — scheduled every five minutes, in vercel.json when the app has none — `app/api/cron/maintenance/route.ts` |
+| `vitest` | A Vitest setup for the app's own tests: the `@` alias, a `server-only` stub, and the `@intelligo-dev/*` packages inlined so the stub reaches them — `vitest.config.ts`, `tests/stubs/server-only.ts` |
 
 ## doctor
 
@@ -134,7 +140,7 @@ JSON object on stdout, same exit code, whose `state` is
                    `migrate` can take it over.
 
 Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
-`unknown`, `legacy` and `adoptable`.
+`unknown`, `legacy`, `legacyMissing` and `adoptable`.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/migrate-check.ts)
 
@@ -146,3 +152,28 @@ never overwrite consumer source, so the interesting output is not
 them" — the set where the consumer has to make a decision.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/upgrade-check.ts)
+
+## sync
+
+Keeps an app's installed registry pages exactly what the framework
+ships. Installing stays the shadcn CLI's job — every item goes in with
+`shadcn add <item> --yes --overwrite` — and this command adds what
+shadcn cannot know:
+
+- the version: items come from the registry bundled with this CLI, so
+  they match the `@intelligo-dev/*` packages of the same release;
+- the order: an item that imports a sibling's files lands after it
+  (requires.json `items`);
+- the seams: files an item ships once for the deployment to own
+  (requires.json `seams`) are put back after the install, and message
+  files are merged key by key, the app's copy winning;
+- the record: intelligo.manifest.json keeps each installed file's
+  hash, so `--check` can tell a file edited by hand from one a newer
+  registry replaced. Scaffold files an install replaces (globals.css,
+  the theme provider) leave the `app-scaffold` record for this one,
+  so `upgrade --check` stops calling them customized.
+
+`--check` installs nothing and exits 1 when any installed file is
+missing, edited or behind the registry — the gate CI runs.
+
+[source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/sync.ts)

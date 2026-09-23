@@ -17,6 +17,7 @@ import {
   convert,
   currency,
   money,
+  MoneyError,
   type CurrencyCode,
   type Money,
 } from "@intelligo-dev/core/money";
@@ -30,22 +31,31 @@ export type ModelCapabilities = {
   codeExec: boolean;
 };
 
+/**
+ * What a model produces: text from a conversation, or vectors from text.
+ * An embedding model is billed on input alone and never runs a chat turn.
+ */
+export type ModelKind = "chat" | "embedding";
+
 export type ModelPricing = {
   /** Provider-prefixed id, e.g. `google/gemini-2.5-flash`. */
   id: string;
+  /** Default `"chat"`. */
+  kind?: ModelKind;
   provider: string;
   /** The id the provider's own SDK expects, which is often dated. */
   model: string;
   displayName: string;
   /** USD per million input tokens, as the provider quotes it. */
   costPerMInputTokens: number;
-  /** USD per million output tokens. */
+  /** USD per million output tokens; 0 for an embedding model. */
   costPerMOutputTokens: number;
   /**
    * The ceiling on streamed output used for worst-case pre-request
-   * estimation.
+   * estimation; 0 for an embedding model, which writes no tokens.
    */
   maxOutputTokens: number;
+  /** All false for an embedding model. */
   capabilities: ModelCapabilities;
 };
 
@@ -81,6 +91,11 @@ export function getModelPricing(modelId: string): ModelPricing | undefined {
   return models.get(modelId);
 }
 
+/** A registered model's kind; `"chat"` when its pricing names none. */
+export function modelKind(pricing: ModelPricing): ModelKind {
+  return pricing.kind ?? "chat";
+}
+
 export function isModelRegistered(modelId: string): boolean {
   return models.has(modelId);
 }
@@ -97,6 +112,14 @@ export function registeredModelIds(): readonly string[] {
 export function clearModels(): void {
   models.clear();
 }
+
+const NO_CAPABILITIES: ModelCapabilities = {
+  thinking: false,
+  toolCall: false,
+  vision: false,
+  webSearch: false,
+  codeExec: false,
+};
 
 /**
  * The catalogue the framework ships, as data.
@@ -202,6 +225,39 @@ export const DEFAULT_MODELS: readonly ModelPricing[] = [
       codeExec: true,
     },
   },
+  {
+    id: "openai/text-embedding-3-small",
+    kind: "embedding",
+    provider: "openai",
+    model: "text-embedding-3-small",
+    displayName: "text-embedding-3-small",
+    costPerMInputTokens: 0.02,
+    costPerMOutputTokens: 0,
+    maxOutputTokens: 0,
+    capabilities: NO_CAPABILITIES,
+  },
+  {
+    id: "openai/text-embedding-3-large",
+    kind: "embedding",
+    provider: "openai",
+    model: "text-embedding-3-large",
+    displayName: "text-embedding-3-large",
+    costPerMInputTokens: 0.13,
+    costPerMOutputTokens: 0,
+    maxOutputTokens: 0,
+    capabilities: NO_CAPABILITIES,
+  },
+  {
+    id: "google/gemini-embedding-001",
+    kind: "embedding",
+    provider: "google",
+    model: "gemini-embedding-001",
+    displayName: "Gemini Embedding",
+    costPerMInputTokens: 0.15,
+    costPerMOutputTokens: 0,
+    maxOutputTokens: 0,
+    capabilities: NO_CAPABILITIES,
+  },
 ];
 
 /** The price of a model, or a loud failure naming the id. */
@@ -276,12 +332,37 @@ export const DEFAULT_MARGIN_BP = 40_000;
 const BP_PER_MULTIPLE = 10_000;
 
 /**
- * Provider cost and what the reader is charged for it: cost × margin,
- * converted into the deployment's currency at its own rate.
+ * What a provider cost is charged at a rate: cost × margin, converted
+ * into the deployment's currency at its own rate.
  *
  * Both steps round up, so a charge is at most two micros over — a
  * millionth of a cent, against a fraction that would otherwise be the
  * deployment's to eat on every request.
+ *
+ * Exported for audits: a usage record keeps its provider cost and the
+ * rate it was billed at, and re-applying the rate to the cost must give
+ * the recorded charge — re-pricing the model instead would use today's
+ * price list.
+ *
+ * @throws {MoneyError} when the cost is not USD, or a USD deployment
+ *   passes a rate that is not 1.
+ */
+export function applyRate(cost: Money, rate: BillingRate): Money {
+  if (cost.currency !== PROVIDER_CURRENCY) {
+    throw new MoneyError(
+      "currency_mismatch",
+      `A provider cost is ${PROVIDER_CURRENCY}; received ${cost.currency}.`
+    );
+  }
+  const withMargin = money(
+    Math.ceil((cost.amount * rate.marginBp) / BP_PER_MULTIPLE),
+    PROVIDER_CURRENCY
+  );
+  return convert(withMargin, rate.currency, rate.usdRateMicros);
+}
+
+/**
+ * Provider cost and what the reader is charged for it (`applyRate`).
  *
  * @throws {UnknownModelError} when the id has no registered price.
  * @throws {MoneyError} when a USD deployment passes a rate that is not 1.
@@ -293,21 +374,15 @@ export function chargeFor(
   rate: BillingRate
 ): { providerCost: Money; charged: Money } {
   const cost = providerCost(modelId, inputTokens, outputTokens);
-  const withMargin = money(
-    Math.ceil((cost.amount * rate.marginBp) / BP_PER_MULTIPLE),
-    PROVIDER_CURRENCY
-  );
-  return {
-    providerCost: cost,
-    charged: convert(withMargin, rate.currency, rate.usdRateMicros),
-  };
+  return { providerCost: cost, charged: applyRate(cost, rate) };
 }
 
 /**
  * The ceiling one turn on this model could charge, for admission:
  * the model's own output limit against a 16K input budget (system
  * prompt plus history). Refusing on the ceiling is what stops a turn
- * that cannot be paid for from burning provider tokens first.
+ * that cannot be paid for from burning provider tokens first. An
+ * embedding model writes nothing, so only the input budget is held.
  *
  * @throws {UnknownModelError} when the id has no registered price.
  */
@@ -315,7 +390,9 @@ export function estimateWorstCaseCharge(
   modelId: string,
   rate: BillingRate
 ): Money {
-  const outputBudget = requireModel(modelId).maxOutputTokens;
+  const pricing = requireModel(modelId);
+  const outputBudget =
+    modelKind(pricing) === "embedding" ? 0 : pricing.maxOutputTokens;
   return chargeFor(modelId, ESTIMATE_INPUT_BUDGET, outputBudget, rate).charged;
 }
 

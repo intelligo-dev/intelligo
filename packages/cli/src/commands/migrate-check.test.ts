@@ -157,6 +157,25 @@ describe("migrateState", () => {
     expect(migrateState(ahead, true)).toBe("ahead");
   });
 
+  it("recognises a legacy migration by an alternate hash", async () => {
+    chain(["0000_a"]);
+    writeFileSync(
+      path.join(dir, "legacy-chain.json"),
+      JSON.stringify({
+        entries: [
+          { tag: "0000_old", hash: "0ld", alternates: ["npm0ld"] },
+          { tag: "0001_old", hash: "0ld1" },
+        ],
+      })
+    );
+
+    const r = await migrateCheck(dir, async () => [{ hash: "npm0ld" }]);
+
+    expect(r.legacy).toEqual(["0000_old"]);
+    expect(r.unknown).toEqual([]);
+    expect(r.legacyMissing).toEqual(["0001_old"]);
+  });
+
   it("prints one JSON object carrying the state and the exit code", async () => {
     chain(["0000_a", "0001_b"]);
     const r = await migrateCheck(dir, async () => []);
@@ -169,8 +188,35 @@ describe("migrateState", () => {
       pending: ["0000_a", "0001_b"],
       unknown: [],
       legacy: [],
+      legacyMissing: [],
       adoptable: false,
     });
+  });
+
+  it("names the pre-1.0 migrations a partial chain lacks, and no version to install", async () => {
+    chain(["0000_a"]);
+    writeFileSync(
+      path.join(dir, "legacy-chain.json"),
+      JSON.stringify({
+        entries: [
+          { tag: "0000_old", hash: "h0" },
+          { tag: "0001_old", hash: "h1" },
+          { tag: "0002_old", hash: "h2" },
+        ],
+      })
+    );
+
+    const r = await migrateCheck(dir, async () => [
+      { hash: "h0" },
+      { hash: "h2" },
+    ]);
+    expect(r.legacyMissing).toEqual(["0001_old"]);
+
+    const printed = formatMigrateCheck(r, true);
+    expect(printed).toContain("ran 2 of the 3 pre-1.0 migrations");
+    expect(printed).toContain("has not run 0001_old");
+    expect(printed).toContain("1.0.0-beta.6");
+    expect(printed).not.toMatch(/beta\.7/);
   });
 });
 

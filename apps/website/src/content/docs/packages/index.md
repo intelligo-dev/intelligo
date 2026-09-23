@@ -16,7 +16,7 @@ Every package is published at the same version, by one release commit. `intellig
 | [billing](/docs/packages/billing) | Quota engine, credits, Stripe, feature gates, trials and rate limiting. |
 | [executions](/docs/packages/executions) | The execution lifecycle (admission, running, settlement) and the model cost registry. |
 | [chat](/docs/packages/chat) | The AI-SDK-native chat transport: one Route Handler with auth, rate limits, feature gates, credits and persistence. |
-| [next](/docs/packages/next) | The Next.js adapter: the one Intelligo package that imports next/*, binding request context and auth routes. |
+| [next](/docs/packages/next) | The Next.js adapter: the one Intelligo package that imports next/*, binding request context, auth routes and Route Handler guards. |
 | [audit](/docs/packages/audit) | Append-only audit events for multi-tenant apps, with a Postgres trigger that refuses every update and delete. |
 | [jobs](/docs/packages/jobs) | A Postgres-backed job queue: enqueue, claim with SKIP LOCKED, retry with backoff and prune. No Redis. |
 | [admin](/docs/packages/admin) | The operational console: cross-tenant queries, health probes and impersonation. |

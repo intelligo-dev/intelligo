@@ -8,14 +8,18 @@
  * failed. Polling stops at `timeoutMs` with a "still waiting?" message
  * and a retry, rather than spinning forever.
  *
- * Provider work happens server-side through `@/actions/payment` (see
- * `@/lib/local-payment`): the browser never sees provider credentials,
- * and never says who is paying — that comes from the session.
+ * Provider work happens server-side through `@/actions/payment`: the
+ * browser never sees provider credentials, never says who is paying —
+ * that comes from the session — and never grants anything. A poll that
+ * sees the invoice paid has already granted what it bought, as
+ * `@/lib/local-payment` prices it.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useFormatter, useTranslations } from "use-intl";
+
+import type { CreatePaymentResult } from "@intelligo-dev/billing/payment";
 
 import { Button } from "@showcase/components/ui/button";
 import {
@@ -29,7 +33,11 @@ import { Spinner } from "@showcase/components/ui/spinner";
 import { CURRENCY } from "@showcase/lib/billing-config";
 import { paymentPollConfig } from "@showcase/lib/payment-poll-config";
 import { pollLocalPayment, startLocalPayment } from "@showcase/actions/payment";
-import type { LocalPaymentInvoice } from "@showcase/lib/local-payment";
+
+type LocalPaymentInvoice = Pick<
+  CreatePaymentResult,
+  "invoiceId" | "qrCode" | "deeplinks"
+>;
 
 type Step = "creating" | "waiting" | "timedOut" | "paid" | "failed";
 
@@ -45,7 +53,10 @@ interface LocalPaymentModalProps {
   amount: number;
   /** Localized name of what is being bought. */
   label: string;
-  /** Called once the provider confirms payment. */
+  /**
+   * Called once the payment is confirmed, after the server granted what
+   * it bought — for closing the modal or moving on, not for granting.
+   */
   onPaid: () => void;
 }
 

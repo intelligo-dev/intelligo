@@ -97,6 +97,7 @@ export {
 } from "./profile/errors";
 export {
   updateProfileSchema,
+  preferredLanguageSchema,
   type UpdateProfileInput,
 } from "./profile/schemas";
 

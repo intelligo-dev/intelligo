@@ -14,7 +14,11 @@ import { users, sessions } from "@intelligo-dev/core/db/schema";
 
 import { auth } from "../server";
 import { requireAuth } from "../helpers";
-import { updateProfileSchema, type UpdateProfileInput } from "./schemas";
+import {
+  preferredLanguageSchema,
+  updateProfileSchema,
+  type UpdateProfileInput,
+} from "./schemas";
 import { ProfileServiceError, isProfileServiceError } from "./errors";
 
 const log = createLogger("ProfileService");
@@ -119,6 +123,31 @@ export function createProfileService(ports: ProfileServicePorts = {}) {
   }
 
   /**
+   * Record the caller's preferred language (`users.preferred_language`),
+   * which emails and a returning session's default locale read. A column
+   * Intelligo owns rather than a Better-Auth user field, so it is written
+   * directly.
+   */
+  async function setPreferredLanguage(locale: string): Promise<void> {
+    const { user } = await callRequireAuth();
+    const validated = parseInput(preferredLanguageSchema, locale);
+
+    try {
+      await db
+        .update(users)
+        .set({ preferredLanguage: validated, updatedAt: new Date() })
+        .where(eq(users.id, user.id));
+    } catch (error) {
+      log.error("setPreferredLanguage failed", { error: errorMessage(error) });
+      throw new ProfileServiceError(
+        "provider_error",
+        "Failed to update the preferred language",
+        { cause: error }
+      );
+    }
+  }
+
+  /**
    * Delete the caller's own account: soft delete (`users.deletedAt`),
    * invalidate every session (force logout), then fire the
    * `onAccountDeleted` port, if bound, without waiting on it.
@@ -160,6 +189,7 @@ export function createProfileService(ports: ProfileServicePorts = {}) {
   return {
     getProfile,
     updateProfile,
+    setPreferredLanguage,
     deleteAccount,
   };
 }

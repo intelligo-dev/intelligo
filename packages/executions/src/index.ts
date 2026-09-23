@@ -56,6 +56,7 @@ export {
   registerModels,
   getModelPricing,
   isModelRegistered,
+  modelKind,
   listModels,
   registeredModelIds,
   clearModels,
@@ -68,6 +69,7 @@ export {
 export type {
   ModelId,
   ModelPricing,
+  ModelKind,
   ModelCapabilities,
   BillingRate,
 } from "./pricing";

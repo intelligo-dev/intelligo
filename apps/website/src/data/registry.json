@@ -1268,6 +1268,7 @@
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
         "@intelligo-dev/billing",
+        "@intelligo-dev/next",
         "sonner",
         "server-only",
         "next-intl"
@@ -1352,6 +1353,7 @@
         "@intelligo-dev/billing",
         "@intelligo-dev/core",
         "@intelligo-dev/executions",
+        "@intelligo-dev/next",
         "lucide-react",
         "next-intl"
       ],
@@ -1417,6 +1419,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "sonner",
         "next-intl"
       ],
@@ -1593,6 +1596,7 @@
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
         "@intelligo-dev/billing",
+        "@intelligo-dev/next",
         "drizzle-orm",
         "sonner",
         "server-only",
@@ -1889,6 +1893,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "lucide-react",
         "next-intl"
       ],
@@ -1929,6 +1934,11 @@
           "target": "actions/notifications.ts"
         },
         {
+          "path": "base/notifications/lib/notification-types.tsx",
+          "type": "registry:file",
+          "target": "lib/notification-types.tsx"
+        },
+        {
           "path": "base/notifications/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/notifications.json"
@@ -1957,6 +1967,7 @@
         "@intelligo-dev/core",
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
+        "@intelligo-dev/next",
         "zod@^4.6.5",
         "lucide-react",
         "server-only",
@@ -2019,9 +2030,19 @@
           "target": "lib/format-money.ts"
         },
         {
+          "path": "base/pricing/lib/plan-copy.ts",
+          "type": "registry:file",
+          "target": "lib/plan-copy.ts"
+        },
+        {
           "path": "base/pricing/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/pricing.json"
+        },
+        {
+          "path": "base/pricing/messages/plans/en.json",
+          "type": "registry:file",
+          "target": "messages/en/plans.json"
         }
       ]
     },
@@ -2177,7 +2198,7 @@
       "name": "payment-poll",
       "type": "registry:block",
       "title": "QR Payment (poll)",
-      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — through the lib/local-payment.ts binding. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
+      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — with the invoice recorded and a paid one granted on the server; lib/local-payment.ts says what each reference costs and grants. Requires the pricing item for lib/billing-config.ts's CURRENCY.",
       "registryDependencies": [
         "@intelligo/button",
         "@intelligo/dialog",
@@ -2185,6 +2206,8 @@
       ],
       "dependencies": [
         "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/next",
         "lucide-react",
         "server-only",
         "next-intl"
@@ -2234,6 +2257,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "sonner",
         "server-only",
         "next-intl"
@@ -2289,6 +2313,7 @@
       ],
       "dependencies": [
         "@intelligo-dev/auth",
+        "@intelligo-dev/next",
         "lucide-react",
         "server-only",
         "next-intl",
@@ -2428,6 +2453,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "lucide-react",
         "sonner",
         "server-only",
@@ -2493,6 +2519,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "lucide-react",
         "sonner",
         "next-intl"
@@ -2595,6 +2622,7 @@
         "@intelligo-dev/billing",
         "@intelligo-dev/chat",
         "@intelligo-dev/core",
+        "@intelligo-dev/next",
         "next-intl",
         "next-themes",
         "prosemirror-state",

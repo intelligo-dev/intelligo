@@ -103,7 +103,9 @@ jobs:
       # 0001_reconcile_chain_built_databases, which adopts a database
       # that ran the old one (see the migrations README). 0002 adds one
       # nullable column (finance_events.claimed_at), which no db:push
-      # can lose.
+      # can lose. 0003 creates one new table (payments, the ledger of
+      # local QR/poll payments) and alters nothing that exists, so a
+      # db:push has nothing of it to drop either.
       #
       # Raising it again: confirm `intelligo migrate --check` reports
       # zero pending, then raise FROZEN_AT in the same commit as the
@@ -111,7 +113,7 @@ jobs:
       - name: The migration chain is frozen
         run: |
           set -euo pipefail
-          FROZEN_AT=3
+          FROZEN_AT=4
           entries=$(node -p "require('./packages/core/src/db/migrations/meta/_journal.json').entries.length")
           echo "journal has $entries entries, frozen at $FROZEN_AT"
           if [ "$entries" -gt "$FROZEN_AT" ]; then
@@ -235,7 +237,8 @@ jobs:
             -c 'SELECT active_organization_id, impersonated_by FROM sessions LIMIT 0;' \
             -c 'SELECT id, request_id, expires_at FROM credit_reservations LIMIT 0;' \
             -c 'SELECT id, action, resource_kind FROM audit_events LIMIT 0;' \
-            -c 'SELECT execution_id FROM usage_records LIMIT 0;'
+            -c 'SELECT execution_id FROM usage_records LIMIT 0;' \
+            -c 'SELECT invoice_id, fulfilled_at FROM payments LIMIT 0;'
 
       # The append-only audit guard is a Postgres trigger (no mock can
       # observe it) and the execution lifecycle rests on a
@@ -254,7 +257,8 @@ jobs:
             packages/core/src/db/__tests__ \
             packages/executions/src/__tests__ \
             packages/jobs/src/__tests__ \
-            packages/billing/src/__tests__
+            packages/billing/src/__tests__ \
+            packages/admin/src/__tests__
 
       # The replay applied the files directly with psql, so drizzle has
       # no record of them — exactly the "unmanaged" state a

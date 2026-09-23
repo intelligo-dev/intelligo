@@ -14,6 +14,197 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Added
+
+- `intelligo sync [items…]` keeps installed registry pages the
+  registry's. It installs each item with `shadcn add --overwrite` from
+  the registry bundled with the CLI — the pages of the same release as
+  the packages — in `requires.json` order, puts the item's seams back,
+  merges message files key by key (the app's copy wins), and records
+  each installed file's hash in `intelligo.manifest.json`. It refuses to
+  overwrite a hand-edited file without `--force`. `intelligo sync
+--check` installs nothing and exits 1 on any file that is missing,
+  edited, outdated or lacks registry message keys. An existing app
+  overwrite a hand-edited file without `--force`.
+  `intelligo sync --check` installs nothing and exits 1 on any file that
+  is missing, edited, outdated or lacks registry message keys. An existing app
+  adopts it by naming its items once.
+- `@intelligo-dev/cli` ships the built registry (`templates/registry`).
+- `requires.json` names every item's `seams`: the files an item ships
+  once for the deployment to own. The site's config-seams page, the
+  reference-app drift test and `sync` read them from there.
+- `createBillingExecutions()` / `billingExecutionPorts()` in
+  `@intelligo-dev/billing`: the execution boundary bound to the quota
+  engine, which every composition root used to copy. The scaffold uses it.
+- `grantPlan({ workspaceId, planSlug, reason, actorId })` in
+  `@intelligo-dev/billing`: a plan as a product decision (a reward, a
+  grant), without writing `subscriptions` directly. Stripe state is left
+  alone.
+- `applyRate(cost, rate)` in `@intelligo-dev/executions/pricing`:
+  `chargeFor`'s arithmetic over a recorded cost, for audits.
+- `@intelligo-dev/admin`: `getProviderCostTotal`, `getUsageByModel`,
+  `getUsageByUser`, `getPlanDistribution`, `listUsageRecords` (each
+  record's charge audited with `applyRate`). Amounts are `Money`.
+- `profile.setPreferredLanguage(locale)` in `@intelligo-dev/auth`, and
+  the `profile-settings` item's `updatePreferredLanguage` action,
+  checked against `routing.locales`.
+- `turn.state` in `@intelligo-dev/chat`: a `Map` that lives for one
+  request and is shared by every seam that receives the turn
+  (`resolveAgent`, `prepareMessages`, tools, `streamTurn`, `persist`,
+  `onTurn`), so what one seam reads the next can reuse.
+- `turn.addUsage(usage, { model, capability })`: tokens a tool spent on
+  another registered model are summed per model and recorded as that
+  model's own execution (`capability` `"chat.embedding"` for an embedding
+  model, `parentExecutionId` in its metadata) when the turn settles or
+  fails. Without `model`, or with the turn's own, usage folds into the
+  turn as before. An unregistered `model` throws `UnknownModelError` at
+  the call.
+- `ModelPricing.kind` (`"chat" | "embedding"`, default chat) and
+  `modelKind()` in `@intelligo-dev/executions/pricing`. Admission for an
+  embedding model holds only the input budget.
+- `DEFAULT_MODELS` prices three embedding models:
+  `openai/text-embedding-3-small` ($0.02/M input tokens),
+  `openai/text-embedding-3-large` ($0.13/M) and
+  `google/gemini-embedding-001` ($0.15/M).
+- `saveProfileSnapshot(actor, input)` in `@intelligo-dev/core/identity`:
+  stores a synthesized profile in `user_profile_snapshots`, one row per
+  user per workspace, bumping `version` atomically and writing a
+  `snapshot` audit row in the same transaction.
+- A "Skip to content" link, visible only when focused, is the first
+  focusable element of the `app-shell`, `auth-login` and `onboarding`
+  layouts; each wraps its page in a `main#main-content` landmark
+  (`tabIndex={-1}`) and carries the copy as `skipToContent`.
+- The `notifications` item ships a new seam, `lib/notification-types.tsx`:
+  a map from a product's notification `type` to its `{ icon, className }`,
+  empty by default and consulted before the built-in types.
+  `workspace_invitation` notifications get their own icon.
+- Plan copy is translatable. A deployment names each plan's `name`,
+  `description` and `features` per locale in a `plans` message namespace
+  (`messages/<locale>/plans.json`, keyed by plan slug); the `pricing`,
+  `billing-settings` and `usage` items read it through the pricing
+  item's `lib/plan-copy.ts` and fall back to the catalogue's strings for
+  any key a locale leaves out. The pricing item ships an empty
+  `messages/en/plans.json`.
+- `@intelligo-dev/next` ships the transport toolkit: `ActionResult<T>`,
+  the `{ success, data } | { success, error }` shape a Server Action
+  returns, and the `./route` subpath's Route Handler guards `withAuth`,
+  `withWorkspace` and `withRole(roles, …)`, which resolve the caller
+  through `requireAuth` / `requireWorkspace` / `requireRole` and answer
+  a failed check as JSON (`401` unauthenticated, `403` no workspace or
+  forbidden) without catching anything the handler throws.
+- `openLocalInvoice({ workspaceId, userId, reference, price })` and
+  `settleLocalInvoice({ invoiceId, workspaceId, fulfil })` in
+  `@intelligo-dev/billing`: a QR-and-poll payment through the registered
+  `PaymentProvider`, recorded in the new `payments` table at the price
+  the server decided. Settling asks the provider that issued the
+  invoice; a paid one is marked fulfilled and its grant (`{ plan }` or
+  `{ credits: Money }`) applied in one transaction, once however many
+  polls see it. Another workspace's invoice is `payment_not_found`; a
+  paid amount other than the invoiced one is `payment_mismatch`.
+  `getPaymentProviderFor(mode)` and `currentPaymentMode()` resolve the
+  provider an invoice was opened with.
+- `@intelligo-dev/core`: the `payments` table (migration
+  `0003_local_payments`; `intelligo migrate` applies it).
+- `getRevenue()` in `@intelligo-dev/admin`: gross revenue per currency
+  as `Money[]` — every paid Stripe invoice, every paid one-time Stripe
+  checkout (a delayed method by its `async_payment_succeeded`), and
+  every paid local invoice. A subscription's checkout is counted
+  through its first invoice, not twice; refunds and fees are not
+  subtracted.
+- `intelligo sync --check` reports `locale-behind`: for every locale
+  in `i18n/routing.ts` besides `en`, each shipped namespace's
+  `messages/<locale>/<item>.json` is compared with the app's English
+  file on disk, and a missing file or missing keys fail the check with
+  the keys named.
+- `intelligo add vitest`: a `vitest.config.ts` with the `@` alias, a
+  `server-only` stub at `tests/stubs/server-only.ts`, and
+  `test.server.deps.inline` for the `@intelligo-dev/*` packages, whose
+  compiled ESM imports `server-only` where a Vite alias cannot reach it
+  otherwise. It prints the devDependency and script to add. A feature in
+  `templates/manifest.json` can now carry `nextSteps`, printed by `add`.
+- Docs: a "Testing your app" guide, and `docs/migrations/1.0.0-beta.14.md`
+  — the upgrade from `1.0.0-beta.6`, in the order it is executed,
+  including the features that left the framework and where each now
+  lives in the app.
+
+### Changed
+
+- `NotificationType` in `@intelligo-dev/core/notifications` is open:
+  `BuiltInNotificationType | (string & {})`, so a product creates its
+  own notification types without a cast. `BuiltInNotificationType` names
+  the framework's own.
+- **Breaking:** `getBillingOverview()` returns `planName: null` for a
+  workspace with no plan instead of the English `"Free"`; `planSlug`
+  stays `"free"`. The `billing-settings` item renders its own translated
+  `freePlan` label.
+- Every registry item's actions type their results with
+  `ActionResult` from `@intelligo-dev/next` and declare the package; the
+  item-specific names (`ProfileActionResult`, `TeamActionResult`, …)
+  remain as aliases. `InvitationActionResult`'s success carries
+  `data: undefined` like the others.
+
+- `apps/app` is regenerated with `intelligo sync` instead of a
+  hand-written `shadcn add` loop.
+- The reference app's web-search tool reports its tokens against the
+  model it ran on, so a turn on another model no longer prices them at
+  the turn's rate.
+
+### Fixed
+
+- `@intelligo-dev/auth`'s invite schema uses `{ message }` instead of
+  zod 4's `{ error }`, which zod 3 — still inside the peer range —
+  ignored. An architecture test keeps zod-4-only params out of packages
+  whose peer range admits zod 3.
+- The `payment-poll` item's seam `lib/local-payment.ts` answers one
+  question: `priceLocalPayment(reference)` returns `{ price, grant }`
+  (or null for a reference not sold this way). It replaces
+  `createLocalPayment` and `checkLocalPaymentStatus`; the item's actions
+  call `openLocalInvoice` / `settleLocalInvoice` themselves, and resolve
+  the caller's workspace with `requireWorkspace`. An installed seam
+  keeps compiling only once it exports `priceLocalPayment`.
+
+- A local (QR-and-poll) payment that completed granted nothing and was
+  recorded nowhere: `pollLocalPayment` reported `paid` and the modal
+  called a client-side `onPaid`, so what was bought depended on the
+  browser. The grant now happens on the server when a poll sees the
+  invoice paid, and the payment is a `payments` row.
+- The composition-root concept page says why composing once in
+  `instrumentation.ts` is enough: registries live on `globalThis` per
+  process, so no module needs an "ensure composed" import; the Edge
+  runtime is its own scope and composes separately.
+- `intelligo create` installs the pages it offers through
+  `intelligo sync`: one `shadcn add` per item, dependencies first, from the
+  registry bundled with the CLI rather than the hosted one, recorded in
+  `intelligo.manifest.json`. A failure leaves a known set installed and
+  prints the sync to re-run.
+- `intelligo create` inside a pnpm workspace that includes the new app
+  runs the dependency install from the workspace root instead of
+  starting a nested lockfile in the app.
+- Scaffold files a registry install replaces (`app/globals.css`,
+  `components/shell/theme-provider.tsx`, `lib/utils.ts`…) move to the
+  `app-scaffold` entry's `handedOver` list, so `upgrade --check` stops
+  reporting them `customized` and `add app-scaffold` leaves them alone.
+
+- `intelligo doctor` reads what an app exports the way the compiler
+  would: comments are stripped before matching, `export type` /
+  `export interface`, `export { a as b }` and `export { x } from "…"`
+  count, and `export * from "…"` is followed into the module it
+  resolves to (relative, `@/`, or a package through node resolution
+  from the app root) — one it cannot read is a warning, not an error.
+  Feature keys match `key:` or `"key":` only outside comments, and a
+  `lib/plans.ts` that re-exports its catalogue from a workspace package
+  is checked against that package's file.
+- `intelligo migrate`, `migrate --check` and the core migrations README
+  no longer tell a database that ran part of the pre-1.0 chain to finish
+  it with `@intelligo-dev/core@1.0.0-beta.7`, a version that was never
+  published. The messages name the migrations it has not run (also
+  `legacyMissing` in `--json`), say that `1.0.0-beta.6` ships the chain
+  only through `0042`, and point at the README's three ways forward:
+  apply the missing SQL from your own copy, bring the schema to the
+  baseline and record it, or start from the baseline.
+
 ## [1.0.0-beta.13] — 2026-09-21
 
 The first version on npm since `1.0.0-beta.6`. `1.0.0-beta.7` to

@@ -428,6 +428,8 @@ describe("eveStreamTurn", () => {
         trigger: undefined,
         write: () => {},
         updateMetadata,
+        state: new Map<string, unknown>(),
+        addUsage: () => {},
         agent: { id: "eve", systemPrompt: "" },
         history: async () => [],
       },

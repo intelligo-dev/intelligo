@@ -1,1 +1,3 @@
 dist/
+# The built registry, copied in by scripts/sync-registry-requires.mjs.
+templates/registry/

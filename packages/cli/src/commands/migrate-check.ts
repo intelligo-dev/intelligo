@@ -37,7 +37,7 @@
  *                    `migrate` can take it over.
  *
  * Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
- * `unknown`, `legacy` and `adoptable`.
+ * `unknown`, `legacy`, `legacyMissing` and `adoptable`.
  */
 
 import { createHash } from "node:crypto";
@@ -65,6 +65,11 @@ export type MigrateCheckResult = {
   /** Length of the pre-1.0 chain (0 when this checkout ships none). */
   legacyChainLength: number;
   /**
+   * Pre-1.0 migrations the database has not run, by tag, in chain
+   * order — empty unless it ran some of them.
+   */
+  legacyMissing: string[];
+  /**
    * The database ran the whole pre-1.0 chain and not the baseline:
    * `migrate` records the baseline as applied without running it.
    */
@@ -74,11 +79,11 @@ export type MigrateCheckResult = {
 /** The pre-1.0 chain's tags and hashes, if this checkout ships them. */
 export function readLegacyChain(
   migrationsDir: string
-): Array<{ tag: string; hash: string }> {
+): Array<{ tag: string; hash: string; alternates?: string[] }> {
   const file = path.join(migrationsDir, "legacy-chain.json");
   if (!existsSync(file)) return [];
   const parsed = JSON.parse(readFileSync(file, "utf8")) as {
-    entries?: Array<{ tag: string; hash: string }>;
+    entries?: Array<{ tag: string; hash: string; alternates?: string[] }>;
   };
   return parsed.entries ?? [];
 }
@@ -118,7 +123,13 @@ export async function migrateCheck(
   }
 
   const legacyChain = readLegacyChain(migrationsDir);
-  const legacyByHash = new Map(legacyChain.map((e) => [e.hash, e.tag]));
+  // A migration can be recorded under more than one hash: npm's
+  // 1.0.0-beta.6 shipped different bytes for three of them.
+  const legacyByHash = new Map(
+    legacyChain.flatMap((e) =>
+      [e.hash, ...(e.alternates ?? [])].map((h) => [h, e.tag] as const)
+    )
+  );
 
   const appliedHashes = new Set(rows.map((r) => r.hash));
   const applied: string[] = [];
@@ -144,6 +155,10 @@ export async function migrateCheck(
     unmanaged: tableMissing || appliedHashes.size === 0,
     legacy,
     legacyChainLength: legacyChain.length,
+    legacyMissing:
+      legacy.length > 0
+        ? legacyChain.map((e) => e.tag).filter((t) => !legacy.includes(t))
+        : [],
     adoptable:
       legacyChain.length > 0 &&
       legacy.length === legacyChain.length &&
@@ -185,12 +200,8 @@ export function formatMigrateCheck(
         `already there), then applies what follows. Tables the old chain ` +
         `created that the framework no longer owns are left untouched.`
     );
-  } else if (r.legacy.length > 0 && r.legacy.length < r.legacyChainLength) {
-    lines.push(
-      `✗ This database ran ${r.legacy.length} of the ${r.legacyChainLength} ` +
-        `pre-1.0 migrations. Finish that chain with @intelligo-dev/core ` +
-        `1.0.0-beta.7 (\`intelligo migrate\`) before upgrading.`
-    );
+  } else if (isPartialLegacy(r)) {
+    lines.push(`✗ ${partialLegacyMessage(r)}`);
   }
 
   if (r.unknown.length > 0) {
@@ -219,6 +230,35 @@ export function migrateCheckExitCode(r: MigrateCheckResult): number {
 /** A partial pre-1.0 chain: neither adoptable nor migratable from here. */
 export function isPartialLegacy(r: MigrateCheckResult): boolean {
   return r.legacy.length > 0 && r.legacy.length < r.legacyChainLength;
+}
+
+/**
+ * The last pre-1.0 migration any published `@intelligo-dev/core`
+ * carries: 1.0.0-beta.6 shipped the chain through it, and the versions
+ * that carried the rest were never published.
+ */
+export const LAST_PUBLISHED_LEGACY_TAG = "0042_sessions_active_organization_id";
+
+/**
+ * Why a partial pre-1.0 chain is refused and where the way forward is
+ * written down. No published version finishes the chain, so the
+ * message names what is missing and points at the README's options
+ * instead of at a version to install.
+ */
+export function partialLegacyMessage(r: MigrateCheckResult): string {
+  const shown = r.legacyMissing.slice(0, 6);
+  const more = r.legacyMissing.length - shown.length;
+  return (
+    `This database ran ${r.legacy.length} of the ${r.legacyChainLength} ` +
+    `pre-1.0 migrations; it has not run ${shown.join(", ")}` +
+    `${more > 0 ? ` and ${more} more` : ""}. No published ` +
+    `@intelligo-dev/core finishes that chain: 1.0.0-beta.6 ships it ` +
+    `through ${LAST_PUBLISHED_LEGACY_TAG}, and the versions that carried ` +
+    `the rest never reached npm. Apply the missing migrations' SQL from ` +
+    `your own copy of it, or bring the schema to the baseline and record ` +
+    `it as applied — see "Databases from before 1.0" in README.md in ` +
+    `@intelligo-dev/core's src/db/migrations.`
+  );
 }
 
 export type MigrateState =
@@ -252,6 +292,7 @@ export function formatMigrateCheckJson(
     pending: r.pending,
     unknown: r.unknown,
     legacy: r.legacy,
+    legacyMissing: r.legacyMissing,
     adoptable: r.adoptable,
   });
 }

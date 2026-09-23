@@ -12,12 +12,9 @@ import "server-only";
  */
 
 import {
+  createBillingExecutions,
   ensureBillingSettingsRow,
   ensurePlanRows,
-  reserveQuota,
-  recordTokenUsage,
-  releaseReservation,
-  findSettlementByRequestId,
 } from "@intelligo-dev/billing";
 import { DEFAULT_MARGIN_BP } from "@intelligo-dev/executions/pricing";
 import {
@@ -29,11 +26,7 @@ import {
 import { setWorkspaceCreatedHandler } from "@intelligo-dev/auth";
 import { assertEnv } from "@intelligo-dev/core/env";
 import { setRequestContextSource } from "@intelligo-dev/core/request-context";
-import {
-  DEFAULT_MODELS,
-  createExecutions,
-  registerModels,
-} from "@intelligo-dev/executions";
+import { DEFAULT_MODELS, registerModels } from "@intelligo-dev/executions";
 import { nextRequestContext } from "@intelligo-dev/next";
 import { createLogger } from "@intelligo-dev/core/logger";
 
@@ -132,44 +125,8 @@ function bind(): void {
   registerModels(DEFAULT_MODELS);
 }
 
-export const executions = createExecutions({
-  async checkEntitlement({ workspaceId, requestId, model }) {
-    const quota = await reserveQuota(workspaceId, {
-      modelId: model,
-      requestId,
-    });
-    return {
-      allowed: quota.allowed,
-      code: quota.code,
-      reason: quota.reason,
-      estimated: quota.estimated,
-      usingTrialCredits: quota.usingTrialCredits,
-    };
-  },
-
-  async settleUsage(settlement) {
-    // Returns what was charged and which pool funded it; the lifecycle
-    // records the amount and its currency on the execution row.
-    return recordTokenUsage({
-      workspaceId: settlement.workspaceId,
-      userId: settlement.userId ?? "",
-      model: settlement.model ?? "unknown",
-      agent: settlement.capability,
-      inputTokens: settlement.inputTokens,
-      outputTokens: settlement.outputTokens,
-      totalTokens: settlement.totalTokens,
-      usingTrialCredits: settlement.usingTrialCredits,
-      requestId: settlement.requestId,
-      metadata: settlement.metadata,
-    });
-  },
-
-  async releaseHold({ requestId }) {
-    await releaseReservation(requestId);
-  },
-
-  // Lets executions.reconcile() tell a settling row whose charge
-  // committed from one whose charge never happened.
-  findSettlement: ({ workspaceId, requestId }) =>
-    findSettlementByRequestId(workspaceId, requestId),
-});
+// The execution boundary, bound to the billing engine: admission
+// reserves the worst-case cost atomically, settlement records usage and
+// deducts credits, reconcile() can tell a committed charge from none.
+// Pass a port to replace one.
+export const executions = createBillingExecutions();

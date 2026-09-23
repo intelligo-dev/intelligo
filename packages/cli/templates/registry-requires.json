@@ -1,5 +1,5 @@
 {
-  "$comment": "Machine-readable requirements of every registry item \u2014 what shadcn's schema cannot express. `scaffold`: consumer files `intelligo create` provides that items may import. Per item: `marker` (the file whose presence means the item is installed), `items` (sibling items that ship files this one imports \u2014 install them first), `files` (scaffold files it imports), `exports` (names a scaffold file must export), `features` (feature keys the item gates on; register them in lib/plans.ts). tests/architecture/registry.test.ts asserts this file matches the code; CI derives the install order from it; `intelligo doctor` checks an app against it (packages/cli/templates/registry-requires.json is a copy the CLI build regenerates; the suite fails if it is stale).",
+  "$comment": "Machine-readable requirements of every registry item \u2014 what shadcn's schema cannot express. `scaffold`: consumer files `intelligo create` provides that items may import. Per item: `marker` (the file whose presence means the item is installed), `items` (sibling items that ship files this one imports \u2014 install them first), `files` (scaffold files it imports), `exports` (names a scaffold file must export), `features` (feature keys the item gates on; register them in lib/plans.ts). `seams`: files an item ships once and the deployment then owns, each with what it configures \u2014 `intelligo sync` never overwrites one, and message files (`messages/`) are merged key by key, the deployment's copy winning. tests/architecture/registry.test.ts asserts this file matches the code; CI derives the install order from it; `intelligo doctor` checks an app against it (packages/cli/templates/registry-requires.json is a copy the CLI build regenerates; the suite fails if it is stale).",
   "scaffold": [
     "lib/intelligo",
     "lib/plans",
@@ -8,6 +8,30 @@
     "i18n/routing",
     "i18n/navigation"
   ],
+  "seams": {
+    "lib/shell-config.tsx": "shell banner and header slots",
+    "lib/nav-config.ts": "navigation",
+    "lib/settings-nav.ts": "settings tabs",
+    "lib/error-reporting.ts": "the error reporter",
+    "lib/billing-config.ts": "product slug, currency, credit bundles",
+    "lib/feature-catalog.ts": "feature names and plans",
+    "lib/feature-gating-config.ts": "upgrade targets for gated features",
+    "lib/trial-banner-config.ts": "trial banner target and suppressed routes",
+    "lib/payment-poll-config.ts": "payment polling behaviour",
+    "lib/local-payment.ts": "the local payment provider",
+    "lib/onboarding-steps.ts": "onboarding steps",
+    "lib/dashboard-config.tsx": "dashboard copy",
+    "lib/dashboard-data.ts": "dashboard resume data",
+    "lib/document-patterns.ts": "artifact detection",
+    "lib/chat-model.ts": "the deployment's model",
+    "lib/chat-models.ts": "the models the composer offers",
+    "lib/chat-renderers.tsx": "tool-call renderers",
+    "lib/chat-canvas-config.tsx": "canvas editors per document kind",
+    "lib/chat-config.tsx": "agent identity, starters, header slot",
+    "lib/chat-server-config.ts": "the chat transport's configuration",
+    "lib/chat-widget-config.tsx": "the embedded widget",
+    "lib/notification-types.tsx": "icons for the product's notification types"
+  },
   "items": {
     "smoke": {
       "marker": "app/[locale]/registry-smoke/page.tsx"
@@ -102,7 +126,7 @@
     "profile-settings": {
       "marker": "app/[locale]/(app)/settings/profile/page.tsx",
       "items": ["route-error"],
-      "files": ["i18n/navigation"]
+      "files": ["i18n/navigation", "i18n/routing"]
     },
     "onboarding": {
       "marker": "app/[locale]/onboarding/layout.tsx",

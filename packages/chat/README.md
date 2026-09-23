@@ -75,8 +75,20 @@ A tool reaches the client mid-turn through the turn: `turn.write()` sends a
 `data-chat-*` part (a status line, a plan), and `createArtifactWriter(turn,
 { kind, title })` streams a document into the chat's canvas — `append`
 deltas, `finish({ documentId })`. A tool that calls a model itself — a
-grounded search, a sub-agent on the same model — hands its tokens to
-`turn.addUsage()`, and the turn settles them with its own. `sanitizeForShare` strips a transcript
+grounded search, a sub-agent, an embedding for retrieval — hands its tokens
+to `turn.addUsage(usage, { model })`. Tokens on the turn's own model (or
+with no `model`) settle with the turn's; tokens on another registered model
+are summed per model and recorded as that model's own execution
+(`capability` `"chat.embedding"` for an embedding model, `parentExecutionId`
+in its metadata) when the turn settles. An unregistered `model` throws
+`UnknownModelError` at the call rather than bill at another model's price.
+
+`turn.state` is a `Map` that lives for one request and is shared by every
+seam that receives the turn — `resolveAgent`, `prepareMessages`, tools,
+`streamTurn`, `persist`, the `onTurn` events — so what one of them reads
+(a profile, a retrieval result) the next can use without a second query.
+
+`sanitizeForShare` strips a transcript
 for a public page; `recordChatFeedback` records a vote and tells the hook.
 Stored attachments mount two more handlers, `createChatUploadHandler` and
 `createChatAttachmentHandler`.

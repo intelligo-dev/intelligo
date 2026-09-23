@@ -8,6 +8,7 @@ import { Link } from "@/i18n/navigation";
 import { Card } from "@/components/ui/card";
 import { CreditBundles } from "@/components/billing/credit-bundles";
 import { formatMoney } from "@/lib/format-money";
+import { planName } from "@/lib/plan-copy";
 import { PortalButton } from "@/components/billing/portal-button";
 import {
   PageHeader,
@@ -34,6 +35,10 @@ export async function generateMetadata(): Promise<Metadata> {
  * `member` and `admin` get a read-only summary; `owner` gets the full
  * plan/credit/payment-method view.
  *
+ * The plan's name is the deployment's `plans` message for its slug when
+ * there is one (`lib/plan-copy.ts`), else the catalogue's name, else
+ * this item's `freePlan` label for a workspace with no plan.
+ *
  * `overview.subscription.status` renders verbatim, untranslated: it is a
  * plain `string` mirrored from Stripe's open-ended status vocabulary, so
  * keying a translation off it risks a missing-message error.
@@ -46,6 +51,11 @@ export default async function BillingSettingsPage() {
     workspaceId: workspace.id,
     role: membership.role,
   });
+  const currentPlanName = planName(
+    await getTranslations("plans"),
+    overview.planSlug,
+    overview.planName ?? t("freePlan")
+  );
 
   return (
     <div className="space-y-6">
@@ -61,7 +71,7 @@ export default async function BillingSettingsPage() {
       {overview.role === "member" && (
         <Card className="space-y-2 p-6">
           <p className="text-sm font-medium">
-            {t("member.currentPlan", { planName: overview.planName })}
+            {t("member.currentPlan", { planName: currentPlanName })}
           </p>
           <p className="text-sm text-muted-foreground">{t("member.note")}</p>
         </Card>
@@ -70,7 +80,7 @@ export default async function BillingSettingsPage() {
       {overview.role === "admin" && (
         <Card className="space-y-2 p-6">
           <p className="text-sm font-medium">
-            {t("admin.currentPlan", { planName: overview.planName })}
+            {t("admin.currentPlan", { planName: currentPlanName })}
           </p>
           <p className="text-sm text-muted-foreground">{t("admin.note")}</p>
         </Card>
@@ -84,7 +94,7 @@ export default async function BillingSettingsPage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   {t("owner.currentPlanLabel")}
                 </p>
-                <p className="text-2xl font-semibold">{overview.planName}</p>
+                <p className="text-2xl font-semibold">{currentPlanName}</p>
               </div>
               {overview.subscription && (
                 <span className="text-sm capitalize text-muted-foreground">

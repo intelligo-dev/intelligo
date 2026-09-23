@@ -43,3 +43,4 @@ apps/app/lib/utils.ts
 # ignored just above, so formatting the source would rewrite one side of
 # a pair the reference app is checked byte-for-byte against.
 packages/registry/base/ui/
+packages/cli/templates/registry/

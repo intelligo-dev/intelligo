@@ -220,7 +220,8 @@ function lastSourceIndex(messages: readonly unknown[]): number {
  * one request, so binding the provider tool directly would drop
  * `saveArtifact`. The search runs as its own grounded call instead and
  * returns the answer with its sources; `turn.addUsage` settles that
- * inner call's tokens with the turn's.
+ * inner call's tokens — with the turn's when the reader picked the
+ * default model, as their own execution when the turn runs on another.
  *
  * Sources are numbered across the conversation, so the `[n]` the model
  * cites is the number the chat shows; `lib/chat-renderers.tsx` reads
@@ -242,7 +243,7 @@ function webSearchTools(turn: ChatTurnContext): ToolSet {
           prompt: query,
           abortSignal,
         });
-        turn.addUsage(result.totalUsage);
+        turn.addUsage(result.totalUsage, { model: CHAT_MODEL_ID });
         const found = await Promise.all(
           result.sources.flatMap((source) =>
             source.sourceType === "url"

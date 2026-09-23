@@ -23,9 +23,9 @@ import {
   type UserFact,
   type UserMemoryAuditRow,
 } from "@intelligo-dev/core/identity";
+import type { ActionResult } from "@intelligo-dev/next";
 
-export type PrivacyActionResult<T = undefined> =
-  { success: true; data: T } | { success: false; error: string };
+export type PrivacyActionResult<T = undefined> = ActionResult<T>;
 
 type Translator = Awaited<
   ReturnType<typeof getTranslations<"privacy-settings">>

@@ -60,7 +60,12 @@ import {
 import type { Conversation } from "@intelligo-dev/core/conversations";
 import { createLogger } from "@intelligo-dev/core/logger";
 import { getStorageAdapter } from "@intelligo-dev/core/storage";
-import { getModelPricing } from "@intelligo-dev/executions/pricing";
+import {
+  UnknownModelError,
+  getModelPricing,
+  isModelRegistered,
+  registeredModelIds,
+} from "@intelligo-dev/executions/pricing";
 
 import { attachmentIdFromUrl, parseChatBody } from "./body";
 import type { ChatAttachmentPolicy } from "./body";
@@ -96,6 +101,8 @@ function errorMessage(error: unknown): string {
 
 const DEFAULT_FEATURE_KEY = "chat";
 const DEFAULT_CAPABILITY = "chat.message";
+/** Capability of the execution recording a turn's embedding-model usage. */
+const EMBEDDING_CAPABILITY = "chat.embedding";
 const DEFAULT_AGENT_ID = "assistant";
 const DEFAULT_SYSTEM_PROMPT =
   "You are a helpful assistant embedded in a SaaS product. Be concise and direct.";
@@ -548,6 +555,13 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     let writerSlot: UIMessageStreamWriter<ChatUIMessage> | null = null;
     // Tokens tools spent on their own model calls, settled with the run's.
     let nestedUsage: TokenUsage | null = null;
+    // Tokens spent on a named model, by model and capability. Which of
+    // them are the turn's own model is known only once the agent is
+    // resolved, so the split happens at settlement.
+    const namedUsage = new Map<
+      string,
+      { model: string; capability?: string; usage: TokenUsage }
+    >();
 
     const context: ChatTurnContext = {
       ...actor,
@@ -562,8 +576,25 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       updateMetadata: async (patch) => {
         await updateConversationMetadata(actor, body.id, patch);
       },
-      addUsage: (usage) => {
-        nestedUsage = sumUsage(nestedUsage ?? {}, pickUsage(usage));
+      state: new Map<string, unknown>(),
+      addUsage: (usage, options) => {
+        const model = options?.model;
+        if (model === undefined) {
+          nestedUsage = sumUsage(nestedUsage ?? {}, pickUsage(usage));
+          return;
+        }
+        // A price is needed to bill these tokens at all; failing here
+        // names the id in the tool that spent them.
+        if (!isModelRegistered(model)) {
+          throw new UnknownModelError(model, registeredModelIds());
+        }
+        const key = `${model}\u0000${options?.capability ?? ""}`;
+        const entry = namedUsage.get(key);
+        namedUsage.set(key, {
+          model,
+          ...(options?.capability ? { capability: options.capability } : {}),
+          usage: sumUsage(entry?.usage ?? {}, pickUsage(usage)),
+        });
       },
     };
 
@@ -797,10 +828,90 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         }
       | undefined;
 
+    /**
+     * Take the usage tools named a model for: the turn's own model
+     * folds into `nestedUsage`, every other model is returned for its
+     * own execution. Drains the map, so a second call finds nothing and
+     * no model's tokens are recorded twice.
+     */
+    const takeOtherModelUsage = () => {
+      const others: Array<{
+        model: string;
+        capability: string;
+        usage: TokenUsage;
+      }> = [];
+      for (const entry of namedUsage.values()) {
+        if (entry.model === modelId) {
+          nestedUsage = sumUsage(nestedUsage ?? {}, entry.usage);
+          continue;
+        }
+        others.push({
+          model: entry.model,
+          capability:
+            entry.capability ??
+            (getModelPricing(entry.model)?.kind === "embedding"
+              ? EMBEDDING_CAPABILITY
+              : capability),
+          usage: entry.usage,
+        });
+      }
+      namedUsage.clear();
+      return others;
+    };
+
+    /**
+     * Record another model's tokens as that model's execution. Begun
+     * and completed at settlement rather than when the tool reports
+     * them: `addUsage` is synchronous inside a tool, and one execution
+     * per model per turn keeps a retrieval loop of twenty embedding
+     * calls one row. The tokens are already spent, so a refusal here
+     * (the workspace ran dry mid-turn) cannot stop them; it is logged
+     * and reported as a settlement failure.
+     */
+    const settleOtherModels = async (
+      others: ReturnType<typeof takeOtherModelUsage>,
+      aborted: boolean
+    ) => {
+      for (const other of others) {
+        try {
+          const child = await config.executions.begin({
+            workspaceId: actor.workspaceId,
+            userId: actor.userId,
+            capability: other.capability,
+            model: other.model,
+            metadata: {
+              ...metadata,
+              parentExecutionId: run.id,
+              parentRequestId: run.requestId,
+            },
+          });
+          if (!child.allowed) {
+            throw new Error(
+              `Usage on ${other.model} was refused: ${child.reason ?? child.code ?? "refused"}`
+            );
+          }
+          await child.complete({
+            usage: other.usage,
+            model: other.model,
+            metadata: { ...metadata, aborted },
+          });
+        } catch (error) {
+          log.error("Nested model settlement failed", {
+            conversationId: body.id,
+            executionId: run.id,
+            modelId: other.model,
+            error: errorMessage(error),
+          });
+          await emit(() => events.fail?.({ turn, error, phase: "settlement" }));
+        }
+      }
+    };
+
     const settle = async (
       usage: TokenUsage,
       detail: { aborted: boolean } & Record<string, unknown>
     ) => {
+      const others = takeOtherModelUsage();
       const whole = nestedUsage ? sumUsage(usage, nestedUsage) : usage;
       const normalized = config.normalizeUsage
         ? config.normalizeUsage(whole)
@@ -824,8 +935,10 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           error: errorMessage(error),
         });
         await emit(() => events.fail?.({ turn, error, phase: "settlement" }));
+        await settleOtherModels(others, detail.aborted);
         return;
       }
+      await settleOtherModels(others, detail.aborted);
       await emit(() =>
         events.complete?.({
           turn,
@@ -1018,6 +1131,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         // abandons it if neither does.
         if (!captured && !request.signal.aborted) {
           void run.fail({ error: new Error("stream ended without usage") });
+          void settleOtherModels(takeOtherModelUsage(), false);
         }
 
         if (config.persist === false) return;
@@ -1064,6 +1178,9 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         // does not await this callback, so nothing here is.
         writerSlot = null;
         void run.fail({ error });
+        // Another model's tokens were spent whether or not the turn
+        // finished; they are that model's execution, not this one's.
+        void settleOtherModels(takeOtherModelUsage(), false);
         void emit(() => events.fail?.({ turn, error, phase: "stream" }));
         return t("streamError");
       },

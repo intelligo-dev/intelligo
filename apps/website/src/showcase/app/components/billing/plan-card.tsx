@@ -6,9 +6,10 @@
  * plan, the free plan, or something the caller can afford to buy.
  *
  * The catalogue has no tier order, so every non-current, non-free plan
- * gets the same "switch to this plan" button. `plan.name`, `description`
- * and `features` are catalogue data rendered verbatim; only the card's
- * own badges and buttons are translated.
+ * gets the same "switch to this plan" button. The plan's name,
+ * description and features come from the deployment's `plans` messages
+ * when it translates them, and from the catalogue otherwise
+ * (`lib/plan-copy.ts`).
  */
 
 import { Check } from "lucide-react";
@@ -20,6 +21,7 @@ import { Card } from "@showcase/components/ui/card";
 
 import { CheckoutButton } from "./checkout-button";
 import { CURRENCY } from "@showcase/lib/billing-config";
+import { planCopy } from "@showcase/lib/plan-copy";
 import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
 interface PlanCardProps {
@@ -39,7 +41,9 @@ export function PlanCard({
   isRecommended = false,
 }: PlanCardProps) {
   const t = useTranslations("pricing");
+  const tPlans = useTranslations("plans");
   const format = useFormatter();
+  const copy = planCopy(tPlans, plan);
   const isCurrent = plan.slug === currentPlanSlug;
 
   // A plan with interval prices is quoted per period; one without is a
@@ -84,14 +88,14 @@ export function PlanCard({
       <div className="flex flex-1 flex-col space-y-6">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
+            <h3 className="text-xl font-bold text-foreground">{copy.name}</h3>
             {isCurrent && (
               <Badge className="border border-border bg-accent text-muted-foreground">
                 {t("planCard.current")}
               </Badge>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">{plan.description}</p>
+          <p className="text-sm text-muted-foreground">{copy.description}</p>
         </div>
 
         <div className="space-y-1">
@@ -108,7 +112,7 @@ export function PlanCard({
         </div>
 
         <ul className="space-y-3">
-          {plan.features.map((feature) => (
+          {copy.features.map((feature) => (
             <li key={feature} className="flex items-start gap-2">
               <Check className="mt-0.5 size-4 flex-shrink-0 text-muted-foreground" />
               <span className="text-sm text-foreground">{feature}</span>
@@ -140,7 +144,7 @@ export function PlanCard({
               interval={interval}
               className="w-full"
             >
-              {t("planCard.switchTo", { planName: plan.name })}
+              {t("planCard.switchTo", { planName: copy.name })}
             </CheckoutButton>
           )}
         </div>

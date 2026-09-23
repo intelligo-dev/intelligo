@@ -24,6 +24,19 @@ export {
 } from "./queries";
 
 export {
+  getProviderCostTotal,
+  getRevenue,
+  getUsageByModel,
+  getUsageByUser,
+  getPlanDistribution,
+  listUsageRecords,
+  type UsageByModelRow,
+  type UsageByUserRow,
+  type PlanDistributionRow,
+  type UsageRecordRow,
+} from "./usage";
+
+export {
   startImpersonation,
   stopImpersonation,
   type ImpersonationResult,

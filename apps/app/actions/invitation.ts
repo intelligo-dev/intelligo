@@ -14,11 +14,11 @@ import {
   isTeamServiceError,
   type TeamServiceErrorCode,
 } from "@intelligo-dev/auth";
+import type { ActionResult } from "@intelligo-dev/next";
 
 import { team } from "@/lib/team";
 
-export type InvitationActionResult =
-  { success: true } | { success: false; error: string };
+export type InvitationActionResult = ActionResult;
 
 type Translator = Awaited<
   ReturnType<typeof getTranslations<"invitation-accept">>
@@ -59,7 +59,7 @@ export async function acceptInvitation(
   revalidatePath("/[locale]/accept-invitation/[id]", "page");
   revalidatePath("/settings/team");
   revalidatePath("/");
-  return { success: true };
+  return { success: true, data: undefined };
 }
 
 export async function rejectInvitation(
@@ -76,5 +76,5 @@ export async function rejectInvitation(
   }
 
   revalidatePath("/[locale]/accept-invitation/[id]", "page");
-  return { success: true };
+  return { success: true, data: undefined };
 }

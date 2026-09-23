@@ -72,13 +72,41 @@ export interface ChatTurnContext extends ChatActor {
    */
   updateMetadata: (patch: Record<string, unknown>) => Promise<void>;
   /**
-   * Add the tokens a tool spent on its own model call — a search that
-   * asks a model, a sub-agent — to what this turn settles. They are
-   * priced as the turn's model, so a call on another model is its own
-   * execution rather than usage added here. Usage added after the run
-   * settles is not charged.
+   * Scratch space living for one turn, shared by every seam that
+   * receives the turn — `resolveAgent`, `prepareMessages`, tools,
+   * `streamTurn`, `persist`, the `onTurn` events. One `Map` per request,
+   * created before `resolveAgent` runs and dropped with the request:
+   * what one seam computes (a profile read, a retrieval result) another
+   * reads without a second query. Nothing in it is persisted.
    */
-  addUsage: (usage: TokenUsage) => void;
+  state: Map<string, unknown>;
+  /**
+   * Add the tokens a tool spent on its own model call — a search that
+   * asks a model, a sub-agent, an embedding — to what this turn settles.
+   *
+   * Without `model`, or with the turn's own model, the tokens are summed
+   * into the turn's execution and priced as its model. With another
+   * model they are that model's usage: summed per model (and
+   * `capability`), each total is recorded as its own execution — same
+   * workspace, user and conversation, `parentExecutionId` in its
+   * metadata — when the turn settles, or when it fails, since the
+   * tokens were spent either way. `capability` defaults to
+   * `"chat.embedding"` for a model registered with `kind: "embedding"`
+   * and to the turn's capability otherwise.
+   *
+   * Throws `UnknownModelError` at the call when `model` has no
+   * registered price, rather than bill the tokens at another model's.
+   * Usage added after the turn settles is not charged.
+   */
+  addUsage: (usage: TokenUsage, options?: ChatUsageOptions) => void;
+}
+
+/** Where `turn.addUsage` bills the tokens it is handed. */
+export interface ChatUsageOptions {
+  /** The registered model the tokens were spent on. Default: the turn's. */
+  model?: string;
+  /** Capability recorded on that model's execution. See `addUsage`. */
+  capability?: string;
 }
 
 /** The agent this turn runs as. */

@@ -61,7 +61,10 @@ export function upgradeCheck(options: UpgradeCheckOptions): UpgradeReport {
       (spec?.files ?? []).map((f) => [f.target, f.template])
     );
 
-    for (const target of newFiles(spec, entry.files)) {
+    for (const target of newFiles(spec, [
+      ...entry.files,
+      ...(entry.handedOver ?? []).map((handed) => ({ path: handed })),
+    ])) {
       report.items.push({ feature, path: target, state: "new" });
     }
 

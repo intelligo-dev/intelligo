@@ -30,6 +30,8 @@ export type TemplateFeature = {
   deprecated?: string;
   files: TemplateFile[];
   cron?: TemplateCron;
+  /** What the developer still does by hand once the files are written. */
+  nextSteps?: string[];
 };
 export type TemplateCatalogue = Record<string, TemplateFeature>;
 
@@ -54,6 +56,8 @@ export type AddResult = {
    * app has a vercel.json without it, which is the consumer's to edit.
    */
   cron?: TemplateCron & { status: "written" | "present" | "manual" };
+  /** The catalogue's steps left to the developer, printed after the files. */
+  nextSteps?: string[];
 };
 
 export type AddOptions = {
@@ -137,9 +141,13 @@ export function addFeature(feature: string, options: AddOptions): AddResult {
     skippedUnknown: [],
   };
   if (spec.deprecated) result.deprecated = spec.deprecated;
+  if (spec.nextSteps?.length) result.nextSteps = spec.nextSteps;
   const recorded: GeneratedFile[] = [];
+  const handedOver = new Set(previous?.handedOver ?? []);
 
   for (const file of spec.files) {
+    // A registry item replaced it; `intelligo sync` keeps it now.
+    if (handedOver.has(file.target)) continue;
     const source = path.join(options.templatesDir, file.template);
     const target = path.join(options.appRoot, file.target);
     const contents = substitute(
@@ -212,6 +220,9 @@ export function formatAddResult(r: AddResult): string {
   )
     lines.push("  nothing to do");
   if (r.cron) lines.push(...cronNextSteps(r.cron));
+  if (r.nextSteps?.length) {
+    lines.push("", "  Next:", ...r.nextSteps.map((step) => `  - ${step}`));
+  }
   return lines.join("\n");
 }
 

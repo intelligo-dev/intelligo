@@ -151,5 +151,24 @@
         "target": "app/api/cron/maintenance/route.ts"
       }
     ]
+  },
+  "vitest": {
+    "templateVersion": "1.0.0",
+    "description": "A Vitest setup for the app's own tests: the `@` alias, a `server-only` stub, and the `@intelligo-dev/*` packages inlined so the stub reaches them",
+    "files": [
+      {
+        "template": "vitest/vitest.config.ts.tpl",
+        "target": "vitest.config.ts"
+      },
+      {
+        "template": "vitest/server-only.ts.tpl",
+        "target": "tests/stubs/server-only.ts"
+      }
+    ],
+    "nextSteps": [
+      "Install the runner: pnpm add -D vitest",
+      "Add a script to package.json: \"test\": \"vitest run\"",
+      "Write tests beside the code as *.test.ts; mock @ai-sdk/* providers so CI makes no model calls"
+    ]
   }
 }

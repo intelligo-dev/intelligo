@@ -9,6 +9,7 @@ import {
   compare,
   currency,
   fromMajor,
+  money,
   toMajor,
 } from "@intelligo-dev/core/money";
 import { createRegistry } from "@intelligo-dev/core/registry";
@@ -18,12 +19,14 @@ import {
   DEFAULT_MODELS,
   PROVIDER_CURRENCY,
   UnknownModelError,
+  applyRate,
   chargeFor,
   clearModels,
   estimateWorstCaseCharge,
   getModelPricing,
   isModelRegistered,
   listModels,
+  modelKind,
   providerCost,
   registerModels,
   registeredModelIds,
@@ -161,6 +164,14 @@ const EVERY_CAPABILITY: ModelCapabilities = {
   codeExec: true,
 };
 
+const NO_CAPABILITY: ModelCapabilities = {
+  thinking: false,
+  toolCall: false,
+  vision: false,
+  webSearch: false,
+  codeExec: false,
+};
+
 const SHIPPED_CAPABILITIES: Readonly<Record<string, ModelCapabilities>> = {
   "google/gemini-2.5-flash": EVERY_CAPABILITY,
   "google/gemini-2.5-pro": EVERY_CAPABILITY,
@@ -175,11 +186,29 @@ const SHIPPED_CAPABILITIES: Readonly<Record<string, ModelCapabilities>> = {
   "openai/gpt-5.4-mini": EVERY_CAPABILITY,
   "openai/o4-mini": EVERY_CAPABILITY,
   "anthropic/claude-sonnet-4-6": EVERY_CAPABILITY,
+  // Embedding models run no turn, so they claim nothing a router reads.
+  "openai/text-embedding-3-small": NO_CAPABILITY,
+  "openai/text-embedding-3-large": NO_CAPABILITY,
+  "google/gemini-embedding-001": NO_CAPABILITY,
+};
+
+/** Input price per million tokens of each shipped embedding model. */
+const EMBEDDING_PRICES: Readonly<Record<string, number>> = {
+  "openai/text-embedding-3-small": 0.02,
+  "openai/text-embedding-3-large": 0.13,
+  "google/gemini-embedding-001": 0.15,
 };
 
 describe("DEFAULT_MODELS", () => {
-  it("ships six models", () => {
-    expect(DEFAULT_MODELS).toHaveLength(6);
+  it("ships six chat models and three embedding models", () => {
+    expect(DEFAULT_MODELS.filter((m) => modelKind(m) === "chat")).toHaveLength(
+      6
+    );
+    expect(
+      DEFAULT_MODELS.filter((m) => modelKind(m) === "embedding").map(
+        (m) => m.id
+      )
+    ).toEqual(Object.keys(EMBEDDING_PRICES));
   });
 
   it("names its provider and that provider's own model id", () => {
@@ -207,8 +236,20 @@ describe("DEFAULT_MODELS", () => {
     }
   });
 
-  it("prices and bounds every one of them", () => {
+  it("prices every embedding model on input alone", () => {
     for (const model of DEFAULT_MODELS) {
+      if (modelKind(model) !== "embedding") continue;
+      expect(model.costPerMInputTokens, model.id).toBe(
+        EMBEDDING_PRICES[model.id]
+      );
+      expect(model.costPerMOutputTokens, model.id).toBe(0);
+      expect(model.maxOutputTokens, model.id).toBe(0);
+    }
+  });
+
+  it("prices and bounds every chat model", () => {
+    for (const model of DEFAULT_MODELS) {
+      if (modelKind(model) !== "chat") continue;
       expect(model.id, `${model.id} has no id`).toMatch(/^[a-z0-9-]+\//);
       expect(model.costPerMInputTokens).toBeGreaterThan(0);
       expect(model.costPerMOutputTokens).toBeGreaterThan(0);
@@ -296,6 +337,30 @@ describe("estimateWorstCaseCharge", () => {
     );
   });
 
+  it("holds only the input budget for an embedding model", () => {
+    // 16K input tokens at $0.02/M is 320 micros, 4× is 1,280 micros.
+    expect(
+      estimateWorstCaseCharge("openai/text-embedding-3-small", USD_RATE)
+    ).toEqual(money(1_280, "USD"));
+    // A stray output ceiling on an embedding model is not held either.
+    registerModels([
+      {
+        ...getModelPricing("openai/text-embedding-3-small")!,
+        id: "test/embedder",
+        maxOutputTokens: 8_000,
+        costPerMOutputTokens: 1,
+      },
+    ]);
+    expect(estimateWorstCaseCharge("test/embedder", USD_RATE)).toEqual(
+      money(1_280, "USD")
+    );
+  });
+
+  it("treats a model with no kind as a chat model", () => {
+    const { kind: _kind, ...legacy } = DEFAULT_MODELS[0]!;
+    expect(modelKind(legacy)).toBe("chat");
+  });
+
   it("uses the model's own output ceiling", () => {
     registerModels([
       { ...DEFAULT_MODELS[0]!, id: "test/tiny", maxOutputTokens: 100 },
@@ -357,6 +422,19 @@ describe("chargeFor", () => {
     // $0.001198 × 4 × 3450 ≈ 16.5₮, kept exact rather than rounded up to 17₮.
     expect(toMajor(charged)).toBeCloseTo(16.53, 1);
     expect(toMajor(cost)).toBeCloseTo(0.001198, 6);
+  });
+
+  it("re-applies a recorded rate to a recorded cost exactly as it charged", () => {
+    const { providerCost: cost, charged } = chargeFor(
+      "google/gemini-2.5-flash",
+      TURN.input,
+      TURN.output,
+      MNT
+    );
+    expect(applyRate(cost, MNT)).toEqual(charged);
+    expect(() => applyRate(money(10, currency("MNT")), MNT)).toThrow(
+      /provider cost is USD/
+    );
   });
 
   it("refuses a USD deployment whose rate is not 1.0", () => {

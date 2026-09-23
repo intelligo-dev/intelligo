@@ -40,7 +40,9 @@ vi.mock("@intelligo-dev/billing", () => ({
 }));
 
 vi.mock("next-intl/server", () => ({
-  getTranslations: async () => (key: string) => key,
+  // A translator with no messages: `has` says so, as next-intl's does.
+  getTranslations: async () =>
+    Object.assign((key: string) => key, { has: () => false }),
 }));
 
 import { withRequestHeaders } from "@intelligo-dev/core/request-context";

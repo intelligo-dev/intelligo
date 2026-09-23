@@ -23,9 +23,9 @@ import {
   isProductDocument,
   type DocumentListItem,
 } from "@intelligo-dev/core/documents";
+import type { ActionResult as BaseActionResult } from "@intelligo-dev/next";
 
-export type ActionResult<T> =
-  { success: true; data: T } | { success: false; error: string };
+export type ActionResult<T> = BaseActionResult<T>;
 
 /**
  * A document list item plus whether its title matches a pattern

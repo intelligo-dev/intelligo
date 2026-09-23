@@ -259,6 +259,35 @@ describe("deleteAccount", () => {
   });
 });
 
+describe("setPreferredLanguage", () => {
+  it("records a language tag on the caller's own row", async () => {
+    const service = createProfileService();
+
+    await service.setPreferredLanguage("mn");
+
+    const [values] = mocks.updateSetWhereMock.mock.calls[0]!;
+    expect(values).toMatchObject({ preferredLanguage: "mn" });
+  });
+
+  it("refuses something that is not a language tag", async () => {
+    const service = createProfileService();
+
+    await expect(
+      service.setPreferredLanguage("mn; drop")
+    ).rejects.toMatchObject({ code: "invalid_input" });
+    expect(mocks.updateSetWhereMock).not.toHaveBeenCalled();
+  });
+
+  it("throws a forbidden ProfileServiceError when unauthenticated", async () => {
+    mocks.requireAuth.mockRejectedValue(new Error("Unauthorized"));
+    const service = createProfileService();
+
+    await expect(service.setPreferredLanguage("en")).rejects.toMatchObject({
+      code: "forbidden",
+    });
+  });
+});
+
 describe("isProfileServiceError", () => {
   it("narrows only ProfileServiceError instances", async () => {
     mocks.requireAuth.mockRejectedValue(new Error("Unauthorized"));

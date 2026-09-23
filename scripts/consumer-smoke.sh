@@ -8,8 +8,8 @@
 #
 #   1. the bare scaffold type-checks, builds, and answers 401 on
 #      /api/assistant (composition root, auth, execution boundary);
-#   2. every registry item, served over HTTP from this tree's build,
-#      installs with the shadcn CLI in requires.json order;
+#   2. every registry item installs through the packed CLI's
+#      `intelligo sync`, and `sync --check` finds no drift;
 #   3. the full app type-checks, builds, serves /registry-smoke and
 #      redirects an unauthenticated /dashboard to login.
 #
@@ -23,7 +23,6 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 WORK=${1:-$(mktemp -d)}
 TARBALLS="$WORK/tarballs"
 APP="$WORK/consumer"
-REGISTRY_PORT=8399
 APP_PORT=3100
 
 step() { echo; echo "=== $*"; }
@@ -132,38 +131,15 @@ stop
 echo "unauthenticated /api/assistant answered $code"
 [ "$code" = "401" ] || fail "expected 401 from /api/assistant, got $code"
 
-step "every registry item installs over HTTP"
-npx --yes http-server@14.1.1 "$ROOT/packages/registry/public/r" -p "$REGISTRY_PORT" -s &
-servers+=($!)
-for _ in $(seq 1 30); do
-  curl -sf "http://127.0.0.1:$REGISTRY_PORT/intelligo.json" >/dev/null && break
-  sleep 1
-done
-# Items name Intelligo's components as @intelligo/<name>: point the
-# namespace at this tree's build, not the deployed site.
-node -e '
-const fs = require("fs");
-const c = JSON.parse(fs.readFileSync("components.json", "utf8"));
-c.registries = { ...c.registries, "@intelligo": process.argv[1] };
-fs.writeFileSync("components.json", JSON.stringify(c, null, 2));
-' "http://127.0.0.1:$REGISTRY_PORT/{name}.json"
-order=$(node -e '
-const { items } = require(process.argv[1]);
-const out = [], done = new Set();
-const visit = (n) => {
-  if (done.has(n)) return;
-  done.add(n);
-  for (const d of items[n].items ?? []) visit(d);
-  out.push(n);
-};
-for (const n of Object.keys(items)) visit(n);
-console.log(out.join(" "));
-' "$ROOT/packages/registry/requires.json")
-for item in $order; do
-  echo "--- $item"
-  pnpm exec shadcn add "http://127.0.0.1:$REGISTRY_PORT/$item.json" --yes --overwrite \
-    >"$WORK/add-$item.log" 2>&1 || { tail -30 "$WORK/add-$item.log"; fail "shadcn add $item failed"; }
-done
+step "every registry item installs through the packed CLI"
+# `intelligo sync` installs from the registry packed into the CLI — the
+# pages of the same release as the packages — one `shadcn add` per item
+# in requires.json order, then `--check` proves nothing drifted.
+items=$(node -e 'console.log(Object.keys(require(process.argv[1]).items).join(" "))' "$ROOT/packages/registry/requires.json")
+pnpm exec intelligo sync intelligo $items --force >"$WORK/sync.log" 2>&1 \
+  || { tail -30 "$WORK/sync.log"; fail "intelligo sync failed"; }
+tail -2 "$WORK/sync.log"
+pnpm exec intelligo sync --check || fail "intelligo sync --check reports drift right after a sync"
 pnpm install --no-frozen-lockfile
 
 step "the full app type-checks, builds and boots"
