@@ -1,9 +1,9 @@
 import "server-only";
 
 /**
- * Cross-tenant usage and plan read models for a platform console: what
- * the platform spent on providers, on which models, for which users, and
- * which plans its workspaces are on. Cross-tenant by design — every
+ * Cross-tenant usage, revenue and plan read models for a platform
+ * console: what the platform spent on providers, on which models, for
+ * which users, what it was paid, and which plans its workspaces are on. Cross-tenant by design — every
  * caller passes through `requireAdmin` first.
  *
  * Amounts are `Money`: provider cost is always USD micros, and a charge
@@ -14,13 +14,21 @@ import "server-only";
 
 import { db } from "@intelligo-dev/core/db";
 import {
+  financeEvents,
   organization,
+  payments,
   plans,
   subscriptions,
   usageRecords,
   users,
 } from "@intelligo-dev/core/db/schema";
-import { currency, money, type Money } from "@intelligo-dev/core/money";
+import {
+  add,
+  currency,
+  fromMinor,
+  money,
+  type Money,
+} from "@intelligo-dev/core/money";
 import {
   PROVIDER_CURRENCY,
   applyRate,
@@ -102,6 +110,62 @@ export async function getUsageByUser(limit = 20): Promise<UsageByUserRow[]> {
     totalTokens: Number(r.totalTokens),
     providerCost: usd(r.micros),
   }));
+}
+
+/**
+ * Stripe events that each record money received once. `invoice.paid`
+ * covers every invoice, the first of a subscription included, so the
+ * subscription checkout's own `checkout.session.completed` is left out.
+ * A one-time checkout creates no invoice and counts when its session
+ * says it was paid: `checkout.session.completed` for an immediate
+ * method, `checkout.session.async_payment_succeeded` for a delayed one
+ * (whose `completed` arrived unpaid). A session whose recorded payload
+ * was truncated no longer says, and is not counted.
+ */
+const stripeMoneyReceived = sql<boolean>`case
+  when ${financeEvents.type} = 'invoice.paid' then true
+  when ${financeEvents.type} in ('checkout.session.completed', 'checkout.session.async_payment_succeeded')
+    then (${financeEvents.metadata}::jsonb ->> 'mode') = 'payment'
+      and (${financeEvents.metadata}::jsonb ->> 'payment_status') = 'paid'
+  else false
+end`;
+
+/**
+ * Gross revenue, one `Money` per currency it was taken in, largest
+ * first: every Stripe payment received (see `stripeMoneyReceived`) plus
+ * every paid invoice of a registered payment provider (`payments`).
+ * Refunds and provider fees are not subtracted, and no currency is
+ * converted into another.
+ */
+export async function getRevenue(): Promise<Money[]> {
+  const [stripe, local] = await Promise.all([
+    db
+      .select({
+        currency: sql<string>`upper(${financeEvents.currency})`,
+        minor: sql<string>`coalesce(sum(${financeEvents.amountMinor}), 0)`,
+      })
+      .from(financeEvents)
+      .where(
+        sql`${financeEvents.amountMinor} is not null and ${financeEvents.currency} is not null and ${stripeMoneyReceived}`
+      )
+      .groupBy(sql`upper(${financeEvents.currency})`),
+    db
+      .select({
+        currency: sql<string>`upper(${payments.currency})`,
+        minor: sql<string>`coalesce(sum(${payments.amountMinor}), 0)`,
+      })
+      .from(payments)
+      .where(eq(payments.status, "paid"))
+      .groupBy(sql`upper(${payments.currency})`),
+  ]);
+
+  const totals = new Map<string, Money>();
+  for (const row of [...stripe, ...local]) {
+    const amount = fromMinor(Number(row.minor), row.currency);
+    const sum = totals.get(amount.currency);
+    totals.set(amount.currency, sum ? add(sum, amount) : amount);
+  }
+  return [...totals.values()].sort((a, b) => b.amount - a.amount);
 }
 
 export type PlanDistributionRow = {

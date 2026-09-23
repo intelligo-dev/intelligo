@@ -25,6 +25,7 @@ export {
 
 export {
   getProviderCostTotal,
+  getRevenue,
   getUsageByModel,
   getUsageByUser,
   getPlanDistribution,
