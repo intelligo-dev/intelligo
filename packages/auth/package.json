@@ -46,8 +46,8 @@
     "zod": "^3.25.76 || ^4.0.0"
   },
   "devDependencies": {
-    "@types/react": "19.2.18",
-    "better-auth": "~1.6.33",
+    "@types/react": "19.3.0",
+    "better-auth": "~1.7.5",
     "drizzle-orm": "^0.45.2",
     "typescript": "^5.9.3",
     "zod": "^4.6.5"

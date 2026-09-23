@@ -40,17 +40,17 @@
     "@vitest/coverage-v8": "~4.1.11",
     "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "pg": "8.18.0",
-    "prettier": "^3.9.7",
+    "pg": "8.23.0",
+    "prettier": "^3.9.8",
     "shadcn": "^4.21.0",
-    "tsx": "^4.23.13",
-    "turbo": "^2.10.13",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.2",
     "typescript": "^5.9.3",
     "vitest": "~4.1.11"
   },
   "pnpm": {
     "overrides": {
-      "pg": "8.18.0",
+      "pg": "8.23.0",
       "next": "~16.3.5",
       "next-intl": ">=4.9.1",
       "drizzle-orm": ">=0.45.2",
