@@ -35,6 +35,7 @@ import {
   shortDescription,
   withDependencies,
   type Command,
+  type InstallPlan,
 } from "../registry-items.js";
 
 export type CreateFlags = {
@@ -100,6 +101,47 @@ function run(c: Command, cwd: string): boolean {
     shell: process.platform === "win32",
   });
   return result.status === 0;
+}
+
+/**
+ * Run the plan: the dependency install, then the sync. Returns the
+ * commands still to run by hand — none when both succeeded.
+ */
+async function installPages(
+  plan: InstallPlan,
+  options: {
+    appRoot: string;
+    interactive: boolean;
+    show: (c: Command) => string;
+    syncContext: SyncContext;
+  }
+): Promise<Command[]> {
+  const { appRoot, interactive, show } = options;
+  const say = (line: string) =>
+    interactive ? p.log.step(line) : console.log(line);
+  const fail = (message: string) =>
+    interactive ? p.log.error(message) : console.error(message);
+  if (plan.install) {
+    say(`› ${show(plan.install)}`);
+    if (!run(plan.install, plan.install.cwd ?? appRoot)) {
+      fail(
+        `\`${show(plan.install)}\` failed — the scaffold is in place; run the rest by hand.`
+      );
+      return [plan.install, plan.sync];
+    }
+  }
+  say(`› ${show(plan.sync)}`);
+  const code = await syncApply(plan.items, options.syncContext, {
+    force: true,
+    log: say,
+  });
+  if (code !== 0) {
+    fail(
+      "The pages did not all install — the scaffold is in place; re-run the sync by hand."
+    );
+    return [plan.sync];
+  }
+  return [];
 }
 
 export async function runCreate(
@@ -208,45 +250,20 @@ export async function runCreate(
     approved = answer;
   }
 
-  let pending: Command[] = [];
-  if (approved && plan && registryDir) {
-    const say = (line: string) =>
-      interactive ? p.log.step(line) : console.log(line);
-    const fail = (message: string) =>
-      interactive ? p.log.error(message) : console.error(message);
-    let ok = true;
-    if (plan.install) {
-      say(`› ${show(plan.install)}`);
-      if (!run(plan.install, plan.install.cwd ?? appRoot)) {
-        fail(
-          `\`${show(plan.install)}\` failed — the scaffold is in place; run the rest by hand.`
-        );
-        pending = commands;
-        ok = false;
-      }
-    }
-    if (ok) {
-      say(`› ${show(plan.sync)}`);
-      const syncContext: SyncContext = {
-        appRoot,
-        registryDir,
-        requires: catalogue.requires,
-        frameworkVersion: context.frameworkVersion,
-      };
-      const code = await syncApply(plan.items, syncContext, {
-        force: true,
-        log: say,
-      });
-      if (code !== 0) {
-        fail(
-          "The pages did not all install — the scaffold is in place; re-run the sync by hand."
-        );
-        pending = [plan.sync];
-      }
-    }
-  } else {
-    pending = commands;
-  }
+  const pending =
+    approved && plan && registryDir
+      ? await installPages(plan, {
+          appRoot,
+          interactive,
+          show,
+          syncContext: {
+            appRoot,
+            registryDir,
+            requires: catalogue.requires,
+            frameworkVersion: context.frameworkVersion,
+          },
+        })
+      : commands;
 
   const next = {
     packageManager: workspaceRoot ? ("pnpm" as const) : packageManager,

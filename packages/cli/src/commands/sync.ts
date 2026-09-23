@@ -46,6 +46,21 @@ import {
   registryClosure,
 } from "../registry-bundle.js";
 import { withDependencies } from "../registry-items.js";
+import {
+  isMessages,
+  localeEntries,
+  mergeMessages,
+  missingMessageKeys,
+  type Json,
+} from "./sync-messages.js";
+import { SCAFFOLD_FEATURE, snapshotScaffold } from "./sync-scaffold.js";
+
+export {
+  appLocales,
+  mergeMessages,
+  missingMessageKeys,
+} from "./sync-messages.js";
+export { SCAFFOLD_FEATURE, scaffoldHandover } from "./sync-scaffold.js";
 
 /** The design-system base: no marker file, installed before any page. */
 export const BASE_ITEM = "intelligo";
@@ -163,105 +178,6 @@ export function installOrder(
   ];
 }
 
-type Json = Record<string, unknown>;
-
-const isObject = (v: unknown): v is Json =>
-  typeof v === "object" && v !== null && !Array.isArray(v);
-
-/** Dotted paths of every leaf in `registry` that `app` lacks. */
-export function missingMessageKeys(
-  registry: Json,
-  app: Json,
-  prefix = ""
-): string[] {
-  return Object.entries(registry).flatMap(([key, value]) => {
-    const at = prefix ? `${prefix}.${key}` : key;
-    if (!(key in app)) return [at];
-    const mine = app[key];
-    return isObject(value) && isObject(mine)
-      ? missingMessageKeys(value, mine, at)
-      : [];
-  });
-}
-
-/**
- * The registry's messages with the app's copy laid over them: every key
- * the registry has is present, every value the app set wins, and keys
- * only the app has (its own nav entries, product copy) are kept.
- */
-export function mergeMessages(registry: Json, app: Json): Json {
-  const out: Json = {};
-  for (const [key, value] of Object.entries(registry)) {
-    const mine = app[key];
-    out[key] =
-      key in app
-        ? isObject(value) && isObject(mine)
-          ? mergeMessages(value, mine)
-          : mine
-        : value;
-  }
-  for (const [key, value] of Object.entries(app)) {
-    if (!(key in out)) out[key] = value;
-  }
-  return out;
-}
-
-const isMessages = (target: string) =>
-  target.startsWith("messages/") && target.endsWith(".json");
-
-/** The locale the registry ships messages in. */
-const SOURCE_LOCALE = "en";
-
-/**
- * The app's locales, from `locales: [...]` in i18n/routing.ts — the
- * source locale alone when there is no such file or list.
- */
-export function appLocales(appRoot: string): string[] {
-  const file = path.join(appRoot, "i18n", "routing.ts");
-  if (!existsSync(file)) return [SOURCE_LOCALE];
-  const list = /\blocales\s*:\s*\[([^\]]*)\]/.exec(readFileSync(file, "utf8"));
-  const locales = [...(list?.[1] ?? "").matchAll(/["'`]([^"'`]+)["'`]/g)].map(
-    (m) => m[1]!
-  );
-  return locales.length > 0 ? locales : [SOURCE_LOCALE];
-}
-
-/**
- * Every other locale's copy of the namespaces the registry ships,
- * against the app's English file on disk — the merged copy, product
- * keys included, which is what the other locales translate. A missing
- * file lacks every key.
- */
-function localeEntries(
-  context: SyncContext,
-  files: readonly ShippedFile[]
-): SyncEntry[] {
-  const others = appLocales(context.appRoot).filter((l) => l !== SOURCE_LOCALE);
-  if (others.length === 0) return [];
-  const prefix = `messages/${SOURCE_LOCALE}/`;
-  const entries: SyncEntry[] = [];
-  for (const { item, target } of files) {
-    if (!target.startsWith(prefix) || !target.endsWith(".json")) continue;
-    const english = path.join(context.appRoot, target);
-    if (!existsSync(english)) continue;
-    const source = JSON.parse(readFileSync(english, "utf8")) as Json;
-    for (const locale of others) {
-      const rel = `messages/${locale}/${target.slice(prefix.length)}`;
-      const abs = path.join(context.appRoot, rel);
-      const missingKeys = missingMessageKeys(
-        source,
-        existsSync(abs) ? (JSON.parse(readFileSync(abs, "utf8")) as Json) : {}
-      );
-      entries.push(
-        missingKeys.length > 0
-          ? { item, path: rel, state: "locale-behind", missingKeys }
-          : { item, path: rel, state: "current" }
-      );
-    }
-  }
-  return entries;
-}
-
 type ShippedFile = { item: string; target: string; content: string };
 
 function shippedFiles(
@@ -321,7 +237,7 @@ export function syncCheck(
     };
   });
 
-  entries.push(...localeEntries(context, files));
+  entries.push(...localeEntries(context.appRoot, files));
   return { version: context.frameworkVersion, items: closure, entries };
 }
 
@@ -425,44 +341,58 @@ function run(
   });
 }
 
-/** The `intelligo create` feature whose files an install may replace. */
-export const SCAFFOLD_FEATURE = "app-scaffold";
-
-/**
- * Scaffold files the install extends in place rather than replaces:
- * shadcn adds dependencies to package.json and style fields to
- * components.json, and both stay the app's.
- */
-const EDITED_IN_PLACE: ReadonlySet<string> = new Set([
-  "package.json",
-  "components.json",
-]);
-
-/**
- * The scaffold files an install has made the registry's: a file an
- * installed item ships, the Tailwind stylesheet once the design-system
- * base is in (it rewrites the tokens), or any scaffold file the install
- * changed (shadcn's own `utils`, `sonner`). Seams stay the app's, and
- * so do the files shadcn only extends. Left in the scaffold's record,
- * each would read `customized` in `upgrade --check` forever.
- */
-export function scaffoldHandover(input: {
-  scaffold: readonly string[];
-  changed: ReadonlySet<string>;
-  shipped: ReadonlySet<string>;
-  seams: Readonly<Record<string, string>>;
-  css: string | null;
-}): string[] {
-  return input.scaffold.filter(
-    (file) =>
-      !(file in input.seams) &&
-      !EDITED_IN_PLACE.has(file) &&
-      (input.shipped.has(file) || file === input.css || input.changed.has(file))
-  );
+/** Put the kept seams back, and merge kept messages over the registry's. */
+function restoreKept(
+  appRoot: string,
+  kept: ReadonlyMap<string, string>,
+  shipped: ReadonlyMap<string, string>
+): void {
+  for (const [target, content] of kept) {
+    const abs = path.join(appRoot, target);
+    mkdirSync(path.dirname(abs), { recursive: true });
+    if (isMessages(target) && shipped.has(target)) {
+      const merged = mergeMessages(
+        JSON.parse(shipped.get(target)!) as Json,
+        JSON.parse(content) as Json
+      );
+      writeFileSync(abs, `${JSON.stringify(merged, null, 2)}\n`);
+    } else {
+      writeFileSync(abs, content);
+    }
+  }
 }
 
-function readIfExists(file: string): string | null {
-  return existsSync(file) ? readFileSync(file, "utf8") : null;
+/**
+ * Write the synced items and each installed file's hash (seams and
+ * message files aside) into the manifest.
+ */
+function recordSync(
+  context: SyncContext,
+  names: readonly string[],
+  after: SyncReport,
+  { manifest }: { manifest: Manifest }
+): void {
+  const files: Record<string, string> = {};
+  for (const e of after.entries) {
+    if (e.state === "seam" || e.state === "missing" || isMessages(e.path)) {
+      continue;
+    }
+    files[e.path] = hashContents(
+      asInstalled(readFileSync(path.join(context.appRoot, e.path), "utf8"))
+    );
+  }
+  const recordedItems = new Set([
+    ...(manifest.registry?.items ?? []),
+    ...names,
+  ]);
+  writeManifest(context.appRoot, {
+    ...manifest,
+    registry: {
+      version: context.frameworkVersion,
+      items: installOrder([...recordedItems], context.requires),
+      files: { ...manifest.registry?.files, ...files },
+    },
+  });
 }
 
 export type SyncApplyOptions = {
@@ -532,12 +462,7 @@ export async function syncApply(
     tailwind?: { css?: string };
   };
   // The scaffold's files as they are now, to see which the install replaces.
-  const scaffoldFiles = (
-    readManifest(appRoot)?.features[SCAFFOLD_FEATURE]?.files ?? []
-  ).map((f) => f.path);
-  const scaffoldBefore = new Map(
-    scaffoldFiles.map((f) => [f, readIfExists(path.join(appRoot, f))])
-  );
+  const scaffold = snapshotScaffold(appRoot);
   const originalRegistry = componentsBefore.registries?.["@intelligo"];
   const { server, url } = await serveRegistry(context.registryDir);
 
@@ -579,19 +504,7 @@ export async function syncApply(
   const shipped = new Map(
     shippedFiles(context, items).files.map((f) => [f.target, f.content])
   );
-  for (const [target, content] of kept) {
-    const abs = path.join(appRoot, target);
-    mkdirSync(path.dirname(abs), { recursive: true });
-    if (isMessages(target) && shipped.has(target)) {
-      const merged = mergeMessages(
-        JSON.parse(shipped.get(target)!) as Json,
-        JSON.parse(content) as Json
-      );
-      writeFileSync(abs, `${JSON.stringify(merged, null, 2)}\n`);
-    } else {
-      writeFileSync(abs, content);
-    }
-  }
+  restoreKept(appRoot, kept, shipped);
 
   if (failed) {
     log(
@@ -602,44 +515,18 @@ export async function syncApply(
 
   // Record what is on disk now, so the next check can tell an edit.
   const after = syncCheck(items, context);
-  const files: Record<string, string> = {};
-  for (const e of after.entries) {
-    if (e.state === "seam" || e.state === "missing" || isMessages(e.path)) {
-      continue;
-    }
-    files[e.path] = hashContents(
-      asInstalled(readFileSync(path.join(appRoot, e.path), "utf8"))
-    );
-  }
-  const changed = new Set(
-    scaffoldFiles.filter(
-      (f) => readIfExists(path.join(appRoot, f)) !== scaffoldBefore.get(f)
-    )
-  );
-  const manifest: Manifest = handOver(
-    readManifest(appRoot) ?? emptyManifest(context.frameworkVersion),
-    SCAFFOLD_FEATURE,
-    scaffoldHandover({
-      scaffold: scaffoldFiles,
-      changed,
-      shipped: new Set(shipped.keys()),
-      seams,
-      css: items.includes(BASE_ITEM)
-        ? (componentsBefore.tailwind?.css ?? null)
-        : null,
-    })
-  );
-  const recordedItems = new Set([
-    ...(manifest.registry?.items ?? []),
-    ...names,
-  ]);
-  writeManifest(appRoot, {
-    ...manifest,
-    registry: {
-      version: context.frameworkVersion,
-      items: installOrder([...recordedItems], context.requires),
-      files: { ...manifest.registry?.files, ...files },
-    },
+  recordSync(context, names, after, {
+    manifest: handOver(
+      readManifest(appRoot) ?? emptyManifest(context.frameworkVersion),
+      SCAFFOLD_FEATURE,
+      scaffold.handedOver({
+        shipped: new Set(shipped.keys()),
+        seams,
+        css: items.includes(BASE_ITEM)
+          ? (componentsBefore.tailwind?.css ?? null)
+          : null,
+      })
+    ),
   });
 
   log(formatSyncReport(after));
