@@ -26,18 +26,23 @@ d("identity service — real DB integration", () => {
   let deleteFact: typeof import("./service").deleteFact;
   let exportIdentity: typeof import("./service").exportIdentity;
   let getAuditTrail: typeof import("./service").getAuditTrail;
+  let saveProfileSnapshot: typeof import("./service").saveProfileSnapshot;
   let isIdentityServiceError: typeof import("./errors").isIdentityServiceError;
 
   const actor = { workspaceId, userId };
-  const _otherActor = { workspaceId, userId: otherUserId };
 
   const factId = `fact-${suffix}-mine`;
   const otherFactId = `fact-${suffix}-other`;
 
   beforeAll(async () => {
     process.env.DATABASE_URL = DATABASE_URL;
-    ({ listFacts, deleteFact, exportIdentity, getAuditTrail } =
-      await import("./service"));
+    ({
+      listFacts,
+      deleteFact,
+      exportIdentity,
+      getAuditTrail,
+      saveProfileSnapshot,
+    } = await import("./service"));
     ({ isIdentityServiceError } = await import("./errors"));
 
     await client.connect();
@@ -86,6 +91,10 @@ d("identity service — real DB integration", () => {
     await client.query(`DELETE FROM user_facts WHERE workspace_id = $1`, [
       workspaceId,
     ]);
+    await client.query(
+      `DELETE FROM user_profile_snapshots WHERE workspace_id = $1`,
+      [workspaceId]
+    );
     await client.end();
   });
 
@@ -129,6 +138,57 @@ d("identity service — real DB integration", () => {
 
     const exportRows = result.audit.filter((row) => row.action === "export");
     expect(exportRows.length).toBeGreaterThan(0);
+  });
+
+  it("saveProfileSnapshot inserts version 1, then replaces and bumps it", async () => {
+    const first = await saveProfileSnapshot(actor, {
+      summary: "Profile: 1 skills.",
+      summaryEn: "Profile: 1 skills.",
+      factsDigest: { totalFacts: 1 },
+      activeGoals: ["graduate"],
+      synthesizedByModel: "deterministic",
+      triggerReason: "manual",
+    });
+    expect(first.version).toBe(1);
+    expect(first.workspaceId).toBe(workspaceId);
+    expect(first.userId).toBe(userId);
+
+    const second = await saveProfileSnapshot(actor, {
+      summary: "Profile: 2 skills.",
+      factsDigest: { totalFacts: 2 },
+      summaryEn: null,
+      triggerReason: "fact_threshold",
+    });
+    expect(second.version).toBe(2);
+    expect(second.summary).toBe("Profile: 2 skills.");
+    expect(second.factsDigest).toEqual({ totalFacts: 2 });
+    // Undefined keeps, null clears.
+    expect(second.activeGoals).toEqual(["graduate"]);
+    expect(second.synthesizedByModel).toBe("deterministic");
+    expect(second.summaryEn).toBeNull();
+
+    const exported = await exportIdentity(actor);
+    expect(exported.snapshot?.version).toBe(2);
+
+    const trail = await getAuditTrail(actor, { targetId: userId });
+    const writes = trail
+      .filter((row) => row.targetKind === "snapshot" && row.action !== "export")
+      .map((row) => [row.action, row.actorKind]);
+    expect(writes).toEqual([
+      ["update", "system_job"],
+      ["create", "system_job"],
+    ]);
+  });
+
+  it("saveProfileSnapshot keeps one row per user per workspace", async () => {
+    const otherActor = { workspaceId, userId: otherUserId };
+    const theirs = await saveProfileSnapshot(otherActor, {
+      summary: "Someone else.",
+      factsDigest: {},
+    });
+    expect(theirs.version).toBe(1);
+    const mine = await exportIdentity(actor);
+    expect(mine.snapshot?.summary).toBe("Profile: 2 skills.");
   });
 
   it("getAuditTrail returns most-recent-first, scoped to the actor", async () => {
