@@ -6,8 +6,9 @@ export const inviteMemberSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   role: z.enum(["admin", "member"], {
     // One message for a missing role and an unknown one: to the person
-    // filling in the form they are the same mistake.
-    error: "Please select a role",
+    // filling in the form they are the same mistake. `message`, not
+    // `error`: the peer range admits zod 3, which reads only `message`.
+    message: "Please select a role",
   }),
 });
 
