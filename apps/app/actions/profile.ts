@@ -17,6 +17,7 @@ import {
   type UpdateProfileInput,
 } from "@intelligo-dev/auth";
 
+import { routing } from "@/i18n/routing";
 import { profile } from "@/lib/profile";
 
 export type ProfileActionResult<T = undefined> =
@@ -57,6 +58,28 @@ export async function updateProfile(
   try {
     await profile.updateProfile(parsed.data);
     revalidatePath("/settings/profile");
+    return { success: true, data: undefined };
+  } catch (error) {
+    return { success: false, error: friendlyError(error, t) };
+  }
+}
+
+/**
+ * Record the caller's preferred language — one of the locales the app
+ * routes (`i18n/routing.ts`). An onboarding step or a settings control
+ * calls it; switching the page's locale is the language switcher's job.
+ */
+export async function updatePreferredLanguage(
+  locale: string
+): Promise<ProfileActionResult> {
+  const t = await getTranslations("profile-settings");
+  if (!(routing.locales as readonly string[]).includes(locale)) {
+    return { success: false, error: t("errors.invalidInput") };
+  }
+
+  try {
+    await profile.setPreferredLanguage(locale);
+    revalidatePath("/", "layout");
     return { success: true, data: undefined };
   } catch (error) {
     return { success: false, error: friendlyError(error, t) };

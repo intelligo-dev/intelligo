@@ -14,6 +14,45 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Added
+
+- `intelligo sync [items…]` keeps installed registry pages the
+  registry's. It installs each item with `shadcn add --overwrite` from
+  the registry bundled with the CLI — the pages of the same release as
+  the packages — in `requires.json` order, puts the item's seams back,
+  merges message files key by key (the app's copy wins), and records
+  each installed file's hash in `intelligo.manifest.json`. It refuses to
+  overwrite a hand-edited file without `--force`. `intelligo sync
+  --check` installs nothing and exits 1 on any file that is missing,
+  edited, outdated or lacks registry message keys. An existing app
+  adopts it by naming its items once.
+- `@intelligo-dev/cli` ships the built registry (`templates/registry`).
+- `requires.json` names every item's `seams`: the files an item ships
+  once for the deployment to own. The site's config-seams page, the
+  reference-app drift test and `sync` read them from there.
+- `createBillingExecutions()` / `billingExecutionPorts()` in
+  `@intelligo-dev/billing`: the execution boundary bound to the quota
+  engine, which every composition root used to copy. The scaffold uses it.
+- `grantPlan({ workspaceId, planSlug, reason, actorId })` in
+  `@intelligo-dev/billing`: a plan as a product decision (a reward, a
+  grant), without writing `subscriptions` directly. Stripe state is left
+  alone.
+- `applyRate(cost, rate)` in `@intelligo-dev/executions/pricing`:
+  `chargeFor`'s arithmetic over a recorded cost, for audits.
+- `@intelligo-dev/admin`: `getProviderCostTotal`, `getUsageByModel`,
+  `getUsageByUser`, `getPlanDistribution`, `listUsageRecords` (each
+  record's charge audited with `applyRate`). Amounts are `Money`.
+- `profile.setPreferredLanguage(locale)` in `@intelligo-dev/auth`, and
+  the `profile-settings` item's `updatePreferredLanguage` action,
+  checked against `routing.locales`.
+
+### Changed
+
+- `apps/app` is regenerated with `intelligo sync` instead of a
+  hand-written `shadcn add` loop.
+
 ## [1.0.0-beta.13] — 2026-09-21
 
 The first version on npm since `1.0.0-beta.6`. `1.0.0-beta.7` to

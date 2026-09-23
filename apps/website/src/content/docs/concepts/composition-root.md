@@ -40,48 +40,7 @@ Packages never reach sideways. `@intelligo-dev/auth` does not import billing; `@
 <!-- snippet: packages/cli/templates/app-scaffold/intelligo.ts.tpl#executions -->
 
 ```ts title="lib/intelligo.ts"
-export const executions = createExecutions({
-  async checkEntitlement({ workspaceId, requestId, model }) {
-    // Passing requestId makes admission atomic: the worst-case cost is
-    // reserved in the same transaction that reads the balance, so
-    // concurrent requests cannot all pass.
-    const quota = await reserveQuota(workspaceId, { modelId: model, requestId });
-    return {
-      allowed: quota.allowed,
-      code: quota.code,
-      reason: quota.reason,
-      // The hold, as an amount with its currency.
-      estimated: quota.estimated,
-      usingTrialCredits: quota.usingTrialCredits,
-    };
-  },
-
-  async settleUsage(s) {
-    // Returns what was charged and which pool funded it; the lifecycle
-    // records the amount and its currency on the execution row.
-    return recordTokenUsage({
-      workspaceId: s.workspaceId,
-      userId: s.userId ?? "",
-      model: s.model ?? "unknown",
-      agent: s.capability,
-      inputTokens: s.inputTokens,
-      outputTokens: s.outputTokens,
-      totalTokens: s.totalTokens,
-      usingTrialCredits: s.usingTrialCredits,
-      requestId: s.requestId,
-      metadata: s.metadata,
-    });
-  },
-
-  async releaseHold({ requestId }) {
-    await releaseReservation(requestId);
-  },
-
-  // Lets executions.reconcile() tell a settling row whose charge
-  // committed from one whose charge never happened.
-  findSettlement: ({ workspaceId, requestId }) =>
-    findSettlementByRequestId(workspaceId, requestId),
-});
+export const executions = createBillingExecutions();
 ```
 
 The same pattern binds `checkMemberLimit` for the team service, `onAccountDeleted` for the profile service, and so on. Swap a port and the service follows; no package has to change.

@@ -20,6 +20,9 @@ intelligo migrate --check   Compare the framework's migrations to a database
                             fresh | ahead | unmanaged | legacy)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
 intelligo upgrade --check   Show what a template upgrade would change
+intelligo sync [items…]     Install registry pages from this release's registry,
+                            keeping seams and merging messages (--force replaces
+                            hand-edited files; --check only reports, exit 1 on drift)
 ```
 
 ## create
@@ -146,3 +149,26 @@ never overwrite consumer source, so the interesting output is not
 them" — the set where the consumer has to make a decision.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/upgrade-check.ts)
+
+## sync
+
+Keeps an app's installed registry pages exactly what the framework
+ships. Installing stays the shadcn CLI's job — every item goes in with
+`shadcn add <item> --yes --overwrite` — and this command adds what
+shadcn cannot know:
+
+- the version: items come from the registry bundled with this CLI, so
+  they match the `@intelligo-dev/*` packages of the same release;
+- the order: an item that imports a sibling's files lands after it
+  (requires.json `items`);
+- the seams: files an item ships once for the deployment to own
+  (requires.json `seams`) are put back after the install, and message
+  files are merged key by key, the app's copy winning;
+- the record: intelligo.manifest.json keeps each installed file's
+  hash, so `--check` can tell a file edited by hand from one a newer
+  registry replaced.
+
+`--check` installs nothing and exits 1 when any installed file is
+missing, edited or behind the registry — the gate CI runs.
+
+[source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/sync.ts)

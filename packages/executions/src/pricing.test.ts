@@ -9,6 +9,7 @@ import {
   compare,
   currency,
   fromMajor,
+  money,
   toMajor,
 } from "@intelligo-dev/core/money";
 import { createRegistry } from "@intelligo-dev/core/registry";
@@ -18,6 +19,7 @@ import {
   DEFAULT_MODELS,
   PROVIDER_CURRENCY,
   UnknownModelError,
+  applyRate,
   chargeFor,
   clearModels,
   estimateWorstCaseCharge,
@@ -357,6 +359,19 @@ describe("chargeFor", () => {
     // $0.001198 × 4 × 3450 ≈ 16.5₮, kept exact rather than rounded up to 17₮.
     expect(toMajor(charged)).toBeCloseTo(16.53, 1);
     expect(toMajor(cost)).toBeCloseTo(0.001198, 6);
+  });
+
+  it("re-applies a recorded rate to a recorded cost exactly as it charged", () => {
+    const { providerCost: cost, charged } = chargeFor(
+      "google/gemini-2.5-flash",
+      TURN.input,
+      TURN.output,
+      MNT
+    );
+    expect(applyRate(cost, MNT)).toEqual(charged);
+    expect(() => applyRate(money(10, currency("MNT")), MNT)).toThrow(
+      /provider cost is USD/
+    );
   });
 
   it("refuses a USD deployment whose rate is not 1.0", () => {

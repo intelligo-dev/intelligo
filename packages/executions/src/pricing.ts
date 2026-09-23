@@ -17,6 +17,7 @@ import {
   convert,
   currency,
   money,
+  MoneyError,
   type CurrencyCode,
   type Money,
 } from "@intelligo-dev/core/money";
@@ -276,12 +277,37 @@ export const DEFAULT_MARGIN_BP = 40_000;
 const BP_PER_MULTIPLE = 10_000;
 
 /**
- * Provider cost and what the reader is charged for it: cost × margin,
- * converted into the deployment's currency at its own rate.
+ * What a provider cost is charged at a rate: cost × margin, converted
+ * into the deployment's currency at its own rate.
  *
  * Both steps round up, so a charge is at most two micros over — a
  * millionth of a cent, against a fraction that would otherwise be the
  * deployment's to eat on every request.
+ *
+ * Exported for audits: a usage record keeps its provider cost and the
+ * rate it was billed at, and re-applying the rate to the cost must give
+ * the recorded charge — re-pricing the model instead would use today's
+ * price list.
+ *
+ * @throws {MoneyError} when the cost is not USD, or a USD deployment
+ *   passes a rate that is not 1.
+ */
+export function applyRate(cost: Money, rate: BillingRate): Money {
+  if (cost.currency !== PROVIDER_CURRENCY) {
+    throw new MoneyError(
+      "currency_mismatch",
+      `A provider cost is ${PROVIDER_CURRENCY}; received ${cost.currency}.`
+    );
+  }
+  const withMargin = money(
+    Math.ceil((cost.amount * rate.marginBp) / BP_PER_MULTIPLE),
+    PROVIDER_CURRENCY
+  );
+  return convert(withMargin, rate.currency, rate.usdRateMicros);
+}
+
+/**
+ * Provider cost and what the reader is charged for it (`applyRate`).
  *
  * @throws {UnknownModelError} when the id has no registered price.
  * @throws {MoneyError} when a USD deployment passes a rate that is not 1.
@@ -293,14 +319,7 @@ export function chargeFor(
   rate: BillingRate
 ): { providerCost: Money; charged: Money } {
   const cost = providerCost(modelId, inputTokens, outputTokens);
-  const withMargin = money(
-    Math.ceil((cost.amount * rate.marginBp) / BP_PER_MULTIPLE),
-    PROVIDER_CURRENCY
-  );
-  return {
-    providerCost: cost,
-    charged: convert(withMargin, rate.currency, rate.usdRateMicros),
-  };
+  return { providerCost: cost, charged: applyRate(cost, rate) };
 }
 
 /**

@@ -54,6 +54,13 @@ export type { ResolvedBillingSettings } from "./billing-settings";
 // The plans table, written from the registered catalogue
 export { ensurePlanRows } from "./plan-rows";
 
+// The execution boundary bound to the quota engine
+export { billingExecutionPorts, createBillingExecutions } from "./executions";
+
+// A plan as a product decision (a reward, a grant), not a payment
+export { grantPlan } from "./plan-grant";
+export type { GrantPlanInput, GrantPlanResult } from "./plan-grant";
+
 // Quota enforcement engine
 export {
   checkQuota,

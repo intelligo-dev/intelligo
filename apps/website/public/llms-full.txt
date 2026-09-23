@@ -232,48 +232,7 @@ Packages never reach sideways. `@intelligo-dev/auth` does not import billing; `@
 <!-- snippet: packages/cli/templates/app-scaffold/intelligo.ts.tpl#executions -->
 
 ```ts title="lib/intelligo.ts"
-export const executions = createExecutions({
-  async checkEntitlement({ workspaceId, requestId, model }) {
-    // Passing requestId makes admission atomic: the worst-case cost is
-    // reserved in the same transaction that reads the balance, so
-    // concurrent requests cannot all pass.
-    const quota = await reserveQuota(workspaceId, { modelId: model, requestId });
-    return {
-      allowed: quota.allowed,
-      code: quota.code,
-      reason: quota.reason,
-      // The hold, as an amount with its currency.
-      estimated: quota.estimated,
-      usingTrialCredits: quota.usingTrialCredits,
-    };
-  },
-
-  async settleUsage(s) {
-    // Returns what was charged and which pool funded it; the lifecycle
-    // records the amount and its currency on the execution row.
-    return recordTokenUsage({
-      workspaceId: s.workspaceId,
-      userId: s.userId ?? "",
-      model: s.model ?? "unknown",
-      agent: s.capability,
-      inputTokens: s.inputTokens,
-      outputTokens: s.outputTokens,
-      totalTokens: s.totalTokens,
-      usingTrialCredits: s.usingTrialCredits,
-      requestId: s.requestId,
-      metadata: s.metadata,
-    });
-  },
-
-  async releaseHold({ requestId }) {
-    await releaseReservation(requestId);
-  },
-
-  // Lets executions.reconcile() tell a settling row whose charge
-  // committed from one whose charge never happened.
-  findSettlement: ({ workspaceId, requestId }) =>
-    findSettlementByRequestId(workspaceId, requestId),
-});
+export const executions = createBillingExecutions();
 ```
 
 The same pattern binds `checkMemberLimit` for the team service, `onAccountDeleted` for the profile service, and so on. Swap a port and the service follows; no package has to change.
@@ -609,7 +568,7 @@ pnpm exec shadcn add @intelligo/chat-share
 | [billing-settings](/blocks/billing-settings) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [feature-gating](/blocks/feature-gating) | [pricing](/blocks/pricing) | `i18n/navigation`, `lib/utils` | — |
 | [payment-poll](/blocks/payment-poll) | [pricing](/blocks/pricing) | — | — |
-| [profile-settings](/blocks/profile-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
+| [profile-settings](/blocks/profile-settings) | [route-error](/blocks/route-error) | `i18n/navigation`, `i18n/routing` | — |
 | [onboarding](/blocks/onboarding) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [dashboard](/blocks/dashboard) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [artifacts](/blocks/artifacts) | — | `i18n/navigation` | — |
@@ -2307,7 +2266,27 @@ intelligo doctor                       # what is misconfigured, and why it matte
 intelligo migrate                      # apply the framework chain
 intelligo migrate --check [--json]     # compare the chain with the database, change nothing
 intelligo upgrade --check              # what a template upgrade would change
+intelligo sync [items…]                # install registry pages from this release, seams kept
+intelligo sync --check                 # exit 1 when an installed page drifted from the registry
 ```
+
+## `sync`: installed pages stay the registry's
+
+A page arrives as source, through `shadcn add`, and nothing stops it drifting
+afterwards — an edit here, a release skipped there. `intelligo sync` installs
+items from the registry bundled with this CLI, so the pages match the
+`@intelligo-dev/*` packages of the same version, in dependency order. Files an
+item ships once for you to own (`lib/*-config`, `lib/nav-config.ts`… — the
+`seams` in the registry's `requires.json`) are put back after the install, and
+message files are merged key by key with your copy winning. The result is
+recorded in `intelligo.manifest.json`.
+
+Name the items once — `intelligo sync intelligo app-shell chat …` — and
+afterwards a bare `intelligo sync` updates them. It refuses to overwrite a file
+you edited by hand unless you pass `--force`: move the change into a seam
+first. `intelligo sync --check` installs nothing, lists every file that is
+`missing`, `edited`, `outdated` or `messages-behind`, and exits 1 on any —
+the gate to run in CI.
 
 ## Why `migrate` is not `drizzle-kit migrate`
 
@@ -2362,6 +2341,9 @@ intelligo migrate --check   Compare the framework's migrations to a database
                             fresh | ahead | unmanaged | legacy)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
 intelligo upgrade --check   Show what a template upgrade would change
+intelligo sync [items…]     Install registry pages from this release's registry,
+                            keeping seams and merging messages (--force replaces
+                            hand-edited files; --check only reports, exit 1 on drift)
 ```
 
 ## create
@@ -2488,6 +2470,29 @@ never overwrite consumer source, so the interesting output is not
 them" — the set where the consumer has to make a decision.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/upgrade-check.ts)
+
+## sync
+
+Keeps an app's installed registry pages exactly what the framework
+ships. Installing stays the shadcn CLI's job — every item goes in with
+`shadcn add <item> --yes --overwrite` — and this command adds what
+shadcn cannot know:
+
+- the version: items come from the registry bundled with this CLI, so
+  they match the `@intelligo-dev/*` packages of the same release;
+- the order: an item that imports a sibling's files lands after it
+  (requires.json `items`);
+- the seams: files an item ships once for the deployment to own
+  (requires.json `seams`) are put back after the install, and message
+  files are merged key by key, the app's copy winning;
+- the record: intelligo.manifest.json keeps each installed file's
+  hash, so `--check` can tell a file edited by hand from one a newer
+  registry replaced.
+
+`--check` installs nothing and exits 1 when any installed file is
+missing, edited or behind the registry — the gate CI runs.
+
+[source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/sync.ts)
 
 ---
 
