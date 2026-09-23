@@ -47,6 +47,10 @@ it explains a framework decision.
 - `profile.setPreferredLanguage(locale)` in `@intelligo-dev/auth`, and
   the `profile-settings` item's `updatePreferredLanguage` action,
   checked against `routing.locales`.
+- A "Skip to content" link, visible only when focused, is the first
+  focusable element of the `app-shell`, `auth-login` and `onboarding`
+  layouts; each wraps its page in a `main#main-content` landmark
+  (`tabIndex={-1}`) and carries the copy as `skipToContent`.
 
 ### Changed
 
