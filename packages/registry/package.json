@@ -38,7 +38,7 @@
     "cmdk": "^1.1.1",
     "codemirror": "^6.0.2",
     "drizzle-orm": "^0.45.2",
-    "eslint": "^10.10.0",
+    "eslint": "^10.11.0",
     "katex": "^0.18.7",
     "lucide-react": "^1.46.0",
     "motion": "^13.4.0",

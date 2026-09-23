@@ -78,7 +78,7 @@
     "@types/react-dom": "^19.3.0",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
-    "eslint": "^10.10.0",
+    "eslint": "^10.11.0",
     "pg": "8.18.0",
     "shadcn": "^4.21.0",
     "tailwindcss": "^4.3.3",
