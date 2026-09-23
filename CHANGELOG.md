@@ -165,8 +165,6 @@ it explains a framework decision.
   the caller's workspace with `requireWorkspace`. An installed seam
   keeps compiling only once it exports `priceLocalPayment`.
 
-### Fixed
-
 - A local (QR-and-poll) payment that completed granted nothing and was
   recorded nowhere: `pollLocalPayment` reported `paid` and the modal
   called a client-side `onPaid`, so what was bought depended on the
@@ -188,8 +186,6 @@ it explains a framework decision.
   `components/shell/theme-provider.tsx`, `lib/utils.ts`…) move to the
   `app-scaffold` entry's `handedOver` list, so `upgrade --check` stops
   reporting them `customized` and `add app-scaffold` leaves them alone.
-
-### Fixed
 
 - `intelligo doctor` reads what an app exports the way the compiler
   would: comments are stripped before matching, `export type` /

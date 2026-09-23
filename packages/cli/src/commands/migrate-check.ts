@@ -79,11 +79,11 @@ export type MigrateCheckResult = {
 /** The pre-1.0 chain's tags and hashes, if this checkout ships them. */
 export function readLegacyChain(
   migrationsDir: string
-): Array<{ tag: string; hash: string }> {
+): Array<{ tag: string; hash: string; alternates?: string[] }> {
   const file = path.join(migrationsDir, "legacy-chain.json");
   if (!existsSync(file)) return [];
   const parsed = JSON.parse(readFileSync(file, "utf8")) as {
-    entries?: Array<{ tag: string; hash: string }>;
+    entries?: Array<{ tag: string; hash: string; alternates?: string[] }>;
   };
   return parsed.entries ?? [];
 }
@@ -123,7 +123,13 @@ export async function migrateCheck(
   }
 
   const legacyChain = readLegacyChain(migrationsDir);
-  const legacyByHash = new Map(legacyChain.map((e) => [e.hash, e.tag]));
+  // A migration can be recorded under more than one hash: npm's
+  // 1.0.0-beta.6 shipped different bytes for three of them.
+  const legacyByHash = new Map(
+    legacyChain.flatMap((e) =>
+      [e.hash, ...(e.alternates ?? [])].map((h) => [h, e.tag] as const)
+    )
+  );
 
   const appliedHashes = new Set(rows.map((r) => r.hash));
   const applied: string[] = [];

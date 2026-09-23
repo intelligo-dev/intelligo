@@ -1,5 +1,5 @@
 {
-  "$comment": "The framework's migration chain before the 1.0 baseline: every entry's tag and the sha256 of its .sql file, as drizzle recorded it in drizzle.__drizzle_migrations. `intelligo migrate` reads it to adopt a database that ran the whole old chain \u2014 it records 0000_baseline as applied without running it. The SQL itself is not shipped.",
+  "$comment": "The framework's migration chain before the 1.0 baseline: every entry's tag and the sha256 of its .sql file, as drizzle recorded it in drizzle.__drizzle_migrations. `intelligo migrate` reads it to adopt a database that ran the whole old chain \u2014 it records 0000_baseline as applied without running it. The SQL itself is not shipped. `alternates`: other hashes the same migration was recorded under \u2014 the SQL npm shipped in 1.0.0-beta.6 differs from the repository's for three of them.",
   "entries": [
     {
       "tag": "0000_sharp_night_nurse",
@@ -151,7 +151,10 @@
     },
     {
       "tag": "0036_executions_audit_jobs",
-      "hash": "8665606757ec96bbd48eaab2b2ebb1ee5b5a86d58ba73635b3229ff94c40e572"
+      "hash": "8665606757ec96bbd48eaab2b2ebb1ee5b5a86d58ba73635b3229ff94c40e572",
+      "alternates": [
+        "c93a93db58737ef13f25138b107711a86f4f21efb48d1c83c18f2ffa07831c3d"
+      ]
     },
     {
       "tag": "0037_rate_limit_minute_bucket",
@@ -159,7 +162,10 @@
     },
     {
       "tag": "0038_user_quotas_generic_usage",
-      "hash": "658b6f64424522d955f2aa4d2ce1fe32b52f0e5adbdba14af75c1678389d7754"
+      "hash": "658b6f64424522d955f2aa4d2ce1fe32b52f0e5adbdba14af75c1678389d7754",
+      "alternates": [
+        "822df887955ddfdb138146ae47612dd0c37c5419b67223b6309b82253efc1c53"
+      ]
     },
     {
       "tag": "0039_platform_admin_impersonation",
@@ -167,7 +173,10 @@
     },
     {
       "tag": "0040_ee_audit_chain",
-      "hash": "16b01fa704f75e13fe85cee307a2dd287e3cbd93e77fd58ce0eb18cc32e178e6"
+      "hash": "16b01fa704f75e13fe85cee307a2dd287e3cbd93e77fd58ce0eb18cc32e178e6",
+      "alternates": [
+        "3a432628f1dcf4c4efbda0421901421fdaaa99c498abdb22ee21c6baef24a005"
+      ]
     },
     {
       "tag": "0041_audit_events_append_only",

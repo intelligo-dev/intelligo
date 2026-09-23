@@ -157,6 +157,25 @@ describe("migrateState", () => {
     expect(migrateState(ahead, true)).toBe("ahead");
   });
 
+  it("recognises a legacy migration by an alternate hash", async () => {
+    chain(["0000_a"]);
+    writeFileSync(
+      path.join(dir, "legacy-chain.json"),
+      JSON.stringify({
+        entries: [
+          { tag: "0000_old", hash: "0ld", alternates: ["npm0ld"] },
+          { tag: "0001_old", hash: "0ld1" },
+        ],
+      })
+    );
+
+    const r = await migrateCheck(dir, async () => [{ hash: "npm0ld" }]);
+
+    expect(r.legacy).toEqual(["0000_old"]);
+    expect(r.unknown).toEqual([]);
+    expect(r.legacyMissing).toEqual(["0001_old"]);
+  });
+
   it("prints one JSON object carrying the state and the exit code", async () => {
     chain(["0000_a", "0001_b"]);
     const r = await migrateCheck(dir, async () => []);
