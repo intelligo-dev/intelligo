@@ -26,10 +26,7 @@ import {
 import { setWorkspaceCreatedHandler } from "@intelligo-dev/auth";
 import { assertEnv } from "@intelligo-dev/core/env";
 import { setRequestContextSource } from "@intelligo-dev/core/request-context";
-import {
-  DEFAULT_MODELS,
-  registerModels,
-} from "@intelligo-dev/executions";
+import { DEFAULT_MODELS, registerModels } from "@intelligo-dev/executions";
 import { nextRequestContext } from "@intelligo-dev/next";
 import { createLogger } from "@intelligo-dev/core/logger";
 

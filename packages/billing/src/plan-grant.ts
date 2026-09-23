@@ -39,8 +39,7 @@ export type GrantPlanResult = {
 
 /** The database, or a transaction the grant should commit with. */
 export type PlanGrantExecutor =
-  | typeof db
-  | Parameters<Parameters<typeof db.transaction>[0]>[0];
+  typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * Put `workspaceId` on `planSlug`, creating its subscription row if it
@@ -48,7 +47,9 @@ export type PlanGrantExecutor =
  *
  * @throws {BillingServiceError} `invalid_plan` when no row has the slug.
  */
-export async function grantPlan(input: GrantPlanInput): Promise<GrantPlanResult> {
+export async function grantPlan(
+  input: GrantPlanInput
+): Promise<GrantPlanResult> {
   const result = await writePlanGrant(db, input);
   invalidateFeatureCache(input.workspaceId);
   return result;

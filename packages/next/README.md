@@ -47,8 +47,10 @@ propagates unchanged:
 // app/api/invoices/route.ts
 import { withRole } from "@intelligo-dev/next/route";
 
-export const GET = withRole(["owner", "admin"], async (request, { workspace }) =>
-  Response.json(await listInvoices(workspace.id))
+export const GET = withRole(
+  ["owner", "admin"],
+  async (request, { workspace }) =>
+    Response.json(await listInvoices(workspace.id))
 );
 ```
 

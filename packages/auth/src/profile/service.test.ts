@@ -272,9 +272,9 @@ describe("setPreferredLanguage", () => {
   it("refuses something that is not a language tag", async () => {
     const service = createProfileService();
 
-    await expect(service.setPreferredLanguage("mn; drop")).rejects.toMatchObject(
-      { code: "invalid_input" }
-    );
+    await expect(
+      service.setPreferredLanguage("mn; drop")
+    ).rejects.toMatchObject({ code: "invalid_input" });
     expect(mocks.updateSetWhereMock).not.toHaveBeenCalled();
   });
 

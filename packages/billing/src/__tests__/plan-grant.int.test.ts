@@ -65,9 +65,16 @@ d("grantPlan (integration)", () => {
       planSlug: "plan-grant-pro",
       reason: "test",
     });
-    expect(result).toEqual({ planId: "plan_plan-grant-pro", previousPlanId: null });
+    expect(result).toEqual({
+      planId: "plan_plan-grant-pro",
+      previousPlanId: null,
+    });
     expect(await subscription()).toEqual([
-      { plan_id: "plan_plan-grant-pro", status: "active", stripe_subscription_id: null },
+      {
+        plan_id: "plan_plan-grant-pro",
+        status: "active",
+        stripe_subscription_id: null,
+      },
     ]);
   });
 
@@ -95,7 +102,11 @@ d("grantPlan (integration)", () => {
 
   it("refuses a slug with no plan row", async () => {
     await expect(
-      grant.grantPlan({ workspaceId: WORKSPACE, planSlug: "nope", reason: "test" })
+      grant.grantPlan({
+        workspaceId: WORKSPACE,
+        planSlug: "nope",
+        reason: "test",
+      })
     ).rejects.toMatchObject({ code: "invalid_plan" });
     expect(await subscription()).toEqual([]);
   });

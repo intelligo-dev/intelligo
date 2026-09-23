@@ -24,5 +24,4 @@ export const nextRequestContext: RequestContextSource = () => headers();
  * translate them, so a client branches on `success` instead of catching.
  */
 export type ActionResult<T = undefined> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+  { success: true; data: T } | { success: false; error: string };

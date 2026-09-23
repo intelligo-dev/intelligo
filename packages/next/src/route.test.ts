@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => {
   class AuthGuardError extends Error {
-    constructor(readonly code: "unauthenticated" | "no_workspace" | "forbidden") {
+    constructor(
+      readonly code: "unauthenticated" | "no_workspace" | "forbidden"
+    ) {
       super(code);
     }
   }
@@ -50,7 +52,9 @@ describe("withAuth", () => {
   });
 
   it("answers 401 without calling the handler when there is no session", async () => {
-    mocks.requireAuth.mockRejectedValue(new mocks.AuthGuardError("unauthenticated"));
+    mocks.requireAuth.mockRejectedValue(
+      new mocks.AuthGuardError("unauthenticated")
+    );
     const handler = vi.fn();
 
     const response = await withAuth(handler)(request, undefined);
@@ -91,7 +95,9 @@ describe("withWorkspace", () => {
   });
 
   it("answers 403 when the caller has no workspace", async () => {
-    mocks.requireWorkspace.mockRejectedValue(new mocks.AuthGuardError("no_workspace"));
+    mocks.requireWorkspace.mockRejectedValue(
+      new mocks.AuthGuardError("no_workspace")
+    );
 
     const response = await withWorkspace(vi.fn())(request, undefined);
 
@@ -105,7 +111,10 @@ describe("withRole", () => {
     mocks.requireRole.mockResolvedValue(workspaceContext);
     const handler = vi.fn(async () => Response.json({ ok: true }));
 
-    const response = await withRole(["owner", "admin"], handler)(request, undefined);
+    const response = await withRole(["owner", "admin"], handler)(
+      request,
+      undefined
+    );
 
     expect(response.status).toBe(200);
     expect(mocks.requireRole).toHaveBeenCalledWith(["owner", "admin"]);
@@ -124,7 +133,9 @@ describe("withRole", () => {
   });
 
   it("answers 401 when there is no session", async () => {
-    mocks.requireRole.mockRejectedValue(new mocks.AuthGuardError("unauthenticated"));
+    mocks.requireRole.mockRejectedValue(
+      new mocks.AuthGuardError("unauthenticated")
+    );
 
     const response = await withRole(["member"], vi.fn())(request, undefined);
 

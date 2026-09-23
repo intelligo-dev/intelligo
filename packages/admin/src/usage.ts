@@ -180,7 +180,10 @@ export async function getPlanDistribution(): Promise<PlanDistributionRow[]> {
     .from(subscriptions)
     .innerJoin(plans, eq(plans.id, subscriptions.planId))
     .groupBy(plans.slug);
-  return rows.map((r) => ({ planSlug: r.planSlug, subscriptions: Number(r.n) }));
+  return rows.map((r) => ({
+    planSlug: r.planSlug,
+    subscriptions: Number(r.n),
+  }));
 }
 
 export type UsageRecordRow = {
