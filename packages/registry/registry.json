@@ -2024,9 +2024,19 @@
           "target": "lib/format-money.ts"
         },
         {
+          "path": "base/pricing/lib/plan-copy.ts",
+          "type": "registry:file",
+          "target": "lib/plan-copy.ts"
+        },
+        {
           "path": "base/pricing/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/pricing.json"
+        },
+        {
+          "path": "base/pricing/messages/plans/en.json",
+          "type": "registry:file",
+          "target": "messages/en/plans.json"
         }
       ]
     },

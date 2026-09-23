@@ -718,7 +718,7 @@ describe("getBillingOverview", () => {
     });
   });
 
-  it("defaults to the free plan and null subscription when there is none", async () => {
+  it("names no plan and a null subscription when there is none", async () => {
     mocks.getWorkspaceBilling.mockResolvedValue({
       plan: null,
       subscription: null,
@@ -733,7 +733,7 @@ describe("getBillingOverview", () => {
 
     expect(overview).toMatchObject({
       role: "owner",
-      planName: "Free",
+      planName: null,
       planSlug: "free",
       subscription: null,
       creditBalance: { amount: 0, currency: "MNT" },

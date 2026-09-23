@@ -55,6 +55,13 @@ it explains a framework decision.
   a map from a product's notification `type` to its `{ icon, className }`,
   empty by default and consulted before the built-in types.
   `workspace_invitation` notifications get their own icon.
+- Plan copy is translatable. A deployment names each plan's `name`,
+  `description` and `features` per locale in a `plans` message namespace
+  (`messages/<locale>/plans.json`, keyed by plan slug); the `pricing`,
+  `billing-settings` and `usage` items read it through the pricing
+  item's `lib/plan-copy.ts` and fall back to the catalogue's strings for
+  any key a locale leaves out. The pricing item ships an empty
+  `messages/en/plans.json`.
 
 ### Changed
 
@@ -62,6 +69,10 @@ it explains a framework decision.
   `BuiltInNotificationType | (string & {})`, so a product creates its
   own notification types without a cast. `BuiltInNotificationType` names
   the framework's own.
+- **Breaking:** `getBillingOverview()` returns `planName: null` for a
+  workspace with no plan instead of the English `"Free"`; `planSlug`
+  stays `"free"`. The `billing-settings` item renders its own translated
+  `freePlan` label.
 
 - `apps/app` is regenerated with `intelligo sync` instead of a
   hand-written `shadcn add` loop.

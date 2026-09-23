@@ -6,6 +6,7 @@
     "title": "Billing",
     "description": "Manage {workspaceName}'s plan and payment details."
   },
+  "freePlan": "Free",
   "member": {
     "currentPlan": "Current plan: {planName}",
     "note": "Only workspace owners can manage billing. Ask an owner to change plans or update payment details."
