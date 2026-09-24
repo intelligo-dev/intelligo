@@ -56,7 +56,8 @@ export type QuotaAdmission =
 
 export type RecordUsageParams = {
   workspaceId: string;
-  userId: string;
+  /** Who ran it; null for work no signed-in user started (a job, an anonymous request). */
+  userId: string | null;
   model: string;
   agent: string;
   inputTokens: number;

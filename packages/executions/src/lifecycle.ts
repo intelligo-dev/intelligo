@@ -25,7 +25,7 @@
 
 import { db } from "@intelligo-dev/core/db";
 import { createLogger } from "@intelligo-dev/core/logger";
-import type { Money } from "@intelligo-dev/core/money";
+import { money, type Money } from "@intelligo-dev/core/money";
 import { recordAuditEvent } from "@intelligo-dev/audit";
 import { and, eq } from "drizzle-orm";
 
@@ -53,6 +53,12 @@ export type BeginExecutionInput = {
   requestId?: string;
   /** Model the caller intends to use — informs the entitlement hold. */
   model?: string;
+  /**
+   * A fixed price for this unit of work — a report, an export — instead
+   * of its tokens' price: entitlement holds exactly this, completion
+   * charges it, failure releases it.
+   */
+  price?: Money;
   metadata?: Record<string, unknown>;
 };
 
@@ -99,6 +105,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
           capability: input.capability,
           requestId,
           model: input.model,
+          price: input.price,
         })
       : { allowed: true };
 
@@ -111,7 +118,8 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       status: decision.allowed ? "running" : "refused",
       model: input.model ?? null,
       reservedMicros: decision.estimated?.amount ?? null,
-      currency: decision.estimated?.currency ?? null,
+      priceMicros: input.price?.amount ?? null,
+      currency: decision.estimated?.currency ?? input.price?.currency ?? null,
       refusalReason: decision.allowed ? null : (decision.reason ?? "refused"),
       startedAt,
       finishedAt: decision.allowed ? null : startedAt,
@@ -241,6 +249,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
               totalTokens,
               usingTrialCredits,
               metadata: result.metadata ?? input.metadata,
+              price: input.price,
             });
             charged = settled?.charged;
           } catch (error) {
@@ -492,6 +501,10 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       // takes the pools in its own order rather than trusting this.
       usingTrialCredits: false,
       metadata: row.metadata ?? undefined,
+      price:
+        row.priceMicros !== null && row.currency
+          ? money(row.priceMicros, row.currency)
+          : undefined,
     });
     const charged = settled?.charged;
     await cas(

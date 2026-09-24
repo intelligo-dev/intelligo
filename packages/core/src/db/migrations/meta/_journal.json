@@ -29,6 +29,13 @@
       "when": 1790179158533,
       "tag": "0003_local_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790259860351,
+      "tag": "0004_usage_subjects",
+      "breakpoints": true
     }
   ]
 }

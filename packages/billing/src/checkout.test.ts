@@ -72,6 +72,7 @@ vi.mock("drizzle-orm", () => ({
 import {
   createSubscriptionCheckout,
   createCreditCheckout,
+  creditBundleOffer,
   createBillingPortal,
   cancelWorkspaceSubscription,
   getCheckoutSession,
@@ -517,6 +518,34 @@ describe("createCreditCheckout", () => {
 
     await expect(call).rejects.toMatchObject({ code: "invalid_bundle" });
     expect(mocks.insert).not.toHaveBeenCalled();
+  });
+});
+
+describe("creditBundleOffer", () => {
+  it("prices a bundle for the local-payment seam, grant and price as Money", async () => {
+    const offer = await creditBundleOffer({
+      id: "pack-5",
+      name: "5 reports",
+      grant: { amount: 5_000_000, currency: "MNT" },
+      price: { amount: 17_500_000_000, currency: "MNT" },
+    });
+
+    expect(offer).toEqual({
+      price: { amount: 17_500_000_000, currency: "MNT" },
+      grant: { credits: { amount: 5_000_000, currency: "MNT" } },
+      description: "5 reports",
+    });
+  });
+
+  it("refuses a grant in a currency the ledger is not denominated in", async () => {
+    await expect(
+      creditBundleOffer({
+        id: "pack-usd",
+        name: "Credit pack",
+        grant: { amount: 5_000_000, currency: "USD" },
+        price: { amount: 5_000_000, currency: "USD" },
+      })
+    ).rejects.toMatchObject({ code: "invalid_bundle" });
   });
 });
 

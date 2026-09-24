@@ -30,6 +30,7 @@ vi.mock("@intelligo-dev/core/db/schema", () => ({
     endpoint: "endpoint",
     requestedAt: "requestedAt",
     minuteBucket: "minuteBucket",
+    windowSeconds: "windowSeconds",
     count: "count",
   },
 }));
@@ -199,6 +200,71 @@ describe("checkRateLimit", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("checkRateLimit with a subject and a window", () => {
+  it("counts any subject against its own limit, per day", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-08-25T10:15:42.500Z"));
+      mockBucketCount(4);
+
+      const result = await checkRateLimit("ip:3f9a", {
+        endpoint: "export",
+        limit: 3,
+        windowMs: 86_400_000,
+      });
+
+      expect(result).toMatchObject({ allowed: false, limit: 3, remaining: 0 });
+      expect(result.resetAt.toISOString()).toBe("2026-08-26T00:00:00.000Z");
+      const values = mocks.insertValues.mock.calls[0]![0]! as {
+        workspaceId: string;
+        endpoint: string;
+        minuteBucket: Date;
+        windowSeconds: number;
+      };
+      expect(values).toMatchObject({
+        workspaceId: "ip:3f9a",
+        endpoint: "export@86400s",
+        windowSeconds: 86_400,
+      });
+      expect(values.minuteBucket.toISOString()).toBe(
+        "2026-08-25T00:00:00.000Z"
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps one-minute windows apart from longer ones on the same endpoint", async () => {
+    mockBucketCount(1);
+
+    await checkRateLimit("ws-1", { limit: 5, windowMs: 3_600_000 });
+    await checkRateLimit("ws-1", { limit: 5 });
+
+    const keys = mocks.insertValues.mock.calls.map(
+      ([values]) => (values as { endpoint: string }).endpoint
+    );
+    expect(keys).toEqual(["chat@3600s", "chat"]);
+  });
+
+  it("takes a plan's rate when asked instead of a limit", async () => {
+    mockBucketCount(1);
+
+    const result = await checkRateLimit("ws-1", { planSlug: "free" });
+
+    expect(result.limit).toBe(DEFAULT_REQUESTS_PER_MINUTE);
+  });
+
+  it("refuses a call that names neither a limit nor a plan, or a window in fractions of a second", async () => {
+    await expect(checkRateLimit("ip:1", {})).rejects.toThrow(/limit/);
+    await expect(
+      checkRateLimit("ip:1", { limit: 1, windowMs: 1500 })
+    ).rejects.toThrow(/whole number of seconds/);
+    await expect(
+      checkRateLimit("ws-1", { planSlug: "free", windowMs: 86_400_000 })
+    ).rejects.toThrow(/per minute/);
   });
 });
 

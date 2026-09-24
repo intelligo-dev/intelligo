@@ -33,6 +33,8 @@ export type EntitlementRequest = {
   /** Correlates the hold with settlement. */
   requestId: string;
   model?: string;
+  /** A fixed price for the run: hold exactly this instead of a model's worst case. */
+  price?: Money;
 };
 
 export type UsageSettlement = {
@@ -46,6 +48,8 @@ export type UsageSettlement = {
   totalTokens: number;
   usingTrialCredits: boolean;
   metadata?: Record<string, unknown>;
+  /** The fixed price the run began with: charge this, not the tokens. */
+  price?: Money;
 };
 
 export type SettlementResult = {

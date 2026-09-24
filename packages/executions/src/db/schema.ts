@@ -62,6 +62,12 @@ export const executions = pgTable(
     chargedMicros: bigint("charged_micros", { mode: "number" }),
     /** Worst-case estimate held at admission, in micros of `currency`. */
     reservedMicros: bigint("reserved_micros", { mode: "number" }),
+    /**
+     * A fixed price the caller set at `begin`, in micros of `currency`:
+     * what settlement charges instead of the tokens. Null for a run
+     * priced by its model.
+     */
+    priceMicros: bigint("price_micros", { mode: "number" }),
     /** What this row's amounts are denominated in; null until one is set. */
     currency: text("currency"),
     /** Populated on status=refused: why entitlement said no. */

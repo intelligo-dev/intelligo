@@ -57,6 +57,12 @@ export { ensurePlanRows } from "./plan-rows";
 // The execution boundary bound to the quota engine
 export { billingExecutionPorts, createBillingExecutions } from "./executions";
 
+// Fixed charges given back or credit given away
+export { creditWorkspace, refundCharge } from "./credit-adjustments";
+export type { CreditOptions, CreditResult } from "./credit-adjustments";
+export { ChargeError } from "./charge-error";
+export type { ChargeErrorCode } from "./charge-error";
+
 // A plan as a product decision (a reward, a grant), not a payment
 export { grantPlan } from "./plan-grant";
 export type { GrantPlanInput, GrantPlanResult } from "./plan-grant";
@@ -67,6 +73,7 @@ export {
   estimateQuota,
   reserveQuota,
   recordTokenUsage,
+  recordFixedCharge,
   resetMonthlyQuota,
   getUsageSummary,
   getQuotaThresholds,
@@ -109,7 +116,7 @@ export {
   cleanupRateLimitEntries,
   DEFAULT_REQUESTS_PER_MINUTE,
 } from "./rate-limit";
-export type { RateLimitResult } from "./rate-limit";
+export type { RateLimitOptions, RateLimitResult } from "./rate-limit";
 
 // Billing email triggers
 export {
@@ -168,6 +175,7 @@ export {
   isBillingServiceError,
   createSubscriptionCheckout,
   createCreditCheckout,
+  creditBundleOffer,
   createBillingPortal,
   cancelWorkspaceSubscription,
   getCheckoutSession,

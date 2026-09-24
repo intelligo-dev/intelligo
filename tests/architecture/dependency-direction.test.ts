@@ -68,7 +68,14 @@ const ALLOWED_DEPS: Record<string, readonly string[]> = {
     "@intelligo-dev/executions",
     "@intelligo-dev/jobs",
   ],
-  billing: ["@intelligo-dev/core", "@intelligo-dev/executions"],
+  // billing audits the credit it grants (who, why) itself: a credit is
+  // not an execution, so no execution event records it. audit reaches
+  // billing through executions already.
+  billing: [
+    "@intelligo-dev/core",
+    "@intelligo-dev/audit",
+    "@intelligo-dev/executions",
+  ],
   // The chat transport composes auth, billing, persistence and the
   // execution boundary into one Route Handler. It is an AI SDK adapter
   // at the top of the graph, like admin — not a boundary package — so

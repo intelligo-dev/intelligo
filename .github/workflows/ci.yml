@@ -105,7 +105,12 @@ jobs:
       # nullable column (finance_events.claimed_at), which no db:push
       # can lose. 0003 creates one new table (payments, the ledger of
       # local QR/poll payments) and alters nothing that exists, so a
-      # db:push has nothing of it to drop either.
+      # db:push has nothing of it to drop either. 0004 drops a NOT NULL
+      # (usage_records.user_id) and a foreign key, and adds two columns
+      # (rate_limit_entries.window_seconds, defaulted;
+      # executions.price_micros, nullable): nothing renamed or removed,
+      # and every constraint the previous release's code writes against
+      # is kept, so it can migrate ahead of the deploy.
       #
       # Raising it again: confirm `intelligo migrate --check` reports
       # zero pending, then raise FROZEN_AT in the same commit as the
@@ -113,7 +118,7 @@ jobs:
       - name: The migration chain is frozen
         run: |
           set -euo pipefail
-          FROZEN_AT=4
+          FROZEN_AT=5
           entries=$(node -p "require('./packages/core/src/db/migrations/meta/_journal.json').entries.length")
           echo "journal has $entries entries, frozen at $FROZEN_AT"
           if [ "$entries" -gt "$FROZEN_AT" ]; then
