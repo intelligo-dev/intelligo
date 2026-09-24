@@ -1,4 +1,5 @@
 {
+  "button": "Pay with QR",
   "title": "{label} — {amount}",
   "qrAlt": "Payment QR code",
   "orChooseApp": "Or open your banking app",

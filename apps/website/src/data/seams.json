@@ -25,7 +25,8 @@
     "lib/notification-types.tsx"
   ],
   "pricing": [
-    "lib/billing-config.ts"
+    "lib/billing-config.ts",
+    "lib/plan-card-config.tsx"
   ],
   "checkout": [],
   "billing-settings": [],

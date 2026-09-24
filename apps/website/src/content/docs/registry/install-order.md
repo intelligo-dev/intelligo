@@ -60,7 +60,7 @@ pnpm exec shadcn add @intelligo/chat-share
 | [checkout](/blocks/checkout) | — | `i18n/navigation` | — |
 | [billing-settings](/blocks/billing-settings) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [feature-gating](/blocks/feature-gating) | [pricing](/blocks/pricing) | `i18n/navigation`, `lib/utils` | — |
-| [payment-poll](/blocks/payment-poll) | [pricing](/blocks/pricing) | — | — |
+| [payment-poll](/blocks/payment-poll) | [pricing](/blocks/pricing) | `i18n/navigation` | — |
 | [profile-settings](/blocks/profile-settings) | [route-error](/blocks/route-error) | `i18n/navigation`, `i18n/routing` | — |
 | [onboarding](/blocks/onboarding) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [dashboard](/blocks/dashboard) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
