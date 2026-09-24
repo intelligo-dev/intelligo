@@ -789,8 +789,8 @@ function Trial() {
       banner={
         <TrialBanner
           daysRemaining={9}
-          creditsRemaining={612}
-          initialCredits={1000}
+          creditsRemaining="612"
+          initialCredits="1K"
         />
       }
     >

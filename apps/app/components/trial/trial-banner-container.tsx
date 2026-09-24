@@ -1,6 +1,7 @@
 import { getWorkspaceContext } from "@intelligo-dev/auth";
 import { getTrialStatus } from "@intelligo-dev/billing";
 import { createLogger } from "@intelligo-dev/core/logger";
+import { getFormatter } from "next-intl/server";
 
 import { TrialBanner } from "./trial-banner";
 
@@ -20,11 +21,15 @@ export async function TrialBannerContainer() {
       return null;
     }
 
+    const format = await getFormatter();
+    const compact = (value: number) =>
+      format.number(value, { notation: "compact", maximumFractionDigits: 1 });
+
     return (
       <TrialBanner
         daysRemaining={trial.daysRemaining}
-        creditsRemaining={trial.creditsRemaining}
-        initialCredits={trial.initialCredits}
+        creditsRemaining={compact(trial.creditsRemaining)}
+        initialCredits={compact(trial.initialCredits)}
       />
     );
   } catch (error) {

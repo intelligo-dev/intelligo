@@ -18,6 +18,15 @@ it explains a framework decision.
 
 ### Fixed
 
+- The `trial-banner` item renders the same credit counts on the server
+  and in the browser. It formatted them with compact notation inside
+  the client component, so Node's ICU spelled them during SSR and the
+  browser's at hydration; for locales where the two disagree, React
+  reported a hydration mismatch and regenerated the tree.
+  `TrialBannerContainer` now formats the counts on the server and
+  `TrialBanner` takes them as strings (`creditsRemaining`,
+  `initialCredits`). An app that renders `TrialBanner` directly passes
+  formatted strings instead of numbers.
 - **`intelligo doctor` no longer requires a feature key only a seam names.**
   `requires.json` derived an item's `features` from every file it ships,
   config seams included, so the `chat` item required `"chat"` in
