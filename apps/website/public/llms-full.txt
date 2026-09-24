@@ -587,7 +587,7 @@ pnpm exec shadcn add @intelligo/chat-share
 | [checkout](/blocks/checkout) | — | `i18n/navigation` | — |
 | [billing-settings](/blocks/billing-settings) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [feature-gating](/blocks/feature-gating) | [pricing](/blocks/pricing) | `i18n/navigation`, `lib/utils` | — |
-| [payment-poll](/blocks/payment-poll) | [pricing](/blocks/pricing) | — | — |
+| [payment-poll](/blocks/payment-poll) | [pricing](/blocks/pricing) | `i18n/navigation` | — |
 | [profile-settings](/blocks/profile-settings) | [route-error](/blocks/route-error) | `i18n/navigation`, `i18n/routing` | — |
 | [onboarding](/blocks/onboarding) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [dashboard](/blocks/dashboard) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
@@ -760,6 +760,39 @@ Stripe into the browser bundle. A bundle is validated server-side by
 
 `CREDIT_BUNDLES` is the one-time credit packs you sell; edit or empty
 it. A bundle's `name` is rendered verbatim, not translated.
+
+### `lib/plan-card-config.tsx`
+
+Exports `PlanCardActionProps`, `PlanCardConfig`, `planCardConfig`. [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/registry/base/pricing/lib/plan-card-config.tsx)
+
+What your product adds to a plan card, without editing
+`components/billing/plan-card.tsx`.
+
+ - `actions`: rendered under the card's checkout button, as another
+   way to buy the same plan (a QR payment rail, a bank transfer, a
+   "talk to sales" link). It appears only where the checkout button
+   does: on a priced plan that is not the workspace's current one,
+   for a caller allowed to change plans. It receives the plan, the
+   selected interval, the price the card shows (major units of
+   `CURRENCY`) and the plan's localized name.
+
+Empty by default: the card offers card checkout alone. To offer the
+QR-and-poll rail, install the `payment-poll` item, price each plan in
+its `lib/local-payment.ts`, and bind its button here:
+
+```ts
+import { LocalPaymentButton } from "@/components/billing/local-payment-button";
+
+export const planCardConfig: PlanCardConfig = {
+  actions: ({ plan, price, planName }) => (
+    <LocalPaymentButton reference={plan.slug} amount={price} label={planName} />
+  ),
+};
+```
+
+The amount is only displayed; `priceLocalPayment(reference)` prices
+the invoice on the server. Encode the interval in the reference
+(`${plan.slug}:${interval}`) when the two prices differ.
 
 ## [feature-gating](/blocks/feature-gating)
 
@@ -3185,7 +3218,7 @@ The subscription handlers take the plan from the subscription's price id, looked
 
 ## Payments outside Stripe
 
-`registerPaymentProvider(mode, provider)` from `@intelligo-dev/billing/payment` registers a `PaymentProvider` in the composition root, and `PAYMENT_MODE` selects which one `getPaymentProvider` returns. The mode defaults to `mock`, which outside production resolves to the in-memory `mockPaymentProvider` with no registration; production refuses it. The [payment-poll block](/blocks/payment-poll) renders the invoice, QR code and polling flow; you bind it to your provider in `lib/local-payment.ts`.
+`registerPaymentProvider(mode, provider)` from `@intelligo-dev/billing/payment` registers a `PaymentProvider` in the composition root, and `PAYMENT_MODE` selects which one `getPaymentProvider` returns. The mode defaults to `mock`, which outside production resolves to the in-memory `mockPaymentProvider` with no registration; production refuses it. The [payment-poll block](/blocks/payment-poll) renders the invoice, QR code and polling flow; you bind it to your provider in `lib/local-payment.ts`. To sell plans that way, bind its `LocalPaymentButton` as `actions` in the pricing item's `lib/plan-card-config.tsx`: every plan card the caller can buy then offers a QR payment under its checkout button, with the plan's slug as the reference `priceLocalPayment` prices on the server. The seam is empty by default, and the pricing page offers card checkout alone.
 
 ## Next
 

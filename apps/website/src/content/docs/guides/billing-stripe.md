@@ -126,7 +126,7 @@ The subscription handlers take the plan from the subscription's price id, looked
 
 ## Payments outside Stripe
 
-`registerPaymentProvider(mode, provider)` from `@intelligo-dev/billing/payment` registers a `PaymentProvider` in the composition root, and `PAYMENT_MODE` selects which one `getPaymentProvider` returns. The mode defaults to `mock`, which outside production resolves to the in-memory `mockPaymentProvider` with no registration; production refuses it. The [payment-poll block](/blocks/payment-poll) renders the invoice, QR code and polling flow; you bind it to your provider in `lib/local-payment.ts`.
+`registerPaymentProvider(mode, provider)` from `@intelligo-dev/billing/payment` registers a `PaymentProvider` in the composition root, and `PAYMENT_MODE` selects which one `getPaymentProvider` returns. The mode defaults to `mock`, which outside production resolves to the in-memory `mockPaymentProvider` with no registration; production refuses it. The [payment-poll block](/blocks/payment-poll) renders the invoice, QR code and polling flow; you bind it to your provider in `lib/local-payment.ts`. To sell plans that way, bind its `LocalPaymentButton` as `actions` in the pricing item's `lib/plan-card-config.tsx`: every plan card the caller can buy then offers a QR payment under its checkout button, with the plan's slug as the reference `priceLocalPayment` prices on the server. The seam is empty by default, and the pricing page offers card checkout alone.
 
 ## Next
 

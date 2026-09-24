@@ -14,6 +14,7 @@
     "lib/settings-nav.ts": "settings tabs",
     "lib/error-reporting.ts": "the error reporter",
     "lib/billing-config.ts": "product slug, currency, credit bundles",
+    "lib/plan-card-config.tsx": "other ways to buy a plan on its pricing card",
     "lib/feature-catalog.ts": "feature names and plans",
     "lib/feature-gating-config.ts": "upgrade targets for gated features",
     "lib/trial-banner-config.ts": "trial banner target and suppressed routes",
@@ -121,7 +122,8 @@
     },
     "payment-poll": {
       "marker": "components/billing/local-payment-modal.tsx",
-      "items": ["pricing"]
+      "items": ["pricing"],
+      "files": ["i18n/navigation"]
     },
     "profile-settings": {
       "marker": "app/[locale]/(app)/settings/profile/page.tsx",
