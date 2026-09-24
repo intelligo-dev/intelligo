@@ -54,7 +54,21 @@ export const GET = withRole(
 );
 ```
 
-`withAuth` needs only a session, `withWorkspace` an active workspace.
+`withAuth` needs only a session, `withWorkspace` an active workspace. Next's
+own second argument — a dynamic segment's `params` — arrives third, typed by
+the wrapper's parameter (Next's generated `RouteContext<"/api/invoices/[id]">`
+fits there too):
+
+```ts
+// app/api/invoices/[id]/route.ts
+export const DELETE = withWorkspace<{ params: Promise<{ id: string }> }>(
+  async (request, { workspace }, { params }) => {
+    const { id } = await params;
+    await deleteInvoice(workspace.id, id);
+    return new Response(null, { status: 204 });
+  }
+);
+```
 
 `ActionResult<T>` is the shape a Server Action returns to its form —
 `{ success: true, data }` or `{ success: false, error }` — shared by every

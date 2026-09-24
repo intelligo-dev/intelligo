@@ -71,6 +71,35 @@ route to get:
 None carry product vocabulary; all close over the caller's tenancy, so the
 model is never told which workspace it is in.
 
+`resolveAgent`, `agent.tools(turn)` and `deriveTitle` receive a `ChatTurnContext`; the later
+seams — `prepareMessages`, `streamTurn`, `persist` — receive a `ChatTurn`, which
+is the same context plus the resolved agent and `history()`. The context
+carries `workspaceId` and `userId`, the `request`, the `conversationId` and its
+row (`conversation`, null on the first turn), the `trigger`, and `body`: the
+fields the client sent beyond the AI SDK's own, such as `ChatPanel`'s `body`
+prop, which is how a page tells a tool which record it is about. `body` is the
+caller's input, so a tool reads a record through the turn's workspace, never
+by the id alone. Beside them sit `write`, `updateMetadata`, `state` and
+`addUsage`:
+
+```ts
+agent: {
+  tools: (turn) => ({
+    summarize: tool({
+      inputSchema: z.object({ section: z.string() }),
+      execute: async ({ section }) => {
+        // Scoped to the caller's workspace: an id from `body` is untrusted.
+        const record = await getRecord(turn.workspaceId, String(turn.body.recordId));
+        if (!record) return { error: "not found" };
+        const { text, usage } = await summarize(record, section);
+        turn.addUsage(usage, { model: "google/gemini-2.5-flash" });
+        return text;
+      },
+    }),
+  }),
+},
+```
+
 A tool reaches the client mid-turn through the turn: `turn.write()` sends a
 `data-chat-*` part (a status line, a plan), and `createArtifactWriter(turn,
 { kind, title })` streams a document into the chat's canvas — `append`
