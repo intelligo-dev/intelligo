@@ -14,6 +14,20 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Fixed
+
+- The `trial-banner` item renders the same credit counts on the server
+  and in the browser. It formatted them with compact notation inside
+  the client component, so Node's ICU spelled them during SSR and the
+  browser's at hydration; for locales where the two disagree, React
+  reported a hydration mismatch and regenerated the tree.
+  `TrialBannerContainer` now formats the counts on the server and
+  `TrialBanner` takes them as strings (`creditsRemaining`,
+  `initialCredits`). An app that renders `TrialBanner` directly passes
+  formatted strings instead of numbers.
+
 ## [1.0.0-beta.14] — 2026-09-24
 
 ### Added

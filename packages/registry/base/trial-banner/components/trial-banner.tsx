@@ -17,7 +17,7 @@
 
 import { useEffect, useState } from "react";
 import { Sparkles, X } from "lucide-react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import { Link, usePathname } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -32,8 +32,14 @@ function today(): string {
 
 type TrialBannerProps = {
   daysRemaining: number;
-  creditsRemaining: number;
-  initialCredits: number;
+  /**
+   * Credit counts already formatted for display, by the server
+   * (`TrialBannerContainer`). Formatting them here would run Intl twice —
+   * Node's ICU during SSR, the browser's at hydration — and the two
+   * disagree on compact notation for many locales.
+   */
+  creditsRemaining: string;
+  initialCredits: string;
 };
 
 export function TrialBanner({
@@ -42,7 +48,6 @@ export function TrialBanner({
   initialCredits,
 }: TrialBannerProps) {
   const t = useTranslations("trial-banner");
-  const format = useFormatter();
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(true);
 
@@ -83,9 +88,6 @@ export function TrialBanner({
       ? "bg-foreground/10 text-foreground"
       : "bg-primary/10 text-primary";
 
-  const compact = (value: number) =>
-    format.number(value, { notation: "compact", maximumFractionDigits: 1 });
-
   return (
     <div className={`relative w-full border-b transition-colors ${strip}`}>
       <div className="container mx-auto px-4 py-3">
@@ -107,8 +109,8 @@ export function TrialBanner({
               </div>
               <span className={`text-xs ${accent}`}>
                 {t("creditsLeft", {
-                  remaining: compact(creditsRemaining),
-                  initial: compact(initialCredits),
+                  remaining: creditsRemaining,
+                  initial: initialCredits,
                 })}
               </span>
             </div>
