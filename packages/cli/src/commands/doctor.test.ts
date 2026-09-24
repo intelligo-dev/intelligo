@@ -302,6 +302,57 @@ describe("runChecks", () => {
       expect(results.some((r) => r.name.startsWith("item:"))).toBe(false);
     });
 
+    describe("a feature key only a seam names", () => {
+      const seamed = {
+        scaffold: requires.scaffold,
+        seams: { "lib/chat-server-config.ts": "the chat transport" },
+        items: {
+          "route-error": requires.items["route-error"],
+          chat: { ...requires.items.chat, features: undefined },
+        },
+      };
+      const ready = {
+        ...installed,
+        "lib/intelligo.ts":
+          "export function composeIntelligo() {}\nexport const executions = {};",
+        "lib/plans.ts": "export const FEATURES = { acme_agent: ['pro'] };",
+      };
+
+      it("is not an item requirement when the seam gates on another key", () => {
+        const results = runChecks({
+          root: app({
+            ...ready,
+            "lib/chat-server-config.ts":
+              "export const config = { featureKey: agent.featureKey };",
+          }),
+          env: fullEnv,
+          requires: seamed,
+        });
+
+        expect(results.find((r) => r.name === "item:chat")!.status).toBe("ok");
+        expect(results.some((r) => r.name.startsWith("seam:"))).toBe(false);
+      });
+
+      it("warns, not errors, when the seam still names an unregistered key", () => {
+        const results = runChecks({
+          root: app({
+            ...ready,
+            "lib/chat-server-config.ts":
+              'export const config = { featureKey: "chat" };',
+          }),
+          env: fullEnv,
+          requires: seamed,
+        });
+        const seam = results.find(
+          (r) => r.name === "seam:lib/chat-server-config.ts"
+        )!;
+
+        expect(results.find((r) => r.name === "item:chat")!.status).toBe("ok");
+        expect(seam.status).toBe("warn");
+        expect(seam.detail).toContain('"chat"');
+      });
+    });
+
     it("checks the reference app against the bundled requirements", () => {
       // The canonical installed result must satisfy its own contract.
       const results = runChecks({
