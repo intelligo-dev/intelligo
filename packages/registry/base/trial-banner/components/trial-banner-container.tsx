@@ -14,6 +14,12 @@
  * renders nothing; so does a fetch failure — a broken banner lookup
  * must never take the shell down with it.
  *
+ * The credit counts are formatted here, on the server, and reach the
+ * client as strings: compact notation ("1.2K") is spelled by the ICU
+ * data of whichever runtime formats it, and Node's and a browser's
+ * differ for many locales — formatting on both sides would render one
+ * string on the server and another at hydration.
+ *
  * Route suppression (e.g. keeping the banner out of the chat surface)
  * is client-side in `TrialBanner` via `trialBannerConfig.hideOnPaths` —
  * a Server Component outside the `[locale]` segment has no reliable
@@ -23,6 +29,7 @@
 import { getWorkspaceContext } from "@intelligo-dev/auth";
 import { getTrialStatus } from "@intelligo-dev/billing";
 import { createLogger } from "@intelligo-dev/core/logger";
+import { getFormatter } from "next-intl/server";
 
 import { TrialBanner } from "./trial-banner";
 
@@ -42,11 +49,15 @@ export async function TrialBannerContainer() {
       return null;
     }
 
+    const format = await getFormatter();
+    const compact = (value: number) =>
+      format.number(value, { notation: "compact", maximumFractionDigits: 1 });
+
     return (
       <TrialBanner
         daysRemaining={trial.daysRemaining}
-        creditsRemaining={trial.creditsRemaining}
-        initialCredits={trial.initialCredits}
+        creditsRemaining={compact(trial.creditsRemaining)}
+        initialCredits={compact(trial.initialCredits)}
       />
     );
   } catch (error) {
