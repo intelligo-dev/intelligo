@@ -650,8 +650,12 @@ describe("registry", () => {
       });
 
       it("declares exactly the feature keys it gates on", () => {
+        // A seam's feature key is the deployment's to change, so only
+        // the files `intelligo sync` overwrites declare one.
         const features = new Set<string>();
         for (const file of item.files) {
+          if (typeof file.target === "string" && file.target in requires.seams)
+            continue;
           const abs = path.join(REGISTRY_DIR, file.path);
           const source = statSyncSafe(abs) ? readFileSync(abs, "utf8") : "";
           for (const m of source.matchAll(/featureKey:\s*["']([^"']+)["']/g)) {

@@ -14,6 +14,20 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Fixed
+
+- **`intelligo doctor` no longer requires a feature key only a seam names.**
+  `requires.json` derived an item's `features` from every file it ships,
+  config seams included, so the `chat` item required `"chat"` in
+  `lib/plans.ts` because its default `lib/chat-server-config.ts` gates on
+  it — an error for an app that owns that seam and gates on another key.
+  `features` now comes from the files `intelligo sync` overwrites only
+  (the `chat` item declares none), and doctor instead warns when an app's
+  own copy of a seam names a literal `featureKey` `lib/plans.ts` does not
+  register.
+
 ## [1.0.0-beta.14] — 2026-09-24
 
 ### Added

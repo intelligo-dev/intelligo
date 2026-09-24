@@ -66,11 +66,11 @@ pnpm exec shadcn add @intelligo/chat-share
 | [dashboard](/blocks/dashboard) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [artifacts](/blocks/artifacts) | — | `i18n/navigation` | — |
 | [privacy-settings](/blocks/privacy-settings) | [route-error](/blocks/route-error) | — | — |
-| [chat](/blocks/chat) | [route-error](/blocks/route-error) | `hooks/use-mobile`, `i18n/navigation`, `i18n/routing`, `lib/intelligo`, `lib/utils` | `chat` |
+| [chat](/blocks/chat) | [route-error](/blocks/route-error) | `hooks/use-mobile`, `i18n/navigation`, `i18n/routing`, `lib/intelligo`, `lib/utils` | — |
 | [chat-panel](/blocks/chat-panel) | [chat](/blocks/chat) | `lib/utils` | — |
 | [chat-widget](/blocks/chat-widget) | [chat](/blocks/chat) | `i18n/navigation`, `lib/utils` | — |
 | [chat-share](/blocks/chat-share) | [chat](/blocks/chat) | `i18n/navigation` | — |
 
-A feature key must be granted to a plan in `lib/plans.ts`; an unregistered feature is denied on every request.
+A feature key must be granted to a plan in `lib/plans.ts`; an unregistered feature is denied on every request. A key a config seam names (the `chat` item's `lib/chat-server-config.ts` gates on `chat` as shipped) is the app's to change and is not listed here; `intelligo doctor` warns when a seam names a key `lib/plans.ts` does not grant.
 
 Scaffold files a block may import, all written by `intelligo create`: `lib/intelligo`, `lib/plans`, `lib/utils`, `hooks/use-mobile`, `i18n/routing`, `i18n/navigation`.
