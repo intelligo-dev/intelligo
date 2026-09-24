@@ -237,6 +237,7 @@ export function ChatHistoryNav({
           aria-label={t("sidebar.newChat")}
           title={t("sidebar.newChat")}
           render={<Link href="/chat" onClick={closeOnMobile} />}
+          nativeButton={false}
         >
           <PlusIcon />
         </Button>

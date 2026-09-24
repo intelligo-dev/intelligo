@@ -14,6 +14,18 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Fixed
+
+- The `chat` item's sidebar history no longer logs Base UI's "expected a
+  native <button>" console error on every authenticated page: its
+  new-chat `Button` renders a `Link` and now passes
+  `nativeButton={false}`. `tests/architecture/design-system.test.ts`
+  fails when a native-button Base UI component (`Button`, or a dialog,
+  sheet, popover, menu or select trigger/close) renders a `Link` or a
+  non-button element without `nativeButton`.
+
 ## [1.0.0-beta.14] — 2026-09-24
 
 ### Added
