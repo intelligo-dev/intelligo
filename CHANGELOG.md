@@ -43,7 +43,6 @@ it explains a framework decision.
   own copy of a seam names a literal `featureKey` `lib/plans.ts` does not
   register.
 
-> > > > > > > origin/main
 
 ### Added
 
