@@ -18,6 +18,12 @@ it explains a framework decision.
 
 ### Fixed
 
+- **`intelligo doctor`, `migrate` and `upgrade` read the workspace root's env
+  files.** An app inside a pnpm workspace whose database URL lives in the
+  repository root's `.env` was reported as missing `DATABASE_URL` and
+  `BETTER_AUTH_SECRET` although it booted. `loadAppEnv` now also loads the
+  enclosing workspace root's `.env.local` and `.env`, below the app's own files
+  and the shell.
 - The `trial-banner` item renders the same credit counts on the server
   and in the browser. It formatted them with compact notation inside
   the client component, so Node's ICU spelled them during SSR and the
@@ -36,6 +42,8 @@ it explains a framework decision.
   (the `chat` item declares none), and doctor instead warns when an app's
   own copy of a seam names a literal `featureKey` `lib/plans.ts` does not
   register.
+
+> > > > > > > origin/main
 
 ## [1.0.0-beta.14] — 2026-09-24
 
