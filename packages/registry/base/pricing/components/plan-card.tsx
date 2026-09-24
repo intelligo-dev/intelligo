@@ -9,7 +9,8 @@
  * gets the same "switch to this plan" button. The plan's name,
  * description and features come from the deployment's `plans` messages
  * when it translates them, and from the catalogue otherwise
- * (`lib/plan-copy.ts`).
+ * (`lib/plan-copy.ts`). Other ways to buy the plan, such as a QR
+ * payment, render under the checkout button from `lib/plan-card-config.tsx`.
  */
 
 import { Check } from "lucide-react";
@@ -21,6 +22,7 @@ import { Card } from "@/components/ui/card";
 
 import { CheckoutButton } from "./checkout-button";
 import { CURRENCY } from "@/lib/billing-config";
+import { planCardConfig } from "@/lib/plan-card-config";
 import { planCopy } from "@/lib/plan-copy";
 import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
@@ -45,6 +47,7 @@ export function PlanCard({
   const format = useFormatter();
   const copy = planCopy(tPlans, plan);
   const isCurrent = plan.slug === currentPlanSlug;
+  const Actions = planCardConfig.actions;
 
   // A plan with interval prices is quoted per period; one without is a
   // single purchase, and the toggle above is hidden for it entirely
@@ -139,13 +142,23 @@ export function PlanCard({
               {t("planCard.askOwner")}
             </Button>
           ) : (
-            <CheckoutButton
-              planSlug={plan.slug}
-              interval={interval}
-              className="w-full"
-            >
-              {t("planCard.switchTo", { planName: copy.name })}
-            </CheckoutButton>
+            <div className="space-y-2">
+              <CheckoutButton
+                planSlug={plan.slug}
+                interval={interval}
+                className="w-full"
+              >
+                {t("planCard.switchTo", { planName: copy.name })}
+              </CheckoutButton>
+              {Actions ? (
+                <Actions
+                  plan={plan}
+                  interval={interval}
+                  price={price}
+                  planName={copy.name}
+                />
+              ) : null}
+            </div>
           )}
         </div>
       </div>

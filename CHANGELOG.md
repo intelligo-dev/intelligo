@@ -14,6 +14,20 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Added
+
+- A plan card can offer the QR payment rail. The `pricing` item ships a
+  `lib/plan-card-config.tsx` seam whose `actions` component renders under
+  the checkout button of every plan the caller can buy, with the plan, the
+  interval, the shown price and the plan's name; it is empty by default.
+  The `payment-poll` item ships `LocalPaymentButton`, which opens
+  `LocalPaymentModal` for one reference and refreshes the page once paid.
+  Binding the button in the seam offers QR payment on the pricing page
+  without editing an installed file, and the pricing item still installs
+  without payment-poll.
+
 ## [1.0.0-beta.14] — 2026-09-24
 
 ### Added
