@@ -48,6 +48,28 @@ function writeScaffoldTemplate() {
   );
 }
 
+function writeStandaloneTemplate() {
+  mkdirSync(path.join(templatesDir, "pnpm-standalone"), { recursive: true });
+  writeFileSync(
+    path.join(templatesDir, "pnpm-standalone", "ws.tpl"),
+    "packages: []\n"
+  );
+  const catalogue = JSON.parse(
+    readFileSync(path.join(templatesDir, "manifest.json"), "utf8")
+  ) as Record<string, unknown>;
+  catalogue["pnpm-standalone"] = {
+    templateVersion: "1.0.0",
+    description: "pnpm settings",
+    files: [
+      { template: "pnpm-standalone/ws.tpl", target: "pnpm-workspace.yaml" },
+    ],
+  };
+  writeFileSync(
+    path.join(templatesDir, "manifest.json"),
+    JSON.stringify(catalogue)
+  );
+}
+
 const create = (target: string, linkWorkspace = false) =>
   createApp({ target, templatesDir, frameworkVersion: "1.2.3", linkWorkspace });
 
@@ -121,6 +143,67 @@ describe("createApp", () => {
     expect(readFileSync(path.join(target, "README.md"), "utf8")).toBe(
       "someone's work\n"
     );
+  });
+
+  it("accepts a directory holding only a fresh repository", () => {
+    const target = path.join(workdir, "repo");
+    mkdirSync(path.join(target, ".git"), { recursive: true });
+
+    expect(() => create(target)).not.toThrow();
+    expect(existsSync(path.join(target, ".git"))).toBe(true);
+  });
+
+  it("takes the project name from --name over the directory's", () => {
+    const target = path.join(workdir, "scratch");
+    createApp({
+      target,
+      templatesDir,
+      frameworkVersion: "1.2.3",
+      name: "Acme Audit",
+    });
+
+    expect(readFileSync(path.join(target, "package.json"), "utf8")).toContain(
+      '"acme-audit"'
+    );
+  });
+
+  it("gives a pnpm app outside any workspace its own pnpm settings", () => {
+    writeStandaloneTemplate();
+    const target = path.join(workdir, "acme");
+    const result = createApp({
+      target,
+      templatesDir,
+      frameworkVersion: "1.2.3",
+      packageManager: "pnpm",
+    });
+
+    expect(result.written).toContain("pnpm-workspace.yaml");
+    expect(readManifest(target)!.features["pnpm-standalone"]).toBeDefined();
+  });
+
+  it("leaves a workspace member, and an npm app, without them", () => {
+    writeStandaloneTemplate();
+    writeFileSync(
+      path.join(workdir, "pnpm-workspace.yaml"),
+      "packages:\n  - apps/*\n"
+    );
+    const member = path.join(workdir, "apps", "acme");
+    createApp({
+      target: member,
+      templatesDir,
+      frameworkVersion: "1.2.3",
+      packageManager: "pnpm",
+    });
+    const npmApp = path.join(workdir, "npm-app");
+    createApp({
+      target: npmApp,
+      templatesDir,
+      frameworkVersion: "1.2.3",
+      packageManager: "npm",
+    });
+
+    expect(existsSync(path.join(member, "pnpm-workspace.yaml"))).toBe(false);
+    expect(existsSync(path.join(npmApp, "pnpm-workspace.yaml"))).toBe(false);
   });
 
   it("accepts an existing but empty directory", () => {

@@ -395,6 +395,28 @@ function recordSync(
   });
 }
 
+/**
+ * Record `names` as items this app keeps in sync before any is
+ * installed, so a bare `intelligo sync` installs them after an install
+ * that did not run or did not finish.
+ */
+export function recordItems(
+  names: readonly string[],
+  context: Pick<SyncContext, "appRoot" | "requires" | "frameworkVersion">
+): void {
+  const manifest =
+    readManifest(context.appRoot) ?? emptyManifest(context.frameworkVersion);
+  const items = new Set([...(manifest.registry?.items ?? []), ...names]);
+  writeManifest(context.appRoot, {
+    ...manifest,
+    registry: {
+      version: manifest.registry?.version ?? context.frameworkVersion,
+      items: installOrder([...items], context.requires),
+      files: manifest.registry?.files ?? {},
+    },
+  });
+}
+
 export type SyncApplyOptions = {
   force?: boolean;
   log?: (line: string) => void;

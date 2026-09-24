@@ -1,4 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -15,6 +21,18 @@ describe("parseCreateFlags", () => {
       yes: false,
       install: true,
       linkWorkspace: false,
+      name: undefined,
+      unknown: [],
+    });
+  });
+
+  it("reads --name, and collects what it does not know", () => {
+    expect(
+      parseCreateFlags([".", "--name", "Acme Audit", "--al", "extra"])
+    ).toMatchObject({
+      target: ".",
+      name: "Acme Audit",
+      unknown: ["--al", "extra"],
     });
   });
 
@@ -73,6 +91,20 @@ describe("runCreate --no-install", () => {
     expect(printed).toMatch(
       /pnpm exec intelligo sync intelligo pricing route-error usage --force/
     );
+  });
+
+  it("records the chosen items, so a bare sync installs them later", async () => {
+    await create(path.join(root, "acme"));
+    const manifest = JSON.parse(
+      readFileSync(path.join(root, "acme", "intelligo.manifest.json"), "utf8")
+    ) as { registry: { items: string[]; files: object } };
+    expect(manifest.registry.items).toEqual([
+      "intelligo",
+      "pricing",
+      "route-error",
+      "usage",
+    ]);
+    expect(manifest.registry.files).toEqual({});
   });
 
   it("installs from the root of a parent pnpm workspace that includes the app", async () => {

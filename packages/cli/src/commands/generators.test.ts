@@ -137,6 +137,15 @@ describe("addFeature", () => {
   });
 });
 
+describe("addFeature with placeholders", () => {
+  it("refuses, writing nothing, when a placeholder has no value", () => {
+    writeTemplates("1.0.0", 'export const NAME = "__APP_NAME__";\n');
+
+    expect(add).toThrow(/__APP_NAME__.*intelligo create/);
+    expect(readManifest(appRoot)).toBeNull();
+  });
+});
+
 describe("addFeature with a cron", () => {
   const CRON = { path: "/api/cron/demo", schedule: "0-59/5 * * * *" };
   const vercelJson = () => path.join(appRoot, "vercel.json");

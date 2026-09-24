@@ -13,6 +13,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
@@ -197,5 +198,45 @@ describe("template catalogue", () => {
         seen.set(file.target, feature);
       }
     }
+  });
+});
+
+describe("template versions", () => {
+  // upgrade --check shows `installed → current` per feature; a template
+  // edited under the same version shows a change with no version to
+  // explain it. The fixture pins each version's content: edit a
+  // template, bump its templateVersion, then record the new pair.
+  const fixture = JSON.parse(
+    readFileSync(
+      path.join(__dirname, "__tests__", "template-versions.json"),
+      "utf8"
+    )
+  ) as Record<string, { templateVersion: string; hash: string }>;
+
+  function contentHash(feature: string): string {
+    const hash = createHash("sha256");
+    for (const file of catalogue[feature]!.files) {
+      hash.update(file.target);
+      hash.update(readFileSync(path.join(TEMPLATES_DIR, file.template)));
+    }
+    return hash.digest("hex");
+  }
+
+  it.each(features)("%s changes only with a new templateVersion", (feature) => {
+    const pinned = fixture[feature];
+    const current = {
+      templateVersion: catalogue[feature]!.templateVersion,
+      hash: contentHash(feature),
+    };
+    if (pinned?.templateVersion === current.templateVersion) {
+      expect(
+        current.hash,
+        `${feature}'s templates changed under ${current.templateVersion}: bump templateVersion in templates/manifest.json`
+      ).toBe(pinned.hash);
+    }
+    expect(
+      current,
+      `record ${feature}'s new version in src/__tests__/template-versions.json`
+    ).toEqual(pinned);
   });
 });

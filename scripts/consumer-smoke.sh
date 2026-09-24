@@ -61,9 +61,12 @@ tar -xzf "$TARBALLS"/intelligo-dev-cli-*.tgz -C "$WORK/cli"
 node "$WORK/cli/package/dist/bin.js" create "$APP"
 cd "$APP"
 
-# Every @intelligo-dev/* resolves to this tree's tarball. pnpm 9 and 10
-# read overrides from package.json, pnpm 11 only from
-# pnpm-workspace.yaml, which is also where it wants build approvals.
+# The scaffold's own pnpm settings are what a consumer installs with:
+# build scripts declined, `pnpm add` allowed at the root. Every
+# @intelligo-dev/* then resolves to this tree's tarball — pnpm 9 and 10
+# read overrides from package.json, pnpm 11 only from the workspace file.
+grep -q '^allowBuilds:' pnpm-workspace.yaml || fail "the scaffold wrote no pnpm build approvals"
+grep -q '^ignore-workspace-root-check=true' .npmrc || fail "the scaffold's .npmrc does not allow pnpm add at the root"
 node - "$TARBALLS" <<'EOF'
 const fs = require("fs");
 const path = require("path");
@@ -77,19 +80,11 @@ const manifest = JSON.parse(fs.readFileSync("package.json", "utf8"));
 manifest.pnpm = { ...manifest.pnpm, overrides };
 fs.writeFileSync("package.json", JSON.stringify(manifest, null, 2) + "\n");
 const yaml = [
-  "packages: []",
   "overrides:",
   ...Object.entries(overrides).map(([k, v]) => `  "${k}": "${v}"`),
-  "allowBuilds:",
-  "  '@parcel/watcher': false",
-  "  '@swc/core': false",
-  "  esbuild: false",
 ];
-fs.writeFileSync("pnpm-workspace.yaml", yaml.join("\n") + "\n");
+fs.appendFileSync("pnpm-workspace.yaml", yaml.join("\n") + "\n");
 EOF
-# That file makes the app a workspace root to pnpm 9 and 10, which
-# refuse the plain `pnpm add` the shadcn CLI runs there.
-echo "ignore-workspace-root-check=true" >> .npmrc
 pnpm install --no-frozen-lockfile
 
 # The installed packages must be the tarballs, not what npm serves.
