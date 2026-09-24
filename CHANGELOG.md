@@ -72,11 +72,13 @@ it explains a framework decision.
   the database's unique violation, after releasing the hold.
 - **Breaking:** `RecordUsageParams.userId` and the admin's
   `UsageByUserRow.userId` are `string | null`.
-- `getUsageSummary`'s per-model breakdown counts token usage only, and its
-  per-agent and daily counts leave credits out; `monthly_usage.request_count`
-  counts fixed-price runs. The admin's `getUsageByModel` counts token usage
-  only, and `listUsageRecords` names each row's `type` and audits the charge
-  of token rows only.
+- `getUsageSummary`'s per-model breakdown and the admin's `getUsageByModel`
+  count work that ran on a model, fixed-price runs included, and leave
+  credits out; its per-agent and daily counts leave credits out too.
+  `monthly_usage.request_count` counts fixed-price runs, and their tokens
+  count toward `tokens_used` and the token totals. `listUsageRecords` names
+  each row's `type` and audits the charge of token-priced rows only;
+  `getUsageByUser` leaves credits out.
 
 ### Fixed
 
