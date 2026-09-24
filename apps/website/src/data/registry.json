@@ -2091,7 +2091,7 @@
       "name": "billing-settings",
       "type": "registry:block",
       "title": "Billing Settings",
-      "description": "Workspace billing management: current plan, credit balance, credit bundle purchase, and the Stripe billing portal, shaped server-side by role (member/admin/owner). Requires the pricing item (provides lib/billing.ts and actions/billing.ts); install it first.",
+      "description": "Workspace billing management: current plan, credit balance, credit bundle purchase, and the Stripe billing portal, shaped server-side by role (member/admin/owner). Requires the pricing item (provides lib/billing.ts and actions/billing.ts); install it first. Other ways to buy a credit bundle render under its button from the lib/credit-bundle-config.tsx seam, which can also hide the card button (the payment-poll item's LocalPaymentButton binds there).",
       "registryDependencies": [
         "alert",
         "@intelligo/button",
@@ -2137,6 +2137,11 @@
           "path": "base/billing-settings/error.tsx",
           "type": "registry:page",
           "target": "app/[locale]/(app)/settings/billing/error.tsx"
+        },
+        {
+          "path": "base/billing-settings/lib/credit-bundle-config.tsx",
+          "type": "registry:file",
+          "target": "lib/credit-bundle-config.tsx"
         }
       ]
     },
@@ -2203,7 +2208,7 @@
       "name": "payment-poll",
       "type": "registry:block",
       "title": "QR Payment (poll)",
-      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — with the invoice recorded and a paid one granted on the server; lib/local-payment.ts says what each reference costs and grants. Requires the pricing item for lib/billing-config.ts's CURRENCY. LocalPaymentButton opens the modal for one reference and refreshes the page once paid; bind it in the pricing item's lib/plan-card-config.tsx to offer the QR rail on every plan card.",
+      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — with the invoice recorded and a paid one granted on the server; lib/local-payment.ts says what each reference costs and grants. Requires the pricing item for lib/billing-config.ts's CURRENCY. LocalPaymentButton opens the modal for one reference and refreshes the page once paid; bind it in the pricing item's lib/plan-card-config.tsx to offer the QR rail on every plan card, and in the billing-settings item's lib/credit-bundle-config.tsx on every credit bundle.",
       "registryDependencies": [
         "@intelligo/button",
         "@intelligo/dialog",

@@ -39,6 +39,10 @@ pnpm install --no-frozen-lockfile >/dev/null
 
 echo "› building the registry"
 pnpm registry:build >/dev/null
+# The CLI prefers the registry its build bundles, and one left over
+# from another checkout would install other pages: refresh it from the
+# registry just built.
+node packages/cli/scripts/sync-registry-requires.mjs >/dev/null
 
 # Every item, through the CLI a consumer runs: `intelligo sync` installs
 # each with `shadcn add --overwrite` from the registry just built, in

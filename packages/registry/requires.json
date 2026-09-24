@@ -1,5 +1,5 @@
 {
-  "$comment": "Machine-readable requirements of every registry item \u2014 what shadcn's schema cannot express. `scaffold`: consumer files `intelligo create` provides that items may import. Per item: `marker` (the file whose presence means the item is installed), `items` (sibling items that ship files this one imports \u2014 install them first), `files` (scaffold files it imports), `exports` (names a scaffold file must export), `features` (feature keys the item's non-seam files gate on; register them in lib/plans.ts \u2014 a key a seam names is the deployment's to change). `seams`: files an item ships once and the deployment then owns, each with what it configures \u2014 `intelligo sync` never overwrites one, and message files (`messages/`) are merged key by key, the deployment's copy winning. tests/architecture/registry.test.ts asserts this file matches the code; CI derives the install order from it; `intelligo doctor` checks an app against it (packages/cli/templates/registry-requires.json is a copy the CLI build regenerates; the suite fails if it is stale).",
+  "$comment": "Machine-readable requirements of every registry item — what shadcn's schema cannot express. `scaffold`: consumer files `intelligo create` provides that items may import. Per item: `marker` (the file whose presence means the item is installed), `items` (sibling items that ship files this one imports — install them first), `files` (scaffold files it imports), `exports` (names a scaffold file must export), `features` (feature keys the item's non-seam files gate on; register them in lib/plans.ts — a key a seam names is the deployment's to change). `seams`: files an item ships once and the deployment then owns, each with what it configures — `intelligo sync` never overwrites one, and message files (`messages/`) are merged key by key, the deployment's copy winning. tests/architecture/registry.test.ts asserts this file matches the code; CI derives the install order from it; `intelligo doctor` checks an app against it (packages/cli/templates/registry-requires.json is a copy the CLI build regenerates; the suite fails if it is stale).",
   "scaffold": [
     "lib/intelligo",
     "lib/plans",
@@ -14,6 +14,7 @@
     "lib/settings-nav.ts": "settings tabs",
     "lib/error-reporting.ts": "the error reporter",
     "lib/billing-config.ts": "product slug, currency, credit bundles",
+    "lib/credit-bundle-config.tsx": "other ways to buy a credit bundle, and whether card checkout shows",
     "lib/plan-card-config.tsx": "other ways to buy a plan on its pricing card",
     "lib/feature-catalog.ts": "feature names and plans",
     "lib/feature-gating-config.ts": "upgrade targets for gated features",

@@ -268,7 +268,7 @@
       "app/[locale]/(app)/settings/billing/page.tsx": "89b5be22d95e13f651538ceaf922ec79be5c96895880a217f4db4d40a49822ad",
       "app/[locale]/(app)/settings/billing/loading.tsx": "d1ff684ec87aa7332f554e05693fa3573c76d4627a233655c77468de2de006b5",
       "components/billing/portal-button.tsx": "f5e0b7a2516904be7979f71cf88ae7be367536eedd23afdfb4dfa4d3c404f1ed",
-      "components/billing/credit-bundles.tsx": "84e2486e5fd6e8cce3a5fc6683261eee02ebb38f57d03f09262ec259ee7989e0",
+      "components/billing/credit-bundles.tsx": "eba514501b0f247e539d8c6502917cdee8fec202147bab50081ed4fc1196422c",
       "app/[locale]/(app)/settings/billing/error.tsx": "981e87a83aa26fbf2863b35706d8676be44831213c37d0d59d81cbd3adad3756",
       "components/billing/feature-gate.tsx": "71caa913649667345435f364a0bd24d72be0f970f239aa5532d0fa5e16c6ffa4",
       "components/billing/upgrade-prompt.tsx": "2632aaaf25dc42a94efc6e230d4455d2e631deb2822bcb41ef5961f68d37bca8",

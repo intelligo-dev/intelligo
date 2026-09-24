@@ -79,6 +79,11 @@ it explains a framework decision.
   fails when a native-button Base UI component (`Button`, or a dialog,
   sheet, popover, menu or select trigger/close) renders a `Link` or a
   non-button element without `nativeButton`.
+- The `billing-settings` item's `lib/credit-bundle-config.tsx` seam: other
+  ways to buy a credit bundle render under its button (`actions`, which the
+  `payment-poll` item's `LocalPaymentButton` binds to), and `cardCheckout:
+false` hides the card button for a deployment without Stripe. The
+  `payment-poll` item's `lib/local-payment.ts` shows how to price a bundle.
 
 ### Changed
 
@@ -150,6 +155,9 @@ it explains a framework decision.
   foreign key: the billing ports passed `""` where no user existed.
 - `cleanupExpiredReservations` compared a local-time `Date` with a naive
   UTC column, and `cleanupRateLimitEntries` now compares in UTC too.
+- `pnpm app:regenerate` installed pages from the CLI's bundled registry
+  when one was left over from another checkout; it now refreshes that copy
+  from the registry it just built.
 - **`intelligo doctor`, `migrate` and `upgrade` read the workspace root's env
   files.** An app inside a pnpm workspace whose database URL lives in the
   repository root's `.env` was reported as missing `DATABASE_URL` and

@@ -196,6 +196,41 @@ The amount is only displayed; `priceLocalPayment(reference)` prices
 the invoice on the server. Encode the interval in the reference
 (`${plan.slug}:${interval}`) when the two prices differ.
 
+## [billing-settings](/blocks/billing-settings)
+
+### `lib/credit-bundle-config.tsx`
+
+Exports `CreditBundleActionProps`, `CreditBundleConfig`, `creditBundleConfig`. [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/registry/base/billing-settings/lib/credit-bundle-config.tsx)
+
+How your product sells its credit bundles, without editing
+`components/billing/credit-bundles.tsx`.
+
+ - `actions`: rendered under a bundle's purchase button, as another
+   way to buy it (a QR payment rail, a bank transfer). It receives the
+   bundle, its price in major units with the price's currency, and the
+   bundle's name.
+ - `cardCheckout`: `false` hides the card (Stripe) purchase button, for
+   a deployment that sells bundles only another way. Default `true`.
+
+Empty by default: bundles are bought by card alone. To sell them
+through the QR-and-poll rail, install the `payment-poll` item, price
+each bundle in its `lib/local-payment.ts` (by `getCreditBundle(reference)`),
+and bind its button here:
+
+```ts
+import { LocalPaymentButton } from "@/components/billing/local-payment-button";
+
+export const creditBundleConfig: CreditBundleConfig = {
+  cardCheckout: false,
+  actions: ({ bundle, price, name }) => (
+    <LocalPaymentButton reference={bundle.id} amount={price} label={name} />
+  ),
+};
+```
+
+The amount is only displayed; `priceLocalPayment(reference)` prices
+the invoice on the server.
+
 ## [feature-gating](/blocks/feature-gating)
 
 ### `lib/feature-catalog.ts`
@@ -276,8 +311,20 @@ return {
 };
 ```
 
-or a credit bundle: `grant: { credits: fromMajor(5, "USD") }`, in the
-deployment's billing currency.
+or one of the pricing item's `CREDIT_BUNDLES`, sold from
+`lib/credit-bundle-config.tsx`:
+
+```ts
+const bundle = getCreditBundle(reference);
+if (!bundle || !("grant" in bundle)) return null;
+return {
+  price: money(bundle.price.amount, bundle.price.currency),
+  grant: { credits: money(bundle.grant.amount, bundle.grant.currency) },
+  description: bundle.name,
+};
+```
+
+A grant of credits is in the deployment's billing currency.
 
 ### `lib/payment-poll-config.ts`
 
