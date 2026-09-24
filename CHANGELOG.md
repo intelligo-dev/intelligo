@@ -57,10 +57,19 @@ it explains a framework decision.
 
 ### Changed
 
-- Migration `0004_usage_subjects`, additive only, so it can run ahead of the
-  deploy: `usage_records.user_id` is nullable, `rate_limit_entries` drops
-  its foreign key to `organization` and gains `window_seconds`, and
-  `executions` gains `price_micros`.
+- Migration `0004_usage_subjects` is additive — the previous release's
+  code keeps working on the migrated database — and **must run before the
+  deploy**: this release writes `executions.price_micros` and
+  `rate_limit_entries.window_seconds`. `usage_records.user_id` becomes
+  nullable and `rate_limit_entries` drops its foreign key to `organization`.
+- A custom `ExecutionPorts.settleUsage` must honour the new
+  `UsageSettlement.price`: one that ignores it charges a fixed-price run for
+  its tokens. With both a `price` and a `model`, the price wins for the hold
+  and the charge; the usage row still records the model, tokens and provider
+  cost.
+- `begin` with a `requestId` an earlier attempt used — a refused one
+  included — throws `ExecutionError` with code `request_id_taken` instead of
+  the database's unique violation, after releasing the hold.
 - **Breaking:** `RecordUsageParams.userId` and the admin's
   `UsageByUserRow.userId` are `string | null`.
 - `getUsageSummary`'s per-model breakdown counts token usage only, and its

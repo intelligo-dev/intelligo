@@ -609,6 +609,68 @@ d("money path (integration)", () => {
       expect(await allowanceUsedMicros()).toBe(used);
     });
 
+    it("keeps a charge and a credit apart when they share a key", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(mnt(5_000));
+      await credit(workspaceId, money(mnt(100), "MNT"), {
+        reason: "goodwill",
+        requestId: `shared-${suffix}`,
+      });
+
+      await (await report(`shared-${suffix}`)).complete();
+
+      expect(await balanceMicros()).toBe(mnt(4_100));
+      expect(await activeReservations()).toBe(0);
+    });
+
+    it("records the model, tokens and provider cost of fixed-price work that ran on one", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(mnt(5_000));
+      const run = await billed.begin({
+        workspaceId,
+        userId,
+        capability: "report.generate",
+        requestId: `modelled-${suffix}`,
+        price,
+        model: "openai/gpt-5-mini",
+      });
+      await run.complete({
+        usage: { inputTokens: 100_000, outputTokens: 50_000 },
+        model: "openai/gpt-5-mini",
+      });
+
+      const { rows } = await client.query<{
+        type: string;
+        model: string;
+        total_tokens: number;
+        provider_cost_micros: string;
+        charged_micros: string;
+      }>(
+        `SELECT type, model, total_tokens, provider_cost_micros, charged_micros FROM usage_records WHERE request_id = $1`,
+        [`modelled-${suffix}`]
+      );
+      expect(rows[0]).toMatchObject({
+        type: "fixed_charge",
+        model: "openai/gpt-5-mini",
+        total_tokens: 150_000,
+        charged_micros: String(mnt(1_000)),
+      });
+      expect(Number(rows[0]!.provider_cost_micros)).toBeGreaterThan(0);
+    });
+
+    it("refuses a retry under a refused attempt's id with a typed error, and holds nothing", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(0);
+      expect((await report(`retry-${suffix}`)).allowed).toBe(false);
+      await setBalance(mnt(5_000));
+
+      await expect(report(`retry-${suffix}`)).rejects.toMatchObject({
+        code: "request_id_taken",
+      });
+      expect(await activeReservations()).toBe(0);
+      expect(await balanceMicros()).toBe(mnt(5_000));
+    });
+
     it("credits once however many calls race with one key", async () => {
       await setBalance(0);
 

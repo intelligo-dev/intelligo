@@ -30,6 +30,7 @@ import { recordAuditEvent } from "@intelligo-dev/audit";
 import { and, eq } from "drizzle-orm";
 
 import { executions } from "./db/schema";
+import { isUniqueViolation, requestIdTaken } from "./errors";
 import type { ExecutionPorts } from "./ports";
 
 const log = createLogger("Executions");
@@ -142,7 +143,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
             })
           );
       }
-      throw error;
+      throw isUniqueViolation(error) ? requestIdTaken(requestId) : error;
     }
 
     const usingTrialCredits = decision.usingTrialCredits ?? false;

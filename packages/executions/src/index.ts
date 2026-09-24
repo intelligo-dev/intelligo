@@ -14,6 +14,8 @@
  */
 
 export { createExecutions } from "./lifecycle";
+export { ExecutionError, isUniqueViolation, requestIdTaken } from "./errors";
+export type { ExecutionErrorCode } from "./errors";
 export type {
   Executions,
   ExecutionStatus,

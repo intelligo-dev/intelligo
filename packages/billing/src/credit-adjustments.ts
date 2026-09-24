@@ -12,7 +12,7 @@
  * given back.
  */
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 
 import { recordAuditEvent } from "@intelligo-dev/audit";
 import { db } from "@intelligo-dev/core/db";
@@ -34,7 +34,8 @@ export type CreditOptions = {
   reason: string;
   /**
    * The idempotency key, per workspace: a second call with one already
-   * credited returns that credit with `replayed: true`.
+   * credited returns that credit with `replayed: true`. Stored as
+   * `credit:<requestId>`, so it never meets a charge's key.
    */
   requestId: string;
   /** Who granted it; the audit event's actor. */
@@ -51,7 +52,12 @@ export function creditWorkspace(
   amount: Money,
   options: CreditOptions
 ): Promise<CreditResult> {
-  return applyCredit(workspaceId, amount, options, null);
+  return applyCredit(
+    workspaceId,
+    amount,
+    { ...options, requestId: `credit:${options.requestId}` },
+    null
+  );
 }
 
 /**
@@ -75,7 +81,8 @@ export async function refundCharge(
     .where(
       and(
         eq(usageRecords.workspaceId, workspaceId),
-        eq(usageRecords.requestId, requestId)
+        eq(usageRecords.requestId, requestId),
+        ne(usageRecords.type, "credit")
       )
     )
     .limit(1);
@@ -136,7 +143,8 @@ async function applyCredit(
       .where(
         and(
           eq(usageRecords.workspaceId, workspaceId),
-          eq(usageRecords.requestId, options.requestId)
+          eq(usageRecords.requestId, options.requestId),
+          eq(usageRecords.type, "credit")
         )
       )
       .limit(1);

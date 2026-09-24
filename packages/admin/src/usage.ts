@@ -34,7 +34,7 @@ import {
   applyRate,
   type BillingRate,
 } from "@intelligo-dev/executions/pricing";
-import { count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 
 const costSum = sql<string>`coalesce(sum(${usageRecords.providerCostMicros}), 0)`;
 const usd = (micros: unknown): Money =>
@@ -65,8 +65,8 @@ export async function getUsageByModel(limit = 20): Promise<UsageByModelRow[]> {
       micros: costSum,
     })
     .from(usageRecords)
-    // A fixed charge or a credit has no model and no tokens.
-    .where(eq(usageRecords.type, "ai_tokens"))
+    // Work that ran on a model, fixed-price work included; not credits.
+    .where(and(ne(usageRecords.type, "credit"), isNotNull(usageRecords.model)))
     .groupBy(usageRecords.model)
     .orderBy(desc(costSum))
     .limit(limit);
@@ -102,6 +102,8 @@ export async function getUsageByUser(limit = 20): Promise<UsageByUserRow[]> {
     })
     .from(usageRecords)
     .leftJoin(users, eq(users.id, usageRecords.userId))
+    // A credit is money given back, not a request anyone made.
+    .where(ne(usageRecords.type, "credit"))
     .groupBy(usageRecords.userId, users.name, users.email)
     .orderBy(desc(costSum))
     .limit(limit);

@@ -16,7 +16,7 @@ import {
   creditReservations,
   trialCredits,
 } from "@intelligo-dev/core/db/schema";
-import { eq, sql, and, gte, lte, gt, ne } from "drizzle-orm";
+import { eq, sql, and, gte, lte, gt, ne, isNotNull } from "drizzle-orm";
 import { getActiveTrialGrant } from "./trial";
 import { checkNotificationTriggers } from "./notifications";
 import {
@@ -50,6 +50,7 @@ import type {
 import { getPlanMessageLimit, getPlanMonthlyAllowance } from "./quota-plan";
 import { BillingNotConfiguredError } from "./plan-registry";
 import { ChargeError } from "./charge-error";
+import { isUniqueViolation, requestIdTaken } from "@intelligo-dev/executions";
 
 export type {
   SettlementOutcome,
@@ -293,6 +294,8 @@ export async function reserveQuota(
     if (error instanceof BillingNotConfiguredError) {
       return notConfigured() as QuotaAdmission;
     }
+    // An earlier attempt holds this key's reservation.
+    if (isUniqueViolation(error)) throw requestIdTaken(requestId);
     throw error;
   }
 }
@@ -453,14 +456,20 @@ export async function cleanupExpiredReservations(): Promise<number> {
  *
  * Idempotent: releasing an already-settled reservation is a no-op.
  */
-export async function releaseReservation(requestId: string): Promise<void> {
+export async function releaseReservation(
+  requestId: string,
+  workspaceId?: string
+): Promise<void> {
   await db
     .update(creditReservations)
     .set({ status: "settled", settledAt: new Date() })
     .where(
       and(
         eq(creditReservations.requestId, requestId),
-        eq(creditReservations.status, "active")
+        eq(creditReservations.status, "active"),
+        workspaceId
+          ? eq(creditReservations.workspaceId, workspaceId)
+          : undefined
       )
     );
 }
@@ -535,32 +544,54 @@ export async function recordFixedCharge(params: {
   capability: string;
   requestId: string;
   amount: Money;
+  /**
+   * The model the work ran on and its tokens, when it ran on one: the row
+   * keeps them and their provider cost, so spend and margin on fixed-price
+   * work stay visible. The charge is `amount` regardless.
+   */
+  model?: string | null;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
   metadata?: Record<string, unknown>;
 }): Promise<SettlementOutcome> {
   const settings = await getBillingSettings();
   assertChargeable(params.amount, settings.currency);
+  const rate: BillingRate = {
+    currency: settings.currency,
+    usdRateMicros: settings.usdRateMicros,
+    marginBp: settings.marginBp,
+  };
+  const inputTokens = params.inputTokens ?? 0;
+  const outputTokens = params.outputTokens ?? 0;
+  let providerCost: Money = zero("USD");
+  if (params.model) {
+    try {
+      ({ providerCost } = chargeFor(
+        params.model,
+        inputTokens,
+        outputTokens,
+        rate
+      ));
+    } catch (error) {
+      // The price is fixed; an unregistered model only leaves its cost
+      // unknown, not the charge.
+      if (!(error instanceof UnknownModelError)) throw error;
+    }
+  }
   return settleCharge(
     {
       workspaceId: params.workspaceId,
       userId: params.userId ?? null,
-      model: null,
+      model: params.model ?? null,
       agent: params.capability,
-      inputTokens: 0,
-      outputTokens: 0,
-      totalTokens: 0,
+      inputTokens,
+      outputTokens,
+      totalTokens: params.totalTokens ?? inputTokens + outputTokens,
       requestId: params.requestId,
       metadata: params.metadata,
     },
-    {
-      type: "fixed_charge",
-      charged: params.amount,
-      providerCost: zero(settings.currency),
-      rate: {
-        currency: settings.currency,
-        usdRateMicros: settings.usdRateMicros,
-        marginBp: settings.marginBp,
-      },
-    }
+    { type: "fixed_charge", charged: params.amount, providerCost, rate }
   );
 }
 
@@ -697,7 +728,12 @@ async function settleCharge(
       await tx
         .update(creditReservations)
         .set({ status: "settled", settledAt: new Date() })
-        .where(eq(creditReservations.requestId, requestId));
+        .where(
+          and(
+            eq(creditReservations.requestId, requestId),
+            eq(creditReservations.workspaceId, params.workspaceId)
+          )
+        );
     }
 
     return { charged, plan, topup, trial, replayed: false };
@@ -733,7 +769,9 @@ async function priorSettlement(
     .where(
       and(
         eq(usageRecords.workspaceId, workspaceId),
-        eq(usageRecords.requestId, requestId)
+        eq(usageRecords.requestId, requestId),
+        // A credit is not a settlement, whatever key it was given.
+        ne(usageRecords.type, "credit")
       )
     )
     .limit(1);
@@ -849,7 +887,9 @@ export async function findSettlementByRequestId(
     .where(
       and(
         eq(usageRecords.workspaceId, workspaceId),
-        eq(usageRecords.requestId, requestId)
+        eq(usageRecords.requestId, requestId),
+        // A credit is not a settlement, whatever key it was given.
+        ne(usageRecords.type, "credit")
       )
     )
     .limit(1);
@@ -934,8 +974,10 @@ export async function getUsageSummary(
     .where(
       and(
         eq(usageRecords.workspaceId, workspaceId),
-        // Per model means per model's tokens: a fixed charge has none.
-        eq(usageRecords.type, "ai_tokens"),
+        // Per model: work that ran on one, fixed-price work included;
+        // not credits, and not work with no model.
+        ne(usageRecords.type, "credit"),
+        isNotNull(usageRecords.model),
         gte(usageRecords.recordedAt, startDate),
         lte(usageRecords.recordedAt, endDate)
       )

@@ -43,7 +43,9 @@ export function billingExecutionPorts(): Required<ExecutionPorts> {
 
     // Records usage, settles the reservation and deducts credits in one
     // transaction; idempotent per requestId. A run begun with a fixed
-    // price is charged that price, not its tokens.
+    // price is charged that price, not its tokens — the price wins over
+    // the model for the hold and the charge — and the row still records
+    // the model and tokens it ran on.
     settleUsage: (s) =>
       s.price
         ? recordFixedCharge({
@@ -52,6 +54,10 @@ export function billingExecutionPorts(): Required<ExecutionPorts> {
             capability: s.capability,
             requestId: s.requestId,
             amount: s.price,
+            model: s.model,
+            inputTokens: s.inputTokens,
+            outputTokens: s.outputTokens,
+            totalTokens: s.totalTokens,
             metadata: s.metadata,
           })
         : recordTokenUsage({
@@ -67,8 +73,8 @@ export function billingExecutionPorts(): Required<ExecutionPorts> {
             metadata: s.metadata,
           }),
 
-    async releaseHold({ requestId }) {
-      await releaseReservation(requestId);
+    async releaseHold({ requestId, workspaceId }) {
+      await releaseReservation(requestId, workspaceId);
     },
 
     // Lets reconcile() tell a settling row whose charge committed from

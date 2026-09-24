@@ -104,8 +104,12 @@ type `fixed_charge` and the charge on the execution, which the usage page
 shows; `reconcile()` settles a run stuck mid-settlement at the same price,
 which the row keeps. A `requestId` names one attempt and is unique across the
 deployment: a refused attempt's id is spent, so a retry begins with a new one.
-The price must be a positive whole number of micros in the deployment's billing
-currency. `estimateQuota(workspaceId, { amount })` answers the same question
+`begin` with a used id throws an `ExecutionError` (`request_id_taken`). With a
+`model` as well, the price wins for the hold and the charge, and the usage row
+keeps the model, tokens and provider cost, so the margin on fixed-price work
+stays visible. The price must be a positive whole number of micros in the
+deployment's billing currency; one that is not throws a `ChargeError`
+(`invalid_amount`, `currency_mismatch`) rather than refusing. `estimateQuota(workspaceId, { amount })` answers the same question
 without holding anything.
 
 ## Refunds and credits
@@ -133,7 +137,8 @@ recorded three ways: the ledger, a `usage_records` row of type `credit` with a
 negative charge, and a `billing.refund` or `billing.credit` audit event with
 the actor and the reason. Neither is an execution, so execution totals show
 what ran, not what was given back. One refund per charge: a second call
-replays the first, a partial refund included. The replay check runs under the
+replays the first, a partial refund included. Their keys are stored as
+`refund:<requestId>` and `credit:<requestId>`, so neither meets a charge's. The replay check runs under the
 workspace lock, so concurrent calls with one key credit once. An amount the
 ledger cannot take throws a `ChargeError`.
 
