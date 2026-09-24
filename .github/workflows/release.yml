@@ -293,6 +293,9 @@ jobs:
       - name: Is latest behind the prerelease?
         if: steps.check.outputs.published != 'true' && contains(steps.version.outputs.version, '-')
         timeout-minutes: 2
+        # A reminder: npm failing to answer must not skip the tag and the
+        # GitHub release of packages already published.
+        continue-on-error: true
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
