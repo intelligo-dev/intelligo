@@ -167,6 +167,19 @@ describe("createApp", () => {
     );
   });
 
+  it("refuses a name with nothing slugifiable in it before creating the directory", () => {
+    const target = path.join(workdir, "fresh");
+    expect(() =>
+      createApp({
+        target,
+        templatesDir,
+        frameworkVersion: "1.2.3",
+        name: "!!!",
+      })
+    ).toThrow(/Cannot derive/);
+    expect(existsSync(target)).toBe(false);
+  });
+
   it("gives a pnpm app outside any workspace its own pnpm settings", () => {
     writeStandaloneTemplate();
     const target = path.join(workdir, "acme");

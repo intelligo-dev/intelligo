@@ -83,7 +83,7 @@ export function parseCreateFlags(args: readonly string[]): CreateFlags {
         .filter(Boolean);
     } else if (arg === "--name" || arg.startsWith("--name=")) {
       const value = arg === "--name" ? args[++i] : arg.slice(7);
-      if (value === undefined || value.startsWith("-")) unknown.push(arg);
+      if (!value?.trim() || value.startsWith("-")) unknown.push(arg);
       else name = value;
     } else if (arg.startsWith("-")) {
       if (!CREATE_FLAGS.includes(arg)) unknown.push(arg);

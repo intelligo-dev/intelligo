@@ -296,8 +296,10 @@ function checkSeamFeatures(
 const VITEST_CONFIGS = [
   "vitest.config.ts",
   "vitest.config.mts",
+  "vitest.config.cts",
   "vitest.config.js",
   "vitest.config.mjs",
+  "vitest.config.cjs",
 ];
 
 /** `PRODUCT_SLUG = "acme"` or `setDefaultProductSlug("acme")` in the composition root. */
@@ -311,7 +313,7 @@ function checkBillingProduct(
   const setsDefault =
     rootSource !== null && /\bsetDefaultProductSlug\s*\(/.test(rootSource);
   const inCode = rootSource?.match(PRODUCT_SLUG_LITERAL)?.[1];
-  if (fromEnv && inCode && fromEnv !== inCode) {
+  if (fromEnv && setsDefault && inCode && fromEnv !== inCode) {
     return {
       name: "billing",
       status: "warn",

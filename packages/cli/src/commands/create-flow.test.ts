@@ -36,6 +36,10 @@ describe("parseCreateFlags", () => {
       unknown: ["--al", "extra"],
     });
     expect(parseCreateFlags(["acme", "--name"]).unknown).toEqual(["--name"]);
+    expect(parseCreateFlags(["acme", "--name", ""]).unknown).toEqual([
+      "--name",
+    ]);
+    expect(parseCreateFlags(["acme", "--name="]).unknown).toEqual(["--name="]);
   });
 
   it("reads --items in either spelling without taking the list for the target", () => {

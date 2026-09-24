@@ -120,8 +120,8 @@ it explains a framework decision.
 - `intelligo add app-scaffold` in an app `create` did not make wrote
   `__APP_NAME__`, `__APP_SLUG__` and `__INTELLIGO_DEP__` unreplaced; `add`
   refuses a feature whose placeholders it cannot fill, before writing.
-- `app-scaffold` changed under template version 1.14.0, so `upgrade
---check` showed a changed template with no newer version; it is 1.15.0,
+- `app-scaffold` changed under template version 1.14.0, so the upgrade
+  check showed a changed template with no newer version; it is 1.15.0,
   and a test pins each template version to its content.
 - The scaffold's `transpilePackages` names `@intelligo-dev/jobs`, and its
   comment no longer says the packages ship TypeScript source.

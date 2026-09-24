@@ -97,9 +97,10 @@ export function createApp(options: CreateOptions): AddResult {
   const target = path.resolve(options.target);
 
   assertNotOccupied(target);
+  // Before the directory exists, so a name that slugifies to nothing
+  // leaves nothing behind.
+  const { appName, appSlug } = deriveNames(options.name || target);
   mkdirSync(target, { recursive: true });
-
-  const { appName, appSlug } = deriveNames(options.name ?? target);
   const workspaceRoot = findWorkspaceRoot(target);
 
   const scaffold = addFeature("app-scaffold", {
