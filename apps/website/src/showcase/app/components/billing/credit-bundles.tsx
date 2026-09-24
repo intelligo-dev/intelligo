@@ -128,12 +128,12 @@ export function CreditBundles({ currentBalance }: CreditBundlesProps) {
                       : t("creditBundles.purchase")}
                   </Button>
                 )}
-                {Actions && (
+                {Actions && "grant" in bundle && (
                   <Actions
                     bundle={bundle}
                     price={price.amount / MICROS_PER_UNIT}
                     currency={price.currency}
-                    name={bundle.name}
+                    bundleName={bundle.name}
                   />
                 )}
               </Card>

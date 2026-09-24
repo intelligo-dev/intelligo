@@ -22,6 +22,7 @@
     "unavailable": "This can't be paid for this way.",
     "createFailed": "We couldn't start the payment. Try again in a moment.",
     "statusFailed": "We couldn't check the payment status.",
-    "declined": "The payment was declined."
+    "declined": "The payment was declined.",
+    "forbidden": "Only a workspace owner can pay for this."
   }
 }

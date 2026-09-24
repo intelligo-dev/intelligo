@@ -112,7 +112,9 @@ function fenceIndentedCode(lines) {
     const pad = Math.min(
       ...run.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length)
     );
-    out.push("```ts", ...run.map((l) => l.slice(pad)), "```");
+    // An example that renders a component is JSX.
+    const lang = run.some((l) => /<[A-Z][\w.]*[\s/>]/.test(l)) ? "tsx" : "ts";
+    out.push("```" + lang, ...run.map((l) => l.slice(pad)), "```");
     i = j;
   }
   return out;

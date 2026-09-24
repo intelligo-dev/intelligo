@@ -84,6 +84,16 @@ it explains a framework decision.
   `payment-poll` item's `LocalPaymentButton` binds to), and `cardCheckout:
 false` hides the card button for a deployment without Stripe. The
   `payment-poll` item's `lib/local-payment.ts` shows how to price a bundle.
+- The `billing-settings` item's `lib/credit-bundle-config.tsx` seam: other
+  ways to buy a credit bundle render under its button (`actions`, which the
+  `payment-poll` item's `LocalPaymentButton` binds to), and `cardCheckout:
+false` hides the card button. The seams' examples sell a bundle through
+  the QR rail only when it is priced in `CURRENCY`, under a `credits:`
+  reference that cannot read as a plan slug.
+- `PaymentProvider.currency` in `@intelligo-dev/billing/payment`: a
+  provider registered with its currency refuses, before it is asked, a
+  local invoice priced in another — `createPayment` takes bare minor units,
+  so a price in the wrong currency was read as the provider's.
 
 ### Changed
 
@@ -155,6 +165,11 @@ false` hides the card button for a deployment without Stripe. The
   foreign key: the billing ports passed `""` where no user existed.
 - `cleanupExpiredReservations` compared a local-time `Date` with a naive
   UTC column, and `cleanupRateLimitEntries` now compares in UTC too.
+- **Breaking:** the `payment-poll` item's `startLocalPayment` let any
+  workspace member open an invoice, so a member could change the
+  workspace's plan through the QR rail that card checkout keeps to owners.
+  It now requires one of `paymentPollConfig.payerRoles` (`["owner"]`, also
+  when a config written before the field has none).
 - `pnpm app:regenerate` installed pages from the CLI's bundled registry
   when one was left over from another checkout; it now refreshes that copy
   from the registry it just built.

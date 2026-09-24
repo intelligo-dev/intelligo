@@ -14,7 +14,7 @@
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
-import { requireWorkspace } from "@intelligo-dev/auth";
+import { requireRole, requireWorkspace } from "@intelligo-dev/auth";
 import type { ActionResult } from "@intelligo-dev/next";
 import {
   isBillingServiceError,
@@ -25,6 +25,15 @@ import {
 import type { CreatePaymentResult } from "@intelligo-dev/billing/payment";
 
 import { priceLocalPayment } from "@/lib/local-payment";
+import { paymentPollConfig } from "@/lib/payment-poll-config";
+
+/**
+ * Who may open an invoice. Read with `in`: a config written before the
+ * field existed still compiles, and keeps the owner-only default.
+ */
+const PAYER_ROLES =
+  ("payerRoles" in paymentPollConfig ? paymentPollConfig.payerRoles : null) ??
+  (["owner"] as const);
 
 export type PaymentActionResult<T> = ActionResult<T>;
 
@@ -47,6 +56,11 @@ export async function startLocalPayment(
     context = await requireWorkspace();
   } catch {
     return { success: false, error: t("errors.unauthorized") };
+  }
+  try {
+    await requireRole([...PAYER_ROLES]);
+  } catch {
+    return { success: false, error: t("errors.forbidden") };
   }
 
   try {

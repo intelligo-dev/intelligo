@@ -86,7 +86,14 @@ export async function openLocalInvoice(
   }
 
   const mode = currentPaymentMode();
-  const invoice = await getPaymentProviderFor(mode).createPayment({
+  const provider = getPaymentProviderFor(mode);
+  if (provider.currency && provider.currency !== input.price.currency) {
+    throw new BillingServiceError(
+      "currency_mismatch",
+      `The ${mode} provider charges in ${provider.currency}; "${input.reference}" is priced in ${input.price.currency}.`
+    );
+  }
+  const invoice = await provider.createPayment({
     amount: amountMinor,
     description: input.description ?? input.reference,
     userId: input.userId,
