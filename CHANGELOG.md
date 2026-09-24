@@ -38,6 +38,21 @@ it explains a framework decision.
   UTC. The three-argument form is unchanged.
 - `creditBundleOffer(bundle)`: a credit bundle as the offer the
   `lib/local-payment.ts` seam returns, grant and price as `Money`.
+- `intelligo create --name <name>`: the project name — package name,
+  billing product, page title — when it is not the directory's.
+- The scaffold writes a `.gitignore`. Under pnpm, an app outside any
+  workspace also gets the `pnpm-standalone` feature: a
+  `pnpm-workspace.yaml` that declines the dependency build scripts
+  pnpm 10 and later stop the install over, and an `.npmrc` that lets the
+  shadcn CLI run `pnpm add` at the app's root. The consumer smoke now
+  installs with the scaffold's own settings.
+- The scaffold's `next.config.mjs` fills in env variables from the
+  enclosing pnpm workspace's `.env.local` and `.env`, as `doctor` and
+  `migrate` read them; the reference app uses it unchanged.
+- `intelligo doctor` accepts a composition root that calls
+  `setDefaultProductSlug()`, warns when `INTELLIGO_BILLING_PRODUCT` and
+  the root name different products, and warns about a `vitest.config.ts`
+  whose runner is not installed.
 - A plan card can offer the QR payment rail. The `pricing` item ships a
   `lib/plan-card-config.tsx` seam whose `actions` component renders under
   the checkout button of every plan the caller can buy, with the plan, the
@@ -79,6 +94,23 @@ it explains a framework decision.
   count toward `tokens_used` and the token totals. `listUsageRecords` names
   each row's `type` and audits the charge of token-priced rows only;
   `getUsageByUser` leaves credits out.
+- `intelligo add app-scaffold` wrote `__APP_NAME__`, `__APP_SLUG__` and
+  `__INTELLIGO_DEP__` unreplaced; `add` now refuses any feature whose
+  placeholders only `create` fills, before writing anything.
+- `app-scaffold` changed under template version 1.14.0, so `upgrade
+--check` showed a changed template with no newer version; it is 1.15.0,
+  and a test pins each template version to its content.
+- The scaffold's `transpilePackages` names `@intelligo-dev/jobs`, and its
+  comment no longer says the packages ship TypeScript source.
+- `intelligo create .` works in a directory that holds only `.git`.
+- Every command refuses a flag it does not know (`sync --chek` used to
+  apply), `--help` works on each, and `sync` takes item names
+  comma-separated as `create --items` does.
+- `create` records the chosen items in `intelligo.manifest.json` before
+  installing, so a bare `intelligo sync` installs them after a declined
+  or failed install.
+- The scaffold's `dev` and `start` scripts no longer pin port 3000.
+- Unset optional env variables are one boot warning, not one each.
 
 ### Fixed
 

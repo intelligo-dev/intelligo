@@ -12,7 +12,7 @@ A scaffolded app has `@intelligo-dev/cli` as a dev dependency; run it with `pnpm
 ```text
 intelligo <command>
 intelligo create [dir]      Scaffold an app, then install the registry pages you pick
-                            (--items a,b | --all, --yes, --no-install)
+                            (--items a,b | --all, --yes, --no-install, --name <name>)
 intelligo doctor            Report configuration and migration-chain problems
 intelligo migrate           Apply the framework's migration chain to DATABASE_URL
 intelligo migrate --check   Compare the framework's migrations to a database
@@ -20,7 +20,8 @@ intelligo migrate --check   Compare the framework's migrations to a database
                             fresh | ahead | unmanaged | legacy)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
 intelligo upgrade --check   Show what a template upgrade would change
-intelligo sync [items…]     Install registry pages from this release's registry,
+intelligo sync [items…]     Install registry pages from this release's registry
+                            (names space- or comma-separated),
                             keeping seams and merging messages (--force replaces
                             hand-edited files; --check only reports, exit 1 on drift)
 ```
@@ -60,6 +61,7 @@ their own, and refuse to overwrite the latter.
 
 | Feature | What it generates |
 | --- | --- |
+| `pnpm-standalone` | pnpm settings for an app that is its own workspace root: dependency build scripts declined, so pnpm 10+ installs without a prompt, and `pnpm add` allowed at the root for the shadcn CLI. `intelligo create` writes it when pnpm installs an app outside any workspace — `pnpm-workspace.yaml`, `.npmrc` |
 | `admin-page` | Mount the Intelligo operational console at /admin — `app/[locale]/admin/page.tsx` |
 | `maintenance` | A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs — scheduled every five minutes, in vercel.json when the app has none — `app/api/cron/maintenance/route.ts` |
 | `vitest` | A Vitest setup for the app's own tests: the `@` alias, a `server-only` stub, and the `@intelligo-dev/*` packages inlined so the stub reaches them — `vitest.config.ts`, `tests/stubs/server-only.ts` |
