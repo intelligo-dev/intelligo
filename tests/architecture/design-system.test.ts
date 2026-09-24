@@ -166,6 +166,88 @@ describe("motion honours prefers-reduced-motion", () => {
   });
 });
 
+/**
+ * Base UI components that act as a native button by default: `Button`
+ * and the triggers/closes of the button-backed families. Tooltip and
+ * hover-card triggers are not among them — they never expect a <button>.
+ */
+const NATIVE_BUTTON_TAG =
+  /<(Button|(?:AlertDialog|Dialog|Sheet|Drawer|Popover|DropdownMenu|Menu|Select|Combobox|Collapsible|Accordion|NavigationMenu)(?:Trigger|Close)|TabsTrigger|Toggle)\b/g;
+
+/**
+ * Each opening tag matched by `tag`, with its own top-level attributes
+ * and the element its `render` prop names. Braces and quotes are
+ * balanced, so a `>` inside an attribute expression does not end the
+ * tag, and a nested element's `render` is not mistaken for this one's.
+ */
+function openingTags(
+  source: string,
+  tag: RegExp
+): { name: string; attrs: string; render?: string; index: number }[] {
+  const tags = [];
+  for (const match of source.matchAll(tag)) {
+    const start = match.index + match[0].length;
+    let depth = 0;
+    let quote: string | null = null;
+    let render: string | undefined;
+    let i = start;
+    for (; i < source.length; i++) {
+      const c = source[i]!;
+      if (quote) {
+        if (c === quote && source[i - 1] !== "\\") quote = null;
+        continue;
+      }
+      if (c === '"' || c === "'" || c === "`") quote = c;
+      else if (c === "{") {
+        if (depth === 0 && /\brender=$/.test(source.slice(start, i))) {
+          render = source.slice(i + 1).match(/^\s*<([\w.]+)/)?.[1];
+        }
+        depth++;
+      } else if (c === "}") depth--;
+      else if (c === ">" && depth === 0) break;
+    }
+    tags.push({
+      name: match[1]!,
+      attrs: source.slice(start, i),
+      render,
+      index: match.index,
+    });
+  }
+  return tags;
+}
+
+describe("link-rendered buttons say they are not native", () => {
+  it("a button-like Base UI component rendering a non-button passes nativeButton", () => {
+    // Flagged: `render={<Link …/>}` or `render={<a …/>}` (any intrinsic
+    // other than button, motion.button included). Components (`<Button/>`, `<Press/>`) and
+    // conditional expressions are not judged — a component may render a
+    // button, and an expression is read by a person, not a regex.
+    const offenders: string[] = [];
+    for (const scope of SCOPES) {
+      for (const file of walk(path.join(ROOT, scope.dir), scope.skip)) {
+        if (!/\.[jt]sx$/.test(file)) continue;
+        const source = readFileSync(file, "utf8");
+        for (const tag of openingTags(source, NATIVE_BUTTON_TAG)) {
+          const { render } = tag;
+          if (!render) continue;
+          const nonButton =
+            render === "Link" ||
+            (/^[a-z]/.test(render) && !/(?:^|\.)button$/.test(render));
+          if (!nonButton || /\bnativeButton=/.test(tag.attrs)) continue;
+          const line = source.slice(0, tag.index).split("\n").length;
+          offenders.push(
+            `${path.relative(ROOT, file)}:${line} <${tag.name} render={<${render}/>}>`
+          );
+        }
+      }
+    }
+    expect(
+      offenders,
+      "Base UI expects a native <button> unless told otherwise; pass nativeButton={false} when rendering a link or another element"
+    ).toEqual([]);
+  });
+});
+
 describe("the site follows the radius scale", () => {
   it("sets no corner above xl in its own pages and components", () => {
     const radius = RULES.find((rule) => rule.id === "radius-scale")!.pattern;

@@ -43,8 +43,6 @@ it explains a framework decision.
   own copy of a seam names a literal `featureKey` `lib/plans.ts` does not
   register.
 
-> > > > > > > origin/main
-
 ### Added
 
 - A plan card can offer the QR payment rail. The `pricing` item ships a
@@ -56,6 +54,13 @@ it explains a framework decision.
   Binding the button in the seam offers QR payment on the pricing page
   without editing an installed file, and the pricing item still installs
   without payment-poll.
+- The `chat` item's sidebar history no longer logs Base UI's "expected a
+  native <button>" console error on every authenticated page: its
+  new-chat `Button` renders a `Link` and now passes
+  `nativeButton={false}`. `tests/architecture/design-system.test.ts`
+  fails when a native-button Base UI component (`Button`, or a dialog,
+  sheet, popover, menu or select trigger/close) renders a `Link` or a
+  non-button element without `nativeButton`.
 
 ## [1.0.0-beta.14] — 2026-09-24
 

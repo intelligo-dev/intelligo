@@ -369,7 +369,7 @@
       "components/chat/chat-input.tsx": "b2c3215f957d381ff515572563e748794268100970706ad997658aea7dcc2265",
       "components/chat/conversation-header.tsx": "01f3371cb96e13b4ae91fba835958d70d4fb261fd0dce03698ef690d9b5d0644",
       "components/chat/chat-history.tsx": "08c3ae0dd791a3aa2b5454d84512b7709447aee7a55be9c9a2065cdd4914fc61",
-      "components/chat/chat-history-nav.tsx": "03f8ecfcd383713ddc68e0571315c331cc7f85bd68833bb08b2327e11d9e649b",
+      "components/chat/chat-history-nav.tsx": "bc73e091beb8187f83702ba1061c5222875c8ccc718bf3dd17c842a37c7573d2",
       "components/chat/share-dialog.tsx": "b58d46c575b38f7b5faf654b6521113b1d68104c18fd7bf23340c7c2148b04c6",
       "components/chat/credit-status-banner.tsx": "f08954e592deb89a130fddbe12780f8adea1b21d6d7621425795643ad3f14c24",
       "components/chat/chat-panel.tsx": "17b02404c1e68e5497661ad755d129cee525e07544c59edfe04e97317a6de7e6",
