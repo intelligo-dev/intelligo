@@ -10,6 +10,10 @@
  *  - `sidebarContent`: the sidebar under the navigation (conversation
  *    history). May be an async server component; it refreshes with the
  *    page. Hiding itself when the sidebar collapses is its own call.
+ *  - `onboardingRedirect`: where a signed-in user who has not finished
+ *    onboarding is sent (default `/onboarding`), or `false` for a
+ *    product without an onboarding step. Point it at a route outside
+ *    `(app)`: one this layout wraps would redirect to itself forever.
  *
  * For example:
  *
@@ -35,6 +39,12 @@ export interface ShellConfig {
    * history. Takes no props; may be an async server component.
    */
   sidebarContent?: ComponentType;
+  /**
+   * Where a user who has not completed onboarding is sent before any
+   * page under `(app)` renders. `false` sends nobody: the product has
+   * no onboarding, or completes it elsewhere. Default `/onboarding`.
+   */
+  onboardingRedirect?: string | false;
 }
 
 export const shellConfig: ShellConfig = {};

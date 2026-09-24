@@ -4,9 +4,11 @@ import { getLocale, getTranslations } from "next-intl/server";
  *
  * 1. A session, checked here because middleware only reads the cookie.
  *    None → `/login`.
- * 2. Completed onboarding. Incomplete → `/onboarding`. The onboarding
- *    route is a sibling of `(app)`, so this cannot redirect into itself;
- *    if you nest onboarding under `(app)`, skip this check on that route.
+ * 2. Completed onboarding. Incomplete → `shellConfig.onboardingRedirect`
+ *    (`/onboarding` unless the seam says otherwise; `false` skips the
+ *    check). The onboarding route is a sibling of `(app)`, so this
+ *    cannot redirect into itself; if you nest onboarding under `(app)`,
+ *    skip this check on that route.
  * 3. An active workspace. `ensureUserWorkspace` creates one if none
  *    exists; what a new workspace starts with is the handler
  *    `lib/intelligo.ts` sets with `setWorkspaceCreatedHandler`.
@@ -43,15 +45,26 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     return null;
   }
 
-  const [userRecord] = await db
-    .select({ onboardingCompleted: users.onboardingCompleted })
-    .from(users)
-    .where(eq(users.id, session.user.id))
-    .limit(1);
+  // Read with `in`: a seam written before the field existed declares a
+  // ShellConfig without it, and still compiles.
+  const onboarding =
+    "onboardingRedirect" in shellConfig
+      ? shellConfig.onboardingRedirect
+      : undefined;
+  if (onboarding !== false) {
+    const [userRecord] = await db
+      .select({ onboardingCompleted: users.onboardingCompleted })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
 
-  if (userRecord && !userRecord.onboardingCompleted) {
-    redirect({ href: "/onboarding", locale: await getLocale() });
-    return null;
+    if (userRecord && !userRecord.onboardingCompleted) {
+      redirect({
+        href: typeof onboarding === "string" ? onboarding : "/onboarding",
+        locale: await getLocale(),
+      });
+      return null;
+    }
   }
 
   const hdrs = await headers();

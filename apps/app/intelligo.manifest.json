@@ -217,7 +217,7 @@
       "components/ui/popover.tsx": "b1720dbd03883d23815bac75134644e0c361f2877da6596d910a446b4247e650",
       "components/ui/tooltip.tsx": "484b94bf7e6e4aa2ef7fb6b17fd10a0b3263aac2d68624c58d69ee689f204c8f",
       "components/ui/ai-sidebar.tsx": "e989be035967fac5146205c7d8aec82cb00254c01639347c70978466153d4f61",
-      "app/[locale]/(app)/layout.tsx": "eb3903fadb35e7756692fd5304cd51422949de123c7ee9b17e66f3fd5b8f9613",
+      "app/[locale]/(app)/layout.tsx": "ff6a4de79a134d055590d5de5513a803a3ed6656b0b8ec77974e2e35b84c92e4",
       "components/shell/app-sidebar.tsx": "78dd219612cce64331bf6551a62af4445f847704ef37b1d5d0ac5947db7168b7",
       "components/shell/workspace-switcher.tsx": "1994dfed22f88891b57e58252b992bff188713dffd3af01dc611219c88b4e904",
       "components/shell/user-menu.tsx": "34f0c6f36357876678d221adc98fbc0a4717af9f4658a25a1a6f82b82633f29d",

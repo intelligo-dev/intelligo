@@ -147,8 +147,8 @@
     ]
   },
   "admin-page": {
-    "templateVersion": "1.1.0",
-    "description": "Mount the Intelligo operational console at /admin",
+    "templateVersion": "1.2.0",
+    "description": "Mount the Intelligo operational console at /admin, styled with the app's tokens, for platform admins only",
     "files": [
       {
         "template": "admin-page/admin-page.tsx.tpl",
