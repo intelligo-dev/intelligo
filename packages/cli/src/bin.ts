@@ -182,7 +182,8 @@ async function main(): Promise<number> {
   const [, , command = "help", ...rest] = process.argv;
 
   // The commands that read the app's configuration see what the app
-  // itself would: its .env.local and .env, under anything the shell set.
+  // itself would: its .env.local and .env, then the pnpm workspace
+  // root's, under anything the shell set.
   if (command === "doctor" || command === "migrate" || command === "upgrade") {
     loadAppEnv(process.cwd());
   }

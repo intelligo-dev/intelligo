@@ -18,6 +18,44 @@ it explains a framework decision.
 
 ### Fixed
 
+- **`intelligo doctor`, `migrate` and `upgrade` read the workspace root's env
+  files.** An app inside a pnpm workspace whose database URL lives in the
+  repository root's `.env` was reported as missing `DATABASE_URL` and
+  `BETTER_AUTH_SECRET` although it booted. `loadAppEnv` now also loads the
+  enclosing workspace root's `.env.local` and `.env`, below the app's own files
+  and the shell.
+- The `trial-banner` item renders the same credit counts on the server
+  and in the browser. It formatted them with compact notation inside
+  the client component, so Node's ICU spelled them during SSR and the
+  browser's at hydration; for locales where the two disagree, React
+  reported a hydration mismatch and regenerated the tree.
+  `TrialBannerContainer` now formats the counts on the server and
+  `TrialBanner` takes them as strings (`creditsRemaining`,
+  `initialCredits`). An app that renders `TrialBanner` directly passes
+  formatted strings instead of numbers.
+- **`intelligo doctor` no longer requires a feature key only a seam names.**
+  `requires.json` derived an item's `features` from every file it ships,
+  config seams included, so the `chat` item required `"chat"` in
+  `lib/plans.ts` because its default `lib/chat-server-config.ts` gates on
+  it — an error for an app that owns that seam and gates on another key.
+  `features` now comes from the files `intelligo sync` overwrites only
+  (the `chat` item declares none), and doctor instead warns when an app's
+  own copy of a seam names a literal `featureKey` `lib/plans.ts` does not
+  register.
+
+> > > > > > > origin/main
+
+### Added
+
+- A plan card can offer the QR payment rail. The `pricing` item ships a
+  `lib/plan-card-config.tsx` seam whose `actions` component renders under
+  the checkout button of every plan the caller can buy, with the plan, the
+  interval, the shown price and the plan's name; it is empty by default.
+  The `payment-poll` item ships `LocalPaymentButton`, which opens
+  `LocalPaymentModal` for one reference and refreshes the page once paid.
+  Binding the button in the seam offers QR payment on the pricing page
+  without editing an installed file, and the pricing item still installs
+  without payment-poll.
 - The `chat` item's sidebar history no longer logs Base UI's "expected a
   native <button>" console error on every authenticated page: its
   new-chat `Button` renders a `Link` and now passes

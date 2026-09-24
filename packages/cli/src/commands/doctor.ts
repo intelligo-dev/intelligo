@@ -41,6 +41,8 @@ type ItemRequires = {
 
 export type RegistryRequires = {
   scaffold: string[];
+  /** Files an item ships once and the deployment then owns. */
+  seams?: Record<string, string>;
   items: Record<string, ItemRequires>;
 };
 
@@ -256,6 +258,41 @@ function checkModelIds(root: string, source: string): CheckResult[] {
 const OPAQUE_REGISTRATION =
   /\bregisterModels?\s*\(\s*(?![\s[{]|DEFAULT_MODELS\s*[,)])/;
 
+/**
+ * A seam's feature keys are the deployment's own choice, so they are
+ * not an item requirement; a literal key the app's copy still names but
+ * lib/plans.ts does not register is worth a warning.
+ */
+function checkSeamFeatures(
+  root: string,
+  seams: Record<string, string> | undefined,
+  plans: ReturnType<typeof reexportedSource> | null
+): CheckResult[] {
+  if (!plans || plans.unresolved.length) return [];
+  const results: CheckResult[] = [];
+  for (const seam of Object.keys(seams ?? {})) {
+    const abs = path.join(root, seam);
+    if (!existsSync(abs)) continue;
+    const keys = new Set(
+      [
+        ...readFileSync(abs, "utf8").matchAll(
+          /featureKey:\s*["']([^"']+)["']/g
+        ),
+      ].map((m) => m[1]!)
+    );
+    const unregistered = [...keys].filter(
+      (key) => !hasObjectKey(plans.text, key)
+    );
+    if (unregistered.length === 0) continue;
+    results.push({
+      name: `seam:${seam}`,
+      status: "warn",
+      detail: `${unregistered.map((key) => `"${key}"`).join(", ")} ${unregistered.length === 1 ? "is" : "are"} not registered in lib/plans.ts — a gate on an unregistered key is denied (403)`,
+    });
+  }
+  return results;
+}
+
 export function runChecks(options: DoctorOptions = {}): CheckResult[] {
   const root = options.root ?? process.cwd();
   const env = options.env ?? process.env;
@@ -383,6 +420,8 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
             }
       );
     }
+
+    results.push(...checkSeamFeatures(root, requires.seams, plans));
   }
 
   // 4b. Maintenance route. It refuses to serve without a strong

@@ -587,18 +587,18 @@ pnpm exec shadcn add @intelligo/chat-share
 | [checkout](/blocks/checkout) | — | `i18n/navigation` | — |
 | [billing-settings](/blocks/billing-settings) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [feature-gating](/blocks/feature-gating) | [pricing](/blocks/pricing) | `i18n/navigation`, `lib/utils` | — |
-| [payment-poll](/blocks/payment-poll) | [pricing](/blocks/pricing) | — | — |
+| [payment-poll](/blocks/payment-poll) | [pricing](/blocks/pricing) | `i18n/navigation` | — |
 | [profile-settings](/blocks/profile-settings) | [route-error](/blocks/route-error) | `i18n/navigation`, `i18n/routing` | — |
 | [onboarding](/blocks/onboarding) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [dashboard](/blocks/dashboard) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [artifacts](/blocks/artifacts) | — | `i18n/navigation` | — |
 | [privacy-settings](/blocks/privacy-settings) | [route-error](/blocks/route-error) | — | — |
-| [chat](/blocks/chat) | [route-error](/blocks/route-error) | `hooks/use-mobile`, `i18n/navigation`, `i18n/routing`, `lib/intelligo`, `lib/utils` | `chat` |
+| [chat](/blocks/chat) | [route-error](/blocks/route-error) | `hooks/use-mobile`, `i18n/navigation`, `i18n/routing`, `lib/intelligo`, `lib/utils` | — |
 | [chat-panel](/blocks/chat-panel) | [chat](/blocks/chat) | `lib/utils` | — |
 | [chat-widget](/blocks/chat-widget) | [chat](/blocks/chat) | `i18n/navigation`, `lib/utils` | — |
 | [chat-share](/blocks/chat-share) | [chat](/blocks/chat) | `i18n/navigation` | — |
 
-A feature key must be granted to a plan in `lib/plans.ts`; an unregistered feature is denied on every request.
+A feature key must be granted to a plan in `lib/plans.ts`; an unregistered feature is denied on every request. A key a config seam names (the `chat` item's `lib/chat-server-config.ts` gates on `chat` as shipped) is the app's to change and is not listed here; `intelligo doctor` warns when a seam names a key `lib/plans.ts` does not grant.
 
 Scaffold files a block may import, all written by `intelligo create`: `lib/intelligo`, `lib/plans`, `lib/utils`, `hooks/use-mobile`, `i18n/routing`, `i18n/navigation`.
 
@@ -760,6 +760,39 @@ Stripe into the browser bundle. A bundle is validated server-side by
 
 `CREDIT_BUNDLES` is the one-time credit packs you sell; edit or empty
 it. A bundle's `name` is rendered verbatim, not translated.
+
+### `lib/plan-card-config.tsx`
+
+Exports `PlanCardActionProps`, `PlanCardConfig`, `planCardConfig`. [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/registry/base/pricing/lib/plan-card-config.tsx)
+
+What your product adds to a plan card, without editing
+`components/billing/plan-card.tsx`.
+
+ - `actions`: rendered under the card's checkout button, as another
+   way to buy the same plan (a QR payment rail, a bank transfer, a
+   "talk to sales" link). It appears only where the checkout button
+   does: on a priced plan that is not the workspace's current one,
+   for a caller allowed to change plans. It receives the plan, the
+   selected interval, the price the card shows (major units of
+   `CURRENCY`) and the plan's localized name.
+
+Empty by default: the card offers card checkout alone. To offer the
+QR-and-poll rail, install the `payment-poll` item, price each plan in
+its `lib/local-payment.ts`, and bind its button here:
+
+```ts
+import { LocalPaymentButton } from "@/components/billing/local-payment-button";
+
+export const planCardConfig: PlanCardConfig = {
+  actions: ({ plan, price, planName }) => (
+    <LocalPaymentButton reference={plan.slug} amount={price} label={planName} />
+  ),
+};
+```
+
+The amount is only displayed; `priceLocalPayment(reference)` prices
+the invoice on the server. Encode the interval in the reference
+(`${plan.slug}:${interval}`) when the two prices differ.
 
 ## [feature-gating](/blocks/feature-gating)
 
@@ -2423,6 +2456,16 @@ item replaces — `app/globals.css`, the theme provider, `lib/utils.ts` — move
 from the `app-scaffold` record to the registry's (the feature's `handedOver`
 list), so `upgrade --check` does not report them as yours forever.
 
+## Where `doctor`, `migrate` and `upgrade` read env from
+
+They run outside Next, so they load the env files themselves, never
+overriding a variable that is already set. Highest precedence first: the
+shell, the app's `.env.local`, the app's `.env`, then — when the app is a
+member of a pnpm workspace — the workspace root's `.env.local` and `.env`. An
+app in a monorepo whose `next.config` falls back to the repository root's
+`.env` is therefore checked and migrated against the same `DATABASE_URL` it
+boots with.
+
 ## Why `migrate` is not `drizzle-kit migrate`
 
 Drizzle applies migrations in journal-timestamp order and skips anything
@@ -3185,7 +3228,7 @@ The subscription handlers take the plan from the subscription's price id, looked
 
 ## Payments outside Stripe
 
-`registerPaymentProvider(mode, provider)` from `@intelligo-dev/billing/payment` registers a `PaymentProvider` in the composition root, and `PAYMENT_MODE` selects which one `getPaymentProvider` returns. The mode defaults to `mock`, which outside production resolves to the in-memory `mockPaymentProvider` with no registration; production refuses it. The [payment-poll block](/blocks/payment-poll) renders the invoice, QR code and polling flow; you bind it to your provider in `lib/local-payment.ts`.
+`registerPaymentProvider(mode, provider)` from `@intelligo-dev/billing/payment` registers a `PaymentProvider` in the composition root, and `PAYMENT_MODE` selects which one `getPaymentProvider` returns. The mode defaults to `mock`, which outside production resolves to the in-memory `mockPaymentProvider` with no registration; production refuses it. The [payment-poll block](/blocks/payment-poll) renders the invoice, QR code and polling flow; you bind it to your provider in `lib/local-payment.ts`. To sell plans that way, bind its `LocalPaymentButton` as `actions` in the pricing item's `lib/plan-card-config.tsx`: every plan card the caller can buy then offers a QR payment under its checkout button, with the plan's slug as the reference `priceLocalPayment` prices on the server. The seam is empty by default, and the pricing page offers card checkout alone.
 
 ## Next
 

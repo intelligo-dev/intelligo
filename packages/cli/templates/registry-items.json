@@ -58,7 +58,7 @@
     },
     "pricing": {
       "title": "Pricing",
-      "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on — install this item first."
+      "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on — install this item first. Other ways to buy a plan render under its checkout button from the lib/plan-card-config.tsx seam, empty by default (the payment-poll item's LocalPaymentButton binds there)."
     },
     "checkout": {
       "title": "Checkout",
@@ -74,7 +74,7 @@
     },
     "payment-poll": {
       "title": "QR Payment (poll)",
-      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — with the invoice recorded and a paid one granted on the server; lib/local-payment.ts says what each reference costs and grants. Requires the pricing item for lib/billing-config.ts's CURRENCY."
+      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — with the invoice recorded and a paid one granted on the server; lib/local-payment.ts says what each reference costs and grants. Requires the pricing item for lib/billing-config.ts's CURRENCY. LocalPaymentButton opens the modal for one reference and refreshes the page once paid; bind it in the pricing item's lib/plan-card-config.tsx to offer the QR rail on every plan card."
     },
     "profile-settings": {
       "title": "Profile Settings",
