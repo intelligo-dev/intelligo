@@ -381,7 +381,7 @@ function registryPages(root) {
     "| Block | Needs these blocks | Imports these scaffold files | Gates on these features |\n| --- | --- | --- | --- |\n" +
     rows.join("\n") +
     "\n\n" +
-    "A feature key must be granted to a plan in `lib/plans.ts`; an unregistered feature is denied on every request.\n\n" +
+    "A feature key must be granted to a plan in `lib/plans.ts`; an unregistered feature is denied on every request. A key a config seam names (the `chat` item's `lib/chat-server-config.ts` gates on `chat` as shipped) is the app's to change and is not listed here; `intelligo doctor` warns when a seam names a key `lib/plans.ts` does not grant.\n\n" +
     `Scaffold files a block may import, all written by \`intelligo create\`: ${requires.scaffold.map((s) => `\`${s}\``).join(", ")}.\n`;
 
   const seams = seamMap(root, registry);
@@ -710,7 +710,10 @@ export function generateLlmsTxt(siteRoot) {
   const listItems = (type, href) =>
     registry
       .filter((i) => i.type === type && i.name !== "smoke")
-      .map((i) => `- [${i.title ?? i.name}](${href(i.name)}): ${lead(i.description)}`)
+      .map(
+        (i) =>
+          `- [${i.title ?? i.name}](${href(i.name)}): ${lead(i.description)}`
+      )
       .join("\n");
 
   const index =
