@@ -14,6 +14,17 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Fixed
+
+- **`intelligo doctor`, `migrate` and `upgrade` read the workspace root's env
+  files.** An app inside a pnpm workspace whose database URL lives in the
+  repository root's `.env` was reported as missing `DATABASE_URL` and
+  `BETTER_AUTH_SECRET` although it booted. `loadAppEnv` now also loads the
+  enclosing workspace root's `.env.local` and `.env`, below the app's own files
+  and the shell.
+
 ## [1.0.0-beta.14] — 2026-09-24
 
 ### Added

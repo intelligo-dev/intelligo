@@ -2423,6 +2423,16 @@ item replaces — `app/globals.css`, the theme provider, `lib/utils.ts` — move
 from the `app-scaffold` record to the registry's (the feature's `handedOver`
 list), so `upgrade --check` does not report them as yours forever.
 
+## Where `doctor`, `migrate` and `upgrade` read env from
+
+They run outside Next, so they load the env files themselves, never
+overriding a variable that is already set. Highest precedence first: the
+shell, the app's `.env.local`, the app's `.env`, then — when the app is a
+member of a pnpm workspace — the workspace root's `.env.local` and `.env`. An
+app in a monorepo whose `next.config` falls back to the repository root's
+`.env` is therefore checked and migrated against the same `DATABASE_URL` it
+boots with.
+
 ## Why `migrate` is not `drizzle-kit migrate`
 
 Drizzle applies migrations in journal-timestamp order and skips anything
