@@ -293,6 +293,13 @@ function checkSeamFeatures(
   return results;
 }
 
+const VITEST_CONFIGS = [
+  "vitest.config.ts",
+  "vitest.config.mts",
+  "vitest.config.js",
+  "vitest.config.mjs",
+];
+
 /** `PRODUCT_SLUG = "acme"` or `setDefaultProductSlug("acme")` in the composition root. */
 const PRODUCT_SLUG_LITERAL =
   /(?:\bPRODUCT_SLUG\s*=|\bsetDefaultProductSlug\s*\()\s*["'`]([^"'`]+)["'`]/;
@@ -309,8 +316,8 @@ function checkBillingProduct(
       name: "billing",
       status: "warn",
       detail:
-        `INTELLIGO_BILLING_PRODUCT is "${fromEnv}" but the composition root sets "${inCode}" — ` +
-        "plans are registered under one and looked up under the other; make them agree",
+        `INTELLIGO_BILLING_PRODUCT is "${fromEnv}" but the composition root sets "${inCode}". ` +
+        "At runtime the composition root wins; the variable only misleads tooling that reads it — make them agree",
     };
   }
   if (fromEnv) {
@@ -332,19 +339,17 @@ function checkBillingProduct(
   };
 }
 
-function declaresDependency(root: string, name: string): boolean {
-  try {
-    const manifest = JSON.parse(
-      readFileSync(path.join(root, "package.json"), "utf8")
-    ) as {
-      dependencies?: Record<string, string>;
-      devDependencies?: Record<string, string>;
-    };
-    return Boolean(
-      manifest.dependencies?.[name] ?? manifest.devDependencies?.[name]
-    );
-  } catch {
-    return false;
+/**
+ * Whether `name` is installed where the app resolves packages from: its
+ * own node_modules or any directory above it, a workspace root's
+ * included.
+ */
+function resolvesFrom(root: string, name: string): boolean {
+  for (let dir = path.resolve(root); ; dir = path.dirname(dir)) {
+    if (existsSync(path.join(dir, "node_modules", name, "package.json"))) {
+      return true;
+    }
+    if (path.dirname(dir) === dir) return false;
   }
 }
 
@@ -541,15 +546,18 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
 
   // 4e. A test config whose runner is not installed fails at the first
   //     `vitest run`, with a module error that does not say why.
-  if (existsSync(path.join(root, "vitest.config.ts"))) {
+  const vitestConfig = VITEST_CONFIGS.find((file) =>
+    existsSync(path.join(root, file))
+  );
+  if (vitestConfig) {
     results.push(
-      declaresDependency(root, "vitest")
+      resolvesFrom(root, "vitest")
         ? { name: "tests", status: "ok", detail: "vitest is installed" }
         : {
             name: "tests",
             status: "warn",
             detail:
-              "vitest.config.ts is here but vitest is not a dependency — " +
+              `${vitestConfig} is here but vitest does not resolve from the app — ` +
               "`pnpm add -D vitest`",
           }
     );

@@ -233,6 +233,37 @@ describe("syncCheck", () => {
     expect(states()["components/ui/button.tsx"]).toBe("edited");
   });
 
+  it("replaces a file the scaffold wrote and nobody edited, so a later sync needs no --force", () => {
+    // `create --no-install`, or an install that failed: the scaffold's
+    // files are on disk and recorded, and no sync has run.
+    const scaffolded = "export const Button = 0;\n";
+    write(context.appRoot, "components/ui/button.tsx", scaffolded);
+    writeManifest(context.appRoot, {
+      schemaVersion: 1,
+      frameworkVersion: "1.0.0-test",
+      features: {
+        "app-scaffold": {
+          templateVersion: "1.0.0",
+          files: [
+            {
+              path: "components/ui/button.tsx",
+              hash: hashContents(scaffolded),
+            },
+          ],
+        },
+      },
+      registry: { version: "1.0.0-test", items: ["usage"], files: {} },
+    });
+    expect(states()["components/ui/button.tsx"]).toBe("outdated");
+
+    write(
+      context.appRoot,
+      "components/ui/button.tsx",
+      "export const Button = 2;\n"
+    );
+    expect(states()["components/ui/button.tsx"]).toBe("differs");
+  });
+
   it("reports a message file missing registry keys", () => {
     write(
       context.appRoot,

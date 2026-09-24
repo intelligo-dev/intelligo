@@ -148,12 +148,20 @@ export function addFeature(feature: string, options: AddOptions): AddResult {
   const recorded: GeneratedFile[] = [];
   const handedOver = new Set(previous?.handedOver ?? []);
 
+  // Re-generating a feature substitutes what it was generated with, so
+  // `add app-scaffold` in an app `create` made takes the app's own name;
+  // values passed now fill in or replace them.
+  const variables =
+    previous?.variables || options.variables
+      ? { ...previous?.variables, ...options.variables }
+      : undefined;
+
   // Checked before anything is written, so a refusal leaves no half-made
   // feature behind.
   for (const file of spec.files) {
     const unfilled = substitute(
       readFileSync(path.join(options.templatesDir, file.template), "utf8"),
-      options.variables
+      variables
     ).match(PLACEHOLDER);
     if (unfilled) {
       throw new Error(
@@ -168,10 +176,7 @@ export function addFeature(feature: string, options: AddOptions): AddResult {
     if (handedOver.has(file.target)) continue;
     const source = path.join(options.templatesDir, file.template);
     const target = path.join(options.appRoot, file.target);
-    const contents = substitute(
-      readFileSync(source, "utf8"),
-      options.variables
-    );
+    const contents = substitute(readFileSync(source, "utf8"), variables);
     if (existsSync(target) && !options.force) {
       const current = hashContents(readFileSync(target, "utf8"));
       const known = previousByPath.get(file.target);
@@ -207,13 +212,7 @@ export function addFeature(feature: string, options: AddOptions): AddResult {
 
   writeManifest(
     options.appRoot,
-    recordFeature(
-      manifest,
-      feature,
-      spec.templateVersion,
-      recorded,
-      options.variables
-    )
+    recordFeature(manifest, feature, spec.templateVersion, recorded, variables)
   );
 
   return result;

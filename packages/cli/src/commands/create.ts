@@ -100,6 +100,7 @@ export function createApp(options: CreateOptions): AddResult {
   mkdirSync(target, { recursive: true });
 
   const { appName, appSlug } = deriveNames(options.name ?? target);
+  const workspaceRoot = findWorkspaceRoot(target);
 
   const scaffold = addFeature("app-scaffold", {
     appRoot: target,
@@ -111,6 +112,7 @@ export function createApp(options: CreateOptions): AddResult {
       __INTELLIGO_DEP__: options.linkWorkspace
         ? "workspace:*"
         : `^${options.frameworkVersion}`,
+      ...workspaceRootVariable(target),
     },
   });
 
@@ -118,7 +120,7 @@ export function createApp(options: CreateOptions): AddResult {
   // file of its own would take it out of it.
   const standalone =
     options.packageManager === "pnpm" &&
-    findWorkspaceRoot(target) === null &&
+    workspaceRoot === null &&
     STANDALONE in readCatalogue(options.templatesDir);
   if (!standalone) return scaffold;
 
@@ -131,6 +133,23 @@ export function createApp(options: CreateOptions): AddResult {
 }
 
 const STANDALONE = "pnpm-standalone";
+
+/**
+ * `__WORKSPACE_ROOT__` for the scaffold's next.config: a JavaScript
+ * literal naming the enclosing pnpm workspace's root relative to the
+ * app, or null when the app is not a member of one — the rule `doctor`
+ * and `migrate` load env files by.
+ */
+export function workspaceRootVariable(target: string): Record<string, string> {
+  const root = findWorkspaceRoot(path.resolve(target));
+  return {
+    __WORKSPACE_ROOT__: root
+      ? JSON.stringify(
+          path.relative(path.resolve(target), root).split(path.sep).join("/")
+        )
+      : "null",
+  };
+}
 
 export type NextSteps = {
   packageManager: PackageManager;

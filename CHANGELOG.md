@@ -40,19 +40,23 @@ it explains a framework decision.
   `lib/local-payment.ts` seam returns, grant and price as `Money`.
 - `intelligo create --name <name>`: the project name — package name,
   billing product, page title — when it is not the directory's.
+- `intelligo create --name <name>`: the project's name when it is not the
+  directory's; its slug becomes the package name, the billing product and
+  the default page title.
 - The scaffold writes a `.gitignore`. Under pnpm, an app outside any
-  workspace also gets the `pnpm-standalone` feature: a
-  `pnpm-workspace.yaml` that declines the dependency build scripts
-  pnpm 10 and later stop the install over, and an `.npmrc` that lets the
-  shadcn CLI run `pnpm add` at the app's root. The consumer smoke now
-  installs with the scaffold's own settings.
-- The scaffold's `next.config.mjs` fills in env variables from the
-  enclosing pnpm workspace's `.env.local` and `.env`, as `doctor` and
-  `migrate` read them; the reference app uses it unchanged.
+  workspace also gets the `pnpm-standalone` feature: a `pnpm-workspace.yaml`
+  that declines the dependency build scripts pnpm 11 stops the install over
+  (10 warns) and allows the shadcn CLI's `pnpm add` at the root, and an
+  `.npmrc` saying the same to pnpm 9. `intelligo add pnpm-standalone` refuses
+  inside a workspace member. The consumer smoke installs with these settings.
+- The scaffold's `next.config.mjs` fills in env variables from the enclosing
+  pnpm workspace's `.env.local` and `.env` when `create` made the app as a
+  member of one (`__WORKSPACE_ROOT__`, decided by the rule `doctor` and
+  `migrate` use); the reference app uses it unchanged.
 - `intelligo doctor` accepts a composition root that calls
-  `setDefaultProductSlug()`, warns when `INTELLIGO_BILLING_PRODUCT` and
-  the root name different products, and warns about a `vitest.config.ts`
-  whose runner is not installed.
+  `setDefaultProductSlug()`, warns when `INTELLIGO_BILLING_PRODUCT` names
+  another product than the root (the root wins at runtime), and warns about
+  a vitest config whose runner resolves from nowhere above the app.
 - A plan card can offer the QR payment rail. The `pricing` item ships a
   `lib/plan-card-config.tsx` seam whose `actions` component renders under
   the checkout button of every plan the caller can buy, with the plan, the
@@ -97,6 +101,25 @@ it explains a framework decision.
 - `intelligo add app-scaffold` wrote `__APP_NAME__`, `__APP_SLUG__` and
   `__INTELLIGO_DEP__` unreplaced; `add` now refuses any feature whose
   placeholders only `create` fills, before writing anything.
+- **Breaking:** every command refuses a flag it does not know
+  (`sync --chek` used to apply); a script passing flags a command never
+  read now exits 2. `--help` prints the usage from any command, and `sync`
+  takes item names comma-separated as `create --items` does.
+- `intelligo create .` works in a directory that holds only `.git`.
+- `create` records the chosen items in `intelligo.manifest.json` before
+  installing, and `sync` treats a file the scaffold wrote and nobody edited
+  as the registry's to replace, so a bare `intelligo sync` finishes a
+  declined or failed install.
+- `intelligo add` re-generates a feature with the values it was first
+  generated with, so `add app-scaffold` works in an app `create` made.
+- The scaffold's `dev` and `start` scripts no longer pin port 3000.
+- Unset optional env variables are one boot warning, not one each.
+
+### Fixed
+
+- `intelligo add app-scaffold` in an app `create` did not make wrote
+  `__APP_NAME__`, `__APP_SLUG__` and `__INTELLIGO_DEP__` unreplaced; `add`
+  refuses a feature whose placeholders it cannot fill, before writing.
 - `app-scaffold` changed under template version 1.14.0, so `upgrade
 --check` showed a changed template with no newer version; it is 1.15.0,
   and a test pins each template version to its content.
@@ -111,9 +134,6 @@ it explains a framework decision.
   or failed install.
 - The scaffold's `dev` and `start` scripts no longer pin port 3000.
 - Unset optional env variables are one boot warning, not one each.
-
-### Fixed
-
 - A run with no user failed settlement on the `usage_records.user_id`
   foreign key: the billing ports passed `""` where no user existed.
 - `cleanupExpiredReservations` compared a local-time `Date` with a naive

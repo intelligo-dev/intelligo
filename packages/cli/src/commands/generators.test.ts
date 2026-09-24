@@ -144,6 +144,21 @@ describe("addFeature with placeholders", () => {
     expect(add).toThrow(/__APP_NAME__.*intelligo create/);
     expect(readManifest(appRoot)).toBeNull();
   });
+
+  it("re-generates with the values the feature was first generated with", () => {
+    writeTemplates("1.0.0", 'export const NAME = "__APP_NAME__";\n');
+    addFeature("demo", {
+      appRoot,
+      templatesDir,
+      frameworkVersion: "0.0.0",
+      variables: { __APP_NAME__: "acme" },
+    });
+    writeTemplates("1.1.0", 'export const NAME = "__APP_NAME__"; // v2\n');
+
+    add();
+
+    expect(readFileSync(target(), "utf8")).toContain('"acme"; // v2');
+  });
 });
 
 describe("addFeature with a cron", () => {

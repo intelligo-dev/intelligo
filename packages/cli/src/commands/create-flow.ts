@@ -82,7 +82,9 @@ export function parseCreateFlags(args: readonly string[]): CreateFlags {
         .map((s) => s.trim())
         .filter(Boolean);
     } else if (arg === "--name" || arg.startsWith("--name=")) {
-      name = arg === "--name" ? args[++i] : arg.slice(7);
+      const value = arg === "--name" ? args[++i] : arg.slice(7);
+      if (value === undefined || value.startsWith("-")) unknown.push(arg);
+      else name = value;
     } else if (arg.startsWith("-")) {
       if (!CREATE_FLAGS.includes(arg)) unknown.push(arg);
     } else if (target === undefined) {
@@ -186,7 +188,7 @@ export async function runCreate(
   if (!target) {
     if (!interactive) {
       console.error(
-        "Usage: intelligo create <directory> [--items a,b | --all] [--yes] [--no-install]"
+        "Usage: intelligo create <directory> [--items a,b | --all] [--yes] [--no-install] [--name <name>]"
       );
       return 1;
     }

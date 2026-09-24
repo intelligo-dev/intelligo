@@ -70,13 +70,17 @@ from the `app-scaffold` record to the registry's (the feature's `handedOver`
 list), so `upgrade --check` does not report them as yours forever.
 
 The chosen items are recorded in `intelligo.manifest.json` before anything is
-installed, so when the install is declined or fails, a bare `intelligo sync`
-picks up where `create` stopped. The project name — the package name, the
-billing product and the page title — is the directory's unless `--name` says
-otherwise. The scaffold carries its own `.gitignore`; under pnpm, an app
-outside any workspace also gets a `pnpm-workspace.yaml` that declines the
-dependency build scripts pnpm 10 and later would stop the install over, and an
-`.npmrc` that lets the shadcn CLI run `pnpm add` at the app's root.
+installed, and `sync` treats a file the scaffold wrote and nobody edited as the
+registry's to replace, so when the install is declined or fails, a bare
+`intelligo sync` picks up where `create` stopped. The project name is the
+directory's unless `--name` says otherwise; its slug is the package name, the
+billing product and the default page title. The scaffold carries its own
+`.gitignore`. Under pnpm, an app outside any workspace also gets a
+`pnpm-workspace.yaml` that declines the dependency build scripts pnpm 11 would
+stop the install over and allows the shadcn CLI's `pnpm add` at the root (with
+an `.npmrc` saying the same to pnpm 9). An app created inside a pnpm workspace
+gets neither; its `next.config.mjs` reads the workspace root's `.env.local` and
+`.env` instead, as `doctor` and `migrate` do.
 
 ## Where `doctor`, `migrate` and `upgrade` read env from
 

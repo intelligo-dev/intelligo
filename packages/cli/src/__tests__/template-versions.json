@@ -5,11 +5,11 @@
   },
   "app-scaffold": {
     "templateVersion": "1.15.0",
-    "hash": "afb39c2e61517cf0954028ec76de3dd4718b47e1fc69491f4d8adb11ff1a6da1"
+    "hash": "1780817fb24d6f760d89cadd41182ffe9663158e89bcd4ac6298e075547220fd"
   },
   "pnpm-standalone": {
     "templateVersion": "1.0.0",
-    "hash": "97a0f94ef2b5e2308cb1c70f9888d8d071dfa689a376b411251f247fef883ac6"
+    "hash": "01b878f9bb558959232c0a48f49bff65592fa6ba5666a8a485f896a48c4f9c80"
   },
   "admin-page": {
     "templateVersion": "1.1.0",

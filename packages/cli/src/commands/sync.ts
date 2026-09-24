@@ -207,7 +207,16 @@ export function syncCheck(
 ): SyncReport {
   const { closure, files } = shippedFiles(context, items);
   const seams = context.requires.seams ?? {};
-  const recorded = readManifest(context.appRoot)?.registry?.files ?? {};
+  const manifest = readManifest(context.appRoot);
+  const recorded = manifest?.registry?.files ?? {};
+  // What the scaffold wrote, by hash: a file it wrote and nobody edited
+  // is the registry's to replace, not someone's work.
+  const scaffolded = new Map(
+    (manifest?.features[SCAFFOLD_FEATURE]?.files ?? []).map((f) => [
+      f.path,
+      f.hash,
+    ])
+  );
 
   const entries: SyncEntry[] = files.map(({ item, target, content }) => {
     const abs = path.join(context.appRoot, target);
@@ -229,7 +238,16 @@ export function syncCheck(
       return { item, path: target, state: "current" };
     }
     const hash = recorded[target];
-    if (hash === undefined) return { item, path: target, state: "differs" };
+    if (hash === undefined) {
+      return {
+        item,
+        path: target,
+        state:
+          scaffolded.get(target) === hashContents(local)
+            ? "outdated"
+            : "differs",
+      };
+    }
     return {
       item,
       path: target,

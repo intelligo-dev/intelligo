@@ -115,7 +115,7 @@ describe("runChecks", () => {
         INTELLIGO_BILLING_PRODUCT: "other",
       });
       expect(result.status).toBe("warn");
-      expect(result.detail).toMatch(/"other".*"acme"/);
+      expect(result.detail).toMatch(/"other".*"acme".*composition root wins/);
     });
 
     it("does not count a commented-out call", () => {
@@ -128,25 +128,31 @@ describe("runChecks", () => {
   describe("tests", () => {
     let root: string;
     afterEach(() => rmSync(root, { recursive: true, force: true }));
-    const tests = (devDependencies: Record<string, string>) => {
+    const tests = (config: string, installed: boolean) => {
       root = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-tests-"));
-      writeFileSync(
-        path.join(root, "vitest.config.ts"),
-        "export default {};\n"
-      );
-      writeFileSync(
-        path.join(root, "package.json"),
-        JSON.stringify({ devDependencies })
-      );
+      writeFileSync(path.join(root, config), "export default {};\n");
+      writeFileSync(path.join(root, "package.json"), "{}");
+      if (installed) {
+        mkdirSync(path.join(root, "node_modules", "vitest"), {
+          recursive: true,
+        });
+        writeFileSync(
+          path.join(root, "node_modules", "vitest", "package.json"),
+          JSON.stringify({ name: "vitest", version: "4.1.11" })
+        );
+      }
       return runChecks({ root, env: fullEnv }).find((r) => r.name === "tests");
     };
 
-    it("warns about a vitest config without vitest", () => {
-      expect(tests({})!.status).toBe("warn");
+    it("warns about a vitest config whose runner does not resolve", () => {
+      expect(tests("vitest.config.mts", false)).toMatchObject({
+        status: "warn",
+        detail: expect.stringContaining("vitest.config.mts"),
+      });
     });
 
-    it("is quiet once vitest is a dependency", () => {
-      expect(tests({ vitest: "^4.1.11" })!.status).toBe("ok");
+    it("is quiet once vitest resolves, from the app or a workspace root", () => {
+      expect(tests("vitest.config.ts", true)!.status).toBe("ok");
     });
   });
 

@@ -52,8 +52,9 @@ import {
 
 import { itemNames, unknownFlags, wantsHelp } from "./args.js";
 import { loadAppEnv } from "./env-files.js";
+import { workspaceRootVariable } from "./commands/create.js";
 import { resolveRegistryDir } from "./registry-bundle.js";
-import { readRegistryCatalogue } from "./registry-items.js";
+import { findWorkspaceRoot, readRegistryCatalogue } from "./registry-items.js";
 import { MIGRATION_LOCATIONS, resolveMigrationsDir } from "./migrations-dir.js";
 
 /**
@@ -194,6 +195,40 @@ function flagsOk(
   return false;
 }
 
+function runAdd(rest: readonly string[]): number {
+  if (!flagsOk("add", rest, ["--force"])) return 2;
+  const feature = rest.find((a) => !a.startsWith("--"));
+  if (!feature) {
+    const catalogue = readCatalogue(TEMPLATES_DIR);
+    console.error("Usage: intelligo add <feature>\n");
+    for (const [name, spec] of Object.entries(catalogue)) {
+      console.error(`  ${name.padEnd(16)} ${spec.description}`);
+    }
+    return 1;
+  }
+  if (feature === "pnpm-standalone" && findWorkspaceRoot(process.cwd())) {
+    console.error(
+      "intelligo add pnpm-standalone: this app is a member of a pnpm workspace, and a " +
+        "workspace file of its own would take it out; the workspace root's settings apply."
+    );
+    return 1;
+  }
+  const result = addFeature(feature, {
+    appRoot: process.cwd(),
+    templatesDir: TEMPLATES_DIR,
+    frameworkVersion: FRAMEWORK_VERSION,
+    force: rest.includes("--force"),
+    // Computed, not recorded: an app made before the variable existed
+    // has no value for it.
+    variables:
+      feature === "app-scaffold"
+        ? workspaceRootVariable(process.cwd())
+        : undefined,
+  });
+  console.log(formatAddResult(result));
+  return addExitCode(result);
+}
+
 async function main(): Promise<number> {
   const [, , command = "help", ...rest] = process.argv;
 
@@ -254,26 +289,8 @@ async function main(): Promise<number> {
         interactive: Boolean(process.stdin.isTTY && process.stdout.isTTY),
       });
     }
-    case "add": {
-      if (!flagsOk("add", rest, ["--force"])) return 2;
-      const feature = rest.find((a) => !a.startsWith("--"));
-      if (!feature) {
-        const catalogue = readCatalogue(TEMPLATES_DIR);
-        console.error("Usage: intelligo add <feature>\n");
-        for (const [name, spec] of Object.entries(catalogue)) {
-          console.error(`  ${name.padEnd(16)} ${spec.description}`);
-        }
-        return 1;
-      }
-      const result = addFeature(feature, {
-        appRoot: process.cwd(),
-        templatesDir: TEMPLATES_DIR,
-        frameworkVersion: FRAMEWORK_VERSION,
-        force: rest.includes("--force"),
-      });
-      console.log(formatAddResult(result));
-      return addExitCode(result);
-    }
+    case "add":
+      return runAdd(rest);
     case "upgrade": {
       if (!flagsOk("upgrade", rest, ["--check"])) return 2;
       if (!rest.includes("--check")) {

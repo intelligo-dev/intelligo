@@ -11,7 +11,7 @@
         },
         {
           "path": "next.config.mjs",
-          "hash": "8252ea88a5a9d928ad9cb34b833e558dac947a9672dd8d2a34da136e65e7ca42"
+          "hash": "ccb6bc1e7acf46bb9a924dadeb2db555d02c322be9b0dbc0fa215a8f5f4e42d0"
         },
         {
           "path": "tsconfig.json",
@@ -113,7 +113,8 @@
       "variables": {
         "__APP_NAME__": "app",
         "__APP_SLUG__": "app",
-        "__INTELLIGO_DEP__": "workspace:*"
+        "__INTELLIGO_DEP__": "workspace:*",
+        "__WORKSPACE_ROOT__": "\"../..\""
       },
       "handedOver": [
         "app/globals.css",
