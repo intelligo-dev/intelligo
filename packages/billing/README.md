@@ -69,6 +69,74 @@ instead: the composition root binds `reserveQuota`, `recordTokenUsage` and
 so a run is admitted against the plan's allowance and the credit balance, and
 settled exactly once.
 
+## A fixed price per unit of work
+
+Not everything a product sells is a model's tokens. An execution can carry a
+fixed `price` instead — a report, an export, a document — and goes through the
+same admission and settlement as a turn:
+
+```ts
+import { fromMajor } from "@intelligo-dev/core/money";
+
+const run = await executions.begin({
+  workspaceId: workspace.id,
+  userId: session?.user.id ?? null, // null for work nobody signed in started
+  capability: "report.generate",
+  price: fromMajor(1, "USD"),
+});
+if (!run.allowed) return refuse(run.code); // insufficient_credits, allowance_depleted…
+
+try {
+  const report = await generateReport(recordId);
+  await run.complete(); // charges exactly the price
+  return report;
+} catch (error) {
+  await run.fail({ error }); // charges nothing and releases the hold
+  throw error;
+}
+```
+
+`executions` is the one `lib/intelligo.ts` exports (`createBillingExecutions()`). `begin`
+holds exactly the price under the workspace lock and refuses when the plan
+allowance, top-up and trial cannot cover it, so two concurrent runs against a
+balance that fits one admit one. `complete` records a `usage_records` row of
+type `fixed_charge` and the charge on the execution, which the usage page
+shows; `reconcile()` settles a run stuck mid-settlement at the same price,
+which the row keeps. A `requestId` names one attempt and is unique across the
+deployment: a refused attempt's id is spent, so a retry begins with a new one.
+The price must be a positive whole number of micros in the deployment's billing
+currency. `estimateQuota(workspaceId, { amount })` answers the same question
+without holding anything.
+
+## Refunds and credits
+
+A charge that should not have happened is a failed run, not a refund. For money
+that was rightly taken and is given back:
+
+```ts
+import { creditWorkspace, refundCharge } from "@intelligo-dev/billing";
+
+await refundCharge(workspace.id, run.requestId, {
+  reason: "delivered late",
+  amount: fromMajor(0.5, "USD"), // optional: all of the charge by default
+  actorId: admin.id,
+});
+await creditWorkspace(workspace.id, fromMajor(5, "USD"), {
+  reason: "launch promotion",
+  requestId: `promo-2026-10:${workspace.id}`, // the idempotency key
+  actorId: admin.id,
+});
+```
+
+Both land on the top-up balance, whichever pool paid the charge, and are
+recorded three ways: the ledger, a `usage_records` row of type `credit` with a
+negative charge, and a `billing.refund` or `billing.credit` audit event with
+the actor and the reason. Neither is an execution, so execution totals show
+what ran, not what was given back. One refund per charge: a second call
+replays the first, a partial refund included. The replay check runs under the
+workspace lock, so concurrent calls with one key credit once. An amount the
+ledger cannot take throws a `ChargeError`.
+
 ## Subpaths that import neither Stripe nor `server-only`
 
 | Subpath          | What                                                                          |
@@ -101,7 +169,21 @@ calendar month in UTC (`getCurrentPeriodStart`, `getCurrentPeriodEnd`,
 
 `checkRateLimit(workspaceId, planSlug, endpoint?)` counts in the `"chat"` bucket
 unless the caller names another; a route that should not spend chat's allowance
-passes its own name.
+passes its own name. `checkRateLimit(subject, { limit, windowMs, endpoint })`
+counts any subject — a workspace, or a hashed IP for requests nobody signed in
+to make — against its own limit per window of whole seconds, a day included:
+
+```ts
+const daily = await checkRateLimit(`ip:${sha256(ip)}`, {
+  endpoint: "export",
+  limit: 3,
+  windowMs: 86_400_000,
+});
+```
+
+Windows are fixed and aligned to the Unix epoch in UTC — a day resets at 00:00
+UTC. `planSlug` gives a plan's per-minute rate and goes with the default
+one-minute window only.
 
 `getPaymentProvider()` resolves `PAYMENT_MODE`, which defaults to `mock`.
 Outside production the in-memory mock needs no registration; in production it
@@ -117,7 +199,10 @@ the provider that issued it; when it is paid, the row is marked fulfilled and
 the grant `fulfil` returns — `{ plan: slug }` or `{ credits: Money }` — is
 applied in the same transaction, so concurrent polls grant once. An invoice of
 another workspace is `payment_not_found`. The `payment-poll` registry item is
-the transport over both.
+the transport over both. A provider is `registerPaymentProvider(mode, {
+createPayment, checkPayment, cancelPayment })` from `/payment`, bound in the
+composition root; `creditBundleOffer(bundle)` turns one of the product's credit
+bundles into the offer the `lib/local-payment.ts` seam returns.
 
 ## The webhook receiver
 
