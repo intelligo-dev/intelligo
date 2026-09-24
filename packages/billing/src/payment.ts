@@ -125,6 +125,12 @@ export function registerPaymentProvider(
   mode: string,
   provider: PaymentProvider
 ): void {
+  if (!provider.currency && process.env.NODE_ENV === "production") {
+    console.warn(
+      `[payment] The "${mode}" provider declares no currency, so an invoice priced in another currency ` +
+        "than it charges in is sent as that many of its own minor units. Set `currency` on the provider."
+    );
+  }
   providers.set(mode, provider);
 }
 

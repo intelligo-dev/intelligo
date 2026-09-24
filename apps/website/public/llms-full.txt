@@ -1892,6 +1892,13 @@ createPayment, checkPayment, cancelPayment })` from `/payment`, bound in the
 composition root; `creditBundleOffer(bundle)` turns one of the product's credit
 bundles into the offer the `lib/local-payment.ts` seam returns.
 
+A provider is `registerPaymentProvider(mode, { currency, createPayment,
+checkPayment, cancelPayment })` from `/payment`, bound in the composition root.
+Give a real provider its `currency`: `createPayment` takes bare minor units, and
+only a provider that names its currency makes `openLocalInvoice` refuse a price
+in another one (`currency_mismatch`) instead of sending that number as its own.
+Registering one without it in production logs a warning.
+
 ## The webhook receiver
 
 `createStripeWebhookHandler` verifies the signature before anything else,
