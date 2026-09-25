@@ -12,8 +12,8 @@
     "hash": "01b878f9bb558959232c0a48f49bff65592fa6ba5666a8a485f896a48c4f9c80"
   },
   "admin-page": {
-    "templateVersion": "1.1.0",
-    "hash": "a7ccf866a712c09365d3803caa8cc69b09e88887395f37e417c1be3d6c96e477"
+    "templateVersion": "1.2.0",
+    "hash": "ea770e199ffd3c8fd1428bd628109738c44b20c756ced64ef55514b2ab9adc34"
   },
   "maintenance": {
     "templateVersion": "1.1.0",
