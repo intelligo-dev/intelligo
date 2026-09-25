@@ -76,6 +76,7 @@ export function validateEnv(): {
 } {
   const errors: string[] = [];
   const warnings: string[] = [];
+  const unsetOptional: string[] = [];
 
   for (const envVar of ENV_VARS) {
     let value = process.env[envVar.name];
@@ -97,9 +98,7 @@ export function validateEnv(): {
           `Missing required env var: ${envVar.name} — ${envVar.description}`
         );
       } else {
-        warnings.push(
-          `Missing optional env var: ${envVar.name} — ${envVar.description}`
-        );
+        unsetOptional.push(envVar.name);
       }
       continue;
     }
@@ -111,6 +110,14 @@ export function validateEnv(): {
         warnings.push(msg);
       }
     }
+  }
+
+  // One line for all of them: each is a feature left off, which is the
+  // point of its being optional, not a fault to repeat on every boot.
+  if (unsetOptional.length > 0) {
+    warnings.push(
+      `Optional env vars not set, their features stay off: ${unsetOptional.join(", ")}`
+    );
   }
 
   // Resend rejects a send without a sender on a verified domain, and the

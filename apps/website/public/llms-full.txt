@@ -2544,6 +2544,7 @@ to the new application, which is where `intelligo` comes from afterwards.
 ```bash
 pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app, plus the pages you pick
 pnpm dlx @intelligo-dev/cli@beta create my-app --items chat,billing-settings --yes   # no questions
+pnpm dlx @intelligo-dev/cli@beta create . --name "Acme Audit"   # into the current, empty directory (a .git may be there)
 intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance, vitest)
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate                      # apply the framework chain
@@ -2588,6 +2589,19 @@ design-system base and every item, one `shadcn add` each. Scaffold files an
 item replaces — `app/globals.css`, the theme provider, `lib/utils.ts` — move
 from the `app-scaffold` record to the registry's (the feature's `handedOver`
 list), so `upgrade --check` does not report them as yours forever.
+
+The chosen items are recorded in `intelligo.manifest.json` before anything is
+installed, and `sync` treats a file the scaffold wrote and nobody edited as the
+registry's to replace, so when the install is declined or fails, a bare
+`intelligo sync` picks up where `create` stopped. The project name is the
+directory's unless `--name` says otherwise; its slug is the package name, the
+billing product and the default page title. The scaffold carries its own
+`.gitignore`. Under pnpm, an app outside any workspace also gets a
+`pnpm-workspace.yaml` that declines the dependency build scripts pnpm 11 would
+stop the install over and allows the shadcn CLI's `pnpm add` at the root (with
+an `.npmrc` saying the same to pnpm 9). An app created inside a pnpm workspace
+gets neither; its `next.config.mjs` reads the workspace root's `.env.local` and
+`.env` instead, as `doctor` and `migrate` do.
 
 ## Where `doctor`, `migrate` and `upgrade` read env from
 
@@ -2645,7 +2659,7 @@ A scaffolded app has `@intelligo-dev/cli` as a dev dependency; run it with `pnpm
 ```text
 intelligo <command>
 intelligo create [dir]      Scaffold an app, then install the registry pages you pick
-                            (--items a,b | --all, --yes, --no-install)
+                            (--items a,b | --all, --yes, --no-install, --name <name>)
 intelligo doctor            Report configuration and migration-chain problems
 intelligo migrate           Apply the framework's migration chain to DATABASE_URL
 intelligo migrate --check   Compare the framework's migrations to a database
@@ -2653,7 +2667,8 @@ intelligo migrate --check   Compare the framework's migrations to a database
                             fresh | ahead | unmanaged | legacy)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
 intelligo upgrade --check   Show what a template upgrade would change
-intelligo sync [items…]     Install registry pages from this release's registry,
+intelligo sync [items…]     Install registry pages from this release's registry
+                            (names space- or comma-separated),
                             keeping seams and merging messages (--force replaces
                             hand-edited files; --check only reports, exit 1 on drift)
 ```
@@ -2693,6 +2708,7 @@ their own, and refuse to overwrite the latter.
 
 | Feature | What it generates |
 | --- | --- |
+| `pnpm-standalone` | pnpm settings for an app that is its own workspace root: dependency build scripts declined, so pnpm 10+ installs without a prompt, and `pnpm add` allowed at the root for the shadcn CLI. `intelligo create` writes it when pnpm installs an app outside any workspace — `pnpm-workspace.yaml`, `.npmrc` |
 | `admin-page` | Mount the Intelligo operational console at /admin — `app/[locale]/admin/page.tsx` |
 | `maintenance` | A CRON_SECRET-gated GET /api/cron/maintenance that reconciles stale executions, drops expired reservations and rate-limit buckets, expires trials and prunes old jobs — scheduled every five minutes, in vercel.json when the app has none — `app/api/cron/maintenance/route.ts` |
 | `vitest` | A Vitest setup for the app's own tests: the `@` alias, a `server-only` stub, and the `@intelligo-dev/*` packages inlined so the stub reaches them — `vitest.config.ts`, `tests/stubs/server-only.ts` |

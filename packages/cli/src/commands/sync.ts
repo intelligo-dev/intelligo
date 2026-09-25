@@ -207,7 +207,16 @@ export function syncCheck(
 ): SyncReport {
   const { closure, files } = shippedFiles(context, items);
   const seams = context.requires.seams ?? {};
-  const recorded = readManifest(context.appRoot)?.registry?.files ?? {};
+  const manifest = readManifest(context.appRoot);
+  const recorded = manifest?.registry?.files ?? {};
+  // What the scaffold wrote, by hash: a file it wrote and nobody edited
+  // is the registry's to replace, not someone's work.
+  const scaffolded = new Map(
+    (manifest?.features[SCAFFOLD_FEATURE]?.files ?? []).map((f) => [
+      f.path,
+      f.hash,
+    ])
+  );
 
   const entries: SyncEntry[] = files.map(({ item, target, content }) => {
     const abs = path.join(context.appRoot, target);
@@ -229,7 +238,16 @@ export function syncCheck(
       return { item, path: target, state: "current" };
     }
     const hash = recorded[target];
-    if (hash === undefined) return { item, path: target, state: "differs" };
+    if (hash === undefined) {
+      return {
+        item,
+        path: target,
+        state:
+          scaffolded.get(target) === hashContents(local)
+            ? "outdated"
+            : "differs",
+      };
+    }
     return {
       item,
       path: target,
@@ -391,6 +409,28 @@ function recordSync(
       version: context.frameworkVersion,
       items: installOrder([...recordedItems], context.requires),
       files: { ...manifest.registry?.files, ...files },
+    },
+  });
+}
+
+/**
+ * Record `names` as items this app keeps in sync before any is
+ * installed, so a bare `intelligo sync` installs them after an install
+ * that did not run or did not finish.
+ */
+export function recordItems(
+  names: readonly string[],
+  context: Pick<SyncContext, "appRoot" | "requires" | "frameworkVersion">
+): void {
+  const manifest =
+    readManifest(context.appRoot) ?? emptyManifest(context.frameworkVersion);
+  const items = new Set([...(manifest.registry?.items ?? []), ...names]);
+  writeManifest(context.appRoot, {
+    ...manifest,
+    registry: {
+      version: manifest.registry?.version ?? context.frameworkVersion,
+      items: installOrder([...items], context.requires),
+      files: manifest.registry?.files ?? {},
     },
   });
 }

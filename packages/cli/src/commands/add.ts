@@ -85,6 +85,9 @@ export function substitute(
   );
 }
 
+/** A `__NAME__` placeholder the variables did not fill. */
+const PLACEHOLDER = /__[A-Z][A-Z0-9_]*__/;
+
 const VERCEL_CONFIG = "vercel.json";
 
 /**
@@ -145,16 +148,35 @@ export function addFeature(feature: string, options: AddOptions): AddResult {
   const recorded: GeneratedFile[] = [];
   const handedOver = new Set(previous?.handedOver ?? []);
 
+  // Re-generating a feature substitutes what it was generated with, so
+  // `add app-scaffold` in an app `create` made takes the app's own name;
+  // values passed now fill in or replace them.
+  const variables =
+    previous?.variables || options.variables
+      ? { ...previous?.variables, ...options.variables }
+      : undefined;
+
+  // Checked before anything is written, so a refusal leaves no half-made
+  // feature behind.
+  for (const file of spec.files) {
+    const unfilled = substitute(
+      readFileSync(path.join(options.templatesDir, file.template), "utf8"),
+      variables
+    ).match(PLACEHOLDER);
+    if (unfilled) {
+      throw new Error(
+        `${feature} needs a value for ${unfilled[0]} that only \`intelligo create\` supplies — ` +
+          "run `intelligo create <directory>`, or `intelligo create .` in an empty one."
+      );
+    }
+  }
+
   for (const file of spec.files) {
     // A registry item replaced it; `intelligo sync` keeps it now.
     if (handedOver.has(file.target)) continue;
     const source = path.join(options.templatesDir, file.template);
     const target = path.join(options.appRoot, file.target);
-    const contents = substitute(
-      readFileSync(source, "utf8"),
-      options.variables
-    );
-
+    const contents = substitute(readFileSync(source, "utf8"), variables);
     if (existsSync(target) && !options.force) {
       const current = hashContents(readFileSync(target, "utf8"));
       const known = previousByPath.get(file.target);
@@ -190,13 +212,7 @@ export function addFeature(feature: string, options: AddOptions): AddResult {
 
   writeManifest(
     options.appRoot,
-    recordFeature(
-      manifest,
-      feature,
-      spec.templateVersion,
-      recorded,
-      options.variables
-    )
+    recordFeature(manifest, feature, spec.templateVersion, recorded, variables)
   );
 
   return result;

@@ -11,7 +11,7 @@
     "deprecated": "Superseded by the `usage` registry item \u2014 install it with the shadcn CLI from the Intelligo registry instead; it ships a full page, components and thin actions as consumer-owned source."
   },
   "app-scaffold": {
-    "templateVersion": "1.14.0",
+    "templateVersion": "1.15.0",
     "description": "A new application: composition root (run once per server process from instrumentation.ts), plans, an assistant route, a Stripe webhook endpoint, config, a drizzle config for the tables you own, next-intl i18n plumbing, and a registry-consuming shadcn base-nova setup with the intelligo design tokens",
     "files": [
       {
@@ -125,6 +125,24 @@
       {
         "template": "app-scaffold/stripe-webhook-route.ts.tpl",
         "target": "app/api/webhooks/stripe/route.ts"
+      },
+      {
+        "template": "app-scaffold/gitignore.tpl",
+        "target": ".gitignore"
+      }
+    ]
+  },
+  "pnpm-standalone": {
+    "templateVersion": "1.0.0",
+    "description": "pnpm settings for an app that is its own workspace root: dependency build scripts declined, so pnpm 10+ installs without a prompt, and `pnpm add` allowed at the root for the shadcn CLI. `intelligo create` writes it when pnpm installs an app outside any workspace",
+    "files": [
+      {
+        "template": "pnpm-standalone/pnpm-workspace.yaml.tpl",
+        "target": "pnpm-workspace.yaml"
+      },
+      {
+        "template": "pnpm-standalone/npmrc.tpl",
+        "target": ".npmrc"
       }
     ]
   },

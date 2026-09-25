@@ -293,6 +293,68 @@ function checkSeamFeatures(
   return results;
 }
 
+const VITEST_CONFIGS = [
+  "vitest.config.ts",
+  "vitest.config.mts",
+  "vitest.config.cts",
+  "vitest.config.js",
+  "vitest.config.mjs",
+  "vitest.config.cjs",
+];
+
+/** `PRODUCT_SLUG = "acme"` or `setDefaultProductSlug("acme")` in the composition root. */
+const PRODUCT_SLUG_LITERAL =
+  /(?:\bPRODUCT_SLUG\s*=|\bsetDefaultProductSlug\s*\()\s*["'`]([^"'`]+)["'`]/;
+
+function checkBillingProduct(
+  fromEnv: string | undefined,
+  rootSource: string | null
+): CheckResult {
+  const setsDefault =
+    rootSource !== null && /\bsetDefaultProductSlug\s*\(/.test(rootSource);
+  const inCode = rootSource?.match(PRODUCT_SLUG_LITERAL)?.[1];
+  if (fromEnv && setsDefault && inCode && fromEnv !== inCode) {
+    return {
+      name: "billing",
+      status: "warn",
+      detail:
+        `INTELLIGO_BILLING_PRODUCT is "${fromEnv}" but the composition root sets "${inCode}". ` +
+        "At runtime the composition root wins; the variable only misleads tooling that reads it — make them agree",
+    };
+  }
+  if (fromEnv) {
+    return { name: "billing", status: "ok", detail: `Product: ${fromEnv}` };
+  }
+  if (setsDefault) {
+    return {
+      name: "billing",
+      status: "ok",
+      detail: `Product: ${inCode ?? "set"} by setDefaultProductSlug() in the composition root`,
+    };
+  }
+  return {
+    name: "billing",
+    status: "warn",
+    detail:
+      "no product — set INTELLIGO_BILLING_PRODUCT, or call setDefaultProductSlug() " +
+      "in the composition root, or plan lookups resolve to nothing",
+  };
+}
+
+/**
+ * Whether `name` is installed where the app resolves packages from: its
+ * own node_modules or any directory above it, a workspace root's
+ * included.
+ */
+function resolvesFrom(root: string, name: string): boolean {
+  for (let dir = path.resolve(root); ; dir = path.dirname(dir)) {
+    if (existsSync(path.join(dir, "node_modules", name, "package.json"))) {
+      return true;
+    }
+    if (path.dirname(dir) === dir) return false;
+  }
+}
+
 export function runChecks(options: DoctorOptions = {}): CheckResult[] {
   const root = options.root ?? process.cwd();
   const env = options.env ?? process.env;
@@ -331,22 +393,15 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
 
   // 3. Billing product. The engine has no built-in default catalogue;
   //    an unset product means every plan lookup returns nothing and
-  //    quotas silently read as zero.
-  results.push(
-    env.INTELLIGO_BILLING_PRODUCT
-      ? {
-          name: "billing",
-          status: "ok",
-          detail: `Product: ${env.INTELLIGO_BILLING_PRODUCT}`,
-        }
-      : {
-          name: "billing",
-          status: "warn",
-          detail:
-            "INTELLIGO_BILLING_PRODUCT unset — the composition root must call " +
-            "setDefaultProductSlug(), or plan lookups resolve to nothing",
-        }
-  );
+  //    quotas silently read as zero. The composition root sets it at
+  //    boot; the variable lets tooling see it without booting.
+  const compositionRoot = ["lib/intelligo.ts", "lib/intelligo.tsx"]
+    .map((rel) => path.join(root, rel))
+    .find((file) => existsSync(file));
+  const rootSource = compositionRoot
+    ? stripComments(readFileSync(compositionRoot, "utf8"))
+    : null;
+  results.push(checkBillingProduct(env.INTELLIGO_BILLING_PRODUCT, rootSource));
 
   // 4. Installed registry items against registry/requires.json: the
   //    sibling items they import from, the scaffold files they import,
@@ -467,10 +522,6 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
   //     admission with no price to estimate against: every request is
   //     refused with `unknown_model`, at runtime, on a deployment whose
   //     only mistake was omitting one line.
-  const compositionRoot = ["lib/intelligo.ts", "lib/intelligo.tsx"]
-    .map((rel) => path.join(root, rel))
-    .find((file) => existsSync(file));
-
   if (compositionRoot) {
     const source = readFileSync(compositionRoot, "utf8");
     const registers = /\bregisterModels?\s*\(/.test(stripComments(source));
@@ -493,6 +544,25 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
     );
 
     if (registers) results.push(...checkModelIds(root, source));
+  }
+
+  // 4e. A test config whose runner is not installed fails at the first
+  //     `vitest run`, with a module error that does not say why.
+  const vitestConfig = VITEST_CONFIGS.find((file) =>
+    existsSync(path.join(root, file))
+  );
+  if (vitestConfig) {
+    results.push(
+      resolvesFrom(root, "vitest")
+        ? { name: "tests", status: "ok", detail: "vitest is installed" }
+        : {
+            name: "tests",
+            status: "warn",
+            detail:
+              `${vitestConfig} is here but vitest does not resolve from the app — ` +
+              "`pnpm add -D vitest`",
+          }
+    );
   }
 
   // 5. Generated source. A conflict — template and consumer both

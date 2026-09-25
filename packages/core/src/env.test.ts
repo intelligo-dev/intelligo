@@ -65,6 +65,19 @@ describe("validateEnv", () => {
     );
   });
 
+  it("names every unset optional var in one warning", () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "");
+    vi.stubEnv("RESEND_API_KEY", "");
+
+    const optional = validateEnv().warnings.filter((w) =>
+      w.startsWith("Optional env vars not set")
+    );
+
+    expect(optional).toHaveLength(1);
+    expect(optional[0]).toContain("STRIPE_SECRET_KEY");
+    expect(optional[0]).toContain("RESEND_API_KEY");
+  });
+
   it("does not warn about variables the framework never reads", () => {
     vi.stubEnv("OPENAI_API_KEY", "");
     vi.stubEnv("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "");

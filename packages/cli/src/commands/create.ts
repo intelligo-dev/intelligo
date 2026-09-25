@@ -20,8 +20,14 @@
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import path from "node:path";
 
-import { addFeature, formatAddResult, type AddResult } from "./add.js";
 import {
+  addFeature,
+  formatAddResult,
+  readCatalogue,
+  type AddResult,
+} from "./add.js";
+import {
+  findWorkspaceRoot,
   formatCommand,
   type Command,
   type PackageManager,
@@ -39,6 +45,15 @@ export type CreateOptions = {
    * protocol used outside a workspace".
    */
   linkWorkspace?: boolean;
+  /** The project name, when it is not the directory's. */
+  name?: string;
+  /**
+   * The package manager that will install the app. Under pnpm, an app
+   * outside any workspace also gets `pnpm-standalone`: its own
+   * workspace file declining the dependency build scripts pnpm 10+
+   * would otherwise stop the install over.
+   */
+  packageManager?: PackageManager;
 };
 
 /** A package name and product slug derived from the directory name. */
@@ -57,17 +72,23 @@ export function deriveNames(target: string): {
   return { appName: slug, appSlug: slug };
 }
 
+/** A fresh repository — `git init`, then `intelligo create .` — is still empty. */
+const IGNORED_ENTRIES = new Set([".git"]);
+
 export function isOccupied(target: string): boolean {
   const dir = path.resolve(target);
-  return existsSync(dir) && readdirSync(dir).length > 0;
+  return (
+    existsSync(dir) &&
+    readdirSync(dir).some((entry) => !IGNORED_ENTRIES.has(entry))
+  );
 }
 
 /** Scaffolding into an occupied directory is how people lose work. */
 export function assertNotOccupied(target: string): void {
   if (isOccupied(target)) {
     throw new Error(
-      `${path.resolve(target)} is not empty. Create the app in a new directory, or use ` +
-        `\`intelligo add app-scaffold\` inside an existing one.`
+      `${path.resolve(target)} is not empty. Create the app in a new directory, ` +
+        "or in an empty one (a .git directory may already be there)."
     );
   }
 }
@@ -76,11 +97,13 @@ export function createApp(options: CreateOptions): AddResult {
   const target = path.resolve(options.target);
 
   assertNotOccupied(target);
+  // Before the directory exists, so a name that slugifies to nothing
+  // leaves nothing behind.
+  const { appName, appSlug } = deriveNames(options.name || target);
   mkdirSync(target, { recursive: true });
+  const workspaceRoot = findWorkspaceRoot(target);
 
-  const { appName, appSlug } = deriveNames(target);
-
-  return addFeature("app-scaffold", {
+  const scaffold = addFeature("app-scaffold", {
     appRoot: target,
     templatesDir: options.templatesDir,
     frameworkVersion: options.frameworkVersion,
@@ -90,8 +113,43 @@ export function createApp(options: CreateOptions): AddResult {
       __INTELLIGO_DEP__: options.linkWorkspace
         ? "workspace:*"
         : `^${options.frameworkVersion}`,
+      ...workspaceRootVariable(target),
     },
   });
+
+  // A member of a parent workspace installs from that root; a workspace
+  // file of its own would take it out of it.
+  const standalone =
+    options.packageManager === "pnpm" &&
+    workspaceRoot === null &&
+    STANDALONE in readCatalogue(options.templatesDir);
+  if (!standalone) return scaffold;
+
+  const pnpm = addFeature(STANDALONE, {
+    appRoot: target,
+    templatesDir: options.templatesDir,
+    frameworkVersion: options.frameworkVersion,
+  });
+  return { ...scaffold, written: [...scaffold.written, ...pnpm.written] };
+}
+
+const STANDALONE = "pnpm-standalone";
+
+/**
+ * `__WORKSPACE_ROOT__` for the scaffold's next.config: a JavaScript
+ * literal naming the enclosing pnpm workspace's root relative to the
+ * app, or null when the app is not a member of one — the rule `doctor`
+ * and `migrate` load env files by.
+ */
+export function workspaceRootVariable(target: string): Record<string, string> {
+  const root = findWorkspaceRoot(path.resolve(target));
+  return {
+    __WORKSPACE_ROOT__: root
+      ? JSON.stringify(
+          path.relative(path.resolve(target), root).split(path.sep).join("/")
+        )
+      : "null",
+  };
 }
 
 export type NextSteps = {

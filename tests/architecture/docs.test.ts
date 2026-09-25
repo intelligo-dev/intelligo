@@ -339,11 +339,14 @@ describe("quoted evidence", async () => {
       QUICKSTART.find((step) => step.title === title)!.out;
     const cli = path.join(PACKAGES_DIR, "cli");
 
-    const scaffold = (
-      JSON.parse(
-        readFileSync(path.join(cli, "templates/manifest.json"), "utf8")
-      ) as Record<string, { files: unknown[] }>
-    )["app-scaffold"]!.files.length;
+    // `pnpm dlx … create my-app` outside any workspace: the scaffold and
+    // the pnpm settings of an app that is its own workspace root.
+    const catalogue = JSON.parse(
+      readFileSync(path.join(cli, "templates/manifest.json"), "utf8")
+    ) as Record<string, { files: unknown[] }>;
+    const scaffold =
+      catalogue["app-scaffold"]!.files.length +
+      catalogue["pnpm-standalone"]!.files.length;
     expect(out("Create")).toContain(`◆ Scaffolded ${scaffold} files in my-app`);
 
     const flow = readFileSync(

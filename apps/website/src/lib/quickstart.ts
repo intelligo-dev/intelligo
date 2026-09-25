@@ -18,7 +18,7 @@ export const QUICKSTART = [
     out: [
       "◆ Which pages should be installed? (space to toggle)",
       "● Also installing what they build on: route-error",
-      "◆ Scaffolded 28 files in my-app",
+      "◆ Scaffolded 31 files in my-app",
       "◇ pnpm install",
       "◇ pnpm exec shadcn add @intelligo/intelligo --yes --overwrite",
       "◇ pnpm exec shadcn add @intelligo/route-error @intelligo/app-shell @intelligo/auth-login @intelligo/auth-signup @intelligo/dashboard --yes --overwrite",

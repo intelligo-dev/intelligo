@@ -21,6 +21,7 @@ to the new application, which is where `intelligo` comes from afterwards.
 ```bash
 pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app, plus the pages you pick
 pnpm dlx @intelligo-dev/cli@beta create my-app --items chat,billing-settings --yes   # no questions
+pnpm dlx @intelligo-dev/cli@beta create . --name "Acme Audit"   # into the current, empty directory (a .git may be there)
 intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance, vitest)
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate                      # apply the framework chain
@@ -65,6 +66,19 @@ design-system base and every item, one `shadcn add` each. Scaffold files an
 item replaces — `app/globals.css`, the theme provider, `lib/utils.ts` — move
 from the `app-scaffold` record to the registry's (the feature's `handedOver`
 list), so `upgrade --check` does not report them as yours forever.
+
+The chosen items are recorded in `intelligo.manifest.json` before anything is
+installed, and `sync` treats a file the scaffold wrote and nobody edited as the
+registry's to replace, so when the install is declined or fails, a bare
+`intelligo sync` picks up where `create` stopped. The project name is the
+directory's unless `--name` says otherwise; its slug is the package name, the
+billing product and the default page title. The scaffold carries its own
+`.gitignore`. Under pnpm, an app outside any workspace also gets a
+`pnpm-workspace.yaml` that declines the dependency build scripts pnpm 11 would
+stop the install over and allows the shadcn CLI's `pnpm add` at the root (with
+an `.npmrc` saying the same to pnpm 9). An app created inside a pnpm workspace
+gets neither; its `next.config.mjs` reads the workspace root's `.env.local` and
+`.env` instead, as `doctor` and `migrate` do.
 
 ## Where `doctor`, `migrate` and `upgrade` read env from
 

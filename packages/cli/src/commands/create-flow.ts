@@ -24,7 +24,7 @@ import {
   formatNextSteps,
   isOccupied,
 } from "./create.js";
-import { syncApply, type SyncContext } from "./sync.js";
+import { recordItems, syncApply, type SyncContext } from "./sync.js";
 import { resolveRegistryDir } from "../registry-bundle.js";
 import {
   detectPackageManager,
@@ -54,11 +54,25 @@ export type CreateFlags = {
    * range, because that is what works everywhere else.
    */
   linkWorkspace: boolean;
+  /** `--name <name>` — the project name, when it is not the directory's. */
+  name?: string;
+  /** Flags `create` does not know. */
+  unknown: string[];
 };
+
+const CREATE_FLAGS = [
+  "--all",
+  "--yes",
+  "-y",
+  "--no-install",
+  "--link-workspace",
+];
 
 export function parseCreateFlags(args: readonly string[]): CreateFlags {
   let target: string | undefined;
   let items: string[] | undefined;
+  let name: string | undefined;
+  const unknown: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
     if (arg === "--items" || arg.startsWith("--items=")) {
@@ -67,13 +81,23 @@ export function parseCreateFlags(args: readonly string[]): CreateFlags {
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
-    } else if (!arg.startsWith("-") && target === undefined) {
+    } else if (arg === "--name" || arg.startsWith("--name=")) {
+      const value = arg === "--name" ? args[++i] : arg.slice(7);
+      if (!value?.trim() || value.startsWith("-")) unknown.push(arg);
+      else name = value;
+    } else if (arg.startsWith("-")) {
+      if (!CREATE_FLAGS.includes(arg)) unknown.push(arg);
+    } else if (target === undefined) {
       target = arg;
+    } else {
+      unknown.push(arg);
     }
   }
   return {
     target,
     items,
+    name,
+    unknown,
     all: args.includes("--all"),
     yes: args.includes("--yes") || args.includes("-y"),
     install: !args.includes("--no-install"),
@@ -164,7 +188,7 @@ export async function runCreate(
   if (!target) {
     if (!interactive) {
       console.error(
-        "Usage: intelligo create <directory> [--items a,b | --all] [--yes] [--no-install]"
+        "Usage: intelligo create <directory> [--items a,b | --all] [--yes] [--no-install] [--name <name>]"
       );
       return 1;
     }
@@ -218,15 +242,25 @@ export async function runCreate(
     templatesDir: context.templatesDir,
     frameworkVersion: context.frameworkVersion,
     linkWorkspace: flags.linkWorkspace,
+    name: flags.name,
+    packageManager,
   });
   const appRoot = path.resolve(target);
   if (interactive) {
     p.log.success(`Scaffolded ${result.written.length} files in ${target}`);
   }
 
-  // 4. The pages — only with approval.
+  // 4. The pages — only with approval, but recorded now, so a bare
+  // `intelligo sync` installs them if this install does not.
   const workspaceRoot = findWorkspaceRoot(appRoot);
   const plan = installPlan(items, { appRoot, packageManager, workspaceRoot });
+  if (plan) {
+    recordItems(plan.items, {
+      appRoot,
+      requires: catalogue.requires,
+      frameworkVersion: context.frameworkVersion,
+    });
+  }
   const commands: Command[] = plan
     ? [...(plan.install ? [plan.install] : []), plan.sync]
     : [];

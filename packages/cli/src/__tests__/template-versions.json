@@ -1,0 +1,26 @@
+{
+  "usage-page": {
+    "templateVersion": "1.0.1",
+    "hash": "2cc5b8c6e754ecac71224e01cf5d81c809782d19604b64724c183e650fdce395"
+  },
+  "app-scaffold": {
+    "templateVersion": "1.15.0",
+    "hash": "1780817fb24d6f760d89cadd41182ffe9663158e89bcd4ac6298e075547220fd"
+  },
+  "pnpm-standalone": {
+    "templateVersion": "1.0.0",
+    "hash": "01b878f9bb558959232c0a48f49bff65592fa6ba5666a8a485f896a48c4f9c80"
+  },
+  "admin-page": {
+    "templateVersion": "1.1.0",
+    "hash": "a7ccf866a712c09365d3803caa8cc69b09e88887395f37e417c1be3d6c96e477"
+  },
+  "maintenance": {
+    "templateVersion": "1.1.0",
+    "hash": "9e2a5cafd4cbbdeec7d13ef056792cc357a386e8af34e293459e285673c0910a"
+  },
+  "vitest": {
+    "templateVersion": "1.0.0",
+    "hash": "d0994f2e8342b0f23f409d83af7ebbd1cc7fb18904105b4ce367bf775bd01aad"
+  }
+}

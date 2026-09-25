@@ -3,15 +3,15 @@
   "frameworkVersion": "1.0.0-beta.14",
   "features": {
     "app-scaffold": {
-      "templateVersion": "1.14.0",
+      "templateVersion": "1.15.0",
       "files": [
         {
           "path": "package.json",
-          "hash": "799ec8c884a81d054926242b094706faa50ebdedf7b0bc0d9e35ec615566cfc2"
+          "hash": "5c3f5eb49000996b619aa237aa2b25d143e52ebb8ec4fcb91466f7f5f00882ed"
         },
         {
           "path": "next.config.mjs",
-          "hash": "5609c4ab20a41056b871c5c550edbc9cc73c42f7b658007d20eb222d6b05a8d0"
+          "hash": "ccb6bc1e7acf46bb9a924dadeb2db555d02c322be9b0dbc0fa215a8f5f4e42d0"
         },
         {
           "path": "tsconfig.json",
@@ -104,12 +104,17 @@
         {
           "path": "app/api/webhooks/stripe/route.ts",
           "hash": "be23b7add5d26e1e37014645636ef7e92b1a57774eb5113c06069e47d5733817"
+        },
+        {
+          "path": ".gitignore",
+          "hash": "380162374b4ed29864490466a0b0f07b426b6c4baf17d5732bd4504fa76f2898"
         }
       ],
       "variables": {
         "__APP_NAME__": "app",
         "__APP_SLUG__": "app",
-        "__INTELLIGO_DEP__": "workspace:*"
+        "__INTELLIGO_DEP__": "workspace:*",
+        "__WORKSPACE_ROOT__": "\"../..\""
       },
       "handedOver": [
         "app/globals.css",

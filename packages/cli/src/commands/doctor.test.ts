@@ -90,6 +90,72 @@ describe("runChecks", () => {
     expect(results.find((r) => r.name === "billing")!.status).toBe("warn");
   });
 
+  describe("billing product", () => {
+    let root: string;
+    afterEach(() => rmSync(root, { recursive: true, force: true }));
+    const withRoot = (source: string) => {
+      root = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-product-"));
+      mkdirSync(path.join(root, "lib"));
+      writeFileSync(path.join(root, "lib", "intelligo.ts"), source);
+      return root;
+    };
+    const billing = (root: string, env: NodeJS.ProcessEnv) =>
+      runChecks({ root, env }).find((r) => r.name === "billing")!;
+    const SCAFFOLDED =
+      'export const PRODUCT_SLUG = "acme";\nsetDefaultProductSlug(PRODUCT_SLUG);\n';
+
+    it("accepts a composition root that sets the product", () => {
+      const result = billing(withRoot(SCAFFOLDED), {});
+      expect(result.status).toBe("ok");
+      expect(result.detail).toContain("acme");
+    });
+
+    it("warns when the variable and the composition root disagree", () => {
+      const result = billing(withRoot(SCAFFOLDED), {
+        INTELLIGO_BILLING_PRODUCT: "other",
+      });
+      expect(result.status).toBe("warn");
+      expect(result.detail).toMatch(/"other".*"acme".*composition root wins/);
+    });
+
+    it("does not count a commented-out call", () => {
+      expect(
+        billing(withRoot("// setDefaultProductSlug(X);\n"), {}).status
+      ).toBe("warn");
+    });
+  });
+
+  describe("tests", () => {
+    let root: string;
+    afterEach(() => rmSync(root, { recursive: true, force: true }));
+    const tests = (config: string, installed: boolean) => {
+      root = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-tests-"));
+      writeFileSync(path.join(root, config), "export default {};\n");
+      writeFileSync(path.join(root, "package.json"), "{}");
+      if (installed) {
+        mkdirSync(path.join(root, "node_modules", "vitest"), {
+          recursive: true,
+        });
+        writeFileSync(
+          path.join(root, "node_modules", "vitest", "package.json"),
+          JSON.stringify({ name: "vitest", version: "4.1.11" })
+        );
+      }
+      return runChecks({ root, env: fullEnv }).find((r) => r.name === "tests");
+    };
+
+    it("warns about a vitest config whose runner does not resolve", () => {
+      expect(tests("vitest.config.mts", false)).toMatchObject({
+        status: "warn",
+        detail: expect.stringContaining("vitest.config.mts"),
+      });
+    });
+
+    it("is quiet once vitest resolves, from the app or a workspace root", () => {
+      expect(tests("vitest.config.ts", true)!.status).toBe("ok");
+    });
+  });
+
   it("warns rather than errors when run outside the workspace", () => {
     const results = runChecks({ root: "/nonexistent", env: fullEnv });
     const migrations = results.find((r) => r.name === "migrations")!;
