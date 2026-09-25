@@ -16,7 +16,7 @@ import {
   creditReservations,
   trialCredits,
 } from "@intelligo-dev/core/db/schema";
-import { eq, sql, and, gte, lte, gt } from "drizzle-orm";
+import { eq, sql, and, gte, lte, gt, ne, isNotNull } from "drizzle-orm";
 import { getActiveTrialGrant } from "./trial";
 import { checkNotificationTriggers } from "./notifications";
 import {
@@ -49,6 +49,9 @@ import type {
 } from "./quota-types";
 import { getPlanMessageLimit, getPlanMonthlyAllowance } from "./quota-plan";
 import { BillingNotConfiguredError } from "./plan-registry";
+import { ChargeError } from "./charge-error";
+import { createLogger } from "@intelligo-dev/core/logger";
+import { isUniqueViolation, requestIdTaken } from "@intelligo-dev/executions";
 
 export type {
   SettlementOutcome,
@@ -150,6 +153,8 @@ async function readPools(
 
 const DEFAULT_MODEL_ID = "google/gemini-2.5-flash";
 
+const log = createLogger("Quota");
+
 /** What `estimateQuota`/`reserveQuota` return when billing is unconfigured. */
 function notConfigured(): QuotaCheckResult {
   return {
@@ -165,22 +170,50 @@ function notConfigured(): QuotaCheckResult {
 }
 
 /**
+ * What admission holds for: the worst case of one turn on a model, or a
+ * fixed amount the product charges for one unit of work.
+ */
+type Price = { modelId: string } | { amount: Money };
+
+function priceOf(options?: { modelId?: string; amount?: Money }): Price {
+  return options?.amount
+    ? { amount: options.amount }
+    : { modelId: options?.modelId ?? DEFAULT_MODEL_ID };
+}
+
+/**
+ * A fixed amount must be a positive whole number of micros in the
+ * deployment's currency; the pools hold nothing else.
+ */
+export function assertChargeable(amount: Money, currency: string): void {
+  if (!Number.isSafeInteger(amount.amount) || amount.amount <= 0) {
+    throw new ChargeError(
+      "invalid_amount",
+      `A charge is a positive whole number of micros, not ${amount.amount}.`
+    );
+  }
+  if (amount.currency !== currency) {
+    throw new ChargeError(
+      "currency_mismatch",
+      `This deployment bills in ${currency}; ${amount.currency} cannot be charged.`
+    );
+  }
+}
+
+/**
  * Read-only estimate of whether a workspace could run a turn on
- * `modelId` right now. Nothing is locked or written, and outstanding
- * reservations are NOT subtracted, so two estimates can both say yes
- * against one balance — this is for dashboards and previews and must
- * never gate a run. Use `reserveQuota` for that.
+ * `modelId` — or pay a fixed `amount` — right now. Nothing is locked or
+ * written, and outstanding reservations are NOT subtracted, so two
+ * estimates can both say yes against one balance — this is for
+ * dashboards and previews and must never gate a run. Use `reserveQuota`
+ * for that.
  */
 export async function estimateQuota(
   workspaceId: string,
-  options?: { modelId?: string }
+  options?: { modelId?: string; amount?: Money }
 ): Promise<QuotaEstimate> {
   try {
-    return decideQuota(
-      await readPools(workspaceId),
-      options?.modelId ?? DEFAULT_MODEL_ID,
-      0
-    );
+    return decideQuota(await readPools(workspaceId), priceOf(options), 0);
   } catch (error) {
     if (error instanceof BillingNotConfiguredError) return notConfigured();
     throw error;
@@ -193,8 +226,9 @@ export async function estimateQuota(
  * Cost-based enforcement: the plan grants a monthly allowance, top-ups
  * land in `credit_balances`, and a trial is a separate grant used last.
  * The request is refused when the remaining total is below the
- * worst-case cost of one turn on the chosen model, so a single
- * expensive turn cannot push a workspace into the red.
+ * worst-case cost of one turn on the chosen model — or below `amount`,
+ * for a fixed charge — so a single expensive turn cannot push a
+ * workspace into the red.
  *
  * The decision runs in a transaction serialized per workspace by
  * `pg_advisory_xact_lock`. Balances are read only after the lock is
@@ -210,9 +244,9 @@ export async function estimateQuota(
  */
 export async function reserveQuota(
   workspaceId: string,
-  options: { modelId?: string; requestId: string }
+  options: { modelId?: string; amount?: Money; requestId: string }
 ): Promise<QuotaAdmission> {
-  const modelId = options.modelId ?? DEFAULT_MODEL_ID;
+  const price = priceOf(options);
   const { requestId } = options;
   if (!requestId) {
     throw new Error("reserveQuota requires a requestId to reserve against.");
@@ -243,7 +277,7 @@ export async function reserveQuota(
         );
       const reservedMicros = Number(reservedRows[0]?.total ?? 0);
 
-      const decision = decideQuota(pools, modelId, reservedMicros);
+      const decision = decideQuota(pools, price, reservedMicros);
       if (!decision.allowed) return decision as QuotaAdmission;
 
       await tx.insert(creditReservations).values({
@@ -263,6 +297,8 @@ export async function reserveQuota(
     if (error instanceof BillingNotConfiguredError) {
       return notConfigured() as QuotaAdmission;
     }
+    // An earlier attempt holds this key's reservation.
+    if (isUniqueViolation(error)) throw requestIdTaken(requestId);
     throw error;
   }
 }
@@ -286,7 +322,7 @@ export async function checkQuota(
 
 function decideQuota(
   pools: Pools,
-  modelId: string,
+  price: Price,
   reservedMicros: number
 ): QuotaCheckResult {
   {
@@ -303,7 +339,12 @@ function decideQuota(
     // the throw become a 500.
     let estimated: Money;
     try {
-      estimated = estimateWorstCaseCharge(modelId, pools.rate);
+      if ("amount" in price) {
+        assertChargeable(price.amount, pools.rate.currency);
+        estimated = price.amount;
+      } else {
+        estimated = estimateWorstCaseCharge(price.modelId, pools.rate);
+      }
     } catch (error) {
       if (error instanceof UnknownModelError) {
         return {
@@ -398,12 +439,13 @@ export const RESERVATION_TTL_MS = 10 * 60_000;
  * expired rows, so this is table hygiene, not correctness.
  */
 export async function cleanupExpiredReservations(): Promise<number> {
+  // UTC wall clock, as drizzle writes the naive `timestamp` columns; a
+  // Date bound in raw SQL would arrive as the server's local time.
+  const cutoff = new Date(Date.now() - RESERVATION_TTL_MS).toISOString();
   const deleted = await db
     .delete(creditReservations)
     .where(
-      sql`${creditReservations.status} = 'settled' OR ${creditReservations.expiresAt} < ${new Date(
-        Date.now() - RESERVATION_TTL_MS
-      )}`
+      sql`${creditReservations.status} = 'settled' OR ${creditReservations.expiresAt} < ${cutoff}::timestamp`
     )
     .returning();
   return deleted.length;
@@ -417,14 +459,20 @@ export async function cleanupExpiredReservations(): Promise<number> {
  *
  * Idempotent: releasing an already-settled reservation is a no-op.
  */
-export async function releaseReservation(requestId: string): Promise<void> {
+export async function releaseReservation(
+  requestId: string,
+  workspaceId?: string
+): Promise<void> {
   await db
     .update(creditReservations)
     .set({ status: "settled", settledAt: new Date() })
     .where(
       and(
         eq(creditReservations.requestId, requestId),
-        eq(creditReservations.status, "active")
+        eq(creditReservations.status, "active"),
+        workspaceId
+          ? eq(creditReservations.workspaceId, workspaceId)
+          : undefined
       )
     );
 }
@@ -460,9 +508,6 @@ export async function releaseReservation(requestId: string): Promise<void> {
 export async function recordTokenUsage(
   params: RecordUsageParams
 ): Promise<SettlementOutcome> {
-  const periodStart = getCurrentPeriodStart();
-  const periodEnd = getCurrentPeriodEnd();
-
   const settings = await getBillingSettings();
 
   // Exact in micros and carrying its currency: what the ledger's
@@ -478,6 +523,102 @@ export async function recordTokenUsage(
     params.outputTokens ?? 0,
     rate
   );
+
+  return settleCharge(params, {
+    type: "ai_tokens",
+    charged,
+    providerCost,
+    rate,
+  });
+}
+
+/**
+ * Record and charge a fixed `amount` for one unit of work — the settling
+ * half of a flat price, whose admission is `reserveQuota(ws, { amount })`.
+ * The same transaction, pools and replay rule as `recordTokenUsage`: the
+ * allowance first, then the top-up, then the trial; a second call for
+ * the same `requestId` returns the first charge. The `usage_records`
+ * row has type `fixed_charge`, no model and no tokens.
+ */
+export async function recordFixedCharge(params: {
+  workspaceId: string;
+  userId?: string | null;
+  /** What was paid for, recorded as the row's agent. */
+  capability: string;
+  requestId: string;
+  amount: Money;
+  /**
+   * The model the work ran on and its tokens, when it ran on one: the row
+   * keeps them and their provider cost, so spend and margin on fixed-price
+   * work stay visible. The charge is `amount` regardless.
+   */
+  model?: string | null;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  metadata?: Record<string, unknown>;
+}): Promise<SettlementOutcome> {
+  const settings = await getBillingSettings();
+  assertChargeable(params.amount, settings.currency);
+  const rate: BillingRate = {
+    currency: settings.currency,
+    usdRateMicros: settings.usdRateMicros,
+    marginBp: settings.marginBp,
+  };
+  const inputTokens = params.inputTokens ?? 0;
+  const outputTokens = params.outputTokens ?? 0;
+  let providerCost: Money = zero("USD");
+  if (params.model) {
+    try {
+      ({ providerCost } = chargeFor(
+        params.model,
+        inputTokens,
+        outputTokens,
+        rate
+      ));
+    } catch (error) {
+      // The price is fixed; an unregistered model only leaves its cost
+      // unknown, not the charge — said here, since the margin on this
+      // work now reads as the whole price.
+      if (!(error instanceof UnknownModelError)) throw error;
+      log.warn(
+        "Fixed-price work ran on an unregistered model; its cost is recorded as 0",
+        {
+          model: params.model,
+          requestId: params.requestId,
+        }
+      );
+    }
+  }
+  return settleCharge(
+    {
+      workspaceId: params.workspaceId,
+      userId: params.userId ?? null,
+      model: params.model ?? null,
+      agent: params.capability,
+      inputTokens,
+      outputTokens,
+      totalTokens: params.totalTokens ?? inputTokens + outputTokens,
+      requestId: params.requestId,
+      metadata: params.metadata,
+    },
+    { type: "fixed_charge", charged: params.amount, providerCost, rate }
+  );
+}
+
+type Charge = {
+  type: "ai_tokens" | "fixed_charge";
+  charged: Money;
+  providerCost: Money;
+  rate: BillingRate;
+};
+
+async function settleCharge(
+  params: Omit<RecordUsageParams, "model"> & { model: string | null },
+  { type, charged, providerCost, rate }: Charge
+): Promise<SettlementOutcome> {
+  const periodStart = getCurrentPeriodStart();
+  const periodEnd = getCurrentPeriodEnd();
 
   const requestId =
     params.requestId ??
@@ -500,8 +641,8 @@ export async function recordTokenUsage(
     await tx.insert(usageRecords).values({
       id: crypto.randomUUID(),
       workspaceId: params.workspaceId,
-      userId: params.userId,
-      type: "ai_tokens",
+      userId: params.userId || null,
+      type,
       model: params.model,
       agent: params.agent,
       inputTokens: params.inputTokens,
@@ -598,7 +739,12 @@ export async function recordTokenUsage(
       await tx
         .update(creditReservations)
         .set({ status: "settled", settledAt: new Date() })
-        .where(eq(creditReservations.requestId, requestId));
+        .where(
+          and(
+            eq(creditReservations.requestId, requestId),
+            eq(creditReservations.workspaceId, params.workspaceId)
+          )
+        );
     }
 
     return { charged, plan, topup, trial, replayed: false };
@@ -634,7 +780,9 @@ async function priorSettlement(
     .where(
       and(
         eq(usageRecords.workspaceId, workspaceId),
-        eq(usageRecords.requestId, requestId)
+        eq(usageRecords.requestId, requestId),
+        // A credit is not a settlement, whatever key it was given.
+        ne(usageRecords.type, "credit")
       )
     )
     .limit(1);
@@ -658,7 +806,7 @@ async function priorSettlement(
  */
 async function debitRemainder(
   tx: SettlementTx,
-  params: RecordUsageParams,
+  params: Pick<RecordUsageParams, "workspaceId" | "totalTokens">,
   remainder: Money
 ): Promise<{ topup: Money; trial: Money }> {
   const unit = remainder.currency;
@@ -750,7 +898,9 @@ export async function findSettlementByRequestId(
     .where(
       and(
         eq(usageRecords.workspaceId, workspaceId),
-        eq(usageRecords.requestId, requestId)
+        eq(usageRecords.requestId, requestId),
+        // A credit is not a settlement, whatever key it was given.
+        ne(usageRecords.type, "credit")
       )
     )
     .limit(1);
@@ -835,6 +985,10 @@ export async function getUsageSummary(
     .where(
       and(
         eq(usageRecords.workspaceId, workspaceId),
+        // Per model: work that ran on one, fixed-price work included;
+        // not credits, and not work with no model.
+        ne(usageRecords.type, "credit"),
+        isNotNull(usageRecords.model),
         gte(usageRecords.recordedAt, startDate),
         lte(usageRecords.recordedAt, endDate)
       )
@@ -851,6 +1005,8 @@ export async function getUsageSummary(
     .where(
       and(
         eq(usageRecords.workspaceId, workspaceId),
+        // A credit is money given back, not a request.
+        ne(usageRecords.type, "credit"),
         gte(usageRecords.recordedAt, startDate),
         lte(usageRecords.recordedAt, endDate)
       )
@@ -867,6 +1023,8 @@ export async function getUsageSummary(
     .where(
       and(
         eq(usageRecords.workspaceId, workspaceId),
+        // A credit is money given back, not a request.
+        ne(usageRecords.type, "credit"),
         gte(usageRecords.recordedAt, startDate),
         lte(usageRecords.recordedAt, endDate)
       )

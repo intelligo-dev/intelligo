@@ -27,10 +27,12 @@ export const usageRecords = pgTable(
     workspaceId: text("workspace_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    type: text("type").notNull(), // "ai_tokens", "api_call"
+    /** Null for work no signed-in user started: a job, an anonymous request. */
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    /** "ai_tokens", "fixed_charge", or "credit" (a refund or goodwill credit, negative). */
+    type: text("type").notNull(),
     model: text("model"), // "gpt-4o", "gpt-4o-mini"
     agent: text("agent"), // the product's agent slug
     inputTokens: integer("input_tokens").notNull().default(0),
@@ -155,7 +157,8 @@ export const trialCredits = pgTable(
 );
 
 /**
- * One row per (workspace, endpoint, minute bucket). Each request upserts the
+ * One row per (subject, endpoint, bucket); a window other than a minute
+ * is part of the endpoint key (`export@86400s`). Each request upserts the
  * row and atomically increments `count`, so N concurrent requests observe
  * 1..N and exactly `limit` are admitted. Old buckets are deleted by the
  * billing-maintenance job.
@@ -164,13 +167,18 @@ export const rateLimitEntries = pgTable(
   "rate_limit_entries",
   {
     id: text("id").primaryKey(),
-    workspaceId: text("workspace_id")
-      .notNull()
-      .references(() => organization.id, { onDelete: "cascade" }),
+    /**
+     * Who is counted: a workspace id, or any key the caller chose (a
+     * hashed IP). Not a foreign key, so a subject need not be a
+     * workspace; rows expire with their window either way.
+     */
+    workspaceId: text("workspace_id").notNull(),
     endpoint: text("endpoint").notNull().default("chat"),
     requestedAt: timestamp("requested_at").notNull().defaultNow(),
-    /** Floored minute bucket for unique constraint enforcement */
+    /** The start of the window this row counts, floored to its length. */
     minuteBucket: timestamp("minute_bucket").notNull(),
+    /** The window's length, for cleanup: a row expires when its window has closed. */
+    windowSeconds: integer("window_seconds").notNull().default(60),
     /** Requests observed in this bucket — incremented via upsert */
     count: integer("count").notNull().default(1),
   },

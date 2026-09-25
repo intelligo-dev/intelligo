@@ -420,4 +420,271 @@ d("money path (integration)", () => {
       );
     }
   });
+
+  describe("fixed prices, refunds and credits", () => {
+    type Executions = ReturnType<
+      typeof import("../executions").createBillingExecutions
+    >;
+    let billed: Executions;
+    let refund: typeof import("../credit-adjustments").refundCharge;
+    let credit: typeof import("../credit-adjustments").creditWorkspace;
+    const price = money(mnt(1_000), "MNT");
+
+    beforeAll(async () => {
+      const { createBillingExecutions } = await import("../executions");
+      billed = createBillingExecutions();
+      ({ refundCharge: refund, creditWorkspace: credit } =
+        await import("../credit-adjustments"));
+    });
+
+    const report = (requestId: string, user: string | null = userId) =>
+      billed.begin({
+        workspaceId,
+        userId: user,
+        capability: "report.generate",
+        requestId,
+        price,
+      });
+
+    async function usageRows(requestId: string) {
+      const { rows } = await client.query<{
+        type: string;
+        charged_micros: string;
+        model: string | null;
+        user_id: string | null;
+      }>(
+        `SELECT type, charged_micros, model, user_id FROM usage_records WHERE request_id = $1`,
+        [requestId]
+      );
+      return rows;
+    }
+
+    it("holds the price at begin and charges exactly it on complete", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(mnt(5_000));
+
+      const run = await report(`fixed-${suffix}`);
+      expect(run.allowed).toBe(true);
+      expect(run.estimated).toEqual(price);
+      await run.complete();
+
+      expect(await balanceMicros()).toBe(mnt(4_000));
+      expect(await usageRows(`fixed-${suffix}`)).toEqual([
+        {
+          type: "fixed_charge",
+          charged_micros: String(mnt(1_000)),
+          model: null,
+          user_id: userId,
+        },
+      ]);
+      const { rows } = await client.query<{
+        status: string;
+        charged_micros: string;
+        price_micros: string;
+      }>(
+        `SELECT status, charged_micros, price_micros FROM executions WHERE request_id = $1`,
+        [`fixed-${suffix}`]
+      );
+      expect(rows).toEqual([
+        {
+          status: "succeeded",
+          charged_micros: String(mnt(1_000)),
+          price_micros: String(mnt(1_000)),
+        },
+      ]);
+    });
+
+    it("charges nothing when the work fails, and releases the hold", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(mnt(5_000));
+
+      const run = await report(`failed-${suffix}`);
+      await run.fail({ error: new Error("the page did not load") });
+
+      expect(await balanceMicros()).toBe(mnt(5_000));
+      expect(await activeReservations()).toBe(0);
+      expect(await usageRows(`failed-${suffix}`)).toEqual([]);
+    });
+
+    it("admits one of two that race for a balance that covers one", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(mnt(1_500));
+
+      const [a, b] = await Promise.all([
+        report(`race-a-${suffix}`),
+        report(`race-b-${suffix}`),
+      ]);
+
+      expect([a.allowed, b.allowed].sort()).toEqual([false, true]);
+      expect([a, b].find((r) => !r.allowed)!.code).toBe("insufficient_credits");
+      await Promise.all([a, b].map((r) => r.complete()));
+      expect(await balanceMicros()).toBe(mnt(500));
+      expect(await activeReservations()).toBe(0);
+    });
+
+    it("settles work no user started", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(mnt(5_000));
+
+      await (await report(`anon-${suffix}`, null)).complete();
+
+      expect((await usageRows(`anon-${suffix}`))[0]?.user_id).toBeNull();
+    });
+
+    it("reconciles a run stuck in settling at its fixed price", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(mnt(5_000));
+      const run = await report(`stuck-${suffix}`);
+      // What complete() leaves when the process dies after claiming the row.
+      await client.query(
+        `UPDATE executions SET status = 'settling', input_tokens = 0, output_tokens = 0, total_tokens = 0 WHERE id = $1`,
+        [run.id]
+      );
+
+      const result = await billed.reconcile(run.id);
+
+      expect(result.action).toBe("settled");
+      expect(await balanceMicros()).toBe(mnt(4_000));
+      expect((await usageRows(`stuck-${suffix}`))[0]?.type).toBe(
+        "fixed_charge"
+      );
+    });
+
+    it("refunds a charge once, to the top-up, and refuses more than was charged", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(mnt(5_000));
+      await (await report(`refund-${suffix}`)).complete();
+      expect(await balanceMicros()).toBe(mnt(4_000));
+
+      await expect(
+        refund(workspaceId, `refund-${suffix}`, {
+          reason: "too much",
+          amount: money(mnt(2_000), "MNT"),
+        })
+      ).rejects.toMatchObject({ code: "refund_exceeds_charge" });
+
+      const first = await refund(workspaceId, `refund-${suffix}`, {
+        reason: "delivered late",
+        amount: money(mnt(400), "MNT"),
+        actorId: userId,
+      });
+      const second = await refund(workspaceId, `refund-${suffix}`, {
+        reason: "delivered late",
+      });
+
+      expect(first).toMatchObject({ replayed: false });
+      // One refund per charge: the second, full refund replays the first.
+      expect(second).toEqual({
+        credited: money(mnt(400), "MNT"),
+        replayed: true,
+      });
+      expect(await balanceMicros()).toBe(mnt(4_400));
+      expect(await usageRows(`refund:refund-${suffix}`)).toEqual([
+        {
+          type: "credit",
+          charged_micros: String(-mnt(400)),
+          model: null,
+          user_id: null,
+        },
+      ]);
+      const { rows: events } = await client.query<{ actor_id: string }>(
+        `SELECT actor_id FROM audit_events WHERE action = 'billing.refund' AND resource_id = $1`,
+        [`refund:refund-${suffix}`]
+      );
+      expect(events).toEqual([{ actor_id: userId }]);
+      await expect(
+        refund(workspaceId, `never-${suffix}`, { reason: "x" })
+      ).rejects.toMatchObject({ code: "charge_not_found" });
+    });
+
+    it("refunds an allowance-funded charge to the top-up, leaving the allowance used", async () => {
+      await setBalance(0);
+      await (await report(`allowance-${suffix}`)).complete();
+      const used = await allowanceUsedMicros();
+      expect(used).toBe(mnt(1_000));
+
+      await refund(workspaceId, `allowance-${suffix}`, { reason: "goodwill" });
+
+      expect(await balanceMicros()).toBe(mnt(1_000));
+      expect(await allowanceUsedMicros()).toBe(used);
+    });
+
+    it("keeps a charge and a credit apart when they share a key", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(mnt(5_000));
+      await credit(workspaceId, money(mnt(100), "MNT"), {
+        reason: "goodwill",
+        requestId: `shared-${suffix}`,
+      });
+
+      await (await report(`shared-${suffix}`)).complete();
+
+      expect(await balanceMicros()).toBe(mnt(4_100));
+      expect(await activeReservations()).toBe(0);
+    });
+
+    it("records the model, tokens and provider cost of fixed-price work that ran on one", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(mnt(5_000));
+      const run = await billed.begin({
+        workspaceId,
+        userId,
+        capability: "report.generate",
+        requestId: `modelled-${suffix}`,
+        price,
+        model: "openai/gpt-5-mini",
+      });
+      await run.complete({
+        usage: { inputTokens: 100_000, outputTokens: 50_000 },
+        model: "openai/gpt-5-mini",
+      });
+
+      const { rows } = await client.query<{
+        type: string;
+        model: string;
+        total_tokens: number;
+        provider_cost_micros: string;
+        charged_micros: string;
+      }>(
+        `SELECT type, model, total_tokens, provider_cost_micros, charged_micros FROM usage_records WHERE request_id = $1`,
+        [`modelled-${suffix}`]
+      );
+      expect(rows[0]).toMatchObject({
+        type: "fixed_charge",
+        model: "openai/gpt-5-mini",
+        total_tokens: 150_000,
+        charged_micros: String(mnt(1_000)),
+      });
+      expect(Number(rows[0]!.provider_cost_micros)).toBeGreaterThan(0);
+    });
+
+    it("refuses a retry under a refused attempt's id with a typed error, and holds nothing", async () => {
+      await setAllowanceUsed(mnt(FREE_ALLOWANCE));
+      await setBalance(0);
+      expect((await report(`retry-${suffix}`)).allowed).toBe(false);
+      await setBalance(mnt(5_000));
+
+      await expect(report(`retry-${suffix}`)).rejects.toMatchObject({
+        code: "request_id_taken",
+      });
+      expect(await activeReservations()).toBe(0);
+      expect(await balanceMicros()).toBe(mnt(5_000));
+    });
+
+    it("credits once however many calls race with one key", async () => {
+      await setBalance(0);
+
+      const results = await Promise.all(
+        [1, 2, 3].map(() =>
+          credit(workspaceId, money(mnt(250), "MNT"), {
+            reason: "promotion",
+            requestId: `promo-${suffix}`,
+          })
+        )
+      );
+
+      expect(results.filter((r) => !r.replayed)).toHaveLength(1);
+      expect(await balanceMicros()).toBe(mnt(250));
+    });
+  });
 });

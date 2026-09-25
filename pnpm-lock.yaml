@@ -598,6 +598,9 @@ importers:
 
   packages/billing:
     dependencies:
+      '@intelligo-dev/audit':
+        specifier: workspace:*
+        version: link:../audit
       '@intelligo-dev/core':
         specifier: workspace:*
         version: link:../core

@@ -16,8 +16,76 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+### Added
+
+- A fixed price per unit of work: `executions.begin({ …, price })` holds
+  exactly the price, `complete()` charges it (a `fixed_charge` usage row),
+  `fail()` releases it, and `reconcile()` settles a stuck run at it. The
+  price is a typed input of the lifecycle — `EntitlementRequest.price` and
+  `UsageSettlement.price` in `@intelligo-dev/executions`, kept on the
+  execution as `price_micros` — which the billing ports honour.
+  `estimateQuota`/`reserveQuota` take `{ amount }`; `recordFixedCharge`
+  settles one.
+- `refundCharge(workspaceId, requestId, { reason, amount?, actorId? })` and
+  `creditWorkspace(workspaceId, amount, { reason, requestId, actorId? })` in
+  `@intelligo-dev/billing`: credit to the top-up balance, visible in the
+  ledger, as a `credit` usage row with a negative charge and as a
+  `billing.refund`/`billing.credit` audit event — not as an execution. One
+  refund per charge; concurrent calls with one key credit once. Both throw
+  `ChargeError` for an amount the ledger cannot take.
+- `checkRateLimit(subject, { limit, windowMs, endpoint })`: any subject (a
+  hashed IP) over any window of whole seconds, aligned to the Unix epoch in
+  UTC. The three-argument form is unchanged.
+- `creditBundleOffer(bundle)`: a credit bundle as the offer the
+  `lib/local-payment.ts` seam returns, grant and price as `Money`.
+- A plan card can offer the QR payment rail. The `pricing` item ships a
+  `lib/plan-card-config.tsx` seam whose `actions` component renders under
+  the checkout button of every plan the caller can buy, with the plan, the
+  interval, the shown price and the plan's name; it is empty by default.
+  The `payment-poll` item ships `LocalPaymentButton`, which opens
+  `LocalPaymentModal` for one reference and refreshes the page once paid.
+  Binding the button in the seam offers QR payment on the pricing page
+  without editing an installed file, and the pricing item still installs
+  without payment-poll.
+- The `chat` item's sidebar history no longer logs Base UI's "expected a
+  native <button>" console error on every authenticated page: its
+  new-chat `Button` renders a `Link` and now passes
+  `nativeButton={false}`. `tests/architecture/design-system.test.ts`
+  fails when a native-button Base UI component (`Button`, or a dialog,
+  sheet, popover, menu or select trigger/close) renders a `Link` or a
+  non-button element without `nativeButton`.
+
+### Changed
+
+- Migration `0004_usage_subjects` is additive — the previous release's
+  code keeps working on the migrated database — and **must run before the
+  deploy**: this release writes `executions.price_micros` and
+  `rate_limit_entries.window_seconds`. `usage_records.user_id` becomes
+  nullable and `rate_limit_entries` drops its foreign key to `organization`.
+- A custom `ExecutionPorts.settleUsage` must honour the new
+  `UsageSettlement.price`: one that ignores it charges a fixed-price run for
+  its tokens. With both a `price` and a `model`, the price wins for the hold
+  and the charge; the usage row still records the model, tokens and provider
+  cost.
+- `begin` with a `requestId` an earlier attempt used — a refused one
+  included — throws `ExecutionError` with code `request_id_taken` instead of
+  the database's unique violation, after releasing the hold.
+- **Breaking:** `RecordUsageParams.userId` and the admin's
+  `UsageByUserRow.userId` are `string | null`.
+- `getUsageSummary`'s per-model breakdown and the admin's `getUsageByModel`
+  count work that ran on a model, fixed-price runs included, and leave
+  credits out; its per-agent and daily counts leave credits out too.
+  `monthly_usage.request_count` counts fixed-price runs, and their tokens
+  count toward `tokens_used` and the token totals. `listUsageRecords` names
+  each row's `type` and audits the charge of token-priced rows only;
+  `getUsageByUser` leaves credits out.
+
 ### Fixed
 
+- A run with no user failed settlement on the `usage_records.user_id`
+  foreign key: the billing ports passed `""` where no user existed.
+- `cleanupExpiredReservations` compared a local-time `Date` with a naive
+  UTC column, and `cleanupRateLimitEntries` now compares in UTC too.
 - **`intelligo doctor`, `migrate` and `upgrade` read the workspace root's env
   files.** An app inside a pnpm workspace whose database URL lives in the
   repository root's `.env` was reported as missing `DATABASE_URL` and
@@ -42,25 +110,6 @@ it explains a framework decision.
   (the `chat` item declares none), and doctor instead warns when an app's
   own copy of a seam names a literal `featureKey` `lib/plans.ts` does not
   register.
-
-### Added
-
-- A plan card can offer the QR payment rail. The `pricing` item ships a
-  `lib/plan-card-config.tsx` seam whose `actions` component renders under
-  the checkout button of every plan the caller can buy, with the plan, the
-  interval, the shown price and the plan's name; it is empty by default.
-  The `payment-poll` item ships `LocalPaymentButton`, which opens
-  `LocalPaymentModal` for one reference and refreshes the page once paid.
-  Binding the button in the seam offers QR payment on the pricing page
-  without editing an installed file, and the pricing item still installs
-  without payment-poll.
-- The `chat` item's sidebar history no longer logs Base UI's "expected a
-  native <button>" console error on every authenticated page: its
-  new-chat `Button` renders a `Link` and now passes
-  `nativeButton={false}`. `tests/architecture/design-system.test.ts`
-  fails when a native-button Base UI component (`Button`, or a dialog,
-  sheet, popover, menu or select trigger/close) renders a `Link` or a
-  non-button element without `nativeButton`.
 
 ## [1.0.0-beta.14] — 2026-09-24
 

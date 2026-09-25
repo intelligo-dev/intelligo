@@ -42,6 +42,7 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
+    "@intelligo-dev/audit": "workspace:*",
     "@intelligo-dev/core": "workspace:*",
     "@intelligo-dev/executions": "workspace:*"
   },

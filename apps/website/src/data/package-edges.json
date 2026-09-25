@@ -29,6 +29,10 @@
   },
   {
     "from": "billing",
+    "to": "audit"
+  },
+  {
+    "from": "billing",
     "to": "core"
   },
   {

@@ -34,7 +34,7 @@ import {
   applyRate,
   type BillingRate,
 } from "@intelligo-dev/executions/pricing";
-import { count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 
 const costSum = sql<string>`coalesce(sum(${usageRecords.providerCostMicros}), 0)`;
 const usd = (micros: unknown): Money =>
@@ -65,6 +65,8 @@ export async function getUsageByModel(limit = 20): Promise<UsageByModelRow[]> {
       micros: costSum,
     })
     .from(usageRecords)
+    // Work that ran on a model, fixed-price work included; not credits.
+    .where(and(ne(usageRecords.type, "credit"), isNotNull(usageRecords.model)))
     .groupBy(usageRecords.model)
     .orderBy(desc(costSum))
     .limit(limit);
@@ -78,7 +80,8 @@ export async function getUsageByModel(limit = 20): Promise<UsageByModelRow[]> {
 }
 
 export type UsageByUserRow = {
-  userId: string;
+  /** Null for the work no signed-in user started, summed as one row. */
+  userId: string | null;
   name: string | null;
   email: string | null;
   requests: number;
@@ -99,6 +102,8 @@ export async function getUsageByUser(limit = 20): Promise<UsageByUserRow[]> {
     })
     .from(usageRecords)
     .leftJoin(users, eq(users.id, usageRecords.userId))
+    // A credit is money given back, not a request anyone made.
+    .where(ne(usageRecords.type, "credit"))
     .groupBy(usageRecords.userId, users.name, users.email)
     .orderBy(desc(costSum))
     .limit(limit);
@@ -201,9 +206,13 @@ export type UsageRecordRow = {
   charged: Money;
   /**
    * What the recorded rate applied to the recorded cost gives. A charge
-   * that differs means the pricing pipeline is broken somewhere.
+   * that differs means the pricing pipeline is broken somewhere. Null
+   * for a record not priced from a provider's cost: a fixed charge
+   * (`type` `fixed_charge`) or a credit (`credit`, negative).
    */
   expectedCharge: Money | null;
+  /** `ai_tokens`, `fixed_charge` or `credit`. */
+  type: string;
 };
 
 /** The most recent usage records, each with its charge audited. */
@@ -223,6 +232,7 @@ export async function listUsageRecords(limit = 200): Promise<UsageRecordRow[]> {
       usdRateMicros: usageRecords.usdRateMicros,
       chargedMicros: usageRecords.chargedMicros,
       currency: usageRecords.currency,
+      type: usageRecords.type,
     })
     .from(usageRecords)
     .leftJoin(organization, eq(organization.id, usageRecords.workspaceId))
@@ -241,7 +251,7 @@ export async function listUsageRecords(limit = 200): Promise<UsageRecordRow[]> {
           }
         : null;
     let expectedCharge: Money | null = null;
-    if (rate) {
+    if (rate && r.type === "ai_tokens") {
       try {
         expectedCharge = applyRate(providerCost, rate);
       } catch {
@@ -264,6 +274,7 @@ export async function listUsageRecords(limit = 200): Promise<UsageRecordRow[]> {
       rate,
       charged: money(r.chargedMicros, currency(r.currency)),
       expectedCharge,
+      type: r.type,
     };
   });
 }

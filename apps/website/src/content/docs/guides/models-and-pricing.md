@@ -39,7 +39,7 @@ Prompts, tools and other runtimes are covered in [Bring your agent](/docs/guides
 
 ## Register every model you run
 
-A model id is a key into a price registry. Nothing registers itself: your [composition root](/docs/concepts/composition-root) does it. The scaffold's `composeIntelligo()` in `lib/intelligo.ts` calls `registerModels(DEFAULT_MODELS)`. The shipped catalogue holds six entries: `google/gemini-2.5-flash`, `google/gemini-2.5-pro`, `openai/gpt-5-mini`, `openai/gpt-5.4-mini`, `openai/o4-mini` and `anthropic/claude-sonnet-4-6`. Its prices are the providers' published USD rates and go stale. Register your own entry for a contracted rate or a model the catalogue does not know; `registerModel` replaces an entry with the same `id`.
+A model id is a key into a price registry. Nothing registers itself: your [composition root](/docs/concepts/composition-root) does it. The scaffold's `composeIntelligo()` in `lib/intelligo.ts` calls `registerModels(DEFAULT_MODELS)`. The shipped catalogue holds six chat models — `google/gemini-2.5-flash`, `google/gemini-2.5-pro`, `openai/gpt-5-mini`, `openai/gpt-5.4-mini`, `openai/o4-mini` and `anthropic/claude-sonnet-4-6` — and three embedding models: `openai/text-embedding-3-small`, `openai/text-embedding-3-large` and `google/gemini-embedding-001`. Its prices are the providers' published USD rates and go stale, and so does availability: a provider can stop serving a model to newly created keys while existing keys keep it, so try the model you pick with your own key before you ship it. Register your own entry for a contracted rate or a model the catalogue does not know; `registerModel` replaces an entry with the same `id`.
 
 ```ts title="lib/intelligo.ts"
 import {

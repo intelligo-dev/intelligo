@@ -23,6 +23,7 @@ import {
 } from "@intelligo-dev/core/money";
 
 import { getBillingSettings } from "./billing-settings";
+import type { LocalPaymentOffer } from "./local-payments";
 import { getStripe, toStripeLocale } from "./stripe";
 import { getPlanBySlug } from "./plans";
 import { planRowId } from "./plan-rows";
@@ -361,6 +362,53 @@ const creditCheckoutSchema = z.object({
 export type CreateCreditCheckoutInput = z.infer<typeof creditCheckoutSchema>;
 
 /**
+ * A bundle's two amounts as `Money`, the grant checked against the
+ * deployment's billing currency.
+ */
+async function bundleAmounts(
+  bundle: CreditBundle
+): Promise<{ grant: Money; price: Money }> {
+  const settings = await getBillingSettings();
+  const grant: Money =
+    "grant" in bundle
+      ? money(bundle.grant.amount, bundle.grant.currency)
+      : money(bundle.credits * MICROS_PER_UNIT, settings.currency);
+  const price: Money =
+    "price" in bundle
+      ? money(bundle.price.amount, bundle.price.currency)
+      : fromMajor(bundle.priceUsd, "USD");
+
+  // Granting one currency into a ledger denominated in another is the
+  // bug this shape exists to prevent; refuse rather than invent a rate.
+  if (grant.currency !== settings.currency) {
+    throw new BillingServiceError(
+      "invalid_bundle",
+      `This deployment bills in ${settings.currency}, so a bundle granting ${grant.currency} cannot be credited to it.`
+    );
+  }
+  return { grant, price };
+}
+
+/**
+ * A credit bundle as a local-payment offer: what the `lib/local-payment.ts`
+ * seam returns when the buyer pays for `bundle.id` through a registered
+ * QR/poll provider rather than Stripe.
+ */
+export async function creditBundleOffer(
+  bundle: CreditBundle
+): Promise<LocalPaymentOffer> {
+  const parsed = creditBundleSchema.safeParse(bundle);
+  if (!parsed.success) {
+    throw new BillingServiceError(
+      "invalid_bundle",
+      parsed.error.issues[0]?.message ?? "Invalid credit bundle."
+    );
+  }
+  const { grant, price } = await bundleAmounts(parsed.data);
+  return { price, grant: { credits: grant }, description: parsed.data.name };
+}
+
+/**
  * Create a Stripe one-time-payment checkout session for a credit
  * bundle, recording a `pending` `creditPurchases` row first so the
  * webhook has something to match against.
@@ -389,24 +437,7 @@ export async function createCreditCheckout(
     userRow?.name ?? ""
   );
 
-  const settings = await getBillingSettings();
-  const grant: Money =
-    "grant" in bundle
-      ? money(bundle.grant.amount, bundle.grant.currency)
-      : money(bundle.credits * MICROS_PER_UNIT, settings.currency);
-  const price: Money =
-    "price" in bundle
-      ? money(bundle.price.amount, bundle.price.currency)
-      : fromMajor(bundle.priceUsd, "USD");
-
-  // Granting one currency into a ledger denominated in another is the
-  // bug this shape exists to prevent; refuse rather than invent a rate.
-  if (grant.currency !== settings.currency) {
-    throw new BillingServiceError(
-      "invalid_bundle",
-      `This deployment bills in ${settings.currency}, so a bundle granting ${grant.currency} cannot be credited to it.`
-    );
-  }
+  const { grant, price } = await bundleAmounts(bundle);
 
   const purchaseId = crypto.randomUUID();
   const priceMinor = toMinor(price);
