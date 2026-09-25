@@ -28,7 +28,7 @@ import { enqueue } from "@intelligo-dev/jobs";
 
 await enqueue({
   kind: "digest.send",
-  workspaceId,
+  workspaceId, // or null: a job no workspace owns (an anonymous request's work)
   payload: { userId },
   runAt: new Date(Date.now() + 60_000), // optional: not before
   maxAttempts: 5, // optional: 3 by default
