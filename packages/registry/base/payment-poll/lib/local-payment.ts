@@ -36,8 +36,26 @@ import "server-only";
  *     description: plan.name,
  *   };
  *
- * or a credit bundle: `grant: { credits: fromMajor(5, "USD") }`, in the
- * deployment's billing currency.
+ * or one of the pricing item's `CREDIT_BUNDLES`, sold from
+ * `lib/credit-bundle-config.tsx` under a `credits:` reference so a bundle
+ * id never reads as a plan slug. The provider charges in `CURRENCY`: a
+ * bundle priced in another currency (the card processor's) is not sold
+ * this way — `money(bundle.price…)` would hand the provider a number in
+ * the wrong unit.
+ *
+ *   if (reference.startsWith("credits:")) {
+ *     const bundle = getCreditBundle(reference.slice("credits:".length));
+ *     if (!bundle || !("grant" in bundle)) return null;
+ *     if (bundle.price.currency !== CURRENCY) return null;
+ *     return {
+ *       price: money(bundle.price.amount, bundle.price.currency),
+ *       grant: { credits: money(bundle.grant.amount, bundle.grant.currency) },
+ *       description: bundle.name,
+ *     };
+ *   }
+ *
+ * A grant of credits is in the deployment's billing currency. A provider
+ * registered with its `currency` refuses a price in any other.
  */
 
 import type { LocalPaymentOffer } from "@intelligo-dev/billing";

@@ -114,3 +114,16 @@ describe("resolution", () => {
     expect(registeredPaymentModes()).toEqual([]);
   });
 });
+
+describe("a provider's currency", () => {
+  it("warns in production when a provider registers without one", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubEnv("NODE_ENV", "production");
+
+    registerPaymentProvider("qpay", stub);
+    registerPaymentProvider("qpay", { ...stub, currency: "MNT" });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]![0])).toContain('"qpay"');
+  });
+});

@@ -29,7 +29,9 @@
     "lib/plan-card-config.tsx"
   ],
   "checkout": [],
-  "billing-settings": [],
+  "billing-settings": [
+    "lib/credit-bundle-config.tsx"
+  ],
   "feature-gating": [
     "lib/feature-catalog.ts",
     "lib/feature-gating-config.ts"

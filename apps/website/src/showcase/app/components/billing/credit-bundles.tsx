@@ -13,6 +13,9 @@
  *
  * A bundle in the legacy `{ credits, priceUsd }` shape is read as whole
  * units of `CURRENCY`, priced in dollars.
+ *
+ * Other ways to buy a bundle render under its button from
+ * `lib/credit-bundle-config.tsx`, which can also hide the card button.
  */
 
 import { useState } from "react";
@@ -26,6 +29,7 @@ import { AnimatedList, AnimatedListItem } from "@showcase/components/ui/animated
 
 import { createCreditPurchaseSession } from "@showcase/actions/billing";
 import { CREDIT_BUNDLES, CURRENCY } from "@showcase/lib/billing-config";
+import { creditBundleConfig } from "@showcase/lib/credit-bundle-config";
 import { formatMoney } from "@showcase/lib/format-money";
 
 /** Micros are millionths of one major unit. */
@@ -61,6 +65,8 @@ export function CreditBundles({ currentBalance }: CreditBundlesProps) {
   const format = useFormatter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const Actions = creditBundleConfig.actions;
+  const cardCheckout = creditBundleConfig.cardCheckout !== false;
 
   const handlePurchase = async (bundleId: string) => {
     setError(null);
@@ -110,16 +116,26 @@ export function CreditBundles({ currentBalance }: CreditBundlesProps) {
                     price: formatMoney(format, price),
                   })}
                 </p>
-                <Button
-                  onClick={() => handlePurchase(bundle.id)}
-                  disabled={isLoading}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {isLoading
-                    ? t("creditBundles.redirecting")
-                    : t("creditBundles.purchase")}
-                </Button>
+                {cardCheckout && (
+                  <Button
+                    onClick={() => handlePurchase(bundle.id)}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {isLoading
+                      ? t("creditBundles.redirecting")
+                      : t("creditBundles.purchase")}
+                  </Button>
+                )}
+                {Actions && "grant" in bundle && (
+                  <Actions
+                    bundle={bundle}
+                    price={price.amount / MICROS_PER_UNIT}
+                    currency={price.currency}
+                    bundleName={bundle.name}
+                  />
+                )}
               </Card>
             </AnimatedListItem>
           );

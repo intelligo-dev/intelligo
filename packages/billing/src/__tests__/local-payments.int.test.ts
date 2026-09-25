@@ -132,6 +132,28 @@ d("local payments (integration)", () => {
     });
   });
 
+  it("refuses a price in another currency than the provider charges in", async () => {
+    payment.registerPaymentProvider("mnt-only", {
+      ...payment.mockPaymentProvider,
+      currency: "MNT",
+    });
+    const mode = process.env.PAYMENT_MODE;
+    process.env.PAYMENT_MODE = "mnt-only";
+    try {
+      await expect(open("bundle-usd")).rejects.toMatchObject({
+        code: "currency_mismatch",
+      });
+      const { rows } = await client.query(
+        `SELECT 1 FROM payments WHERE reference = 'bundle-usd' AND workspace_id = $1`,
+        [WORKSPACE]
+      );
+      expect(rows).toEqual([]);
+    } finally {
+      if (mode === undefined) delete process.env.PAYMENT_MODE;
+      else process.env.PAYMENT_MODE = mode;
+    }
+  });
+
   it("reports an unpaid invoice as pending and grants nothing", async () => {
     const invoice = await open();
     let asked = 0;

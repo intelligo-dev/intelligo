@@ -182,7 +182,7 @@ Empty by default: the card offers card checkout alone. To offer the
 QR-and-poll rail, install the `payment-poll` item, price each plan in
 its `lib/local-payment.ts`, and bind its button here:
 
-```ts
+```tsx
 import { LocalPaymentButton } from "@/components/billing/local-payment-button";
 
 export const planCardConfig: PlanCardConfig = {
@@ -195,6 +195,50 @@ export const planCardConfig: PlanCardConfig = {
 The amount is only displayed; `priceLocalPayment(reference)` prices
 the invoice on the server. Encode the interval in the reference
 (`${plan.slug}:${interval}`) when the two prices differ.
+
+## [billing-settings](/blocks/billing-settings)
+
+### `lib/credit-bundle-config.tsx`
+
+Exports `CreditBundleActionProps`, `CreditBundleConfig`, `creditBundleConfig`. [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/registry/base/billing-settings/lib/credit-bundle-config.tsx)
+
+How your product sells its credit bundles, without editing
+`components/billing/credit-bundles.tsx`.
+
+ - `actions`: rendered under a bundle's purchase button, as another
+   way to buy it (a QR payment rail, a bank transfer). It receives the
+   bundle, its price in major units with the price's currency, and the
+   bundle's name. Bundles in the legacy `{ credits, priceUsd }` shape
+   are sold by card only and get no actions.
+ - `cardCheckout`: `false` hides the card (Stripe) purchase button, for
+   a deployment that sells bundles only another way. With no `actions`
+   as well, nothing can buy a bundle.
+
+Empty by default: bundles are bought by card alone. To sell them
+through the QR-and-poll rail, install the `payment-poll` item, price
+each bundle in its `lib/local-payment.ts`, and bind its button here.
+A bundle's `price` is what the card processor charges; the QR provider
+charges in `CURRENCY`, so offer the button only for a bundle priced in
+it, and give its reference a prefix plans do not use:
+
+```ts
+import { LocalPaymentButton } from "@/components/billing/local-payment-button";
+import { CURRENCY } from "@/lib/billing-config";
+
+export const creditBundleConfig: CreditBundleConfig = {
+  actions: ({ bundle, price, currency, bundleName }) =>
+    currency === CURRENCY ? (
+      <LocalPaymentButton
+        reference={`credits:${bundle.id}`}
+        amount={price}
+        label={bundleName}
+      />
+    ) : null,
+};
+```
+
+The amount is only displayed; `priceLocalPayment(reference)` prices
+the invoice on the server.
 
 ## [feature-gating](/blocks/feature-gating)
 
@@ -276,8 +320,28 @@ return {
 };
 ```
 
-or a credit bundle: `grant: { credits: fromMajor(5, "USD") }`, in the
-deployment's billing currency.
+or one of the pricing item's `CREDIT_BUNDLES`, sold from
+`lib/credit-bundle-config.tsx` under a `credits:` reference so a bundle
+id never reads as a plan slug. The provider charges in `CURRENCY`: a
+bundle priced in another currency (the card processor's) is not sold
+this way — `money(bundle.price…)` would hand the provider a number in
+the wrong unit.
+
+```ts
+if (reference.startsWith("credits:")) {
+  const bundle = getCreditBundle(reference.slice("credits:".length));
+  if (!bundle || !("grant" in bundle)) return null;
+  if (bundle.price.currency !== CURRENCY) return null;
+  return {
+    price: money(bundle.price.amount, bundle.price.currency),
+    grant: { credits: money(bundle.grant.amount, bundle.grant.currency) },
+    description: bundle.name,
+  };
+}
+```
+
+A grant of credits is in the deployment's billing currency. A provider
+registered with its `currency` refuses a price in any other.
 
 ### `lib/payment-poll-config.ts`
 
@@ -294,6 +358,10 @@ rate-limits status reads.
 minutes is long enough for someone to switch apps, log into their
 bank, and confirm — the common case that a shorter timeout would
 cut off mid-payment.
+
+`payerRoles`: who in a workspace may open an invoice. A payment buys
+the workspace a plan or credit, so by default only an owner may, as
+with card checkout.
 
 ## [onboarding](/blocks/onboarding)
 
@@ -716,7 +784,7 @@ component edit).
 
 Mount the widget once, in your app layout:
 
-```ts
+```tsx
 import { ChatWidget } from "@/components/chat/chat-widget";
 …
 <ChatWidget />

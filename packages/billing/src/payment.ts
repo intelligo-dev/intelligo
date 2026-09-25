@@ -28,6 +28,13 @@ export interface PaymentCheckResult {
 }
 
 export interface PaymentProvider {
+  /**
+   * The currency the provider charges in (ISO 4217). When set, a local
+   * invoice priced in another currency is refused before the provider is
+   * asked: `createPayment` takes bare minor units, and a price in the
+   * wrong currency would be read as this one's.
+   */
+  currency?: string;
   createPayment(params: {
     amount: number; // Minor units of the provider's own currency
     description: string;
@@ -118,6 +125,12 @@ export function registerPaymentProvider(
   mode: string,
   provider: PaymentProvider
 ): void {
+  if (!provider.currency && process.env.NODE_ENV === "production") {
+    console.warn(
+      `[payment] The "${mode}" provider declares no currency, so an invoice priced in another currency ` +
+        "than it charges in is sent as that many of its own minor units. Set `currency` on the provider."
+    );
+  }
   providers.set(mode, provider);
 }
 

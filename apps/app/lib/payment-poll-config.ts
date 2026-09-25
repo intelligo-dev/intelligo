@@ -10,14 +10,22 @@
  * minutes is long enough for someone to switch apps, log into their
  * bank, and confirm — the common case that a shorter timeout would
  * cut off mid-payment.
+ *
+ * `payerRoles`: who in a workspace may open an invoice. A payment buys
+ * the workspace a plan or credit, so by default only an owner may, as
+ * with card checkout.
  */
+
+import type { WorkspaceRole } from "@intelligo-dev/auth";
 
 export interface PaymentPollConfig {
   pollIntervalMs: number;
   timeoutMs: number;
+  payerRoles?: WorkspaceRole[];
 }
 
 export const paymentPollConfig: PaymentPollConfig = {
   pollIntervalMs: 3_000,
   timeoutMs: 5 * 60_000,
+  payerRoles: ["owner"],
 };
