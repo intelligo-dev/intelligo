@@ -9,7 +9,7 @@
     "i18n/navigation"
   ],
   "seams": {
-    "lib/shell-config.tsx": "shell banner and header slots",
+    "lib/shell-config.tsx": "shell banner and header slots, and where unfinished onboarding goes",
     "lib/nav-config.ts": "navigation",
     "lib/settings-nav.ts": "settings tabs",
     "lib/error-reporting.ts": "the error reporter",

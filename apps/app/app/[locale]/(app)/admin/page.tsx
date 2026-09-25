@@ -8,15 +8,15 @@
  *
  * It lives inside `(app)` so it inherits the shell — an operator is a
  * signed-in user, not a visitor to a separate application — and a
- * caller who is not a platform admin is redirected to the dashboard
- * rather than told the route exists. "Not authorized" on a page that
- * renders is itself a disclosure.
+ * caller who is not a platform admin gets the app's 404 rather than
+ * being told the route exists. "Not authorized" on a page that renders,
+ * or a redirect away from it, is itself a disclosure.
  *
  * Platform admin is a row, not an env var (`users.role`); see
  * `PLATFORM_ADMIN_EMAILS` for how the first one is seeded.
  */
 
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import {
   getIntegrationHealth,
@@ -46,7 +46,7 @@ export default async function AdminPage() {
   try {
     await requireAdmin("admin.overview.viewed");
   } catch {
-    redirect("/dashboard");
+    notFound();
   }
 
   const [

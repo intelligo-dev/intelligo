@@ -57,6 +57,12 @@ it explains a framework decision.
   `setDefaultProductSlug()`, warns when `INTELLIGO_BILLING_PRODUCT` names
   another product than the root (the root wins at runtime), and warns about
   a vitest config whose runner resolves from nowhere above the app.
+- `shellConfig.onboardingRedirect` in the `app-shell` item's
+  `lib/shell-config.tsx` seam: where a user who has not finished
+  onboarding is sent, or `false` for a product without an onboarding
+  step (the layout then skips the query). A seam written before the
+  field existed compiles unchanged and keeps `/onboarding`. The path must
+  be outside `(app)`, or the layout redirects to itself.
 - A plan card can offer the QR payment rail. The `pricing` item ships a
   `lib/plan-card-config.tsx` seam whose `actions` component renders under
   the checkout button of every plan the caller can buy, with the plan, the
@@ -114,6 +120,12 @@ it explains a framework decision.
   generated with, so `add app-scaffold` works in an app `create` made.
 - The scaffold's `dev` and `start` scripts no longer pin port 3000.
 - Unset optional env variables are one boot warning, not one each.
+- `intelligo add admin-page` (template 1.2.0) writes a page styled with
+  the app's tokens instead of inline `system-ui`, shows integration
+  health and operations beside the overview, answers a caller who is not
+  a platform admin with the app's 404, and renders each screen whose read
+  fails as unavailable instead of failing the page. Its header says where a
+  product adds its own sections; the consumer smoke builds it.
 
 ### Fixed
 

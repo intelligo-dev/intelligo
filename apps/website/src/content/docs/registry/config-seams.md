@@ -56,6 +56,10 @@ a component with no props; one that needs data fetches it itself.
  - `sidebarContent`: the sidebar under the navigation (conversation
    history). May be an async server component; it refreshes with the
    page. Hiding itself when the sidebar collapses is its own call.
+ - `onboardingRedirect`: where a signed-in user who has not finished
+   onboarding is sent (default `/onboarding`), or `false` for a
+   product without an onboarding step. Point it at a route outside
+   `(app)`: one this layout wraps would redirect to itself forever.
 
 For example:
 
