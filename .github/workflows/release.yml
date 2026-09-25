@@ -15,8 +15,10 @@ name: Release
 # in the `npm` environment of intelligo-dev/intelligo, as its trusted
 # publisher; npm checks the run's OIDC identity at publish time and
 # attaches provenance. The registry work OIDC cannot do — deprecating
-# a folded package, moving a dist-tag — is scripts/npm-maintain.mjs,
-# which a maintainer runs.
+# a folded package, and moving a dist-tag while npm accepts the OIDC
+# identity for `publish` only — is scripts/npm-maintain.mjs, which a
+# maintainer runs. After a prerelease the publish job says on the run
+# when `latest` is behind it.
 #
 # Only the release commit publishes: a version still missing from npm
 # on a later commit fails the run instead of shipping a tree its
@@ -282,6 +284,31 @@ jobs:
             (cd "$dir" && pnpm pack --pack-destination "$out" >/dev/null)
             npm publish "$out"/*.tgz --access public --tag "$DIST_TAG"
           done
+
+      # While no stable version exists, `latest` should follow the newest
+      # prerelease, so a bare `npx @intelligo-dev/cli` does not resolve to
+      # an old beta. npm accepts this run's OIDC identity for `publish`
+      # only, so the move is the maintainer's; this step reads the tag and,
+      # when it is behind, says so on the run with the command to run.
+      - name: Is latest behind the prerelease?
+        if: steps.check.outputs.published != 'true' && contains(steps.version.outputs.version, '-')
+        timeout-minutes: 2
+        # A reminder: npm failing to answer must not skip the tag and the
+        # GitHub release of packages already published.
+        continue-on-error: true
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          versions=$(npm view @intelligo-dev/core versions --json)
+          if node -e 'process.exit([JSON.parse(process.argv[1])].flat().some((v) => !v.includes("-")) ? 0 : 1)' "$versions"; then
+            echo "a stable release exists; latest is this workflow's"
+            exit 0
+          fi
+          latest=$(npm view @intelligo-dev/core dist-tags.latest)
+          if [ "$latest" != "$VERSION" ]; then
+            echo "::notice title=latest is $latest::npm latest still points at $latest, not $VERSION. A maintainer runs: node scripts/npm-maintain.mjs"
+          fi
 
       # The tag records which commit shipped; a push by GITHUB_TOKEN
       # does not trigger this workflow again. Runs whether or not this
