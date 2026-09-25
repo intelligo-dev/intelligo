@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "frameworkVersion": "1.0.0-beta.14",
+  "frameworkVersion": "1.0.0-beta.15",
   "features": {
     "app-scaffold": {
       "templateVersion": "1.15.0",
@@ -124,7 +124,7 @@
     }
   },
   "registry": {
-    "version": "1.0.0-beta.14",
+    "version": "1.0.0-beta.15",
     "items": [
       "intelligo",
       "smoke",
