@@ -5,14 +5,14 @@ The Next.js adapter: the one Intelligo package that imports next/*, binding requ
 Part of [Intelligo](https://intelligo.dev), an application framework and
 operational platform for vertical AI SaaS products. Every `@intelligo-dev/*`
 package is released at one version and shares one database schema;
-`pnpm dlx @intelligo-dev/cli@beta create my-app` installs the set an
+`pnpm dlx @intelligo-dev/cli create my-app` installs the set an
 application needs. Documentation:
 [intelligo.dev/docs/packages/next](https://intelligo.dev/docs/packages/next).
 
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/next@beta
+pnpm add @intelligo-dev/next
 ```
 
 `next` and `better-auth` are peers: the adapter binds into the copies your

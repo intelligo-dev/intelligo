@@ -10,7 +10,7 @@ label: "admin"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/admin@beta drizzle-orm react
+pnpm add @intelligo-dev/admin drizzle-orm react
 ```
 
 `drizzle-orm` and `react` (19 or later) are peers. `intelligo add admin-page`

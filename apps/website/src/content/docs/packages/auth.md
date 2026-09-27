@@ -10,7 +10,7 @@ label: "auth"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/auth@beta better-auth drizzle-orm zod
+pnpm add @intelligo-dev/auth better-auth drizzle-orm zod
 ```
 
 `better-auth`, `drizzle-orm` and `zod` are peers: the guards read the

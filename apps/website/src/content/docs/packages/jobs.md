@@ -10,7 +10,7 @@ label: "jobs"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/jobs@beta drizzle-orm
+pnpm add @intelligo-dev/jobs drizzle-orm
 ```
 
 `drizzle-orm` is a peer. The queue is one table, `jobs`, in the framework's

@@ -5,14 +5,14 @@ Quota engine, credits, Stripe, feature gates, trials and rate limiting.
 Part of [Intelligo](https://intelligo.dev), an application framework and
 operational platform for vertical AI SaaS products. Every `@intelligo-dev/*`
 package is released at one version and shares one database schema;
-`pnpm dlx @intelligo-dev/cli@beta create my-app` installs the set an
+`pnpm dlx @intelligo-dev/cli create my-app` installs the set an
 application needs. Documentation:
 [intelligo.dev/docs/packages/billing](https://intelligo.dev/docs/packages/billing).
 
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/billing@beta drizzle-orm stripe zod
+pnpm add @intelligo-dev/billing drizzle-orm stripe zod
 ```
 
 `drizzle-orm`, `stripe` and `zod` are peers.

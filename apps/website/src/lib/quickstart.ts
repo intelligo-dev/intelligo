@@ -13,7 +13,7 @@
 export const QUICKSTART = [
   {
     title: "Create",
-    cmd: "pnpm dlx @intelligo-dev/cli@beta create my-app",
+    cmd: "pnpm dlx @intelligo-dev/cli create my-app",
     note: "Next.js 16, shadcn, Tailwind 4, next-intl and a composition root wired to the execution boundary. It asks which pages you want and installs them as your source.",
     out: [
       "◆ Which pages should be installed? (space to toggle)",

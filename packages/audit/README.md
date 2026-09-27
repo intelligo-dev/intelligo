@@ -5,14 +5,14 @@ Append-only audit events for multi-tenant apps, with a Postgres trigger that ref
 Part of [Intelligo](https://intelligo.dev), an application framework and
 operational platform for vertical AI SaaS products. Every `@intelligo-dev/*`
 package is released at one version and shares one database schema;
-`pnpm dlx @intelligo-dev/cli@beta create my-app` installs the set an
+`pnpm dlx @intelligo-dev/cli create my-app` installs the set an
 application needs. Documentation:
 [intelligo.dev/docs/packages/audit](https://intelligo.dev/docs/packages/audit).
 
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/audit@beta drizzle-orm
+pnpm add @intelligo-dev/audit drizzle-orm
 ```
 
 `drizzle-orm` is a peer. The `audit_events` table and its trigger are part of

@@ -10,7 +10,7 @@ label: "audit"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/audit@beta drizzle-orm
+pnpm add @intelligo-dev/audit drizzle-orm
 ```
 
 `drizzle-orm` is a peer. The `audit_events` table and its trigger are part of

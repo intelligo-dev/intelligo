@@ -861,7 +861,7 @@ function Hook({ p }: { p: number }) {
 type Line = { text: string; tone?: "cmd" | "ok" | "dim" | "amber" };
 
 const LINES: Line[] = [
-  { text: "pnpm dlx @intelligo-dev/cli@beta create my-app", tone: "cmd" },
+  { text: "pnpm dlx @intelligo-dev/cli create my-app", tone: "cmd" },
   { text: "✓ my-app/lib/intelligo.ts — composition root", tone: "ok" },
   { text: "✓ my-app/lib/plans.ts · intelligo.manifest.json", tone: "ok" },
   {
@@ -1561,7 +1561,7 @@ function Editor({
 
 /* ---------- the closing card ---------- */
 
-const CREATE_COMMAND = "pnpm dlx @intelligo-dev/cli@beta create my-app";
+const CREATE_COMMAND = "pnpm dlx @intelligo-dev/cli create my-app";
 
 function Ending({ ending }: { ending: number }) {
   const veil = interp(ending, [0, 0.18], [0, 0.94]);

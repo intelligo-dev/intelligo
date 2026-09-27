@@ -10,7 +10,7 @@ label: "chat"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/chat@beta ai
+pnpm add @intelligo-dev/chat ai
 ```
 
 `ai` (the Vercel AI SDK) is a peer: the transport takes its tools, its models

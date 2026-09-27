@@ -10,7 +10,7 @@ Source: https://intelligo.dev/docs/getting-started
 ## Create the application
 
 ```bash
-pnpm dlx @intelligo-dev/cli@beta create my-app
+pnpm dlx @intelligo-dev/cli create my-app
 ```
 
 `create` asks which pages you want — the shell, sign-in, sign-up and the dashboard are ticked to start with — adds the pages they build on, and shows you the commands that install them: `pnpm install` (shadcn is one of the scaffold's dev dependencies), then `shadcn add` for the design-system base and your pages, in the order they need. Nothing runs until you approve. `--items chat,billing-settings` or `--all` answers the question up front, `--yes` approves the commands, and `--no-install` stops after the scaffold.
@@ -1525,7 +1525,7 @@ Source: https://intelligo.dev/docs/packages/core
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/core@beta drizzle-orm
+pnpm add @intelligo-dev/core drizzle-orm
 ```
 
 `drizzle-orm` is a peer; `react` 19 is an optional one, needed only by the
@@ -1664,7 +1664,7 @@ Source: https://intelligo.dev/docs/packages/auth
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/auth@beta better-auth drizzle-orm zod
+pnpm add @intelligo-dev/auth better-auth drizzle-orm zod
 ```
 
 `better-auth`, `drizzle-orm` and `zod` are peers: the guards read the
@@ -1725,7 +1725,7 @@ Source: https://intelligo.dev/docs/packages/billing
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/billing@beta drizzle-orm stripe zod
+pnpm add @intelligo-dev/billing drizzle-orm stripe zod
 ```
 
 `drizzle-orm`, `stripe` and `zod` are peers.
@@ -1981,7 +1981,7 @@ Source: https://intelligo.dev/docs/packages/executions
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/executions@beta drizzle-orm
+pnpm add @intelligo-dev/executions drizzle-orm
 ```
 
 `drizzle-orm` is a peer. The `executions` table is part of the framework's
@@ -2102,7 +2102,7 @@ Source: https://intelligo.dev/docs/packages/chat
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/chat@beta ai
+pnpm add @intelligo-dev/chat ai
 ```
 
 `ai` (the Vercel AI SDK) is a peer: the transport takes its tools, its models
@@ -2259,7 +2259,7 @@ Source: https://intelligo.dev/docs/packages/next
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/next@beta
+pnpm add @intelligo-dev/next
 ```
 
 `next` and `better-auth` are peers: the adapter binds into the copies your
@@ -2352,7 +2352,7 @@ Source: https://intelligo.dev/docs/packages/audit
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/audit@beta drizzle-orm
+pnpm add @intelligo-dev/audit drizzle-orm
 ```
 
 `drizzle-orm` is a peer. The `audit_events` table and its trigger are part of
@@ -2424,7 +2424,7 @@ Source: https://intelligo.dev/docs/packages/jobs
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/jobs@beta drizzle-orm
+pnpm add @intelligo-dev/jobs drizzle-orm
 ```
 
 `drizzle-orm` is a peer. The queue is one table, `jobs`, in the framework's
@@ -2501,7 +2501,7 @@ Source: https://intelligo.dev/docs/packages/admin
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/admin@beta drizzle-orm react
+pnpm add @intelligo-dev/admin drizzle-orm react
 ```
 
 `drizzle-orm` and `react` (19 or later) are peers. `intelligo add admin-page`
@@ -2599,7 +2599,7 @@ Source: https://intelligo.dev/docs/packages/mastra
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/mastra@beta
+pnpm add @intelligo-dev/mastra
 ```
 
 `@mastra/core` 1.x is an optional peer dependency and **nothing here imports
@@ -2665,7 +2665,7 @@ Source: https://intelligo.dev/docs/packages/cli
 ## Install
 
 ```bash
-pnpm add -D @intelligo-dev/cli@beta
+pnpm add -D @intelligo-dev/cli
 ```
 
 `create` needs no install — run it with `pnpm dlx`. The scaffold adds the CLI
@@ -2674,9 +2674,9 @@ to the new application, which is where `intelligo` comes from afterwards.
 ## Commands
 
 ```bash
-pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app, plus the pages you pick
-pnpm dlx @intelligo-dev/cli@beta create my-app --items chat,billing-settings --yes   # no questions
-pnpm dlx @intelligo-dev/cli@beta create . --name "Acme Audit"   # into the current, empty directory (a .git may be there)
+pnpm dlx @intelligo-dev/cli create my-app   # a registry-ready Next.js app, plus the pages you pick
+pnpm dlx @intelligo-dev/cli create my-app --items chat,billing-settings --yes   # no questions
+pnpm dlx @intelligo-dev/cli create . --name "Acme Audit"   # into the current, empty directory (a .git may be there)
 intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance, vitest)
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate                      # apply the framework chain

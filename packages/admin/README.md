@@ -5,14 +5,14 @@ The operational console: cross-tenant queries, health probes and impersonation.
 Part of [Intelligo](https://intelligo.dev), an application framework and
 operational platform for vertical AI SaaS products. Every `@intelligo-dev/*`
 package is released at one version and shares one database schema;
-`pnpm dlx @intelligo-dev/cli@beta create my-app` installs the set an
+`pnpm dlx @intelligo-dev/cli create my-app` installs the set an
 application needs. Documentation:
 [intelligo.dev/docs/packages/admin](https://intelligo.dev/docs/packages/admin).
 
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/admin@beta drizzle-orm react
+pnpm add @intelligo-dev/admin drizzle-orm react
 ```
 
 `drizzle-orm` and `react` (19 or later) are peers. `intelligo add admin-page`

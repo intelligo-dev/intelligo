@@ -5,14 +5,14 @@ The execution lifecycle (admission, running, settlement) and the model cost regi
 Part of [Intelligo](https://intelligo.dev), an application framework and
 operational platform for vertical AI SaaS products. Every `@intelligo-dev/*`
 package is released at one version and shares one database schema;
-`pnpm dlx @intelligo-dev/cli@beta create my-app` installs the set an
+`pnpm dlx @intelligo-dev/cli create my-app` installs the set an
 application needs. Documentation:
 [intelligo.dev/docs/packages/executions](https://intelligo.dev/docs/packages/executions).
 
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/executions@beta drizzle-orm
+pnpm add @intelligo-dev/executions drizzle-orm
 ```
 
 `drizzle-orm` is a peer. The `executions` table is part of the framework's

@@ -5,14 +5,14 @@ Database schema, email, logging, notifications, and the conversation, document a
 Part of [Intelligo](https://intelligo.dev), an application framework and
 operational platform for vertical AI SaaS products. Every `@intelligo-dev/*`
 package is released at one version and shares one database schema;
-`pnpm dlx @intelligo-dev/cli@beta create my-app` installs the set an
+`pnpm dlx @intelligo-dev/cli create my-app` installs the set an
 application needs. Documentation:
 [intelligo.dev/docs/packages/core](https://intelligo.dev/docs/packages/core).
 
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/core@beta drizzle-orm
+pnpm add @intelligo-dev/core drizzle-orm
 ```
 
 `drizzle-orm` is a peer; `react` 19 is an optional one, needed only by the
