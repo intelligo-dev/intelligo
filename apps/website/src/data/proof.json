@@ -3,8 +3,8 @@
   "version": "1.0.0-beta.15",
   "published": "1.0.0-beta.15",
   "packages": 11,
-  "testFiles": 116,
-  "testCases": 1249,
+  "testFiles": 117,
+  "testCases": 1256,
   "architectureTests": 15,
   "registryItems": 28
 }

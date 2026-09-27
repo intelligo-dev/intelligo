@@ -23,6 +23,13 @@ it explains a framework decision.
   renders in the default language instead of throwing, so a locale can
   be translated a namespace at a time. `intelligo sync --check` still
   reports what is behind. `app-scaffold` 1.16.0.
+- `intelligo migrate --check` also checks the app's own chain: the
+  migrations `drizzle-kit generate` wrote to `./drizzle` against what
+  `drizzle-kit migrate` recorded in `drizzle.__app_migrations`. A pending
+  or unknown app migration exits 1, so the scaffold's `db:check` deploy
+  gate no longer passes with the app's schema behind. `--json` carries it
+  as `app` (`null` when the app owns no chain); `state` still describes
+  the framework's chain and `exitCode` covers both.
 
 ### Fixed
 

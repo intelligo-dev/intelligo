@@ -2741,7 +2741,7 @@ intelligo create [dir]      Scaffold an app, then install the registry pages you
                             (--items a,b | --all, --yes, --no-install, --name <name>)
 intelligo doctor            Report configuration and migration-chain problems
 intelligo migrate           Apply the framework's migration chain to DATABASE_URL
-intelligo migrate --check   Compare the framework's migrations to a database
+intelligo migrate --check   Compare the framework's and the app's migrations to a database
                             (--json: one object whose `state` is up_to_date | pending |
                             fresh | ahead | unmanaged | legacy)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
@@ -2868,7 +2868,10 @@ JSON object on stdout, same exit code, whose `state` is
                    `migrate` can take it over.
 
 Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
-`unknown`, `legacy`, `legacyMissing` and `adoptable`.
+`unknown`, `legacy`, `legacyMissing` and `adoptable`. `state` describes
+the framework's chain; `app` is the application's own chain
+(`app-chain-check.ts`) — `{ chain, applied, pending, unknown }`, or
+null when the app owns none — and `exitCode` covers both.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/migrate-check.ts)
 

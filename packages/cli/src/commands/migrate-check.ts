@@ -37,7 +37,10 @@
  *                    `migrate` can take it over.
  *
  * Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
- * `unknown`, `legacy`, `legacyMissing` and `adoptable`.
+ * `unknown`, `legacy`, `legacyMissing` and `adoptable`. `state` describes
+ * the framework's chain; `app` is the application's own chain
+ * (`app-chain-check.ts`) — `{ chain, applied, pending, unknown }`, or
+ * null when the app owns none — and `exitCode` covers both.
  */
 
 import { createHash } from "node:crypto";
@@ -45,6 +48,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { readMigrationChain } from "../migrations.js";
+import { appChainExitCode, type AppChainResult } from "./app-chain-check.js";
 
 export type MigrateCheckResult = {
   /** Journal tags this checkout knows about, in order. */
@@ -282,11 +286,12 @@ export function migrateState(
 /** The `--json` report: `state` first, then the detail behind it. */
 export function formatMigrateCheckJson(
   r: MigrateCheckResult,
-  schemaExists: boolean
+  schemaExists: boolean,
+  app: AppChainResult | null = null
 ): string {
   return JSON.stringify({
     state: migrateState(r, schemaExists),
-    exitCode: migrateCheckExitCode(r),
+    exitCode: Math.max(migrateCheckExitCode(r), appChainExitCode(app)),
     chain: r.chain,
     applied: r.applied,
     pending: r.pending,
@@ -294,5 +299,6 @@ export function formatMigrateCheckJson(
     legacy: r.legacy,
     legacyMissing: r.legacyMissing,
     adoptable: r.adoptable,
+    app,
   });
 }

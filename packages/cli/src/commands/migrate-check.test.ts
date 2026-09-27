@@ -190,7 +190,26 @@ describe("migrateState", () => {
       legacy: [],
       legacyMissing: [],
       adoptable: false,
+      app: null,
     });
+  });
+
+  it("fails the JSON report on a pending app migration while the framework is up to date", async () => {
+    chain(["0000_a"]);
+    const r = await migrateCheck(dir, applied(1));
+
+    const report = JSON.parse(
+      formatMigrateCheckJson(r, true, {
+        chain: ["0000_notes"],
+        applied: [],
+        pending: ["0000_notes"],
+        unknown: [],
+      })
+    );
+
+    expect(report.state).toBe("up_to_date");
+    expect(report.exitCode).toBe(1);
+    expect(report.app.pending).toEqual(["0000_notes"]);
   });
 
   it("names the pre-1.0 migrations a partial chain lacks, and no version to install", async () => {
