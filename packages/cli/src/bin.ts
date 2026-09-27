@@ -21,6 +21,11 @@ import {
   addExitCode,
   readCatalogue,
 } from "./commands/add.js";
+import {
+  appChainCheck,
+  appChainExitCode,
+  formatAppChainCheck,
+} from "./commands/app-chain-check.js";
 import { exitCodeFor, formatResults, runChecks } from "./commands/doctor.js";
 import {
   formatMigrateCheck,
@@ -90,7 +95,7 @@ function usage(): string {
     "                    (--items a,b | --all, --yes, --no-install, --name <name>)",
     "  doctor            Report configuration and migration-chain problems",
     "  migrate           Apply the framework's migration chain to DATABASE_URL",
-    "  migrate --check   Compare the framework's migrations to a database",
+    "  migrate --check   Compare the framework's and the app's migrations to a database",
     "                    (--json: one object whose `state` is up_to_date | pending |",
     "                    fresh | ahead | unmanaged | legacy)",
     "  add <feature>     Generate consumer-owned source (--force to overwrite)",
@@ -131,20 +136,21 @@ async function runMigrate(
 
   try {
     if (mode === "check") {
-      const result = await migrateCheck(
-        migrationsDir,
-        async (sql) => (await client.query<{ hash: string }>(sql)).rows
-      );
+      const hashes = async (sql: string) =>
+        (await client.query<{ hash: string }>(sql)).rows;
+      const result = await migrateCheck(migrationsDir, hashes);
+      const app = await appChainCheck(process.cwd(), hashes);
       const probe = await client.query<{ rel: string | null }>(
         SCHEMA_PROBE_SQL
       );
       const schemaExists = probe.rows[0]?.rel != null;
-      console.log(
-        json
-          ? formatMigrateCheckJson(result, schemaExists)
-          : formatMigrateCheck(result, schemaExists)
-      );
-      return migrateCheckExitCode(result);
+      if (json) {
+        console.log(formatMigrateCheckJson(result, schemaExists, app));
+      } else {
+        console.log(formatMigrateCheck(result, schemaExists));
+        if (app) console.log(formatAppChainCheck(app));
+      }
+      return Math.max(migrateCheckExitCode(result), appChainExitCode(app));
     }
 
     // Applied here rather than by drizzle's migrator: the pending set is
