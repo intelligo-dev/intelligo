@@ -24,6 +24,7 @@ import {
   MIGRATION_LOCATIONS,
   resolveMigrationsDir,
 } from "../migrations-dir.js";
+import { findWorkspaceRoot, workspacePackages } from "../registry-items.js";
 
 export type CheckResult = {
   name: string;
@@ -342,6 +343,31 @@ function checkBillingProduct(
 }
 
 /**
+ * A workspace member named like another package: `pnpm --filter` and
+ * `workspace:*` pick one of the two, and a root named after the product
+ * is the usual other.
+ */
+function checkWorkspaceName(root: string): CheckResult | null {
+  const workspaceRoot = findWorkspaceRoot(root);
+  if (!workspaceRoot) return null;
+  const packages = workspacePackages(workspaceRoot);
+  const app = path.resolve(root);
+  const name = packages.get(app);
+  if (!name) return null;
+  const others = [...packages]
+    .filter(([dir, other]) => dir !== app && other === name)
+    .map(([dir]) => path.relative(workspaceRoot, dir) || "the workspace root");
+  if (others.length === 0) return null;
+  return {
+    name: "workspace",
+    status: "warn",
+    detail:
+      `package name "${name}" is also ${others.join(", ")}'s — pnpm --filter ` +
+      `and workspace:* resolve only one of them; rename this app's package (e.g. "@scope/${path.basename(app)}")`,
+  };
+}
+
+/**
  * Whether `name` is installed where the app resolves packages from: its
  * own node_modules or any directory above it, a workspace root's
  * included.
@@ -390,6 +416,9 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
 
   // 2. Required environment.
   results.push(...checkEnvironment(root, env));
+
+  const workspaceName = checkWorkspaceName(root);
+  if (workspaceName) results.push(workspaceName);
 
   // 3. Billing product. The engine has no built-in default catalogue;
   //    an unset product means every plan lookup returns nothing and

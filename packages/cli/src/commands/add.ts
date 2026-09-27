@@ -79,6 +79,11 @@ export function substitute(
   variables: Record<string, string> | undefined
 ): string {
   if (!variables) return contents;
+  // An app recorded before its package name had a variable of its own
+  // was named `__APP_NAME__`.
+  if (variables.__APP_NAME__ && !variables.__PACKAGE_NAME__) {
+    variables = { ...variables, __PACKAGE_NAME__: variables.__APP_NAME__ };
+  }
   return Object.entries(variables).reduce(
     (out, [key, value]) => out.split(key).join(value),
     contents

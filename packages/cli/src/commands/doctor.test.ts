@@ -63,6 +63,42 @@ describe("runChecks", () => {
     ).toBe(false);
   });
 
+  it("warns when the app's package name is also another workspace package's", () => {
+    const workspace = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-ws-"));
+    try {
+      writeFileSync(
+        path.join(workspace, "pnpm-workspace.yaml"),
+        "packages:\n  - apps/*\n"
+      );
+      writeFileSync(
+        path.join(workspace, "package.json"),
+        JSON.stringify({ name: "acme" })
+      );
+      const root = path.join(workspace, "apps", "app");
+      mkdirSync(root, { recursive: true });
+      writeFileSync(
+        path.join(root, "package.json"),
+        JSON.stringify({ name: "acme" })
+      );
+
+      const clash = runChecks({ root, env: fullEnv }).find(
+        (r) => r.name === "workspace"
+      );
+      expect(clash?.status).toBe("warn");
+      expect(clash?.detail).toContain("the workspace root");
+
+      writeFileSync(
+        path.join(root, "package.json"),
+        JSON.stringify({ name: "@acme/app" })
+      );
+      expect(
+        runChecks({ root, env: fullEnv }).find((r) => r.name === "workspace")
+      ).toBeUndefined();
+    } finally {
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  });
+
   it("reads the localhost URL out of a production env file", () => {
     const root = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-env-"));
     try {

@@ -28,6 +28,7 @@ import {
 } from "./add.js";
 import {
   findWorkspaceRoot,
+  workspacePackages,
   formatCommand,
   type Command,
   type PackageManager,
@@ -61,15 +62,55 @@ export function deriveNames(target: string): {
   appName: string;
   appSlug: string;
 } {
-  const base = path.basename(path.resolve(target));
-  const slug = base
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  const slug = slugify(path.basename(path.resolve(target)));
   if (!slug) {
     throw new Error(`Cannot derive a project name from "${target}".`);
   }
   return { appName: slug, appSlug: slug };
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * The app's package name. Outside a workspace, and inside one where it is
+ * free, it is `appName`. A workspace member whose name another package
+ * already has (the root is usually named after the product, as `--name`
+ * is) is `@<scope>/<directory>` instead, the scope taken from the root's
+ * own scope or name — `apps/app` in workspace `acme` is `@acme/app`.
+ */
+export function packageNameFor(
+  target: string,
+  appName: string,
+  workspaceRoot: string | null
+): string {
+  if (!workspaceRoot) return appName;
+  const app = path.resolve(target);
+  const taken = new Set(
+    [...workspacePackages(workspaceRoot)]
+      .filter(([dir]) => dir !== app)
+      .map(([, name]) => name)
+  );
+  if (!taken.has(appName)) return appName;
+
+  const rootName = workspacePackages(workspaceRoot).get(
+    path.resolve(workspaceRoot)
+  );
+  const scope =
+    rootName?.match(/^@([^/]+)\//)?.[1] ??
+    (slugify(rootName ?? "") || slugify(path.basename(workspaceRoot)));
+  const dir = slugify(path.basename(app)) || "app";
+  for (const candidate of [`@${scope}/${dir}`, `@${scope}/${dir}-app`]) {
+    if (!taken.has(candidate)) return candidate;
+  }
+  throw new Error(
+    `Every package name for ${app} is taken in the workspace at ${workspaceRoot} ` +
+      `(${appName}, @${scope}/${dir}, @${scope}/${dir}-app). Pass another --name.`
+  );
 }
 
 /** A fresh repository — `git init`, then `intelligo create .` — is still empty. */
@@ -109,6 +150,7 @@ export function createApp(options: CreateOptions): AddResult {
     frameworkVersion: options.frameworkVersion,
     variables: {
       __APP_NAME__: appName,
+      __PACKAGE_NAME__: packageNameFor(target, appName, workspaceRoot),
       __APP_SLUG__: appSlug,
       __INTELLIGO_DEP__: options.linkWorkspace
         ? "workspace:*"

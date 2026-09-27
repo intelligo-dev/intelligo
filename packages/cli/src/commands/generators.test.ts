@@ -297,6 +297,21 @@ describe("upgradeCheck", () => {
     expect(check().items[0]!.state).toBe("customized");
   });
 
+  it("reads an app recorded without __PACKAGE_NAME__ as named __APP_NAME__", () => {
+    // Apps scaffolded before the package name had its own variable
+    // recorded only __APP_NAME__; their package.json must stay current.
+    writeTemplates("1.0.0", '{ "name": "__APP_NAME__" }\n');
+    addFeature("demo", {
+      appRoot,
+      templatesDir,
+      frameworkVersion: "0.0.0",
+      variables: { __APP_NAME__: "acme" },
+    });
+    writeTemplates("1.0.0", '{ "name": "__PACKAGE_NAME__" }\n');
+
+    expect(check().items[0]!.state).toBe("current");
+  });
+
   it("reports a file the consumer deleted", () => {
     add();
     rmSync(target());

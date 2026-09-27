@@ -1,5 +1,5 @@
 {
-  "name": "__APP_NAME__",
+  "name": "__PACKAGE_NAME__",
   "version": "0.0.0",
   "private": true,
   "type": "module",
