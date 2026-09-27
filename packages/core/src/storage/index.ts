@@ -4,7 +4,11 @@
  * composition root:
  *
  *     import { setStorageAdapter } from "@intelligo-dev/core/storage";
- *     setStorageAdapter(createS3Storage({ bucket, region }));   // the app's lib/storage.ts
+ *     import { createS3Storage } from "@intelligo-dev/core/storage/s3";
+ *     setStorageAdapter(createS3Storage({ bucket, region, accessKeyId, secretAccessKey }));
+ *
+ * `@intelligo-dev/core/storage/s3` covers any S3-compatible bucket (S3, R2,
+ * MinIO); anything else implements `StorageAdapter`.
  *
  * An unbound adapter throws where a file is needed. Keys carry the tenant —
  * `ws/<workspaceId>/att/<id>` — so a signed URL for one workspace's file can
