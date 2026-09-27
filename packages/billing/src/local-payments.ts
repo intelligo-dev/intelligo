@@ -36,8 +36,13 @@ import { writePlanGrant } from "./plan-grant";
 
 const log = createLogger("LocalPayments");
 
-/** What a paid invoice gives the workspace: a plan by slug, or credit. */
-export type LocalPaymentGrant = { plan: string } | { credits: Money };
+/**
+ * What a paid invoice gives the workspace: a plan by slug, or credit. A
+ * plan with `days` lapses that many days after it is granted (or after the
+ * same plan's running grant ends); without, it has no end.
+ */
+export type LocalPaymentGrant =
+  { plan: string; days?: number } | { credits: Money };
 
 /**
  * What a reference sells for and what paying it grants — the product's
@@ -225,6 +230,7 @@ export async function settleLocalInvoice(
       await writePlanGrant(tx, {
         workspaceId: payment.workspaceId,
         planSlug: grant.plan,
+        days: grant.days,
         reason: `local payment ${payment.invoiceId}`,
         actorId: payment.userId,
       });

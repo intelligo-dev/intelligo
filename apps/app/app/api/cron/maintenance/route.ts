@@ -20,6 +20,9 @@
  * - **Expire trials and send reminders.** `hasActiveTrial` checks the
  *   end date inline, so admission is safe without this — feature
  *   access and the reminder emails are what it drives.
+ * - **Return lapsed plan grants to free.** A plan granted with an end
+ *   (`grantPlan({ days })`, a one-time local payment) stays on until
+ *   this step moves it back.
  * - **Prune finished jobs** older than a week.
  *
  * Draining the job queue is NOT done here: `drain` needs your handlers,
@@ -33,6 +36,7 @@ import { timingSafeEqual } from "node:crypto";
 import {
   cleanupExpiredReservations,
   cleanupRateLimitEntries,
+  processExpiredPlanGrants,
   processTrialExpirations,
 } from "@intelligo-dev/billing";
 import { findStaleExecutions } from "@intelligo-dev/executions";
@@ -109,6 +113,10 @@ export async function GET(request: Request) {
       cleanupRateLimitEntries
     ),
     trials: await step("processTrialExpirations", processTrialExpirations),
+    planGrants: await step(
+      "processExpiredPlanGrants",
+      processExpiredPlanGrants
+    ),
     jobsPruned: await step("pruneJobs", () =>
       pruneJobs(new Date(Date.now() - PRUNE_JOBS_AFTER_MS))
     ),

@@ -201,8 +201,10 @@ A QR-and-poll payment (QPay, PIX, UPI…) goes through two calls.
 invoice through the provider and records it in `payments` at the price the
 server decided. `settleLocalInvoice({ invoiceId, workspaceId, fulfil })` asks
 the provider that issued it; when it is paid, the row is marked fulfilled and
-the grant `fulfil` returns — `{ plan: slug }` or `{ credits: Money }` — is
-applied in the same transaction, so concurrent polls grant once. An invoice of
+the grant `fulfil` returns — `{ plan: slug, days? }` or `{ credits: Money }` —
+is applied in the same transaction, so concurrent polls grant once. A plan
+with `days` lapses that long after it is granted; bought again before then,
+the days add to the running grant. An invoice of
 another workspace is `payment_not_found`. The `payment-poll` registry item is
 the transport over both. A provider is `registerPaymentProvider(mode, {
 createPayment, checkPayment, cancelPayment })` from `/payment`, bound in the
@@ -215,6 +217,16 @@ Give a real provider its `currency`: `createPayment` takes bare minor units, and
 only a provider that names its currency makes `openLocalInvoice` refuse a price
 in another one (`currency_mismatch`) instead of sending that number as its own.
 Registering one without it in production logs a warning.
+
+## Granting a plan
+
+`grantPlan({ workspaceId, planSlug, reason, actorId?, endsAt? | days? })` puts
+a workspace on a plan as a product decision (a reward, a partner deal) rather
+than a payment. With `endsAt` or `days` the grant lapses, and
+`processExpiredPlanGrants()` — a step of the maintenance route — returns it to
+the free plan, audited as `billing.plan_grant.expired`. `days` counts from the
+end of a running grant of the same plan, so renewals stack. On a workspace
+Stripe bills, the plan moves but the period stays Stripe's.
 
 ## The webhook receiver
 

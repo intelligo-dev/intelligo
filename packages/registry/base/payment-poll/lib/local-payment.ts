@@ -32,9 +32,13 @@ import "server-only";
  *   if (!plan) return null;
  *   return {
  *     price: fromMajor(plan.priceOneTime, CURRENCY),
- *     grant: { plan: plan.slug },
+ *     grant: { plan: plan.slug, days: 30 },
  *     description: plan.name,
  *   };
+ *
+ * `days` makes a one-time payment buy a period: the maintenance route
+ * returns the workspace to the free plan when it lapses, and a second
+ * payment before then extends it. Without `days` the plan never ends.
  *
  * or one of the pricing item's `CREDIT_BUNDLES`, sold from
  * `lib/credit-bundle-config.tsx` under a `credits:` reference so a bundle
