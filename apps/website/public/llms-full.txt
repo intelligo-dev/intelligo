@@ -1676,7 +1676,9 @@ and is never authorization; the scaffold does not use it.
 
 Platform admin is a row (`users.role`), not an environment variable. The
 allowlist in `PLATFORM_ADMIN_EMAILS` is promoted into that column on first use,
-so the plugin and the guard cannot disagree.
+so the plugin and the guard cannot disagree. The allowlist counts a verified
+address only; on a machine that verifies none, `intelligo admin grant <email>`
+writes the column directly.
 
 ## Entry points
 
@@ -2628,6 +2630,7 @@ intelligo add <feature>                # generate consumer-owned source (admin-p
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate                      # apply the framework chain
 intelligo migrate --check [--json]     # compare the chain with the database, change nothing
+intelligo admin grant <email>          # make a signed-up user a platform admin
 intelligo upgrade --check              # what a template upgrade would change
 intelligo sync [items…]                # install registry pages from this release, seams kept
 intelligo sync --check                 # exit 1 when an installed page drifted from the registry
@@ -2684,7 +2687,7 @@ gets neither; its `next.config.mjs` reads the workspace root's `.env.local` and
 has the app's name (a root named after the product, say), the app's package is
 `@<scope>/<directory>` instead, the scope being the root's scope or name.
 
-## Where `doctor`, `migrate` and `upgrade` read env from
+## Where `doctor`, `migrate`, `upgrade` and `admin` read env from
 
 They run outside Next, so they load the env files themselves, never
 overriding a variable that is already set. Highest precedence first: the
@@ -2693,6 +2696,15 @@ member of a pnpm workspace — the workspace root's `.env.local` and `.env`. An
 app in a monorepo whose `next.config` falls back to the repository root's
 `.env` is therefore checked and migrated against the same `DATABASE_URL` it
 boots with.
+
+## `admin grant`: the first platform admin
+
+`PLATFORM_ADMIN_EMAILS` promotes an address only once it is verified, and a
+development setup without an email provider verifies none (the console
+provider logs the verification link instead, outside production).
+`intelligo admin grant <email>` writes `users.role` for a user who has signed
+up and records an `admin.platform_admin.granted` audit event, in one
+transaction. With `NODE_ENV=production` it refuses unless `--force` is passed.
 
 ## Why `migrate` is not `drizzle-kit migrate`
 
@@ -2746,6 +2758,7 @@ intelligo migrate           Apply the framework's migration chain to DATABASE_UR
 intelligo migrate --check   Compare the framework's and the app's migrations to a database
                             (--json: one object whose `state` is up_to_date | pending |
                             fresh | ahead | unmanaged | legacy)
+intelligo admin grant <email>  Make a signed-up user a platform admin (--force in production)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
 intelligo upgrade --check   Show what a template upgrade would change
 intelligo sync [items…]     Install registry pages from this release's registry
@@ -3592,7 +3605,7 @@ The first time a user gets a workspace, `ensureUserWorkspace` calls `onWorkspace
 
 ## Platform admins
 
-A platform admin is a row, not a workspace role: `users.role` holds `platform-admin`. List emails in `PLATFORM_ADMIN_EMAILS`, comma-separated; `requirePlatformAdmin()` promotes a listed user into the column the first time it runs, and throws `"Insufficient permissions"` for anyone with neither. Never gate a cross-workspace surface on `owner`: every signup owns a workspace.
+A platform admin is a row, not a workspace role: `users.role` holds `platform-admin`. List emails in `PLATFORM_ADMIN_EMAILS`, comma-separated; `requirePlatformAdmin()` promotes a listed user into the column the first time it runs, and throws `"Insufficient permissions"` for anyone with neither. The allowlist counts a verified address only; on a development machine with no email provider, verify through the link the console provider logs, or run `intelligo admin grant <email>`, which writes the column directly. Never gate a cross-workspace surface on `owner`: every signup owns a workspace.
 
 Impersonation goes through `startImpersonation({ targetUserId, reason })` and `stopImpersonation({ targetUserId })` from `@intelligo-dev/admin`. Starting requires a platform admin and a reason, writes the audit event first and aborts if it cannot be written, lasts at most 30 minutes, and refuses another admin as the target; stopping is audited too. `impersonateUser` in `@intelligo-dev/auth` verifies the caller is a platform admin and the target is not, but writes no audit event, so call the admin functions instead.
 

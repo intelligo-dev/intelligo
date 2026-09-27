@@ -217,3 +217,40 @@ describe("LoopsProvider", () => {
     });
   });
 });
+
+describe("ConsoleProvider", () => {
+  const verify = {
+    to: "dev@local.test",
+    subject: "Verify your email address",
+    html: "",
+    template: {
+      key: "verify-email",
+      variables: {
+        userName: "Dev",
+        verificationUrl: "http://localhost:4002/api/auth/verify-email?token=t",
+      },
+    },
+  };
+
+  it("logs the links a message carries outside production", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+
+    await new ConsoleProvider().send(verify);
+
+    const logged = vi.mocked(console.log).mock.calls.flat().join("\n");
+    expect(logged).toContain(
+      "verificationUrl: http://localhost:4002/api/auth/verify-email?token=t"
+    );
+    expect(logged).not.toContain("userName");
+  });
+
+  it("keeps links out of a production log", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    await new ConsoleProvider().send(verify);
+
+    const logged = vi.mocked(console.log).mock.calls.flat().join("\n");
+    expect(logged).toContain("dev@local.test");
+    expect(logged).not.toContain("token=t");
+  });
+});

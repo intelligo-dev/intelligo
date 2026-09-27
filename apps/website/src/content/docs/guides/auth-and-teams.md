@@ -121,7 +121,7 @@ The first time a user gets a workspace, `ensureUserWorkspace` calls `onWorkspace
 
 ## Platform admins
 
-A platform admin is a row, not a workspace role: `users.role` holds `platform-admin`. List emails in `PLATFORM_ADMIN_EMAILS`, comma-separated; `requirePlatformAdmin()` promotes a listed user into the column the first time it runs, and throws `"Insufficient permissions"` for anyone with neither. Never gate a cross-workspace surface on `owner`: every signup owns a workspace.
+A platform admin is a row, not a workspace role: `users.role` holds `platform-admin`. List emails in `PLATFORM_ADMIN_EMAILS`, comma-separated; `requirePlatformAdmin()` promotes a listed user into the column the first time it runs, and throws `"Insufficient permissions"` for anyone with neither. The allowlist counts a verified address only; on a development machine with no email provider, verify through the link the console provider logs, or run `intelligo admin grant <email>`, which writes the column directly. Never gate a cross-workspace surface on `owner`: every signup owns a workspace.
 
 Impersonation goes through `startImpersonation({ targetUserId, reason })` and `stopImpersonation({ targetUserId })` from `@intelligo-dev/admin`. Starting requires a platform admin and a reason, writes the audit event first and aborts if it cannot be written, lasts at most 30 minutes, and refuses another admin as the target; stopping is audited too. `impersonateUser` in `@intelligo-dev/auth` verifies the caller is a platform admin and the target is not, but writes no audit event, so call the admin functions instead.
 

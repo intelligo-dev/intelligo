@@ -26,6 +26,11 @@ import {
   appChainExitCode,
   formatAppChainCheck,
 } from "./commands/app-chain-check.js";
+import {
+  formatGrantResult,
+  grantExitCode,
+  grantPlatformAdmin,
+} from "./commands/admin.js";
 import { exitCodeFor, formatResults, runChecks } from "./commands/doctor.js";
 import {
   formatMigrateCheck,
@@ -98,6 +103,7 @@ function usage(): string {
     "  migrate --check   Compare the framework's and the app's migrations to a database",
     "                    (--json: one object whose `state` is up_to_date | pending |",
     "                    fresh | ahead | unmanaged | legacy)",
+    "  admin grant <email>  Make a signed-up user a platform admin (--force in production)",
     "  add <feature>     Generate consumer-owned source (--force to overwrite)",
     "  upgrade --check   Show what a template upgrade would change",
     "  sync [items…]     Install registry pages from this release's registry",
@@ -187,6 +193,38 @@ async function runMigrate(
   }
 }
 
+async function runAdmin(rest: readonly string[]): Promise<number> {
+  if (!flagsOk("admin", rest, ["--force"])) return 2;
+  const [action, email, ...extra] = rest.filter((a) => !a.startsWith("--"));
+  if (action !== "grant" || !email || extra.length > 0) {
+    console.error("Usage: intelligo admin grant <email> [--force]");
+    return 2;
+  }
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    console.error("DATABASE_URL is required for `admin grant`.");
+    return 1;
+  }
+
+  const { Client } = await import("pg");
+  const client = new Client({ connectionString: url });
+  await client.connect();
+  try {
+    const result = await grantPlatformAdmin(
+      email,
+      async (sql, params) => (await client.query(sql, params)).rows,
+      {
+        production: process.env.NODE_ENV === "production",
+        force: rest.includes("--force"),
+      }
+    );
+    console.log(formatGrantResult(result));
+    return grantExitCode(result);
+  } finally {
+    await client.end();
+  }
+}
+
 function flagsOk(
   command: string,
   args: readonly string[],
@@ -246,7 +284,12 @@ async function main(): Promise<number> {
   // The commands that read the app's configuration see what the app
   // itself would: its .env.local and .env, then the pnpm workspace
   // root's, under anything the shell set.
-  if (command === "doctor" || command === "migrate" || command === "upgrade") {
+  if (
+    command === "doctor" ||
+    command === "migrate" ||
+    command === "upgrade" ||
+    command === "admin"
+  ) {
     loadAppEnv(process.cwd());
   }
 
@@ -351,6 +394,8 @@ async function main(): Promise<number> {
         force: rest.includes("--force"),
       });
     }
+    case "admin":
+      return runAdmin(rest);
     case "help":
     case "--help":
     case "-h":

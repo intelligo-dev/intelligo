@@ -169,6 +169,13 @@ export class LoopsProvider implements EmailProvider {
   }
 }
 
+/**
+ * Sends nothing; logs what it would have sent. Outside production it also
+ * logs the links the message carries (`verificationUrl`, `resetUrl`, …),
+ * so a development setup without an email provider can still verify an
+ * address or reset a password. In production a link in the log would be
+ * a credential in the log, so only the recipient and subject are.
+ */
 export class ConsoleProvider implements EmailProvider {
   async send(params: EmailSendParams): Promise<{ id: string }> {
     const recipient = Array.isArray(params.to)
@@ -178,6 +185,13 @@ export class ConsoleProvider implements EmailProvider {
     console.log(
       `[Email] Would send to: ${recipient}, subject: ${params.subject}`
     );
+    if (process.env.NODE_ENV !== "production") {
+      for (const [key, value] of Object.entries(
+        params.template?.variables ?? {}
+      )) {
+        if (/Url$/.test(key)) console.log(`[Email]   ${key}: ${value}`);
+      }
+    }
 
     return { id: `console-${Date.now()}` };
   }

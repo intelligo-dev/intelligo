@@ -26,6 +26,7 @@ intelligo add <feature>                # generate consumer-owned source (admin-p
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate                      # apply the framework chain
 intelligo migrate --check [--json]     # compare the chain with the database, change nothing
+intelligo admin grant <email>          # make a signed-up user a platform admin
 intelligo upgrade --check              # what a template upgrade would change
 intelligo sync [items…]                # install registry pages from this release, seams kept
 intelligo sync --check                 # exit 1 when an installed page drifted from the registry
@@ -82,7 +83,7 @@ gets neither; its `next.config.mjs` reads the workspace root's `.env.local` and
 has the app's name (a root named after the product, say), the app's package is
 `@<scope>/<directory>` instead, the scope being the root's scope or name.
 
-## Where `doctor`, `migrate` and `upgrade` read env from
+## Where `doctor`, `migrate`, `upgrade` and `admin` read env from
 
 They run outside Next, so they load the env files themselves, never
 overriding a variable that is already set. Highest precedence first: the
@@ -91,6 +92,15 @@ member of a pnpm workspace — the workspace root's `.env.local` and `.env`. An
 app in a monorepo whose `next.config` falls back to the repository root's
 `.env` is therefore checked and migrated against the same `DATABASE_URL` it
 boots with.
+
+## `admin grant`: the first platform admin
+
+`PLATFORM_ADMIN_EMAILS` promotes an address only once it is verified, and a
+development setup without an email provider verifies none (the console
+provider logs the verification link instead, outside production).
+`intelligo admin grant <email>` writes `users.role` for a user who has signed
+up and records an `admin.platform_admin.granted` audit event, in one
+transaction. With `NODE_ENV=production` it refuses unless `--force` is passed.
 
 ## Why `migrate` is not `drizzle-kit migrate`
 
