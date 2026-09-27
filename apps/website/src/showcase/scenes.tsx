@@ -77,6 +77,7 @@ import {
   PLANS,
   RESUME,
   USAGE_OVERVIEW,
+  USAGE_SCALE,
   USER,
   WORKSPACE,
   WORKSPACES,
@@ -721,7 +722,7 @@ function Usage() {
           quota={USAGE_OVERVIEW.quota}
           trial={USAGE_OVERVIEW.trial}
         />
-        <UsageChart points={USAGE_OVERVIEW.daily} />
+        <UsageChart points={USAGE_OVERVIEW.daily} {...USAGE_SCALE} />
       </div>
     </AppFrame>
   );
@@ -812,7 +813,7 @@ function FeatureGating() {
       />
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <PaywallBlur isLocked>
-          <UsageChart points={USAGE_OVERVIEW.daily} />
+          <UsageChart points={USAGE_OVERVIEW.daily} {...USAGE_SCALE} />
         </PaywallBlur>
         <UpgradePrompt
           feature="Usage export"

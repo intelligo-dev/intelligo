@@ -12,8 +12,25 @@ import { daysAgo } from "@showcase/actions/_preview";
 export { NOTIFICATIONS } from "@showcase/actions/notifications";
 export { DOCUMENTS } from "@showcase/actions/documents";
 export { CONVERSATIONS } from "@showcase/actions/chat";
-export { USAGE_OVERVIEW } from "@showcase/actions/usage";
+import { USAGE_OVERVIEW } from "@showcase/actions/usage";
+export { USAGE_OVERVIEW };
 export { FACTS, AUDIT_TRAIL } from "@showcase/actions/privacy";
+
+/** The usage chart's scale, formatted as `UsagePage` does on the server. */
+const usageMax = Math.max(
+  ...USAGE_OVERVIEW.daily.map((point) => point.tokensUsed),
+  1
+);
+const compact = new Intl.NumberFormat("en", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+export const USAGE_SCALE = {
+  max: usageMax,
+  scaleLabels: [usageMax, usageMax / 2, 0].map((value) =>
+    compact.format(Math.round(value))
+  ) as [string, string, string],
+};
 
 export const USER = {
   id: "user_you",

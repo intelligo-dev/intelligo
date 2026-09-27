@@ -793,6 +793,31 @@ describe("registry", () => {
 
       expect(violations).toEqual([]);
     });
+
+    // Compact notation ("1.2K") is spelled by the ICU data of whichever
+    // runtime formats it, and Node's and a browser's differ for many
+    // locales: a client component that formats it renders one string
+    // during SSR and another at hydration. The server formats it and
+    // passes the string down.
+    it("never formats compact numbers in a client component", () => {
+      const violations: string[] = [];
+
+      for (const item of registry.items) {
+        for (const file of item.files) {
+          const abs = path.join(REGISTRY_DIR, file.path);
+          if (!statSyncSafe(abs)) continue;
+          const source = readFileSync(abs, "utf8");
+          if (
+            /^\s*["']use client["']/.test(source) &&
+            /notation:\s*["']compact["']/.test(source)
+          ) {
+            violations.push(`${item.name}: ${file.path}`);
+          }
+        }
+      }
+
+      expect(violations).toEqual([]);
+    });
   });
 
   describe("i18n-native items", () => {
