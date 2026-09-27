@@ -1334,7 +1334,7 @@ streamTurn: async (turn, prepared, { abortSignal }) => {
   const stream = await handleChatStream({
     mastra,
     agentId: turn.agent.id,
-    version: "v6",
+    version: "v7",
     params: {
       messages: prepared.messages,
       memory: { thread: turn.conversationId, resource: turn.userId },
@@ -1420,7 +1420,7 @@ Each block reads its copy through next-intl under a namespace named after the bl
 
    Add the locale to `locales`, for example `["en", "de"]`.
 
-2. Copy `messages/en/` to `messages/de/` and translate the values. Keep the keys.
+2. Copy `messages/en/` to `messages/de/` and translate the values. Keep the keys. You can translate a namespace at a time: `i18n/request.ts` lays each locale over the default locale's messages, so a file or key `de` does not have yet renders in English.
 
 3. Install the `language-switcher` block and put it in a shell slot:
 
@@ -1429,7 +1429,7 @@ Each block reads its copy through next-intl under a namespace named after the bl
    export const shellConfig: ShellConfig = { headerRight: LanguageSwitcher };
    ```
 
-A missing file or key falls back to what next-intl is configured to do; `messages/en` stays the reference.
+A missing file or key renders in the default locale; `messages/en` stays the reference, and `intelligo sync --check` lists what a locale has not translated.
 
 ## Your own strings
 

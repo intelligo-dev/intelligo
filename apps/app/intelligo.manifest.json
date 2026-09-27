@@ -3,7 +3,7 @@
   "frameworkVersion": "1.0.0-beta.15",
   "features": {
     "app-scaffold": {
-      "templateVersion": "1.15.0",
+      "templateVersion": "1.16.0",
       "files": [
         {
           "path": "package.json",
@@ -79,7 +79,7 @@
         },
         {
           "path": "i18n/request.ts",
-          "hash": "5e5307d265bf7681e4ada872c4d49af287ee9e0f7a98a7074412dc739e2aa6ac"
+          "hash": "70b423c5d250d964dbddb8f1a24ed410dfa4131d4f05994b071216543b54ff0a"
         },
         {
           "path": "proxy.ts",

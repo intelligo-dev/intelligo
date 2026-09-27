@@ -732,7 +732,7 @@ streamTurn: async (turn, prepared, { abortSignal }) => {
   const stream = await handleChatStream({
     mastra,
     agentId: turn.agent.id,
-    version: "v6",
+    version: "v7",
     params: {
       messages: prepared.messages,
       memory: { thread: turn.conversationId, resource: turn.userId },
