@@ -4,7 +4,8 @@
  * and an unknown override is refused rather than silently defaulted.
  */
 
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { pgTable, text } from "drizzle-orm/pg-core";
 import { selectDriver } from "./client";
 
 describe("selectDriver", () => {
@@ -37,5 +38,27 @@ describe("selectDriver", () => {
     expect(() =>
       selectDriver("postgresql://localhost/db", "neon-http")
     ).toThrow(/neon-http is not supported/);
+  });
+});
+
+describe("db", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it("maps a column declared without a name to snake_case, as drizzle-kit generates it", async () => {
+    vi.stubEnv("DATABASE_URL", "postgresql://localhost:5432/casing_check");
+    vi.stubEnv("INTELLIGO_DB_DRIVER", "pg");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const { db } = await import("./client");
+    const notes = pgTable("notes", { workspaceId: text().notNull() });
+
+    const { sql } = db
+      .select({ workspaceId: notes.workspaceId })
+      .from(notes)
+      .toSQL();
+
+    expect(sql).toBe('select "workspace_id" from "notes"');
   });
 });

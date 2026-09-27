@@ -11,6 +11,10 @@
  * Neon-compatible proxy or a self-hosted Postgres whose hostname happens to
  * match.
  *
+ * Columns declared without a name map to snake_case (`workspaceId` →
+ * `workspace_id`), the same rule the scaffold's `drizzle.config.ts` gives
+ * drizzle-kit, so a consumer table reads through this handle as generated.
+ *
  * The client is created on first access so `next build` can collect route
  * metadata without DATABASE_URL; a missing URL throws on the first query.
  */
@@ -25,6 +29,8 @@ import * as schema from "./schema";
 export type DbDriver = "pg" | "neon-serverless";
 
 type Db = ReturnType<typeof drizzleNeon> | ReturnType<typeof drizzlePostgres>;
+
+const options = { schema, casing: "snake_case" } as const;
 
 let cached: Db | null = null;
 
@@ -65,12 +71,12 @@ function initDb(): Db {
     }
     const pool = new NeonPool({ connectionString: url });
     console.log("📊 Database: Neon (serverless, WebSocket)");
-    return drizzleNeon(pool, { schema });
+    return drizzleNeon(pool, options);
   }
 
   const pool = new Pool({ connectionString: url });
   console.log("📊 Database: PostgreSQL");
-  return drizzlePostgres(pool as any, { schema });
+  return drizzlePostgres(pool as any, options);
 }
 
 function resolveDb(): Db {
