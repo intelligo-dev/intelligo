@@ -45,6 +45,16 @@ export interface PaymentProvider {
   checkPayment(invoiceId: string): Promise<PaymentCheckResult>;
 
   cancelPayment(invoiceId: string): Promise<void>;
+
+  /**
+   * The invoice a provider's callback request is about, or null when it
+   * names none — read from wherever this provider puts it (a query
+   * parameter of the callback URL, a field of the body). Only the id is
+   * taken from the request: the invoice is settled by asking
+   * `checkPayment`, so a forged callback settles nothing that is not
+   * paid. A provider without it has no callback route.
+   */
+  invoiceIdFromCallback?(request: Request): Promise<string | null>;
 }
 
 // ─── Mock Provider (Development) ───
@@ -92,6 +102,10 @@ export const mockPaymentProvider: PaymentProvider = {
     if (payment) {
       payment.status = "expired";
     }
+  },
+
+  async invoiceIdFromCallback(request) {
+    return new URL(request.url).searchParams.get("invoice");
   },
 };
 

@@ -25,6 +25,7 @@ import {
 import type { CreatePaymentResult } from "@intelligo-dev/billing/payment";
 
 import { priceLocalPayment } from "@/lib/local-payment";
+import { grantLocalPayment } from "@/lib/local-payment-grant";
 import { paymentPollConfig } from "@/lib/payment-poll-config";
 
 /**
@@ -110,16 +111,7 @@ export async function pollLocalPayment(
     const status = await settleLocalInvoice({
       invoiceId,
       workspaceId: context.workspace.id,
-      fulfil: async (payment) => {
-        const offer = await priceLocalPayment(payment.reference);
-        if (!offer) {
-          throw new Error(
-            `"${payment.reference}" no longer prices through lib/local-payment.ts; ` +
-              `invoice ${payment.invoiceId} is paid and left unfulfilled.`
-          );
-        }
-        return offer.grant;
-      },
+      fulfil: grantLocalPayment,
     });
     // What was bought shows everywhere the workspace's plan or balance
     // is rendered, so every page is stale once it lands.

@@ -49,7 +49,10 @@ The reference app does the same from inside the monorepo, where the CLI is a wor
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "buildCommand": "pnpm --filter @intelligo-dev/cli build && node ../../packages/cli/dist/bin.js migrate && pnpm exec drizzle-kit migrate && pnpm build",
-  "crons": [{ "path": "/api/cron/maintenance", "schedule": "0 3 * * *" }]
+  "crons": [
+    { "path": "/api/cron/maintenance", "schedule": "0 3 * * *" },
+    { "path": "/api/payments/local/settle", "schedule": "30 3 * * *" }
+  ]
 }
 ```
 

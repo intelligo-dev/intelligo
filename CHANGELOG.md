@@ -35,6 +35,20 @@ it explains a framework decision.
   lapsed grant to the free plan, audited as `billing.plan_grant.expired`,
   and the `maintenance` template (1.2.0) runs it after trial expiry.
   A one-time QR payment therefore no longer grants its plan forever.
+- Local invoices settle without the buyer's tab. `settlePendingLocalInvoices`
+  in `@intelligo-dev/billing` settles every unfulfilled invoice opened in
+  the last day, or the one a provider's callback names, each against the
+  workspace that recorded it and by asking the provider — a callback's
+  body is never taken as payment. `PaymentProvider` gains an optional
+  `invoiceIdFromCallback(request)`; the mock reads `?invoice=`. The
+  `payment-poll` item ships `app/api/payments/local/settle/route.ts`
+  (schedule it with `CRON_SECRET`, beside maintenance) and
+  `app/api/webhooks/local-payment/route.ts` (the provider's callback URL),
+  both granting through the new `lib/local-payment-grant.ts`, which the
+  poll action now uses too.
+- `withCronSecret(handler)` in `@intelligo-dev/next/route`: 401 without
+  `Authorization: Bearer $CRON_SECRET`, 403 to everyone while the secret
+  is unset or shorter than 32 characters.
 
 ### Changed
 

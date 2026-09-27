@@ -19,6 +19,8 @@
 
 import "server-only";
 
+import { timingSafeEqual } from "node:crypto";
+
 import {
   isAuthGuardError,
   requireAuth,
@@ -104,4 +106,35 @@ export function withRole<Context = unknown>(
   handler: GuardedHandler<WorkspaceContext, Context>
 ): RouteHandler<Context> {
   return guarded(() => requireRole(roles), handler);
+}
+
+/** Constant-time bearer comparison; length is compared too. */
+function bearerMatches(header: string | null, secret: string): boolean {
+  if (!header?.startsWith("Bearer ")) return false;
+  const token = Buffer.from(header.slice("Bearer ".length));
+  const expected = Buffer.from(secret);
+  if (token.length !== expected.length) return false;
+  return timingSafeEqual(token, expected);
+}
+
+/**
+ * Runs `handler` for a scheduler presenting `Authorization: Bearer
+ * $CRON_SECRET` (Vercel Cron sends it itself); 401 otherwise. A secret
+ * that is unset or shorter than 32 characters answers 403 to everyone:
+ * a scheduled route is never open by misconfiguration.
+ */
+export function withCronSecret<Context = unknown>(
+  handler: RouteHandler<Context>
+): RouteHandler<Context> {
+  return async (request, context) => {
+    const secret = process.env.CRON_SECRET;
+    if (!secret || secret.length < 32) {
+      console.error("CRON_SECRET missing or shorter than 32 chars — refusing");
+      return new Response("Forbidden", { status: 403 });
+    }
+    if (!bearerMatches(request.headers.get("authorization"), secret)) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    return handler(request, context);
+  };
 }
