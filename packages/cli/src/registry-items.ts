@@ -9,7 +9,7 @@
  * sibling's files lands after it.
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
 import type { RegistryRequires } from "./commands/doctor.js";
@@ -179,6 +179,78 @@ export function findWorkspaceRoot(appRoot: string): string | null {
     if (parent === dir) return null;
     dir = parent;
   }
+}
+
+/** `name` from a package.json, or null when it has none or is unreadable. */
+function packageName(dir: string): string | null {
+  try {
+    const { name } = JSON.parse(
+      readFileSync(path.join(dir, "package.json"), "utf8")
+    ) as { name?: unknown };
+    return typeof name === "string" && name ? name : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Directories under `root` whose relative path a glob matches. */
+function expandGlob(root: string, glob: string): string[] {
+  const matcher = globToRegExp(glob);
+  const found: string[] = [];
+  const walk = (dir: string, rel: string, depth: number) => {
+    if (depth > 6) return;
+    let entries: string[];
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry === "node_modules" || entry.startsWith(".")) continue;
+      const full = path.join(dir, entry);
+      try {
+        if (!statSync(full).isDirectory()) continue;
+      } catch {
+        continue;
+      }
+      const relPath = rel ? `${rel}/${entry}` : entry;
+      if (matcher.test(relPath)) found.push(full);
+      walk(full, relPath, depth + 1);
+    }
+  };
+  walk(root, "", 0);
+  return found;
+}
+
+/**
+ * Every package name in the pnpm workspace rooted at `root`: the root's
+ * own and each member's, by absolute directory. Two packages sharing a
+ * name break `pnpm --filter` and workspace resolution.
+ */
+export function workspacePackages(root: string): Map<string, string> {
+  const packages = new Map<string, string>();
+  const rootName = packageName(root);
+  if (rootName) packages.set(path.resolve(root), rootName);
+
+  let yaml = "";
+  try {
+    yaml = readFileSync(path.join(root, "pnpm-workspace.yaml"), "utf8");
+  } catch {
+    return packages;
+  }
+  const globs = workspaceGlobs(yaml);
+  const excludes = globs
+    .filter((g) => g.startsWith("!"))
+    .map((g) => globToRegExp(g.slice(1)));
+  for (const glob of globs.filter((g) => !g.startsWith("!"))) {
+    for (const dir of expandGlob(root, glob)) {
+      const rel = path.relative(root, dir).split(path.sep).join("/");
+      if (excludes.some((re) => re.test(rel))) continue;
+      const name = packageName(dir);
+      if (name) packages.set(dir, name);
+    }
+  }
+  return packages;
 }
 
 /** The design-system base, installed before any page. */

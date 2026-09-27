@@ -3,7 +3,7 @@
   "frameworkVersion": "1.0.0-beta.15",
   "features": {
     "app-scaffold": {
-      "templateVersion": "1.16.0",
+      "templateVersion": "1.17.0",
       "files": [
         {
           "path": "package.json",
@@ -112,6 +112,7 @@
       ],
       "variables": {
         "__APP_NAME__": "app",
+        "__PACKAGE_NAME__": "app",
         "__APP_SLUG__": "app",
         "__INTELLIGO_DEP__": "workspace:*",
         "__WORKSPACE_ROOT__": "\"../..\""

@@ -80,7 +80,9 @@ billing product and the default page title. The scaffold carries its own
 stop the install over and allows the shadcn CLI's `pnpm add` at the root (with
 an `.npmrc` saying the same to pnpm 9). An app created inside a pnpm workspace
 gets neither; its `next.config.mjs` reads the workspace root's `.env.local` and
-`.env` instead, as `doctor` and `migrate` do.
+`.env` instead, as `doctor` and `migrate` do. When another package in that workspace already
+has the app's name (a root named after the product, say), the app's package is
+`@<scope>/<directory>` instead, the scope being the root's scope or name.
 
 ## Where `doctor`, `migrate` and `upgrade` read env from
 

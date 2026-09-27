@@ -47,6 +47,15 @@ it explains a framework decision.
   many locales, which React reported as a hydration mismatch. An
   architecture test now refuses compact notation in any client component
   an item ships.
+- `intelligo create` inside a pnpm workspace no longer gives the app a
+  package name another package has: `create apps/app --name Acme` in a
+  workspace whose root is `acme` names the app `@acme/app` (the root's
+  scope or name, then the directory). The page title and billing product
+  still come from `--name`. The package name is its own template variable,
+  `__PACKAGE_NAME__` (`app-scaffold` 1.17.0); an app recorded before it
+  reads as named `__APP_NAME__`, so its `package.json` stays current.
+- `intelligo doctor` warns when the app's package name is also another
+  workspace package's — `pnpm --filter` and `workspace:*` resolve only one.
 
 ## [1.0.0-beta.15] — 2026-09-25
 

@@ -17,7 +17,12 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { createApp, deriveNames, formatNextSteps } from "./create.js";
+import {
+  createApp,
+  deriveNames,
+  formatNextSteps,
+  packageNameFor,
+} from "./create.js";
 import { hashContents, readManifest } from "../manifest.js";
 
 let workdir: string;
@@ -262,5 +267,86 @@ describe("formatNextSteps", () => {
       installed: true,
     });
     expect(steps.split("\n")[0]).toBe("cd acme");
+  });
+});
+
+describe("packageNameFor", () => {
+  function workspace(rootName: string, members: Record<string, string> = {}) {
+    writeFileSync(
+      path.join(workdir, "pnpm-workspace.yaml"),
+      "packages:\n  - apps/*\n  - packages/*\n"
+    );
+    writeFileSync(
+      path.join(workdir, "package.json"),
+      JSON.stringify({ name: rootName, private: true })
+    );
+    for (const [dir, name] of Object.entries(members)) {
+      mkdirSync(path.join(workdir, dir), { recursive: true });
+      writeFileSync(
+        path.join(workdir, dir, "package.json"),
+        JSON.stringify({ name })
+      );
+    }
+  }
+
+  it("keeps the app's name outside a workspace", () => {
+    expect(packageNameFor(path.join(workdir, "acme"), "acme", null)).toBe(
+      "acme"
+    );
+  });
+
+  it("keeps the app's name when the workspace has no package by it", () => {
+    workspace("monorepo");
+
+    expect(
+      packageNameFor(path.join(workdir, "apps", "web"), "acme", workdir)
+    ).toBe("acme");
+  });
+
+  it("scopes the app under the root's name when the root already has it", () => {
+    workspace("acme");
+
+    expect(
+      packageNameFor(path.join(workdir, "apps", "app"), "acme", workdir)
+    ).toBe("@acme/app");
+  });
+
+  it("uses the root's own scope, and steps past a name a member has", () => {
+    workspace("@acme/root", {
+      "packages/data": "acme",
+      "packages/app-lib": "@acme/app",
+    });
+
+    expect(
+      packageNameFor(path.join(workdir, "apps", "app"), "acme", workdir)
+    ).toBe("@acme/app-app");
+  });
+
+  it("does not count the app's own directory as taking its name", () => {
+    workspace("monorepo", { "apps/acme": "acme" });
+
+    expect(
+      packageNameFor(path.join(workdir, "apps", "acme"), "acme", workdir)
+    ).toBe("acme");
+  });
+
+  it("writes the scoped name into the scaffold's package.json", () => {
+    workspace("acme");
+    writeFileSync(
+      path.join(templatesDir, "app-scaffold", "pkg.tpl"),
+      '{ "name": "__PACKAGE_NAME__", "title": "__APP_NAME__" }\n'
+    );
+    const target = path.join(workdir, "apps", "app");
+
+    createApp({
+      target,
+      templatesDir,
+      frameworkVersion: "1.2.3",
+      name: "Acme",
+    });
+
+    expect(
+      JSON.parse(readFileSync(path.join(target, "package.json"), "utf8"))
+    ).toEqual({ name: "@acme/app", title: "acme" });
   });
 });
