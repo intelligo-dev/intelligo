@@ -2217,6 +2217,7 @@
       "dependencies": [
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
+        "@intelligo-dev/core",
         "@intelligo-dev/next",
         "lucide-react",
         "server-only",
@@ -2247,6 +2248,21 @@
           "path": "base/payment-poll/lib/payment-poll-config.ts",
           "type": "registry:file",
           "target": "lib/payment-poll-config.ts"
+        },
+        {
+          "path": "base/payment-poll/lib/local-payment-grant.ts",
+          "type": "registry:file",
+          "target": "lib/local-payment-grant.ts"
+        },
+        {
+          "path": "base/payment-poll/routes/settle.ts",
+          "type": "registry:file",
+          "target": "app/api/payments/local/settle/route.ts"
+        },
+        {
+          "path": "base/payment-poll/routes/callback.ts",
+          "type": "registry:file",
+          "target": "app/api/webhooks/local-payment/route.ts"
         },
         {
           "path": "base/payment-poll/messages/en.json",

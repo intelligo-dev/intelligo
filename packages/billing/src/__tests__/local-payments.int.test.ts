@@ -307,4 +307,95 @@ d("local payments (integration)", () => {
     ).rejects.toMatchObject({ code: "payment_mismatch" });
     expect(await balanceMicros()).toBe(0);
   });
+
+  describe("settlePendingLocalInvoices", () => {
+    const grantCredits = () => ({ credits: credits() });
+    const sweep = (extra: { invoiceId?: string } = {}) =>
+      local.settlePendingLocalInvoices({
+        fulfil: grantCredits,
+        openedBefore: new Date(Date.now() + 60_000),
+        ...extra,
+      });
+
+    it("grants an invoice paid after the buyer's tab closed", async () => {
+      const invoice = await open();
+      payment.mockCompletePayment(invoice.invoiceId);
+
+      const result = await sweep();
+
+      expect(result.errors).toEqual([]);
+      expect(result.paid).toBeGreaterThanOrEqual(1);
+      expect(await balanceMicros()).toBe(credits().amount);
+      expect((await row(invoice.invoiceId))?.fulfilled_at).toBeInstanceOf(Date);
+
+      await sweep();
+      expect(await balanceMicros()).toBe(credits().amount);
+    });
+
+    it("leaves an invoice the buyer's tab may still be polling", async () => {
+      const invoice = await open();
+      payment.mockCompletePayment(invoice.invoiceId);
+
+      await local.settlePendingLocalInvoices({ fulfil: grantCredits });
+
+      expect((await row(invoice.invoiceId))?.status).toBe("pending");
+      expect(await balanceMicros()).toBe(0);
+    });
+
+    it("marks an invoice the provider no longer knows failed", async () => {
+      const invoice = await open();
+      await payment.mockPaymentProvider.cancelPayment(invoice.invoiceId);
+
+      await sweep();
+
+      expect((await row(invoice.invoiceId))?.status).toBe("failed");
+    });
+
+    it("grants nothing for a callback naming an unpaid invoice", async () => {
+      const invoice = await open();
+
+      const result = await sweep({ invoiceId: invoice.invoiceId });
+
+      expect(result).toMatchObject({ paid: 0, pending: 1, errors: [] });
+      expect(await balanceMicros()).toBe(0);
+    });
+
+    it("settles a callback's invoice into the workspace that opened it", async () => {
+      const invoice = await local.openLocalInvoice({
+        workspaceId: OTHER_WORKSPACE,
+        userId: USER,
+        reference: "bundle-5",
+        price: fromMajor(12.5, "USD"),
+      });
+      payment.mockCompletePayment(invoice.invoiceId);
+
+      const result = await local.settlePendingLocalInvoices({
+        invoiceId: invoice.invoiceId,
+        fulfil: grantCredits,
+      });
+
+      expect(result.paid).toBe(1);
+      expect(await balanceMicros(OTHER_WORKSPACE)).toBe(credits().amount);
+      expect(await balanceMicros()).toBe(0);
+    });
+
+    it("reports a grant that throws and keeps settling the rest", async () => {
+      const failing = await open();
+      const fine = await open("bundle-ok");
+      payment.mockCompletePayment(failing.invoiceId);
+      payment.mockCompletePayment(fine.invoiceId);
+
+      const result = await local.settlePendingLocalInvoices({
+        openedBefore: new Date(Date.now() + 60_000),
+        fulfil: (p) => {
+          if (p.invoiceId === failing.invoiceId) throw new Error("unpriced");
+          return grantCredits();
+        },
+      });
+
+      expect(result.errors.join()).toContain(failing.invoiceId);
+      expect((await row(failing.invoiceId))?.fulfilled_at).toBeNull();
+      expect((await row(fine.invoiceId))?.fulfilled_at).toBeInstanceOf(Date);
+    });
+  });
 });

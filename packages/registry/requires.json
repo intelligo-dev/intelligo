@@ -124,7 +124,7 @@
     "payment-poll": {
       "marker": "components/billing/local-payment-modal.tsx",
       "items": ["pricing"],
-      "files": ["i18n/navigation"]
+      "files": ["i18n/navigation", "lib/intelligo"]
     },
     "profile-settings": {
       "marker": "app/[locale]/(app)/settings/profile/page.tsx",

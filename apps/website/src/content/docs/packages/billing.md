@@ -202,7 +202,18 @@ the provider that issued it; when it is paid, the row is marked fulfilled and
 the grant `fulfil` returns — `{ plan: slug, days? }` or `{ credits: Money }` —
 is applied in the same transaction, so concurrent polls grant once. A plan
 with `days` lapses that long after it is granted; bought again before then,
-the days add to the running grant. An invoice of
+the days add to the running grant.
+
+A buyer who pays in their bank's app and closes the tab is not left
+unfulfilled: `settlePendingLocalInvoices({ fulfil })` settles every
+unfulfilled invoice opened in the last day (and at least a minute ago, which
+the tab may still be polling) against the workspace that recorded it, and
+`settlePendingLocalInvoices({ invoiceId, fulfil })` settles the one a
+provider's callback names. Both ask the provider; a callback's body is never
+taken as payment. A provider whose callbacks name an invoice implements
+`invoiceIdFromCallback(request)`. The `payment-poll` item serves both at
+`/api/payments/local/settle` (a `CRON_SECRET` schedule) and
+`/api/webhooks/local-payment`. An invoice of
 another workspace is `payment_not_found`. The `payment-poll` registry item is
 the transport over both. A provider is `registerPaymentProvider(mode, {
 createPayment, checkPayment, cancelPayment })` from `/payment`, bound in the

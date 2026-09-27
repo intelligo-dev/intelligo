@@ -159,13 +159,19 @@ export type {
 
 // Invoices from a registered payment provider, recorded and granted on
 // the server
-export { openLocalInvoice, settleLocalInvoice } from "./local-payments";
+export {
+  openLocalInvoice,
+  settleLocalInvoice,
+  settlePendingLocalInvoices,
+} from "./local-payments";
 export type {
   LocalPaymentGrant,
   LocalPaymentOffer,
   LocalPaymentStatus,
   OpenLocalInvoiceInput,
   SettleLocalInvoiceInput,
+  SettlePendingLocalInvoicesInput,
+  SettlePendingLocalInvoicesResult,
 } from "./local-payments";
 
 // Checkout & billing overview service. Transports call

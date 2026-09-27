@@ -25,7 +25,7 @@ vi.mock("@intelligo-dev/auth", () => ({
   isAuthGuardError: (error: unknown) => error instanceof mocks.AuthGuardError,
 }));
 
-import { withAuth, withRole, withWorkspace } from "./route";
+import { withAuth, withCronSecret, withRole, withWorkspace } from "./route";
 
 const request = new Request("https://app.test/api/thing");
 const session = { session: { id: "s_1" }, user: { id: "u_1" } };
@@ -140,5 +140,44 @@ describe("withRole", () => {
     const response = await withRole(["member"], vi.fn())(request, undefined);
 
     expect(response.status).toBe(401);
+  });
+});
+
+describe("withCronSecret", () => {
+  const SECRET = "s".repeat(32);
+  const handler = withCronSecret(async () => new Response("ran"));
+  const call = (authorization?: string) =>
+    handler(
+      new Request("https://app.test/api/cron", {
+        headers: authorization ? { authorization } : {},
+      }),
+      {}
+    );
+
+  beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  it("runs the handler for the scheduler's bearer", async () => {
+    vi.stubEnv("CRON_SECRET", SECRET);
+    const response = await call(`Bearer ${SECRET}`);
+    expect(await response.text()).toBe("ran");
+    vi.unstubAllEnvs();
+  });
+
+  it("answers 401 to a missing or wrong bearer", async () => {
+    vi.stubEnv("CRON_SECRET", SECRET);
+    expect((await call()).status).toBe(401);
+    expect((await call(`Bearer ${"x".repeat(32)}`)).status).toBe(401);
+    expect((await call(`Bearer ${SECRET}x`)).status).toBe(401);
+    vi.unstubAllEnvs();
+  });
+
+  it("answers 403 to everyone while the secret is unset or short", async () => {
+    vi.stubEnv("CRON_SECRET", "short");
+    expect((await call("Bearer short")).status).toBe(403);
+    vi.stubEnv("CRON_SECRET", "");
+    expect((await call("Bearer ")).status).toBe(403);
+    vi.unstubAllEnvs();
   });
 });

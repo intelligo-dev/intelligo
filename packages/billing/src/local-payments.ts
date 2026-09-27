@@ -16,7 +16,7 @@
  * plan grant and a Stripe credit purchase use.
  */
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, gt, isNull, lt } from "drizzle-orm";
 
 import { db } from "@intelligo-dev/core/db";
 import { payments, type Payment } from "@intelligo-dev/core/db/schema";
@@ -263,4 +263,90 @@ function currencyMismatch(payment: Payment, granted: string) {
     "currency_mismatch",
     `Credit in ${granted} cannot be added to this workspace's ledger.`
   );
+}
+
+export type SettlePendingLocalInvoicesInput = {
+  fulfil: SettleLocalInvoiceInput["fulfil"];
+  /**
+   * Settle this invoice only, whichever workspace recorded it — a
+   * provider's callback naming it. The provider is still asked; nothing
+   * the callback said is taken as payment.
+   */
+  invoiceId?: string;
+  /** Skip invoices opened after this, which the buyer's tab is still polling. Default: a minute ago. */
+  openedBefore?: Date;
+  /** Skip invoices opened before this, long expired at the provider. Default: a day ago. */
+  openedAfter?: Date;
+  /** At most this many invoices per run, oldest first. Default 100. */
+  limit?: number;
+};
+
+export type SettlePendingLocalInvoicesResult = Record<
+  LocalPaymentStatus,
+  number
+> & { errors: string[] };
+
+/**
+ * Settle the invoices nobody is polling: a buyer who paid in their bank's
+ * app and closed the tab is granted what they bought on the next run.
+ * Every unfulfilled `pending` invoice in the window is settled with
+ * `settleLocalInvoice` against the workspace that recorded it — asked of
+ * its provider, granted once, marked failed when expired. Run it from a
+ * schedule (the `payment-poll` item's route does) and from a provider's
+ * callback with `invoiceId`.
+ */
+export async function settlePendingLocalInvoices(
+  input: SettlePendingLocalInvoicesInput
+): Promise<SettlePendingLocalInvoicesResult> {
+  const now = Date.now();
+  const unfulfilled = and(
+    eq(payments.status, "pending"),
+    isNull(payments.fulfilledAt)
+  );
+  const where = input.invoiceId
+    ? and(unfulfilled, eq(payments.invoiceId, input.invoiceId))
+    : and(
+        unfulfilled,
+        lt(payments.createdAt, input.openedBefore ?? new Date(now - 60_000)),
+        gt(
+          payments.createdAt,
+          input.openedAfter ?? new Date(now - 24 * 60 * 60_000)
+        )
+      );
+
+  const rows = await db
+    .select({
+      invoiceId: payments.invoiceId,
+      workspaceId: payments.workspaceId,
+    })
+    .from(payments)
+    .where(where)
+    .orderBy(asc(payments.createdAt))
+    .limit(input.limit ?? 100);
+
+  const result: SettlePendingLocalInvoicesResult = {
+    paid: 0,
+    pending: 0,
+    failed: 0,
+    errors: [],
+  };
+  for (const row of rows) {
+    try {
+      const status = await settleLocalInvoice({
+        invoiceId: row.invoiceId,
+        workspaceId: row.workspaceId,
+        fulfil: input.fulfil,
+      });
+      result[status]++;
+    } catch (error) {
+      const message = `${row.invoiceId}: ${error instanceof Error ? error.message : String(error)}`;
+      result.errors.push(message);
+      log.error("Settling a local invoice failed", {
+        workspaceId: row.workspaceId,
+        invoiceId: row.invoiceId,
+        error: message,
+      });
+    }
+  }
+  return result;
 }
