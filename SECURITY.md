@@ -47,6 +47,6 @@ solely by an automated scanner with no working reproduction.
 
 ## Supported versions
 
-During the 1.0 beta, only the newest `@intelligo-dev/*@beta` release
-receives security fixes. Once 1.0 is out, the latest minor release of
-each published package does.
+The latest minor release of each published `@intelligo-dev/*` package
+receives security fixes. Prereleases (`beta`, `rc`) are not supported
+once a stable release supersedes them.

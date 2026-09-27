@@ -5,14 +5,14 @@ The AI-SDK-native chat transport: one Route Handler with auth, rate limits, feat
 Part of [Intelligo](https://intelligo.dev), an application framework and
 operational platform for vertical AI SaaS products. Every `@intelligo-dev/*`
 package is released at one version and shares one database schema;
-`pnpm dlx @intelligo-dev/cli@beta create my-app` installs the set an
+`pnpm dlx @intelligo-dev/cli create my-app` installs the set an
 application needs. Documentation:
 [intelligo.dev/docs/packages/chat](https://intelligo.dev/docs/packages/chat).
 
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/chat@beta ai
+pnpm add @intelligo-dev/chat ai
 ```
 
 `ai` (the Vercel AI SDK) is a peer: the transport takes its tools, its models

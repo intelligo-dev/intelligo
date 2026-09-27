@@ -10,7 +10,7 @@ label: "billing"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/billing@beta drizzle-orm stripe zod
+pnpm add @intelligo-dev/billing drizzle-orm stripe zod
 ```
 
 `drizzle-orm`, `stripe` and `zod` are peers.

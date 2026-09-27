@@ -10,7 +10,7 @@ label: "executions"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/executions@beta drizzle-orm
+pnpm add @intelligo-dev/executions drizzle-orm
 ```
 
 `drizzle-orm` is a peer. The `executions` table is part of the framework's

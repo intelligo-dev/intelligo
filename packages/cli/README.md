@@ -5,14 +5,14 @@ The Intelligo CLI: scaffold an AI SaaS app, generate owned source, and check its
 Part of [Intelligo](https://intelligo.dev), an application framework and
 operational platform for vertical AI SaaS products. Every `@intelligo-dev/*`
 package is released at one version and shares one database schema;
-`pnpm dlx @intelligo-dev/cli@beta create my-app` installs the set an
+`pnpm dlx @intelligo-dev/cli create my-app` installs the set an
 application needs. Documentation:
 [intelligo.dev/docs/packages/cli](https://intelligo.dev/docs/packages/cli).
 
 ## Install
 
 ```bash
-pnpm add -D @intelligo-dev/cli@beta
+pnpm add -D @intelligo-dev/cli
 ```
 
 `create` needs no install — run it with `pnpm dlx`. The scaffold adds the CLI
@@ -21,9 +21,9 @@ to the new application, which is where `intelligo` comes from afterwards.
 ## Commands
 
 ```bash
-pnpm dlx @intelligo-dev/cli@beta create my-app   # a registry-ready Next.js app, plus the pages you pick
-pnpm dlx @intelligo-dev/cli@beta create my-app --items chat,billing-settings --yes   # no questions
-pnpm dlx @intelligo-dev/cli@beta create . --name "Acme Audit"   # into the current, empty directory (a .git may be there)
+pnpm dlx @intelligo-dev/cli create my-app   # a registry-ready Next.js app, plus the pages you pick
+pnpm dlx @intelligo-dev/cli create my-app --items chat,billing-settings --yes   # no questions
+pnpm dlx @intelligo-dev/cli create . --name "Acme Audit"   # into the current, empty directory (a .git may be there)
 intelligo add <feature>                # generate consumer-owned source (admin-page, maintenance, vitest)
 intelligo doctor                       # what is misconfigured, and why it matters
 intelligo migrate                      # apply the framework chain

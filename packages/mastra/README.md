@@ -5,14 +5,14 @@ An optional bridge from a native Mastra agent to the execution boundary.
 Part of [Intelligo](https://intelligo.dev), an application framework and
 operational platform for vertical AI SaaS products. Every `@intelligo-dev/*`
 package is released at one version and shares one database schema;
-`pnpm dlx @intelligo-dev/cli@beta create my-app` installs the set an
+`pnpm dlx @intelligo-dev/cli create my-app` installs the set an
 application needs. Documentation:
 [intelligo.dev/docs/packages/mastra](https://intelligo.dev/docs/packages/mastra).
 
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/mastra@beta
+pnpm add @intelligo-dev/mastra
 ```
 
 `@mastra/core` 1.x is an optional peer dependency and **nothing here imports

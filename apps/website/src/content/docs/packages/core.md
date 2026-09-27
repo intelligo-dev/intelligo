@@ -10,7 +10,7 @@ label: "core"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/core@beta drizzle-orm
+pnpm add @intelligo-dev/core drizzle-orm
 ```
 
 `drizzle-orm` is a peer; `react` 19 is an optional one, needed only by the

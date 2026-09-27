@@ -27,7 +27,7 @@ Intelligo is everything around it — and it is tested, typed, and yours.
 
 </div>
 
-> **Status: 1.0 beta.** On npm under the `beta` dist-tag (`@intelligo-dev/*@beta`); APIs are settling until 1.0. Everything on this page exists and runs today.
+> **Status: 1.0.** On npm under `latest`; the public APIs follow semantic versioning. Everything on this page exists and runs today.
 
 ## The other half
 
@@ -77,7 +77,7 @@ You need Node 22.14+, pnpm 9, and PostgreSQL with pgvector (Neon, Supabase, or `
 
 ```bash
 # asks which pages you want, then installs them as your source — tick the chat
-pnpm dlx @intelligo-dev/cli@beta create my-app
+pnpm dlx @intelligo-dev/cli create my-app
 cd my-app
 ```
 

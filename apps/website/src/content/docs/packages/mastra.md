@@ -10,7 +10,7 @@ label: "mastra"
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/mastra@beta
+pnpm add @intelligo-dev/mastra
 ```
 
 `@mastra/core` 1.x is an optional peer dependency and **nothing here imports
