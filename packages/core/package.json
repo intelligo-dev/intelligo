@@ -36,6 +36,7 @@
     "./identity": "./src/identity/index.ts",
     "./attachments": "./src/attachments/index.ts",
     "./storage": "./src/storage/index.ts",
+    "./storage/s3": "./src/storage/s3.ts",
     "./env": "./src/env.ts",
     "./registry": "./src/registry.ts",
     "./money": "./src/money.ts",
@@ -139,6 +140,10 @@
       "./storage": {
         "types": "./dist/storage/index.d.ts",
         "default": "./dist/storage/index.js"
+      },
+      "./storage/s3": {
+        "types": "./dist/storage/s3.d.ts",
+        "default": "./dist/storage/s3.js"
       },
       "./env": {
         "types": "./dist/env.d.ts",

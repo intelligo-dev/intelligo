@@ -49,6 +49,15 @@ it explains a framework decision.
 - `withCronSecret(handler)` in `@intelligo-dev/next/route`: 401 without
   `Authorization: Bearer $CRON_SECRET`, 403 to everyone while the secret
   is unset or shorter than 32 characters.
+- `@intelligo-dev/core/storage/s3`: a `StorageAdapter` for any
+  S3-compatible bucket — AWS S3, Cloudflare R2, MinIO. `createS3Storage`
+  takes the bucket, region, keys and an optional `endpoint` and
+  `pathStyle`, and signs with Signature Version 4 over `fetch` and Web
+  Crypto, so it adds no dependency; `s3StorageFromEnv()` builds
+  one from `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`,
+  `STORAGE_SECRET_ACCESS_KEY`, `STORAGE_REGION` and `STORAGE_ENDPOINT`, or
+  returns null without a bucket. The storage port's example no longer
+  names an adapter that did not exist.
 
 ### Changed
 
