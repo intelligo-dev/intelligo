@@ -207,6 +207,24 @@ d("local payments (integration)", () => {
     expect(await planOf()).toBe(`plan_${PLAN}`);
   });
 
+  it("ends a plan bought for a number of days", async () => {
+    const invoice = await open(PLAN);
+    payment.mockCompletePayment(invoice.invoiceId);
+
+    await local.settleLocalInvoice({
+      invoiceId: invoice.invoiceId,
+      workspaceId: WORKSPACE,
+      fulfil: (p) => ({ plan: p.reference, days: 30 }),
+    });
+
+    const { rows } = await client.query<{ days: string }>(
+      `SELECT round(extract(epoch FROM current_period_end - current_period_start) / 86400) AS days
+       FROM subscriptions WHERE workspace_id = $1`,
+      [WORKSPACE]
+    );
+    expect(Number(rows[0]!.days)).toBe(30);
+  });
+
   it("leaves the invoice unfulfilled when the grant fails, so the next poll retries", async () => {
     const invoice = await open();
     payment.mockCompletePayment(invoice.invoiceId);

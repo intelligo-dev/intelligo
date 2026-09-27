@@ -16,8 +16,8 @@
     "hash": "ea770e199ffd3c8fd1428bd628109738c44b20c756ced64ef55514b2ab9adc34"
   },
   "maintenance": {
-    "templateVersion": "1.1.0",
-    "hash": "9e2a5cafd4cbbdeec7d13ef056792cc357a386e8af34e293459e285673c0910a"
+    "templateVersion": "1.2.0",
+    "hash": "c3c3eab1e8cad3eb27acec9c272c69a583e9fb1ad1b9042a45537a9e7454cbc7"
   },
   "vitest": {
     "templateVersion": "1.0.0",

@@ -64,7 +64,7 @@ export { ChargeError } from "./charge-error";
 export type { ChargeErrorCode } from "./charge-error";
 
 // A plan as a product decision (a reward, a grant), not a payment
-export { grantPlan } from "./plan-grant";
+export { grantPlan, processExpiredPlanGrants } from "./plan-grant";
 export type { GrantPlanInput, GrantPlanResult } from "./plan-grant";
 
 // Quota enforcement engine

@@ -24,6 +24,17 @@ it explains a framework decision.
   refuses unless `--force` is passed. `PLATFORM_ADMIN_EMAILS` counts only
   a verified address, which a development setup without an email provider
   never has.
+- A granted plan can end. `grantPlan({ …, endsAt })` or `{ …, days }`
+  records the grant's period (`days` counts from the end of a running
+  grant of the same plan, so renewals stack), and a local payment's plan
+  grant takes `days` too: `{ plan: slug, days: 30 }`. Without either, a
+  grant has no end, as before, and clears an end an earlier grant left.
+  `GrantPlanResult` carries `endsAt`. On a workspace Stripe bills, the
+  plan moves and the period stays Stripe's.
+- `processExpiredPlanGrants()` in `@intelligo-dev/billing` returns every
+  lapsed grant to the free plan, audited as `billing.plan_grant.expired`,
+  and the `maintenance` template (1.2.0) runs it after trial expiry.
+  A one-time QR payment therefore no longer grants its plan forever.
 
 ### Changed
 
