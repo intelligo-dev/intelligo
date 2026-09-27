@@ -14,6 +14,16 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Fixed
+
+- `@intelligo-dev/core`'s `db` maps a column declared without a name to
+  snake_case, as the scaffold's `drizzle.config.ts` does: a consumer table
+  written `workspaceId: text()` is queried as `workspace_id`, the column
+  drizzle-kit generated. The framework's own columns are all named, so
+  their SQL is unchanged.
+
 ## [1.0.0-beta.15] — 2026-09-25
 
 ### Added
