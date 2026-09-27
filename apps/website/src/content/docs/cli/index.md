@@ -18,6 +18,7 @@ intelligo migrate           Apply the framework's migration chain to DATABASE_UR
 intelligo migrate --check   Compare the framework's and the app's migrations to a database
                             (--json: one object whose `state` is up_to_date | pending |
                             fresh | ahead | unmanaged | legacy)
+intelligo admin grant <email>  Make a signed-up user a platform admin (--force in production)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
 intelligo upgrade --check   Show what a template upgrade would change
 intelligo sync [items…]     Install registry pages from this release's registry

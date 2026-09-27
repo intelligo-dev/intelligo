@@ -50,7 +50,9 @@ and is never authorization; the scaffold does not use it.
 
 Platform admin is a row (`users.role`), not an environment variable. The
 allowlist in `PLATFORM_ADMIN_EMAILS` is promoted into that column on first use,
-so the plugin and the guard cannot disagree.
+so the plugin and the guard cannot disagree. The allowlist counts a verified
+address only; on a machine that verifies none, `intelligo admin grant <email>`
+writes the column directly.
 
 ## Entry points
 

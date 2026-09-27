@@ -16,6 +16,15 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+### Added
+
+- `intelligo admin grant <email>`: makes a signed-up user a platform admin
+  by writing `users.role`, and records an `admin.platform_admin.granted`
+  audit event in the same transaction. With `NODE_ENV=production` it
+  refuses unless `--force` is passed. `PLATFORM_ADMIN_EMAILS` counts only
+  a verified address, which a development setup without an email provider
+  never has.
+
 ### Changed
 
 - The scaffold's `i18n/request.ts` lays a locale's messages over the
@@ -30,6 +39,10 @@ it explains a framework decision.
   gate no longer passes with the app's schema behind. `--json` carries it
   as `app` (`null` when the app owns no chain); `state` still describes
   the framework's chain and `exitCode` covers both.
+- Outside production, the console email provider logs the links a message
+  carries (`verificationUrl`, `resetUrl`, …) beside its recipient and
+  subject, so an address can be verified and a password reset without an
+  email provider.
 
 ### Fixed
 
