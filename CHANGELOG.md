@@ -16,6 +16,14 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+### Changed
+
+- The scaffold's `i18n/request.ts` lays a locale's messages over the
+  default locale's: a namespace or key a locale has not translated yet
+  renders in the default language instead of throwing, so a locale can
+  be translated a namespace at a time. `intelligo sync --check` still
+  reports what is behind. `app-scaffold` 1.16.0.
+
 ### Fixed
 
 - `@intelligo-dev/core`'s `db` maps a column declared without a name to
@@ -23,6 +31,8 @@ it explains a framework decision.
   written `workspaceId: text()` is queried as `workspace_id`, the column
   drizzle-kit generated. The framework's own columns are all named, so
   their SQL is unchanged.
+- The `chat` item's `lib/chat-server-config.ts` shows Mastra's
+  `handleChatStream` with `version: "v7"`, the stream AI SDK 7 reads.
 
 ## [1.0.0-beta.15] — 2026-09-25
 

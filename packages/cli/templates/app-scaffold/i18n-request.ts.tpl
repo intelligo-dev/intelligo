@@ -39,7 +39,7 @@ const MESSAGES_ROOT = path.join(process.cwd(), "messages");
  * item is just dropping its message file in; nothing here needs to
  * change and no component is edited.
  */
-function loadMessages(locale: string): Record<string, unknown> {
+function readLocale(locale: string): Record<string, unknown> {
   const localeDir = path.join(MESSAGES_ROOT, locale);
 
   let files: string[];
@@ -56,6 +56,34 @@ function loadMessages(locale: string): Record<string, unknown> {
     );
     return messages;
   }, {});
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function mergeMessages(
+  base: Record<string, unknown>,
+  override: Record<string, unknown>
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const under = merged[key];
+    merged[key] =
+      isObject(under) && isObject(value) ? mergeMessages(under, value) : value;
+  }
+  return merged;
+}
+
+/**
+ * A locale's messages over the default locale's: a namespace or key the
+ * locale has not translated yet renders in the default language instead
+ * of throwing. `intelligo sync --check` lists what is still untranslated.
+ */
+function loadMessages(locale: string): Record<string, unknown> {
+  const messages = readLocale(locale);
+  if (locale === routing.defaultLocale) return messages;
+  return mergeMessages(readLocale(routing.defaultLocale), messages);
 }
 
 export default getRequestConfig(async ({ requestLocale }) => {
