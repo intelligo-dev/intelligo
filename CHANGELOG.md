@@ -40,6 +40,13 @@ it explains a framework decision.
   their SQL is unchanged.
 - The `chat` item's `lib/chat-server-config.ts` shows Mastra's
   `handleChatStream` with `version: "v7"`, the stream AI SDK 7 reads.
+- The `usage` item's chart renders the same scale on server and client.
+  `UsagePage` formats the axis labels in compact notation and passes them
+  down (`UsageChart` takes `max` and `scaleLabels`), as the trial banner
+  does: Node's and a browser's ICU spell compact numbers differently for
+  many locales, which React reported as a hydration mismatch. An
+  architecture test now refuses compact notation in any client component
+  an item ships.
 
 ## [1.0.0-beta.15] — 2026-09-25
 

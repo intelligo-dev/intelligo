@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 
 import { getUsageOverview } from "@/actions/usage";
 import { UsageEmptyState } from "@/components/usage/usage-empty-state";
@@ -53,6 +53,17 @@ async function UsageOverviewSection() {
 
   const { data } = result;
 
+  // The chart's scale is formatted here, not in the client component:
+  // Node's and a browser's ICU spell compact numbers differently.
+  const format = await getFormatter();
+  const max = Math.max(...data.daily.map((point) => point.tokensUsed), 1);
+  const scaleLabels = [max, max / 2, 0].map((value) =>
+    format.number(Math.round(value), {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    })
+  ) as [string, string, string];
+
   return (
     <div className="space-y-8">
       <UsageSummaryCards
@@ -62,7 +73,7 @@ async function UsageOverviewSection() {
         quota={data.quota}
         trial={data.trial}
       />
-      <UsageChart points={data.daily} />
+      <UsageChart points={data.daily} max={max} scaleLabels={scaleLabels} />
 
       <UsageRecordsTable records={data.records} />
     </div>

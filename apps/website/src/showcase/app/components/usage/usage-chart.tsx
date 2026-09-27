@@ -11,6 +11,12 @@
  * the path, and every stroke carries `vectorEffect`.
  *
  * Every value is also in a visually hidden table for screen readers.
+ *
+ * The scale arrives from the server already formatted (`UsagePage`):
+ * compact notation ("1.2K") is spelled by the ICU data of whichever
+ * runtime formats it, and Node's and a browser's differ for many locales,
+ * so formatting it here would render one label during SSR and another at
+ * hydration.
  */
 
 import { useId, useState } from "react";
@@ -25,6 +31,10 @@ const PADDING_BOTTOM = 20;
 
 interface UsageChartProps {
   points: UsageDailyPoint[];
+  /** The top of the scale: the busiest day's tokens, at least 1. */
+  max: number;
+  /** The scale's labels at `max`, half of it and zero, formatted for display. */
+  scaleLabels: [string, string, string];
 }
 
 /**
@@ -40,7 +50,7 @@ function dateOf(iso: string): Date {
   return new Date(Date.UTC(year ?? 1970, (month ?? 1) - 1, day ?? 1));
 }
 
-export function UsageChart({ points }: UsageChartProps) {
+export function UsageChart({ points, max, scaleLabels }: UsageChartProps) {
   const t = useTranslations("usage");
   const format = useFormatter();
   const gradientId = useId();
@@ -50,7 +60,6 @@ export function UsageChart({ points }: UsageChartProps) {
   // period would divide by zero below.
   if (points.length < 2) return null;
 
-  const max = Math.max(...points.map((point) => point.tokensUsed), 1);
   const plotHeight = VIEWBOX_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
   const step = VIEWBOX_WIDTH / (points.length - 1);
 
@@ -68,8 +77,6 @@ export function UsageChart({ points }: UsageChartProps) {
   const area = `${line} ${VIEWBOX_WIDTH},${PADDING_TOP + plotHeight} 0,${PADDING_TOP + plotHeight}`;
 
   const hovered = active === null ? null : points[active];
-  const compact = (value: number) =>
-    format.number(value, { notation: "compact", maximumFractionDigits: 1 });
   // `timeZone: "UTC"` pairs with `dateOf`: the day is already the
   // reader's, so this formats the label, it does not convert it.
   const shortDate = (date: Date) =>
@@ -95,9 +102,9 @@ export function UsageChart({ points }: UsageChartProps) {
             <span
               key={value}
               className="absolute right-0 -translate-y-1/2 tabular-nums"
-              style={{ top: `${topPercent(index === 2 ? 0 : value)}%` }}
+              style={{ top: `${topPercent(value)}%` }}
             >
-              {compact(Math.round(value))}
+              {scaleLabels[index]}
             </span>
           ))}
         </div>
