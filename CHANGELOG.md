@@ -21,6 +21,9 @@ it explains a framework decision.
 - The `auth-login` item's `returnPath` validates the post-sign-in
   destination more strictly and returns the path resolved against the
   site. Re-sync `auth-login`.
+- In the chat's `inline` attachment mode a file part must be a `data:`
+  URL; any other URL is refused as `attachmentRejected`. `stored` mode
+  is unchanged.
 
 ## [1.0.0] — 2026-09-27
 

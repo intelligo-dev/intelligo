@@ -153,6 +153,26 @@ describe("parseChatBody", () => {
       }).ok
     ).toBe(false);
   });
+
+  it("refuses an inline part that does not carry its bytes", () => {
+    const file = (url: string) => ({
+      id: "m",
+      role: "user",
+      parts: [{ type: "file", mediaType: "image/png", url }],
+    });
+    for (const url of [
+      "https://elsewhere.test/huge.png",
+      "/api/chat/attachments/a-1",
+      "data:image/png;base64",
+    ]) {
+      const parsed = parseChatBody(body({ messages: [file(url)] }), {
+        ...opts,
+        attachments: { accept: ["image/png"] },
+      });
+      expect(parsed.ok, url).toBe(false);
+      if (!parsed.ok) expect(parsed.rejection.key).toBe("attachmentRejected");
+    }
+  });
 });
 
 describe("parseChatBody — stored attachments and continuations", () => {
