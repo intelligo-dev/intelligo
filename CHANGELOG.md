@@ -42,6 +42,15 @@ it explains a framework decision.
   (15 minutes) after its `expiresAt` and marks it failed, and
   `settlePendingLocalInvoices` keeps settling an invoice with a recorded
   expiry until then rather than only for a day after it was opened.
+- A local invoice keeps what it was sold for. `openLocalInvoice` takes the
+  offer's `grant` and stores it in the new `payments.grant_terms`, and
+  `settleLocalInvoice` applies that grant rather than asking `fulfil`,
+  which now decides only for an invoice opened without one. An offer
+  changed or removed after the invoice was opened no longer changes or
+  blocks what a paid invoice grants. The `payment-poll` item's
+  `startLocalPayment` passes the grant.
+- Migration `0006_local_invoice_grant`: adds the nullable
+  `payments.grant_terms`.
 - Migration `0005_local_invoice_expiry`: `payments.invoice_id` becomes
   nullable and `payments.expires_at` is added. Nothing is renamed or
   removed, so it can run ahead of the deploy.

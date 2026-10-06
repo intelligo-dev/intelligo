@@ -74,6 +74,7 @@ export async function startLocalPayment(
       reference,
       price: offer.price,
       description: offer.description,
+      grant: offer.grant,
     });
     return {
       success: true,

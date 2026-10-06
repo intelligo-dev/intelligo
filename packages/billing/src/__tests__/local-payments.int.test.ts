@@ -257,6 +257,53 @@ d("local payments (integration)", () => {
     expect(await balanceMicros()).toBe(credits().amount);
   });
 
+  it("grants the terms the invoice was opened with, without asking fulfil", async () => {
+    const invoice = await local.openLocalInvoice({
+      workspaceId: WORKSPACE,
+      userId: USER,
+      reference: "bundle-5",
+      price: fromMajor(12.5, "USD"),
+      grant: { credits: credits() },
+    });
+    payment.mockCompletePayment(invoice.invoiceId);
+
+    const status = await local.settleLocalInvoice({
+      invoiceId: invoice.invoiceId,
+      workspaceId: WORKSPACE,
+      fulfil: () => {
+        throw new Error("the offer has changed since");
+      },
+    });
+
+    expect(status).toBe("paid");
+    expect(await balanceMicros()).toBe(credits().amount);
+  });
+
+  it("grants a stored plan for its stored number of days", async () => {
+    const invoice = await local.openLocalInvoice({
+      workspaceId: WORKSPACE,
+      userId: USER,
+      reference: "renamed-offer",
+      price: fromMajor(12.5, "USD"),
+      grant: { plan: PLAN, days: 7 },
+    });
+    payment.mockCompletePayment(invoice.invoiceId);
+
+    await local.settleLocalInvoice({
+      invoiceId: invoice.invoiceId,
+      workspaceId: WORKSPACE,
+      fulfil: () => ({ plan: "no-such-plan" }),
+    });
+
+    expect(await planOf()).toBe(`plan_${PLAN}`);
+    const { rows } = await client.query<{ days: string }>(
+      `SELECT round(extract(epoch FROM current_period_end - current_period_start) / 86400) AS days
+       FROM subscriptions WHERE workspace_id = $1`,
+      [WORKSPACE]
+    );
+    expect(Number(rows[0]!.days)).toBe(7);
+  });
+
   it("reports an unpaid invoice as pending and grants nothing", async () => {
     const invoice = await open();
     let asked = 0;

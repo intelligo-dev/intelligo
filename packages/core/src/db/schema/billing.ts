@@ -12,6 +12,7 @@ import {
   bigint,
   boolean,
   index,
+  jsonb,
   unique,
 } from "drizzle-orm/pg-core";
 import { organization, users } from "./auth";
@@ -168,6 +169,16 @@ export const payments = pgTable(
     status: text("status").notNull().default("pending"), // opening|pending|paid|failed
     /** When the provider stops accepting payment for the invoice. */
     expiresAt: timestamp("expires_at"),
+    /**
+     * What paying the invoice grants, fixed when it was opened: a plan by
+     * slug (with `days` when it lapses) or credit as `{ amount, currency }`
+     * in micros. Null for an invoice opened without one, whose grant is
+     * decided at settlement.
+     */
+    grantTerms: jsonb("grant_terms").$type<
+      | { plan: string; days?: number }
+      | { credits: { amount: number; currency: string } }
+    >(),
     fulfilledAt: timestamp("fulfilled_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

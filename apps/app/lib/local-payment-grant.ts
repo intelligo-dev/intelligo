@@ -6,8 +6,10 @@ import type { Payment } from "@intelligo-dev/core/db/schema";
 import { priceLocalPayment } from "@/lib/local-payment";
 
 /**
- * What a paid invoice grants: `lib/local-payment.ts`'s answer for its
- * reference, asked again at settlement. Shared by the buyer's poll and
+ * What a paid invoice grants when it was opened without its grant
+ * stored: `lib/local-payment.ts`'s answer for its reference, asked at
+ * settlement. An invoice opened by `startLocalPayment` stores the grant
+ * it was offered and never reaches this. Shared by the buyer's poll and
  * the settle routes, so an invoice grants the same whichever settles it.
  *
  * A reference that no longer prices throws, which leaves the paid

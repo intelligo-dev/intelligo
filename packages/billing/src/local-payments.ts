@@ -14,8 +14,9 @@
  * update on `fulfilled_at`, so any number of concurrent polls grant
  * once.
  *
- * What a reference buys is the product's decision: settlement asks the
- * caller's `fulfil` for the grant and applies it with the same writes a
+ * What a reference buys is the product's decision, fixed when the
+ * invoice is opened (`grant`) or, for one opened without it, asked of the
+ * caller's `fulfil` at settlement. It is applied with the same writes a
  * plan grant and a Stripe credit purchase use.
  */
 
@@ -24,7 +25,7 @@ import { and, asc, eq, gt, isNotNull, isNull, lt, or } from "drizzle-orm";
 import { db } from "@intelligo-dev/core/db";
 import { payments, type Payment } from "@intelligo-dev/core/db/schema";
 import { createLogger } from "@intelligo-dev/core/logger";
-import { toMinor, type Money } from "@intelligo-dev/core/money";
+import { money, toMinor, type Money } from "@intelligo-dev/core/money";
 
 import { getBillingSettings } from "./billing-settings";
 import { BillingServiceError } from "./checkout";
@@ -56,8 +57,7 @@ export type LocalPaymentGrant =
 
 /**
  * What a reference sells for and what paying it grants — the product's
- * answer, looked up on the server when the invoice is opened and again
- * when it is settled.
+ * answer, looked up on the server when the invoice is opened.
  */
 export type LocalPaymentOffer = {
   price: Money;
@@ -79,6 +79,12 @@ export type OpenLocalInvoiceInput = {
   price: Money;
   /** The line the provider shows the buyer; defaults to `reference`. */
   description?: string;
+  /**
+   * What paying grants, stored with the invoice so a change to the offer
+   * between opening and payment changes neither. Without it, settlement
+   * asks `fulfil`.
+   */
+  grant?: LocalPaymentGrant;
 };
 
 /**
@@ -121,6 +127,7 @@ export async function openLocalInvoice(
     amountMinor,
     currency: input.price.currency,
     status: "opening",
+    grantTerms: input.grant ?? null,
   });
 
   let invoice: CreatePaymentResult;
@@ -164,9 +171,11 @@ export type SettleLocalInvoiceInput = {
   /** The caller's workspace; an invoice of any other is not found. */
   workspaceId: string;
   /**
-   * What the paid invoice grants. Called once the provider reports it
-   * paid and before anything is written, so a throw leaves the invoice
-   * unfulfilled for the next settle to retry.
+   * What the paid invoice grants, for an invoice opened without a
+   * `grant`; one opened with it grants that, and `fulfil` is not called.
+   * Called once the provider reports it paid and before anything is
+   * written, so a throw leaves the invoice unfulfilled for the next
+   * settle to retry.
    */
   fulfil: (payment: Payment) => LocalPaymentGrant | Promise<LocalPaymentGrant>;
 };
@@ -265,7 +274,9 @@ export async function settleLocalInvoice(
     );
   }
 
-  const grant = await input.fulfil(payment);
+  const grant = payment.grantTerms
+    ? storedGrant(payment.grantTerms)
+    : await input.fulfil(payment);
 
   if ("credits" in grant) {
     const ledgerCurrency = (await getBillingSettings()).currency;
@@ -307,6 +318,15 @@ export async function settleLocalInvoice(
     });
   }
   return "paid";
+}
+
+/** A grant as `grant_terms` holds it, its credit validated back into `Money`. */
+function storedGrant(
+  terms: NonNullable<Payment["grantTerms"]>
+): LocalPaymentGrant {
+  return "credits" in terms
+    ? { credits: money(terms.credits.amount, terms.credits.currency) }
+    : terms;
 }
 
 function currencyMismatch(payment: Payment, granted: string) {

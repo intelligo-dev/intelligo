@@ -112,7 +112,8 @@ jobs:
       # and every constraint the previous release's code writes against
       # is kept, so it can migrate ahead of the deploy. 0005 drops a NOT
       # NULL (payments.invoice_id) and adds one nullable column
-      # (payments.expires_at): nothing renamed or removed.
+      # (payments.expires_at): nothing renamed or removed. 0006 adds one
+      # nullable column (payments.grant_terms).
       #
       # Raising it again: confirm `intelligo migrate --check` reports
       # zero pending, then raise FROZEN_AT in the same commit as the
@@ -120,7 +121,7 @@ jobs:
       - name: The migration chain is frozen
         run: |
           set -euo pipefail
-          FROZEN_AT=6
+          FROZEN_AT=7
           entries=$(node -p "require('./packages/core/src/db/migrations/meta/_journal.json').entries.length")
           echo "journal has $entries entries, frozen at $FROZEN_AT"
           if [ "$entries" -gt "$FROZEN_AT" ]; then
