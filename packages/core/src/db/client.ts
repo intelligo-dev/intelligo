@@ -17,6 +17,13 @@
  *
  * The client is created on first access so `next build` can collect route
  * metadata without DATABASE_URL; a missing URL throws on the first query.
+ *
+ * The pool waits a bounded time for a connection, so an exhausted pool
+ * fails requests instead of hanging the process. No session settings are
+ * sent at connect: a transaction pooler (PgBouncer, Neon's `-pooler` host)
+ * can refuse a startup parameter it does not know. `DATABASE_POOL_MAX` sizes it (default 10). An
+ * idle connection the server drops is logged, not thrown: an unhandled
+ * pool error would end the process with every request in flight.
  */
 
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-serverless";
@@ -33,6 +40,22 @@ type Db = ReturnType<typeof drizzleNeon> | ReturnType<typeof drizzlePostgres>;
 const options = { schema, casing: "snake_case" } as const;
 
 let cached: Db | null = null;
+
+/** Connection settings both drivers' pools take. */
+export function poolOptions(
+  env: Record<string, string | undefined> = process.env
+) {
+  const max = Number(env.DATABASE_POOL_MAX);
+  return {
+    max: Number.isInteger(max) && max > 0 ? max : 10,
+    connectionTimeoutMillis: 15_000,
+    idleTimeoutMillis: 10_000,
+  };
+}
+
+function onPoolError(error: Error) {
+  console.error(`[db] idle connection error: ${error.message}`);
+}
 
 /**
  * Which driver a connection string gets. Pure, so the rule is testable
@@ -69,12 +92,14 @@ function initDb(): Db {
     if (!neonConfig.webSocketConstructor && typeof WebSocket !== "undefined") {
       neonConfig.webSocketConstructor = WebSocket;
     }
-    const pool = new NeonPool({ connectionString: url });
+    const pool = new NeonPool({ connectionString: url, ...poolOptions() });
+    pool.on("error", onPoolError);
     console.log("📊 Database: Neon (serverless, WebSocket)");
     return drizzleNeon(pool, options);
   }
 
-  const pool = new Pool({ connectionString: url });
+  const pool = new Pool({ connectionString: url, ...poolOptions() });
+  pool.on("error", onPoolError);
   console.log("📊 Database: PostgreSQL");
   return drizzlePostgres(pool as any, options);
 }

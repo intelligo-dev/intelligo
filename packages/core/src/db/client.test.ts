@@ -6,7 +6,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { pgTable, text } from "drizzle-orm/pg-core";
-import { selectDriver } from "./client";
+import { poolOptions, selectDriver } from "./client";
 
 describe("selectDriver", () => {
   it("gives Neon hosts the WebSocket driver", () => {
@@ -60,5 +60,22 @@ describe("db", () => {
       .toSQL();
 
     expect(sql).toBe('select "workspace_id" from "notes"');
+  });
+});
+
+describe("poolOptions", () => {
+  it("bounds the wait for a connection and sizes the pool from the env", () => {
+    expect(poolOptions({})).toEqual({
+      max: 10,
+      connectionTimeoutMillis: 15_000,
+      idleTimeoutMillis: 10_000,
+    });
+    expect(poolOptions({ DATABASE_POOL_MAX: "25" }).max).toBe(25);
+  });
+
+  it("keeps the default for a size that is not a positive integer", () => {
+    for (const value of ["0", "-3", "2.5", "many", ""]) {
+      expect(poolOptions({ DATABASE_POOL_MAX: value }).max, value).toBe(10);
+    }
   });
 });
