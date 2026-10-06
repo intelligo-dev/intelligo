@@ -2,8 +2,9 @@
  * A QR-and-poll payment, opened and settled against a real database
  * through the mock provider: the invoice is recorded at the server's
  * price, a paid invoice grants once however often it is settled, an
- * invoice is invisible to every other workspace, and a failed one is
- * recorded as failed with nothing granted.
+ * invoice is invisible to every other workspace, a failed one is
+ * recorded as failed with nothing granted, and one unpaid past its
+ * expiry is cancelled.
  *
  * Runs against a real database when TEST_PG_URL is set. DATABASE_URL
  * must point at the same database.
@@ -152,6 +153,108 @@ d("local payments (integration)", () => {
       if (mode === undefined) delete process.env.PAYMENT_MODE;
       else process.env.PAYMENT_MODE = mode;
     }
+  });
+
+  const withProvider = async <T>(
+    provider: import("../payment").PaymentProvider,
+    run: () => Promise<T>
+  ): Promise<T> => {
+    payment.registerPaymentProvider("under-test", provider);
+    const mode = process.env.PAYMENT_MODE;
+    process.env.PAYMENT_MODE = "under-test";
+    try {
+      return await run();
+    } finally {
+      if (mode === undefined) delete process.env.PAYMENT_MODE;
+      else process.env.PAYMENT_MODE = mode;
+    }
+  };
+
+  const paymentRow = async (invoiceId: string) =>
+    (
+      await client.query<{ id: string; expires_ms: string | null }>(
+        // A timestamp without time zone holds UTC; epoch reads it as such.
+        `SELECT id, extract(epoch FROM expires_at) * 1000 AS expires_ms
+           FROM payments WHERE invoice_id = $1`,
+        [invoiceId]
+      )
+    ).rows[0];
+
+  it("hands the provider the recorded payment's id and records the expiry", async () => {
+    let paymentId: string | undefined;
+    const invoice = await withProvider(
+      {
+        ...payment.mockPaymentProvider,
+        createPayment: (params) => {
+          paymentId = params.paymentId;
+          return payment.mockPaymentProvider.createPayment(params);
+        },
+      },
+      () => open()
+    );
+
+    const recorded = await paymentRow(invoice.invoiceId);
+    expect(recorded?.id).toBe(paymentId);
+    expect(Number(recorded?.expires_ms)).toBe(invoice.expiresAt.getTime());
+  });
+
+  it("records an invoice the provider refused as failed", async () => {
+    await expect(
+      withProvider(
+        {
+          ...payment.mockPaymentProvider,
+          createPayment: async () => {
+            throw new Error("provider down");
+          },
+        },
+        () => open("bundle-refused")
+      )
+    ).rejects.toThrow("provider down");
+
+    const { rows } = await client.query<{
+      status: string;
+      invoice_id: string | null;
+    }>(
+      `SELECT status, invoice_id FROM payments WHERE reference = 'bundle-refused' AND workspace_id = $1`,
+      [WORKSPACE]
+    );
+    expect(rows).toEqual([{ status: "failed", invoice_id: null }]);
+  });
+
+  it("cancels an invoice still unpaid past its expiry", async () => {
+    const invoice = await open();
+    await client.query(
+      `UPDATE payments SET expires_at = now() - interval '1 day' WHERE invoice_id = $1`,
+      [invoice.invoiceId]
+    );
+
+    const status = await local.settleLocalInvoice({
+      invoiceId: invoice.invoiceId,
+      workspaceId: WORKSPACE,
+      fulfil: () => ({ credits: credits() }),
+    });
+
+    expect(status).toBe("failed");
+    expect(payment.getMockPayment(invoice.invoiceId)?.status).toBe("expired");
+    expect((await row(invoice.invoiceId))?.status).toBe("failed");
+  });
+
+  it("grants an invoice paid after its expiry but before it was cancelled", async () => {
+    const invoice = await open();
+    await client.query(
+      `UPDATE payments SET expires_at = now() - interval '1 day' WHERE invoice_id = $1`,
+      [invoice.invoiceId]
+    );
+    payment.mockCompletePayment(invoice.invoiceId);
+
+    expect(
+      await local.settleLocalInvoice({
+        invoiceId: invoice.invoiceId,
+        workspaceId: WORKSPACE,
+        fulfil: () => ({ credits: credits() }),
+      })
+    ).toBe("paid");
+    expect(await balanceMicros()).toBe(credits().amount);
   });
 
   it("reports an unpaid invoice as pending and grants nothing", async () => {
@@ -377,6 +480,37 @@ d("local payments (integration)", () => {
       expect(result.paid).toBe(1);
       expect(await balanceMicros(OTHER_WORKSPACE)).toBe(credits().amount);
       expect(await balanceMicros()).toBe(0);
+    });
+
+    it("settles an invoice opened days ago that has not expired", async () => {
+      const invoice = await open();
+      await client.query(
+        `UPDATE payments
+            SET created_at = now() - interval '3 days',
+                expires_at = now() + interval '1 day'
+          WHERE invoice_id = $1`,
+        [invoice.invoiceId]
+      );
+      payment.mockCompletePayment(invoice.invoiceId);
+
+      await sweep();
+
+      expect((await row(invoice.invoiceId))?.status).toBe("paid");
+      expect(await balanceMicros()).toBe(credits().amount);
+    });
+
+    it("settles a callback that names the recorded payment's id", async () => {
+      const invoice = await open();
+      payment.mockCompletePayment(invoice.invoiceId);
+      const { id } = (await paymentRow(invoice.invoiceId))!;
+
+      const result = await local.settlePendingLocalInvoices({
+        invoiceId: id,
+        fulfil: grantCredits,
+      });
+
+      expect(result.paid).toBe(1);
+      expect(await balanceMicros()).toBe(credits().amount);
     });
 
     it("reports a grant that throws and keeps settling the rest", async () => {

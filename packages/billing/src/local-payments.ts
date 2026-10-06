@@ -5,7 +5,10 @@
  *
  * Opening an invoice writes a `payments` row with the price the server
  * decided, so nothing the browser sends later can change who pays or
- * what it costs. Settling asks the provider that issued the invoice
+ * what it costs. The row is written before the provider is asked, so the
+ * provider is handed its id and no invoice the provider issues goes
+ * unrecorded; an invoice still unpaid after its expiry is cancelled at
+ * the provider and marked failed. Settling asks the provider that issued the invoice
  * whether it was paid and, when it was, marks the row fulfilled and
  * applies the grant in one transaction. The mark is a conditional
  * update on `fulfilled_at`, so any number of concurrent polls grant
@@ -16,7 +19,7 @@
  * plan grant and a Stripe credit purchase use.
  */
 
-import { and, asc, eq, gt, isNull, lt } from "drizzle-orm";
+import { and, asc, eq, gt, isNotNull, isNull, lt, or } from "drizzle-orm";
 
 import { db } from "@intelligo-dev/core/db";
 import { payments, type Payment } from "@intelligo-dev/core/db/schema";
@@ -35,6 +38,13 @@ import {
 import { writePlanGrant } from "./plan-grant";
 
 const log = createLogger("LocalPayments");
+
+/**
+ * How long past its expiry an invoice the provider still calls pending
+ * is left alone before it is cancelled: room for a payment confirmed at
+ * the last moment to reach the provider's status.
+ */
+export const LOCAL_INVOICE_EXPIRY_GRACE_MS = 15 * 60_000;
 
 /**
  * What a paid invoice gives the workspace: a plan by slug, or credit. A
@@ -73,8 +83,10 @@ export type OpenLocalInvoiceInput = {
 
 /**
  * Issue an invoice for `price` through the provider PAYMENT_MODE names
- * and record it as `pending`. Returns the provider's invoice: its id,
- * and the QR code and app deeplinks the buyer pays with.
+ * and record it as `pending`. The row is written first, as `opening`,
+ * and its id is handed to the provider as `paymentId`; a provider that
+ * refuses leaves the row `failed`. Returns the provider's invoice: its
+ * id, and the QR code and app deeplinks the buyer pays with.
  *
  * @throws {BillingServiceError} `invalid_bundle` for a price that is
  *   not positive; whatever the provider throws when it refuses.
@@ -98,24 +110,44 @@ export async function openLocalInvoice(
       `The ${mode} provider charges in ${provider.currency}; "${input.reference}" is priced in ${input.price.currency}.`
     );
   }
-  const invoice = await provider.createPayment({
-    amount: amountMinor,
-    description: input.description ?? input.reference,
-    userId: input.userId,
-    planSlug: input.reference,
-  });
 
+  const paymentId = crypto.randomUUID();
   await db.insert(payments).values({
-    id: crypto.randomUUID(),
+    id: paymentId,
     provider: mode,
-    invoiceId: invoice.invoiceId,
     workspaceId: input.workspaceId,
     userId: input.userId,
     reference: input.reference,
     amountMinor,
     currency: input.price.currency,
-    status: "pending",
+    status: "opening",
   });
+
+  let invoice: CreatePaymentResult;
+  try {
+    invoice = await provider.createPayment({
+      amount: amountMinor,
+      description: input.description ?? input.reference,
+      userId: input.userId,
+      planSlug: input.reference,
+      paymentId,
+    });
+  } catch (error) {
+    await db
+      .update(payments)
+      .set({ status: "failed" })
+      .where(eq(payments.id, paymentId));
+    throw error;
+  }
+
+  await db
+    .update(payments)
+    .set({
+      invoiceId: invoice.invoiceId,
+      expiresAt: invoice.expiresAt,
+      status: "pending",
+    })
+    .where(eq(payments.id, paymentId));
 
   log.info("Local invoice opened", {
     workspaceId: input.workspaceId,
@@ -177,11 +209,10 @@ export async function settleLocalInvoice(
   if (payment.fulfilledAt) return "paid";
   if (payment.status === "failed") return "failed";
 
-  const check = await getPaymentProviderFor(payment.provider).checkPayment(
-    payment.invoiceId
-  );
+  const provider = getPaymentProviderFor(payment.provider);
+  const check = await provider.checkPayment(input.invoiceId);
 
-  if (check.status === "failed" || check.status === "expired") {
+  const markFailed = async (providerStatus: string) => {
     await db
       .update(payments)
       .set({ status: "failed" })
@@ -189,12 +220,37 @@ export async function settleLocalInvoice(
     log.info("Local invoice failed", {
       workspaceId: payment.workspaceId,
       invoiceId: payment.invoiceId,
-      providerStatus: check.status,
+      providerStatus,
     });
-    return "failed";
+    return "failed" as const;
+  };
+
+  if (check.status === "failed" || check.status === "expired") {
+    return markFailed(check.status);
   }
 
-  if (check.status !== "paid") return "pending";
+  if (check.status !== "paid") {
+    const expiry = payment.expiresAt?.getTime();
+    if (
+      expiry === undefined ||
+      Date.now() <= expiry + LOCAL_INVOICE_EXPIRY_GRACE_MS
+    ) {
+      return "pending";
+    }
+    // Past its expiry and still unpaid: withdrawn at the provider so it
+    // cannot be paid after it is recorded failed.
+    try {
+      await provider.cancelPayment(input.invoiceId);
+    } catch (error) {
+      log.error("Cancelling an expired local invoice failed", {
+        workspaceId: payment.workspaceId,
+        invoiceId: payment.invoiceId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return "pending";
+    }
+    return markFailed("cancelled after expiry");
+  }
 
   if (check.amount !== payment.amountMinor) {
     log.error("Provider reports a paid amount other than the invoice's", {
@@ -269,13 +325,18 @@ export type SettlePendingLocalInvoicesInput = {
   fulfil: SettleLocalInvoiceInput["fulfil"];
   /**
    * Settle this invoice only, whichever workspace recorded it — a
-   * provider's callback naming it. The provider is still asked; nothing
+   * provider's callback naming it by the provider's invoice id or by the
+   * `paymentId` it was created with. The provider is still asked; nothing
    * the callback said is taken as payment.
    */
   invoiceId?: string;
   /** Skip invoices opened after this, which the buyer's tab is still polling. Default: a minute ago. */
   openedBefore?: Date;
-  /** Skip invoices opened before this, long expired at the provider. Default: a day ago. */
+  /**
+   * Skip invoices opened before this. Default: none for an invoice with
+   * a recorded expiry, which is settled until it is paid or cancelled;
+   * a day for one without.
+   */
   openedAfter?: Date;
   /** At most this many invoices per run, oldest first. Default 100. */
   limit?: number;
@@ -291,7 +352,8 @@ export type SettlePendingLocalInvoicesResult = Record<
  * app and closed the tab is granted what they bought on the next run.
  * Every unfulfilled `pending` invoice in the window is settled with
  * `settleLocalInvoice` against the workspace that recorded it — asked of
- * its provider, granted once, marked failed when expired. Run it from a
+ * its provider, granted once, cancelled and marked failed once past its
+ * expiry. Run it from a
  * schedule (the `payment-poll` item's route does) and from a provider's
  * callback with `invoiceId`.
  */
@@ -304,17 +366,25 @@ export async function settlePendingLocalInvoices(
     isNull(payments.fulfilledAt)
   );
   const where = input.invoiceId
-    ? and(unfulfilled, eq(payments.invoiceId, input.invoiceId))
+    ? and(
+        unfulfilled,
+        or(
+          eq(payments.invoiceId, input.invoiceId),
+          eq(payments.id, input.invoiceId)
+        )
+      )
     : and(
         unfulfilled,
         lt(payments.createdAt, input.openedBefore ?? new Date(now - 60_000)),
-        gt(
-          payments.createdAt,
-          input.openedAfter ?? new Date(now - 24 * 60 * 60_000)
-        )
+        input.openedAfter
+          ? gt(payments.createdAt, input.openedAfter)
+          : or(
+              isNotNull(payments.expiresAt),
+              gt(payments.createdAt, new Date(now - 24 * 60 * 60_000))
+            )
       );
 
-  const rows = await db
+  const found = await db
     .select({
       invoiceId: payments.invoiceId,
       workspaceId: payments.workspaceId,
@@ -323,6 +393,10 @@ export async function settlePendingLocalInvoices(
     .where(where)
     .orderBy(asc(payments.createdAt))
     .limit(input.limit ?? 100);
+  const rows = found.filter(
+    (row): row is { invoiceId: string; workspaceId: string } =>
+      row.invoiceId !== null
+  );
 
   const result: SettlePendingLocalInvoicesResult = {
     paid: 0,
