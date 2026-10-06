@@ -32,8 +32,9 @@ export async function generateMetadata(): Promise<Metadata> {
 /**
  * Reads the caller's role from `requireWorkspace()` and the role-shaped
  * billing state from `getBillingOverview` (`@intelligo-dev/billing`).
- * `member` and `admin` get a read-only summary; `owner` gets the full
- * plan/credit/payment-method view.
+ * `member` and `admin` get a read-only summary, plus the credit bundles
+ * when `lib/credit-bundle-config.tsx` lets their role buy one; `owner`
+ * gets the full plan/credit/payment-method view.
  *
  * The plan's name is the deployment's `plans` message for its slug when
  * there is one (`lib/plan-copy.ts`), else the catalogue's name, else
@@ -85,6 +86,8 @@ export default async function BillingSettingsPage() {
           <p className="text-sm text-muted-foreground">{t("admin.note")}</p>
         </Card>
       )}
+
+      {overview.role !== "owner" && <CreditBundles role={overview.role} />}
 
       {overview.role === "owner" && (
         <div className="space-y-6">
@@ -141,7 +144,10 @@ export default async function BillingSettingsPage() {
             <StatCardFooter>{t("owner.creditBalanceNote")}</StatCardFooter>
           </StatCard>
 
-          <CreditBundles currentBalance={overview.creditBalance} />
+          <CreditBundles
+            role={overview.role}
+            currentBalance={overview.creditBalance}
+          />
 
           {overview.subscription?.stripeCustomerId && (
             <Card className="space-y-2 p-6">

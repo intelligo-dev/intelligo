@@ -172,11 +172,14 @@ What your product adds to a plan card, without editing
 
  - `actions`: rendered under the card's checkout button, as another
    way to buy the same plan (a QR payment rail, a bank transfer, a
-   "talk to sales" link). It appears only where the checkout button
-   does: on a priced plan that is not the workspace's current one,
-   for a caller allowed to change plans. It receives the plan, the
-   selected interval, the price the card shows (major units of
-   `CURRENCY`) and the plan's localized name.
+   "talk to sales" link). It appears on a priced plan that is not the
+   workspace's current one, for a caller whose role is in
+   `actionRoles`. It receives the plan, the selected interval, the
+   price the card shows (major units of `CURRENCY`) and the plan's
+   localized name.
+ - `actionRoles`: the workspace roles shown `actions`. Default
+   `["owner"]`, as for card checkout, which stays owner-only. Match it
+   to whoever the bound action lets pay on the server.
 
 Empty by default: the card offers card checkout alone. To offer the
 QR-and-poll rail, install the `payment-poll` item, price each plan in
@@ -184,11 +187,13 @@ its `lib/local-payment.ts`, and bind its button here:
 
 ```tsx
 import { LocalPaymentButton } from "@/components/billing/local-payment-button";
+import { paymentPollConfig } from "@/lib/payment-poll-config";
 
 export const planCardConfig: PlanCardConfig = {
   actions: ({ plan, price, planName }) => (
     <LocalPaymentButton reference={plan.slug} amount={price} label={planName} />
   ),
+  actionRoles: paymentPollConfig.payerRoles,
 };
 ```
 
@@ -210,6 +215,9 @@ How your product sells its credit bundles, without editing
    bundle, its price in major units with the price's currency, and the
    bundle's name. Bundles in the legacy `{ credits, priceUsd }` shape
    are sold by card only and get no actions.
+ - `actionRoles`: the workspace roles shown `actions`. Default
+   `["owner"]`. Card purchase stays owner-only; match this to whoever
+   the bound action lets pay on the server.
  - `cardCheckout`: `false` hides the card (Stripe) purchase button, for
    a deployment that sells bundles only another way. With no `actions`
    as well, nothing can buy a bundle.
@@ -224,6 +232,7 @@ it, and give its reference a prefix plans do not use:
 ```ts
 import { LocalPaymentButton } from "@/components/billing/local-payment-button";
 import { CURRENCY } from "@/lib/billing-config";
+import { paymentPollConfig } from "@/lib/payment-poll-config";
 
 export const creditBundleConfig: CreditBundleConfig = {
   actions: ({ bundle, price, currency, bundleName }) =>
@@ -234,6 +243,7 @@ export const creditBundleConfig: CreditBundleConfig = {
         label={bundleName}
       />
     ) : null,
+  actionRoles: paymentPollConfig.payerRoles,
 };
 ```
 

@@ -35,7 +35,7 @@ export default async function PricingPage() {
       <PricingContent
         plans={plans}
         currentPlanSlug={overview.planSlug}
-        canCheckout={membership.role === "owner"}
+        role={membership.role}
       />
     </div>
   );

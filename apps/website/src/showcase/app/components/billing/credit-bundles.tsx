@@ -15,7 +15,9 @@
  * units of `CURRENCY`, priced in dollars.
  *
  * Other ways to buy a bundle render under its button from
- * `lib/credit-bundle-config.tsx`, which can also hide the card button.
+ * `lib/credit-bundle-config.tsx`, for the roles it names; it can also
+ * hide the card button, which only an owner sees. Nothing renders for a
+ * role that can buy no bundle.
  */
 
 import { useState } from "react";
@@ -26,6 +28,7 @@ import { Alert, AlertDescription } from "@showcase/components/ui/alert";
 import { Button } from "@showcase/components/ui/button";
 import { Card } from "@showcase/components/ui/card";
 import { AnimatedList, AnimatedListItem } from "@showcase/components/ui/animated-list";
+import type { WorkspaceRole } from "@intelligo-dev/auth";
 
 import { createCreditPurchaseSession } from "@showcase/actions/billing";
 import { CREDIT_BUNDLES, CURRENCY } from "@showcase/lib/billing-config";
@@ -56,17 +59,22 @@ function priceOf(bundle: Bundle): Amount {
 }
 
 interface CreditBundlesProps {
+  /** The caller's role in the workspace. */
+  role: WorkspaceRole;
   /** The top-up balance, in the ledger's own currency. */
   currentBalance?: Amount | null;
 }
 
-export function CreditBundles({ currentBalance }: CreditBundlesProps) {
+export function CreditBundles({ role, currentBalance }: CreditBundlesProps) {
   const t = useTranslations("billing-settings");
   const format = useFormatter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const Actions = creditBundleConfig.actions;
-  const cardCheckout = creditBundleConfig.cardCheckout !== false;
+  const Actions = (creditBundleConfig.actionRoles ?? ["owner"]).includes(role)
+    ? creditBundleConfig.actions
+    : undefined;
+  const cardCheckout =
+    role === "owner" && creditBundleConfig.cardCheckout !== false;
 
   const handlePurchase = async (bundleId: string) => {
     setError(null);
@@ -82,6 +90,8 @@ export function CreditBundles({ currentBalance }: CreditBundlesProps) {
 
     window.location.href = result.data.url;
   };
+
+  if (!cardCheckout && !Actions) return null;
 
   return (
     <div className="space-y-4">

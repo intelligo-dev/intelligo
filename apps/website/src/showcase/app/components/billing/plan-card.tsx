@@ -10,7 +10,8 @@
  * description and features come from the deployment's `plans` messages
  * when it translates them, and from the catalogue otherwise
  * (`lib/plan-copy.ts`). Other ways to buy the plan, such as a QR
- * payment, render under the checkout button from `lib/plan-card-config.tsx`.
+ * payment, render under the checkout button from `lib/plan-card-config.tsx`,
+ * for the roles it names. Card checkout is the owner's alone.
  */
 
 import { Check } from "lucide-react";
@@ -24,14 +25,15 @@ import { CheckoutButton } from "./checkout-button";
 import { CURRENCY } from "@showcase/lib/billing-config";
 import { planCardConfig } from "@showcase/lib/plan-card-config";
 import { planCopy } from "@showcase/lib/plan-copy";
+import type { WorkspaceRole } from "@intelligo-dev/auth";
 import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
 interface PlanCardProps {
   plan: PlanConfig;
   currentPlanSlug: string;
   interval: "monthly" | "yearly";
-  /** Whether the signed-in caller is allowed to start checkout (owner-only). */
-  canCheckout: boolean;
+  /** The caller's role in the workspace. */
+  role: WorkspaceRole;
   isRecommended?: boolean;
 }
 
@@ -39,7 +41,7 @@ export function PlanCard({
   plan,
   currentPlanSlug,
   interval,
-  canCheckout,
+  role,
   isRecommended = false,
 }: PlanCardProps) {
   const t = useTranslations("pricing");
@@ -47,7 +49,10 @@ export function PlanCard({
   const format = useFormatter();
   const copy = planCopy(tPlans, plan);
   const isCurrent = plan.slug === currentPlanSlug;
-  const Actions = planCardConfig.actions;
+  const canCheckout = role === "owner";
+  const Actions = (planCardConfig.actionRoles ?? ["owner"]).includes(role)
+    ? planCardConfig.actions
+    : undefined;
 
   // A plan with interval prices is quoted per period; one without is a
   // single purchase, and the toggle above is hidden for it entirely
@@ -137,19 +142,21 @@ export function PlanCard({
                 {t("planCard.freeForever")}
               </p>
             </div>
-          ) : !canCheckout ? (
+          ) : !canCheckout && !Actions ? (
             <Button variant="outline" disabled className="w-full">
               {t("planCard.askOwner")}
             </Button>
           ) : (
             <div className="space-y-2">
-              <CheckoutButton
-                planSlug={plan.slug}
-                interval={interval}
-                className="w-full"
-              >
-                {t("planCard.switchTo", { planName: copy.name })}
-              </CheckoutButton>
+              {canCheckout ? (
+                <CheckoutButton
+                  planSlug={plan.slug}
+                  interval={interval}
+                  className="w-full"
+                >
+                  {t("planCard.switchTo", { planName: copy.name })}
+                </CheckoutButton>
+              ) : null}
               {Actions ? (
                 <Actions
                   plan={plan}

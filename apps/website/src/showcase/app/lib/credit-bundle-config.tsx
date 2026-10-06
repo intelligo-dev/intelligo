@@ -7,6 +7,9 @@
  *    bundle, its price in major units with the price's currency, and the
  *    bundle's name. Bundles in the legacy `{ credits, priceUsd }` shape
  *    are sold by card only and get no actions.
+ *  - `actionRoles`: the workspace roles shown `actions`. Default
+ *    `["owner"]`. Card purchase stays owner-only; match this to whoever
+ *    the bound action lets pay on the server.
  *  - `cardCheckout`: `false` hides the card (Stripe) purchase button, for
  *    a deployment that sells bundles only another way. With no `actions`
  *    as well, nothing can buy a bundle.
@@ -20,6 +23,7 @@
  *
  *   import { LocalPaymentButton } from "@showcase/components/billing/local-payment-button";
  *   import { CURRENCY } from "@showcase/lib/billing-config";
+ *   import { paymentPollConfig } from "@showcase/lib/payment-poll-config";
  *
  *   export const creditBundleConfig: CreditBundleConfig = {
  *     actions: ({ bundle, price, currency, bundleName }) =>
@@ -30,6 +34,7 @@
  *           label={bundleName}
  *         />
  *       ) : null,
+ *     actionRoles: paymentPollConfig.payerRoles,
  *   };
  *
  * The amount is only displayed; `priceLocalPayment(reference)` prices
@@ -38,6 +43,7 @@
 
 import type { ComponentType } from "react";
 
+import type { WorkspaceRole } from "@intelligo-dev/auth";
 import type { CreditBundle } from "@intelligo-dev/billing";
 
 export interface CreditBundleActionProps {
@@ -52,6 +58,8 @@ export interface CreditBundleActionProps {
 export interface CreditBundleConfig {
   /** Rendered under each bundle's purchase button. */
   actions?: ComponentType<CreditBundleActionProps>;
+  /** Roles shown `actions`. Default `["owner"]`. */
+  actionRoles?: readonly WorkspaceRole[];
   /** `false` hides the card purchase button. Default `true`. */
   cardCheckout?: boolean;
 }

@@ -14,6 +14,23 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Added
+
+- `actionRoles` on the `pricing` item's `lib/plan-card-config.tsx` and the
+  `billing-settings` item's `lib/credit-bundle-config.tsx`: the workspace
+  roles shown a plan's or a bundle's other ways to pay (default
+  `["owner"]`). Bind it to `paymentPollConfig.payerRoles` so the pages
+  offer the QR payment to the roles its server action accepts.
+
+### Changed
+
+- `PricingContent`, `PlanCard` and `CreditBundles` take the caller's `role`
+  instead of a `canCheckout` flag. Card checkout stays owner-only; an
+  admin or member sees the bundles on billing settings when
+  `actionRoles` includes their role.
+
 ## [1.0.1] — 2026-10-06
 
 ### Fixed

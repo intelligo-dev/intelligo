@@ -13,6 +13,7 @@ import { useTranslations } from "use-intl";
 
 import { Alert, AlertDescription } from "@showcase/components/ui/alert";
 import { AnimatedList, AnimatedListItem } from "@showcase/components/ui/animated-list";
+import type { WorkspaceRole } from "@intelligo-dev/auth";
 import type { PlanConfig } from "@intelligo-dev/billing/plans";
 
 import { IntervalToggle } from "./interval-toggle";
@@ -22,13 +23,14 @@ interface PricingContentProps {
   /** The plan catalogue, resolved by the page through `getPlans`. */
   plans: Partial<Record<string, PlanConfig>>;
   currentPlanSlug: string;
-  canCheckout: boolean;
+  /** The caller's role in the workspace; decides what each card offers. */
+  role: WorkspaceRole;
 }
 
 export function PricingContent({
   plans,
   currentPlanSlug,
-  canCheckout,
+  role,
 }: PricingContentProps) {
   const t = useTranslations("pricing");
   const searchParams = useSearchParams();
@@ -77,7 +79,7 @@ export function PricingContent({
               plan={plan}
               currentPlanSlug={currentPlanSlug}
               interval={interval}
-              canCheckout={canCheckout}
+              role={role}
               // No plan is highlighted by default; set `isRecommended`
               // for the one you want to single out.
             />
