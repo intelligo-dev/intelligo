@@ -242,7 +242,7 @@
       "components/auth/auth-card.tsx": "caf6515a15f636910b8249f3012777fc0487c02f9ceeab0ad03d6677fc36ee77",
       "components/auth/login-form.tsx": "7694be4c158ff87337f1e0c543407098a786c1d0a520ed250c677e8b24a52c8d",
       "components/auth/social-login-buttons.tsx": "fdb76e236bae1c106bbefe59838f55c52a5954c8e0f425444660d51b042d64bb",
-      "lib/auth-validation.ts": "6c05163a00869529ccb2821ec71bac6b8215d29b8a830fa51c9a6f8454b7fb34",
+      "lib/auth-validation.ts": "673531325e3c0b99f9cb2bc9ee5e62c91bcabc4e67b43523fba5bb942879dc7f",
       "app/[locale]/(auth)/error.tsx": "80a8be834add636005e53ff20bfe6be5568f3c3d0a4ab3b0479974a0bb13cbae",
       "app/[locale]/(auth)/signup/page.tsx": "3c268dd749957e5d0ca620158298222b531bc8196fbedbc022e768052a5f1adc",
       "components/auth/signup-form.tsx": "4d848cdccd151d01c772b72d7bfc77e678300d284092d5be6530810acd7ef7c1",

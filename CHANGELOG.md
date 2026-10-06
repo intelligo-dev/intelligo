@@ -14,6 +14,14 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Fixed
+
+- The `auth-login` item's `returnPath` validates the post-sign-in
+  destination more strictly and returns the path resolved against the
+  site. Re-sync `auth-login`.
+
 ## [1.0.0] — 2026-09-27
 
 ### Added
