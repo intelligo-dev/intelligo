@@ -23,6 +23,9 @@ it explains a framework decision.
   roles shown a plan's or a bundle's other ways to pay (default
   `["owner"]`). Bind it to `paymentPollConfig.payerRoles` so the pages
   offer the QR payment to the roles its server action accepts.
+- `PaymentProvider.callbackResponse({ settled })`: the answer a provider
+  expects to its callback. The `payment-poll` item's callback route returns
+  it when the provider has one, and its JSON summary otherwise.
 
 ### Changed
 
@@ -65,9 +68,6 @@ it explains a framework decision.
 - In the chat's `inline` attachment mode a file part must be a `data:`
   URL; any other URL is refused as `attachmentRejected`. `stored` mode
   is unchanged.
-- `PaymentProvider.callbackResponse({ settled })`: the answer a provider
-  expects to its callback. The `payment-poll` item's callback route returns
-  it when the provider has one, and its JSON summary otherwise.
 
 ## [1.0.0] — 2026-09-27
 

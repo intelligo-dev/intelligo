@@ -282,7 +282,7 @@
       "actions/payment.ts": "a56dfce4f801b711d9a280ebb6498f2874360e06c9e75eaf0f2c4e84bc5dd73e",
       "lib/local-payment-grant.ts": "6090cc55b52982efa520cdfdfde8c37f6dd001ecbe64a3a6ad1147ec8b90176d",
       "app/api/payments/local/settle/route.ts": "2cb9f5a02e3cd758e82d4b5b573534ddb746bfae68aee7b8f9fb6551dc6779fc",
-      "app/api/webhooks/local-payment/route.ts": "6caf2bbed39878cfe348cb7f59b9778a91f4a1fea05dc73acb2e1d48b6ef62f8",
+      "app/api/webhooks/local-payment/route.ts": "8773bcddb464e57d4f81c3367dd12d743005f53d5de5e706e2b9ce935087169f",
       "app/[locale]/(app)/settings/profile/page.tsx": "67261ee58f600012703353f4b42f82051ca92d673ba896b374a0e3261ab069e7",
       "app/[locale]/(app)/settings/profile/loading.tsx": "1018257ce41f28c9e84402b2e3d52410c7c2e5c11fe396788aacc09817f80638",
       "components/profile/profile-settings-form.tsx": "2102ae649f21fa2ba2d90c01afa41bcffef0da45a8cd665a3cf00588ebb4635c",

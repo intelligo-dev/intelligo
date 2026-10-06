@@ -7,6 +7,9 @@
  * provider, so a forged callback grants nothing that is not paid. A
  * provider without `invoiceIdFromCallback` has no callback here (404), and
  * its invoices are settled by the buyer's poll and the settle route.
+ *
+ * The answer is the provider's `callbackResponse` when it has one, so a
+ * provider that expects a particular body gets it; otherwise JSON.
  */
 
 import {
@@ -30,16 +33,23 @@ async function handle(request: Request): Promise<Response> {
   const invoiceId = await provider.invoiceIdFromCallback(request);
   if (!invoiceId) return new Response("Bad request", { status: 400 });
 
+  // A settle that failed answers so the provider calls again.
   try {
     const result = await settlePendingLocalInvoices({
       invoiceId,
       fulfil: grantLocalPayment,
     });
-    // A settle that failed answers 500 so the provider calls again.
-    return Response.json(result, { status: result.errors.length ? 500 : 200 });
+    const settled = result.errors.length === 0;
+    return (
+      provider.callbackResponse?.({ settled }) ??
+      Response.json(result, { status: settled ? 200 : 500 })
+    );
   } catch (error) {
     if (!isBillingServiceError(error)) throw error;
-    return Response.json({ error: error.code }, { status: 500 });
+    return (
+      provider.callbackResponse?.({ settled: false }) ??
+      Response.json({ error: error.code }, { status: 500 })
+    );
   }
 }
 
