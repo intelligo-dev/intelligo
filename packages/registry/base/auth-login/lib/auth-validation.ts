@@ -67,13 +67,24 @@ export const resetPasswordSchema = z
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
+const SAME_SITE = "http://same.site";
+
 /**
  * Where to go after signing in: `next` when it is a path on this site,
  * `/dashboard` otherwise. A full URL, or `//host`, would let a link send
- * a reader who just signed in to somebody else's site.
+ * a reader who just signed in to somebody else's site. Control
+ * characters and backslashes are refused, and what is returned is the
+ * path as resolved against this site, never the raw input.
  */
 export function returnPath(next: string | null | undefined): string {
-  return typeof next === "string" && /^\/(?![/\\])/.test(next)
-    ? next
-    : "/dashboard";
+  if (typeof next !== "string" || !next.startsWith("/")) return "/dashboard";
+  if (/[\u0000-\u001f\u007f\\]/.test(next)) return "/dashboard";
+  let url: URL;
+  try {
+    url = new URL(next, SAME_SITE);
+  } catch {
+    return "/dashboard";
+  }
+  if (url.origin !== SAME_SITE) return "/dashboard";
+  return `${url.pathname}${url.search}${url.hash}`;
 }
