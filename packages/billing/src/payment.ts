@@ -63,6 +63,14 @@ export interface PaymentProvider {
    * paid. A provider without it has no callback route.
    */
   invoiceIdFromCallback?(request: Request): Promise<string | null>;
+
+  /**
+   * The answer this provider expects to a callback it sent: `settled`
+   * is false when settling failed and the provider should call again.
+   * Some providers read the status, others the body (a fixed word).
+   * Without it the callback route answers JSON, 200 or 500.
+   */
+  callbackResponse?(outcome: { settled: boolean }): Response;
 }
 
 // ─── Mock Provider (Development) ───
