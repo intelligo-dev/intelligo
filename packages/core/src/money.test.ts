@@ -19,6 +19,8 @@ import {
   subtract,
   toMajor,
   toMinor,
+  toStripeMinor,
+  fromStripeMinor,
   zero,
 } from "./money";
 
@@ -87,6 +89,35 @@ describe("conversion to and from the units a system actually uses", () => {
     expect(toMinor(money(12_345_001, "USD"))).toBe(1235);
     expect(toMinor(money(1, "USD"))).toBe(1);
     expect(toMinor(money(1, "JPY"))).toBe(1);
+  });
+
+  it("gives Stripe hundredths for the whole-unit currencies it takes that way", () => {
+    expect(toStripeMinor(fromMajor(10_000, "MNT"))).toBe(1_000_000);
+    expect(toStripeMinor(fromMajor(5, "ISK"))).toBe(500);
+    expect(toStripeMinor(fromMajor(5, "UGX"))).toBe(500);
+    // Stripe refuses a fraction of these; the price rounds up to a unit.
+    expect(toStripeMinor(fromMajor(4.2, "ISK"))).toBe(500);
+    expect(toStripeMinor(money(1, "MNT"))).toBe(100);
+  });
+
+  it("gives Stripe the ordinary minor unit for every other currency", () => {
+    expect(toStripeMinor(fromMajor(12.34, "USD"))).toBe(1234);
+    expect(toStripeMinor(fromMajor(1000, "JPY"))).toBe(1000);
+    expect(toStripeMinor(fromMajor(1.234, "KWD"))).toBe(1234);
+    expect(toStripeMinor(money(12_345_001, "USD"))).toBe(1235);
+  });
+
+  it("reads an amount Stripe reported back into Money", () => {
+    expect(fromStripeMinor(1_000_000, "MNT")).toEqual(fromMajor(10_000, "MNT"));
+    expect(fromStripeMinor(500, "isk")).toEqual(fromMajor(5, "ISK"));
+    expect(fromStripeMinor(500, "UGX")).toEqual(fromMajor(5, "UGX"));
+    expect(fromStripeMinor(1234, "USD")).toEqual(fromMajor(12.34, "USD"));
+    expect(fromStripeMinor(1000, "JPY")).toEqual(fromMajor(1000, "JPY"));
+  });
+
+  it("keeps toMinor in whole units for rails that take them", () => {
+    expect(toMinor(fromMajor(10_000, "MNT"))).toBe(10_000);
+    expect(fromMinor(10_000, "MNT")).toEqual(fromMajor(10_000, "MNT"));
   });
 });
 

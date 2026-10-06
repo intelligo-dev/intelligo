@@ -41,8 +41,10 @@ const MICROS_PER_UNIT = 1_000_000;
 
 /**
  * Currencies whose minor unit is not the usual hundredth; everything else
- * is 2. Getting this wrong charges ¥100,000 instead of ¥1,000, because
- * Stripe takes zero-decimal currencies in whole units.
+ * is 2. These are the units most payment rails take an amount in: whole
+ * units for a currency with no fractions in use. Stripe differs for a few
+ * (see `STRIPE_WHOLE_UNITS_AS_HUNDREDTHS`); amounts bound for Stripe go
+ * through `toStripeMinor`.
  */
 const MINOR_EXPONENT: Readonly<Record<string, 0 | 2 | 3>> = {
   BIF: 0,
@@ -144,6 +146,41 @@ export function fromMinor(value: number, code: string | CurrencyCode): Money {
 export function toMinor(value: Money): number {
   const scale = MICROS_PER_UNIT / 10 ** minorExponent(value.currency);
   return Math.ceil(value.amount / scale);
+}
+
+/**
+ * Currencies Stripe takes in hundredths although none are in use: ISK and
+ * UGX by Stripe's backward compatibility (the hundredths are always 00),
+ * MNT because Stripe lists it as two-decimal. Sent as whole units, each is
+ * charged at a hundredth of its price.
+ */
+const STRIPE_WHOLE_UNITS_AS_HUNDREDTHS: ReadonlySet<string> = new Set([
+  "ISK",
+  "MNT",
+  "UGX",
+]);
+
+/**
+ * The integer Stripe's API takes for this amount (`unit_amount`,
+ * `amount`). Equal to `toMinor` except for the currencies Stripe takes
+ * in hundredths although none are in use: those are rounded up to a
+ * whole unit, which Stripe requires, and multiplied by 100.
+ */
+export function toStripeMinor(value: Money): number {
+  if (!STRIPE_WHOLE_UNITS_AS_HUNDREDTHS.has(value.currency)) {
+    return toMinor(value);
+  }
+  return Math.ceil(value.amount / MICROS_PER_UNIT) * 100;
+}
+
+/** An amount Stripe reported (an invoice, a payment) as `Money`. */
+export function fromStripeMinor(
+  value: number,
+  code: string | CurrencyCode
+): Money {
+  const c = currency(code);
+  if (!STRIPE_WHOLE_UNITS_AS_HUNDREDTHS.has(c)) return fromMinor(value, c);
+  return { amount: micros(value * (MICROS_PER_UNIT / 100)), currency: c };
 }
 
 /** The amount as a plain decimal number, for display and for charts. */

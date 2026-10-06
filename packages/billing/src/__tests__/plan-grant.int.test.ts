@@ -204,6 +204,32 @@ d("grantPlan (integration)", () => {
     expect((await period())!.current_period_end!).toBe(stripeEnd.getTime());
   });
 
+  it("takes over a workspace whose Stripe subscription ended", async () => {
+    await client.query(
+      `INSERT INTO subscriptions (id, workspace_id, plan_id, status, stripe_subscription_id)
+       VALUES ('sub_grant_test', $1, 'plan_plan-grant-free', 'canceled', 'sub_stripe_ended')`,
+      [WORKSPACE]
+    );
+
+    const result = await grant.grantPlan({
+      workspaceId: WORKSPACE,
+      planSlug: "plan-grant-pro",
+      reason: "local payment",
+      days: 30,
+    });
+
+    expect(result.endsAt).not.toBeNull();
+    expect(await subscription()).toEqual([
+      {
+        plan_id: "plan_plan-grant-pro",
+        status: "active",
+        stripe_subscription_id: null,
+      },
+    ]);
+    const end = (await period())!.current_period_end!;
+    expect(Math.abs(end - (Date.now() + 30 * DAY))).toBeLessThan(60_000);
+  });
+
   it("refuses endsAt and days together", async () => {
     await expect(
       grant.grantPlan({

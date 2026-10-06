@@ -18,7 +18,7 @@ import { users, creditPurchases } from "@intelligo-dev/core/db/schema";
 import {
   fromMajor,
   money,
-  toMinor,
+  toStripeMinor,
   type Money,
 } from "@intelligo-dev/core/money";
 
@@ -440,7 +440,7 @@ export async function createCreditCheckout(
   const { grant, price } = await bundleAmounts(bundle);
 
   const purchaseId = crypto.randomUUID();
-  const priceMinor = toMinor(price);
+  const priceMinor = toStripeMinor(price);
 
   await db.insert(creditPurchases).values({
     id: purchaseId,

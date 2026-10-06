@@ -26,6 +26,7 @@ import {
   add,
   currency,
   fromMinor,
+  fromStripeMinor,
   money,
   type Money,
 } from "@intelligo-dev/core/money";
@@ -165,8 +166,11 @@ export async function getRevenue(): Promise<Money[]> {
   ]);
 
   const totals = new Map<string, Money>();
-  for (const row of [...stripe, ...local]) {
-    const amount = fromMinor(Number(row.minor), row.currency);
+  const amounts = [
+    ...stripe.map((row) => fromStripeMinor(Number(row.minor), row.currency)),
+    ...local.map((row) => fromMinor(Number(row.minor), row.currency)),
+  ];
+  for (const amount of amounts) {
     const sum = totals.get(amount.currency);
     totals.set(amount.currency, sum ? add(sum, amount) : amount);
   }

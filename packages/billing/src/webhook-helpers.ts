@@ -14,7 +14,11 @@ import {
   plans,
 } from "@intelligo-dev/core/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { formatMoney, fromMajor, fromMinor } from "@intelligo-dev/core/money";
+import {
+  formatMoney,
+  fromMajor,
+  fromStripeMinor,
+} from "@intelligo-dev/core/money";
 import { getBillingSettings } from "./billing-settings";
 import {
   handlePaymentFailedEmail,
@@ -167,7 +171,7 @@ export async function sendPaymentFailedEmail(
     workspaceId,
     workspaceName: owner.workspaceName,
     amount: formatMoney(
-      fromMinor(invoice.amountMinor, invoice.currency.toUpperCase()),
+      fromStripeMinor(invoice.amountMinor, invoice.currency),
       "en-US"
     ),
   });

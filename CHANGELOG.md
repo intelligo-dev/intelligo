@@ -14,6 +14,24 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Fixed
+
+- Stripe amounts for ISK, UGX and MNT. Stripe takes these in hundredths
+  although none are in use, and they were sent as whole units — a charge
+  at a hundredth of its price, or refused under Stripe's minimum. Credit
+  checkout now converts through the new `toStripeMinor`, and amounts read
+  back from Stripe (the payment-failed email, the admin revenue totals)
+  through `fromStripeMinor`, both in `@intelligo-dev/core/money`. `toMinor`
+  keeps the whole units local payment rails take.
+- A Stripe subscription that ended stays ended. A payment failure that
+  arrives after `customer.subscription.deleted` no longer marks it
+  `past_due` (which kept the paid plan), and the deletion drops the row's
+  Stripe id. A plan granted to a workspace whose Stripe subscription
+  ended — a local payment, `grantPlan` — now gets its period and lapses,
+  instead of being taken for one Stripe still bills.
+
 ## [1.1.0] — 2026-10-06
 
 ### Added
