@@ -15,6 +15,10 @@ import {
 } from "better-auth/plugins/admin/access";
 import { PLATFORM_ADMIN_ROLE } from "./roles";
 import { resolveTrustedOrigins } from "./trusted-origins";
+import {
+  ipAddressOptions,
+  SERVICE_ONLY_ORGANIZATION_PATHS,
+} from "./request-hardening";
 
 /**
  * Access control for the platform role. Better-Auth refuses an `adminRoles`
@@ -86,6 +90,9 @@ export const auth = betterAuth({
     // so requiring it would lock every new account out — in production
     // as much as in development. `validateEnv` warns about that case.
     requireEmailVerification: !(getEmailProvider() instanceof ConsoleProvider),
+    // A reset is what a user does when they think someone else has their
+    // password: every session open before it ends with it.
+    revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
       sendPasswordResetEmail({
         to: user.email,
@@ -139,6 +146,12 @@ export const auth = betterAuth({
   },
 
   trustedOrigins: TRUSTED_ORIGINS,
+
+  disabledPaths: [...SERVICE_ONLY_ORGANIZATION_PATHS],
+
+  advanced: {
+    ipAddress: ipAddressOptions(process.env),
+  },
 
   databaseHooks: {
     user: {

@@ -3,7 +3,8 @@
 /**
  * Lists the caller's workspaces (fetched by the layout) and activates one
  * through Better-Auth's organization plugin. It has no create-workspace
- * action; build one on `authClient.organization.create` if you need it.
+ * action; build one as a server action over the workspace service's
+ * `createWorkspace`, which applies the plan's workspace limit.
  */
 
 import * as React from "react";

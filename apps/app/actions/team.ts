@@ -37,6 +37,7 @@ function friendlyMessage(
         : t("errors.memberLimitReachedCount", { limit }),
     invitation_not_found: t("errors.invitationNotFound"),
     sole_owner: t("errors.soleOwner"),
+    last_workspace: t("errors.lastWorkspace"),
     forbidden: t("errors.forbidden"),
     invalid_input: t("errors.invalidInput"),
     accept_verification_failed: t("errors.acceptVerificationFailed"),

@@ -254,12 +254,24 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
   }
 
   /**
-   * Delete the caller's active workspace. Owner only. Switches the
-   * caller to another workspace afterward, if one remains.
+   * Delete the caller's active workspace. Owner only, and never the
+   * caller's last one: with none left, the next page would create a new
+   * personal workspace, and with it whatever the product grants a new
+   * one. Switches the caller to another workspace afterward.
    */
   async function deleteWorkspace(): Promise<void> {
     const { workspace } = await callRequireRole(["owner"]);
     const hdrs = await getRequestHeaders();
+
+    const before = await callOrgApi("list", () =>
+      orgApi["/organization/list"]({ headers: hdrs })
+    );
+    if ((before?.length ?? 0) <= 1) {
+      throw new WorkspaceServiceError(
+        "last_workspace",
+        "Cannot delete your only workspace."
+      );
+    }
 
     if (ports.beforeDeleteWorkspace) {
       try {

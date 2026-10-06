@@ -56,6 +56,13 @@ so the plugin and the guard cannot disagree. The allowlist counts a verified
 address only; on a machine that verifies none, `intelligo admin grant <email>`
 writes the column directly.
 
+Workspaces and memberships change through the team and workspace services,
+which apply the plan's limits and the deletion hook around Better-Auth's
+organization plugin; the plugin's own mutating endpoints answer 404 over HTTP
+(`SERVICE_ONLY_ORGANIZATION_PATHS`). Behind proxies, `AUTH_IP_HEADERS`
+(headers to read the client address from, in order) and
+`AUTH_TRUSTED_PROXIES` (CIDRs) let the auth rate limiter tell clients apart.
+
 ## Licence
 
 Apache-2.0

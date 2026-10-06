@@ -15,9 +15,13 @@
  *   call that reads it back).
  * - `provider_error` — the underlying Better-Auth organization-plugin
  *   call itself failed (network, upstream API error, etc.).
+ * - `last_workspace` — deleting it would leave the caller with no
+ *   workspace, and the next page would create a new personal one with a
+ *   fresh start (a new trial, where the product grants one).
  */
 export type WorkspaceServiceErrorCode =
   | "workspace_limit_reached"
+  | "last_workspace"
   | "forbidden"
   | "invalid_input"
   | "not_found"

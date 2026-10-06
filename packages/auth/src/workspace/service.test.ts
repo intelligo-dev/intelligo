@@ -364,6 +364,14 @@ describe("updateWorkspace", () => {
 });
 
 describe("deleteWorkspace", () => {
+  const twoWorkspaces = [
+    { id: "ws-1", name: "Acme" },
+    { id: "ws-2", name: "Beta" },
+  ];
+  beforeEach(() => {
+    mocks.orgApi["/organization/list"].mockResolvedValue(twoWorkspaces);
+  });
+
   it("requires owner", async () => {
     const service = createWorkspaceService();
 
@@ -383,10 +391,23 @@ describe("deleteWorkspace", () => {
     expect(mocks.deleteOrganization).not.toHaveBeenCalled();
   });
 
-  it("switches to another workspace when one remains after delete", async () => {
+  it("refuses to delete the caller's only workspace", async () => {
     mocks.orgApi["/organization/list"].mockResolvedValue([
-      { id: "ws-2", name: "Beta" },
+      { id: "ws-1", name: "Acme" },
     ]);
+    const service = createWorkspaceService();
+
+    const err = await service.deleteWorkspace().catch((e) => e);
+
+    expect(isWorkspaceServiceError(err)).toBe(true);
+    expect(err.code).toBe("last_workspace");
+    expect(mocks.deleteOrganization).not.toHaveBeenCalled();
+  });
+
+  it("switches to another workspace when one remains after delete", async () => {
+    mocks.orgApi["/organization/list"]
+      .mockResolvedValueOnce(twoWorkspaces)
+      .mockResolvedValueOnce([{ id: "ws-2", name: "Beta" }]);
     const service = createWorkspaceService();
 
     await service.deleteWorkspace();
@@ -400,7 +421,9 @@ describe("deleteWorkspace", () => {
   });
 
   it("skips set-active when no workspace remains after delete", async () => {
-    mocks.orgApi["/organization/list"].mockResolvedValue([]);
+    mocks.orgApi["/organization/list"]
+      .mockResolvedValueOnce(twoWorkspaces)
+      .mockResolvedValueOnce([]);
     const service = createWorkspaceService();
 
     await service.deleteWorkspace();

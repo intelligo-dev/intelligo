@@ -532,6 +532,11 @@ describe("removeMember + updateMemberRole", () => {
 });
 
 describe("leaveWorkspace", () => {
+  const twoWorkspaces = [{ id: "ws-1" }, { id: "ws-2" }];
+  beforeEach(() => {
+    mocks.orgApi["/organization/list"].mockResolvedValue(twoWorkspaces);
+  });
+
   it("blocks the sole owner from leaving", async () => {
     mocks.requireWorkspace.mockResolvedValue({
       ...baseCtx,
@@ -549,6 +554,21 @@ describe("leaveWorkspace", () => {
     expect(mocks.orgApi["/organization/leave"]).not.toHaveBeenCalled();
   });
 
+  it("refuses to leave the caller's only workspace", async () => {
+    mocks.requireWorkspace.mockResolvedValue({
+      ...baseCtx,
+      membership: { role: "member" },
+    });
+    mocks.orgApi["/organization/list"].mockResolvedValue([{ id: "ws-1" }]);
+    const service = createTeamService();
+
+    const err = await service.leaveWorkspace().catch((e) => e);
+
+    expect(isTeamServiceError(err)).toBe(true);
+    expect(err.code).toBe("last_workspace");
+    expect(mocks.orgApi["/organization/leave"]).not.toHaveBeenCalled();
+  });
+
   it("allows leaving when another owner exists and switches active workspace", async () => {
     mocks.requireWorkspace.mockResolvedValue({
       ...baseCtx,
@@ -560,7 +580,9 @@ describe("leaveWorkspace", () => {
         { userId: "u-2", role: "owner" },
       ],
     });
-    mocks.orgApi["/organization/list"].mockResolvedValue([{ id: "ws-2" }]);
+    mocks.orgApi["/organization/list"]
+      .mockResolvedValueOnce(twoWorkspaces)
+      .mockResolvedValueOnce([{ id: "ws-2" }]);
     const service = createTeamService();
 
     await service.leaveWorkspace();
@@ -576,7 +598,9 @@ describe("leaveWorkspace", () => {
       ...baseCtx,
       membership: { role: "member" },
     });
-    mocks.orgApi["/organization/list"].mockResolvedValue([]);
+    mocks.orgApi["/organization/list"]
+      .mockResolvedValueOnce(twoWorkspaces)
+      .mockResolvedValueOnce([]);
     const service = createTeamService();
 
     await service.leaveWorkspace();

@@ -18,9 +18,12 @@
  *   depth against a stolen invitation id — see `acceptInvitation`).
  * - `provider_error` — the underlying Better-Auth org-plugin call
  *   itself failed (network, upstream API error, etc.).
+ * - `last_workspace` — leaving would leave the caller with no workspace,
+ *   which the next page replaces with a new personal one.
  */
 export type TeamServiceErrorCode =
   | "member_limit_reached"
+  | "last_workspace"
   | "invitation_not_found"
   | "sole_owner"
   | "forbidden"
