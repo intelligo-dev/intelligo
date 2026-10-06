@@ -20,7 +20,7 @@ export type ChatAttachmentPolicy = {
   maxBytes?: number;
   /**
    * `inline` (default): the file travels in the message as a data URL
-   * and is persisted with it. `stored`: the file was uploaded first
+   * and is persisted with it; a part with any other URL is refused. `stored`: the file was uploaded first
    * through the upload route and the part carries the app URL the
    * attachment route serves; the transport signs it for the model.
    */
@@ -153,8 +153,9 @@ function rejectedAttachment(
       if (attachmentIdFromUrl(policy, file.url) === null) return true;
       continue;
     }
+    // An inline part carries its bytes, so its size is known here.
     const bytes = dataUrlBytes(file.url);
-    if (bytes !== null && bytes > (policy.maxBytes ?? ATTACHMENT_MAX_BYTES)) {
+    if (bytes === null || bytes > (policy.maxBytes ?? ATTACHMENT_MAX_BYTES)) {
       return true;
     }
   }
