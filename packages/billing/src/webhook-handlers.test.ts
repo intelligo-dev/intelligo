@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
     subscriptionSets: [] as Record<string, unknown>[],
     subscriptionWheres: [] as unknown[],
     subscriptionUpserts: [] as Record<string, unknown>[],
+    subscriptionMatches: true,
   },
 }));
 
@@ -93,7 +94,9 @@ vi.mock("@intelligo-dev/core/db", () => {
           if (table.table === "subscriptions") {
             state.subscriptionSets.push(values);
             state.subscriptionWheres.push(condition);
-            return result([{ workspaceId: "ws-1" }]);
+            return result(
+              state.subscriptionMatches ? [{ workspaceId: "ws-1" }] : []
+            );
           }
           const purchase = state.purchase;
           if (!purchase) return result([]);
@@ -201,6 +204,7 @@ beforeEach(() => {
   mocks.state.balanceMicros = 0;
   mocks.state.ledgerCurrency = "USD";
   mocks.state.subscriptionSets = [];
+  mocks.state.subscriptionMatches = true;
   mocks.state.subscriptionWheres = [];
   mocks.state.subscriptionUpserts = [];
   mocks.getBillingSettings.mockResolvedValue({ currency: "USD" });
@@ -343,6 +347,7 @@ describe("status-changing events drop the workspace's feature cache", () => {
     await handleSubscriptionDeleted(subscription());
     expect(mocks.state.subscriptionSets[0]).toMatchObject({
       status: "canceled",
+      stripeSubscriptionId: null,
     });
     expect(mocks.invalidateFeatureCache).toHaveBeenCalledWith("ws-1");
   });
@@ -374,9 +379,10 @@ describe("status-changing events drop the workspace's feature cache", () => {
     });
   });
 
-  it("a late invoice.paid or update never reopens a canceled subscription", async () => {
+  it("a late invoice.paid, payment failure or update never reopens a canceled subscription", async () => {
     const guard = expect.objectContaining({ op: "ne", val: "canceled" });
     await handleInvoicePaid(invoice);
+    await handleInvoicePaymentFailed(invoice);
     await handleSubscriptionUpdated(subscription());
     for (const where of mocks.state.subscriptionWheres) {
       expect(where).toMatchObject({
@@ -384,7 +390,14 @@ describe("status-changing events drop the workspace's feature cache", () => {
         conds: expect.arrayContaining([guard]),
       });
     }
-    expect(mocks.state.subscriptionWheres).toHaveLength(2);
+    expect(mocks.state.subscriptionWheres).toHaveLength(3);
+  });
+
+  it("a payment failure that matches no open subscription emails no one", async () => {
+    mocks.state.subscriptionMatches = false;
+    await handleInvoicePaymentFailed(invoice);
+    expect(mocks.sendPaymentFailedEmail).not.toHaveBeenCalled();
+    expect(mocks.invalidateFeatureCache).not.toHaveBeenCalled();
   });
 });
 

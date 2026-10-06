@@ -475,13 +475,27 @@ export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     return;
   }
 
-  await db
+  // A canceled subscription stays canceled: a failure that arrives after
+  // the deletion must not put it back on the paid plan as past_due.
+  const marked = await db
     .update(subscriptions)
     .set({
       status: "past_due",
       updatedAt: new Date(),
     })
-    .where(eq(subscriptions.stripeSubscriptionId, subscriptionId));
+    .where(
+      and(
+        eq(subscriptions.stripeSubscriptionId, subscriptionId),
+        ne(subscriptions.status, "canceled")
+      )
+    )
+    .returning({ id: subscriptions.id });
+  if (marked.length === 0) {
+    log.info("Payment failed for no open subscription, ignored", {
+      subscriptionId,
+    });
+    return;
+  }
 
   log.info("Payment failed, marked as past_due", { subscriptionId });
 
@@ -568,7 +582,10 @@ export async function handleSubscriptionUpdated(
  *
  * Triggered when the subscription ends — at once, or at the period end
  * when it was set to cancel then. Marks the local subscription
- * `canceled`, which resolves the workspace to the free plan.
+ * `canceled`, which resolves the workspace to the free plan, and drops
+ * its Stripe id: nothing Stripe sends about the ended subscription can
+ * reach the row again, and a plan granted later is not taken for one
+ * Stripe bills.
  */
 export async function handleSubscriptionDeleted(
   subscription: Stripe.Subscription
@@ -579,6 +596,7 @@ export async function handleSubscriptionDeleted(
     .update(subscriptions)
     .set({
       status: "canceled",
+      stripeSubscriptionId: null,
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId))

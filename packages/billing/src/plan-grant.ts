@@ -108,6 +108,7 @@ export async function writePlanGrant(
   const [existing] = await executor
     .select({
       planId: subscriptions.planId,
+      status: subscriptions.status,
       stripeSubscriptionId: subscriptions.stripeSubscriptionId,
       currentPeriodEnd: subscriptions.currentPeriodEnd,
     })
@@ -115,12 +116,16 @@ export async function writePlanGrant(
     .where(eq(subscriptions.workspaceId, input.workspaceId))
     .limit(1);
 
+  // A Stripe subscription that ended no longer bills the workspace: the
+  // grant takes the row over, period and all, and drops the dead id.
+  const stripeBilled =
+    Boolean(existing?.stripeSubscriptionId) && existing?.status !== "canceled";
   const now = new Date();
   let endsAt = input.endsAt ?? null;
   if (input.days !== undefined) {
     const running =
       existing?.planId === plan.id &&
-      !existing.stripeSubscriptionId &&
+      !stripeBilled &&
       existing.currentPeriodEnd &&
       existing.currentPeriodEnd > now
         ? existing.currentPeriodEnd
@@ -128,7 +133,6 @@ export async function writePlanGrant(
     endsAt = new Date(running.getTime() + input.days * 24 * 60 * 60 * 1000);
   }
 
-  const stripeBilled = Boolean(existing?.stripeSubscriptionId);
   if (stripeBilled && endsAt) {
     log.warn("Plan granted on a Stripe-billed workspace; its end is Stripe's", {
       workspaceId: input.workspaceId,
@@ -140,6 +144,7 @@ export async function writePlanGrant(
     : {
         currentPeriodStart: endsAt ? now : null,
         currentPeriodEnd: endsAt,
+        stripeSubscriptionId: null,
       };
 
   await executor
