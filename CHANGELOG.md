@@ -14,7 +14,7 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
-## [Unreleased]
+## [1.1.0] — 2026-10-06
 
 ### Added
 
@@ -52,11 +52,20 @@ it explains a framework decision.
   changed or removed after the invoice was opened no longer changes or
   blocks what a paid invoice grants. The `payment-poll` item's
   `startLocalPayment` passes the grant.
-- Migration `0006_local_invoice_grant`: adds the nullable
-  `payments.grant_terms`.
-- Migration `0005_local_invoice_expiry`: `payments.invoice_id` becomes
-  nullable and `payments.expires_at` is added. Nothing is renamed or
-  removed, so it can run ahead of the deploy.
+- `Payment.invoiceId` (the `payments` row type) is `string | null`: a row
+  is `opening`, with no invoice id yet, while its provider is asked. Code
+  that reads `payments` directly checks for it.
+- Migrations `0005_local_invoice_expiry` (`payments.invoice_id` nullable,
+  `payments.expires_at` added) and `0006_local_invoice_grant`
+  (`payments.grant_terms` added). Nothing is renamed or removed, so
+  `intelligo migrate` can run ahead of the deploy.
+
+### Upgrading
+
+Run `intelligo migrate`, then `intelligo sync pricing billing-settings
+payment-poll` to take the new pages and route; bind `actionRoles` in
+`lib/plan-card-config.tsx` and `lib/credit-bundle-config.tsx` if a role
+other than the owner pays locally.
 
 ## [1.0.1] — 2026-10-06
 
