@@ -42,6 +42,11 @@ it explains a framework decision.
   exhausted pool fails requests instead of hanging the process, and logs
   an idle connection the server dropped instead of letting the unhandled
   error end the process. `DATABASE_POOL_MAX` sizes it (default 10).
+- A chat turn stopped mid-reply is charged for the step that was running.
+  The finished steps were the only usage settled, so a reply stopped
+  before its first step finished — every one-step turn — settled at
+  zero while the provider billed it. The step in flight is now estimated
+  from its prompt and what it had streamed.
 
 ## [1.1.0] — 2026-10-06
 

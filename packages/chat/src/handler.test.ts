@@ -687,7 +687,13 @@ describe("POST streaming", () => {
       )
     );
     const reader = response.body!.getReader();
-    await reader.read();
+    const decoder = new TextDecoder();
+    let seen = "";
+    while (!seen.includes('"text-delta"')) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      seen += decoder.decode(value);
+    }
     controller.abort();
     await reader.cancel().catch(() => {});
 
@@ -697,6 +703,13 @@ describe("POST streaming", () => {
         metadata: expect.objectContaining({ aborted: true }),
       })
     );
+    // The one step was in flight: no step finished, yet its prompt was
+    // sent and part of its reply streamed, so the run is not free.
+    const { usage } = fake.complete.mock.calls[0]![0] as {
+      usage: { inputTokens: number; outputTokens: number };
+    };
+    expect(usage.inputTokens).toBeGreaterThan(0);
+    expect(usage.outputTokens).toBeGreaterThan(0);
     expect(fake.fail).not.toHaveBeenCalled();
   });
 

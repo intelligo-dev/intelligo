@@ -89,9 +89,14 @@ import type {
   ChatUIMessage,
 } from "./parts";
 import { truncateTitle } from "./title";
-import { pickUsage, sumStepUsage, sumUsage } from "./usage";
+import { abortedUsage, pickUsage, sumUsage } from "./usage";
 import type { TokenUsage } from "./usage";
-import { applyConversationWindow, extractText } from "./windowing";
+import {
+  applyConversationWindow,
+  estimateConversationTokens,
+  estimateTokenCount,
+  extractText,
+} from "./windowing";
 
 const log = createLogger("Chat");
 
@@ -1033,6 +1038,12 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
 
         const model = await config.model.resolve!(modelId, context);
         const outputCeiling = getModelPricing(modelId)?.maxOutputTokens;
+        const system = prepared.system ?? agent.systemPrompt;
+        // What the first step reads, for a run stopped before it reports.
+        const promptTokens =
+          estimateTokenCount(system ?? "") +
+          estimateConversationTokens(modelMessages);
+        let inFlight: { streamed: string } | null = null;
         const result = streamText({
           // Admission held the registered model's `maxOutputTokens`;
           // the same number caps what a step may write unless the
@@ -1047,7 +1058,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           // handler or the model admission priced.
           ...pickGenerationOptions(agent.generation),
           model,
-          system: prepared.system ?? agent.systemPrompt,
+          system,
           ...(agent.providerOptions
             ? { providerOptions: agent.providerOptions }
             : {}),
@@ -1072,6 +1083,20 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           // run continues server-side to completion — billed in full
           // for a reply nobody receives — and `onAbort` never fires.
           abortSignal: request.signal,
+          onStepStart: () => {
+            inFlight = { streamed: "" };
+          },
+          onChunk: ({ chunk }) => {
+            if (
+              inFlight &&
+              (chunk.type === "text-delta" || chunk.type === "reasoning-delta")
+            ) {
+              inFlight.streamed += chunk.text;
+            }
+          },
+          onStepFinish: () => {
+            inFlight = null;
+          },
           onFinish: async ({
             totalUsage,
             finishReason,
@@ -1092,7 +1117,20 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
             await settle(captured.usage, { aborted: false });
           },
           onAbort: async ({ steps }) => {
-            await settle(sumStepUsage(steps), { aborted: true });
+            // The step in flight is billed by the provider and reported
+            // by no one: estimated, so stopping a reply is not free.
+            await settle(
+              abortedUsage(
+                steps,
+                inFlight
+                  ? {
+                      promptTokens,
+                      streamedTokens: estimateTokenCount(inFlight.streamed),
+                    }
+                  : null
+              ),
+              { aborted: true }
+            );
           },
         });
 
