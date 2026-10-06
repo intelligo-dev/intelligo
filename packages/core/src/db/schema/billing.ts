@@ -140,7 +140,9 @@ export const creditPurchases = pgTable(
  * Invoices issued through a registered payment provider (QR-and-poll
  * methods such as QPay, PIX or UPI), one row per invoice. The row is
  * written when the invoice is opened, so settlement knows who pays and
- * what was priced without trusting the browser; `fulfilled_at` is set
+ * what was priced without trusting the browser. It is written before the
+ * provider is asked, as `opening`, so the provider can be handed the row's
+ * id; `invoice_id` and `expires_at` follow from its answer. `fulfilled_at` is set
  * in the same transaction that grants what was bought, so a payment is
  * granted once however many polls see it paid.
  */
@@ -150,7 +152,8 @@ export const payments = pgTable(
     id: text("id").primaryKey(),
     /** The PAYMENT_MODE the invoice was opened under; settlement asks the same provider. */
     provider: text("provider").notNull(),
-    invoiceId: text("invoice_id").notNull().unique(),
+    /** The provider's invoice id; null while the row is `opening`. */
+    invoiceId: text("invoice_id").unique(),
     workspaceId: text("workspace_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
@@ -162,7 +165,9 @@ export const payments = pgTable(
     /** The price, in minor units of `currency`. */
     amountMinor: integer("amount_minor").notNull(),
     currency: text("currency").notNull(),
-    status: text("status").notNull().default("pending"), // pending|paid|failed
+    status: text("status").notNull().default("pending"), // opening|pending|paid|failed
+    /** When the provider stops accepting payment for the invoice. */
+    expiresAt: timestamp("expires_at"),
     fulfilledAt: timestamp("fulfilled_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

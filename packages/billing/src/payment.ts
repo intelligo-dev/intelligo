@@ -40,6 +40,13 @@ export interface PaymentProvider {
     description: string;
     userId: string;
     planSlug: string;
+    /**
+     * The recorded payment's id, stable before the provider's own invoice
+     * exists: the provider's merchant-side invoice number, or a parameter
+     * of the callback URL. `invoiceIdFromCallback` may return it in place
+     * of the provider's id.
+     */
+    paymentId: string;
   }): Promise<CreatePaymentResult>;
 
   checkPayment(invoiceId: string): Promise<PaymentCheckResult>;
@@ -49,7 +56,8 @@ export interface PaymentProvider {
   /**
    * The invoice a provider's callback request is about, or null when it
    * names none — read from wherever this provider puts it (a query
-   * parameter of the callback URL, a field of the body). Only the id is
+   * parameter of the callback URL, a field of the body). Either the
+   * provider's invoice id or the `paymentId` it was created with. Only the id is
    * taken from the request: the invoice is settled by asking
    * `checkPayment`, so a forged callback settles nothing that is not
    * paid. A provider without it has no callback route.

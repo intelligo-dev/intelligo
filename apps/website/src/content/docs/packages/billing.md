@@ -206,10 +206,12 @@ the days add to the running grant.
 
 A buyer who pays in their bank's app and closes the tab is not left
 unfulfilled: `settlePendingLocalInvoices({ fulfil })` settles every
-unfulfilled invoice opened in the last day (and at least a minute ago, which
-the tab may still be polling) against the workspace that recorded it, and
-`settlePendingLocalInvoices({ invoiceId, fulfil })` settles the one a
-provider's callback names. Both ask the provider; a callback's body is never
+unfulfilled invoice opened at least a minute ago (which the tab may still be
+polling) against the workspace that recorded it, until it is paid or past its
+expiry, and `settlePendingLocalInvoices({ invoiceId, fulfil })` settles the
+one a provider's callback names. An invoice still unpaid
+`LOCAL_INVOICE_EXPIRY_GRACE_MS` after the `expiresAt` its provider returned is
+cancelled at the provider (`cancelPayment`) and marked failed. Both ask the provider; a callback's body is never
 taken as payment. A provider whose callbacks name an invoice implements
 `invoiceIdFromCallback(request)`. The `payment-poll` item serves both at
 `/api/payments/local/settle` (a `CRON_SECRET` schedule) and
@@ -222,6 +224,10 @@ bundles into the offer the `lib/local-payment.ts` seam returns.
 
 A provider is `registerPaymentProvider(mode, { currency, createPayment,
 checkPayment, cancelPayment })` from `/payment`, bound in the composition root.
+`openLocalInvoice` records the invoice before it asks the provider and passes
+the row's id as `paymentId`: use it as the provider's merchant-side invoice
+number or in the callback URL, and `invoiceIdFromCallback` may return it in
+place of the provider's own id.
 Give a real provider its `currency`: `createPayment` takes bare minor units, and
 only a provider that names its currency makes `openLocalInvoice` refuse a price
 in another one (`currency_mismatch`) instead of sending that number as its own.

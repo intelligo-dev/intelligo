@@ -36,6 +36,13 @@
       "when": 1790259860351,
       "tag": "0004_usage_subjects",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791293981724,
+      "tag": "0005_local_invoice_expiry",
+      "breakpoints": true
     }
   ]
 }

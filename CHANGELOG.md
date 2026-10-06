@@ -30,6 +30,21 @@ it explains a framework decision.
   instead of a `canCheckout` flag. Card checkout stays owner-only; an
   admin or member sees the bundles on billing settings when
   `actionRoles` includes their role.
+- A local invoice is recorded before its provider is asked. `openLocalInvoice`
+  writes the `payments` row as `opening`, hands its id to
+  `createPayment` as the new `paymentId` parameter, and fills in the
+  provider's `invoice_id` and `expires_at` from the answer; a provider that
+  refuses leaves the row `failed`. A provider can use `paymentId` as its
+  merchant-side invoice number or in its callback URL, and
+  `invoiceIdFromCallback` may return either id.
+- An invoice's expiry is kept and acted on. `settleLocalInvoice` cancels an
+  invoice the provider still reports unpaid `LOCAL_INVOICE_EXPIRY_GRACE_MS`
+  (15 minutes) after its `expiresAt` and marks it failed, and
+  `settlePendingLocalInvoices` keeps settling an invoice with a recorded
+  expiry until then rather than only for a day after it was opened.
+- Migration `0005_local_invoice_expiry`: `payments.invoice_id` becomes
+  nullable and `payments.expires_at` is added. Nothing is renamed or
+  removed, so it can run ahead of the deploy.
 
 ## [1.0.1] — 2026-10-06
 
