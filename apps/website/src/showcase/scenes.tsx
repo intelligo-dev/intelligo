@@ -537,7 +537,7 @@ function SettingsPrivacy() {
 function Pricing() {
   return (
     <AppFrame>
-      <PricingContent plans={PLANS} currentPlanSlug="free" canCheckout />
+      <PricingContent plans={PLANS} currentPlanSlug="free" role="owner" />
     </AppFrame>
   );
 }
@@ -566,6 +566,7 @@ function BillingSettings() {
             </CardContent>
           </Card>
           <CreditBundles
+            role="owner"
             currentBalance={{ amount: 917_000_000, currency: "USD" }}
           />
         </div>
