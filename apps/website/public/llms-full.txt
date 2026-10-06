@@ -1941,7 +1941,9 @@ one a provider's callback names. An invoice still unpaid
 `LOCAL_INVOICE_EXPIRY_GRACE_MS` after the `expiresAt` its provider returned is
 cancelled at the provider (`cancelPayment`) and marked failed. Both ask the provider; a callback's body is never
 taken as payment. A provider whose callbacks name an invoice implements
-`invoiceIdFromCallback(request)`. The `payment-poll` item serves both at
+`invoiceIdFromCallback(request)`, and one that expects a particular answer
+(a status, a fixed body) implements `callbackResponse({ settled })`. The
+`payment-poll` item serves both at
 `/api/payments/local/settle` (a `CRON_SECRET` schedule) and
 `/api/webhooks/local-payment`. An invoice of
 another workspace is `payment_not_found`. The `payment-poll` registry item is

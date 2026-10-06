@@ -23,6 +23,9 @@ it explains a framework decision.
   roles shown a plan's or a bundle's other ways to pay (default
   `["owner"]`). Bind it to `paymentPollConfig.payerRoles` so the pages
   offer the QR payment to the roles its server action accepts.
+- `PaymentProvider.callbackResponse({ settled })`: the answer a provider
+  expects to its callback. The `payment-poll` item's callback route returns
+  it when the provider has one, and its JSON summary otherwise.
 
 ### Changed
 
