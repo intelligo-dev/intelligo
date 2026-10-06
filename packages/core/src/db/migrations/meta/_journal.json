@@ -43,6 +43,13 @@
       "when": 1791293981724,
       "tag": "0005_local_invoice_expiry",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791294273940,
+      "tag": "0006_local_invoice_grant",
+      "breakpoints": true
     }
   ]
 }

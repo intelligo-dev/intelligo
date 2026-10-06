@@ -195,12 +195,15 @@ is refused, and any other mode must be registered from the composition root.
 ## Local payments
 
 A QR-and-poll payment (QPay, PIX, UPI…) goes through two calls.
-`openLocalInvoice({ workspaceId, userId, reference, price })` issues the
+`openLocalInvoice({ workspaceId, userId, reference, price, grant })` issues the
 invoice through the provider and records it in `payments` at the price the
-server decided. `settleLocalInvoice({ invoiceId, workspaceId, fulfil })` asks
-the provider that issued it; when it is paid, the row is marked fulfilled and
-the grant `fulfil` returns — `{ plan: slug, days? }` or `{ credits: Money }` —
-is applied in the same transaction, so concurrent polls grant once. A plan
+server decided, with the grant it buys — `{ plan: slug, days? }` or
+`{ credits: Money }`. `settleLocalInvoice({ invoiceId, workspaceId, fulfil })`
+asks the provider that issued it; when it is paid, the row is marked fulfilled
+and its stored grant is applied in the same transaction, so concurrent polls
+grant once and a change to the offer after the invoice was opened changes
+nothing it buys. `fulfil` decides the grant only for an invoice opened
+without one. A plan
 with `days` lapses that long after it is granted; bought again before then,
 the days add to the running grant.
 
