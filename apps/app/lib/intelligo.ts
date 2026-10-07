@@ -25,9 +25,12 @@ import {
 } from "@intelligo-dev/billing/plans";
 import { setWorkspaceCreatedHandler } from "@intelligo-dev/auth";
 import { assertEnv } from "@intelligo-dev/core/env";
-import { setRequestContextSource } from "@intelligo-dev/core/request-context";
+import {
+  setBackgroundTaskRunner,
+  setRequestContextSource,
+} from "@intelligo-dev/core/request-context";
 import { DEFAULT_MODELS, registerModels } from "@intelligo-dev/executions";
-import { nextRequestContext } from "@intelligo-dev/next";
+import { nextBackgroundTasks, nextRequestContext } from "@intelligo-dev/next";
 import { createLogger } from "@intelligo-dev/core/logger";
 
 import {
@@ -109,6 +112,11 @@ function bind(): void {
   // asks `@intelligo-dev/core/request-context` and stays usable from a
   // worker or a test.
   setRequestContextSource(nextRequestContext);
+
+  // Work the framework starts without awaiting — an auth email, a new
+  // workspace's bootstrap — keeps running after the response, which a
+  // serverless host would otherwise be free to freeze.
+  setBackgroundTaskRunner(nextBackgroundTasks);
 
   // What a new user's personal workspace starts with.
   setWorkspaceCreatedHandler(onWorkspaceCreated);
