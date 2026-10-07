@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Client } from "pg";
 
-import { drain, enqueue } from "../index";
+import { drain, enqueue, pruneJobs } from "../index";
 import type { Job } from "../db/schema";
 
 const PG_URL = process.env.TEST_PG_URL;
@@ -105,6 +105,117 @@ d("job queue (integration)", () => {
       [id]
     );
     expect(rows[0]!.status).toBe("failed");
+  });
+
+  it("runs a job once when another worker claims it while it waits in a batch", async () => {
+    const ids = [
+      await enqueue({ kind: `${kind}.batch` }),
+      await enqueue({ kind: `${kind}.batch` }),
+    ];
+    const ran: string[] = [];
+
+    const result = await drain(
+      {
+        [`${kind}.batch`]: async (job) => {
+          ran.push(job.id);
+          if (ran.length > 1) return;
+          // Another worker claims the job still waiting in this batch as
+          // abandoned and finishes it.
+          await client.query(
+            `UPDATE jobs SET status = 'succeeded', attempts = attempts + 1,
+                    started_at = (now() AT TIME ZONE 'utc') + interval '1 minute',
+                    finished_at = (now() AT TIME ZONE 'utc')
+              WHERE id = $1`,
+            [ids.find((id) => id !== job.id)]
+          );
+        },
+      },
+      { limit: 2 }
+    );
+
+    expect(ran).toHaveLength(1);
+    expect(result).toMatchObject({ claimed: 2, succeeded: 1 });
+    const { rows } = await client.query<{ status: string }>(
+      `SELECT status FROM jobs WHERE id = ANY($1)`,
+      [ids]
+    );
+    expect(rows.map((r) => r.status)).toEqual(["succeeded", "succeeded"]);
+  });
+
+  it("leaves the outcome of a worker that reclaimed a running job", async () => {
+    const id = await enqueue({ kind: `${kind}.reclaimed` });
+
+    await drain({
+      [`${kind}.reclaimed`]: async () => {
+        await client.query(
+          `UPDATE jobs SET started_at = (now() AT TIME ZONE 'utc') + interval '1 minute',
+                  status = 'succeeded'
+            WHERE id = $1`,
+          [id]
+        );
+        throw new Error("late failure");
+      },
+    });
+
+    const { rows } = await client.query<{
+      status: string;
+      last_error: string | null;
+    }>(`SELECT status, last_error FROM jobs WHERE id = $1`, [id]);
+    expect(rows[0]).toEqual({ status: "succeeded", last_error: null });
+  });
+
+  it("prunes succeeded and failed jobs past their cutoffs", async () => {
+    const old = `(now() AT TIME ZONE 'utc') - interval '30 days'`;
+    const ids = {
+      succeeded: await enqueue({ kind: `${kind}.prune` }),
+      failed: await enqueue({ kind: `${kind}.prune` }),
+      recentFailed: await enqueue({ kind: `${kind}.prune` }),
+      pending: await enqueue({ kind: `${kind}.prune-pending` }),
+    };
+    await client.query(
+      `UPDATE jobs SET status = 'succeeded', finished_at = ${old} WHERE id = $1`,
+      [ids.succeeded]
+    );
+    await client.query(
+      `UPDATE jobs SET status = 'failed', finished_at = ${old} WHERE id = $1`,
+      [ids.failed]
+    );
+    await client.query(
+      `UPDATE jobs SET status = 'failed', finished_at = (now() AT TIME ZONE 'utc')
+        WHERE id = $1`,
+      [ids.recentFailed]
+    );
+
+    const deleted = await pruneJobs(new Date(Date.now() - 7 * 86_400_000));
+
+    expect(deleted).toBeGreaterThanOrEqual(2);
+    const { rows } = await client.query<{ id: string }>(
+      `SELECT id FROM jobs WHERE id = ANY($1)`,
+      [Object.values(ids)]
+    );
+    expect(rows.map((r) => r.id).sort()).toEqual(
+      [ids.recentFailed, ids.pending].sort()
+    );
+  });
+
+  it("keeps failed jobs until their own cutoff when one is given", async () => {
+    const id = await enqueue({ kind: `${kind}.prune-kept` });
+    await client.query(
+      `UPDATE jobs SET status = 'failed',
+              finished_at = (now() AT TIME ZONE 'utc') - interval '10 days'
+        WHERE id = $1`,
+      [id]
+    );
+
+    await pruneJobs(new Date(Date.now() - 7 * 86_400_000), {
+      failedBefore: new Date(Date.now() - 30 * 86_400_000),
+    });
+
+    const { rowCount } = await client.query(
+      `SELECT 1 FROM jobs WHERE id = $1`,
+      [id]
+    );
+    expect(rowCount).toBe(1);
   });
 
   it("puts back what it had no time to start, attempt unspent", async () => {
