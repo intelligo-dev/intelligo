@@ -83,6 +83,10 @@ async function resolveLocale(): Promise<string> {
  * the first `throw` is for callers outside the chat route. Set
  * `CHAT_MODEL_ID` above to the registered id turns run on by default;
  * a model registered with `registerModel` resolves the same way.
+ *
+ * In a production build the stub refuses to reply until a real model is
+ * bound here, unless `INTELLIGO_ALLOW_STUB_MODEL=1` says the deployment
+ * is meant to run on it.
  */
 export function getChatModel(modelId: string): LanguageModel {
   void modelId;

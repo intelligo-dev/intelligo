@@ -123,6 +123,26 @@ function bind(): void {
   // which prices it is billing against, and can register its own
   // contracted rates — or a model the framework has never heard of.
   registerModels(DEFAULT_MODELS);
+  // The assistant route's stub, which calls no provider: registered at
+  // no cost, since admission refuses any id without a price.
+  registerModels([
+    {
+      id: "reference/echo-1",
+      provider: "reference",
+      model: "echo-1",
+      displayName: "Echo (no provider)",
+      costPerMInputTokens: 0,
+      costPerMOutputTokens: 0,
+      maxOutputTokens: 1_000,
+      capabilities: {
+        thinking: false,
+        toolCall: false,
+        vision: false,
+        webSearch: false,
+        codeExec: false,
+      },
+    },
+  ]);
 }
 
 // The execution boundary, bound to the billing engine: admission
