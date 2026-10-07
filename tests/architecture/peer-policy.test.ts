@@ -27,7 +27,12 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { PACKAGES_DIR, listPublishedWorkspaces, walk } from "./tree";
+import {
+  PACKAGES_DIR,
+  importSpecifiers,
+  listPublishedWorkspaces,
+  walk,
+} from "./tree";
 
 /**
  * Packages whose identity must be shared, with why — the note is the
@@ -126,6 +131,18 @@ describe("the framework's one door to Next.js", () => {
     ).toMatch(/from "next\/headers"/);
   });
 
+  it("recognises every way of importing next", () => {
+    for (const source of [
+      'import { cookies } from "next/headers";',
+      'import "next/server";',
+      'const { cookies } = await import("next/headers");',
+      'const next = require("next");',
+    ]) {
+      expect(reachesNext(source), source).toBe(true);
+    }
+    expect(reachesNext('import x from "next-intl";')).toBe(false);
+  });
+
   it("is the only package that imports next/*", () => {
     // Every other package has to be usable from a queue worker, a Hono
     // API, a test, or a product built on something that is not Next.
@@ -140,7 +157,7 @@ describe("the framework's one door to Next.js", () => {
         const rel = path.relative(PACKAGES_DIR, file);
         if (`packages/${rel}`.split(path.sep).join("/").startsWith(ALLOWED))
           continue;
-        if (/from\s+["']next(\/[^"']+)?["']/.test(readFileSync(file, "utf8"))) {
+        if (reachesNext(readFileSync(file, "utf8"))) {
           offenders.push(`packages/${rel}`);
         }
       }
@@ -153,10 +170,15 @@ describe("the framework's one door to Next.js", () => {
   });
 });
 
+/** Any import of next or next/* — static, side-effect, dynamic or require. */
+function reachesNext(source: string): boolean {
+  return importSpecifiers(source).some(
+    (spec) => spec === "next" || spec.startsWith("next/")
+  );
+}
+
 function sourceImportsNext(dir: string): boolean {
   return walk(path.join(PACKAGES_DIR, dir, "src"), (name) =>
     /\.tsx?$/.test(name)
-  ).some((file) =>
-    /from\s+["']next(\/[^"']+)?["']/.test(readFileSync(file, "utf8"))
-  );
+  ).some((file) => reachesNext(readFileSync(file, "utf8")));
 }
