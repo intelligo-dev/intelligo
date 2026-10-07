@@ -18,6 +18,11 @@ it explains a framework decision.
 
 ### Fixed
 
+- The `pricing` and `billing-settings` pages read `actionRoles` from their
+  config seams with `in`, so an app whose `lib/plan-card-config.tsx` or
+  `lib/credit-bundle-config.tsx` predates the field — `intelligo sync`
+  keeps seams as they are — compiles again. Since 1.1.0 it failed to
+  type-check.
 - A chat turn holds what it can spend. Admission held one model call
   against a fixed 16K-token prompt, while a turn with tools may call the
   model once per step and a long conversation sends more than 16K; the
@@ -77,6 +82,20 @@ it explains a framework decision.
   in `profile-settings`).
 - Email logs mask the recipient in production and leave the subject out,
   which can carry user-written names.
+- Model-written Markdown loads images only from hosts it is given. An
+  image URL fetches on render, and a reply steered by what the model read
+  could send the reader's address, and anything put in the URL, to any
+  server — on a shared chat, for every visitor. The `ai-markdown`
+  component's `Markdown` takes `imagePrefixes` (none by default), and the
+  `chat` item's `lib/chat-config.tsx` takes `imageHosts` for replies.
+- An invitation email's subject no longer carries the inviter's or the
+  workspace's name — user-written text in a line signed with the
+  product's domain — and the server refuses a display name over 50
+  characters or one containing a link, which only the sign-up form did.
+- A chat upload with no declared length is read only up to the limit
+  instead of buffered whole, and a stored attachment is served inline
+  only when it is a kind that runs nothing (raster images, PDF, plain
+  text); an uploaded SVG or HTML page downloads instead.
 
 - Dependencies moved past their published advisories without new
   overrides: Next.js `~16.3.8` (the scaffold's `package.json` too,

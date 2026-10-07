@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  displayNameProblem,
   ipAddressOptions,
   SERVICE_ONLY_ADMIN_PATHS,
   SERVICE_ONLY_ORGANIZATION_PATHS,
@@ -51,5 +52,21 @@ describe("ipAddressOptions", () => {
       ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"],
       trustedProxies: ["10.0.0.0/8", "173.245.48.0/20"],
     });
+  });
+});
+
+describe("displayNameProblem", () => {
+  it("accepts an ordinary name, and leaves a missing one to the form", () => {
+    expect(displayNameProblem("Ada Lovelace")).toBeNull();
+    expect(displayNameProblem(undefined)).toBeNull();
+    expect(displayNameProblem("x".repeat(50))).toBeNull();
+  });
+
+  it("refuses a name longer than the form allows, or one carrying a link", () => {
+    expect(displayNameProblem("x".repeat(51))).toMatch(/50/);
+    expect(displayNameProblem("Verify at https://evil.example")).toMatch(
+      /link/
+    );
+    expect(displayNameProblem("see WWW.evil.example")).toMatch(/link/);
   });
 });

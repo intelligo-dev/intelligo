@@ -38,6 +38,49 @@ import { ATTACHMENT_MAX_BYTES, attachmentUrl } from "./body";
 
 /** Room for the multipart boundaries and headers around the file. */
 const FORM_OVERHEAD_BYTES = 64 * 1024;
+
+/**
+ * The request body, read until it passes `limit` bytes; then the read
+ * stops and the upload is refused, so a body of any size costs at most
+ * the limit in memory.
+ */
+async function readUpTo(
+  request: Request,
+  limit: number
+): Promise<Uint8Array<ArrayBuffer> | "too_large"> {
+  if (!request.body) return new Uint8Array(new ArrayBuffer(0));
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel();
+      return "too_large";
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(new ArrayBuffer(total));
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out;
+}
+
+/** Types a browser displays without running anything, served inline. */
+const INLINE_TYPES: ReadonlySet<string> = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "image/avif",
+  "application/pdf",
+  "text/plain",
+]);
 import type { ChatActor, ChatServerConfig } from "./config";
 import { DEFAULT_CHAT_MESSAGES, refuse } from "./errors";
 
@@ -109,7 +152,8 @@ export function createChatUploadHandler(
       return refuse("UNAUTHORIZED", t("unauthorized"));
     }
 
-    // Refused before the body is read: `formData()` buffers all of it.
+    // A declared length over the limit is refused before the body is
+    // read; one with none (a chunked upload) is read only up to it.
     const maxBytes = policy.maxBytes ?? ATTACHMENT_MAX_BYTES;
     const declared = Number(request.headers.get("content-length"));
     if (
@@ -118,10 +162,16 @@ export function createChatUploadHandler(
     ) {
       return refuse("BAD_REQUEST", t("attachmentRejected"));
     }
+    const body = await readUpTo(request, maxBytes + FORM_OVERHEAD_BYTES);
+    if (body === "too_large") {
+      return refuse("BAD_REQUEST", t("attachmentRejected"));
+    }
 
     let form: FormData;
     try {
-      form = await request.formData();
+      form = await new Response(body, {
+        headers: { "content-type": request.headers.get("content-type") ?? "" },
+      }).formData();
     } catch {
       return refuse("BAD_REQUEST", t("invalidBody"));
     }
@@ -239,7 +289,11 @@ export function createChatAttachmentHandler(
       const row = await getAttachment(actor, id);
       const url = await getStorageAdapter().getSignedUrl(row.storageKey, {
         expiresInSeconds: SIGNED_URL_SECONDS,
-        disposition: "inline",
+        // The type is the uploader's word for it: only kinds a browser
+        // shows without running anything open in place; the rest (an
+        // SVG, an HTML page) download, so nothing runs on the bucket's
+        // origin.
+        disposition: INLINE_TYPES.has(row.mediaType) ? "inline" : "attachment",
         filename: row.filename,
       });
       return new Response(null, {

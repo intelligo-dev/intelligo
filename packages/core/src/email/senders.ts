@@ -104,9 +104,15 @@ export async function sendInvitationEmail(params: {
   acceptUrl: string;
   declineUrl: string;
 }): Promise<SendEmailResult> {
+  const brandedName = emailBrand().name;
   return sendEmail({
     to: params.to,
-    subject: `${params.inviterName} invited you to ${params.workspaceName}`,
+    // No user-written text in the subject: names go in the body, where
+    // the template escapes them, and a subject is what a phishing line
+    // signed with this product's domain would be read from.
+    subject: brandedName
+      ? `You've been invited to a workspace on ${brandedName}`
+      : "You've been invited to a workspace",
     react: React.createElement(WorkspaceInvitationEmail, {
       inviterName: params.inviterName,
       workspaceName: params.workspaceName,

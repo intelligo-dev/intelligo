@@ -50,7 +50,12 @@ export function PlanCard({
   const copy = planCopy(tPlans, plan);
   const isCurrent = plan.slug === currentPlanSlug;
   const canCheckout = role === "owner";
-  const Actions = (planCardConfig.actionRoles ?? ["owner"]).includes(role)
+  // Read with `in`: a config written before the field existed still
+  // compiles, and keeps the owner-only default.
+  const actionRoles = ("actionRoles" in planCardConfig
+    ? (planCardConfig.actionRoles as readonly string[] | undefined)
+    : undefined) ?? ["owner"];
+  const Actions = actionRoles.includes(role)
     ? planCardConfig.actions
     : undefined;
 
