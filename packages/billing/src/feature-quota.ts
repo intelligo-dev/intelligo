@@ -9,6 +9,11 @@
  * The row carries no period, so a counter is a lifetime total: nothing
  * here resets it, and a limit caps all use until the product clears
  * `usage` itself.
+ *
+ * `checkFeatureQuota` reads the counter and `recordFeatureUsage` adds to
+ * it later, so requests running at once can each pass the check;
+ * `consumeFeatureQuota` checks and counts in one statement, so they
+ * cannot.
  */
 
 import { db } from "@intelligo-dev/core/db";
@@ -92,14 +97,24 @@ async function ensureUserQuota(
     return { usage: (existing[0].usage as Record<string, number>) ?? {} };
   }
 
-  await db.insert(userQuotas).values({
-    id: crypto.randomUUID(),
-    userId,
-    workspaceId,
-    plan,
-  });
+  // Two first calls race here: the second insert is a no-op, and that
+  // call reads the row the first one wrote.
+  const inserted = await db
+    .insert(userQuotas)
+    .values({
+      id: crypto.randomUUID(),
+      userId,
+      workspaceId,
+      plan,
+    })
+    .onConflictDoNothing({
+      target: [userQuotas.userId, userQuotas.workspaceId],
+    })
+    .returning({ id: userQuotas.id });
+  if (inserted.length > 0) return { usage: {} };
 
-  return { usage: {} };
+  const [row] = await db.select().from(userQuotas).where(scope).limit(1);
+  return { usage: (row?.usage as Record<string, number> | undefined) ?? {} };
 }
 
 /**
@@ -112,10 +127,67 @@ export async function checkFeatureQuota(
   action: QuotaAction
 ): Promise<FeatureQuotaResult> {
   const quota = await ensureUserQuota(userId, workspaceId, plan);
+  return quotaResult(plan, action, quota.usage[action] ?? 0);
+}
+
+/**
+ * Count one use of `action` if the plan's limit still allows it, and
+ * report the result — the check and the increment are one conditional
+ * UPDATE, so requests running at once never take the counter past the
+ * limit. A refused call counts nothing. Use it instead of
+ * `checkFeatureQuota` + `recordFeatureUsage` where the limit must hold
+ * under concurrency.
+ */
+export async function consumeFeatureQuota(
+  userId: string,
+  workspaceId: string,
+  plan: string,
+  action: QuotaAction,
+  costUsd: number = 0
+): Promise<FeatureQuotaResult> {
+  await ensureUserQuota(userId, workspaceId, plan);
   const limit = getActionLimit(plan, action);
+  const counter = sql`COALESCE((${userQuotas.usage}->>${action}::text)::int, 0)`;
+  const scope = and(
+    eq(userQuotas.userId, userId),
+    eq(userQuotas.workspaceId, workspaceId)
+  );
 
-  const used = quota.usage[action] ?? 0;
+  const [counted] = await db
+    .update(userQuotas)
+    .set({
+      usage: sql`COALESCE(${userQuotas.usage}, '{}'::jsonb) || jsonb_build_object(${action}::text, ${counter} + 1)`,
+      totalCostUsd: sql`${userQuotas.totalCostUsd} + ${costUsd}`,
+      updatedAt: new Date(),
+    })
+    .where(limit === -1 ? scope : and(scope, sql`${counter} < ${limit}::int`))
+    .returning({ usage: userQuotas.usage });
 
+  if (counted) {
+    // Reported after counting: this use was allowed even when it was
+    // the last one the limit had.
+    const usage = (counted.usage as Record<string, number> | null) ?? {};
+    const { upgradeMessage: _spent, ...result } = quotaResult(
+      plan,
+      action,
+      usage[action] ?? 0,
+      limit
+    );
+    return { ...result, allowed: true };
+  }
+
+  const quota = await ensureUserQuota(userId, workspaceId, plan);
+  const used = Math.max(quota.usage[action] ?? 0, limit);
+  return quotaResult(plan, action, used, limit);
+}
+
+/** The result of a check that found `used` against the plan's limit. */
+function quotaResult(
+  plan: string,
+  action: QuotaAction,
+  used: number,
+  limit: number = getActionLimit(plan, action)
+): FeatureQuotaResult {
   // Unlimited (-1)
   if (limit === -1) {
     return {
@@ -176,7 +248,7 @@ export async function recordFeatureUsage(
   await db
     .update(userQuotas)
     .set({
-      usage: sql`COALESCE(${userQuotas.usage}, '{}'::jsonb) || jsonb_build_object(${action}, COALESCE((${userQuotas.usage}->>${action})::int, 0) + 1)`,
+      usage: sql`COALESCE(${userQuotas.usage}, '{}'::jsonb) || jsonb_build_object(${action}::text, COALESCE((${userQuotas.usage}->>${action}::text)::int, 0) + 1)`,
       totalCostUsd: sql`${userQuotas.totalCostUsd} + ${costUsd}`,
       updatedAt: new Date(),
     })

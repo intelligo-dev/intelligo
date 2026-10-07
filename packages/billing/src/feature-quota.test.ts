@@ -225,16 +225,20 @@ function resetChainMocks() {
   mocks.mockSelectFrom.mockReturnValue({ where: mocks.mockSelectWhere });
   mocks.mockSelect.mockReturnValue({ from: mocks.mockSelectFrom });
 
-  mocks.mockInsertValues.mockImplementation(
-    async (row: Record<string, unknown>) => {
-      mocks.setRow({
-        userId: row.userId as string,
-        workspaceId: (row.workspaceId as string) ?? "ws-1",
-        plan: (row.plan as string) ?? "free",
-      });
-      return [];
-    }
-  );
+  mocks.mockInsertValues.mockImplementation((row: Record<string, unknown>) => ({
+    // Keyed on (user, workspace): a row already there is left alone.
+    onConflictDoNothing: () => ({
+      returning: async () => {
+        if (mocks.state.rows.some((r) => r.userId === row.userId)) return [];
+        mocks.setRow({
+          userId: row.userId as string,
+          workspaceId: (row.workspaceId as string) ?? "ws-1",
+          plan: (row.plan as string) ?? "free",
+        });
+        return [{ id: "row" }];
+      },
+    }),
+  }));
   mocks.mockInsert.mockReturnValue({ values: mocks.mockInsertValues });
 
   mocks.mockUpdateWhere.mockImplementation(async () => {
