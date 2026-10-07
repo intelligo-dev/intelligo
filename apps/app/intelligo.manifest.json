@@ -3,11 +3,11 @@
   "frameworkVersion": "1.1.1",
   "features": {
     "app-scaffold": {
-      "templateVersion": "1.18.0",
+      "templateVersion": "1.19.0",
       "files": [
         {
           "path": "package.json",
-          "hash": "5c3f5eb49000996b619aa237aa2b25d143e52ebb8ec4fcb91466f7f5f00882ed"
+          "hash": "e2cd3a4dd33a9afb57f573c396c492df8c200ec9361c5c73f15d948419a72f42"
         },
         {
           "path": "next.config.mjs",

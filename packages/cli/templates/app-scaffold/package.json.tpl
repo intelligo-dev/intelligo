@@ -29,7 +29,7 @@
     "cn": "^0.3.0",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.46.0",
-    "next": "~16.3.5",
+    "next": "~16.3.8",
     "next-intl": "^4.14.5",
     "next-themes": "^0.4.6",
     "react": "^19.3.0",
@@ -48,7 +48,7 @@
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "pg": "8.18.0",
-    "shadcn": "^4.21.0",
+    "shadcn": "^4.21.3",
     "tailwindcss": "^4.3.3",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5.9.3"
