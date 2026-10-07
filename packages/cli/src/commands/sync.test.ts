@@ -493,6 +493,29 @@ describe("orphaned files, backups and removal", () => {
     expect(removeItem("usage", context)).toEqual({ status: "not_installed" });
   });
 
+  it("copies a page edited by hand under .intelligo/backup before removing it", () => {
+    write(context.appRoot, "app/usage/page.tsx", "export default function Mine() {}\n");
+    write(context.appRoot, "app/error.tsx", "export default 1;\n");
+    keep(["route-error", "usage"], {
+      "app/usage/page.tsx": hashContents(PAGE.replace(/^\/\*\*.*\*\/\n/, "")),
+    });
+
+    const result = removeItem("usage", context);
+
+    expect(result.status).toBe("removed");
+    if (result.status !== "removed") return;
+    expect(result.backedUp?.files).toEqual(["app/usage/page.tsx"]);
+    expect(
+      readFileSync(
+        path.join(context.appRoot, result.backedUp!.dir, "app/usage/page.tsx"),
+        "utf8"
+      )
+    ).toBe("export default function Mine() {}\n");
+    expect(existsSync(path.join(context.appRoot, "app/usage/page.tsx"))).toBe(
+      false
+    );
+  });
+
   it("refuses to remove an item another kept item needs", () => {
     keep(["route-error", "usage"]);
     expect(removeItem("route-error", context)).toEqual({
