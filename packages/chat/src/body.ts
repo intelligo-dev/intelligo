@@ -11,6 +11,7 @@
 
 import type { UIMessage } from "ai";
 
+import type { RateLimitDecision } from "./config";
 import { ELIDED_FILE_URL } from "./elide";
 import { extractText } from "./windowing";
 
@@ -40,6 +41,32 @@ export type ChatAttachmentPolicy = {
     mediaType: string;
     bytes: () => Promise<Uint8Array>;
   }) => Promise<string | null>;
+  /**
+   * How often the upload route accepts a file from a workspace. Default:
+   * the workspace plan's per-minute rate, counted apart from chat turns;
+   * `false` disables it, as the config's `rateLimit: false` does.
+   */
+  rateLimit?:
+    | false
+    | ((actor: {
+        workspaceId: string;
+        userId: string;
+      }) => Promise<RateLimitDecision>);
+  /**
+   * Bytes a workspace may hold in uploads no turn has claimed yet; an
+   * upload past it is refused until a turn claims them or the sweep
+   * deletes them. Default ten times `maxBytes`; `false`: no cap.
+   */
+  maxUnclaimedBytes?: number | false;
+  /**
+   * The deployment's own storage quota — per plan, per user. Return
+   * false to refuse the upload as over quota; runs after the file is
+   * read and before anything is stored.
+   */
+  admitUpload?: (
+    actor: { workspaceId: string; userId: string },
+    file: { filename: string; mediaType: string; size: number }
+  ) => boolean | Promise<boolean>;
 };
 
 export type ChatBody = {

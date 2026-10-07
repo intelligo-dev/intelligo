@@ -142,4 +142,53 @@ d("attachment sweep — real DB integration", () => {
     );
     expect(left.rowCount).toBe(1);
   });
+
+  it("moves a key storage keeps refusing behind the keys queued after it", async () => {
+    // Queued before anything else, so they lead the queue.
+    const refused = [key("refused-1"), key("refused-2")];
+    await client.query(
+      `INSERT INTO storage_deletions (storage_key, queued_at)
+       SELECT k, '2000-01-01' FROM unnest($1::text[]) AS k`,
+      [refused]
+    );
+    await client.query(
+      `INSERT INTO storage_deletions (storage_key, queued_at)
+       VALUES ($1, '2000-01-02')`,
+      [key("deletable")]
+    );
+    const deleted: string[] = [];
+    const partial = {
+      ...storage,
+      delete: async (storageKey: string) => {
+        if (refused.includes(storageKey)) throw new Error("access denied");
+        deleted.push(storageKey);
+      },
+    };
+    // Earlier tests may leave their own keys at the head of the queue;
+    // clear the ones this suite queued that are not part of this case.
+    await client.query(
+      `DELETE FROM storage_deletions WHERE storage_key LIKE $1 AND storage_key <> ALL($2)`,
+      [`ws/${workspaceId}/%`, [...refused, key("deletable")]]
+    );
+
+    await sweep.sweepAttachments({
+      storage: partial,
+      olderThan: new Date(0),
+      limit: 2,
+    });
+    await sweep.sweepAttachments({
+      storage: partial,
+      olderThan: new Date(0),
+      limit: 2,
+    });
+
+    expect(deleted).toContain(key("deletable"));
+    const left = await client.query(
+      `SELECT storage_key FROM storage_deletions WHERE storage_key = ANY($1)`,
+      [[...refused, key("deletable")]]
+    );
+    expect(left.rows.map((row) => row.storage_key).sort()).toEqual(
+      [...refused].sort()
+    );
+  });
 });
