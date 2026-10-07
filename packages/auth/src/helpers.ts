@@ -19,7 +19,10 @@ export type WorkspaceRole = "owner" | "admin" | "member";
 const log = createLogger("Auth");
 
 /**
- * The current session and user, or null when unauthenticated.
+ * The current session and user, or null when unauthenticated — or when
+ * the account is scheduled for deletion: such a session exists only to
+ * reach the restore screen (`getPendingDeletion`), so every guard built
+ * on this one treats it as signed out.
  */
 export async function getAuthSession(): Promise<{
   session: Session;
@@ -30,6 +33,9 @@ export async function getAuthSession(): Promise<{
   });
 
   if (!session?.user) {
+    return null;
+  }
+  if ((session.user as { deletedAt?: Date | null }).deletedAt) {
     return null;
   }
 

@@ -113,6 +113,18 @@ describe("getAuthSession", () => {
 
     expect(result).toBeNull();
   });
+
+  it("returns null for an account scheduled for deletion, so every guard refuses it", async () => {
+    getSessionMock.mockResolvedValue({
+      session: sessionFixture,
+      user: { ...userFixture, deletedAt: new Date() },
+    });
+
+    expect(await getAuthSession()).toBeNull();
+    await expect(requireAuth()).rejects.toMatchObject({
+      code: "unauthenticated",
+    });
+  });
 });
 
 describe("requireAuth", () => {

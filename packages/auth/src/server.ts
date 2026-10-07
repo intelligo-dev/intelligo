@@ -16,6 +16,7 @@ import {
   ipAddressOptions,
   SERVICE_ONLY_ADMIN_PATHS,
   SERVICE_ONLY_ORGANIZATION_PATHS,
+  workspaceNameProblem,
 } from "./request-hardening";
 import { APIError } from "better-auth/api";
 
@@ -89,6 +90,15 @@ export const auth = betterAuth({
   }),
 
   baseURL: APP_URL,
+
+  user: {
+    additionalFields: {
+      // Carried on every session's user, so the guards can tell an
+      // account scheduled for deletion without another query. Never
+      // settable through the user API.
+      deletedAt: { type: "date", required: false, input: false },
+    },
+  },
 
   emailAndPassword: {
     enabled: true,
@@ -238,26 +248,10 @@ export const auth = betterAuth({
     session: {
       create: {
         before: async (session): Promise<{ data: typeof session }> => {
-          // A soft-deleted user gets no session.
-          try {
-            const userRecord = await db
-              .select({ deletedAt: users.deletedAt })
-              .from(users)
-              .where(eq(users.id, session.userId))
-              .limit(1);
-
-            if (userRecord[0]?.deletedAt) {
-              throw new Error(
-                "This account has been deleted. Contact support@intelligo.dev to recover your account within 30 days."
-              );
-            }
-          } catch (error) {
-            console.error(
-              "[session.create hook] Deleted user check failed:",
-              error
-            );
-            throw error;
-          }
+          // A user whose account is scheduled for deletion still gets a
+          // session: signing in is how they reach the restore screen.
+          // `getAuthSession` treats that session as signed out everywhere
+          // else (see `getPendingDeletion`).
 
           // Set the active organization. Reads `member` directly because
           // `/organization/list` resolves the user from a session, and this
@@ -310,6 +304,18 @@ export const auth = betterAuth({
         );
       },
       invitationExpiresIn: 60 * 60 * 24 * 7,
+      // A workspace's name is printed in invitation emails, so it is
+      // held to the name rule whichever path creates or renames it.
+      organizationHooks: {
+        beforeCreateOrganization: async ({ organization }) => {
+          const problem = workspaceNameProblem(organization.name);
+          if (problem) throw new APIError("BAD_REQUEST", { message: problem });
+        },
+        beforeUpdateOrganization: async ({ organization }) => {
+          const problem = workspaceNameProblem(organization.name);
+          if (problem) throw new APIError("BAD_REQUEST", { message: problem });
+        },
+      },
     }),
     /**
      * Enabled for its impersonation endpoints, used by the console.

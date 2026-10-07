@@ -83,6 +83,20 @@ export {
   type UpdateWorkspaceInput,
 } from "./workspace/schemas";
 
+export type {
+  BeforeDeleteWorkspace,
+  WorkspaceDeletionSettle,
+} from "./workspace/delete";
+export {
+  accountDeletionGraceMs,
+  DEFAULT_ACCOUNT_DELETION_GRACE_DAYS,
+  getPendingDeletion,
+  purgeDeletedAccounts,
+  restoreAccount,
+  type PendingDeletion,
+  type PurgeDeletedAccountsOptions,
+} from "./account-deletion";
+
 export {
   createProfileService,
   type ProfileService,
@@ -116,4 +130,5 @@ export { setStepSchema, type SetStepInput } from "./onboarding/schemas";
 export {
   SERVICE_ONLY_ADMIN_PATHS,
   SERVICE_ONLY_ORGANIZATION_PATHS,
+  workspaceNameProblem,
 } from "./request-hardening";

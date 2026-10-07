@@ -10,12 +10,23 @@
  *   failed (network, upstream API error, etc.).
  * - `reauthentication_required` — deleting the account needs a session
  *   signed in within the last day, and one that is not an impersonation.
+ *   Restoring one needs a session signed in after it was deleted.
+ * - `sole_owner` — the caller is the only owner of a workspace that has
+ *   other members; they transfer ownership or delete that workspace
+ *   first. `meta.workspaces` lists those workspaces' names.
+ * - `not_scheduled` — restore was asked for an account that is not
+ *   scheduled for deletion.
+ * - `restore_expired` — the grace period ended; the account can no
+ *   longer be restored.
  */
 export type ProfileServiceErrorCode =
   | "forbidden"
   | "invalid_input"
   | "provider_error"
-  | "reauthentication_required";
+  | "reauthentication_required"
+  | "sole_owner"
+  | "not_scheduled"
+  | "restore_expired";
 
 export interface ProfileServiceErrorMeta {
   [key: string]: unknown;
