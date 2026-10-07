@@ -14,7 +14,7 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
-## [Unreleased]
+## [1.1.2] — 2026-10-07
 
 ### Added
 
@@ -244,6 +244,34 @@ it explains a framework decision.
 - Plan allowances in another currency than the billing row still count
   as none, but the mismatch is logged once instead of every plan reading
   as zero without a word.
+
+### Upgrading
+
+Run `intelligo migrate` before deploying: `0007_schema_hardening` adds
+the auth rate-limit table, the audit actor email, share tokens and the
+storage deletion queue, and keeps trial grants when a workspace is
+deleted. It only adds or loosens, so it can run ahead of the deploy.
+
+Run `intelligo sync` for every item: the items now name dependency
+ranges, the chat sends earlier files without their bytes and opens long
+conversations on their latest page, and the manifest starts recording
+the message hashes later syncs compare against. Allow image hosts for
+replies in `lib/chat-config.tsx` (`imageHosts`) if your agent shows
+images. `intelligo upgrade --check` lists the scaffold files that
+changed (app-scaffold 1.21.0, maintenance 1.3.0): `i18n/request.ts`
+falls back to English, `lib/plans.ts` gains `definePlans` and
+`RATE_LIMITS` (register them with `registerRateLimits`), and the
+maintenance route sweeps uploads; `intelligo upgrade --diff <path>`
+shows each change.
+
+A shared conversation's link is now a token. Links handed out before
+keep working until the conversation is shared again. Code that called
+`getPublicConversation` or `getPublicMessages` with an id passes the
+link's segment (`shareRef(row)`).
+
+Platform admins keep only finding users and impersonating through the
+console; anything else of Better-Auth's admin plugin is gone from the
+role. Deleting an account needs a sign-in from the last day.
 
 ## [1.1.1] — 2026-10-07
 
