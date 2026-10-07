@@ -45,6 +45,27 @@ const nextConfig = {
     "@intelligo-dev/jobs",
     "@intelligo-dev/next",
   ],
+  // Sent on every response. No page may be framed by another site (the
+  // settings pages delete and transfer things a click away), browsers
+  // keep to HTTPS and to the declared content types, and a link out
+  // carries only the origin. A Content-Security-Policy is yours to add.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default withNextIntl(nextConfig);

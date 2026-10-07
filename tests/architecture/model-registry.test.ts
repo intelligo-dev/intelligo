@@ -65,13 +65,11 @@ const MODEL_ID =
   /"((?:openai|anthropic|google|xai|mistral|meta)\/[a-z0-9._-]+)"/g;
 
 /**
- * Ids that are deliberately not registered.
- *
- * `reference/echo-1` is the reference app's stub, which never reaches a
- * provider — it exists to exercise the accounting path with a name that
- * obviously is not a real model.
+ * Ids that are deliberately not registered. None: a stub that reaches
+ * no provider is still admitted by its price, so it is registered at no
+ * cost like any other model.
  */
-const ALLOWED_UNREGISTERED = new Set<string>(["reference/echo-1"]);
+const ALLOWED_UNREGISTERED = new Set<string>();
 
 /**
  * Comments are stripped before scanning: a comment may name a broken

@@ -95,6 +95,9 @@ export function getChatModel(modelId: string): LanguageModel {
   }
   return createStubLanguageModel({
     modelId: CHAT_MODEL_ID,
+    // The reference app runs on the stub wherever no key is set,
+    // its own deployment included.
+    allowInProduction: true,
     reply: async (userText, prompt) => {
       const t = await getTranslations({
         locale: await resolveLocale(),

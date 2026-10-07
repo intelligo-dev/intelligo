@@ -31,6 +31,7 @@ import { setRequestContextSource } from "@intelligo-dev/core/request-context";
 import {
   DEFAULT_MODELS,
   registerModels,
+  type ModelPricing,
 } from "@intelligo-dev/executions";
 import { nextRequestContext } from "@intelligo-dev/next";
 import { createLogger } from "@intelligo-dev/core/logger";
@@ -48,6 +49,28 @@ export const PRODUCT_SLUG = "__APP_SLUG__";
 export const CAPABILITIES = {
   assistantMessage: "assistant.message",
 } as const;
+
+/**
+ * The assistant route's stand-in model. Every model id an execution
+ * names needs a registered price, or admission refuses it; this one
+ * calls no provider, so it is free.
+ */
+const ECHO_MODEL: ModelPricing = {
+  id: "example/echo-1",
+  provider: "example",
+  model: "echo-1",
+  displayName: "Echo (no provider)",
+  costPerMInputTokens: 0,
+  costPerMOutputTokens: 0,
+  maxOutputTokens: 1_000,
+  capabilities: {
+    thinking: false,
+    toolCall: false,
+    vision: false,
+    webSearch: false,
+    codeExec: false,
+  },
+};
 
 const log = createLogger("Intelligo");
 
@@ -129,6 +152,9 @@ function bind(): void {
   // contracted rates, or add a model the framework has never heard of,
   // by passing your own array here.
   registerModels(DEFAULT_MODELS);
+  // The stand-in model of app/api/assistant/route.ts, which calls no
+  // provider and so costs nothing. Remove it with the stand-in.
+  registerModels([ECHO_MODEL]);
 }
 
 // The execution boundary, bound to the billing engine: admission

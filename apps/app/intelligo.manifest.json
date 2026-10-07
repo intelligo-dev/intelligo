@@ -3,7 +3,7 @@
   "frameworkVersion": "1.1.0",
   "features": {
     "app-scaffold": {
-      "templateVersion": "1.17.0",
+      "templateVersion": "1.18.0",
       "files": [
         {
           "path": "package.json",
@@ -11,7 +11,7 @@
         },
         {
           "path": "next.config.mjs",
-          "hash": "ccb6bc1e7acf46bb9a924dadeb2db555d02c322be9b0dbc0fa215a8f5f4e42d0"
+          "hash": "c01fa6859a3ef4157d2d64cbdb0b61c36a92d99a15a930e6b7ea10e879ef00a4"
         },
         {
           "path": "tsconfig.json",
@@ -19,11 +19,11 @@
         },
         {
           "path": ".env.example",
-          "hash": "0c911c2a69967526b713c1ead8f6f33ac194e40c9aeb7aefda6715f2d04f3044"
+          "hash": "1eaae4cfbc678f3c8290d3818fe5c42b42f17cab2cf76391ab6b0a09edc2673f"
         },
         {
           "path": "lib/intelligo.ts",
-          "hash": "8c25f6654a94ec46293837e24dd12a57f3a484a7f7fb68d60877462c950c8c1d"
+          "hash": "6fe7a913a24da70f082e4a0e2866d629580e4de69668d1967151421d30fb9718"
         },
         {
           "path": "instrumentation.ts",
@@ -43,7 +43,7 @@
         },
         {
           "path": "app/api/assistant/route.ts",
-          "hash": "3dcd975d6128e222523c8f69e861da7f388becd10e2ff92c926ceac23a03810c"
+          "hash": "363cd6a788e4a74fabf11de6e4053095cf838a7dbbf6a2a8d557065cf151ef79"
         },
         {
           "path": "components.json",

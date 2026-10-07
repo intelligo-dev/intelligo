@@ -119,6 +119,7 @@ Source: https://intelligo.dev/docs/getting-started/environment
 | --- | --- |
 | `DATABASE_URL` | Postgres with the pgvector extension (Neon, Supabase, RDS, or local). |
 | `INTELLIGO_DB_DRIVER` | Driver is chosen from the URL (Neon hosts get the WebSocket driver, everything else node-postgres). Force it with pg \| neon-serverless. |
+| `DATABASE_POOL_MAX` | Connections the pool may open per server process (default 10). A request waits at most 15 seconds for one before it fails. |
 | `BETTER_AUTH_SECRET` | At least 32 characters. Generate with: openssl rand -base64 32 |
 | `NEXT_PUBLIC_APP_URL` | Where users reach the app. Auth callbacks, email links and redirects are built from it, so production needs the public https URL. The scaffold sets `http://localhost:3000`. |
 | `INTELLIGO_BILLING_PRODUCT` | Which product's plans the billing engine bills against. Your composition root also sets this via setDefaultProductSlug(); the variable is here so CLI tooling can check it without booting the app. The scaffold sets `your-app`. |
@@ -128,6 +129,7 @@ Source: https://intelligo.dev/docs/getting-started/environment
 | Variable | What it is |
 | --- | --- |
 | `GOOGLE_CLIENT_ID`<br>`GOOGLE_CLIENT_SECRET`<br>`GITHUB_CLIENT_ID`<br>`GITHUB_CLIENT_SECRET` | Sign in with Google or GitHub. A provider's button appears once both of its values are set; the callback URL to register with the provider is NEXT_PUBLIC_APP_URL + /api/auth/callback/google (or /github). |
+| `AUTH_IP_HEADERS`<br>`AUTH_TRUSTED_PROXIES` | Behind proxies: the headers the auth rate limiter reads the client's address from, in order (default x-forwarded-for), and the proxies' CIDRs, so a forwarded chain is read up to the first hop not among them. Without them, an app behind more than one proxy counts every client as one. |
 | `RESEND_API_KEY` | Email. Without a provider, emails (verification, invitations, reset links) are printed to the server console, and sign-ups are not held for email verification. |
 | `EMAIL_FROM` | The sender of every email, on a domain verified with Resend. Required with RESEND_API_KEY: there is no built-in sender, so sends fail without it. Loops ignores it and takes the sender from each template. The scaffold sets `Acme <noreply@example.com>`. |
 | `APP_NAME`<br>`SUPPORT_EMAIL` | The product's name in every email's heading and footer; defaults to the display name in EMAIL_FROM. SUPPORT_EMAIL is the address the footer offers for replies; without it the footer offers none. The scaffold sets `Acme`. |
@@ -136,6 +138,7 @@ Source: https://intelligo.dev/docs/getting-started/environment
 | `STRIPE_SECRET_KEY`<br>`STRIPE_WEBHOOK_SECRET` | Stripe. Billing pages say "not configured" until these are set; the webhook at /api/webhooks/stripe verifies with the secret. |
 | `PAYMENT_MODE` | Which registered payment provider serves payments outside Stripe (registerPaymentProvider in the composition root). Defaults to the in-memory mock, which production refuses. |
 | `OPENAI_API_KEY`<br>`ANTHROPIC_API_KEY`<br>`GOOGLE_GENERATIVE_AI_API_KEY` | AI providers. Chat runs on a built-in stub model until lib/chat-model.ts names a real one. Set only the key of the provider that model belongs to — the provider's SDK reads it, and the framework checks none of them. |
+| `INTELLIGO_ALLOW_STUB_MODEL` | The stub refuses to reply in a production build, so a deployment that never bound a model fails loudly. Set to 1 for one meant to run on it. |
 | `CRON_SECRET` | Bearer token your scheduler sends to /api/cron/maintenance (`intelligo add maintenance`). At least 32 characters. |
 | `PLATFORM_ADMIN_EMAILS` | Comma-separated emails allowed to reach the Intelligo admin console. Closed by default: with no value, nobody is a platform admin. |
 

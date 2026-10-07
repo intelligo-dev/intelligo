@@ -34,7 +34,23 @@ export type StubLanguageModelOptions = {
   ) => StubToolCall | null | Promise<StubToolCall | null>;
   /** Delay between tokens, in ms. Default 15; 0 in tests. */
   chunkDelayInMs?: number;
+  /**
+   * Answer in a production build. Off by default: there the stub
+   * refuses to reply unless this is set or `INTELLIGO_ALLOW_STUB_MODEL`
+   * is `1`, so a deployment that never bound a real model fails loudly
+   * instead of billing users for its echo.
+   */
+  allowInProduction?: boolean;
 };
+
+/** Whether the stub may reply here, read when it is asked to. */
+function stubAllowed(options: StubLanguageModelOptions): boolean {
+  return (
+    process.env.NODE_ENV !== "production" ||
+    options.allowInProduction === true ||
+    process.env.INTELLIGO_ALLOW_STUB_MODEL === "1"
+  );
+}
 
 /**
  * Structurally the provider spec's `LanguageModelV3StreamPart`, for
@@ -94,6 +110,12 @@ export function createStubLanguageModel(
     provider: "stub",
     modelId: options.modelId,
     doStream: async ({ prompt }) => {
+      if (!stubAllowed(options)) {
+        throw new Error(
+          "The stub chat model is answering in production. Bind a real model in lib/chat-model.ts, " +
+            "or set INTELLIGO_ALLOW_STUB_MODEL=1 for a deployment meant to run on the stub."
+        );
+      }
       const userText = lastUserTextOf(prompt);
       const reply = await options.reply(userText, prompt);
       const call = options.toolCall

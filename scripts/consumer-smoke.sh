@@ -108,7 +108,8 @@ probe() {
 }
 
 start() {
-  pnpm exec next start --port "$APP_PORT" >"$WORK/next-$1.log" 2>&1 &
+  # The stub chat model refuses in a production build unless allowed.
+  INTELLIGO_ALLOW_STUB_MODEL=1 pnpm exec next start --port "$APP_PORT" >"$WORK/next-$1.log" 2>&1 &
   servers+=($!)
 }
 
