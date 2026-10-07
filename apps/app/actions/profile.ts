@@ -31,6 +31,7 @@ function friendlyMessage(t: Translator): Partial<Record<string, string>> {
   return {
     forbidden: t("errors.forbidden"),
     provider_error: t("errors.providerError"),
+    reauthentication_required: t("errors.reauthenticationRequired"),
   };
 }
 

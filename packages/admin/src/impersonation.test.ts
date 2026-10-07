@@ -110,6 +110,27 @@ describe("startImpersonation", () => {
         actorKind: "support",
         resourceKind: "user",
         resourceId: "u-target",
+        metadata: { reason: "ticket-1042" },
+      })
+    );
+  });
+
+  it("records that an impersonation it audited never began", async () => {
+    mocks.impersonateUser.mockRejectedValue(new Error("Target is an admin"));
+
+    await expect(
+      startImpersonation({ targetUserId: "u-target", reason: "ticket-1042" })
+    ).rejects.toThrow("Target is an admin");
+
+    expect(mocks.recordAuditEventOrThrow).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        action: "admin.impersonation.refused",
+        outcome: "failed",
+        resourceId: "u-target",
+        metadata: expect.objectContaining({
+          reason: "ticket-1042",
+          error: "Target is an admin",
+        }),
       })
     );
   });

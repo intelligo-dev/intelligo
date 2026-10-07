@@ -15,6 +15,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 
 vi.mock("server-only", () => ({}));
+// The read model checks for a platform admin; this test has no request.
+vi.mock("../gate", () => ({ assertPlatformAdmin: async () => {} }));
 
 const PG_URL = process.env.TEST_PG_URL;
 const d = PG_URL ? describe : describe.skip;

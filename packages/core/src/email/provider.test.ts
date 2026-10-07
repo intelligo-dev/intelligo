@@ -249,8 +249,10 @@ describe("ConsoleProvider", () => {
 
     await new ConsoleProvider().send(verify);
 
+    // The production line goes through the logger, which masks the
+    // address; neither the address nor a link reaches the console.
     const logged = vi.mocked(console.log).mock.calls.flat().join("\n");
-    expect(logged).toContain("dev@local.test");
+    expect(logged).not.toContain("dev@local.test");
     expect(logged).not.toContain("token=t");
   });
 });

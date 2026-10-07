@@ -88,6 +88,33 @@ describe("requireAdmin", () => {
   });
 });
 
+describe("an allowlist promotion", () => {
+  it("is recorded when this request made it, and not otherwise", async () => {
+    mocks.requirePlatformAdmin.mockResolvedValue({
+      user: { id: "u-admin", email: "admin@example.test" },
+      promoted: true,
+    });
+    await requireAdmin("admin.overview.viewed");
+    expect(mocks.recordAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "admin.platform_admin.granted",
+        resourceId: "u-admin",
+        metadata: { email: "admin@example.test", via: "allowlist" },
+      })
+    );
+
+    vi.clearAllMocks();
+    mocks.requirePlatformAdmin.mockResolvedValue({
+      user: { id: "u-admin", email: "admin@example.test" },
+      promoted: false,
+    });
+    await requireAdmin("admin.overview.viewed");
+    expect(mocks.recordAuditEvent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: "admin.platform_admin.granted" })
+    );
+  });
+});
+
 describe("requireAdminOrRefuse", () => {
   it("uses the throwing audit write", async () => {
     await requireAdminOrRefuse("admin.workspace.impersonated", {

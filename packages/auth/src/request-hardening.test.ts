@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ipAddressOptions,
+  SERVICE_ONLY_ADMIN_PATHS,
   SERVICE_ONLY_ORGANIZATION_PATHS,
 } from "./request-hardening";
 
@@ -23,6 +24,12 @@ describe("SERVICE_ONLY_ORGANIZATION_PATHS", () => {
     expect(SERVICE_ONLY_ORGANIZATION_PATHS).not.toContain(
       "/organization/set-active"
     );
+  });
+});
+
+describe("SERVICE_ONLY_ADMIN_PATHS", () => {
+  it("closes raw impersonation, which skips the reason and the audit event", () => {
+    expect(SERVICE_ONLY_ADMIN_PATHS).toContain("/admin/impersonate-user");
   });
 });
 

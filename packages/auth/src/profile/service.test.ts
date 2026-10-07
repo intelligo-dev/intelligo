@@ -84,7 +84,10 @@ beforeEach(() => {
   vi.resetAllMocks();
 
   mocks.headersMock.mockImplementation(async () => new Headers());
-  mocks.requireAuth.mockResolvedValue({ user: baseUser });
+  mocks.requireAuth.mockResolvedValue({
+    user: baseUser,
+    session: { createdAt: new Date() },
+  });
   mocks.updateUser.mockResolvedValue({});
   mocks.updateSetWhereMock.mockResolvedValue(undefined);
   mocks.deleteWhereMock.mockResolvedValue(undefined);
@@ -199,6 +202,33 @@ describe("updateProfile", () => {
 });
 
 describe("deleteAccount", () => {
+  it("refuses a session signed in more than a day ago", async () => {
+    mocks.requireAuth.mockResolvedValue({
+      user: baseUser,
+      session: { createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000) },
+    });
+    const service = createProfileService();
+
+    const err = await service.deleteAccount().catch((e) => e);
+
+    expect(isProfileServiceError(err)).toBe(true);
+    expect(err.code).toBe("reauthentication_required");
+    expect(mocks.updateSetWhereMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses an impersonated session", async () => {
+    mocks.requireAuth.mockResolvedValue({
+      user: baseUser,
+      session: { createdAt: new Date(), impersonatedBy: "u-admin" },
+    });
+    const service = createProfileService();
+
+    const err = await service.deleteAccount().catch((e) => e);
+
+    expect(err.code).toBe("reauthentication_required");
+    expect(mocks.updateSetWhereMock).not.toHaveBeenCalled();
+  });
+
   it("soft-deletes the user and invalidates every session", async () => {
     const service = createProfileService();
 

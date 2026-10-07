@@ -6,7 +6,13 @@
 
 import { describe, expect, it } from "vitest";
 
-import { grantExitCode, grantPlatformAdmin } from "./admin.js";
+import {
+  formatRevokeResult,
+  grantExitCode,
+  grantPlatformAdmin,
+  revokeExitCode,
+  revokePlatformAdmin,
+} from "./admin.js";
 
 function database(
   user: { id: string; email: string; role: string | null } | null
@@ -101,5 +107,63 @@ describe("grantPlatformAdmin", () => {
       "INSERT",
       "ROLLBACK",
     ]);
+  });
+});
+
+describe("revokePlatformAdmin", () => {
+  it("removes the role, audits it and ends the sessions, in one transaction", async () => {
+    const db = database({
+      id: "u1",
+      email: "a@x.io",
+      role: "tester,platform-admin",
+    });
+
+    const r = await revokePlatformAdmin("a@x.io", db.query, {
+      production: false,
+    });
+
+    expect(r).toMatchObject({ status: "revoked", allowlisted: false });
+    expect(revokeExitCode(r)).toBe(0);
+    expect(db.statements.map((s) => s.sql.trim().split(/\s/)[0])).toEqual([
+      "SELECT",
+      "BEGIN",
+      "UPDATE",
+      "INSERT",
+      "DELETE",
+      "COMMIT",
+    ]);
+    expect(db.statements[2]!.params).toEqual(["u1", "tester"]);
+    expect(db.statements[3]!.sql).toContain("admin.platform_admin.revoked");
+  });
+
+  it("leaves a plain user role when admin was the only one", async () => {
+    const db = database({ id: "u1", email: "a@x.io", role: "platform-admin" });
+    await revokePlatformAdmin("a@x.io", db.query, { production: false });
+    expect(db.statements[2]!.params).toEqual(["u1", "user"]);
+  });
+
+  it("warns that the allowlist will promote the address again", async () => {
+    const db = database({ id: "u1", email: "A@x.io", role: "platform-admin" });
+    const r = await revokePlatformAdmin("a@x.io", db.query, {
+      production: false,
+      allowlist: "ops@x.io, a@X.io",
+    });
+    expect(r).toMatchObject({ status: "revoked", allowlisted: true });
+    expect(formatRevokeResult(r)).toContain("PLATFORM_ADMIN_EMAILS");
+  });
+
+  it("refuses in production without --force, and touches nothing for a non-admin", async () => {
+    const refused = await revokePlatformAdmin("a@x.io", database(null).query, {
+      production: true,
+    });
+    expect(refused.status).toBe("refused");
+    expect(revokeExitCode(refused)).toBe(1);
+
+    const db = database({ id: "u1", email: "a@x.io", role: "user" });
+    const r = await revokePlatformAdmin("a@x.io", db.query, {
+      production: false,
+    });
+    expect(r.status).toBe("not_admin");
+    expect(db.statements).toHaveLength(1);
   });
 });
