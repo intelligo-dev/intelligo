@@ -16,6 +16,33 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+### Added
+
+- `intelligo --version`, `intelligo <command> --help` for one command's
+  usage, and documented exit codes: 0 done, 1 a check found problems or
+  the command failed, 2 the command was used wrongly (an unknown command
+  or a missing argument now exits 2).
+- `intelligo doctor` asks the database when `DATABASE_URL` is set (and
+  `--offline` is not): whether the framework's and the app's migrations
+  are applied, whether pgvector is available, and whether the billing
+  row's currency is the one `lib/billing-config.ts` formats. It accepts
+  `AUTH_SECRET` as the app does (with a note to rename it), warns about a
+  Resend key without `EMAIL_FROM` and, in production, a non-https URL or a
+  test Stripe key. Its migrations line now says what it checks: the
+  framework chain's integrity, not the database.
+- `--json` on `doctor`, `upgrade --check` and `sync --check`, for CI.
+- `intelligo upgrade --diff <path>` shows how the app's copy differs from
+  the current template, and `upgrade --accept <path>` keeps the app's copy
+  and stops reporting it as a conflict until the template changes again.
+- `intelligo sync` records each seam's shipped default, and `sync --check`
+  reports `seam-changed` when a release changes it (the app's copy is still
+  kept); `sync --diff <path>` shows the change. Files an earlier release
+  shipped and none of the app's items do now are reported `orphaned`.
+- `intelligo remove <item>` deletes the files only that item ships and
+  forgets it, keeping its seams; it refuses an item another needs.
+- `intelligo sync --force` copies the files it replaces to
+  `.intelligo/backup/<time>/` first.
+
 ### Fixed
 
 - The `pricing` and `billing-settings` pages read `actionRoles` from their
@@ -107,6 +134,17 @@ it explains a framework decision.
   uses argparse only for its command-line binary). `pnpm audit` reports
   one advisory with no release at all: `braces`, reached through shadcn's
   build tooling with patterns the developer writes.
+
+### Changed
+
+- `create` prints the database, migration and admin steps after
+  scaffolding. `add` with no feature no longer lists retired ones. `sync`
+  records the framework version it installed in the manifest, and refuses
+  to install pages for a version other than the installed packages'
+  without `--force`. The CLI finds `@intelligo-dev/*` packages the way
+  Node does, from the app upward, so a dependency hoisted to a workspace
+  root is found and an app's own `packages/core` is not taken for the
+  framework's.
 
 ## [1.1.1] — 2026-10-07
 

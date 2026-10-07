@@ -256,12 +256,14 @@ const COMMANDS = [
 ];
 
 function cliPage(root) {
-  const bin = read(root, "packages/cli/src/bin.ts");
+  const bin = read(root, "packages/cli/src/usage.ts");
   const usageBlock = bin.match(
     /function usage\(\): string \{\s*return \[([\s\S]*?)\]\.join/
   );
   if (!usageBlock)
-    throw new Error("docs: could not find usage() in packages/cli/src/bin.ts");
+    throw new Error(
+      "docs: could not find usage() in packages/cli/src/usage.ts"
+    );
   const usage = [...usageBlock[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)]
     .map((m) => m[1].replace(/\\"/g, '"'))
     .filter((l) => l !== "")

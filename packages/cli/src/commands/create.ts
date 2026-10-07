@@ -221,13 +221,16 @@ export function formatNextSteps(target: string, next: NextSteps): string {
   };
   return [
     `cd ${shellQuote(path.relative(process.cwd(), appRoot) || ".")}`,
-    "cp .env.example .env.local   # then fill it in",
+    "cp .env.example .env.local   # then set DATABASE_URL and BETTER_AUTH_SECRET",
     ...(next.pending?.length
       ? next.pending.map((c) => formatCommand(c, appRoot))
       : next.installed
         ? []
         : [formatCommand(install, appRoot)]),
+    `${pm === "npm" ? "npm run" : pm} db:migrate   # the framework's tables, then yours`,
     `${pm === "npm" ? "npm run" : pm} dev`,
+    "# sign up, then make yourself a platform admin:",
+    `${pm === "npm" ? "npx" : `${pm} exec`} intelligo admin grant <your email>`,
   ].join("\n");
 }
 

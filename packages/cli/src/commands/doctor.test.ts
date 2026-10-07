@@ -46,6 +46,42 @@ describe("runChecks", () => {
     expect(exitCodeFor(results)).toBe(1);
   });
 
+  it("accepts AUTH_SECRET as the app does, and says to rename it", () => {
+    const { BETTER_AUTH_SECRET, ...rest } = fullEnv;
+    const results = runChecks({
+      root: "/nonexistent",
+      env: { ...rest, AUTH_SECRET: BETTER_AUTH_SECRET },
+    });
+    const env = results.filter((r) => r.name === "env");
+
+    expect(env.some((r) => r.status === "error")).toBe(false);
+    expect(env.find((r) => r.status === "warn")!.detail).toContain(
+      "AUTH_SECRET"
+    );
+  });
+
+  it("warns on a Resend key with no sender, and on test Stripe keys in production", () => {
+    const details = (env: NodeJS.ProcessEnv) =>
+      runChecks({ root: "/nonexistent", env })
+        .filter((r) => r.name === "env" && r.status === "warn")
+        .map((r) => r.detail)
+        .join("\n");
+
+    expect(details({ ...fullEnv, RESEND_API_KEY: "re_x" })).toContain(
+      "EMAIL_FROM"
+    );
+    expect(
+      details({
+        ...fullEnv,
+        NODE_ENV: "production",
+        STRIPE_SECRET_KEY: "sk_test_x",
+      })
+    ).toContain("test key");
+    expect(
+      details({ ...fullEnv, STRIPE_SECRET_KEY: "sk_test_x" })
+    ).not.toContain("test key");
+  });
+
   it("warns when production would build links to localhost", () => {
     const warned = (env: NodeJS.ProcessEnv) =>
       runChecks({ root: "/nonexistent", env }).some(
@@ -553,6 +589,8 @@ describe("runChecks", () => {
     function app(files: Record<string, string>): string {
       root = mkdtempSync(path.join(tmpdir(), "intelligo-doctor-ids-"));
       const all = {
+        "node_modules/@intelligo-dev/executions/package.json":
+          '{ "name": "@intelligo-dev/executions" }',
         "node_modules/@intelligo-dev/executions/dist/pricing.js": CATALOGUE,
         ...files,
       };

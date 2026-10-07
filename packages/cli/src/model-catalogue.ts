@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
+import { packageDir } from "./package-dir.js";
+
 /**
  * Where the shipped model catalogue (`DEFAULT_MODELS`) can be read from,
  * relative to the directory the CLI is run from: the framework
@@ -19,8 +21,10 @@ export const MODEL_CATALOGUE_LOCATIONS = [
  * found or the declaration is not in it.
  */
 export function readCatalogueModelIds(root: string): Set<string> | null {
-  for (const relative of MODEL_CATALOGUE_LOCATIONS) {
-    const file = path.join(root, relative);
+  const executions = packageDir(root, "@intelligo-dev/executions");
+  if (!executions) return null;
+  for (const relative of ["src/pricing.ts", "dist/pricing.js"]) {
+    const file = path.join(executions, relative);
     if (!existsSync(file)) continue;
     const text = readFileSync(file, "utf8");
     const start = text.indexOf("export const DEFAULT_MODELS");
