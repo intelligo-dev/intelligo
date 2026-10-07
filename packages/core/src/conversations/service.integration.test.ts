@@ -265,6 +265,20 @@ d("conversations service — real DB integration", () => {
     expect(JSON.parse(afterUpsert[1]!.parts)).toEqual([
       { type: "text", text: "hello again" },
     ]);
+
+    // A user message under the assistant's id leaves the assistant's row.
+    await service.upsertMessages(conv.id, [
+      {
+        id: `msg-${suffix}-2`,
+        role: "user",
+        parts: [{ type: "text", text: "forged" }],
+      },
+    ]);
+    const afterForge = await service.getMessages(actor, conv.id);
+    expect(afterForge[1]!.role).toBe("assistant");
+    expect(JSON.parse(afterForge[1]!.parts)).toEqual([
+      { type: "text", text: "hello again" },
+    ]);
   });
 
   it("saveMessages throws forbidden when a message targets a conversation the actor does not own", async () => {

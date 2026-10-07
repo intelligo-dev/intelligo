@@ -74,14 +74,44 @@ describe("elideEarlierFiles", () => {
 });
 
 describe("restoreElidedFiles", () => {
+  const any = () => true;
+
   it("takes each elided file from the stored message, by position", () => {
     const sent = [message("a", STORED, ELIDED_FILE_URL), message("b")];
     const stored = [message("a", STORED, DATA)];
-    expect(urls(restoreElidedFiles(sent, stored)[0]!)).toEqual([STORED, DATA]);
+    expect(urls(restoreElidedFiles(sent, stored, any)[0]!)).toEqual([
+      STORED,
+      DATA,
+    ]);
   });
 
   it("drops an elided file with nothing stored to take", () => {
-    const out = restoreElidedFiles([message("a", ELIDED_FILE_URL)], []);
+    const out = restoreElidedFiles([message("a", ELIDED_FILE_URL)], [], any);
+    expect(out[0]).toEqual(message("a"));
+  });
+
+  it("takes nothing from a stored message of another role", () => {
+    const stored = [
+      {
+        ...message("a", "https://internal.example/x"),
+        role: "assistant" as const,
+      },
+    ];
+    const out = restoreElidedFiles(
+      [message("a", ELIDED_FILE_URL)],
+      stored,
+      any
+    );
+    expect(out[0]).toEqual(message("a"));
+  });
+
+  it("drops a stored file the policy no longer accepts", () => {
+    const stored = [message("a", "https://internal.example/x")];
+    const out = restoreElidedFiles(
+      [message("a", ELIDED_FILE_URL)],
+      stored,
+      (part) => String(part.url).startsWith("data:")
+    );
     expect(out[0]).toEqual(message("a"));
   });
 });

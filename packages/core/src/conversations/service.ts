@@ -389,7 +389,9 @@ export async function upsertMessages(
       set: {
         parts: sql`excluded.parts`,
       },
-      setWhere: sql`${messages.conversationId} = excluded.conversation_id`,
+      // A message keeps its role: a user message sent under an
+      // assistant message's id must not rewrite what the model said.
+      setWhere: sql`${messages.conversationId} = excluded.conversation_id and ${messages.role} = excluded.role`,
     });
 }
 
