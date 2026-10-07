@@ -1974,6 +1974,9 @@ place of the provider's own id.
 Give a real provider its `currency`: `createPayment` takes bare minor units, and
 only a provider that names its currency makes `openLocalInvoice` refuse a price
 in another one (`currency_mismatch`) instead of sending that number as its own.
+A plan is not sold through a local invoice to a workspace a live Stripe
+subscription bills: `openLocalInvoice` refuses it (`subscription_active`),
+since the subscription's next webhook would put its own plan back.
 Registering one without it in production logs a warning.
 
 ## Granting a plan
@@ -1993,6 +1996,14 @@ writes the receipt before running handlers, claims the event with
 `UPDATE … WHERE processed_at IS NULL` so two concurrent deliveries cannot both
 run, and answers 500 on a handler error so Stripe retries. Answering 202 to an
 error tells Stripe the event was handled and silently drops it.
+
+Stripe does not deliver events in order. `customer.subscription.updated` reads
+the subscription back from Stripe and writes what it holds now, so a retried
+older update cannot undo a newer one. `charge.refunded` and
+`charge.dispute.created` take the refunded or disputed share of a credit
+purchase's grant back out of the balance, never below zero, recorded as a
+`credit` usage row and a `billing.credit_reversed` audit event; a purchase
+refunded or disputed before it was granted is never granted.
 
 ## Entry points
 
@@ -3543,12 +3554,14 @@ The handler verifies the `stripe-signature` header against `STRIPE_WEBHOOK_SECRE
 | `checkout.session.completed`               | Subscription: upserts the workspace's `subscriptions` row, marks a trial converted, clears the feature cache, emails the owner. Payment: when `payment_status` is `paid`, adds the grant to `credit_balances` and completes the `credit_purchases` row |
 | `invoice.paid`                             | Status `active`, the new period dates, and a fresh monthly usage row                                                                                                                                                                                   |
 | `invoice.payment_failed`                   | Status `past_due`, and an email to the owner                                                                                                                                                                                                           |
-| `customer.subscription.updated`            | Status, period, cancel-at-period-end, and the plan whose Stripe price the subscription now carries                                                                                                                                                     |
+| `customer.subscription.updated`            | Status, period, cancel-at-period-end, and the plan whose Stripe price the subscription now carries, read back from Stripe so a late delivery cannot undo a newer change                                                                                |
 | `customer.subscription.deleted`            | Status `canceled`, which resolves the workspace to the free plan                                                                                                                                                                                       |
 | `checkout.session.async_payment_succeeded` | A delayed payment method cleared: grants the bundle, once, even if `completed` already did                                                                                                                                                             |
 | `checkout.session.async_payment_failed`    | Marks the pending credit purchase failed                                                                                                                                                                                                               |
+| `charge.refunded`                          | Takes the refunded share of a credit purchase's grant back out of `credit_balances`, never below zero; a full refund marks the purchase `refunded`                                                                                                     |
+| `charge.dispute.created`                   | Takes the disputed share of a credit purchase's grant back out of `credit_balances` and marks the purchase `disputed`                                                                                                                                  |
 
-Enable exactly these seven on the dashboard endpoint. Other types are recorded and acknowledged.
+Enable exactly these nine on the dashboard endpoint. Other types are recorded and acknowledged.
 
 Entitlement follows the subscription's status: `active`, `trialing` and `past_due` keep the plan — Stripe is still retrying the payment — and any other status resolves the workspace to the free plan. Pass `onEvent` to `createStripeWebhookHandler` for anything of your own; it runs after the built-in handler for every event, and throwing makes Stripe retry.
 
@@ -3577,7 +3590,7 @@ The subscription handlers take the plan from the subscription's price id, looked
 ## Going live
 
 - Set the live `STRIPE_SECRET_KEY` and live price ids. A `sk_test_` key under `NODE_ENV=production` logs `STRIPE_SECRET_KEY is a test key in production environment` at startup.
-- Add a dashboard endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` with the seven events, and set its signing secret as `STRIPE_WEBHOOK_SECRET`.
+- Add a dashboard endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` with the nine events, and set its signing secret as `STRIPE_WEBHOOK_SECRET`.
 
 ## Payments outside Stripe
 

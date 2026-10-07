@@ -31,6 +31,7 @@ const mocks = vi.hoisted(() => ({
   select: vi.fn(),
   insertValues: vi.fn(),
   insert: vi.fn(),
+  txExecute: vi.fn(),
 }));
 
 vi.mock("./stripe", async () => ({
@@ -53,12 +54,22 @@ vi.mock("./billing-settings", () => ({
   getBillingSettings: mocks.getBillingSettings,
 }));
 
-vi.mock("@intelligo-dev/core/db", () => ({
-  db: {
-    select: mocks.select,
-    insert: mocks.insert,
-  },
-}));
+vi.mock("@intelligo-dev/core/db", () => {
+  // Transactions take turns, as the advisory lock makes them.
+  let queue: Promise<unknown> = Promise.resolve();
+  const transaction = <T>(fn: (tx: unknown) => Promise<T>): Promise<T> => {
+    const run = queue.then(() => fn({ execute: mocks.txExecute }));
+    queue = run.catch(() => undefined);
+    return run;
+  };
+  return {
+    db: {
+      select: mocks.select,
+      insert: mocks.insert,
+      transaction,
+    },
+  };
+});
 
 vi.mock("@intelligo-dev/core/db/schema", () => ({
   users: { id: "id", email: "email", name: "name" },
@@ -67,6 +78,10 @@ vi.mock("@intelligo-dev/core/db/schema", () => ({
 
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn((col: unknown, val: unknown) => ({ op: "eq", col, val })),
+  sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+    strings,
+    values,
+  })),
 }));
 
 import {
@@ -357,6 +372,32 @@ describe("createSubscriptionCheckout", () => {
     expect(
       mocks.checkoutSessionsExpire.mock.invocationCallOrder[0]!
     ).toBeLessThan(mocks.checkoutSessionsCreate.mock.invocationCallOrder[0]!);
+  });
+
+  it("leaves one open checkout when two are requested for a workspace at once", async () => {
+    mocks.getPlanBySlug.mockReturnValue(basePlan);
+    const open = new Set<string>();
+    let created = 0;
+    mocks.checkoutSessionsList.mockImplementation(async () => ({
+      data: [...open].map((id) => ({ id, mode: "subscription" })),
+    }));
+    mocks.checkoutSessionsExpire.mockImplementation(async (id: string) => {
+      open.delete(id);
+    });
+    mocks.checkoutSessionsCreate.mockImplementation(async () => {
+      const id = `cs_${++created}`;
+      open.add(id);
+      return { url: `https://checkout.stripe.com/${id}` };
+    });
+
+    await Promise.all([
+      createSubscriptionCheckout(upgrade),
+      createSubscriptionCheckout(upgrade),
+    ]);
+
+    expect(created).toBe(2);
+    expect([...open]).toEqual(["cs_2"]);
+    expect(mocks.txExecute).toHaveBeenCalledTimes(2);
   });
 
   it.each(["canceled", "incomplete", "incomplete_expired"])(

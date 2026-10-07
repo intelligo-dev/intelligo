@@ -238,6 +238,9 @@ place of the provider's own id.
 Give a real provider its `currency`: `createPayment` takes bare minor units, and
 only a provider that names its currency makes `openLocalInvoice` refuse a price
 in another one (`currency_mismatch`) instead of sending that number as its own.
+A plan is not sold through a local invoice to a workspace a live Stripe
+subscription bills: `openLocalInvoice` refuses it (`subscription_active`),
+since the subscription's next webhook would put its own plan back.
 Registering one without it in production logs a warning.
 
 ## Granting a plan
@@ -257,6 +260,14 @@ writes the receipt before running handlers, claims the event with
 `UPDATE … WHERE processed_at IS NULL` so two concurrent deliveries cannot both
 run, and answers 500 on a handler error so Stripe retries. Answering 202 to an
 error tells Stripe the event was handled and silently drops it.
+
+Stripe does not deliver events in order. `customer.subscription.updated` reads
+the subscription back from Stripe and writes what it holds now, so a retried
+older update cannot undo a newer one. `charge.refunded` and
+`charge.dispute.created` take the refunded or disputed share of a credit
+purchase's grant back out of the balance, never below zero, recorded as a
+`credit` usage row and a `billing.credit_reversed` audit event; a purchase
+refunded or disputed before it was granted is never granted.
 
 ## Licence
 
