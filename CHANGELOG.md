@@ -57,6 +57,23 @@ it explains a framework decision.
 
 ### Fixed
 
+- A conversation with an inline image no longer sends the image again
+  with every later message. `useChat` sends the whole transcript each
+  turn, so a 3 MB image added about 4 MB of base64 to every request
+  after it, past a serverless body limit for the rest of the chat. The
+  `chat` item's transport uses `sendWithoutEarlierFiles` from
+  `@intelligo-dev/chat/client`, which replaces earlier messages' inline
+  bytes with a placeholder, and the handler puts the stored file back
+  (or drops the part when that message was never stored).
+- A conversation opens on its latest 100 messages, with "Show earlier
+  messages" for the rest (`loadEarlierMessages`), instead of reading its
+  whole transcript on every load. An approval continuation reads the one
+  message it checks. `@intelligo-dev/core/conversations` adds
+  `getRecentMessages` (a page, oldest first, with `hasEarlier`),
+  `getMessage` and `getMessagesByIds`. A turn on a reopened long
+  conversation shows the model what the thread holds, windowed as
+  before; `turn.history()` still reads everything.
+
 - The `pricing` and `billing-settings` pages read `actionRoles` from their
   config seams with `in`, so an app whose `lib/plan-card-config.tsx` or
   `lib/credit-bundle-config.tsx` predates the field — `intelligo sync`

@@ -33,14 +33,17 @@ import {
 import { useChat } from "@ai-sdk/react";
 import type { FileUIPart, UIMessage } from "ai";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 import {
   isChatDataPart,
   parseChatError,
+  sendWithoutEarlierFiles,
   type ChatArtifactData,
   type ChatModelOption,
 } from "@intelligo-dev/chat/client";
 
+import { loadEarlierMessages } from "@/actions/chat";
 import { useRouter } from "@/i18n/navigation";
 import { chatConfig, type ChatMention } from "@/lib/chat-config";
 import type { CanvasRef, ToolRendererActions } from "@/lib/chat-renderers";
@@ -111,6 +114,8 @@ export type ChatThreadVariant = "page" | "panel" | "widget";
 export interface ChatThreadProps {
   conversationId: string;
   initialMessages: UIMessage[];
+  /** Whether messages precede `initialMessages`, loadable a page at a time. */
+  hasEarlier?: boolean;
   /**
    * Server-rendered credit state. Optional so a deployment that has
    * not wired billing renders the chat unchanged.
@@ -148,6 +153,7 @@ export interface ChatThreadProps {
 export function ChatThread({
   conversationId,
   initialMessages,
+  hasEarlier: initialHasEarlier = false,
   quotaState = null,
   quotaStates,
   votes = {},
@@ -174,8 +180,14 @@ export function ChatThread({
   const router = useRouter();
   const compact = variant !== "page";
 
+  // Earlier messages go without their inline files' bytes; the server
+  // restores them from the stored transcript.
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/chat" }),
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        prepareSendMessagesRequest: sendWithoutEarlierFiles,
+      }),
     []
   );
 
@@ -270,6 +282,29 @@ export function ChatThread({
   useEffect(() => {
     if (!isStreaming) setStatusLabel(null);
   }, [isStreaming]);
+
+  // A long conversation opens on its latest page; earlier pages are
+  // prepended on request. The server rebuilds nothing from them: a turn
+  // shows the model what the thread holds, windowed.
+  const [hasEarlier, setHasEarlier] = useState(initialHasEarlier);
+  const [loadingEarlier, setLoadingEarlier] = useState(false);
+  const loadEarlier = useCallback(() => {
+    const first = messages[0];
+    if (!first) return;
+    setLoadingEarlier(true);
+    void loadEarlierMessages(conversationId, first.id).then((result) => {
+      setLoadingEarlier(false);
+      if (!result.success) {
+        toast.error(t("list.earlierFailed"));
+        return;
+      }
+      setHasEarlier(result.data.hasEarlier);
+      setMessages((current) => [
+        ...(result.data.messages as typeof current),
+        ...current,
+      ]);
+    });
+  }, [conversationId, messages, setMessages, t]);
 
   const versions = useChatVersions({
     conversationId,
@@ -492,6 +527,11 @@ export function ChatThread({
           onEdit={readOnly ? undefined : handleEdit}
           toolActions={readOnly ? undefined : toolActions}
           compact={compact}
+          earlier={
+            hasEarlier
+              ? { onLoad: loadEarlier, loading: loadingEarlier }
+              : undefined
+          }
         />
       )}
       <CreditStatusBanner quotaState={activeQuotaState} block={block} />

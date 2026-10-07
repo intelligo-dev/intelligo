@@ -41,11 +41,20 @@ export async function loadConversationForChat(..._args: unknown[]): Promise<
   ChatActionResult<{
     conversation: { id: string; title: string | null } | null;
     messages: import("ai").UIMessage[];
+    hasEarlier: boolean;
     votes: Record<string, "up" | "down">;
   }>
 > {
   await wait(200);
   return { success: false, error: PREVIEW_NOTE };
+}
+export async function loadEarlierMessages(
+  ..._args: unknown[]
+): Promise<
+  ChatActionResult<{ messages: import("ai").UIMessage[]; hasEarlier: boolean }>
+> {
+  await wait();
+  return { success: true, data: { messages: [], hasEarlier: false } };
 }
 export async function renameConversation(
   ..._args: unknown[]

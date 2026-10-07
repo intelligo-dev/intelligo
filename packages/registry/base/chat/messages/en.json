@@ -34,7 +34,9 @@
     "navigation": "Jump to a message",
     "navigationItem": "Go to {sender} message {index} of {total}",
     "emptyPreview": "Message",
-    "scrollToEnd": "Scroll to the latest message"
+    "scrollToEnd": "Scroll to the latest message",
+    "showEarlier": "Show earlier messages",
+    "earlierFailed": "Could not load earlier messages."
   },
   "message": {
     "reasoning": "Reasoning",

@@ -1,8 +1,8 @@
 /**
  * What a chat client needs to know about the transport. Imports nothing at
- * runtime (`./parts` is types and one type guard), so the UI never pulls
- * the server handler, or Drizzle, Stripe and the auth server behind it,
- * into the browser.
+ * runtime but `./parts` (types and one type guard) and `./elide` (pure
+ * request shaping), so the UI never pulls the server handler, or Drizzle,
+ * Stripe and the auth server behind it, into the browser.
  */
 
 /** Stable codes the transport answers with. The status is fixed per code. */
@@ -87,6 +87,11 @@ export type {
   ChatUIMessageChunk,
 } from "./parts";
 export { isChatDataPart } from "./parts";
+export {
+  ELIDED_FILE_URL,
+  elideEarlierFiles,
+  sendWithoutEarlierFiles,
+} from "./elide";
 
 const CODES: ReadonlySet<string> = new Set(CHAT_ERROR_CODES);
 

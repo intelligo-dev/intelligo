@@ -11,6 +11,7 @@
 
 import type { UIMessage } from "ai";
 
+import { ELIDED_FILE_URL } from "./elide";
 import { extractText } from "./windowing";
 
 export type ChatAttachmentPolicy = {
@@ -133,7 +134,8 @@ export function attachmentIdFromUrl(
 
 function rejectedAttachment(
   message: UIMessage,
-  policy: ChatAttachmentPolicy | false
+  policy: ChatAttachmentPolicy | false,
+  earlier: boolean
 ): boolean {
   for (const part of message.parts) {
     if (part.type !== "file") continue;
@@ -146,6 +148,9 @@ function rejectedAttachment(
       return true;
     }
     if (typeof file.url !== "string") return true;
+    // An earlier message's file sent without its bytes: the handler
+    // restores the stored copy, or drops the part.
+    if (earlier && file.url === ELIDED_FILE_URL) continue;
     if (policy.mode === "stored") {
       // A stored part names an upload; the row is checked by the
       // handler, which knows the tenant. A data URL here bypassed the
@@ -192,7 +197,7 @@ export function parseChatBody(
   const messages = json.messages as UIMessage[];
   // Every user message, not only the new one: the history is the
   // client's too, and a turn is billed for all of it.
-  for (const message of messages) {
+  for (const [index, message] of messages.entries()) {
     if (message.role !== "user") continue;
     const length = extractText(message.parts).length;
     if (length > options.maxMessageLength) {
@@ -204,7 +209,8 @@ export function parseChatBody(
         },
       };
     }
-    if (rejectedAttachment(message, options.attachments)) {
+    const earlier = index < messages.length - 1;
+    if (rejectedAttachment(message, options.attachments, earlier)) {
       return { ok: false, rejection: { key: "attachmentRejected" } };
     }
   }

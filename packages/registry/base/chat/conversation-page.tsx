@@ -61,7 +61,7 @@ export default async function ConversationPage({
     );
   }
 
-  const { conversation, messages, votes } = conversationResult.data;
+  const { conversation, messages, hasEarlier, votes } = conversationResult.data;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -72,6 +72,7 @@ export default async function ConversationPage({
       <ChatWorkspace
         conversationId={id}
         initialMessages={messages}
+        hasEarlier={hasEarlier}
         quotaState={quotaState}
         quotaStates={quotaStates}
         votes={votes}

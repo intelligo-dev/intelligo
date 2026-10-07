@@ -10,6 +10,8 @@ import { useTranslations } from "use-intl";
 import type { FileUIPart, UIMessage } from "ai";
 
 import { MessageScroller } from "@showcase/components/ui/ai-message-scroller";
+import { Button } from "@showcase/components/ui/button";
+import { Spinner } from "@showcase/components/ui/spinner";
 import { useIsMobile } from "@showcase/hooks/use-mobile";
 import type { ToolRendererActions } from "@showcase/lib/chat-renderers";
 import { Message, type MessageVersion } from "./message";
@@ -29,6 +31,8 @@ interface MessageListProps {
   toolActions?: ToolRendererActions;
   /** Narrower measure for a panel or widget. */
   compact?: boolean;
+  /** Set when messages precede the first one shown: loads the page before. */
+  earlier?: { onLoad: () => void; loading: boolean };
 }
 
 export function MessageList({
@@ -43,6 +47,7 @@ export function MessageList({
   onEdit,
   toolActions,
   compact = false,
+  earlier,
 }: MessageListProps) {
   const t = useTranslations("chat");
   // The rail is for a pointer: on a phone it only sits on the text.
@@ -71,6 +76,21 @@ export function MessageList({
           : "mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6"
       }
     >
+      {earlier ? (
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            disabled={earlier.loading}
+            aria-busy={earlier.loading || undefined}
+            onClick={earlier.onLoad}
+          >
+            {earlier.loading ? <Spinner data-icon="inline-start" /> : null}
+            {t("list.showEarlier")}
+          </Button>
+        </div>
+      ) : null}
       {messages.map((message, index) => (
         <Message
           key={message.id}

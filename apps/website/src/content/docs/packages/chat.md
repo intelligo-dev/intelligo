@@ -145,8 +145,12 @@ modelIds })` reads it once per model a picker offers.
 
 - `@intelligo-dev/chat/client` — error codes, the quota-state shape,
   `parseChatError`, the `data-chat-*` parts vocabulary (`ChatUIMessage`,
-  `isChatDataPart`) and `ChatModelOption`, for a client bundle. Imports
-  nothing at runtime.
+  `isChatDataPart`) and `ChatModelOption`, for a client bundle, plus
+  `sendWithoutEarlierFiles`: a `prepareSendMessagesRequest` for
+  `DefaultChatTransport` that sends earlier messages' inline files without
+  their bytes, which the handler restores from the stored transcript, so a
+  conversation with an image in it does not re-send the image every turn.
+  Pulls in no server code.
 - `@intelligo-dev/chat/testing` — `createStubLanguageModel`, a deterministic
   model that streams with no API key.
 

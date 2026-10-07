@@ -4,6 +4,8 @@
 
 import type { UIMessage } from "ai";
 
+import { ELIDED_FILE_URL, hasElidedFile } from "./elide";
+
 type MessageRow = { id: string; role: string; parts: string };
 
 function isChatRole(role: string): role is UIMessage["role"] {
@@ -36,4 +38,40 @@ export function lastUserMessage(
 ): UIMessage | null {
   const last = messages[messages.length - 1];
   return last?.role === "user" ? last : null;
+}
+
+/**
+ * Puts back the files a client elided from earlier messages
+ * (`elideEarlierFiles`), taking each from the stored copy of its
+ * message: the n-th file part takes the stored message's n-th file.
+ * A part with no stored file to take — the message was never stored,
+ * or the deployment persists elsewhere — is dropped, so the model sees
+ * the message without it rather than a placeholder.
+ */
+export function restoreElidedFiles(
+  messages: UIMessage[],
+  stored: ReadonlyArray<UIMessage>
+): UIMessage[] {
+  const byId = new Map(stored.map((message) => [message.id, message]));
+  return messages.map((message) => {
+    if (!hasElidedFile(message)) return message;
+    const files = (byId.get(message.id)?.parts ?? []).filter(
+      (part) => part.type === "file"
+    );
+    let fileIndex = 0;
+    const parts: UIMessage["parts"] = [];
+    for (const part of message.parts) {
+      if (part.type !== "file") {
+        parts.push(part);
+        continue;
+      }
+      const original = files[fileIndex++];
+      if ((part as { url?: unknown }).url !== ELIDED_FILE_URL) {
+        parts.push(part);
+      } else if (original) {
+        parts.push(original);
+      }
+    }
+    return { ...message, parts };
+  });
 }
