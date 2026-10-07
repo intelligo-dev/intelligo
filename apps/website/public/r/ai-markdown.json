@@ -4,12 +4,12 @@
   "title": "AI Markdown",
   "description": "Markdown as a model writes it — GFM, highlighted code, CJK emphasis — with maths and diagrams fetched only when the text contains them.",
   "dependencies": [
-    "streamdown",
-    "@streamdown/code",
-    "@streamdown/math",
-    "@streamdown/mermaid",
-    "@streamdown/cjk",
-    "katex"
+    "streamdown@^2.6.0",
+    "@streamdown/code@^1.1.1",
+    "@streamdown/math@^1.0.3",
+    "@streamdown/mermaid@^1.0.3",
+    "@streamdown/cjk@^1.0.3",
+    "katex@^0.18.10"
   ],
   "files": [
     {

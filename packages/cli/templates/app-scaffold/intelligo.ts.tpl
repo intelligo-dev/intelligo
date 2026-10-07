@@ -22,6 +22,7 @@ import { DEFAULT_MARGIN_BP } from "@intelligo-dev/executions/pricing";
 import {
   registerProductFeatures,
   registerProductPlans,
+  registerRateLimits,
   registerTeamMemberLimits,
   setDefaultProductSlug,
 } from "@intelligo-dev/billing/plans";
@@ -36,7 +37,7 @@ import {
 import { nextRequestContext } from "@intelligo-dev/next";
 import { createLogger } from "@intelligo-dev/core/logger";
 
-import { FEATURES, PLANS, TEAM_MEMBER_LIMITS } from "./plans";
+import { FEATURES, PLANS, RATE_LIMITS, TEAM_MEMBER_LIMITS } from "./plans";
 import { onWorkspaceCreated } from "./workspace-bootstrap";
 
 /** Identifies your product to the billing engine. */
@@ -145,6 +146,7 @@ function bind(): void {
   registerProductPlans(PRODUCT_SLUG, PLANS);
   registerProductFeatures(PRODUCT_SLUG, FEATURES);
   registerTeamMemberLimits(PRODUCT_SLUG, TEAM_MEMBER_LIMITS);
+  registerRateLimits(PRODUCT_SLUG, RATE_LIMITS);
 
   // What each model costs. The framework ships a catalogue as data and
   // registers none of it: an id with no registered price throws where

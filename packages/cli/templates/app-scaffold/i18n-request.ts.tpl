@@ -75,15 +75,22 @@ function mergeMessages(
   return merged;
 }
 
+/** The language registry items ship their messages in. */
+const SOURCE_LOCALE = "en";
+
 /**
- * A locale's messages over the default locale's: a namespace or key the
- * locale has not translated yet renders in the default language instead
- * of throwing. `intelligo sync --check` lists what is still untranslated.
+ * A locale's messages over the default locale's, over English: a key the
+ * locale has not translated yet renders in the default language, and one
+ * a new registry release added — which arrives in English only — renders
+ * in English, instead of throwing. `intelligo sync --check` lists what is
+ * still untranslated.
  */
 function loadMessages(locale: string): Record<string, unknown> {
-  const messages = readLocale(locale);
-  if (locale === routing.defaultLocale) return messages;
-  return mergeMessages(readLocale(routing.defaultLocale), messages);
+  const chain = [...new Set([SOURCE_LOCALE, routing.defaultLocale, locale])];
+  return chain.reduce<Record<string, unknown>>(
+    (messages, next) => mergeMessages(messages, readLocale(next)),
+    {}
+  );
 }
 
 export default getRequestConfig(async ({ requestLocale }) => {

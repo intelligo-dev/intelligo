@@ -4,8 +4,8 @@
   "title": "AI Message Scroller",
   "description": "The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages.",
   "dependencies": [
-    "motion",
-    "lucide-react"
+    "motion@^13.4.0",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

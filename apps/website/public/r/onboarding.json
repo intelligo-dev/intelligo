@@ -6,10 +6,10 @@
   "dependencies": [
     "@intelligo-dev/auth",
     "@intelligo-dev/next",
-    "lucide-react",
-    "server-only",
-    "next-intl",
-    "motion"
+    "lucide-react@^1.46.0",
+    "server-only@^0.0.1",
+    "next-intl@^4.14.5",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/button",

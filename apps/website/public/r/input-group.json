@@ -4,7 +4,7 @@
   "title": "Input Group",
   "description": "An input or textarea with inline addons, buttons and text.",
   "dependencies": [
-    "class-variance-authority"
+    "class-variance-authority@^0.7.1"
   ],
   "registryDependencies": [
     "@intelligo/button",

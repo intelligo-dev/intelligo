@@ -4,7 +4,7 @@
   "title": "Registry Smoke Test",
   "description": "Permanent canary item that proves the registry build and install pipeline end to end.",
   "dependencies": [
-    "next-intl"
+    "next-intl@^4.14.5"
   ],
   "registryDependencies": [
     "@intelligo/button",

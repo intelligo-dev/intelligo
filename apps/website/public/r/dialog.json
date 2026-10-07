@@ -4,9 +4,9 @@
   "title": "Dialog",
   "description": "A modal window over a blurred backdrop that springs up into place.",
   "dependencies": [
-    "@base-ui/react",
-    "lucide-react",
-    "motion"
+    "@base-ui/react@^1.8.0",
+    "lucide-react@^1.46.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/button",

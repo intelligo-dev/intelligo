@@ -4,8 +4,8 @@
   "title": "Switch",
   "description": "An on/off control with a weighted thumb that squeezes while pressed.",
   "dependencies": [
-    "@base-ui/react",
-    "motion"
+    "@base-ui/react@^1.8.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [],
   "files": [

@@ -4,7 +4,7 @@
   "title": "AI Agent Progress",
   "description": "A long-running step: a pulsing grid beside the verb and an elapsed-time counter.",
   "dependencies": [
-    "motion"
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

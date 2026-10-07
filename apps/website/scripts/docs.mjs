@@ -402,7 +402,11 @@ function registryPages(root) {
           ),
         ].map((m) => `\`${m[1]}\``);
         const doc = leadingDocComment(text);
-        return `### \`${target}\`\n\n${exports.length ? `Exports ${exports.join(", ")}. ` : ""}[source](${GITHUB}/blob/main/${source})\n\n${doc}`;
+        const runs =
+          requires.boundaries?.[target] === "client"
+            ? "Bundled for the browser: no server imports, no secrets. "
+            : "Runs on the server. ";
+        return `### \`${target}\`\n\n${runs}${exports.length ? `Exports ${exports.join(", ")}. ` : ""}[source](${GITHUB}/blob/main/${source})\n\n${doc}`;
       });
       return `## [${b.name}](/blocks/${b.name})\n\n${parts.join("\n\n")}`;
     });
@@ -416,6 +420,7 @@ function registryPages(root) {
     }) +
     `${marker("packages/registry/registry.json and each seam file's doc comment")}\n\n` +
     "Installed components are used verbatim. What a deployment varies lives in these files: they are consumer-owned, and each explains itself in the comment it ships with, reproduced here. If a product needs something no seam offers, the change belongs in the registry as a new seam — editing an installed component forks you from every later improvement to it.\n\n" +
+    "Each seam says where it runs. One the browser bundles must not import server code (`server-only`, the database, a server SDK) or read a secret: that fails the build, or ships the secret in the page. `intelligo doctor` warns about either.\n\n" +
     sections.join("\n\n") +
     "\n";
   return out;

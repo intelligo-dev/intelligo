@@ -4,7 +4,7 @@
   "title": "Status Badge",
   "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour.",
   "dependencies": [
-    "class-variance-authority"
+    "class-variance-authority@^0.7.1"
   ],
   "files": [
     {

@@ -4,7 +4,7 @@
   "title": "AI Artifact",
   "description": "A generated document's frame: header, actions and content.",
   "dependencies": [
-    "lucide-react"
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/button",

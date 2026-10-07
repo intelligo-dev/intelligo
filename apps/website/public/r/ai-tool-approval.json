@@ -4,8 +4,8 @@
   "title": "AI Tool Approval",
   "description": "A permission card for a tool call: name, parameters behind a disclosure, allow once / always allow / deny, and the outcome as a status.",
   "dependencies": [
-    "lucide-react",
-    "motion"
+    "lucide-react@^1.46.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-code-block",

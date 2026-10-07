@@ -4,8 +4,8 @@
   "title": "Chat Widget",
   "description": "The floating assistant: a launcher in a corner of every page and a compact chat over it, configured in lib/chat-widget-config.tsx. Requires the chat item.",
   "dependencies": [
-    "lucide-react",
-    "next-intl"
+    "lucide-react@^1.46.0",
+    "next-intl@^4.14.5"
   ],
   "registryDependencies": [
     "@intelligo/button"

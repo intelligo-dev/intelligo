@@ -4,8 +4,8 @@
   "title": "AI Code Block",
   "description": "Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark.",
   "dependencies": [
-    "shiki",
-    "lucide-react"
+    "shiki@^4.4.3",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/copy-button",

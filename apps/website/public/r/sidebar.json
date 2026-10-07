@@ -4,9 +4,9 @@
   "title": "Sidebar",
   "description": "The app sidebar — collapsible to icons, keyboard-toggled, a sheet on mobile.",
   "dependencies": [
-    "@base-ui/react",
-    "class-variance-authority",
-    "lucide-react"
+    "@base-ui/react@^1.8.0",
+    "class-variance-authority@^0.7.1",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/button",

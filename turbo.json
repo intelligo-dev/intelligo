@@ -93,7 +93,12 @@
     },
     "@intelligo-dev/registry#build": {
       "dependsOn": [],
-      "inputs": ["registry.json", "base/**"],
+      "inputs": [
+        "registry.json",
+        "base/**",
+        "package.json",
+        "scripts/pin-dependencies.mjs"
+      ],
       "outputs": ["public/r/**"]
     },
     "@intelligo-dev/registry#lint": {

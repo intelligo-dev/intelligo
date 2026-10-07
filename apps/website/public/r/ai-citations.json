@@ -4,8 +4,8 @@
   "title": "AI Citations",
   "description": "The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list.",
   "dependencies": [
-    "lucide-react",
-    "motion"
+    "lucide-react@^1.46.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",

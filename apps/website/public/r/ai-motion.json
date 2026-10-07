@@ -4,7 +4,7 @@
   "title": "AI Motion",
   "description": "The motion vocabulary every tier shares: easing curves, spring presets, a transform-only disclosure, a text swap, the popup and backdrop presets the primitives open with, the button press and list staggers, all gated on reduced motion.",
   "dependencies": [
-    "motion"
+    "motion@^13.4.0"
   ],
   "registryDependencies": [],
   "files": [

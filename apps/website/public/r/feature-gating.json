@@ -5,8 +5,8 @@
   "description": "The vocabulary for selling a plan: a server-side FeatureGate that renders gated content only to entitled workspaces, three densities of upgrade prompt (full, compact, inline), a quota warning that escalates as a limit approaches, and a preview paywall that blurs content instead of hiding it. Which features exist and which plan unlocks them is consumer config (lib/feature-catalog.ts). Install pricing or billing-settings for somewhere to send the user.",
   "dependencies": [
     "@intelligo-dev/billing",
-    "lucide-react",
-    "next-intl"
+    "lucide-react@^1.46.0",
+    "next-intl@^4.14.5"
   ],
   "registryDependencies": [
     "@intelligo/button",

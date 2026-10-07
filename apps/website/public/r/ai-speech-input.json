@@ -4,7 +4,7 @@
   "title": "AI Speech Input",
   "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent.",
   "dependencies": [
-    "lucide-react"
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/button"

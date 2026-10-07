@@ -4,8 +4,8 @@
   "title": "Expandable Tabs",
   "description": "A bar of icon tabs on Base UI's Tabs where the active tab widens to unfurl its label, the pill glides to it and its panel rises in.",
   "dependencies": [
-    "@base-ui/react",
-    "motion"
+    "@base-ui/react@^1.8.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

@@ -4,7 +4,7 @@
   "title": "Collapsible",
   "description": "Content that eases open and closed from its measured height.",
   "dependencies": [
-    "@base-ui/react"
+    "@base-ui/react@^1.8.0"
   ],
   "registryDependencies": [],
   "files": [

@@ -4,8 +4,8 @@
   "title": "Checkbox",
   "description": "A checkbox whose check draws itself in, with an indeterminate state.",
   "dependencies": [
-    "@base-ui/react",
-    "motion"
+    "@base-ui/react@^1.8.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

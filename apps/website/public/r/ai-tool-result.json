@@ -4,8 +4,8 @@
   "title": "AI Tool Result",
   "description": "The result of a tool the agent ran: a summary line that opens onto highlighted output, status rolling from running to done, copy and run-again actions.",
   "dependencies": [
-    "motion",
-    "lucide-react"
+    "motion@^13.4.0",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-code-block",

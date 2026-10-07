@@ -4,7 +4,7 @@
   "title": "Animated List",
   "description": "A list container that staggers its rows in on mount, rows that rise in, fall out and glide on reorder (ul, ol, div or tbody/tr), and a block that reveals once as it scrolls into view.",
   "dependencies": [
-    "motion"
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

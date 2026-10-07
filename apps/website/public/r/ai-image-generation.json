@@ -4,8 +4,8 @@
   "title": "AI Image Generation",
   "description": "An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes.",
   "dependencies": [
-    "lucide-react",
-    "motion"
+    "lucide-react@^1.46.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",

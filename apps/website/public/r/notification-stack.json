@@ -4,9 +4,9 @@
   "title": "Notification Stack",
   "description": "Notifications fanned into a stack — the newest in front, the rest peeking out scaled back — that springs apart into a list of openable, dismissable cards on hover or click.",
   "dependencies": [
-    "@base-ui/react",
-    "motion",
-    "lucide-react"
+    "@base-ui/react@^1.8.0",
+    "motion@^13.4.0",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",

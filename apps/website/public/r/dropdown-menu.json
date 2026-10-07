@@ -4,9 +4,9 @@
   "title": "Dropdown Menu",
   "description": "Actions, checkboxes and radio groups with submenus, in a panel that scales out of its trigger.",
   "dependencies": [
-    "@base-ui/react",
-    "lucide-react",
-    "motion"
+    "@base-ui/react@^1.8.0",
+    "lucide-react@^1.46.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

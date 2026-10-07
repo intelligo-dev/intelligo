@@ -4,8 +4,8 @@
   "title": "Language Switcher",
   "description": "Locale dropdown over the locales i18n/routing.ts declares, labeled with each language's own name. Renders nothing in a single-locale deployment, so it is safe to mount unconditionally (e.g. in shellConfig.headerRight). Adding a locale to routing.ts plus a messages directory is the whole job.",
   "dependencies": [
-    "lucide-react",
-    "next-intl"
+    "lucide-react@^1.46.0",
+    "next-intl@^4.14.5"
   ],
   "registryDependencies": [
     "@intelligo/button",

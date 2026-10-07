@@ -4,8 +4,8 @@
   "title": "Popover Morph",
   "description": "A non-modal popover whose trigger surface grows into the panel through a shared layout and folds back on close.",
   "dependencies": [
-    "@base-ui/react",
-    "motion"
+    "@base-ui/react@^1.8.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

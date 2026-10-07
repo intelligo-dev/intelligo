@@ -7,10 +7,10 @@
     "@intelligo-dev/auth",
     "@intelligo-dev/core",
     "@intelligo-dev/next",
-    "lucide-react",
-    "sonner",
-    "server-only",
-    "next-intl"
+    "lucide-react@^1.46.0",
+    "sonner@^2.0.8",
+    "server-only@^0.0.1",
+    "next-intl@^4.14.5"
   ],
   "registryDependencies": [
     "alert",

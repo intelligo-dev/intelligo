@@ -4,7 +4,7 @@
   "title": "AI Reasoning Text",
   "description": "What the agent is doing while it reasons: phrases cycle with a cascade, swap or scramble behind an ASCII loader.",
   "dependencies": [
-    "motion"
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",

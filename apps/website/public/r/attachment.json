@@ -4,8 +4,8 @@
   "title": "Attachment",
   "description": "A file attached to a message or a prompt.",
   "dependencies": [
-    "@base-ui/react",
-    "class-variance-authority"
+    "@base-ui/react@^1.8.0",
+    "class-variance-authority@^0.7.1"
   ],
   "registryDependencies": [
     "@intelligo/button"

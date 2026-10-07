@@ -4,9 +4,9 @@
   "title": "Morphing Modal",
   "description": "A card or button that grows into a centred or bottom dialog through a shared layout, cross-fading between views while the panel resizes.",
   "dependencies": [
-    "@base-ui/react",
-    "motion",
-    "lucide-react"
+    "@base-ui/react@^1.8.0",
+    "motion@^13.4.0",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",

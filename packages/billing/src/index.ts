@@ -9,8 +9,8 @@ export {
   dispatchStripeEvent,
 } from "./webhook-route";
 export type { StripeWebhookOptions } from "./webhook-route";
-export { getPlanBySlug, isUnlimited } from "./plans";
-export type { PlanSlug, PlanConfig, PlanLimits } from "./plans";
+export { definePlans, forPlans, getPlanBySlug, isUnlimited } from "./plans";
+export type { PlanSlug, PlanSlugOf, PlanConfig, PlanLimits } from "./plans";
 
 // Plan registry. The full surface — every register*/clear* pair, the
 // trial and rate-limit maps — is `@intelligo-dev/billing/plan-registry`;

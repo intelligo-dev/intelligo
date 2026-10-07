@@ -4,7 +4,7 @@
   "title": "AI Branch",
   "description": "A pager over the versions of a reply or an edited message — previous, next, `2 / 3`.",
   "dependencies": [
-    "lucide-react"
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/button"

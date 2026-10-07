@@ -4,9 +4,9 @@
   "title": "Tabs",
   "description": "Switches between views with one indicator that glides from tab to tab — raised and line variants.",
   "dependencies": [
-    "@base-ui/react",
-    "class-variance-authority",
-    "motion"
+    "@base-ui/react@^1.8.0",
+    "class-variance-authority@^0.7.1",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

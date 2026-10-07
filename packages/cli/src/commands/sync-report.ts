@@ -10,6 +10,7 @@ const FAILING: ReadonlySet<SyncFileState> = new Set([
   "differs",
   "missing",
   "messages-behind",
+  "messages-arguments",
   "locale-behind",
 ]);
 
@@ -32,7 +33,10 @@ export function formatSyncReport(report: SyncReport): string {
       "edited by hand — move the change into a seam, or ask for one upstream",
     differs: "not what the registry ships, and never synced",
     missing: "not installed",
-    "messages-behind": "lacks registry keys — `intelligo sync` adds them",
+    "messages-behind":
+      "lacks registry keys, or holds text the registry has since reworded or dropped — `intelligo sync` updates them",
+    "messages-arguments":
+      "your wording uses an argument the registry's text no longer passes — it would render the placeholder; reword it",
     "locale-behind":
       "lacks keys the app's English copy has — translate them; sync never writes another locale",
   };
@@ -52,14 +56,24 @@ export function formatSyncReport(report: SyncReport): string {
     );
     for (const e of changedSeams) lines.push(`  ${e.path}  [${e.item}]`);
   }
+  const changedMessages = report.entries.filter(
+    (e) => e.state === "messages-changed"
+  );
+  if (changedMessages.length > 0) {
+    lines.push(
+      "",
+      "messages-changed (you reworded these and the registry's text has since changed or gone; yours is kept):"
+    );
+    for (const e of changedMessages) {
+      lines.push(`  ${e.path}  [${e.item}] — ${keyList(e.missingKeys ?? [])}`);
+    }
+  }
   for (const state of FAILING) {
     const group = report.entries.filter((e) => e.state === state);
     if (group.length === 0) continue;
     lines.push("", `${state} (${HINT[state]}):`);
     for (const e of group) {
-      const keys = e.missingKeys
-        ? ` — ${e.missingKeys.slice(0, 5).join(", ")}${e.missingKeys.length > 5 ? `, +${e.missingKeys.length - 5}` : ""}`
-        : "";
+      const keys = e.missingKeys ? ` — ${keyList(e.missingKeys)}` : "";
       lines.push(`  ${e.path}  [${e.item}]${keys}`);
     }
   }
@@ -67,4 +81,9 @@ export function formatSyncReport(report: SyncReport): string {
     lines.push("✓ every installed file is the registry's, seams aside");
   }
   return lines.join("\n");
+}
+
+function keyList(keys: readonly string[]): string {
+  const more = keys.length > 5 ? `, +${keys.length - 5}` : "";
+  return `${keys.slice(0, 5).join(", ")}${more}`;
 }

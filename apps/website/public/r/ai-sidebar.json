@@ -4,8 +4,8 @@
   "title": "AI Sidebar",
   "description": "The AI product's sidebar: a shell that morphs between a panel and an icon rail with tooltips, slides in as a sheet on mobile, holds menus with a gliding hover and active pill and staggered submenus, and a resource tree of folders, projects, conversations, files and bookmarks with keyboard and drag-and-drop moves, rename and a row menu.",
   "dependencies": [
-    "motion",
-    "lucide-react"
+    "motion@^13.4.0",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",
