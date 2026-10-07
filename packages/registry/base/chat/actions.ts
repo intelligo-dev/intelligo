@@ -31,7 +31,7 @@ import {
 import {
   deleteConversation as deleteConversationRow,
   getConversation,
-  getMessages,
+  getRecentMessages,
   getVotes,
   isConversationServiceError,
   listConversations,
@@ -111,16 +111,22 @@ export async function listConversationHistory(): Promise<
   }
 }
 
+/** How many messages a conversation opens with, and each earlier page adds. */
+const HISTORY_PAGE = 100;
+
 export type LoadedConversation = {
   conversation: { id: string; title: string | null } | null;
+  /** The latest page of the transcript, oldest first. */
   messages: ReturnType<typeof toUIMessages>;
+  /** Whether messages precede the page (`loadEarlierMessages`). */
+  hasEarlier: boolean;
   /** The reader's votes, by message id. */
   votes: Record<string, "up" | "down">;
 };
 
 /**
- * Loads a conversation and its messages for the thread's initial
- * state. A conversation id with no row yet resolves as a brand-new,
+ * Loads a conversation and its latest messages for the thread's
+ * initial state. A conversation id with no row yet resolves as a brand-new,
  * empty chat rather than an error — see the module doc comment above.
  */
 export async function loadConversationForChat(
@@ -131,8 +137,8 @@ export async function loadConversationForChat(
 
     try {
       const conversation = await getConversation(scoped, id);
-      const [rows, voteRows] = await Promise.all([
-        getMessages(scoped, id),
+      const [page, voteRows] = await Promise.all([
+        getRecentMessages(scoped, id, { limit: HISTORY_PAGE }),
         getVotes(scoped, id),
       ]);
       const votes: Record<string, "up" | "down"> = {};
@@ -145,7 +151,8 @@ export async function loadConversationForChat(
           conversation: { id: conversation.id, title: conversation.title },
           // Stored parts are a JSON string; a corrupt row costs one
           // message, not the conversation.
-          messages: toUIMessages(rows),
+          messages: toUIMessages(page.messages),
+          hasEarlier: page.hasEarlier,
           votes,
         },
       };
@@ -153,11 +160,46 @@ export async function loadConversationForChat(
       if (isConversationServiceError(error) && error.code === "not_found") {
         return {
           success: true,
-          data: { conversation: null, messages: [], votes: {} },
+          data: {
+            conversation: null,
+            messages: [],
+            hasEarlier: false,
+            votes: {},
+          },
         };
       }
       throw error;
     }
+  } catch (error) {
+    return {
+      success: false,
+      error: friendlyError(await getTranslations("chat"), error),
+    };
+  }
+}
+
+/** The page of messages before `before`, for a thread scrolled to its top. */
+export async function loadEarlierMessages(
+  id: string,
+  before: string
+): Promise<
+  ChatActionResult<{
+    messages: ReturnType<typeof toUIMessages>;
+    hasEarlier: boolean;
+  }>
+> {
+  try {
+    const page = await getRecentMessages(await actor(), id, {
+      limit: HISTORY_PAGE,
+      before,
+    });
+    return {
+      success: true,
+      data: {
+        messages: toUIMessages(page.messages),
+        hasEarlier: page.hasEarlier,
+      },
+    };
   } catch (error) {
     return {
       success: false,

@@ -20,6 +20,7 @@ import {
 
 import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
 
+import { ELIDED_FILE_URL } from "./elide";
 import { createChatHandler } from "./handler";
 import type { ChatServerConfig } from "./config";
 import { createStubLanguageModel } from "./testing";
@@ -105,6 +106,11 @@ vi.mock("@intelligo-dev/core/conversations", () => ({
   },
   getMessages: async (_actor: unknown, id: string) =>
     store.messages.filter((m) => m.conversationId === id),
+  getMessage: async (_actor: unknown, id: string, messageId: string) =>
+    store.messages.find((m) => m.conversationId === id && m.id === messageId) ??
+    null,
+  getMessagesByIds: async (_actor: unknown, id: string, ids: string[]) =>
+    store.messages.filter((m) => m.conversationId === id && ids.includes(m.id)),
   upsertMessages: async (
     id: string,
     finished: Array<{ id: string; role: string; parts: unknown[] }>
@@ -1899,5 +1905,110 @@ describe("stored attachments", () => {
     expect(foreign.status).toBe(200);
     await foreign.text();
     expect(JSON.stringify(seen)).not.toContain("att-2");
+  });
+});
+
+describe("earlier messages' files sent without their bytes", () => {
+  const BYTES = Buffer.from("image-bytes").toString("base64");
+
+  function promptOf(fake: ReturnType<typeof fakeExecutions>) {
+    const seen: unknown[] = [];
+    const handler = createChatHandler(
+      baseConfig(fake.executions, {
+        attachments: { accept: ["image/png"] },
+        model: {
+          defaultId: MODEL_ID,
+          resolve: () =>
+            createStubLanguageModel({
+              modelId: MODEL_ID,
+              chunkDelayInMs: 0,
+              reply: (_text, prompt) => {
+                seen.push(...prompt);
+                return "seen";
+              },
+            }),
+        },
+      })
+    );
+    return { handler, seen };
+  }
+
+  const withImage = (url: string): UIMessage => ({
+    id: "m-1",
+    role: "user",
+    parts: [
+      { type: "text", text: "look" },
+      { type: "file", mediaType: "image/png", url },
+    ],
+  });
+
+  const transcript = (first: UIMessage) => ({
+    id: CONVERSATION_ID,
+    messages: [
+      first,
+      { id: "m-2", role: "assistant", parts: [{ type: "text", text: "ok" }] },
+      userMessage("and now?", "m-3"),
+    ],
+  });
+
+  beforeEach(() => {
+    store.rows.set(CONVERSATION_ID, {
+      id: CONVERSATION_ID,
+      workspaceId: "ws-1",
+      userId: "u-1",
+      agentId: "assistant",
+      modelId: MODEL_ID,
+      title: "t",
+    });
+  });
+
+  it("restores them from the stored message", async () => {
+    store.messages.push({
+      id: "m-1",
+      conversationId: CONVERSATION_ID,
+      role: "user",
+      parts: JSON.stringify(withImage(`data:image/png;base64,${BYTES}`).parts),
+      createdAt: new Date(),
+    });
+    const fake = fakeExecutions();
+    const { handler, seen } = promptOf(fake);
+
+    const response = await handler.POST(
+      post(transcript(withImage(ELIDED_FILE_URL)))
+    );
+    expect(response.status).toBe(200);
+    await response.text();
+
+    const prompt = JSON.stringify(seen);
+    expect(prompt).toContain(BYTES);
+    expect(prompt).not.toContain(ELIDED_FILE_URL);
+  });
+
+  it("drops a file whose message was never stored", async () => {
+    const fake = fakeExecutions();
+    const { handler, seen } = promptOf(fake);
+
+    const response = await handler.POST(
+      post(transcript(withImage(ELIDED_FILE_URL)))
+    );
+    expect(response.status).toBe(200);
+    await response.text();
+
+    const prompt = JSON.stringify(seen);
+    expect(prompt).toContain("look");
+    expect(prompt).not.toContain(ELIDED_FILE_URL);
+  });
+
+  it("refuses the placeholder on the message being sent", async () => {
+    const fake = fakeExecutions();
+    const { handler } = promptOf(fake);
+
+    const response = await handler.POST(
+      post({
+        id: CONVERSATION_ID,
+        messages: [{ ...withImage(ELIDED_FILE_URL), id: "m-9" }],
+      })
+    );
+    expect(response.status).toBe(400);
   });
 });

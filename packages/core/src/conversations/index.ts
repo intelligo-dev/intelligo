@@ -23,6 +23,7 @@ export {
   shareRef,
 } from "./sharing";
 export type { ConversationVisibility } from "./sharing";
+export { getMessage, getMessagesByIds, getRecentMessages } from "./history";
 
 export {
   ConversationServiceError,

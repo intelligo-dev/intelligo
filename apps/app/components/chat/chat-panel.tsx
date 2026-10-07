@@ -67,6 +67,7 @@ export function ChatPanel({
   const [history, setHistory] = useState<{
     id: string;
     messages: UIMessage[];
+    hasEarlier: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -77,6 +78,7 @@ export function ChatPanel({
       setHistory({
         id: conversationId,
         messages: result.success ? result.data.messages : [],
+        hasEarlier: result.success ? result.data.hasEarlier : false,
       });
     });
     return () => {
@@ -125,6 +127,11 @@ export function ChatPanel({
               key={id}
               conversationId={id}
               initialMessages={initialMessages}
+              hasEarlier={
+                history !== null && history.id === conversationId
+                  ? history.hasEarlier
+                  : false
+              }
               variant="panel"
               agentId={agentId}
               body={body}

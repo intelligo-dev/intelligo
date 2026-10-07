@@ -46,6 +46,8 @@ import type { MessageVote } from "./message-actions";
 interface ChatWorkspaceProps {
   conversationId: string;
   initialMessages: UIMessage[];
+  /** Whether messages precede `initialMessages`. */
+  hasEarlier?: boolean;
   quotaState?: ChatQuotaState | null;
   /** The same estimate per offered model, by model id. */
   quotaStates?: Record<string, ChatQuotaState>;
@@ -59,6 +61,7 @@ const WIDTH = { initial: 45, min: 30, max: 70, step: 2 };
 export function ChatWorkspace({
   conversationId,
   initialMessages,
+  hasEarlier = false,
   quotaState = null,
   quotaStates,
   votes = {},
@@ -156,6 +159,7 @@ export function ChatWorkspace({
     <ChatThread
       conversationId={conversationId}
       initialMessages={initialMessages}
+      hasEarlier={hasEarlier}
       quotaState={quotaState}
       quotaStates={quotaStates}
       votes={votes}

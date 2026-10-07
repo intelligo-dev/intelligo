@@ -51,7 +51,9 @@ import {
   deleteConversation,
   deleteTrailingMessages,
   getConversation,
+  getMessage,
   getMessages,
+  getMessagesByIds,
   isConversationServiceError,
   renameConversation,
   updateConversationMetadata,
@@ -82,7 +84,8 @@ import type {
 import { CHAT_ERROR_STATUS, DEFAULT_CHAT_MESSAGES, refuse } from "./errors";
 import type { ChatMessages } from "./errors";
 import { pickGenerationOptions } from "./generation";
-import { lastUserMessage, toUIMessages } from "./messages";
+import { hasElidedFile } from "./elide";
+import { lastUserMessage, restoreElidedFiles, toUIMessages } from "./messages";
 import type {
   ChatDataChunk,
   ChatMessageMetadata,
@@ -465,9 +468,8 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     const last = body.messages[body.messages.length - 1]!;
     let stored: UIMessage | undefined;
     try {
-      stored = toUIMessages(await getMessages(actor, body.id)).find(
-        (message) => message.id === last.id
-      );
+      const row = await getMessage(actor, body.id, last.id);
+      stored = row ? toUIMessages([row])[0] : undefined;
     } catch {
       return false;
     }
@@ -553,6 +555,25 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         error: errorMessage(loaded.error),
       });
       return refusal("INTERNAL", t("internalError"), where, {}, cors);
+    }
+
+    // Earlier messages' files sent without their bytes come back from
+    // the stored transcript (`sendWithoutEarlierFiles`).
+    const elided = body.messages.filter(hasElidedFile).map((m) => m.id);
+    if (elided.length > 0) {
+      try {
+        const stored =
+          config.persist === undefined && loaded.row
+            ? toUIMessages(await getMessagesByIds(actor, body.id, elided))
+            : [];
+        body.messages = restoreElidedFiles(body.messages, stored);
+      } catch (error) {
+        log.error("Failed to restore elided files", {
+          conversationId: body.id,
+          error: errorMessage(error),
+        });
+        return refusal("INTERNAL", t("internalError"), where, {}, cors);
+      }
     }
 
     // The writer exists only while the stream is open; a tool that
