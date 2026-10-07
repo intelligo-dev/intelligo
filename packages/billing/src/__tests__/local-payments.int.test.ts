@@ -125,7 +125,7 @@ d("local payments (integration)", () => {
       workspace_id: WORKSPACE,
       user_id: USER,
       reference: "bundle-5",
-      amount_minor: 1250,
+      amount_minor: "1250",
       currency: "USD",
       status: "pending",
       fulfilled_at: null,
