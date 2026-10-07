@@ -6,6 +6,7 @@ import {
   estimateConversationTokens,
   estimateTokenCount,
   extractText,
+  IMAGE_TOKEN_ESTIMATE,
 } from "./windowing";
 
 function m(role: UIMessage["role"], text: string, id = text): UIMessage {
@@ -49,6 +50,57 @@ describe("estimateConversationTokens", () => {
       parts: [{ type: "tool-call" }],
     } as unknown as UIMessage;
     expect(estimateConversationTokens([message])).toBe(5);
+  });
+
+  function file(mediaType: string, url: string): UIMessage {
+    return { id: "f", role: "user", parts: [{ type: "file", mediaType, url }] };
+  }
+  const base64Of = (bytes: number) => Buffer.alloc(bytes, 7).toString("base64");
+
+  it("counts an inline image at a flat estimate, not its encoded size", () => {
+    const megabyte = file(
+      "image/png",
+      `data:image/png;base64,${base64Of(1 << 20)}`
+    );
+    expect(estimateConversationTokens([megabyte])).toBe(IMAGE_TOKEN_ESTIMATE);
+    expect(
+      estimateConversationTokens([file("image/jpeg", "https://cdn.test/a.jpg")])
+    ).toBe(IMAGE_TOKEN_ESTIMATE);
+  });
+
+  it("counts an inline text file by its decoded length", () => {
+    const text = Buffer.from("a".repeat(4_000)).toString("base64");
+    expect(
+      estimateConversationTokens([
+        file("text/plain", `data:text/plain;base64,${text}`),
+      ])
+    ).toBe(1_000);
+    expect(
+      estimateConversationTokens([
+        file("application/json", `data:application/json,${"x".repeat(400)}`),
+      ])
+    ).toBe(100);
+  });
+
+  it("counts another document by its decoded size, never under the floor", () => {
+    expect(
+      estimateConversationTokens([
+        file(
+          "application/pdf",
+          `data:application/pdf;base64,${base64Of(160_000)}`
+        ),
+      ])
+    ).toBe(10_000);
+    expect(
+      estimateConversationTokens([
+        file("application/pdf", `data:application/pdf;base64,${base64Of(100)}`),
+      ])
+    ).toBe(1_600);
+    expect(
+      estimateConversationTokens([
+        file("application/pdf", "/api/chat/attachments/a-1"),
+      ])
+    ).toBe(1_600);
   });
 });
 
@@ -113,6 +165,21 @@ describe("applyConversationWindow", () => {
     });
     expect(windowed.map((x) => x.id)).toEqual(["big2"]);
     expect(pruned.map((x) => x.id)).toEqual(["big1"]);
+  });
+
+  it("keeps the question when the assistant message being continued is over budget", () => {
+    const transcript = [
+      m("user", "earlier", "u1"),
+      m("assistant", "done", "a1"),
+      m("user", "search for it", "u2"),
+      m("assistant", "r".repeat(4_000), "a2"),
+    ];
+    const { windowed, pruned } = applyConversationWindow(transcript, {
+      maxMessages: 10,
+      maxTokens: 100,
+    });
+    expect(windowed.map((x) => x.id)).toEqual(["u2", "a2"]);
+    expect(pruned.map((x) => x.id)).toEqual(["u1", "a1"]);
   });
 
   it("drops from the front until a token budget fits", () => {
