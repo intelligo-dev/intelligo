@@ -42,6 +42,18 @@ it explains a framework decision.
   forgets it, keeping its seams; it refuses an item another needs.
 - `intelligo sync --force` copies the files it replaces to
   `.intelligo/backup/<time>/` first.
+- `executionRefusalResponse(run)` in `@intelligo-dev/next/route`: the chat
+  route's answer to a refused execution for any route — 503
+  `MODEL_UNAVAILABLE` or `BILLING_NOT_CONFIGURED`, 402 `QUOTA_EXCEEDED`.
+  The scaffold's assistant route uses it with `withWorkspace` (template
+  1.20.0).
+- `assertEnv({ extra })` and `validateEnv({ extra })` check a product's own
+  variables beside the framework's; the thrown error names the missing
+  variables, and `validateEnv` warns about a pair set by half (OAuth id
+  without secret, a Stripe key without its webhook secret, a storage
+  bucket without credentials).
+- `LOG_LEVEL` sets how much the server logs.
+- `clearUpgradeMessages` and `clearActionLabels`, for tests.
 
 ### Fixed
 
@@ -145,6 +157,9 @@ it explains a framework decision.
   Node does, from the app upward, so a dependency hoisted to a workspace
   root is found and an app's own `packages/core` is not taken for the
   framework's.
+- Plan allowances in another currency than the billing row still count
+  as none, but the mismatch is logged once instead of every plan reading
+  as zero without a word.
 
 ## [1.1.1] — 2026-10-07
 

@@ -4,13 +4,24 @@
  * optional in development (STRIPE_*, RESEND_API_KEY).
  */
 
-type EnvVar = {
+export type EnvVar = {
   name: string;
   required: boolean;
   description: string;
   /** Optional minimum length — used for secret strength checks */
   minLength?: number;
 };
+
+/**
+ * Variables that only work together: one set without the others is a
+ * feature half-configured, which fails later and less clearly.
+ */
+const ENV_PAIRS: ReadonlyArray<readonly string[]> = [
+  ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
+  ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"],
+  ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"],
+  ["STORAGE_BUCKET", "STORAGE_ACCESS_KEY_ID", "STORAGE_SECRET_ACCESS_KEY"],
+];
 
 // Only variables the framework itself reads. A model provider's key is
 // absent on purpose: which provider a deployment calls is the product's
@@ -69,16 +80,19 @@ const ENV_VARS: EnvVar[] = [
   },
 ];
 
-export function validateEnv(): {
+export function validateEnv(options: { extra?: readonly EnvVar[] } = {}): {
   valid: boolean;
   errors: string[];
   warnings: string[];
+  /** The required variables that are unset, by name. */
+  missing: string[];
 } {
+  const missing: string[] = [];
   const errors: string[] = [];
   const warnings: string[] = [];
   const unsetOptional: string[] = [];
 
-  for (const envVar of ENV_VARS) {
+  for (const envVar of [...ENV_VARS, ...(options.extra ?? [])]) {
     let value = process.env[envVar.name];
     // Better-Auth reads BETTER_AUTH_SECRET then AUTH_SECRET; the CLI, the
     // scaffold and this validator use the former.
@@ -94,6 +108,7 @@ export function validateEnv(): {
     }
     if (!value || value.trim() === "") {
       if (envVar.required) {
+        missing.push(envVar.name);
         errors.push(
           `Missing required env var: ${envVar.name} — ${envVar.description}`
         );
@@ -161,15 +176,25 @@ export function validateEnv(): {
     }
   }
 
-  return { valid: errors.length === 0, errors, warnings };
+  for (const group of ENV_PAIRS) {
+    const set = group.filter((name) => process.env[name]?.trim());
+    if (set.length > 0 && set.length < group.length) {
+      warnings.push(
+        `${set.join(", ")} set without ${group.filter((n) => !set.includes(n)).join(", ")} — the feature they configure stays broken until all are set`
+      );
+    }
+  }
+
+  return { valid: errors.length === 0, errors, warnings, missing };
 }
 
 /**
- * Call during app initialization. Throws on missing required variables;
- * logs warnings for optional ones.
+ * Call during app initialization. Throws on missing required variables,
+ * naming them; logs warnings for optional ones. `extra` adds the
+ * product's own variables to the same check.
  */
-export function assertEnv(): void {
-  const { valid, errors, warnings } = validateEnv();
+export function assertEnv(options: { extra?: readonly EnvVar[] } = {}): void {
+  const { valid, errors, warnings, missing } = validateEnv(options);
 
   for (const warning of warnings) {
     console.warn(`[Env] ${warning}`);
@@ -181,7 +206,9 @@ export function assertEnv(): void {
       console.error(`  - ${error}`);
     }
     throw new Error(
-      `Missing ${errors.length} required environment variable(s). See logs above.`
+      missing.length > 0
+        ? `Missing required environment variable(s): ${missing.join(", ")}.`
+        : `${errors.length} environment variable(s) are invalid: ${errors.join("; ")}`
     );
   }
 }

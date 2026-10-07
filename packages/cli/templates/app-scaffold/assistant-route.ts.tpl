@@ -8,7 +8,10 @@
  * changes.
  */
 
-import { isAuthGuardError, requireWorkspace } from "@intelligo-dev/auth";
+import {
+  executionRefusalResponse,
+  withWorkspace,
+} from "@intelligo-dev/next/route";
 
 import { CAPABILITIES, composeIntelligo, executions } from "@/lib/intelligo";
 
@@ -24,7 +27,9 @@ async function callModel(prompt: string) {
   };
 }
 
-export async function POST(request: Request) {
+// withWorkspace answers 401/403 for a refused guard and lets any other
+// failure (the database down) through as the server's.
+export const POST = withWorkspace(async (request, context) => {
   composeIntelligo();
 
   const body = (await request.json().catch(() => null)) as {
@@ -32,16 +37,6 @@ export async function POST(request: Request) {
   } | null;
   if (!body || typeof body.prompt !== "string" || !body.prompt.trim()) {
     return Response.json({ error: "prompt is required" }, { status: 400 });
-  }
-
-  let context;
-  try {
-    context = await requireWorkspace();
-  } catch (error) {
-    // Only a refused guard is a 401; anything else (the database down)
-    // is the server's failure, not the caller's.
-    if (!isAuthGuardError(error)) throw error;
-    return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
   const run = await executions.begin({
@@ -52,19 +47,9 @@ export async function POST(request: Request) {
   });
 
   if (!run.allowed) {
-    // 503 for what only the deployment can fix (a model with no
-    // registered price, billing not configured); 402 for what the
-    // workspace can fix by paying. `run.reason` is for the log.
-    const unavailable =
-      run.code === "unknown_model" || run.code === "billing_not_configured";
+    // The engine's reason is for the log; the caller gets a code.
     console.error("[assistant] refused:", run.code, run.reason);
-    return Response.json(
-      {
-        error: unavailable ? "assistant unavailable" : "quota exceeded",
-        code: unavailable ? "UNAVAILABLE" : "QUOTA_EXCEEDED",
-      },
-      { status: unavailable ? 503 : 402 }
-    );
+    return executionRefusalResponse(run);
   }
 
   try {
@@ -75,4 +60,4 @@ export async function POST(request: Request) {
     await run.fail({ error });
     return Response.json({ error: "assistant failed" }, { status: 500 });
   }
-}
+});

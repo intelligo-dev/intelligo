@@ -6,7 +6,11 @@
 
 import { zero, type CurrencyCode, type Money } from "@intelligo-dev/core/money";
 
+import { createLogger } from "@intelligo-dev/core/logger";
+
 import { getDefaultProductSlug, getPlanConfigs } from "./plans";
+
+const log = createLogger("QuotaPlan");
 
 function limit(
   planSlug: string | null | undefined,
@@ -25,7 +29,8 @@ function limit(
  *
  * Zero when the product registered nothing, when the plan is unknown,
  * or when the catalogue names a currency the settings row does not —
- * inventing a conversion would be a currency mismatch. No allowance
+ * inventing a conversion would be a currency mismatch; that last is
+ * logged once per pair. No allowance
  * means the request falls through to purchased credits or is refused:
  * the safe direction, since a non-zero default hands out free allowance
  * on a misconfigured deploy.
@@ -39,8 +44,25 @@ export function getPlanMonthlyAllowance(
   const declared =
     (planSlug ? configs[planSlug]?.monthlyAllowance : undefined) ??
     configs.free?.monthlyAllowance;
-  return declared && declared.currency === currency ? declared : zero(currency);
+  if (declared && declared.currency !== currency) {
+    // Still zero — but said once, since every plan reads as no allowance
+    // and the cause (the code and the billing row disagree) is not
+    // visible anywhere else.
+    const key = `${productSlug}:${declared.currency}:${currency}`;
+    if (!warnedMismatch.has(key)) {
+      warnedMismatch.add(key);
+      log.error("Plan allowances are in another currency than billing", {
+        productSlug,
+        allowanceCurrency: declared.currency,
+        billingCurrency: currency,
+      });
+    }
+    return zero(currency);
+  }
+  return declared ?? zero(currency);
 }
+
+const warnedMismatch = new Set<string>();
 
 /**
  * Message-count limit, read by the usage dashboard. Enforcement uses

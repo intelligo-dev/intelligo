@@ -66,6 +66,10 @@ export function registerUpgradeMessages(
   productUpgradeMessages.set(productSlug, messages);
 }
 
+export function clearUpgradeMessages(): void {
+  productUpgradeMessages.clear();
+}
+
 export function getUpgradeMessage(
   productSlug: string,
   planSlug: string,
@@ -88,6 +92,10 @@ export function registerActionLabels(
   labels: ActionLabelMap
 ): void {
   productActionLabels.set(productSlug, labels);
+}
+
+export function clearActionLabels(): void {
+  productActionLabels.clear();
 }
 
 export function getActionLabel(

@@ -19,7 +19,9 @@ export type { PlanSlug, PlanConfig, PlanLimits } from "./plans";
 export {
   registerProductPlans,
   registerUpgradeMessages,
+  clearUpgradeMessages,
   registerActionLabels,
+  clearActionLabels,
   getRegisteredProductSlugs,
   BillingNotConfiguredError,
 } from "./plan-registry";

@@ -25,7 +25,13 @@ vi.mock("@intelligo-dev/auth", () => ({
   isAuthGuardError: (error: unknown) => error instanceof mocks.AuthGuardError,
 }));
 
-import { withAuth, withCronSecret, withRole, withWorkspace } from "./route";
+import {
+  executionRefusalResponse,
+  withAuth,
+  withCronSecret,
+  withRole,
+  withWorkspace,
+} from "./route";
 
 const request = new Request("https://app.test/api/thing");
 const session = { session: { id: "s_1" }, user: { id: "u_1" } };
@@ -179,5 +185,40 @@ describe("withCronSecret", () => {
     vi.stubEnv("CRON_SECRET", "");
     expect((await call("Bearer ")).status).toBe(403);
     vi.unstubAllEnvs();
+  });
+});
+
+describe("executionRefusalResponse", () => {
+  it("answers 503 for what only the deployment can fix", async () => {
+    const model = executionRefusalResponse({
+      code: "unknown_model",
+      reason: "x",
+    });
+    expect(model.status).toBe(503);
+    expect(await model.json()).toEqual({
+      error: "unavailable",
+      code: "MODEL_UNAVAILABLE",
+      reasonCode: "unknown_model",
+    });
+    const billing = executionRefusalResponse({
+      code: "billing_not_configured",
+    });
+    expect(billing.status).toBe(503);
+    expect((await billing.json()).code).toBe("BILLING_NOT_CONFIGURED");
+  });
+
+  it("answers 402 for what paying fixes, the engine's reason left out", async () => {
+    const response = executionRefusalResponse({
+      code: "insufficient_credits",
+      reason: "Workspace ws-1 has 0 micros",
+    });
+    expect(response.status).toBe(402);
+    const body = await response.json();
+    expect(body).toEqual({
+      error: "quota exceeded",
+      code: "QUOTA_EXCEEDED",
+      reasonCode: "insufficient_credits",
+    });
+    expect(executionRefusalResponse({}).status).toBe(402);
   });
 });

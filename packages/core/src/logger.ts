@@ -133,8 +133,22 @@ function redactData(data: Record<string, unknown>): Record<string, unknown> {
   return redactObject(data, 0);
 }
 
+const LEVELS = ["fatal", "error", "warn", "info", "debug", "trace"] as const;
+
+/**
+ * `LOG_LEVEL` when it names a level, else `info` in production and
+ * `debug` elsewhere.
+ */
+export function logLevel(
+  env: Record<string, string | undefined> = process.env
+): string {
+  const asked = env.LOG_LEVEL?.trim().toLowerCase();
+  if (asked && (LEVELS as readonly string[]).includes(asked)) return asked;
+  return env.NODE_ENV === "production" ? "info" : "debug";
+}
+
 const baseLogger = pino({
-  level: isProduction ? "info" : "debug",
+  level: logLevel(),
   formatters: {
     level(label) {
       return { level: label };
@@ -198,7 +212,7 @@ export function _createLoggerWithStream(
 ): Logger {
   const customBase = pino(
     {
-      level: isProduction ? "info" : "debug",
+      level: logLevel(),
       formatters: {
         level(label) {
           return { level: label };

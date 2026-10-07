@@ -17,6 +17,8 @@ import { createRegistry } from "@intelligo-dev/core/registry";
 
 import {
   BillingNotConfiguredError,
+  clearActionLabels,
+  clearUpgradeMessages,
   DEFAULT_REQUESTS_PER_MINUTE,
   NO_TRIAL,
   clearActionLimitKeys,
@@ -298,5 +300,20 @@ describe("the registries behind the seam", () => {
     registerUpgradeMessages("alpha", { free: { chat: "Upgrade to chat" } });
     expect(getUpgradeMessage("alpha", "pro", "chat")).toBeUndefined();
     expect(getUpgradeMessage("alpha", "free", "reports")).toBeUndefined();
+  });
+});
+
+describe("upgrade messages and action labels", () => {
+  it("are forgotten when cleared, for a test that starts from nothing", () => {
+    registerUpgradeMessages("clear-test", { pro: { export: "Upgrade" } });
+    registerActionLabels("clear-test", { export: "Export" });
+    expect(getUpgradeMessage("clear-test", "pro", "export")).toBe("Upgrade");
+    expect(getActionLabel("clear-test", "export")).toBe("Export");
+
+    clearUpgradeMessages();
+    clearActionLabels();
+
+    expect(getUpgradeMessage("clear-test", "pro", "export")).toBeUndefined();
+    expect(getActionLabel("clear-test", "export")).toBeUndefined();
   });
 });

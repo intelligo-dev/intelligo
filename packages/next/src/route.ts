@@ -138,3 +138,30 @@ export function withCronSecret<Context = unknown>(
     return handler(request, context);
   };
 }
+
+/**
+ * The answer to a refused execution, the chat route's mapping for any
+ * route: 503 for what only the deployment can fix (a model with no
+ * registered price, billing not configured), 402 for what the workspace
+ * can fix by paying. The engine's `reason` is English for the log; the
+ * caller gets `code` and `reasonCode`.
+ */
+export function executionRefusalResponse(run: {
+  code?: string;
+  reason?: string;
+}): Response {
+  const code =
+    run.code === "unknown_model"
+      ? "MODEL_UNAVAILABLE"
+      : run.code === "billing_not_configured"
+        ? "BILLING_NOT_CONFIGURED"
+        : "QUOTA_EXCEEDED";
+  return Response.json(
+    {
+      error: code === "QUOTA_EXCEEDED" ? "quota exceeded" : "unavailable",
+      code,
+      ...(run.code ? { reasonCode: run.code } : {}),
+    },
+    { status: code === "QUOTA_EXCEEDED" ? 402 : 503 }
+  );
+}
