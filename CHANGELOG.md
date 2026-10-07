@@ -14,6 +14,19 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Security
+
+- Dependencies moved past their published advisories without new
+  overrides: Next.js `~16.3.8` (the scaffold's `package.json` too,
+  app-scaffold template 1.19.0), and in the lockfile `sharp`, `dompurify`,
+  `devalue`, `smol-toml`, `source-map-js`, `http-cache-semantics` and the
+  MCP SDK to their patched releases. `pnpm audit` reports three advisories
+  with no fix to move to: `braces` (through shadcn's build tooling),
+  `sprintf-js` (through `@mastra/core`) and `katex` (held below its fix by
+  `@streamdown/math`).
+
 ## [1.1.1] — 2026-10-07
 
 ### Fixed
