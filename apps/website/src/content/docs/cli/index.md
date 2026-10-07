@@ -13,7 +13,9 @@ A scaffolded app has `@intelligo-dev/cli` as a dev dependency; run it with `pnpm
 intelligo <command>
 intelligo create [dir]      Scaffold an app, then install the registry pages you pick
                             (--items a,b | --all, --yes, --no-install, --name <name>)
-intelligo doctor            Report configuration and migration-chain problems
+intelligo doctor            Report configuration and migration-chain problems, and,
+                            with DATABASE_URL, the database's (--offline skips it;
+                            --json for CI)
 intelligo migrate           Apply the framework's migration chain to DATABASE_URL
 intelligo migrate --check   Compare the framework's and the app's migrations to a database
                             (--json: one object whose `state` is up_to_date | pending |
@@ -21,11 +23,19 @@ intelligo migrate --check   Compare the framework's and the app's migrations to 
 intelligo admin grant <email>  Make a signed-up user a platform admin (--force in production)
 intelligo admin revoke <email> Take platform admin away and end its sessions (--force in production)
 intelligo add <feature>     Generate consumer-owned source (--force to overwrite)
-intelligo upgrade --check   Show what a template upgrade would change
+intelligo upgrade --check   Show what a template upgrade would change (--json)
+intelligo upgrade --diff <path>    How your copy differs from the current template
+intelligo upgrade --accept <path>  Keep your copy; stop reporting it as a conflict
 intelligo sync [items…]     Install registry pages from this release's registry
                             (names space- or comma-separated),
                             keeping seams and merging messages (--force replaces
-                            hand-edited files; --check only reports, exit 1 on drift)
+                            hand-edited files; --check only reports, exit 1 on drift,
+                            --json for CI; --diff <path> compares a file, a seam
+                            included, with what the registry ships)
+intelligo remove <item>     Delete an installed page's files and forget it (seams stay)
+intelligo --version         Print the CLI's version
+Exit codes: 0 done, 1 a check found problems or the command failed,
+2 the command was used wrongly.
 ```
 
 ## create

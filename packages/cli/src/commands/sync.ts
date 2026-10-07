@@ -29,6 +29,11 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
 
+import { packageDir } from "../package-dir.js";
+import { backUp } from "./backup.js";
+import { syncCheckExitCode, formatSyncReport } from "./sync-report.js";
+export { syncCheckExitCode, formatSyncReport } from "./sync-report.js";
+
 import type { RegistryRequires } from "./doctor.js";
 import {
   emptyManifest,
@@ -78,6 +83,10 @@ export type SyncFileState =
   | "missing"
   /** a seam: the app's own from the first install on */
   | "seam"
+  /** a seam whose shipped default changed since the last sync */
+  | "seam-changed"
+  /** recorded by an earlier sync, but no item this app keeps ships it now */
+  | "orphaned"
   /** a message file that lacks keys the registry's has */
   | "messages-behind"
   /** another locale's copy of a shipped namespace lacks keys the app's English has */
@@ -108,15 +117,6 @@ export type SyncContext = {
   requires: RegistryRequires & { seams?: Record<string, string> };
   frameworkVersion: string;
 };
-
-const FAILING: ReadonlySet<SyncFileState> = new Set([
-  "outdated",
-  "edited",
-  "differs",
-  "missing",
-  "messages-behind",
-  "locale-behind",
-]);
 
 /**
  * The items to sync: the ones named, else the ones the manifest
@@ -178,9 +178,9 @@ export function installOrder(
   ];
 }
 
-type ShippedFile = { item: string; target: string; content: string };
+export type ShippedFile = { item: string; target: string; content: string };
 
-function shippedFiles(
+export function shippedFiles(
   context: SyncContext,
   items: readonly string[]
 ): {
@@ -221,7 +221,17 @@ export function syncCheck(
   const entries: SyncEntry[] = files.map(({ item, target, content }) => {
     const abs = path.join(context.appRoot, target);
     if (!existsSync(abs)) return { item, path: target, state: "missing" };
-    if (target in seams) return { item, path: target, state: "seam" };
+    if (target in seams) {
+      const seen = manifest?.registry?.seams?.[target];
+      return {
+        item,
+        path: target,
+        state:
+          seen !== undefined && seen !== hashContents(asInstalled(content))
+            ? "seam-changed"
+            : "seam",
+      };
+    }
     const local = readFileSync(abs, "utf8");
 
     if (isMessages(target)) {
@@ -256,59 +266,25 @@ export function syncCheck(
   });
 
   entries.push(...localeEntries(context.appRoot, files));
-  return { version: context.frameworkVersion, items: closure, entries };
-}
-
-export function syncCheckExitCode(report: SyncReport): number {
-  return report.entries.some((e) => FAILING.has(e.state)) ? 1 : 0;
-}
-
-export function formatSyncReport(report: SyncReport): string {
-  const counts = new Map<SyncFileState, number>();
-  for (const e of report.entries) {
-    counts.set(e.state, (counts.get(e.state) ?? 0) + 1);
-  }
-  const lines = [
-    `Registry ${report.version}: ${report.items.length} item(s), ${report.entries.length} file(s) — ` +
-      [...counts].map(([state, n]) => `${n} ${state}`).join(", "),
-  ];
-  const HINT: Partial<Record<SyncFileState, string>> = {
-    outdated: "a newer registry version — `intelligo sync` replaces it",
-    edited:
-      "edited by hand — move the change into a seam, or ask for one upstream",
-    differs: "not what the registry ships, and never synced",
-    missing: "not installed",
-    "messages-behind": "lacks registry keys — `intelligo sync` adds them",
-    "locale-behind":
-      "lacks keys the app's English copy has — translate them; sync never writes another locale",
-  };
-  for (const state of FAILING) {
-    const group = report.entries.filter((e) => e.state === state);
-    if (group.length === 0) continue;
-    lines.push("", `${state} (${HINT[state]}):`);
-    for (const e of group) {
-      const keys = e.missingKeys
-        ? ` — ${e.missingKeys.slice(0, 5).join(", ")}${e.missingKeys.length > 5 ? `, +${e.missingKeys.length - 5}` : ""}`
-        : "";
-      lines.push(`  ${e.path}  [${e.item}]${keys}`);
+  // Checked against everything the app keeps, not only the items named:
+  // a file another item ships is not left behind by this one.
+  const known = [
+    ...new Set([...(manifest?.registry?.items ?? []), ...items]),
+  ].filter((name) => hasRegistryItem(context.registryDir, name));
+  const kept = new Set(shippedFiles(context, known).files.map((f) => f.target));
+  for (const target of Object.keys(recorded)) {
+    if (!kept.has(target) && existsSync(path.join(context.appRoot, target))) {
+      entries.push({ item: "", path: target, state: "orphaned" });
     }
   }
-  if (!report.entries.some((e) => FAILING.has(e.state))) {
-    lines.push("✓ every installed file is the registry's, seams aside");
-  }
-  return lines.join("\n");
+  return { version: context.frameworkVersion, items: closure, entries };
 }
 
 /** The package version the app resolves for `@intelligo-dev/core`, if any. */
 export function installedFrameworkVersion(appRoot: string): string | null {
-  const manifest = path.join(
-    appRoot,
-    "node_modules",
-    "@intelligo-dev",
-    "core",
-    "package.json"
-  );
-  if (!existsSync(manifest)) return null;
+  const core = packageDir(appRoot, "@intelligo-dev/core");
+  if (!core) return null;
+  const manifest = path.join(core, "package.json");
   return (JSON.parse(readFileSync(manifest, "utf8")) as { version: string })
     .version;
 }
@@ -388,11 +364,23 @@ function recordSync(
   context: SyncContext,
   names: readonly string[],
   after: SyncReport,
-  { manifest }: { manifest: Manifest }
+  {
+    manifest,
+    shippedSeams,
+  }: { manifest: Manifest; shippedSeams: Record<string, string> }
 ): void {
   const files: Record<string, string> = {};
+  const seams: Record<string, string> = {};
+  for (const [target, content] of Object.entries(shippedSeams)) {
+    seams[target] = hashContents(asInstalled(content));
+  }
   for (const e of after.entries) {
-    if (e.state === "seam" || e.state === "missing" || isMessages(e.path)) {
+    if (
+      e.state === "seam" ||
+      e.state === "seam-changed" ||
+      e.state === "missing" ||
+      isMessages(e.path)
+    ) {
       continue;
     }
     files[e.path] = hashContents(
@@ -405,10 +393,13 @@ function recordSync(
   ]);
   writeManifest(context.appRoot, {
     ...manifest,
+    // The pages now match this release, so the app is on it.
+    frameworkVersion: context.frameworkVersion,
     registry: {
       version: context.frameworkVersion,
       items: installOrder([...recordedItems], context.requires),
       files: { ...manifest.registry?.files, ...files },
+      seams: { ...manifest.registry?.seams, ...seams },
     },
   });
 }
@@ -474,6 +465,13 @@ export async function syncApply(
   const edited = before.entries.filter(
     (e) => e.state === "edited" || e.state === "differs"
   );
+  if (edited.length > 0 && options.force) {
+    const dir = backUp(
+      appRoot,
+      edited.map((e) => e.path)
+    );
+    log(`Backed up ${edited.length} file(s) --force replaces to ${dir}`);
+  }
   if (edited.length > 0 && !options.force) {
     log(
       [
@@ -556,6 +554,9 @@ export async function syncApply(
   // Record what is on disk now, so the next check can tell an edit.
   const after = syncCheck(items, context);
   recordSync(context, names, after, {
+    shippedSeams: Object.fromEntries(
+      [...shipped].filter(([target]) => target in seams)
+    ),
     manifest: handOver(
       readManifest(appRoot) ?? emptyManifest(context.frameworkVersion),
       SCAFFOLD_FEATURE,

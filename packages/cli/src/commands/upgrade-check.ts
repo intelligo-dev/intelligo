@@ -11,7 +11,12 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { readCatalogue, substitute } from "./add.js";
-import { hashContents, readManifest, type Manifest } from "../manifest.js";
+import {
+  hashContents,
+  readManifest,
+  writeManifest,
+  type Manifest,
+} from "../manifest.js";
 
 export type UpgradeItem = {
   feature: string;
@@ -129,7 +134,8 @@ export function formatUpgradeReport(r: UpgradeReport): string {
   const label: Record<UpgradeItem["state"], string> = {
     current: "✓ up to date",
     outdated: "↑ template changed — safe to re-run `intelligo add`",
-    conflict: "! template changed AND you edited it — review the diff",
+    conflict:
+      "! template changed AND you edited it — `upgrade --diff <path>`, then merge or `upgrade --accept <path>`",
     customized: "= yours (template unchanged)",
     deleted: "✗ removed by you",
     new: "+ new in the template — `intelligo add` writes it",
@@ -157,4 +163,119 @@ export function formatUpgradeReport(r: UpgradeReport): string {
  */
 export function upgradeCheckExitCode(r: UpgradeReport): number {
   return r.items.some((i) => i.state === "conflict") ? 1 : 0;
+}
+
+/**
+ * The file at `target` as the current template writes it for this app,
+ * with the feature that owns it; null when no recorded feature does.
+ */
+function renderedTemplate(
+  options: UpgradeCheckOptions,
+  target: string
+): { feature: string; contents: string } | null {
+  const manifest = readManifest(options.appRoot);
+  if (!manifest) return null;
+  const catalogue = readCatalogue(options.templatesDir);
+  for (const [feature, entry] of Object.entries(manifest.features)) {
+    const file = catalogue[feature]?.files.find((f) => f.target === target);
+    if (!file || !entry.files.some((f) => f.path === target)) continue;
+    return {
+      feature,
+      contents: substitute(
+        readFileSync(path.join(options.templatesDir, file.template), "utf8"),
+        entry.variables
+      ),
+    };
+  }
+  return null;
+}
+
+/** A line diff, `-` for the app's lines and `+` for the template's. */
+export function lineDiff(ours: string, theirs: string): string[] {
+  const a = ours.split("\n");
+  const b = theirs.split("\n");
+  // Longest common subsequence table, filled from the end.
+  const lcs: number[][] = Array.from({ length: a.length + 1 }, () =>
+    new Array<number>(b.length + 1).fill(0)
+  );
+  for (let i = a.length - 1; i >= 0; i--) {
+    for (let j = b.length - 1; j >= 0; j--) {
+      lcs[i]![j] =
+        a[i] === b[j]
+          ? lcs[i + 1]![j + 1]! + 1
+          : Math.max(lcs[i + 1]![j]!, lcs[i]![j + 1]!);
+    }
+  }
+  const out: string[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length || j < b.length) {
+    if (i < a.length && j < b.length && a[i] === b[j]) {
+      out.push(`  ${a[i]}`);
+      i++;
+      j++;
+    } else if (
+      j < b.length &&
+      (i >= a.length || lcs[i]![j + 1]! >= lcs[i + 1]![j]!)
+    ) {
+      out.push(`+ ${b[j]}`);
+      j++;
+    } else {
+      out.push(`- ${a[i]}`);
+      i++;
+    }
+  }
+  return out;
+}
+
+/**
+ * `upgrade --diff <path>`: how the app's copy differs from what the
+ * current template would write, changed lines with three of context.
+ */
+export function upgradeDiff(
+  options: UpgradeCheckOptions,
+  target: string
+): string | null {
+  const rendered = renderedTemplate(options, target);
+  if (!rendered) return null;
+  const abs = path.join(options.appRoot, target);
+  const ours = existsSync(abs) ? readFileSync(abs, "utf8") : "";
+  const lines = lineDiff(ours, rendered.contents);
+  const keep = lines.map((line, index) =>
+    lines
+      .slice(Math.max(0, index - 3), index + 4)
+      .some((near) => !near.startsWith("  "))
+  );
+  const shown: string[] = [];
+  lines.forEach((line, index) => {
+    if (keep[index]) shown.push(line);
+    else if (shown[shown.length - 1] !== "…") shown.push("…");
+  });
+  return [
+    `--- ${target} (yours)`,
+    `+++ ${target} (${rendered.feature} template)`,
+    ...shown,
+  ].join("\n");
+}
+
+/**
+ * `upgrade --accept <path>`: the app keeps its copy, and the template's
+ * current version is recorded as seen, so the file reads `customized`
+ * instead of `conflict` until the template changes again.
+ */
+export function upgradeAccept(
+  options: UpgradeCheckOptions,
+  target: string
+): "accepted" | "not_found" {
+  const rendered = renderedTemplate(options, target);
+  const manifest = readManifest(options.appRoot);
+  if (!rendered || !manifest) return "not_found";
+  const entry = manifest.features[rendered.feature]!;
+  entry.files = entry.files.map((file) =>
+    file.path === target
+      ? { ...file, hash: hashContents(rendered.contents) }
+      : file
+  );
+  writeManifest(options.appRoot, manifest);
+  return "accepted";
 }

@@ -18,7 +18,13 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { addExitCode, addFeature, formatAddResult } from "./add.js";
-import { upgradeCheck, upgradeCheckExitCode } from "./upgrade-check.js";
+import {
+  lineDiff,
+  upgradeAccept,
+  upgradeCheck,
+  upgradeCheckExitCode,
+  upgradeDiff,
+} from "./upgrade-check.js";
 import { handOver, readManifest, writeManifest } from "../manifest.js";
 
 let appRoot: string;
@@ -279,6 +285,37 @@ describe("upgradeCheck", () => {
     expect(upgradeCheckExitCode(report)).toBe(1);
   });
 
+  it("shows a conflict's diff, and an accepted one stays the app's until the template moves again", () => {
+    add();
+    writeFileSync(target(), "// mine\nexport const a = 1;\n");
+    writeTemplates("1.1.0", "// new upstream\nexport const a = 1;\n");
+
+    const diff = upgradeDiff({ appRoot, templatesDir }, "app/demo/page.tsx");
+    expect(diff).toContain("- // mine");
+    expect(diff).toContain("+ // new upstream");
+    expect(diff).toContain("  export const a = 1;");
+
+    expect(upgradeAccept({ appRoot, templatesDir }, "app/demo/page.tsx")).toBe(
+      "accepted"
+    );
+    expect(check().items[0]!.state).toBe("customized");
+    expect(upgradeCheckExitCode(check())).toBe(0);
+    expect(readFileSync(target(), "utf8")).toBe(
+      "// mine\nexport const a = 1;\n"
+    );
+
+    writeTemplates("1.2.0", "// newer still\n");
+    expect(check().items[0]!.state).toBe("conflict");
+  });
+
+  it("knows no file the manifest does not record", () => {
+    add();
+    expect(upgradeDiff({ appRoot, templatesDir }, "lib/other.ts")).toBeNull();
+    expect(upgradeAccept({ appRoot, templatesDir }, "lib/other.ts")).toBe(
+      "not_found"
+    );
+  });
+
   it("compares substituted templates against the substituted file, not the raw template", () => {
     // `create` writes files with placeholders replaced. Hashing the raw
     // template on the upgrade side would make every such file read as
@@ -370,5 +407,17 @@ describe("addFeature vitest", () => {
     expect(printed).toContain("pnpm add -D vitest");
     expect(printed).toContain('"test": "vitest run"');
     expect(readManifest(appRoot)!.features.vitest!.files).toHaveLength(2);
+  });
+});
+
+describe("lineDiff", () => {
+  it("keeps common lines and marks each side's own", () => {
+    expect(lineDiff("a\nb\nc", "a\nx\nc")).toEqual([
+      "  a",
+      "+ x",
+      "- b",
+      "  c",
+    ]);
+    expect(lineDiff("", "")).toEqual(["  "]);
   });
 });

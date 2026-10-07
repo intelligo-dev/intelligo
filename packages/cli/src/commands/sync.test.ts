@@ -5,7 +5,14 @@
  * regeneration, not here.
  */
 
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -24,6 +31,8 @@ import {
   syncCheckExitCode,
   type SyncContext,
 } from "./sync.js";
+import { removeItem, syncDiff } from "./sync-maintenance.js";
+import { backUp } from "./backup.js";
 
 let root: string;
 let context: SyncContext;
@@ -208,6 +217,54 @@ describe("syncCheck", () => {
     expect(syncCheckExitCode(syncCheck(["usage"], context))).toBe(0);
   });
 
+  it("says when a seam's shipped default changed, and shows the change", () => {
+    write(context.appRoot, "app/usage/page.tsx", PAGE);
+    write(context.appRoot, "lib/usage-config.ts", "export const x = 'mine';\n");
+    writeManifest(context.appRoot, {
+      schemaVersion: 1,
+      frameworkVersion: "1.0.0-test",
+      features: {},
+      registry: {
+        version: "1.0.0-old",
+        items: ["usage"],
+        files: {},
+        seams: { "lib/usage-config.ts": hashContents("export const x = 0;\n") },
+      },
+    });
+
+    expect(states()["lib/usage-config.ts"]).toBe("seam-changed");
+    const report = syncCheck(["usage"], context);
+    // Reported, not failed: the app's copy is still its own.
+    const seamOnly = {
+      ...report,
+      entries: report.entries.filter((e) => e.state === "seam-changed"),
+    };
+    expect(syncCheckExitCode(seamOnly)).toBe(0);
+    expect(formatSyncReport(report)).toContain("sync --diff");
+
+    const diff = syncDiff("lib/usage-config.ts", ["usage"], context)!;
+    expect(diff).toContain("- export const x = 'mine';");
+    expect(diff).toContain("+ export const x = 1;");
+    expect(syncDiff("lib/nowhere.ts", ["usage"], context)).toBeNull();
+  });
+
+  it("leaves a seam whose default it has not seen change as a seam", () => {
+    write(context.appRoot, "app/usage/page.tsx", PAGE);
+    write(context.appRoot, "lib/usage-config.ts", "export const x = 'mine';\n");
+    writeManifest(context.appRoot, {
+      schemaVersion: 1,
+      frameworkVersion: "1.0.0-test",
+      features: {},
+      registry: {
+        version: "1.0.0-test",
+        items: ["usage"],
+        files: {},
+        seams: { "lib/usage-config.ts": hashContents("export const x = 1;\n") },
+      },
+    });
+    expect(states()["lib/usage-config.ts"]).toBe("seam");
+  });
+
   it("tells an edit from a newer registry by the recorded hash", () => {
     const old = "export const Button = 0;\n";
     write(context.appRoot, "components/ui/button.tsx", old);
@@ -384,5 +441,63 @@ describe("scaffoldHandover", () => {
         css: null,
       })
     ).toEqual([]);
+  });
+});
+
+describe("orphaned files, backups and removal", () => {
+  const keep = (items: string[], files: Record<string, string> = {}) =>
+    writeManifest(context.appRoot, {
+      schemaVersion: 1,
+      frameworkVersion: "1.0.0-test",
+      features: {},
+      registry: { version: "1.0.0-test", items, files },
+    });
+
+  it("reports a recorded file no kept item ships any more", () => {
+    write(context.appRoot, "app/old/page.tsx", "export default 0;\n");
+    keep(["usage"], { "app/old/page.tsx": "x" });
+    const report = syncCheck(["usage"], context);
+    expect(report.entries).toContainEqual({
+      item: "",
+      path: "app/old/page.tsx",
+      state: "orphaned",
+    });
+  });
+
+  it("copies files under .intelligo/backup before they are replaced", () => {
+    write(context.appRoot, "lib/a.ts", "mine\n");
+    const dir = backUp(context.appRoot, ["lib/a.ts", "lib/gone.ts"]);
+    expect(dir).toMatch(/^\.intelligo\/backup\//);
+    expect(
+      readFileSync(path.join(context.appRoot, dir, "lib/a.ts"), "utf8")
+    ).toBe("mine\n");
+  });
+
+  it("removes an item's own files, keeps its seams and what others ship", () => {
+    write(context.appRoot, "app/usage/page.tsx", PAGE);
+    write(context.appRoot, "lib/usage-config.ts", "mine\n");
+    write(context.appRoot, "app/error.tsx", "export default 1;\n");
+    keep(["route-error", "usage"], { "app/usage/page.tsx": "x" });
+
+    const result = removeItem("usage", context);
+
+    expect(result).toEqual({
+      status: "removed",
+      deleted: expect.arrayContaining(["app/usage/page.tsx"]),
+      keptSeams: ["lib/usage-config.ts"],
+    });
+    expect(existsSync(path.join(context.appRoot, "app/usage/page.tsx"))).toBe(
+      false
+    );
+    expect(existsSync(path.join(context.appRoot, "app/error.tsx"))).toBe(true);
+    expect(removeItem("usage", context)).toEqual({ status: "not_installed" });
+  });
+
+  it("refuses to remove an item another kept item needs", () => {
+    keep(["route-error", "usage"]);
+    expect(removeItem("route-error", context)).toEqual({
+      status: "needed",
+      by: ["usage"],
+    });
   });
 });

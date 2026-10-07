@@ -35,6 +35,7 @@ import {
   revokePlatformAdmin,
 } from "./commands/admin.js";
 import { exitCodeFor, formatResults, runChecks } from "./commands/doctor.js";
+import { runDatabaseChecks } from "./commands/doctor-database.js";
 import {
   formatMigrateCheck,
   formatMigrateCheckJson,
@@ -58,12 +59,20 @@ import {
   type SyncContext,
 } from "./commands/sync.js";
 import {
+  formatRemoveResult,
+  removeItem,
+  syncDiff,
+} from "./commands/sync-maintenance.js";
+import {
   formatUpgradeReport,
+  upgradeAccept,
   upgradeCheck,
   upgradeCheckExitCode,
+  upgradeDiff,
 } from "./commands/upgrade-check.js";
 
 import { itemNames, unknownFlags, wantsHelp } from "./args.js";
+import { commandUsage, usage } from "./usage.js";
 import { loadAppEnv } from "./env-files.js";
 import { workspaceRootVariable } from "./commands/create.js";
 import { resolveRegistryDir } from "./registry-bundle.js";
@@ -94,29 +103,6 @@ const TEMPLATES_DIR = path.resolve(
 const FRAMEWORK_VERSION: string = createRequire(import.meta.url)(
   "../package.json"
 ).version;
-
-function usage(): string {
-  return [
-    "intelligo <command>",
-    "",
-    "  create [dir]      Scaffold an app, then install the registry pages you pick",
-    "                    (--items a,b | --all, --yes, --no-install, --name <name>)",
-    "  doctor            Report configuration and migration-chain problems",
-    "  migrate           Apply the framework's migration chain to DATABASE_URL",
-    "  migrate --check   Compare the framework's and the app's migrations to a database",
-    "                    (--json: one object whose `state` is up_to_date | pending |",
-    "                    fresh | ahead | unmanaged | legacy)",
-    "  admin grant <email>  Make a signed-up user a platform admin (--force in production)",
-    "  admin revoke <email> Take platform admin away and end its sessions (--force in production)",
-    "  add <feature>     Generate consumer-owned source (--force to overwrite)",
-    "  upgrade --check   Show what a template upgrade would change",
-    "  sync [items…]     Install registry pages from this release's registry",
-    "                    (names space- or comma-separated),",
-    "                    keeping seams and merging messages (--force replaces",
-    "                    hand-edited files; --check only reports, exit 1 on drift)",
-    "",
-  ].join("\n");
-}
 
 async function runMigrate(
   mode: "check" | "apply",
@@ -261,9 +247,11 @@ function runAdd(rest: readonly string[]): number {
     const catalogue = readCatalogue(TEMPLATES_DIR);
     console.error("Usage: intelligo add <feature>\n");
     for (const [name, spec] of Object.entries(catalogue)) {
+      // A retired feature stays addable for apps that have it, unlisted.
+      if (spec.deprecated) continue;
       console.error(`  ${name.padEnd(16)} ${spec.description}`);
     }
-    return 1;
+    return 2;
   }
   if (feature === "pnpm-standalone" && findWorkspaceRoot(process.cwd())) {
     console.error(
@@ -288,11 +276,164 @@ function runAdd(rest: readonly string[]): number {
   return addExitCode(result);
 }
 
+async function runDoctor(rest: readonly string[]): Promise<number> {
+  if (!flagsOk("doctor", rest, ["--json", "--offline"])) return 2;
+  const results = runChecks();
+  const url = process.env.DATABASE_URL;
+  if (url && !rest.includes("--offline")) {
+    results.push(
+      ...(await runDatabaseChecks(
+        url,
+        process.cwd(),
+        resolveMigrationsDir(process.cwd())
+      ))
+    );
+  }
+  console.log(
+    rest.includes("--json")
+      ? JSON.stringify({ ok: exitCodeFor(results) === 0, results }, null, 2)
+      : formatResults(results)
+  );
+  return exitCodeFor(results);
+}
+
+async function runUpgrade(rest: readonly string[]): Promise<number> {
+  if (!flagsOk("upgrade", rest, ["--check", "--json", "--diff", "--accept"])) {
+    return 2;
+  }
+  const target = rest.find((a) => !a.startsWith("--"));
+  const upgradeOptions = {
+    appRoot: process.cwd(),
+    templatesDir: TEMPLATES_DIR,
+  };
+  if (rest.includes("--diff") || rest.includes("--accept")) {
+    if (!target) {
+      console.error("Usage: intelligo upgrade --diff|--accept <path>");
+      return 2;
+    }
+    if (rest.includes("--accept")) {
+      const accepted = upgradeAccept(upgradeOptions, target);
+      console.log(
+        accepted === "accepted"
+          ? `✓ ${target} is yours; the current template is recorded as seen.`
+          : `✗ No generated file at ${target} in intelligo.manifest.json.`
+      );
+      return accepted === "accepted" ? 0 : 1;
+    }
+    const diff = upgradeDiff(upgradeOptions, target);
+    if (diff === null) {
+      console.error(
+        `No generated file at ${target} in intelligo.manifest.json.`
+      );
+      return 1;
+    }
+    console.log(diff);
+    return 0;
+  }
+  if (!rest.includes("--check")) {
+    console.error("Only `upgrade --check` is implemented.");
+    console.error(
+      "Applying an upgrade means re-running `intelligo add` for the " +
+        "features it reports as outdated — deliberately your call, " +
+        "since the files are yours."
+    );
+    return 1;
+  }
+  const report = upgradeCheck(upgradeOptions);
+  console.log(
+    rest.includes("--json")
+      ? JSON.stringify(report, null, 2)
+      : formatUpgradeReport(report)
+  );
+  return upgradeCheckExitCode(report);
+}
+
+async function runSync(rest: readonly string[]): Promise<number> {
+  if (!flagsOk("sync", rest, ["--check", "--force", "--json", "--diff"])) {
+    return 2;
+  }
+  const registryDir = resolveRegistryDir(TEMPLATES_DIR);
+  if (!registryDir) {
+    console.error(
+      "This CLI has no bundled registry — in the framework repository, run `pnpm registry:build` first."
+    );
+    return 1;
+  }
+  const context: SyncContext = {
+    appRoot: process.cwd(),
+    registryDir,
+    requires: readRegistryCatalogue(TEMPLATES_DIR).requires,
+    frameworkVersion: FRAMEWORK_VERSION,
+  };
+  const installed = installedFrameworkVersion(context.appRoot);
+  if (installed && installed !== FRAMEWORK_VERSION) {
+    console.error(
+      `${rest.includes("--force") ? "!" : "✗"} @intelligo-dev/core is ${installed} but this CLI carries the ${FRAMEWORK_VERSION} registry — ` +
+        "run the CLI of the same version (`pnpm exec intelligo`), or pages and packages will disagree."
+    );
+    // Checking reports drift either way; installing pages for
+    // another version of the packages needs --force.
+    if (!rest.includes("--force") && !rest.includes("--check")) return 1;
+  }
+  if (rest.includes("--diff")) {
+    const target = itemNames(rest)[0];
+    const all = selectItems([], context);
+    const diff = target && all.ok ? syncDiff(target, all.items, context) : null;
+    if (diff === null) {
+      console.error(
+        "Usage: intelligo sync --diff <path> (a file the registry ships for an installed page)"
+      );
+      return 2;
+    }
+    console.log(diff);
+    return 0;
+  }
+  const selection = selectItems(itemNames(rest), context);
+  if (!selection.ok) {
+    console.error(selection.message);
+    return 1;
+  }
+  if (rest.includes("--check")) {
+    const report = syncCheck(selection.items, context);
+    console.log(
+      rest.includes("--json")
+        ? JSON.stringify(report, null, 2)
+        : formatSyncReport(report)
+    );
+    return syncCheckExitCode(report);
+  }
+  return syncApply(selection.items, context, {
+    force: rest.includes("--force"),
+  });
+}
+
+async function runRemove(rest: readonly string[]): Promise<number> {
+  if (!flagsOk("remove", rest, [])) return 2;
+  const [name, ...extra] = itemNames(rest);
+  const registryDir = resolveRegistryDir(TEMPLATES_DIR);
+  if (!name || extra.length > 0 || !registryDir) {
+    console.error("Usage: intelligo remove <item>");
+    return 2;
+  }
+  const result = removeItem(name, {
+    appRoot: process.cwd(),
+    registryDir,
+    requires: readRegistryCatalogue(TEMPLATES_DIR).requires,
+    frameworkVersion: FRAMEWORK_VERSION,
+  });
+  console.log(formatRemoveResult(name, result));
+  return result.status === "removed" ? 0 : 1;
+}
+
 async function main(): Promise<number> {
   const [, , command = "help", ...rest] = process.argv;
 
+  if (command === "--version" || command === "-v" || command === "version") {
+    console.log(FRAMEWORK_VERSION);
+    return 0;
+  }
   if (wantsHelp(rest)) {
-    console.log(usage());
+    console.log(commandUsage(command));
     return 0;
   }
 
@@ -309,12 +450,8 @@ async function main(): Promise<number> {
   }
 
   switch (command) {
-    case "doctor": {
-      if (!flagsOk("doctor", rest, [])) return 2;
-      const results = runChecks();
-      console.log(formatResults(results));
-      return exitCodeFor(results);
-    }
+    case "doctor":
+      return runDoctor(rest);
     case "migrate": {
       // Applying is the default, so a mistyped flag (`--dry-run`,
       // `--chek`) must not fall through to it.
@@ -355,60 +492,12 @@ async function main(): Promise<number> {
     }
     case "add":
       return runAdd(rest);
-    case "upgrade": {
-      if (!flagsOk("upgrade", rest, ["--check"])) return 2;
-      if (!rest.includes("--check")) {
-        console.error("Only `upgrade --check` is implemented.");
-        console.error(
-          "Applying an upgrade means re-running `intelligo add` for the " +
-            "features it reports as outdated — deliberately your call, " +
-            "since the files are yours."
-        );
-        return 1;
-      }
-      const report = upgradeCheck({
-        appRoot: process.cwd(),
-        templatesDir: TEMPLATES_DIR,
-      });
-      console.log(formatUpgradeReport(report));
-      return upgradeCheckExitCode(report);
-    }
-    case "sync": {
-      if (!flagsOk("sync", rest, ["--check", "--force"])) return 2;
-      const registryDir = resolveRegistryDir(TEMPLATES_DIR);
-      if (!registryDir) {
-        console.error(
-          "This CLI has no bundled registry — in the framework repository, run `pnpm registry:build` first."
-        );
-        return 1;
-      }
-      const context: SyncContext = {
-        appRoot: process.cwd(),
-        registryDir,
-        requires: readRegistryCatalogue(TEMPLATES_DIR).requires,
-        frameworkVersion: FRAMEWORK_VERSION,
-      };
-      const installed = installedFrameworkVersion(context.appRoot);
-      if (installed && installed !== FRAMEWORK_VERSION) {
-        console.error(
-          `! @intelligo-dev/core is ${installed} but this CLI carries the ${FRAMEWORK_VERSION} registry — ` +
-            "run the CLI of the same version (`pnpm exec intelligo`), or pages and packages will disagree."
-        );
-      }
-      const selection = selectItems(itemNames(rest), context);
-      if (!selection.ok) {
-        console.error(selection.message);
-        return 1;
-      }
-      if (rest.includes("--check")) {
-        const report = syncCheck(selection.items, context);
-        console.log(formatSyncReport(report));
-        return syncCheckExitCode(report);
-      }
-      return syncApply(selection.items, context, {
-        force: rest.includes("--force"),
-      });
-    }
+    case "upgrade":
+      return runUpgrade(rest);
+    case "sync":
+      return runSync(rest);
+    case "remove":
+      return runRemove(rest);
     case "admin":
       return runAdmin(rest);
     case "help":
@@ -419,7 +508,7 @@ async function main(): Promise<number> {
     default:
       console.error(`Unknown command: ${command}\n`);
       console.error(usage());
-      return 1;
+      return 2;
   }
 }
 

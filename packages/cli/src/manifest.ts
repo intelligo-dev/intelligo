@@ -61,6 +61,12 @@ export type RegistryEntry = {
   version: string;
   items: string[];
   files: Record<string, string>;
+  /**
+   * Each seam's default as the registry shipped it at the last sync, by
+   * hash: when a release changes a default, the app's own copy — kept
+   * as it is — may need the change too.
+   */
+  seams?: Record<string, string>;
 };
 
 export type Manifest = {

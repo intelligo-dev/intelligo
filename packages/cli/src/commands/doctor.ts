@@ -138,8 +138,52 @@ function checkEnvironment(
   env: NodeJS.ProcessEnv | Record<string, string | undefined>
 ): CheckResult[] {
   const results: CheckResult[] = [];
-  const missing = REQUIRED_ENV.filter((k) => !env[k]);
-  const authSecret = env.BETTER_AUTH_SECRET ?? "";
+  // The app accepts AUTH_SECRET as Better-Auth's legacy name for the
+  // secret, as `validateEnv` does: present, but worth renaming.
+  const aliased = !env.BETTER_AUTH_SECRET && Boolean(env.AUTH_SECRET);
+  const missing = REQUIRED_ENV.filter(
+    (k) => !env[k] && !(k === "BETTER_AUTH_SECRET" && aliased)
+  );
+  const authSecret = env.BETTER_AUTH_SECRET ?? env.AUTH_SECRET ?? "";
+  if (aliased) {
+    results.push({
+      name: "env",
+      status: "warn",
+      detail:
+        "AUTH_SECRET is set but BETTER_AUTH_SECRET is not — rename it; AUTH_SECRET is a legacy alias",
+    });
+  }
+  const provider = env.EMAIL_PROVIDER?.toLowerCase();
+  if (
+    env.RESEND_API_KEY?.trim() &&
+    provider !== "loops" &&
+    provider !== "console" &&
+    !env.EMAIL_FROM?.trim()
+  ) {
+    results.push({
+      name: "env",
+      status: "warn",
+      detail:
+        "RESEND_API_KEY is set but EMAIL_FROM is not — every email fails until it names a sender on a domain verified with Resend",
+    });
+  }
+  if (env.NODE_ENV === "production") {
+    const appUrl = env.NEXT_PUBLIC_APP_URL?.trim();
+    if (appUrl && !appUrl.startsWith("https://")) {
+      results.push({
+        name: "env",
+        status: "warn",
+        detail: `NEXT_PUBLIC_APP_URL is ${appUrl}, not https — auth callbacks, email links and secure cookies are built from it`,
+      });
+    }
+    if (env.STRIPE_SECRET_KEY?.startsWith("sk_test_")) {
+      results.push({
+        name: "env",
+        status: "warn",
+        detail: "STRIPE_SECRET_KEY is a test key in production",
+      });
+    }
+  }
   const weakSecret =
     authSecret.length > 0 && authSecret.length < MIN_AUTH_SECRET_LENGTH;
   if (missing.length > 0) {
@@ -401,7 +445,7 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
       results.push({
         name: "migrations",
         status: "ok",
-        detail: `${chain.files.length} migrations, all registered in the journal`,
+        detail: `framework chain intact: ${chain.files.length} migrations, all in the journal (the database itself: \`intelligo migrate --check\`)`,
       });
     } else {
       for (const p of problems) {
