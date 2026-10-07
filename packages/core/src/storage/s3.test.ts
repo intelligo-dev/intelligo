@@ -6,7 +6,7 @@
  * TEST_S3_ENDPOINT points at an S3-compatible server (MinIO).
  */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createS3Storage, s3StorageFromEnv } from "./s3";
 
@@ -78,6 +78,34 @@ describe("createS3Storage signing", () => {
     });
 
     expect(url).toBe("http://localhost:9000/files/ws/w%201/att/a%2Bb");
+  });
+});
+
+describe("createS3Storage requests", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("gives up on a bucket that never answers", async () => {
+    vi.stubGlobal(
+      "fetch",
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () =>
+            reject(init.signal!.reason)
+          );
+        })
+    );
+    const storage = createS3Storage({
+      bucket: "files",
+      region: "auto",
+      endpoint: "https://bucket.test",
+      accessKeyId: "a",
+      secretAccessKey: "b",
+      timeoutMs: 20,
+    });
+
+    await expect(storage.delete("ws/1/att/1")).rejects.toThrow();
   });
 });
 
