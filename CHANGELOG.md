@@ -18,6 +18,9 @@ it explains a framework decision.
 
 ### Fixed
 
+- The logger writes an `Error` passed in its data as its type, message,
+  stack, `code` and `cause` chain. It wrote `{}`, so a logged failure such
+  as the scaffold's seeding error carried no detail.
 - Stripe amounts for ISK, UGX and MNT. Stripe takes these in hundredths
   although none are in use, and they were sent as whole units — a charge
   at a hundredth of its price, or refused under Stripe's minimum. Credit
