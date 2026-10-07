@@ -93,6 +93,46 @@ describe("sanitizeForShare", () => {
     });
   });
 
+  it("keeps no tool field beyond the ones a card needs", () => {
+    const failed = {
+      id: "a2",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-search",
+          toolCallId: "c3",
+          state: "output-error",
+          input: undefined,
+          rawInput: { q: "private query" },
+          errorText: "Invalid input",
+          resultProviderMetadata: { provider: { trace: "private-trace" } },
+          preliminary: false,
+        },
+        {
+          type: "dynamic-tool",
+          toolName: "lookup",
+          toolCallId: "c4",
+          state: "output-available",
+          input: { id: "private-id" },
+          output: { secret: "private-output" },
+        },
+      ],
+    } as unknown as UIMessage;
+    const [shared] = sanitizeForShare([failed], {
+      keepToolOutput: ["search"],
+    });
+    expect(shared!.parts).toEqual([
+      { type: "tool-search", toolCallId: "c3", state: "output-error" },
+      {
+        type: "dynamic-tool",
+        toolName: "lookup",
+        toolCallId: "c4",
+        state: "output-available",
+      },
+    ]);
+    expect(JSON.stringify(shared)).not.toContain("private");
+  });
+
   it("keeps only the data parts the policy lists", () => {
     const [, assistant] = sanitizeForShare(transcript, {
       keepDataParts: ["chat-status"],
