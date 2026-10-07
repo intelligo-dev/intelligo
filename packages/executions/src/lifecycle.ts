@@ -32,6 +32,7 @@ import { and, eq } from "drizzle-orm";
 import { executions } from "./db/schema";
 import { isUniqueViolation, requestIdTaken } from "./errors";
 import type { ExecutionPorts } from "./ports";
+import type { Workload } from "./pricing";
 
 const log = createLogger("Executions");
 
@@ -54,6 +55,17 @@ export type BeginExecutionInput = {
   requestId?: string;
   /** Model the caller intends to use — informs the entitlement hold. */
   model?: string;
+  /**
+   * The prompt's size and the model calls the run may make, so the hold
+   * covers this run rather than a one-call default.
+   */
+  workload?: Workload;
+  /**
+   * The work already ran and its tokens are spent — another model a tool
+   * called mid-turn. Admission is skipped, since refusing cannot unspend
+   * them, nothing is held, and `complete()` charges the usage.
+   */
+  alreadySpent?: boolean;
   /**
    * A fixed price for this unit of work — a report, an export — instead
    * of its tokens' price: entitlement holds exactly this, completion
@@ -99,16 +111,18 @@ export function createExecutions(ports: ExecutionPorts = {}) {
     const id = crypto.randomUUID();
     const startedAt = new Date();
 
-    const decision = ports.checkEntitlement
-      ? await ports.checkEntitlement({
-          workspaceId: input.workspaceId,
-          userId: input.userId,
-          capability: input.capability,
-          requestId,
-          model: input.model,
-          price: input.price,
-        })
-      : { allowed: true };
+    const decision =
+      ports.checkEntitlement && !input.alreadySpent
+        ? await ports.checkEntitlement({
+            workspaceId: input.workspaceId,
+            userId: input.userId,
+            capability: input.capability,
+            requestId,
+            model: input.model,
+            workload: input.workload,
+            price: input.price,
+          })
+        : { allowed: true };
 
     const row = db.insert(executions).values({
       id,

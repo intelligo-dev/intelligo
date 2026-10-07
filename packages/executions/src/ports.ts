@@ -10,6 +10,8 @@
 
 import type { Money } from "@intelligo-dev/core/money";
 
+import type { Workload } from "./pricing";
+
 export type EntitlementDecision = {
   allowed: boolean;
   /**
@@ -33,6 +35,8 @@ export type EntitlementRequest = {
   /** Correlates the hold with settlement. */
   requestId: string;
   model?: string;
+  /** What the run is expected to send; the model's hold scales with it. */
+  workload?: Workload;
   /** A fixed price for the run: hold exactly this instead of a model's worst case. */
   price?: Money;
 };

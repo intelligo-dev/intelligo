@@ -16,6 +16,26 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+### Fixed
+
+- A chat turn holds what it can spend. Admission held one model call
+  against a fixed 16K-token prompt, while a turn with tools may call the
+  model once per step and a long conversation sends more than 16K; the
+  shortfall was forgiven at settlement. `executions.begin` takes a
+  `workload` (`inputTokens`, `steps`), `estimateWorstCaseCharge` scales by
+  it, and the chat handler passes the prepared prompt's estimate and, for
+  an agent with tools, `maxSteps`.
+- A chat turn that errors after its first steps is charged for them. The
+  stream error released the hold, so every step the provider had already
+  billed was free; the finished steps (and a step the provider had begun
+  to answer) are now settled.
+- Tokens a tool spent on another model are recorded however low the
+  balance has run: `executions.begin({ alreadySpent: true })` skips
+  admission for work that already happened, and the chat handler uses it
+  for that usage, which a refusal used to drop.
+- A product's `deriveTitle` runs once the turn is admitted, so a refused
+  turn no longer pays a model to name its conversation.
+
 ### Security
 
 - Dependencies moved past their published advisories without new
