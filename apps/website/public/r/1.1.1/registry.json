@@ -1,0 +1,2976 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "intelligo",
+  "homepage": "https://intelligo.dev",
+  "items": [
+    {
+      "name": "intelligo",
+      "type": "registry:base",
+      "extends": "none",
+      "title": "Intelligo design system",
+      "description": "The base every Intelligo page is built on: shadcn base-nova on Base UI, the neutral theme with its focus ring, muted text and destructive raised to WCAG AA, and additive tokens for status (success, warning, info, destructive-foreground), layers and motion. Initialise an app from it before installing any other item.",
+      "dependencies": [
+        "class-variance-authority",
+        "cn",
+        "tw-animate-css",
+        "@base-ui/react",
+        "lucide-react"
+      ],
+      "registryDependencies": ["utils", "font-geist"],
+      "config": {
+        "style": "base-nova",
+        "tailwind": {
+          "baseColor": "neutral"
+        },
+        "iconLibrary": "lucide",
+        "rtl": false,
+        "menuColor": "default",
+        "menuAccent": "subtle"
+      },
+      "cssVars": {
+        "theme": {
+          "font-heading": "var(--font-sans)",
+          "color-destructive-foreground": "var(--destructive-foreground)",
+          "color-success": "var(--success)",
+          "color-success-foreground": "var(--success-foreground)",
+          "color-warning": "var(--warning)",
+          "color-warning-foreground": "var(--warning-foreground)",
+          "color-info": "var(--info)",
+          "color-info-foreground": "var(--info-foreground)",
+          "ease-standard": "cubic-bezier(0.16, 1, 0.3, 1)",
+          "ease-emphasized": "cubic-bezier(0.32, 0.72, 0, 1)",
+          "ease-exit": "cubic-bezier(0.77, 0, 0.175, 1)"
+        },
+        "light": {
+          "font-sans": "\"Geist\", \"Geist Fallback\", -apple-system, \"Segoe UI\", sans-serif",
+          "background": "oklch(0.99 0 0)",
+          "foreground": "oklch(0.15 0 0)",
+          "card": "oklch(0.97 0 0)",
+          "card-foreground": "oklch(0.15 0 0)",
+          "popover": "oklch(0.99 0 0)",
+          "popover-foreground": "oklch(0.15 0 0)",
+          "primary": "oklch(0.15 0 0)",
+          "primary-foreground": "oklch(0.99 0 0)",
+          "secondary": "oklch(0.955 0 0)",
+          "secondary-foreground": "oklch(0.15 0 0)",
+          "muted": "oklch(0.97 0 0)",
+          "muted-foreground": "oklch(0.5 0 0)",
+          "accent": "oklch(0.95 0 0)",
+          "accent-foreground": "oklch(0.15 0 0)",
+          "destructive": "oklch(0.52 0.2 25)",
+          "border": "oklch(0.15 0 0 / 8%)",
+          "input": "oklch(0.15 0 0 / 14%)",
+          "ring": "oklch(0.55 0 0)",
+          "chart-1": "oklch(0.87 0 0)",
+          "chart-2": "oklch(0.556 0 0)",
+          "chart-3": "oklch(0.439 0 0)",
+          "chart-4": "oklch(0.371 0 0)",
+          "chart-5": "oklch(0.269 0 0)",
+          "radius": "0.5rem",
+          "sidebar": "oklch(0.975 0 0)",
+          "sidebar-foreground": "oklch(0.15 0 0)",
+          "sidebar-primary": "oklch(0.15 0 0)",
+          "sidebar-primary-foreground": "oklch(0.99 0 0)",
+          "sidebar-accent": "oklch(0.94 0 0)",
+          "sidebar-accent-foreground": "oklch(0.15 0 0)",
+          "sidebar-border": "oklch(0.15 0 0 / 8%)",
+          "sidebar-ring": "oklch(0.55 0 0)",
+          "destructive-foreground": "oklch(0.99 0 0)",
+          "success": "oklch(0.49 0.12 155)",
+          "success-foreground": "oklch(0.99 0 0)",
+          "warning": "oklch(0.5 0.105 75)",
+          "warning-foreground": "oklch(0.99 0 0)",
+          "info": "oklch(0.5 0.135 245)",
+          "info-foreground": "oklch(0.99 0 0)"
+        },
+        "dark": {
+          "background": "oklch(0.196 0 0)",
+          "foreground": "oklch(0.96 0 0)",
+          "card": "oklch(0.227 0 0)",
+          "card-foreground": "oklch(0.96 0 0)",
+          "popover": "oklch(0.227 0 0)",
+          "popover-foreground": "oklch(0.96 0 0)",
+          "primary": "oklch(0.96 0 0)",
+          "primary-foreground": "oklch(0.196 0 0)",
+          "secondary": "oklch(0.27 0 0)",
+          "secondary-foreground": "oklch(0.96 0 0)",
+          "muted": "oklch(0.227 0 0)",
+          "muted-foreground": "oklch(0.68 0 0)",
+          "accent": "oklch(0.28 0 0)",
+          "accent-foreground": "oklch(0.96 0 0)",
+          "destructive": "oklch(0.7 0.18 25)",
+          "border": "oklch(1 0 0 / 7%)",
+          "input": "oklch(1 0 0 / 12%)",
+          "ring": "oklch(0.58 0 0)",
+          "chart-1": "oklch(0.87 0 0)",
+          "chart-2": "oklch(0.556 0 0)",
+          "chart-3": "oklch(0.439 0 0)",
+          "chart-4": "oklch(0.371 0 0)",
+          "chart-5": "oklch(0.269 0 0)",
+          "sidebar": "oklch(0.175 0 0)",
+          "sidebar-foreground": "oklch(0.96 0 0)",
+          "sidebar-primary": "oklch(0.96 0 0)",
+          "sidebar-primary-foreground": "oklch(0.196 0 0)",
+          "sidebar-accent": "oklch(0.26 0 0)",
+          "sidebar-accent-foreground": "oklch(0.96 0 0)",
+          "sidebar-border": "oklch(1 0 0 / 7%)",
+          "sidebar-ring": "oklch(0.58 0 0)",
+          "destructive-foreground": "oklch(0.196 0 0)",
+          "success": "oklch(0.72 0.16 155)",
+          "success-foreground": "oklch(0.196 0 0)",
+          "warning": "oklch(0.78 0.15 75)",
+          "warning-foreground": "oklch(0.196 0 0)",
+          "info": "oklch(0.72 0.13 245)",
+          "info-foreground": "oklch(0.196 0 0)"
+        }
+      },
+      "css": {
+        "@import \"tw-animate-css\"": {},
+        "@import \"shadcn/tailwind.css\"": {},
+        "@layer base": {
+          "*": {
+            "@apply border-border outline-ring/50": {}
+          },
+          "body": {
+            "@apply bg-background text-foreground": {}
+          },
+          ":root": {
+            "--z-sticky": "10",
+            "--z-dropdown": "20",
+            "--z-overlay": "40",
+            "--z-modal": "50",
+            "--z-popover": "60",
+            "--z-toast": "70",
+            "--duration-fast": "120ms",
+            "--duration-normal": "200ms",
+            "--duration-slow": "320ms"
+          }
+        },
+        "@utility z-sticky": {
+          "z-index": "var(--z-sticky)"
+        },
+        "@utility z-dropdown": {
+          "z-index": "var(--z-dropdown)"
+        },
+        "@utility z-overlay": {
+          "z-index": "var(--z-overlay)"
+        },
+        "@utility z-modal": {
+          "z-index": "var(--z-modal)"
+        },
+        "@utility z-popover": {
+          "z-index": "var(--z-popover)"
+        },
+        "@utility z-toast": {
+          "z-index": "var(--z-toast)"
+        },
+        "@utility duration-fast": {
+          "transition-duration": "var(--duration-fast)",
+          "animation-duration": "var(--duration-fast)"
+        },
+        "@utility duration-normal": {
+          "transition-duration": "var(--duration-normal)",
+          "animation-duration": "var(--duration-normal)"
+        },
+        "@utility duration-slow": {
+          "transition-duration": "var(--duration-slow)",
+          "animation-duration": "var(--duration-slow)"
+        },
+        "@media (prefers-reduced-motion: reduce)": {
+          "*, ::before, ::after": {
+            "animation-duration": "0.01ms !important",
+            "animation-iteration-count": "1 !important",
+            "transition-duration": "0.01ms !important",
+            "scroll-behavior": "auto !important"
+          }
+        }
+      }
+    },
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "The action primitive: presses in and settles back — six variants, eight sizes, composes through render.",
+      "dependencies": ["@base-ui/react", "class-variance-authority"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/button/button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/button.tsx"
+        }
+      ]
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:ui",
+      "title": "Checkbox",
+      "description": "A checkbox whose check draws itself in, with an indeterminate state.",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/checkbox/checkbox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/checkbox.tsx"
+        }
+      ]
+    },
+    {
+      "name": "radio-group",
+      "type": "registry:ui",
+      "title": "Radio Group",
+      "description": "One choice from a set; the dot springs out from the centre.",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/radio-group/radio-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/radio-group.tsx"
+        }
+      ]
+    },
+    {
+      "name": "switch",
+      "type": "registry:ui",
+      "title": "Switch",
+      "description": "An on/off control with a weighted thumb that squeezes while pressed.",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/switch/switch.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/switch.tsx"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "type": "registry:ui",
+      "title": "Input",
+      "description": "A single-line text field whose border and soft ring ease in on focus.",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/input/input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "textarea",
+      "type": "registry:ui",
+      "title": "Textarea",
+      "description": "A multi-line text field that grows with its content.",
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/textarea/textarea.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/textarea.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:ui",
+      "title": "Tooltip",
+      "description": "A short hint on hover or focus that grows out of its trigger; neighbours open instantly.",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/tooltip/tooltip.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tooltip.tsx"
+        }
+      ]
+    },
+    {
+      "name": "popover",
+      "type": "registry:ui",
+      "title": "Popover",
+      "description": "Floating content in a rounded panel that scales out of its trigger.",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/popover/popover.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/popover.tsx"
+        }
+      ]
+    },
+    {
+      "name": "dropdown-menu",
+      "type": "registry:ui",
+      "title": "Dropdown Menu",
+      "description": "Actions, checkboxes and radio groups with submenus, in a panel that scales out of its trigger.",
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/dropdown-menu/dropdown-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/dropdown-menu.tsx"
+        }
+      ]
+    },
+    {
+      "name": "select",
+      "type": "registry:ui",
+      "title": "Select",
+      "description": "A picker for one value from a list, on the input's field and the menu's panel.",
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/select/select.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/select.tsx"
+        }
+      ]
+    },
+    {
+      "name": "dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "A modal window over a blurred backdrop that springs up into place.",
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json", "https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/dialog/dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "alert-dialog",
+      "type": "registry:ui",
+      "title": "Alert Dialog",
+      "description": "A modal that confirms a destructive or irreversible action, with the dialog's backdrop and spring.",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json", "https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/alert-dialog/alert-dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/alert-dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "sheet",
+      "type": "registry:ui",
+      "title": "Sheet",
+      "description": "A panel that slides in from any edge on the drawer curve.",
+      "dependencies": ["@base-ui/react", "lucide-react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json", "https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/sheet/sheet.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/sheet.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "Switches between views with one indicator that glides from tab to tab — raised and line variants.",
+      "dependencies": ["@base-ui/react", "class-variance-authority", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/tabs/tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tabs.tsx"
+        }
+      ]
+    },
+    {
+      "name": "collapsible",
+      "type": "registry:ui",
+      "title": "Collapsible",
+      "description": "Content that eases open and closed from its measured height.",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/collapsible/collapsible.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/collapsible.tsx"
+        }
+      ]
+    },
+    {
+      "name": "progress",
+      "type": "registry:ui",
+      "title": "Progress",
+      "description": "A rounded bar whose fill glides to each new value.",
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/progress/progress.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/progress.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spinner",
+      "type": "registry:ui",
+      "title": "Spinner",
+      "description": "Pending state: a faint ring with a running arc. Pair with disabled and aria-busy.",
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/spinner/spinner.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/spinner.tsx"
+        }
+      ]
+    },
+    {
+      "name": "attachment",
+      "type": "registry:ui",
+      "title": "Attachment",
+      "description": "A file attached to a message or a prompt.",
+      "dependencies": ["@base-ui/react", "class-variance-authority"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json"],
+      "files": [
+        {
+          "path": "base/ui/attachment/attachment.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/attachment.tsx"
+        }
+      ]
+    },
+    {
+      "name": "input-group",
+      "type": "registry:ui",
+      "title": "Input Group",
+      "description": "An input or textarea with inline addons, buttons and text.",
+      "dependencies": ["class-variance-authority"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "https://intelligo.dev/r/1.1.1/textarea.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/input-group/input-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input-group.tsx"
+        }
+      ]
+    },
+    {
+      "name": "command",
+      "type": "registry:ui",
+      "title": "Command",
+      "description": "A searchable list of actions, inline or in a dialog.",
+      "dependencies": ["cmdk", "lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/dialog.json", "https://intelligo.dev/r/1.1.1/input-group.json"],
+      "files": [
+        {
+          "path": "base/ui/command/command.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/command.tsx"
+        }
+      ]
+    },
+    {
+      "name": "sidebar",
+      "type": "registry:ui",
+      "title": "Sidebar",
+      "description": "The app sidebar — collapsible to icons, keyboard-toggled, a sheet on mobile.",
+      "dependencies": [
+        "@base-ui/react",
+        "class-variance-authority",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "separator",
+        "https://intelligo.dev/r/1.1.1/sheet.json",
+        "skeleton",
+        "https://intelligo.dev/r/1.1.1/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/sidebar/sidebar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/sidebar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "page-header",
+      "type": "registry:ui",
+      "title": "Page Header",
+      "description": "The one page title every Intelligo page renders: heading, description and actions.",
+      "files": [
+        {
+          "path": "base/ui/page-header/page-header.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/page-header.tsx"
+        }
+      ]
+    },
+    {
+      "name": "stat-card",
+      "type": "registry:ui",
+      "title": "Stat Card",
+      "description": "A metric on a card — label, value, an action such as a status badge, and a footer.",
+      "registryDependencies": ["card"],
+      "files": [
+        {
+          "path": "base/ui/stat-card/stat-card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/stat-card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "status-badge",
+      "type": "registry:ui",
+      "title": "Status Badge",
+      "description": "A status shown in a status token — neutral, info, success, warning or destructive — never a palette colour.",
+      "dependencies": ["class-variance-authority"],
+      "files": [
+        {
+          "path": "base/ui/status-badge/status-badge.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/status-badge.tsx"
+        }
+      ]
+    },
+    {
+      "name": "copy-button",
+      "type": "registry:ui",
+      "title": "Copy Button",
+      "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json"],
+      "files": [
+        {
+          "path": "base/ui/copy-button/copy-button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/copy-button.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-code-block",
+      "type": "registry:ui",
+      "title": "AI Code Block",
+      "description": "Highlighted code that streams without layout shift: header with filename, language, status and copy action, line numbers, focused lines, light and dark.",
+      "dependencies": ["shiki", "lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/copy-button.json", "https://intelligo.dev/r/1.1.1/spinner.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-code-block/ai-code-block.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-code-block.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-markdown",
+      "type": "registry:ui",
+      "title": "AI Markdown",
+      "description": "Markdown as a model writes it — GFM, highlighted code, CJK emphasis — with maths and diagrams fetched only when the text contains them.",
+      "dependencies": [
+        "streamdown",
+        "@streamdown/code",
+        "@streamdown/math",
+        "@streamdown/mermaid",
+        "@streamdown/cjk",
+        "katex"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-markdown/ai-markdown.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-markdown.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-reasoning",
+      "type": "registry:ui",
+      "title": "AI Reasoning",
+      "description": "Streamed reasoning, collapsible, with the time it took.",
+      "dependencies": ["lucide-react", "streamdown"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/collapsible.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-reasoning/ai-reasoning.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-reasoning.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-suggestion",
+      "type": "registry:ui",
+      "title": "AI Suggestion",
+      "description": "Conversation starters and follow-ups in a scrollable row.",
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json", "scroll-area"],
+      "files": [
+        {
+          "path": "base/ui/ai-suggestion/ai-suggestion.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-suggestion.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-artifact",
+      "type": "registry:ui",
+      "title": "AI Artifact",
+      "description": "A generated document's frame: header, actions and content.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json", "https://intelligo.dev/r/1.1.1/tooltip.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-artifact/ai-artifact.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-artifact.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-prompt-input",
+      "type": "registry:ui",
+      "title": "AI Prompt Input",
+      "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply.",
+      "dependencies": ["ai@^7.0.103", "lucide-react", "motion"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/attachment.json",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/dropdown-menu.json",
+        "https://intelligo.dev/r/1.1.1/select.json",
+        "https://intelligo.dev/r/1.1.1/spinner.json",
+        "https://intelligo.dev/r/1.1.1/ai-motion.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-prompt-input/ai-prompt-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-prompt-input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-branch",
+      "type": "registry:ui",
+      "title": "AI Branch",
+      "description": "A pager over the versions of a reply or an edited message — previous, next, `2 / 3`.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-branch/ai-branch.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-branch.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-speech-input",
+      "type": "registry:ui",
+      "title": "AI Speech Input",
+      "description": "Voice into the composer on the browser's speech recognition; renders nothing where it is absent.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-speech-input/ai-speech-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-speech-input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-composer-menu",
+      "type": "registry:ui",
+      "title": "AI Composer Menu",
+      "description": "The picker a composer opens for slash commands and @ mentions, anchored above the textarea.",
+      "dependencies": [],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/command.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-composer-menu/ai-composer-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-composer-menu.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-motion",
+      "type": "registry:ui",
+      "title": "AI Motion",
+      "description": "The motion vocabulary every tier shares: easing curves, spring presets, a transform-only disclosure, a text swap, the popup and backdrop presets the primitives open with, the button press and list staggers, all gated on reduced motion.",
+      "dependencies": ["motion"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/ai-motion/ai-motion.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-motion.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-shimmer-text",
+      "type": "registry:ui",
+      "title": "AI Shimmer Text",
+      "description": "A status line that reads as alive while the agent works; a token gradient sweeps the text and the words swap with motion, honouring reduced motion.",
+      "dependencies": ["motion"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "base/ui/ai-shimmer-text/ai-shimmer-text.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-shimmer-text.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-agent-activity",
+      "type": "registry:ui",
+      "title": "AI Agent Activity",
+      "description": "One adaptive stream of what the agent is doing: reasoning text, plan steps, web searches with results, tool calls and structured traces, gliding while it works and folding into a summary when done.",
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "https://intelligo.dev/r/1.1.1/ai-shimmer-text.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-agent-activity/ai-agent-activity.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-agent-activity.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-approval-card",
+      "type": "registry:ui",
+      "title": "AI Approval Card",
+      "description": "A decision surface: approve, reject or request changes, or step through single-choice, multiple-choice and freeform questions and submit the answers.",
+      "dependencies": ["lucide-react", "motion"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/checkbox.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "https://intelligo.dev/r/1.1.1/radio-group.json",
+        "https://intelligo.dev/r/1.1.1/spinner.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-approval-card/ai-approval-card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-approval-card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-file-diff",
+      "type": "registry:ui",
+      "title": "AI File Diff",
+      "description": "A file the agent is changing: the path with live added and removed counts, opening onto a unified diff whose highlighted rows arrive while the change streams.",
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/ai-code-block.json",
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/spinner.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-file-diff/ai-file-diff.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-file-diff.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-message-bubble",
+      "type": "registry:ui",
+      "title": "AI Message Bubble",
+      "description": "The speech bubble inside a message row: six surface variants that pop into place, grouped bubbles and a collapsible long body.",
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json", "https://intelligo.dev/r/1.1.1/ai-message.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-message-bubble/ai-message-bubble.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-message-bubble.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-message-scroller",
+      "type": "registry:ui",
+      "title": "AI Message Scroller",
+      "description": "The scrolling transcript: follows streamed output while the reader stays at the live edge, lets go when they scroll up, with an optional preview rail for jumping between messages.",
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-message-scroller/ai-message-scroller.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-message-scroller.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-message",
+      "type": "registry:ui",
+      "title": "AI Message",
+      "description": "One turn of a conversation: the row with its side, optional avatar, content column, header, footer, a centred marker and the typing indicator.",
+      "dependencies": ["motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-message/ai-message.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-message.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-todo-list",
+      "type": "registry:ui",
+      "title": "AI Todo List",
+      "description": "The agent's to-do list: a collapsible plan whose status marks morph between pending, in progress, completed and cancelled, with a rolling completion count.",
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-todo-list/ai-todo-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-todo-list.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-tool-approval",
+      "type": "registry:ui",
+      "title": "AI Tool Approval",
+      "description": "A permission card for a tool call: name, parameters behind a disclosure, allow once / always allow / deny, and the outcome as a status.",
+      "dependencies": ["lucide-react", "motion"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/ai-code-block.json",
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "https://intelligo.dev/r/1.1.1/spinner.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-tool-approval/ai-tool-approval.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-tool-approval.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-tool-result",
+      "type": "registry:ui",
+      "title": "AI Tool Result",
+      "description": "The result of a tool the agent ran: a summary line that opens onto highlighted output, status rolling from running to done, copy and run-again actions.",
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/ai-code-block.json",
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/spinner.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-tool-result/ai-tool-result.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-tool-result.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-agent-progress",
+      "type": "registry:ui",
+      "title": "AI Agent Progress",
+      "description": "A long-running step: a pulsing grid beside the verb and an elapsed-time counter.",
+      "dependencies": ["motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-agent-progress/ai-agent-progress.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-agent-progress.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-citations",
+      "type": "registry:ui",
+      "title": "AI Citations",
+      "description": "The sources an answer leans on: inline source pills with a hover preview, favicon stacks, a sources sheet and a collapsible reference list.",
+      "dependencies": ["lucide-react", "motion"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "hover-card",
+        "https://intelligo.dev/r/1.1.1/sheet.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-citations/ai-citations.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-citations.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-image-generation",
+      "type": "registry:ui",
+      "title": "AI Image Generation",
+      "description": "An image the agent is making: reserved frame, dither field while queued and generating, media sharpening in as it refines and completes.",
+      "dependencies": ["lucide-react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json", "https://intelligo.dev/r/1.1.1/button.json"],
+      "files": [
+        {
+          "path": "base/ui/ai-image-generation/ai-image-generation.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-image-generation.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-reasoning-text",
+      "type": "registry:ui",
+      "title": "AI Reasoning Text",
+      "description": "What the agent is doing while it reasons: phrases cycle with a cascade, swap or scramble behind an ASCII loader.",
+      "dependencies": ["motion"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "https://intelligo.dev/r/1.1.1/ai-shimmer-text.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-reasoning-text/ai-reasoning-text.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-reasoning-text.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-streaming-response",
+      "type": "registry:ui",
+      "title": "AI Streaming Response",
+      "description": "An assistant reply as it streams and once it lands: content, copy, retry and feedback actions, and a sources disclosure.",
+      "dependencies": ["lucide-react", "motion"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/ai-citations.json",
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "https://intelligo.dev/r/1.1.1/button.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-streaming-response/ai-streaming-response.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-streaming-response.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-sidebar",
+      "type": "registry:ui",
+      "title": "AI Sidebar",
+      "description": "The AI product's sidebar: a shell that morphs between a panel and an icon rail with tooltips, slides in as a sheet on mobile, holds menus with a gliding hover and active pill and staggered submenus, and a resource tree of folders, projects, conversations, files and bookmarks with keyboard and drag-and-drop moves, rename and a row menu.",
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/popover.json",
+        "https://intelligo.dev/r/1.1.1/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/ai-sidebar/ai-sidebar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ai-sidebar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "document-viewer",
+      "type": "registry:ui",
+      "title": "Document Viewer",
+      "description": "How a saved document reads when nobody is editing it: markdown with maths and diagrams, highlighted code, a sheet's rows, an image, and a sandboxed HTML preview — plus the title-to-language and kind-glyph helpers the chat canvas and the artifacts library share.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/ai-code-block.json",
+        "https://intelligo.dev/r/1.1.1/ai-markdown.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/document-viewer/document-viewer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/document-viewer.tsx"
+        }
+      ]
+    },
+    {
+      "name": "popover-morph",
+      "type": "registry:ui",
+      "title": "Popover Morph",
+      "description": "A non-modal popover whose trigger surface grows into the panel through a shared layout and folds back on close.",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/popover-morph/popover-morph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/popover-morph.tsx"
+        }
+      ]
+    },
+    {
+      "name": "select-morph",
+      "type": "registry:ui",
+      "title": "Select Morph",
+      "description": "A select whose trigger continues into its list: the list unclips down from the trigger's edge as one surface while its options stagger in.",
+      "dependencies": ["@base-ui/react", "motion", "lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/select-morph/select-morph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/select-morph.tsx"
+        }
+      ]
+    },
+    {
+      "name": "morphing-modal",
+      "type": "registry:ui",
+      "title": "Morphing Modal",
+      "description": "A card or button that grows into a centred or bottom dialog through a shared layout, cross-fading between views while the panel resizes.",
+      "dependencies": ["@base-ui/react", "motion", "lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json", "https://intelligo.dev/r/1.1.1/button.json"],
+      "files": [
+        {
+          "path": "base/ui/morphing-modal/morphing-modal.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/morphing-modal.tsx"
+        }
+      ]
+    },
+    {
+      "name": "notification-stack",
+      "type": "registry:ui",
+      "title": "Notification Stack",
+      "description": "Notifications fanned into a stack — the newest in front, the rest peeking out scaled back — that springs apart into a list of openable, dismissable cards on hover or click.",
+      "dependencies": ["@base-ui/react", "motion", "lucide-react"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json", "https://intelligo.dev/r/1.1.1/button.json"],
+      "files": [
+        {
+          "path": "base/ui/notification-stack/notification-stack.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/notification-stack.tsx"
+        }
+      ]
+    },
+    {
+      "name": "animated-list",
+      "type": "registry:ui",
+      "title": "Animated List",
+      "description": "A list container that staggers its rows in on mount, rows that rise in, fall out and glide on reorder (ul, ol, div or tbody/tr), and a block that reveals once as it scrolls into view.",
+      "dependencies": ["motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/animated-list/animated-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/animated-list.tsx"
+        }
+      ]
+    },
+    {
+      "name": "otp-input",
+      "type": "registry:ui",
+      "title": "OTP Input",
+      "description": "A one-time-code input on Base UI's OTP Field whose characters roll into their slots under a blinking caret, shaking on a rejected code and drawing a check on an accepted one.",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/otp-input/otp-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/otp-input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "file-upload",
+      "type": "registry:ui",
+      "title": "File Upload",
+      "description": "A controlled file upload — a drop zone with a queue of rows that slide in, fill a progress bar and settle on done or error, or a compact chat-composer wrapper with a drop overlay and chips.",
+      "dependencies": ["motion", "lucide-react"],
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/spinner.json"
+      ],
+      "files": [
+        {
+          "path": "base/ui/file-upload/file-upload.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/file-upload.tsx"
+        }
+      ]
+    },
+    {
+      "name": "expandable-tabs",
+      "type": "registry:ui",
+      "title": "Expandable Tabs",
+      "description": "A bar of icon tabs on Base UI's Tabs where the active tab widens to unfurl its label, the pill glides to it and its panel rises in.",
+      "dependencies": ["@base-ui/react", "motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json"],
+      "files": [
+        {
+          "path": "base/ui/expandable-tabs/expandable-tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/expandable-tabs.tsx"
+        }
+      ]
+    },
+    {
+      "name": "hold-action-button",
+      "type": "registry:ui",
+      "title": "Hold Action Button",
+      "description": "A press-and-hold confirmation for a destructive action, by pointer or held Space/Enter, whose fill sweeps across while held and drains on an early release.",
+      "dependencies": ["motion"],
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/ai-motion.json", "https://intelligo.dev/r/1.1.1/button.json"],
+      "files": [
+        {
+          "path": "base/ui/hold-action-button/hold-action-button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/hold-action-button.tsx"
+        }
+      ]
+    },
+    {
+      "name": "smoke",
+      "type": "registry:block",
+      "title": "Registry Smoke Test",
+      "description": "Permanent canary item that proves the registry build and install pipeline end to end.",
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json", "card"],
+      "files": [
+        {
+          "path": "base/smoke/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/registry-smoke/page.tsx"
+        },
+        {
+          "path": "base/smoke/components/smoke-card.tsx",
+          "type": "registry:component",
+          "target": "components/smoke/smoke-card.tsx"
+        },
+        {
+          "path": "base/smoke/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/smoke.json"
+        }
+      ],
+      "dependencies": ["next-intl"]
+    },
+    {
+      "name": "route-error",
+      "type": "registry:block",
+      "title": "Route Error States",
+      "description": "The app's error surfaces: a shared RouteError component every error.tsx renders, message-based error classification, an (app) group boundary, a translated 404, and a dependency-free global-error. Error reporting goes through the lib/error-reporting.ts seam (a no-op until you bind a reporter), so no SDK enters the registry. Items that ship an error.tsx depend on this one - install it first.",
+      "registryDependencies": ["alert", "https://intelligo.dev/r/1.1.1/button.json"],
+      "dependencies": ["lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/route-error/components/route-error.tsx",
+          "type": "registry:component",
+          "target": "components/shared/route-error.tsx"
+        },
+        {
+          "path": "base/route-error/lib/get-error-type.ts",
+          "type": "registry:file",
+          "target": "lib/errors/get-error-type.ts"
+        },
+        {
+          "path": "base/route-error/lib/error-reporting.ts",
+          "type": "registry:file",
+          "target": "lib/error-reporting.ts"
+        },
+        {
+          "path": "base/route-error/app-error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/error.tsx"
+        },
+        {
+          "path": "base/route-error/not-found.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/not-found.tsx"
+        },
+        {
+          "path": "base/route-error/root-not-found.tsx",
+          "type": "registry:page",
+          "target": "app/not-found.tsx"
+        },
+        {
+          "path": "base/route-error/global-error.tsx",
+          "type": "registry:page",
+          "target": "app/global-error.tsx"
+        },
+        {
+          "path": "base/route-error/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/route-error.json"
+        }
+      ]
+    },
+    {
+      "name": "team-settings",
+      "type": "registry:block",
+      "title": "Team Settings",
+      "description": "Workspace team management: invite members, change roles, remove members, and manage pending invitations, backed by the framework's team service.",
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/alert-dialog.json",
+        "badge",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "card",
+        "https://intelligo.dev/r/1.1.1/dialog.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "label",
+        "https://intelligo.dev/r/1.1.1/select.json",
+        "skeleton",
+        "table",
+        "https://intelligo.dev/r/1.1.1/page-header.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/next",
+        "sonner",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/team-settings/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/team/page.tsx"
+        },
+        {
+          "path": "base/team-settings/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/team/loading.tsx"
+        },
+        {
+          "path": "base/team-settings/components/member-list.tsx",
+          "type": "registry:component",
+          "target": "components/team/member-list.tsx"
+        },
+        {
+          "path": "base/team-settings/components/invite-member-form.tsx",
+          "type": "registry:component",
+          "target": "components/team/invite-member-form.tsx"
+        },
+        {
+          "path": "base/team-settings/components/pending-invitations.tsx",
+          "type": "registry:component",
+          "target": "components/team/pending-invitations.tsx"
+        },
+        {
+          "path": "base/team-settings/components/role-badge.tsx",
+          "type": "registry:component",
+          "target": "components/team/role-badge.tsx"
+        },
+        {
+          "path": "base/team-settings/components/leave-workspace.tsx",
+          "type": "registry:component",
+          "target": "components/team/leave-workspace.tsx"
+        },
+        {
+          "path": "base/team-settings/actions.ts",
+          "type": "registry:file",
+          "target": "actions/team.ts"
+        },
+        {
+          "path": "base/team-settings/lib/team.ts",
+          "type": "registry:file",
+          "target": "lib/team.ts"
+        },
+        {
+          "path": "base/team-settings/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/team-settings.json"
+        },
+        {
+          "path": "base/team-settings/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/team/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "usage",
+      "type": "registry:block",
+      "title": "Usage",
+      "description": "Workspace usage dashboard: current-period summary tiles, a period selector, and a table of recent AI execution records.",
+      "registryDependencies": [
+        "card",
+        "https://intelligo.dev/r/1.1.1/progress.json",
+        "skeleton",
+        "table",
+        "https://intelligo.dev/r/1.1.1/tabs.json",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/page-header.json",
+        "https://intelligo.dev/r/1.1.1/stat-card.json",
+        "https://intelligo.dev/r/1.1.1/status-badge.json",
+        "https://intelligo.dev/r/1.1.1/animated-list.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/core",
+        "@intelligo-dev/executions",
+        "@intelligo-dev/next",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/usage/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/usage/page.tsx"
+        },
+        {
+          "path": "base/usage/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/usage/loading.tsx"
+        },
+        {
+          "path": "base/usage/actions.ts",
+          "type": "registry:file",
+          "target": "actions/usage.ts"
+        },
+        {
+          "path": "base/usage/components/usage-summary-cards.tsx",
+          "type": "registry:component",
+          "target": "components/usage/usage-summary-cards.tsx"
+        },
+        {
+          "path": "base/usage/components/usage-chart.tsx",
+          "type": "registry:component",
+          "target": "components/usage/usage-chart.tsx"
+        },
+        {
+          "path": "base/usage/components/usage-records-table.tsx",
+          "type": "registry:component",
+          "target": "components/usage/usage-records-table.tsx"
+        },
+        {
+          "path": "base/usage/components/usage-empty-state.tsx",
+          "type": "registry:component",
+          "target": "components/usage/usage-empty-state.tsx"
+        },
+        {
+          "path": "base/usage/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/usage.json"
+        },
+        {
+          "path": "base/usage/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/usage/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "invitation-accept",
+      "type": "registry:block",
+      "title": "Invitation Accept",
+      "description": "Accept or decline a workspace invitation via the team service. Requires the team-settings item (provides lib/team.ts and the role badge); install it first.",
+      "registryDependencies": [
+        "alert",
+        "card",
+        "skeleton",
+        "https://intelligo.dev/r/1.1.1/button.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
+        "@intelligo-dev/next",
+        "sonner",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/invitation-accept/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/accept-invitation/[id]/page.tsx"
+        },
+        {
+          "path": "base/invitation-accept/layout.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/accept-invitation/[id]/layout.tsx"
+        },
+        {
+          "path": "base/invitation-accept/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/accept-invitation/[id]/loading.tsx"
+        },
+        {
+          "path": "base/invitation-accept/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/accept-invitation/[id]/error.tsx"
+        },
+        {
+          "path": "base/invitation-accept/components/invitation-actions.tsx",
+          "type": "registry:component",
+          "target": "components/invitation/invitation-actions.tsx"
+        },
+        {
+          "path": "base/invitation-accept/actions.ts",
+          "type": "registry:file",
+          "target": "actions/invitation.ts"
+        },
+        {
+          "path": "base/invitation-accept/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/invitation-accept.json"
+        }
+      ]
+    },
+    {
+      "name": "app-shell",
+      "type": "registry:block",
+      "title": "App Shell",
+      "description": "Authenticated application shell: session and onboarding gate, workspace bootstrap, a sidebar that morphs into an icon rail with a gliding active pill, workspace switcher, configurable nav and user menu, and a page region that lifts each section in.",
+      "registryDependencies": [
+        "avatar",
+        "https://intelligo.dev/r/1.1.1/dropdown-menu.json",
+        "separator",
+        "https://intelligo.dev/r/1.1.1/ai-sidebar.json",
+        "https://intelligo.dev/r/1.1.1/ai-motion.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
+        "next-themes",
+        "drizzle-orm",
+        "lucide-react",
+        "sonner",
+        "motion",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/app-shell/layout.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/layout.tsx"
+        },
+        {
+          "path": "base/app-shell/components/app-sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/shell/app-sidebar.tsx"
+        },
+        {
+          "path": "base/app-shell/components/workspace-switcher.tsx",
+          "type": "registry:component",
+          "target": "components/shell/workspace-switcher.tsx"
+        },
+        {
+          "path": "base/app-shell/components/user-menu.tsx",
+          "type": "registry:component",
+          "target": "components/shell/user-menu.tsx"
+        },
+        {
+          "path": "base/app-shell/components/shell-header.tsx",
+          "type": "registry:component",
+          "target": "components/shell/shell-header.tsx"
+        },
+        {
+          "path": "base/app-shell/components/theme-provider.tsx",
+          "type": "registry:component",
+          "target": "components/shell/theme-provider.tsx"
+        },
+        {
+          "path": "base/app-shell/components/page-transition.tsx",
+          "type": "registry:component",
+          "target": "components/shell/page-transition.tsx"
+        },
+        {
+          "path": "base/app-shell/components/time-zone-cookie.tsx",
+          "type": "registry:component",
+          "target": "components/shell/time-zone-cookie.tsx"
+        },
+        {
+          "path": "base/app-shell/lib/shell-config.tsx",
+          "type": "registry:file",
+          "target": "lib/shell-config.tsx"
+        },
+        {
+          "path": "base/app-shell/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/app-shell.json"
+        },
+        {
+          "path": "base/app-shell/lib/nav-config.ts",
+          "type": "registry:file",
+          "target": "lib/nav-config.ts"
+        }
+      ]
+    },
+    {
+      "name": "settings-shell",
+      "type": "registry:block",
+      "title": "Settings Shell",
+      "description": "The shared frame around every /settings page: layout with heading and width constraint, a configurable tab bar (lib/settings-nav.ts), and a /settings index that redirects to the first tab. Install alongside the settings items - without it they render unframed and plain /settings links 404.",
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/tabs.json", "https://intelligo.dev/r/1.1.1/page-header.json"],
+      "dependencies": ["lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/settings-shell/layout.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/layout.tsx"
+        },
+        {
+          "path": "base/settings-shell/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/page.tsx"
+        },
+        {
+          "path": "base/settings-shell/components/settings-tabs.tsx",
+          "type": "registry:component",
+          "target": "components/settings/settings-tabs.tsx"
+        },
+        {
+          "path": "base/settings-shell/lib/settings-nav.ts",
+          "type": "registry:file",
+          "target": "lib/settings-nav.ts"
+        },
+        {
+          "path": "base/settings-shell/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/settings-shell.json"
+        }
+      ]
+    },
+    {
+      "name": "workspace-settings",
+      "type": "registry:block",
+      "title": "Workspace Settings",
+      "description": "Workspace name/URL editing and owner-only deletion, backed by the framework's workspace service.",
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "card",
+        "https://intelligo.dev/r/1.1.1/dialog.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "label",
+        "skeleton",
+        "https://intelligo.dev/r/1.1.1/page-header.json",
+        "https://intelligo.dev/r/1.1.1/hold-action-button.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/next",
+        "drizzle-orm",
+        "sonner",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/workspace-settings/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/workspace/page.tsx"
+        },
+        {
+          "path": "base/workspace-settings/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/workspace/loading.tsx"
+        },
+        {
+          "path": "base/workspace-settings/components/workspace-settings-form.tsx",
+          "type": "registry:component",
+          "target": "components/workspace/workspace-settings-form.tsx"
+        },
+        {
+          "path": "base/workspace-settings/actions.ts",
+          "type": "registry:file",
+          "target": "actions/workspace.ts"
+        },
+        {
+          "path": "base/workspace-settings/lib/workspace.ts",
+          "type": "registry:file",
+          "target": "lib/workspace.ts"
+        },
+        {
+          "path": "base/workspace-settings/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/workspace-settings.json"
+        },
+        {
+          "path": "base/workspace-settings/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/workspace/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "auth-login",
+      "type": "registry:block",
+      "title": "Auth: Login",
+      "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first.",
+      "registryDependencies": [
+        "alert",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "https://intelligo.dev/r/1.1.1/spinner.json",
+        "field"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "react-hook-form@^7.71.1",
+        "@hookform/resolvers@^5.2.2",
+        "zod@^4.6.5",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/auth-login/layout.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/layout.tsx"
+        },
+        {
+          "path": "base/auth-login/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/login/page.tsx"
+        },
+        {
+          "path": "base/auth-login/components/auth-card.tsx",
+          "type": "registry:component",
+          "target": "components/auth/auth-card.tsx"
+        },
+        {
+          "path": "base/auth-login/components/login-form.tsx",
+          "type": "registry:component",
+          "target": "components/auth/login-form.tsx"
+        },
+        {
+          "path": "base/auth-login/components/social-login-buttons.tsx",
+          "type": "registry:component",
+          "target": "components/auth/social-login-buttons.tsx"
+        },
+        {
+          "path": "base/auth-login/lib/auth-validation.ts",
+          "type": "registry:file",
+          "target": "lib/auth-validation.ts"
+        },
+        {
+          "path": "base/auth-login/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/auth-login.json"
+        },
+        {
+          "path": "base/auth-login/auth-error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "auth-signup",
+      "type": "registry:block",
+      "title": "Auth: Signup",
+      "description": "Email/password and OAuth account creation. Requires the auth-login item (provides the shared AuthCard shell, SocialLoginButtons, and lib/auth-validation.ts schemas); install it first. Redirects to auth-email-verification's /verify-email route when the server requires email verification.",
+      "registryDependencies": [
+        "alert",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "https://intelligo.dev/r/1.1.1/spinner.json",
+        "field"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "react-hook-form@^7.71.1",
+        "@hookform/resolvers@^5.2.2",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/auth-signup/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/signup/page.tsx"
+        },
+        {
+          "path": "base/auth-signup/components/signup-form.tsx",
+          "type": "registry:component",
+          "target": "components/auth/signup-form.tsx"
+        },
+        {
+          "path": "base/auth-signup/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/auth-signup.json"
+        }
+      ]
+    },
+    {
+      "name": "auth-password-reset",
+      "type": "registry:block",
+      "title": "Auth: Password Reset",
+      "description": "Forgot-password and reset-password pages, backed by the Better-Auth client SDK's requestPasswordReset/resetPassword actions. Requires the auth-login item (provides the shared AuthCard shell and lib/auth-validation.ts schemas); install it first.",
+      "registryDependencies": [
+        "alert",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "https://intelligo.dev/r/1.1.1/spinner.json",
+        "field"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "react-hook-form@^7.71.1",
+        "@hookform/resolvers@^5.2.2",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/auth-password-reset/forgot-page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/forgot-password/page.tsx"
+        },
+        {
+          "path": "base/auth-password-reset/reset-page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/reset-password/page.tsx"
+        },
+        {
+          "path": "base/auth-password-reset/components/forgot-password-form.tsx",
+          "type": "registry:component",
+          "target": "components/auth/forgot-password-form.tsx"
+        },
+        {
+          "path": "base/auth-password-reset/components/reset-password-form.tsx",
+          "type": "registry:component",
+          "target": "components/auth/reset-password-form.tsx"
+        },
+        {
+          "path": "base/auth-password-reset/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/auth-password-reset.json"
+        }
+      ]
+    },
+    {
+      "name": "auth-email-verification",
+      "type": "registry:block",
+      "title": "Auth: Email Verification",
+      "description": "Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action. Reads the ?error=/?email= search params Better-Auth's own /verify-email link handler redirects back with. Requires the auth-login item (provides the shared AuthCard shell); install it first.",
+      "registryDependencies": [
+        "alert",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "https://intelligo.dev/r/1.1.1/spinner.json",
+        "field"
+      ],
+      "dependencies": ["@intelligo-dev/auth", "lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/auth-email-verification/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/verify-email/page.tsx"
+        },
+        {
+          "path": "base/auth-email-verification/components/resend-verification-button.tsx",
+          "type": "registry:component",
+          "target": "components/auth/resend-verification-button.tsx"
+        },
+        {
+          "path": "base/auth-email-verification/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/auth-email-verification.json"
+        }
+      ]
+    },
+    {
+      "name": "language-switcher",
+      "type": "registry:block",
+      "title": "Language Switcher",
+      "description": "Locale dropdown over the locales i18n/routing.ts declares, labeled with each language's own name. Renders nothing in a single-locale deployment, so it is safe to mount unconditionally (e.g. in shellConfig.headerRight). Adding a locale to routing.ts plus a messages directory is the whole job.",
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json", "https://intelligo.dev/r/1.1.1/dropdown-menu.json"],
+      "dependencies": ["lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/language-switcher/components/language-switcher.tsx",
+          "type": "registry:component",
+          "target": "components/layout/language-switcher.tsx"
+        },
+        {
+          "path": "base/language-switcher/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/language-switcher.json"
+        }
+      ]
+    },
+    {
+      "name": "trial-banner",
+      "type": "registry:block",
+      "title": "Trial Banner",
+      "description": "Dismissable trial-status strip for the app shell's bannerTop seam: days and credits remaining with an upgrade CTA, urgency-ramped visuals, dismiss-for-today, and a consumer config (lib/trial-banner-config.ts) for the CTA target and route suppression (hidden on /chat by default). Bind TrialBannerContainer as shellConfig.bannerTop.",
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json"],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/core",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/trial-banner/components/trial-banner-container.tsx",
+          "type": "registry:component",
+          "target": "components/trial/trial-banner-container.tsx"
+        },
+        {
+          "path": "base/trial-banner/components/trial-banner.tsx",
+          "type": "registry:component",
+          "target": "components/trial/trial-banner.tsx"
+        },
+        {
+          "path": "base/trial-banner/lib/trial-banner-config.ts",
+          "type": "registry:file",
+          "target": "lib/trial-banner-config.ts"
+        },
+        {
+          "path": "base/trial-banner/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/trial-banner.json"
+        }
+      ]
+    },
+    {
+      "name": "notifications",
+      "type": "registry:block",
+      "title": "Notifications",
+      "description": "Notification bell with an unread badge and dropdown, plus a full notifications page with mark-as-read and load-more, backed by the framework's notification records.",
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/popover.json",
+        "scroll-area",
+        "separator",
+        "skeleton",
+        "https://intelligo.dev/r/1.1.1/page-header.json",
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "https://intelligo.dev/r/1.1.1/animated-list.json",
+        "https://intelligo.dev/r/1.1.1/notification-stack.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
+        "@intelligo-dev/next",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/notifications/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/notifications/page.tsx"
+        },
+        {
+          "path": "base/notifications/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/notifications/loading.tsx"
+        },
+        {
+          "path": "base/notifications/components/notification-bell.tsx",
+          "type": "registry:component",
+          "target": "components/notifications/notification-bell.tsx"
+        },
+        {
+          "path": "base/notifications/components/notification-list.tsx",
+          "type": "registry:component",
+          "target": "components/notifications/notification-list.tsx"
+        },
+        {
+          "path": "base/notifications/components/notification-item.tsx",
+          "type": "registry:component",
+          "target": "components/notifications/notification-item.tsx"
+        },
+        {
+          "path": "base/notifications/hooks/use-notifications.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-notifications.ts"
+        },
+        {
+          "path": "base/notifications/actions.ts",
+          "type": "registry:file",
+          "target": "actions/notifications.ts"
+        },
+        {
+          "path": "base/notifications/lib/notification-types.tsx",
+          "type": "registry:file",
+          "target": "lib/notification-types.tsx"
+        },
+        {
+          "path": "base/notifications/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/notifications.json"
+        },
+        {
+          "path": "base/notifications/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/notifications/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "pricing",
+      "type": "registry:block",
+      "title": "Pricing",
+      "description": "Plan comparison and upgrade page with a monthly/yearly toggle, backed by the framework's checkout service and the product's registered plan catalogue. Ships the lib/billing.ts product binding and actions/billing.ts checkout actions that the checkout and billing-settings items also depend on — install this item first. Other ways to buy a plan render under its checkout button from the lib/plan-card-config.tsx seam, empty by default (the payment-poll item's LocalPaymentButton binds there).",
+      "registryDependencies": [
+        "alert",
+        "badge",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "card",
+        "skeleton",
+        "https://intelligo.dev/r/1.1.1/animated-list.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/core",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/next",
+        "zod@^4.6.5",
+        "lucide-react",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/pricing/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/pricing/page.tsx"
+        },
+        {
+          "path": "base/pricing/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/pricing/loading.tsx"
+        },
+        {
+          "path": "base/pricing/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/pricing/error.tsx"
+        },
+        {
+          "path": "base/pricing/components/pricing-content.tsx",
+          "type": "registry:component",
+          "target": "components/billing/pricing-content.tsx"
+        },
+        {
+          "path": "base/pricing/components/plan-card.tsx",
+          "type": "registry:component",
+          "target": "components/billing/plan-card.tsx"
+        },
+        {
+          "path": "base/pricing/components/interval-toggle.tsx",
+          "type": "registry:component",
+          "target": "components/billing/interval-toggle.tsx"
+        },
+        {
+          "path": "base/pricing/components/checkout-button.tsx",
+          "type": "registry:component",
+          "target": "components/billing/checkout-button.tsx"
+        },
+        {
+          "path": "base/pricing/actions.ts",
+          "type": "registry:file",
+          "target": "actions/billing.ts"
+        },
+        {
+          "path": "base/pricing/lib/billing.ts",
+          "type": "registry:file",
+          "target": "lib/billing.ts"
+        },
+        {
+          "path": "base/pricing/lib/billing-config.ts",
+          "type": "registry:file",
+          "target": "lib/billing-config.ts"
+        },
+        {
+          "path": "base/pricing/lib/format-money.ts",
+          "type": "registry:file",
+          "target": "lib/format-money.ts"
+        },
+        {
+          "path": "base/pricing/lib/plan-copy.ts",
+          "type": "registry:file",
+          "target": "lib/plan-copy.ts"
+        },
+        {
+          "path": "base/pricing/lib/plan-card-config.tsx",
+          "type": "registry:file",
+          "target": "lib/plan-card-config.tsx"
+        },
+        {
+          "path": "base/pricing/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/pricing.json"
+        },
+        {
+          "path": "base/pricing/messages/plans/en.json",
+          "type": "registry:file",
+          "target": "messages/en/plans.json"
+        }
+      ]
+    },
+    {
+      "name": "checkout",
+      "type": "registry:block",
+      "title": "Checkout",
+      "description": "Checkout-success page that verifies the Stripe session directly through the framework's checkout service, covering the webhook-race window between the browser redirect and Stripe's webhook delivery.",
+      "registryDependencies": [
+        "alert",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "card",
+        "https://intelligo.dev/r/1.1.1/spinner.json",
+        "https://intelligo.dev/r/1.1.1/status-badge.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/checkout/success-page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/checkout/success/page.tsx"
+        },
+        {
+          "path": "base/checkout/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/checkout/success/error.tsx"
+        },
+        {
+          "path": "base/checkout/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/checkout.json"
+        }
+      ]
+    },
+    {
+      "name": "billing-settings",
+      "type": "registry:block",
+      "title": "Billing Settings",
+      "description": "Workspace billing management: current plan, credit balance, credit bundle purchase, and the Stripe billing portal, shaped server-side by role (member/admin/owner). Requires the pricing item (provides lib/billing.ts and actions/billing.ts); install it first. Other ways to buy a credit bundle render under its button from the lib/credit-bundle-config.tsx seam, which can also hide the card button (the payment-poll item's LocalPaymentButton binds there).",
+      "registryDependencies": [
+        "alert",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "card",
+        "skeleton",
+        "https://intelligo.dev/r/1.1.1/page-header.json",
+        "https://intelligo.dev/r/1.1.1/stat-card.json",
+        "https://intelligo.dev/r/1.1.1/animated-list.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "lucide-react",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/billing-settings/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/billing/page.tsx"
+        },
+        {
+          "path": "base/billing-settings/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/billing/loading.tsx"
+        },
+        {
+          "path": "base/billing-settings/components/portal-button.tsx",
+          "type": "registry:component",
+          "target": "components/billing/portal-button.tsx"
+        },
+        {
+          "path": "base/billing-settings/components/credit-bundles.tsx",
+          "type": "registry:component",
+          "target": "components/billing/credit-bundles.tsx"
+        },
+        {
+          "path": "base/billing-settings/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/billing-settings.json"
+        },
+        {
+          "path": "base/billing-settings/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/billing/error.tsx"
+        },
+        {
+          "path": "base/billing-settings/lib/credit-bundle-config.tsx",
+          "type": "registry:file",
+          "target": "lib/credit-bundle-config.tsx"
+        }
+      ]
+    },
+    {
+      "name": "feature-gating",
+      "type": "registry:block",
+      "title": "Feature Gating",
+      "description": "The vocabulary for selling a plan: a server-side FeatureGate that renders gated content only to entitled workspaces, three densities of upgrade prompt (full, compact, inline), a quota warning that escalates as a limit approaches, and a preview paywall that blurs content instead of hiding it. Which features exist and which plan unlocks them is consumer config (lib/feature-catalog.ts). Install pricing or billing-settings for somewhere to send the user.",
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "card",
+        "https://intelligo.dev/r/1.1.1/dialog.json"
+      ],
+      "dependencies": ["@intelligo-dev/billing", "lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/feature-gating/components/feature-gate.tsx",
+          "type": "registry:component",
+          "target": "components/billing/feature-gate.tsx"
+        },
+        {
+          "path": "base/feature-gating/components/upgrade-prompt.tsx",
+          "type": "registry:component",
+          "target": "components/billing/upgrade-prompt.tsx"
+        },
+        {
+          "path": "base/feature-gating/components/inline-upgrade-banner.tsx",
+          "type": "registry:component",
+          "target": "components/billing/inline-upgrade-banner.tsx"
+        },
+        {
+          "path": "base/feature-gating/components/quota-warning.tsx",
+          "type": "registry:component",
+          "target": "components/billing/quota-warning.tsx"
+        },
+        {
+          "path": "base/feature-gating/components/quota-limit-dialog.tsx",
+          "type": "registry:component",
+          "target": "components/billing/quota-limit-dialog.tsx"
+        },
+        {
+          "path": "base/feature-gating/components/paywall-blur.tsx",
+          "type": "registry:component",
+          "target": "components/billing/paywall-blur.tsx"
+        },
+        {
+          "path": "base/feature-gating/lib/feature-catalog.ts",
+          "type": "registry:file",
+          "target": "lib/feature-catalog.ts"
+        },
+        {
+          "path": "base/feature-gating/lib/feature-gating-config.ts",
+          "type": "registry:file",
+          "target": "lib/feature-gating-config.ts"
+        },
+        {
+          "path": "base/feature-gating/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/feature-gating.json"
+        }
+      ]
+    },
+    {
+      "name": "payment-poll",
+      "type": "registry:block",
+      "title": "QR Payment (poll)",
+      "description": "The non-card checkout the catalogue was missing: issue an invoice, show a QR the user scans in their banking app, poll until the provider confirms. Provider-agnostic — QPay, SocialPay, PIX, UPI, PromptPay all fit — with the invoice recorded and a paid one granted on the server; lib/local-payment.ts says what each reference costs and grants. Requires the pricing item for lib/billing-config.ts's CURRENCY. LocalPaymentButton opens the modal for one reference and refreshes the page once paid; bind it in the pricing item's lib/plan-card-config.tsx to offer the QR rail on every plan card, and in the billing-settings item's lib/credit-bundle-config.tsx on every credit bundle.",
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/dialog.json",
+        "https://intelligo.dev/r/1.1.1/spinner.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/core",
+        "@intelligo-dev/next",
+        "lucide-react",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/payment-poll/components/local-payment-modal.tsx",
+          "type": "registry:component",
+          "target": "components/billing/local-payment-modal.tsx"
+        },
+        {
+          "path": "base/payment-poll/components/local-payment-button.tsx",
+          "type": "registry:component",
+          "target": "components/billing/local-payment-button.tsx"
+        },
+        {
+          "path": "base/payment-poll/actions.ts",
+          "type": "registry:file",
+          "target": "actions/payment.ts"
+        },
+        {
+          "path": "base/payment-poll/lib/local-payment.ts",
+          "type": "registry:file",
+          "target": "lib/local-payment.ts"
+        },
+        {
+          "path": "base/payment-poll/lib/payment-poll-config.ts",
+          "type": "registry:file",
+          "target": "lib/payment-poll-config.ts"
+        },
+        {
+          "path": "base/payment-poll/lib/local-payment-grant.ts",
+          "type": "registry:file",
+          "target": "lib/local-payment-grant.ts"
+        },
+        {
+          "path": "base/payment-poll/routes/settle.ts",
+          "type": "registry:file",
+          "target": "app/api/payments/local/settle/route.ts"
+        },
+        {
+          "path": "base/payment-poll/routes/callback.ts",
+          "type": "registry:file",
+          "target": "app/api/webhooks/local-payment/route.ts"
+        },
+        {
+          "path": "base/payment-poll/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/payment-poll.json"
+        }
+      ]
+    },
+    {
+      "name": "profile-settings",
+      "type": "registry:block",
+      "title": "Profile Settings",
+      "description": "User profile name editing, read-only email, and account deletion with typed confirmation, backed by the framework's profile service.",
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "card",
+        "https://intelligo.dev/r/1.1.1/dialog.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "label",
+        "skeleton",
+        "https://intelligo.dev/r/1.1.1/page-header.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
+        "@intelligo-dev/next",
+        "sonner",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/profile-settings/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/profile/page.tsx"
+        },
+        {
+          "path": "base/profile-settings/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/profile/loading.tsx"
+        },
+        {
+          "path": "base/profile-settings/components/profile-settings-form.tsx",
+          "type": "registry:component",
+          "target": "components/profile/profile-settings-form.tsx"
+        },
+        {
+          "path": "base/profile-settings/actions.ts",
+          "type": "registry:file",
+          "target": "actions/profile.ts"
+        },
+        {
+          "path": "base/profile-settings/lib/profile.ts",
+          "type": "registry:file",
+          "target": "lib/profile.ts"
+        },
+        {
+          "path": "base/profile-settings/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/profile-settings.json"
+        },
+        {
+          "path": "base/profile-settings/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/profile/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "onboarding",
+      "type": "registry:block",
+      "title": "Onboarding",
+      "description": "A generic multi-step onboarding wizard driven by a consumer-owned steps config: text and single-select-card fields, a completion screen, skip, and back/next - backed by the framework's onboarding service (durable step progress, no vertical-specific UI).",
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "label",
+        "https://intelligo.dev/r/1.1.1/ai-motion.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/next",
+        "lucide-react",
+        "server-only",
+        "next-intl",
+        "motion"
+      ],
+      "files": [
+        {
+          "path": "base/onboarding/layout.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/onboarding/layout.tsx"
+        },
+        {
+          "path": "base/onboarding/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/onboarding/page.tsx"
+        },
+        {
+          "path": "base/onboarding/components/onboarding-wizard.tsx",
+          "type": "registry:component",
+          "target": "components/onboarding/onboarding-wizard.tsx"
+        },
+        {
+          "path": "base/onboarding/components/onboarding-step.tsx",
+          "type": "registry:component",
+          "target": "components/onboarding/onboarding-step.tsx"
+        },
+        {
+          "path": "base/onboarding/actions.ts",
+          "type": "registry:file",
+          "target": "actions/onboarding.ts"
+        },
+        {
+          "path": "base/onboarding/lib/onboarding.ts",
+          "type": "registry:file",
+          "target": "lib/onboarding.ts"
+        },
+        {
+          "path": "base/onboarding/lib/onboarding-steps.ts",
+          "type": "registry:file",
+          "target": "lib/onboarding-steps.ts"
+        },
+        {
+          "path": "base/onboarding/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/onboarding.json"
+        },
+        {
+          "path": "base/onboarding/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/onboarding/error.tsx"
+        },
+        {
+          "path": "base/onboarding/lib/onboarding-profile.ts",
+          "type": "registry:file",
+          "target": "lib/onboarding-profile.ts"
+        }
+      ]
+    },
+    {
+      "name": "dashboard",
+      "type": "registry:block",
+      "title": "Dashboard",
+      "description": "An AI-first workspace home: a hero and a real composer centred as one unit, starter chips that fill it, and a resume affordance for unfinished work — and nothing else, because history belongs to the sidebar and spend to /usage. Configurable through lib/dashboard-config.tsx (copy, starters, chat base path) and lib/dashboard-data.ts (what \"resume\" means). Pairs with the chat item for its /chat routes; install it first.",
+      "registryDependencies": [
+        "skeleton",
+        "https://intelligo.dev/r/1.1.1/ai-prompt-input.json",
+        "https://intelligo.dev/r/1.1.1/ai-speech-input.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
+        "lucide-react",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/dashboard/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/dashboard/page.tsx"
+        },
+        {
+          "path": "base/dashboard/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/dashboard/loading.tsx"
+        },
+        {
+          "path": "base/dashboard/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/dashboard.json"
+        },
+        {
+          "path": "base/dashboard/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/dashboard/error.tsx"
+        },
+        {
+          "path": "base/dashboard/components/dashboard-hero.tsx",
+          "type": "registry:component",
+          "target": "components/dashboard/dashboard-hero.tsx"
+        },
+        {
+          "path": "base/dashboard/components/prompt-bar.tsx",
+          "type": "registry:component",
+          "target": "components/dashboard/prompt-bar.tsx"
+        },
+        {
+          "path": "base/dashboard/lib/dashboard-config.tsx",
+          "type": "registry:file",
+          "target": "lib/dashboard-config.tsx"
+        },
+        {
+          "path": "base/dashboard/lib/dashboard-data.ts",
+          "type": "registry:file",
+          "target": "lib/dashboard-data.ts"
+        }
+      ]
+    },
+    {
+      "name": "artifacts",
+      "type": "registry:block",
+      "title": "Artifacts",
+      "description": "Browse and manage AI-generated document artifacts: filterable list, full-content preview, copy-to-clipboard, and version delete, backed by the framework's document persistence service.",
+      "registryDependencies": [
+        "alert",
+        "badge",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "card",
+        "https://intelligo.dev/r/1.1.1/dialog.json",
+        "scroll-area",
+        "skeleton",
+        "https://intelligo.dev/r/1.1.1/spinner.json",
+        "https://intelligo.dev/r/1.1.1/page-header.json",
+        "https://intelligo.dev/r/1.1.1/document-viewer.json",
+        "https://intelligo.dev/r/1.1.1/animated-list.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
+        "@intelligo-dev/next",
+        "lucide-react",
+        "sonner",
+        "server-only",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/artifacts/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/artifacts/page.tsx"
+        },
+        {
+          "path": "base/artifacts/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/artifacts/loading.tsx"
+        },
+        {
+          "path": "base/artifacts/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/artifacts/error.tsx"
+        },
+        {
+          "path": "base/artifacts/actions.ts",
+          "type": "registry:file",
+          "target": "actions/documents.ts"
+        },
+        {
+          "path": "base/artifacts/lib/document-patterns.ts",
+          "type": "registry:file",
+          "target": "lib/document-patterns.ts"
+        },
+        {
+          "path": "base/artifacts/components/document-list.tsx",
+          "type": "registry:component",
+          "target": "components/artifacts/document-list.tsx"
+        },
+        {
+          "path": "base/artifacts/components/document-actions.tsx",
+          "type": "registry:component",
+          "target": "components/artifacts/document-actions.tsx"
+        },
+        {
+          "path": "base/artifacts/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/artifacts.json"
+        }
+      ],
+      "css": {
+        "@source \"../node_modules/streamdown/dist/*.js\"": {}
+      }
+    },
+    {
+      "name": "privacy-settings",
+      "type": "registry:block",
+      "title": "Privacy Settings",
+      "description": "GDPR-style data export, a read-only memory-audit trail, and per-category fact listing with delete, backed by the framework's identity service.",
+      "registryDependencies": [
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "card",
+        "skeleton",
+        "https://intelligo.dev/r/1.1.1/page-header.json"
+      ],
+      "dependencies": [
+        "@intelligo-dev/auth",
+        "@intelligo-dev/core",
+        "@intelligo-dev/next",
+        "lucide-react",
+        "sonner",
+        "next-intl"
+      ],
+      "files": [
+        {
+          "path": "base/privacy-settings/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/privacy/page.tsx"
+        },
+        {
+          "path": "base/privacy-settings/loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/privacy/loading.tsx"
+        },
+        {
+          "path": "base/privacy-settings/actions.ts",
+          "type": "registry:file",
+          "target": "actions/privacy.ts"
+        },
+        {
+          "path": "base/privacy-settings/components/export-data-button.tsx",
+          "type": "registry:component",
+          "target": "components/privacy/export-data-button.tsx"
+        },
+        {
+          "path": "base/privacy-settings/components/fact-list.tsx",
+          "type": "registry:component",
+          "target": "components/privacy/fact-list.tsx"
+        },
+        {
+          "path": "base/privacy-settings/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/privacy-settings.json"
+        },
+        {
+          "path": "base/privacy-settings/error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/settings/privacy/error.tsx"
+        }
+      ]
+    },
+    {
+      "name": "chat",
+      "type": "registry:block",
+      "title": "Chat",
+      "description": "A ChatGPT-level AI chat surface: a streaming thread with edit, regenerate and response versions, attachments, a model picker, reasoning, sources, tool cards and human-in-the-loop approvals, agent activity for Mastra and eve turns, a canvas beside the chat for documents a tool streams, a sidebar with pinned and dated groups, share links and feedback — on a two-line Route Handler that binds @intelligo-dev/chat's transport (auth, rate limit, feature gate, persistence, the execution boundary) to consumer-owned config (lib/chat-server-config.ts). Every tool renders through one entry in lib/chat-renderers.tsx, inline and in the canvas. Ships with a deterministic stub model so a clean install streams with no API keys. The config imports lib/intelligo.ts (the composition root) and lib/plans.ts, which are provided by the `intelligo create` scaffold, not by any registry item - in a hand-rolled app, create both before installing (see the CLI's app-scaffold templates).",
+      "registryDependencies": [
+        "alert",
+        "https://intelligo.dev/r/1.1.1/alert-dialog.json",
+        "https://intelligo.dev/r/1.1.1/attachment.json",
+        "https://intelligo.dev/r/1.1.1/button.json",
+        "https://intelligo.dev/r/1.1.1/dialog.json",
+        "https://intelligo.dev/r/1.1.1/dropdown-menu.json",
+        "https://intelligo.dev/r/1.1.1/input.json",
+        "item",
+        "https://intelligo.dev/r/1.1.1/sheet.json",
+        "skeleton",
+        "https://intelligo.dev/r/1.1.1/spinner.json",
+        "https://intelligo.dev/r/1.1.1/textarea.json",
+        "https://intelligo.dev/r/1.1.1/tooltip.json",
+        "https://intelligo.dev/r/1.1.1/ai-agent-activity.json",
+        "https://intelligo.dev/r/1.1.1/ai-approval-card.json",
+        "https://intelligo.dev/r/1.1.1/ai-artifact.json",
+        "https://intelligo.dev/r/1.1.1/ai-branch.json",
+        "https://intelligo.dev/r/1.1.1/ai-citations.json",
+        "https://intelligo.dev/r/1.1.1/ai-code-block.json",
+        "https://intelligo.dev/r/1.1.1/ai-composer-menu.json",
+        "https://intelligo.dev/r/1.1.1/ai-markdown.json",
+        "https://intelligo.dev/r/1.1.1/ai-message.json",
+        "https://intelligo.dev/r/1.1.1/ai-message-bubble.json",
+        "https://intelligo.dev/r/1.1.1/ai-message-scroller.json",
+        "https://intelligo.dev/r/1.1.1/ai-prompt-input.json",
+        "https://intelligo.dev/r/1.1.1/ai-reasoning.json",
+        "https://intelligo.dev/r/1.1.1/ai-shimmer-text.json",
+        "https://intelligo.dev/r/1.1.1/ai-speech-input.json",
+        "https://intelligo.dev/r/1.1.1/ai-suggestion.json",
+        "https://intelligo.dev/r/1.1.1/ai-todo-list.json",
+        "https://intelligo.dev/r/1.1.1/ai-tool-approval.json",
+        "https://intelligo.dev/r/1.1.1/ai-tool-result.json",
+        "https://intelligo.dev/r/1.1.1/copy-button.json",
+        "https://intelligo.dev/r/1.1.1/document-viewer.json",
+        "https://intelligo.dev/r/1.1.1/status-badge.json",
+        "https://intelligo.dev/r/1.1.1/ai-motion.json",
+        "https://intelligo.dev/r/1.1.1/ai-sidebar.json",
+        "https://intelligo.dev/r/1.1.1/ai-file-diff.json",
+        "https://intelligo.dev/r/1.1.1/ai-image-generation.json",
+        "https://intelligo.dev/r/1.1.1/ai-reasoning-text.json",
+        "https://intelligo.dev/r/1.1.1/ai-streaming-response.json",
+        "https://intelligo.dev/r/1.1.1/ai-agent-progress.json"
+      ],
+      "dependencies": [
+        "ai@^7.0.103",
+        "@ai-sdk/react@^4.0.106",
+        "streamdown",
+        "lucide-react",
+        "sonner",
+        "server-only",
+        "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
+        "@intelligo-dev/chat",
+        "@intelligo-dev/core",
+        "@intelligo-dev/next",
+        "next-intl",
+        "next-themes",
+        "prosemirror-state",
+        "prosemirror-view",
+        "prosemirror-markdown",
+        "prosemirror-example-setup",
+        "prosemirror-inputrules",
+        "codemirror",
+        "@codemirror/state",
+        "@codemirror/view",
+        "@codemirror/lang-javascript",
+        "@codemirror/lang-python",
+        "@codemirror/theme-one-dark",
+        "react-data-grid@7.0.0-beta.61",
+        "papaparse",
+        "@types/papaparse",
+        "motion"
+      ],
+      "files": [
+        {
+          "path": "base/chat/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/chat/page.tsx"
+        },
+        {
+          "path": "base/chat/conversation-page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/chat/[id]/page.tsx"
+        },
+        {
+          "path": "base/chat/conversation-loading.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/chat/[id]/loading.tsx"
+        },
+        {
+          "path": "base/chat/conversation-error.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(app)/chat/[id]/error.tsx"
+        },
+        {
+          "path": "base/chat/route.ts",
+          "type": "registry:file",
+          "target": "app/api/chat/route.ts"
+        },
+        {
+          "path": "base/chat/actions.ts",
+          "type": "registry:file",
+          "target": "actions/chat.ts"
+        },
+        {
+          "path": "base/chat/lib/chat-model.ts",
+          "type": "registry:file",
+          "target": "lib/chat-model.ts"
+        },
+        {
+          "path": "base/chat/lib/chat-models.ts",
+          "type": "registry:file",
+          "target": "lib/chat-models.ts"
+        },
+        {
+          "path": "base/chat/lib/chat-renderers.tsx",
+          "type": "registry:file",
+          "target": "lib/chat-renderers.tsx"
+        },
+        {
+          "path": "base/chat/lib/chat-canvas-config.tsx",
+          "type": "registry:file",
+          "target": "lib/chat-canvas-config.tsx"
+        },
+        {
+          "path": "base/chat/lib/message-parts.ts",
+          "type": "registry:file",
+          "target": "lib/message-parts.ts"
+        },
+        {
+          "path": "base/chat/lib/chat-config.tsx",
+          "type": "registry:file",
+          "target": "lib/chat-config.tsx"
+        },
+        {
+          "path": "base/chat/lib/chat-server-config.ts",
+          "type": "registry:file",
+          "target": "lib/chat-server-config.ts"
+        },
+        {
+          "path": "base/chat/lib/chat-quota.ts",
+          "type": "registry:file",
+          "target": "lib/chat-quota.ts"
+        },
+        {
+          "path": "base/chat/hooks/use-chat-versions.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-chat-versions.ts"
+        },
+        {
+          "path": "base/chat/hooks/use-chat-draft.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-chat-draft.ts"
+        },
+        {
+          "path": "base/chat/hooks/use-chat-shortcuts.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-chat-shortcuts.ts"
+        },
+        {
+          "path": "base/chat/hooks/use-composer-menu.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-composer-menu.ts"
+        },
+        {
+          "path": "base/chat/components/chat-workspace.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-workspace.tsx"
+        },
+        {
+          "path": "base/chat/components/chat-thread.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-thread.tsx"
+        },
+        {
+          "path": "base/chat/components/chat-canvas.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-canvas.tsx"
+        },
+        {
+          "path": "base/chat/components/canvas/text-editor.tsx",
+          "type": "registry:component",
+          "target": "components/chat/canvas/text-editor.tsx"
+        },
+        {
+          "path": "base/chat/components/canvas/code-editor.tsx",
+          "type": "registry:component",
+          "target": "components/chat/canvas/code-editor.tsx"
+        },
+        {
+          "path": "base/chat/components/canvas/sheet-editor.tsx",
+          "type": "registry:component",
+          "target": "components/chat/canvas/sheet-editor.tsx"
+        },
+        {
+          "path": "base/chat/components/chat-empty.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-empty.tsx"
+        },
+        {
+          "path": "base/chat/components/chat-error-strip.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-error-strip.tsx"
+        },
+        {
+          "path": "base/chat/components/message-list.tsx",
+          "type": "registry:component",
+          "target": "components/chat/message-list.tsx"
+        },
+        {
+          "path": "base/chat/components/message.tsx",
+          "type": "registry:component",
+          "target": "components/chat/message.tsx"
+        },
+        {
+          "path": "base/chat/components/message-actions.tsx",
+          "type": "registry:component",
+          "target": "components/chat/message-actions.tsx"
+        },
+        {
+          "path": "base/chat/components/data-parts.tsx",
+          "type": "registry:component",
+          "target": "components/chat/data-parts.tsx"
+        },
+        {
+          "path": "base/chat/components/agent-activity.tsx",
+          "type": "registry:component",
+          "target": "components/chat/agent-activity.tsx"
+        },
+        {
+          "path": "base/chat/components/tool-activity.tsx",
+          "type": "registry:component",
+          "target": "components/chat/tool-activity.tsx"
+        },
+        {
+          "path": "base/chat/components/artifact-card.tsx",
+          "type": "registry:component",
+          "target": "components/chat/artifact-card.tsx"
+        },
+        {
+          "path": "base/chat/components/chat-input.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-input.tsx"
+        },
+        {
+          "path": "base/chat/components/conversation-header.tsx",
+          "type": "registry:component",
+          "target": "components/chat/conversation-header.tsx"
+        },
+        {
+          "path": "base/chat/components/chat-history.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-history.tsx"
+        },
+        {
+          "path": "base/chat/components/chat-history-nav.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-history-nav.tsx"
+        },
+        {
+          "path": "base/chat/components/share-dialog.tsx",
+          "type": "registry:component",
+          "target": "components/chat/share-dialog.tsx"
+        },
+        {
+          "path": "base/chat/components/credit-status-banner.tsx",
+          "type": "registry:component",
+          "target": "components/chat/credit-status-banner.tsx"
+        },
+        {
+          "path": "base/chat/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/chat.json"
+        }
+      ],
+      "css": {
+        "@source \"../node_modules/streamdown/dist/*.js\"": {}
+      }
+    },
+    {
+      "name": "chat-panel",
+      "type": "registry:block",
+      "title": "Chat Panel",
+      "description": "The chat as a side panel on any page: a sheet that opens the same thread the chat page runs, with the page's context on every turn. Requires the chat item.",
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json", "https://intelligo.dev/r/1.1.1/sheet.json"],
+      "dependencies": ["ai@^7.0.103", "lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/chat-panel/components/chat-panel.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-panel.tsx"
+        },
+        {
+          "path": "base/chat-panel/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/chat-panel.json"
+        }
+      ]
+    },
+    {
+      "name": "chat-widget",
+      "type": "registry:block",
+      "title": "Chat Widget",
+      "description": "The floating assistant: a launcher in a corner of every page and a compact chat over it, configured in lib/chat-widget-config.tsx. Requires the chat item.",
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json"],
+      "dependencies": ["lucide-react", "next-intl"],
+      "files": [
+        {
+          "path": "base/chat-widget/components/chat-widget.tsx",
+          "type": "registry:component",
+          "target": "components/chat/chat-widget.tsx"
+        },
+        {
+          "path": "base/chat-widget/lib/chat-widget-config.tsx",
+          "type": "registry:file",
+          "target": "lib/chat-widget-config.tsx"
+        },
+        {
+          "path": "base/chat-widget/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/chat-widget.json"
+        }
+      ]
+    },
+    {
+      "name": "chat-share",
+      "type": "registry:block",
+      "title": "Chat Share",
+      "description": "A conversation its owner published, readable by anyone with the link at /share/[id]: the same transcript, read-only, minus reasoning, tool details and attachments. Requires the chat item.",
+      "registryDependencies": ["https://intelligo.dev/r/1.1.1/button.json"],
+      "dependencies": [
+        "ai@^7.0.103",
+        "next-intl",
+        "@intelligo-dev/chat",
+        "@intelligo-dev/core"
+      ],
+      "files": [
+        {
+          "path": "base/chat-share/page.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/share/[id]/page.tsx"
+        },
+        {
+          "path": "base/chat-share/actions.ts",
+          "type": "registry:file",
+          "target": "actions/chat-share.ts"
+        },
+        {
+          "path": "base/chat-share/components/shared-conversation.tsx",
+          "type": "registry:component",
+          "target": "components/chat/shared-conversation.tsx"
+        },
+        {
+          "path": "base/chat-share/messages/en.json",
+          "type": "registry:file",
+          "target": "messages/en/chat-share.json"
+        }
+      ]
+    },
+    {
+      "name": "chat-eve",
+      "type": "registry:lib",
+      "title": "Chat: eve binding",
+      "description": "eve through the chat transport: a streamTurn for lib/chat-server-config.ts that runs a turn as an eve session over HTTP and NDJSON and maps its events to the AI SDK's chunks — text, reasoning, tool calls, approvals, questions, subagents, authorization — so an eve agent renders through the same tool renderers as any other. Consumer-owned; imports nothing from eve. Requires the chat item.",
+      "dependencies": ["ai@^7.0.103", "@intelligo-dev/chat"],
+      "files": [
+        {
+          "path": "base/chat-eve/lib/chat-eve.ts",
+          "type": "registry:lib",
+          "target": "lib/chat-eve.ts"
+        }
+      ]
+    }
+  ]
+}

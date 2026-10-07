@@ -3,6 +3,7 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, fontProviders } from "astro/config";
 
+import securityHeaders from "./src/lib/headers.mjs";
 import { codeFrame } from "./src/lib/markdown.mjs";
 import ogImages from "./src/lib/og-images.mjs";
 
@@ -22,6 +23,7 @@ export default defineConfig({
     react(),
     sitemap({ filter: (page) => !/\/404\/?$/.test(page) }),
     ogImages(),
+    securityHeaders(),
   ],
   // Docs code blocks carry both themes (global.css switches under .dark),
   // and a frame with a label and a copy button (src/lib/markdown.mjs).

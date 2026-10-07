@@ -2,8 +2,8 @@
 /**
  * One Intelligo component: the live demo, the command that installs it,
  * what it is built on and which blocks use it, and the source itself —
- * the file `shadcn add` writes, read from the copy the sync keeps in
- * src/showcase/app. Everything comes from registry.json.
+ * the file `shadcn add` writes, read from the hosted registry item in
+ * public/r. Everything comes from registry.json.
  */
 import { Code } from "astro:components";
 
@@ -16,7 +16,16 @@ import { truncate } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 import { ComponentDemo } from "@/showcase/intelligo-demos";
 
-const SOURCES = import.meta.glob<string>("../../showcase/app/components/ui/*.tsx", {
+interface RegistryItem {
+  files?: { target?: string; content?: string }[];
+}
+/** The items intelligo.dev/r serves: what `shadcn add @intelligo/<name>` installs. */
+const HOSTED = import.meta.glob<RegistryItem>("../../../public/r/*.json", {
+  import: "default",
+  eager: true,
+});
+/** A component on main that no release ships yet, with the showcase's alias undone. */
+const UNRELEASED = import.meta.glob<string>("../../showcase/app/components/ui/*.tsx", {
   query: "?raw",
   import: "default",
   eager: true,
@@ -36,8 +45,12 @@ interface Props {
 }
 const { entry, prev, next } = Astro.props;
 
-const source = SOURCES[`../../showcase/app/components/ui/${entry.name}.tsx`];
-if (!source) throw new Error(`components/${entry.name}: no source in src/showcase/app/components/ui`);
+const target = `components/ui/${entry.name}.tsx`;
+const hosted = HOSTED[`../../../public/r/${entry.name}.json`]?.files?.find((f) => f.target === target)?.content;
+const released = hosted !== undefined;
+const source =
+  hosted ?? UNRELEASED[`../../showcase/app/${target}`]?.replace(/(from |import\()"@showcase\//g, '$1"@/');
+if (!source) throw new Error(`components/${entry.name}: no source in public/r or src/showcase/app/components/ui`);
 const { dependencies, builtOn, usedBy } = componentDetails(entry.name);
 const related = COMPONENTS.filter((e) => e.group === entry.group && e.name !== entry.name && e.intelligo);
 const cmd = installCommand(entry.name);
@@ -127,7 +140,9 @@ const structuredData = [
     <div class="px-6 py-8 md:px-10">
       <h2 class="heading text-lg font-medium">Source</h2>
       <p class="mt-1 text-sm text-muted-foreground">
-        What <code class="mono">shadcn add</code> writes to <code class="mono">components/ui/{entry.name}.tsx</code>. It is yours from then on.
+        {released
+          ? <>What <code class="mono">shadcn add</code> writes to <code class="mono">components/ui/{entry.name}.tsx</code>. It is yours from then on.</>
+          : <>The source on main, which <code class="mono">shadcn add</code> writes to <code class="mono">components/ui/{entry.name}.tsx</code> from the next release.</>}
       </p>
       <div class="code-frame mt-4 max-h-[36rem] overflow-auto rounded-xl border border-border text-[0.8rem]">
         <Code code={source} lang="tsx" themes={{ light: "github-light", dark: "github-dark" }} defaultColor={false} />
