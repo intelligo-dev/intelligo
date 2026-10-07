@@ -3,7 +3,7 @@
   "frameworkVersion": "1.1.1",
   "features": {
     "app-scaffold": {
-      "templateVersion": "1.19.0",
+      "templateVersion": "1.20.0",
       "files": [
         {
           "path": "package.json",
@@ -19,7 +19,7 @@
         },
         {
           "path": ".env.example",
-          "hash": "1eaae4cfbc678f3c8290d3818fe5c42b42f17cab2cf76391ab6b0a09edc2673f"
+          "hash": "ba725bc008a28e8a3c537cf0d16fcd3932c9a77ee04ce80e40e87b71a4e2f3c4"
         },
         {
           "path": "lib/intelligo.ts",
@@ -43,7 +43,7 @@
         },
         {
           "path": "app/api/assistant/route.ts",
-          "hash": "363cd6a788e4a74fabf11de6e4053095cf838a7dbbf6a2a8d557065cf151ef79"
+          "hash": "42d16816a81c3eb72d470ee84638ea67166506ae4b2c1ef9acfedf233a938089"
         },
         {
           "path": "components.json",

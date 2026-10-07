@@ -22,6 +22,42 @@ describe("validateEnv", () => {
     expect(result.errors).toHaveLength(0);
   });
 
+  it("names the missing variables in the error it throws", () => {
+    vi.stubEnv("DATABASE_URL", "");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(() => assertEnv()).toThrow(
+      "Missing required environment variable(s): DATABASE_URL."
+    );
+  });
+
+  it("checks the product's own variables beside the framework's", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const extra = [
+      { name: "ACME_API_KEY", required: true, description: "Acme API" },
+    ];
+    vi.stubEnv("ACME_API_KEY", "");
+    expect(() => assertEnv({ extra })).toThrow("ACME_API_KEY");
+    vi.stubEnv("ACME_API_KEY", "k");
+    expect(() => assertEnv({ extra })).not.toThrow();
+  });
+
+  it("warns about a pair set by half", () => {
+    vi.stubEnv("GOOGLE_CLIENT_ID", "id");
+    vi.stubEnv("GOOGLE_CLIENT_SECRET", "");
+    vi.stubEnv("STORAGE_BUCKET", "b");
+    vi.stubEnv("STORAGE_ACCESS_KEY_ID", "");
+    vi.stubEnv("STORAGE_SECRET_ACCESS_KEY", "");
+    const { warnings } = validateEnv();
+    expect(warnings.join("\n")).toContain(
+      "GOOGLE_CLIENT_ID set without GOOGLE_CLIENT_SECRET"
+    );
+    expect(warnings.join("\n")).toContain(
+      "STORAGE_BUCKET set without STORAGE_ACCESS_KEY_ID, STORAGE_SECRET_ACCESS_KEY"
+    );
+  });
+
   it("returns error for missing DATABASE_URL", () => {
     vi.stubEnv("DATABASE_URL", "");
     const result = validateEnv();

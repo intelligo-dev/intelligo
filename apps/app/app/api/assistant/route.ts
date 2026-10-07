@@ -22,6 +22,7 @@
 
 import { isAuthGuardError, requireWorkspace } from "@intelligo-dev/auth";
 import { ExecutionRefusedError, runWithExecution } from "@intelligo-dev/mastra";
+import { executionRefusalResponse } from "@intelligo-dev/next/route";
 
 import { CAPABILITIES, composeIntelligo, executions } from "@/lib/intelligo";
 
@@ -86,23 +87,9 @@ export async function POST(request: Request) {
     // A refusal is a distinct outcome, not a failure — the bridge
     // throws a typed error so it cannot be mistaken for an empty result.
     if (error instanceof ExecutionRefusedError) {
-      // Same mapping as the chat route: a refusal the workspace can fix
-      // by paying is 402; one only the deployment can fix — billing not
-      // configured, a model with no registered price — is 503.
-      const notConfigured = error.reasonCode === "billing_not_configured";
-      const unknownModel = error.reasonCode === "unknown_model";
-      return Response.json(
-        {
-          error: error.message,
-          code: notConfigured
-            ? "BILLING_NOT_CONFIGURED"
-            : unknownModel
-              ? "MODEL_UNAVAILABLE"
-              : "QUOTA_EXCEEDED",
-          reasonCode: error.reasonCode,
-        },
-        { status: notConfigured || unknownModel ? 503 : 402 }
-      );
+      // The chat route's mapping: 402 for what paying fixes, 503 for
+      // what only the deployment can.
+      return executionRefusalResponse({ code: error.reasonCode });
     }
     return Response.json({ error: "assistant failed" }, { status: 500 });
   }

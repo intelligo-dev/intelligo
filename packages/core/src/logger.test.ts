@@ -172,3 +172,16 @@ describe("Logger", () => {
     });
   });
 });
+
+describe("logLevel", () => {
+  it("takes LOG_LEVEL when it names a level, else follows NODE_ENV", async () => {
+    const { logLevel } = await import("./logger");
+    expect(logLevel({ LOG_LEVEL: "warn" })).toBe("warn");
+    expect(logLevel({ LOG_LEVEL: " TRACE " })).toBe("trace");
+    expect(logLevel({ LOG_LEVEL: "loud", NODE_ENV: "production" })).toBe(
+      "info"
+    );
+    expect(logLevel({ NODE_ENV: "production" })).toBe("info");
+    expect(logLevel({ NODE_ENV: "development" })).toBe("debug");
+  });
+});

@@ -140,6 +140,7 @@ Source: https://intelligo.dev/docs/getting-started/environment
 | `OPENAI_API_KEY`<br>`ANTHROPIC_API_KEY`<br>`GOOGLE_GENERATIVE_AI_API_KEY` | AI providers. Chat runs on a built-in stub model until lib/chat-model.ts names a real one. Set only the key of the provider that model belongs to — the provider's SDK reads it, and the framework checks none of them. |
 | `INTELLIGO_ALLOW_STUB_MODEL` | The stub refuses to reply in a production build, so a deployment that never bound a model fails loudly. Set to 1 for one meant to run on it. |
 | `CRON_SECRET` | Bearer token your scheduler sends to /api/cron/maintenance (`intelligo add maintenance`). At least 32 characters. |
+| `LOG_LEVEL` | How much the server logs: fatal, error, warn, info, debug or trace. Defaults to info in production and debug elsewhere. |
 | `PLATFORM_ADMIN_EMAILS` | Comma-separated emails allowed to reach the Intelligo admin console. Closed by default: with no value, nobody is a platform admin. |
 
 ---
