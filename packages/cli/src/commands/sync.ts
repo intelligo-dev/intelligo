@@ -17,7 +17,11 @@
  *   hash, so `--check` can tell a file edited by hand from one a newer
  *   registry replaced. Scaffold files an install replaces (globals.css,
  *   the theme provider) leave the `app-scaffold` record for this one,
- *   so `upgrade --check` stops calling them customized.
+ *   so `upgrade --check` stops calling them customized;
+ * - the app's copies: seams and message files wait under
+ *   `.intelligo/sync-restore/` while the install runs, and a file of
+ *   shadcn's own items (`utils`, `card`…) the install replaced is saved
+ *   under `.intelligo/backup/` (`sync-guard.ts`).
  *
  * `--check` installs nothing and exits 1 when any installed file is
  * missing, edited or behind the registry — the gate CI runs.
@@ -30,7 +34,18 @@ import type { AddressInfo } from "node:net";
 import path from "node:path";
 
 import { packageDir } from "../package-dir.js";
-import { backUp } from "./backup.js";
+import { spawnCommand } from "../spawn-command.js";
+import { backUp, backUpContents } from "./backup.js";
+import {
+  RESTORE_DIR,
+  clearRestorePoint,
+  leftRestorePoint,
+  onInterrupt,
+  snapshotUpstream,
+  upstreamDirs,
+  writeBack,
+  writeRestorePoint,
+} from "./sync-guard.js";
 import { syncCheckExitCode, formatSyncReport } from "./sync-report.js";
 export { syncCheckExitCode, formatSyncReport } from "./sync-report.js";
 
@@ -301,10 +316,15 @@ export function installedFrameworkVersion(appRoot: string): string | null {
 function serveRegistry(dir: string): Promise<{ server: Server; url: string }> {
   return new Promise((resolve, reject) => {
     const server = createServer((req, res) => {
-      const name = decodeURIComponent((req.url ?? "").split("?")[0]!).replace(
-        /^\//,
-        ""
-      );
+      let name = "";
+      try {
+        name = decodeURIComponent((req.url ?? "").split("?")[0]!).replace(
+          /^\//,
+          ""
+        );
+      } catch {
+        // A malformed escape names no item: answered 404 below.
+      }
       const file = path.join(dir, name);
       if (!/^[a-z0-9-]+\.json$/.test(name) || !existsSync(file)) {
         res.writeHead(404);
@@ -328,10 +348,10 @@ function run(
   cwd: string
 ): Promise<{ code: number; output: string }> {
   return new Promise((resolve) => {
-    const child = spawn(command, args, {
+    const spawned = spawnCommand(command, args);
+    const child = spawn(spawned.command, spawned.args, {
       cwd,
-      // pnpm, npx and friends are .cmd shims on Windows.
-      shell: process.platform === "win32",
+      shell: spawned.shell,
       env: process.env,
     });
     let output = "";
@@ -457,6 +477,19 @@ export async function syncApply(
     return 1;
   }
 
+  const left = leftRestorePoint(appRoot);
+  if (left.length > 0) {
+    log(
+      [
+        `An earlier sync did not finish: the app's copies of these files are under ${RESTORE_DIR}:`,
+        ...left.map((file) => `  ${file}`),
+        "",
+        `Put back the ones the install replaced, then delete ${RESTORE_DIR} and re-run.`,
+      ].join("\n")
+    );
+    return 1;
+  }
+
   const items = installOrder(names, context.requires);
   const before = syncCheck(items, context);
   const shippedTargets = new Set(
@@ -495,14 +528,35 @@ export async function syncApply(
     }
   }
 
-  const componentsBefore = JSON.parse(readFileSync(componentsPath, "utf8")) as {
+  const componentsRaw = readFileSync(componentsPath, "utf8");
+  const componentsBefore = JSON.parse(componentsRaw) as {
     registries?: Record<string, string>;
     tailwind?: { css?: string };
+    aliases?: Record<string, string>;
   };
   // The scaffold's files as they are now, to see which the install replaces.
   const scaffold = snapshotScaffold(appRoot);
+  // shadcn's own items' files, which no check here covers.
+  const upstream = snapshotUpstream(
+    appRoot,
+    upstreamDirs(componentsBefore.aliases),
+    new Set([...shippedTargets, ...Object.keys(seams)])
+  );
   const originalRegistry = componentsBefore.registries?.["@intelligo"];
-  const { server, url } = await serveRegistry(context.registryDir);
+
+  // Until the install is over, the app's own copies wait on disk too,
+  // and an interrupt puts them back.
+  const restorePoint = new Map([...kept, ["components.json", componentsRaw]]);
+  writeRestorePoint(appRoot, restorePoint);
+  let server: Server | null = null;
+  const disposeInterrupt = onInterrupt(() => {
+    server?.close();
+    writeBack(appRoot, restorePoint);
+    clearRestorePoint(appRoot);
+    log(
+      "sync interrupted: the app's seams, messages and components.json are back as they were."
+    );
+  });
 
   const setRegistry = (value: string | undefined) => {
     // Read fresh: the base item rewrites components.json's style fields,
@@ -519,13 +573,18 @@ export async function syncApply(
   };
 
   let failed: { item: string; output: string } | null = null;
+  const shipped = new Map(
+    shippedFiles(context, items).files.map((f) => [f.target, f.content])
+  );
   try {
-    setRegistry(`${url}/{name}.json`);
+    const served = await serveRegistry(context.registryDir);
+    server = served.server;
+    setRegistry(`${served.url}/{name}.json`);
     for (const item of items) {
       log(`› shadcn add ${item}`);
       const result = await run(
         shadcn,
-        ["add", `${url}/${item}.json`, "--yes", "--overwrite"],
+        ["add", `${served.url}/${item}.json`, "--yes", "--overwrite"],
         appRoot
       );
       if (result.code !== 0) {
@@ -534,20 +593,29 @@ export async function syncApply(
       }
     }
   } finally {
+    disposeInterrupt();
     setRegistry(originalRegistry);
-    server.close();
+    server?.close();
+    // Seams back as they were; messages merged over the registry's.
+    restoreKept(
+      appRoot,
+      kept,
+      shipped,
+      readManifest(appRoot)?.registry?.messages ?? {}
+    );
+    clearRestorePoint(appRoot);
   }
 
-  // Seams back as they were; messages merged over the registry's.
-  const shipped = new Map(
-    shippedFiles(context, items).files.map((f) => [f.target, f.content])
-  );
-  restoreKept(
-    appRoot,
-    kept,
-    shipped,
-    readManifest(appRoot)?.registry?.messages ?? {}
-  );
+  const replaced = upstream.replaced();
+  if (replaced.size > 0) {
+    const dir = backUpContents(appRoot, replaced);
+    log(
+      [
+        `shadcn replaced ${replaced.size} file(s) of its own items; the app's copies are in ${dir}:`,
+        ...[...replaced.keys()].map((file) => `  ${file}`),
+      ].join("\n")
+    );
+  }
 
   if (failed) {
     log(
