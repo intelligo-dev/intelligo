@@ -208,3 +208,98 @@ describe("pnpm.overrides", () => {
     ).toEqual([]);
   });
 });
+
+/** A specifier's package: `react/jsx-runtime` → `react`, `@a/b/c` → `@a/b`. */
+function packageOf(spec: string): string {
+  const parts = spec.split("/");
+  return spec.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0]!;
+}
+
+/** Specifiers a module loads at runtime: type-only imports and exports load nothing. */
+function runtimeSpecifiers(source: string): string[] {
+  return importSpecifiers(
+    source.replace(
+      /(?:^|\n)\s*(?:import|export)\s+type\s[^;]*?from\s*["'][^"']+["']/g,
+      ""
+    )
+  );
+}
+
+/** The packages a module reaches at load, following its relative imports. */
+function reachedPackages(entry: string): Set<string> {
+  const seen = new Set<string>();
+  const reached = new Set<string>();
+  const queue = [entry];
+  while (queue.length > 0) {
+    const file = queue.pop()!;
+    if (seen.has(file)) continue;
+    seen.add(file);
+    for (const spec of runtimeSpecifiers(readFileSync(file, "utf8"))) {
+      if (!spec.startsWith(".")) {
+        reached.add(packageOf(spec));
+        continue;
+      }
+      const base = path.resolve(path.dirname(file), spec);
+      const next = [
+        base,
+        `${base}.ts`,
+        `${base}.tsx`,
+        path.join(base, "index.ts"),
+        path.join(base, "index.tsx"),
+      ].find((candidate) => {
+        try {
+          return /\.tsx?$/.test(candidate) && readFileSync(candidate) !== null;
+        } catch {
+          return false;
+        }
+      });
+      if (next) queue.push(next);
+    }
+  }
+  return reached;
+}
+
+describe("peers reached through another package", () => {
+  it.each(packages)(
+    "$dir declares the optional peers its @intelligo-dev imports load",
+    ({ dir, manifest }) => {
+      // An optional peer is optional for the subpaths that never load
+      // it. A package that imports such a subpath at load time needs the
+      // peer as surely as if it imported it itself, and must say so, or
+      // a consumer without it fails to start.
+      const byName = new Map(packages.map((p) => [p.manifest.name, p]));
+      const missing = new Set<string>();
+      for (const file of walk(path.join(PACKAGES_DIR, dir, "src"), (name) =>
+        /\.tsx?$/.test(name)
+      )) {
+        if (/\.test\.tsx?$/.test(file)) continue;
+        for (const spec of runtimeSpecifiers(readFileSync(file, "utf8"))) {
+          const owner = byName.get(packageOf(spec));
+          if (!owner || owner.dir === dir) continue;
+          const subpath = `.${spec.slice(packageOf(spec).length)}`;
+          const target = (
+            owner.manifest as Manifest & { exports?: Record<string, unknown> }
+          ).exports?.[subpath === "." ? "." : subpath];
+          if (typeof target !== "string") continue;
+          const reached = reachedPackages(
+            path.join(PACKAGES_DIR, owner.dir, target)
+          );
+          // A required peer is installed with the package that declares
+          // it; an optional one is not.
+          for (const peer of Object.keys(
+            owner.manifest.peerDependenciesMeta ?? {}
+          ).filter(
+            (name) => owner.manifest.peerDependenciesMeta?.[name]?.optional
+          )) {
+            if (
+              reached.has(peer) &&
+              !(peer in (manifest.peerDependencies ?? {}))
+            )
+              missing.add(`${peer} (through ${spec})`);
+          }
+        }
+      }
+      expect([...missing].sort()).toEqual([]);
+    }
+  );
+});
