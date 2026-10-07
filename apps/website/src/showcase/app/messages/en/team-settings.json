@@ -93,6 +93,7 @@
     "lastWorkspace": "This is your only workspace, so you can't leave it.",
     "forbidden": "You don't have permission to do that.",
     "acceptVerificationFailed": "We couldn't confirm the invitation. Please try again.",
+    "rateLimited": "You've sent a lot of invitations recently. Try again in a while.",
     "providerError": "Something went wrong. Please try again.",
     "somethingWentWrong": "Something went wrong.",
     "invalidInput": "Invalid input"

@@ -3,7 +3,8 @@ import { getLocale, getTranslations } from "next-intl/server";
  * The layout for every route under `(app)`. Checks, in order:
  *
  * 1. A session, checked here because middleware only reads the cookie.
- *    None → `/login`.
+ *    None → `/login`; one for an account scheduled for deletion →
+ *    `/restore-account` (the auth-login item).
  * 2. Completed onboarding. Incomplete → `shellConfig.onboardingRedirect`
  *    (`/onboarding` unless the seam says otherwise; `false` skips the
  *    check). The onboarding route is a sibling of `(app)`, so this
@@ -22,6 +23,7 @@ import {
   auth,
   ensureUserWorkspace,
   getAuthSession,
+  getPendingDeletion,
   getWorkspaceContextById,
 } from "@intelligo-dev/auth";
 import { db } from "@intelligo-dev/core/db";
@@ -41,7 +43,13 @@ const SKIP_LINK_CLASS =
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await getAuthSession();
   if (!session) {
-    redirect({ href: "/login", locale: await getLocale() });
+    // A signed-in account scheduled for deletion goes to the restore
+    // screen; everyone else signs in.
+    const pending = await getPendingDeletion();
+    redirect({
+      href: pending ? "/restore-account" : "/login",
+      locale: await getLocale(),
+    });
     return null;
   }
 

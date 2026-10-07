@@ -25,6 +25,10 @@
  *   this step moves it back.
  * - **Prune finished jobs** older than a week.
  * - **Prune read notifications** older than 90 days. Unread ones stay.
+ * - **Purge deleted accounts** whose grace period
+ *   (`ACCOUNT_DELETION_GRACE_DAYS`, 30 by default) has ended: the user
+ *   row goes, with their private data; usage and billing rows stay
+ *   unattributed, and both audit trails forget who they were.
  *
  * Draining the job queue is NOT done here: `drain` needs your handlers,
  * so give it its own route (or call it below once you have some).
@@ -40,6 +44,8 @@ import {
   processExpiredPlanGrants,
   processTrialExpirations,
 } from "@intelligo-dev/billing";
+import { eraseActorFromAuditEvents } from "@intelligo-dev/audit";
+import { purgeDeletedAccounts } from "@intelligo-dev/auth";
 import { findStaleExecutions } from "@intelligo-dev/executions";
 import { pruneJobs } from "@intelligo-dev/jobs";
 import { createLogger } from "@intelligo-dev/core/logger";
@@ -126,6 +132,13 @@ export async function GET(request: Request) {
     ),
     notificationsPruned: await step("pruneNotifications", () =>
       pruneNotifications(new Date(Date.now() - PRUNE_NOTIFICATIONS_AFTER_MS))
+    ),
+    deletedAccounts: await step("purgeDeletedAccounts", () =>
+      purgeDeletedAccounts({
+        beforePurge: async (userId) => {
+          await eraseActorFromAuditEvents(userId);
+        },
+      })
     ),
     errors,
   };

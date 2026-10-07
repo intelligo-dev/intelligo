@@ -61,6 +61,15 @@ organization plugin; the plugin's own mutating endpoints answer 404 over HTTP
 (headers to read the client address from, in order) and
 `AUTH_TRUSTED_PROXIES` (CIDRs) let the auth rate limiter tell clients apart.
 
+Deleting an account (`createProfileService().deleteAccount`) schedules it:
+it is refused while the user is the only owner of a workspace other people
+belong to, and the workspaces they own alone are deleted with it. Until the
+grace period ends — `ACCOUNT_DELETION_GRACE_DAYS`, 30 by default — signing
+in leads to a restore screen (`getPendingDeletion`, `restoreAccount`);
+every other guard treats that session as signed out. After it,
+`purgeDeletedAccounts`, called from the maintenance route, deletes the
+account and erases the user from the memory audit.
+
 ## Entry points
 
 - `@intelligo-dev/auth`

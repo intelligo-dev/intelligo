@@ -27,17 +27,27 @@ type Translator = Awaited<
   ReturnType<typeof getTranslations<"profile-settings">>
 >;
 
-function friendlyMessage(t: Translator): Partial<Record<string, string>> {
+function friendlyMessage(
+  t: Translator,
+  workspaces: string[]
+): Partial<Record<string, string>> {
   return {
     forbidden: t("errors.forbidden"),
     provider_error: t("errors.providerError"),
     reauthentication_required: t("errors.reauthenticationRequired"),
+    sole_owner: t("errors.soleOwner", {
+      workspaces: workspaces.join(", "),
+      count: workspaces.length,
+    }),
   };
 }
 
 function friendlyError(error: unknown, t: Translator): string {
   if (isProfileServiceError(error)) {
-    return friendlyMessage(t)[error.code] ?? error.message;
+    const workspaces = Array.isArray(error.meta?.workspaces)
+      ? error.meta.workspaces.map(String)
+      : [];
+    return friendlyMessage(t, workspaces)[error.code] ?? error.message;
   }
   // `Error#message` can carry internals (SQL, hostnames) to the UI.
   console.error("[profile-settings]", error);

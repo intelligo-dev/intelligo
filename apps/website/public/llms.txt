@@ -67,7 +67,7 @@ Product pages installed into a Next.js app as your own source: `pnpm exec shadcn
 - [App Shell](https://intelligo.dev/blocks/app-shell): Authenticated application shell: session and onboarding gate, workspace bootstrap, a sidebar that morphs into an icon rail with a gliding active pill, workspace switcher, configurable nav and user menu, and a page region that lifts each section in.
 - [Settings Shell](https://intelligo.dev/blocks/settings-shell): The shared frame around every /settings page: layout with heading and width constraint, a configurable tab bar (lib/settings-nav.ts), and a /settings index that redirects to the first tab.
 - [Workspace Settings](https://intelligo.dev/blocks/workspace-settings): Workspace name/URL editing and owner-only deletion, backed by the framework's workspace service.
-- [Auth: Login](https://intelligo.dev/blocks/auth-login): Email/password and OAuth login.
+- [Auth: Login](https://intelligo.dev/blocks/auth-login): Email/password and OAuth login, and the restore screen an account scheduled for deletion lands on after signing in.
 - [Auth: Signup](https://intelligo.dev/blocks/auth-signup): Email/password and OAuth account creation.
 - [Auth: Password Reset](https://intelligo.dev/blocks/auth-password-reset): Forgot-password and reset-password pages, backed by the Better-Auth client SDK's requestPasswordReset/resetPassword actions.
 - [Auth: Email Verification](https://intelligo.dev/blocks/auth-email-verification): Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action.
