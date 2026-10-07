@@ -494,7 +494,11 @@ describe("orphaned files, backups and removal", () => {
   });
 
   it("copies a page edited by hand under .intelligo/backup before removing it", () => {
-    write(context.appRoot, "app/usage/page.tsx", "export default function Mine() {}\n");
+    write(
+      context.appRoot,
+      "app/usage/page.tsx",
+      "export default function Mine() {}\n"
+    );
     write(context.appRoot, "app/error.tsx", "export default 1;\n");
     keep(["route-error", "usage"], {
       "app/usage/page.tsx": hashContents(PAGE.replace(/^\/\*\*.*\*\/\n/, "")),
