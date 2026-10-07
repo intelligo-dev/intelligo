@@ -10,7 +10,7 @@
  * the paying plan winning, as it should.
  */
 
-import { and, eq, isNull, lt, ne } from "drizzle-orm";
+import { and, eq, isNull, lt, ne, sql } from "drizzle-orm";
 
 import { recordAuditEvent } from "@intelligo-dev/audit";
 import { db } from "@intelligo-dev/core/db";
@@ -52,9 +52,10 @@ export type GrantPlanResult = {
   endsAt: Date | null;
 };
 
-/** The database, or a transaction the grant should commit with. */
-export type PlanGrantExecutor =
-  typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+/** A transaction the grant commits with. */
+export type PlanGrantExecutor = Parameters<
+  Parameters<typeof db.transaction>[0]
+>[0];
 
 /**
  * Put `workspaceId` on `planSlug`, creating its subscription row if it
@@ -69,16 +70,17 @@ export type PlanGrantExecutor =
 export async function grantPlan(
   input: GrantPlanInput
 ): Promise<GrantPlanResult> {
-  const result = await writePlanGrant(db, input);
+  const result = await db.transaction((tx) => writePlanGrant(tx, input));
   invalidateFeatureCache(input.workspaceId);
   return result;
 }
 
 /**
- * The rows `grantPlan` writes, on `executor`. A caller that passes a
- * transaction invalidates the feature cache itself once it commits:
- * invalidating before the commit lets a concurrent read cache the old
- * plan again.
+ * The rows `grantPlan` writes, in the caller's transaction, which then
+ * invalidates the feature cache itself once it commits: invalidating
+ * before the commit lets a concurrent read cache the old plan again.
+ * Grants to one workspace take turns, so two paid together each add
+ * their days rather than both starting from the same end.
  *
  * @throws {BillingServiceError} `invalid_plan` when no row has the slug.
  */
@@ -86,6 +88,9 @@ export async function writePlanGrant(
   executor: PlanGrantExecutor,
   input: GrantPlanInput
 ): Promise<GrantPlanResult> {
+  await executor.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtext(${`plan-grant:${input.workspaceId}`}))`
+  );
   const [plan] = await executor
     .select({ id: plans.id })
     .from(plans)

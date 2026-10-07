@@ -169,6 +169,20 @@ d("grantPlan (integration)", () => {
     expect(second - first).toBeLessThanOrEqual(30 * DAY + 1000);
   });
 
+  it("adds two grants made at the same moment one after the other", async () => {
+    const grantThirty = () =>
+      grant.grantPlan({
+        workspaceId: WORKSPACE,
+        planSlug: "plan-grant-pro",
+        reason: "local payment",
+        days: 30,
+      });
+    await Promise.all([grantThirty(), grantThirty()]);
+
+    const end = (await period())!.current_period_end!;
+    expect(Math.abs(end - (Date.now() + 60 * DAY))).toBeLessThan(60_000);
+  });
+
   it("clears the end when the next grant has none", async () => {
     await grant.grantPlan({
       workspaceId: WORKSPACE,

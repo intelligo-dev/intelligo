@@ -35,6 +35,21 @@ it explains a framework decision.
   for that usage, which a refusal used to drop.
 - A product's `deriveTitle` runs once the turn is admitted, so a refused
   turn no longer pays a model to name its conversation.
+- Two plan grants to one workspace at the same moment — two local
+  invoices settled together — both count: grants take turns on a
+  per-workspace lock, so the second adds its days to the first's end
+  instead of both starting from the same one.
+- A job whose handler kills its worker every time stops being reclaimed
+  once it has used its attempts, and is recorded `failed`. `drain` takes
+  `deadlineMs`: jobs it claimed but had no time to start go back with the
+  attempt unspent, reported as `deferred`.
+- An execution that receives usage after it was failed — abandoned by the
+  stale sweep while it still ran — logs it and records an
+  `execution.usage_after_failure` audit event instead of dropping it
+  without a trace.
+- A local invoice its provider's callback names is asked about again
+  even when it was recorded failed, and granted if it was paid after all
+  (`settleLocalInvoice({ recheckFailed })`).
 
 ### Security
 

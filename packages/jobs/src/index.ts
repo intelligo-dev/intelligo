@@ -12,7 +12,7 @@
 
 import { db } from "@intelligo-dev/core/db";
 import { createLogger } from "@intelligo-dev/core/logger";
-import { and, desc, eq, inArray, lt, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, lte, or, sql } from "drizzle-orm";
 
 import { jobs } from "./db/schema";
 import type { Job } from "./db/schema";
@@ -48,6 +48,8 @@ export type DrainResult = {
   failed: number;
   /** Jobs whose kind had no registered handler — left pending. */
   unhandled: string[];
+  /** Claimed but not started before `deadlineMs`; put back pending. */
+  deferred: number;
 };
 
 export async function enqueue(input: EnqueueInput): Promise<string> {
@@ -73,13 +75,27 @@ export async function enqueue(input: EnqueueInput): Promise<string> {
 async function claim(limit: number): Promise<Job[]> {
   const now = new Date();
   const abandonedBefore = new Date(now.getTime() - ABANDONED_AFTER_MS);
+  const abandoned = and(
+    eq(jobs.status, "running"),
+    lt(jobs.startedAt, abandonedBefore)
+  );
+  // An abandoned job that has used its attempts — one whose handler
+  // keeps killing the worker — fails here instead of being run again.
+  await db
+    .update(jobs)
+    .set({
+      status: "failed",
+      finishedAt: now,
+      lastError: "The worker stopped while the handler ran.",
+    })
+    .where(and(abandoned, gte(jobs.attempts, jobs.maxAttempts)));
   const due = db
     .select({ id: jobs.id })
     .from(jobs)
     .where(
       or(
         and(eq(jobs.status, "pending"), lte(jobs.runAt, now)),
-        and(eq(jobs.status, "running"), lt(jobs.startedAt, abandonedBefore))
+        and(abandoned, lt(jobs.attempts, jobs.maxAttempts))
       )
     )
     .orderBy(jobs.runAt)
@@ -97,19 +113,42 @@ async function claim(limit: number): Promise<Job[]> {
     .returning();
 }
 
+/**
+ * Run the due jobs, one at a time. `deadlineMs` stops starting new ones
+ * that long after the drain began, so a run fits its route's time limit;
+ * the claimed jobs it did not start go back, attempt unspent, as
+ * `deferred`.
+ */
 export async function drain(
   handlers: Record<string, JobHandler>,
-  options: { limit?: number } = {}
+  options: { limit?: number; deadlineMs?: number } = {}
 ): Promise<DrainResult> {
+  const deadline =
+    options.deadlineMs === undefined
+      ? Number.POSITIVE_INFINITY
+      : Date.now() + options.deadlineMs;
   const claimedJobs = await claim(options.limit ?? 10);
   const result: DrainResult = {
     claimed: claimedJobs.length,
     succeeded: 0,
     failed: 0,
     unhandled: [],
+    deferred: 0,
   };
 
   for (const job of claimedJobs) {
+    if (Date.now() >= deadline) {
+      result.deferred += 1;
+      await db
+        .update(jobs)
+        .set({
+          status: "pending",
+          attempts: sql`${jobs.attempts} - 1`,
+          startedAt: null,
+        })
+        .where(eq(jobs.id, job.id));
+      continue;
+    }
     const handler = handlers[job.kind];
 
     if (!handler) {

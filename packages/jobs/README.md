@@ -49,9 +49,9 @@ const result = await drain(
       await sendDigest(job.payload);
     },
   },
-  { limit: 25 }
+  { limit: 25, deadlineMs: 45_000 }
 );
-// { claimed, succeeded, failed, unhandled }
+// { claimed, succeeded, failed, unhandled, deferred }
 ```
 
 ## What the queue guarantees
@@ -63,7 +63,10 @@ const result = await drain(
   last error. `listFailedJobs()` reads them, newest first.
 - **A dead worker does not strand a job.** One still `running` thirty minutes
   after its handler started is claimed again, so a handler must finish well
-  inside that.
+  inside that — until it has used its attempts: a handler that keeps killing
+  its worker ends `failed`.
+- **A drain fits its time limit.** With `deadlineMs`, jobs claimed but not
+  started by then go back without spending an attempt (`deferred`).
 - **An unknown kind costs nothing.** A job with no handler in this worker goes
   back without spending an attempt, a minute behind the jobs the worker can
   run — another deployment may know it.

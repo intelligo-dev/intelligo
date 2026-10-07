@@ -86,4 +86,40 @@ d("job queue (integration)", () => {
 
     expect(result.succeeded).toBe(1);
   });
+
+  it("fails an abandoned job that has used its attempts instead of running it again", async () => {
+    const id = await enqueue({ kind: `${kind}.killer`, maxAttempts: 2 });
+    await client.query(
+      `UPDATE jobs SET status = 'running', attempts = 2,
+              started_at = (now() AT TIME ZONE 'utc') - interval '1 hour'
+        WHERE id = $1`,
+      [id]
+    );
+    let ran = false;
+
+    await drain({ [`${kind}.killer`]: async () => void (ran = true) });
+
+    expect(ran).toBe(false);
+    const { rows } = await client.query<{ status: string }>(
+      `SELECT status FROM jobs WHERE id = $1`,
+      [id]
+    );
+    expect(rows[0]!.status).toBe("failed");
+  });
+
+  it("puts back what it had no time to start, attempt unspent", async () => {
+    const id = await enqueue({ kind: `${kind}.late` });
+
+    const result = await drain(
+      { [`${kind}.late`]: async () => {} },
+      { deadlineMs: 0 }
+    );
+
+    expect(result.deferred).toBeGreaterThanOrEqual(1);
+    const { rows } = await client.query<{ status: string; attempts: number }>(
+      `SELECT status, attempts FROM jobs WHERE id = $1`,
+      [id]
+    );
+    expect(rows[0]).toEqual({ status: "pending", attempts: 0 });
+  });
 });

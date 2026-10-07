@@ -82,6 +82,7 @@ const beginInput = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.selectRows.mockResolvedValue([]);
   mocks.insert.mockReturnValue({ values: mocks.insertValues });
   mocks.insertValues.mockResolvedValue(undefined);
   mocks.update.mockReturnValue({ set: mocks.updateSet });

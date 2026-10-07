@@ -50,6 +50,7 @@ vi.mock("drizzle-orm", () => ({
   and: vi.fn((...args: unknown[]) => ({ op: "and", args })),
   eq: vi.fn((col: unknown, val: unknown) => ({ op: "eq", col, val })),
   lte: vi.fn((col: unknown, val: unknown) => ({ op: "lte", col, val })),
+  gte: vi.fn((col: unknown, val: unknown) => ({ op: "gte", col, val })),
   lt: vi.fn((col: unknown, val: unknown) => ({ op: "lt", col, val })),
   or: vi.fn((...args: unknown[]) => ({ op: "or", args })),
   desc: vi.fn((col: unknown) => ({ op: "desc", col })),
@@ -239,6 +240,7 @@ describe("drain", () => {
       succeeded: 0,
       failed: 0,
       unhandled: [],
+      deferred: 0,
     });
   });
 });
