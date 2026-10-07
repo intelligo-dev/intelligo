@@ -70,7 +70,12 @@ export function CreditBundles({ role, currentBalance }: CreditBundlesProps) {
   const format = useFormatter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const Actions = (creditBundleConfig.actionRoles ?? ["owner"]).includes(role)
+  // Read with `in`: a config written before the field existed still
+  // compiles, and keeps the owner-only default.
+  const actionRoles = ("actionRoles" in creditBundleConfig
+    ? (creditBundleConfig.actionRoles as readonly string[] | undefined)
+    : undefined) ?? ["owner"];
+  const Actions = actionRoles.includes(role)
     ? creditBundleConfig.actions
     : undefined;
   const cardCheckout =

@@ -43,6 +43,7 @@ import { CitationPill, type CitationItem } from "@showcase/components/ui/ai-cita
 import { ImageGeneration } from "@showcase/components/ui/ai-image-generation";
 import { Markdown } from "@showcase/components/ui/ai-markdown";
 import { chatConfig } from "@showcase/lib/chat-config";
+
 import { ReasoningText } from "@showcase/components/ui/ai-reasoning-text";
 import { StreamingResponse } from "@showcase/components/ui/ai-streaming-response";
 import {
@@ -86,6 +87,13 @@ import {
 } from "@showcase/lib/message-parts";
 import { MessageActions, type MessageVote } from "./message-actions";
 import { ToolActivity } from "./tool-activity";
+
+// Read with `in`: a config written before the field existed still
+// compiles, and loads no image.
+const IMAGE_HOSTS =
+  "imageHosts" in chatConfig
+    ? (chatConfig.imageHosts as string[] | undefined)
+    : undefined;
 
 export type MessageVersion = {
   index: number;
@@ -305,7 +313,7 @@ export function Message({
               mode={streamingText ? "streaming" : "static"}
               isAnimating={streamingText}
               components={markdownComponents}
-              imagePrefixes={chatConfig.imageHosts}
+              imagePrefixes={IMAGE_HOSTS}
             >
               {linkCitations(part.text, new Set(citations.keys()))}
             </Markdown>

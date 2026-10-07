@@ -18,6 +18,11 @@ it explains a framework decision.
 
 ### Fixed
 
+- The `pricing` and `billing-settings` pages read `actionRoles` from their
+  config seams with `in`, so an app whose `lib/plan-card-config.tsx` or
+  `lib/credit-bundle-config.tsx` predates the field — `intelligo sync`
+  keeps seams as they are — compiles again. Since 1.1.0 it failed to
+  type-check.
 - A chat turn holds what it can spend. Admission held one model call
   against a fixed 16K-token prompt, while a turn with tools may call the
   model once per step and a long conversation sends more than 16K; the
