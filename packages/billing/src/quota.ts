@@ -24,6 +24,7 @@ import {
   chargeFor,
   estimateWorstCaseCharge,
   type BillingRate,
+  type Workload,
 } from "@intelligo-dev/executions/pricing";
 import {
   add,
@@ -174,15 +175,23 @@ function notConfigured(): QuotaCheckResult {
 }
 
 /**
- * What admission holds for: the worst case of one turn on a model, or a
- * fixed amount the product charges for one unit of work.
+ * What admission holds for: the worst case of a run on a model (one
+ * call, or its workload's), or a fixed amount the product charges for
+ * one unit of work.
  */
-type Price = { modelId: string } | { amount: Money };
+type Price = { modelId: string; workload?: Workload } | { amount: Money };
 
-function priceOf(options?: { modelId?: string; amount?: Money }): Price {
+function priceOf(options?: {
+  modelId?: string;
+  amount?: Money;
+  workload?: Workload;
+}): Price {
   return options?.amount
     ? { amount: options.amount }
-    : { modelId: options?.modelId ?? DEFAULT_MODEL_ID };
+    : {
+        modelId: options?.modelId ?? DEFAULT_MODEL_ID,
+        workload: options?.workload,
+      };
 }
 
 /**
@@ -248,7 +257,12 @@ export async function estimateQuota(
  */
 export async function reserveQuota(
   workspaceId: string,
-  options: { modelId?: string; amount?: Money; requestId: string }
+  options: {
+    modelId?: string;
+    amount?: Money;
+    workload?: Workload;
+    requestId: string;
+  }
 ): Promise<QuotaAdmission> {
   const price = priceOf(options);
   const { requestId } = options;
@@ -351,7 +365,11 @@ function decideQuota(
         assertChargeable(price.amount, pools.rate.currency);
         estimated = price.amount;
       } else {
-        estimated = estimateWorstCaseCharge(price.modelId, pools.rate);
+        estimated = estimateWorstCaseCharge(
+          price.modelId,
+          pools.rate,
+          price.workload
+        );
       }
     } catch (error) {
       if (error instanceof UnknownModelError) {

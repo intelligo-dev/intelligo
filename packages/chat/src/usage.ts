@@ -60,12 +60,23 @@ export function abortedUsage(
 }
 
 /**
- * Follows the step a run is in, for `abortedUsage`: wire its three
+ * Follows the steps of a run, for `abortedUsage`: wire its three
  * callbacks into `streamText`, and on abort settle `aborted(steps)`.
+ * Where no step list is handed over (a stream error), `spent()` is the
+ * steps it saw finish, plus the step in flight only if the provider had
+ * begun to answer it: a call refused outright was not billed.
  * `promptTokens` estimates what the first step reads.
  */
 export function inFlightTracker(promptTokens: number) {
   let streamed: string | null = null;
+  const finished: { usage?: TokenUsage }[] = [];
+  const aborted = (steps: ReadonlyArray<{ usage?: TokenUsage }>) =>
+    abortedUsage(
+      steps,
+      streamed === null
+        ? null
+        : { promptTokens, streamedTokens: estimateTokenCount(streamed) }
+    );
   return {
     onStepStart: () => {
       streamed = "";
@@ -78,16 +89,12 @@ export function inFlightTracker(promptTokens: number) {
         streamed += chunk.text ?? "";
       }
     },
-    onStepFinish: () => {
+    onStepFinish: (step: { usage?: TokenUsage }) => {
       streamed = null;
+      finished.push({ usage: step.usage });
     },
-    aborted: (steps: ReadonlyArray<{ usage?: TokenUsage }>) =>
-      abortedUsage(
-        steps,
-        streamed === null
-          ? null
-          : { promptTokens, streamedTokens: estimateTokenCount(streamed) }
-      ),
+    aborted,
+    spent: () => (streamed ? aborted(finished) : abortedUsage(finished, null)),
   };
 }
 

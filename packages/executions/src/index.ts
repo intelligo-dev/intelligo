@@ -67,6 +67,7 @@ export {
   providerCost,
   chargeFor,
   estimateWorstCaseCharge,
+  type Workload,
 } from "./pricing";
 export type {
   ModelId,

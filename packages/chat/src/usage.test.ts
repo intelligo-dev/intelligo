@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { abortedUsage, sumStepUsage } from "./usage";
+import { abortedUsage, inFlightTracker, sumStepUsage } from "./usage";
 
 describe("abortedUsage", () => {
   const finished = [
@@ -32,5 +32,48 @@ describe("abortedUsage", () => {
     expect(
       abortedUsage([{}], { promptTokens: 400, streamedTokens: 3 })
     ).toEqual({ inputTokens: 400, outputTokens: 3, totalTokens: 403 });
+  });
+});
+
+describe("inFlightTracker", () => {
+  const usage = (inputTokens: number, outputTokens: number) => ({
+    inputTokens,
+    outputTokens,
+  });
+
+  it("counts the finished steps, and a step in flight only once it answered", () => {
+    const tracker = inFlightTracker(400);
+    tracker.onStepStart();
+    tracker.onChunk({ chunk: { type: "text-delta", text: "abcd" } });
+    tracker.onStepFinish({ usage: usage(100, 20) });
+    tracker.onStepStart();
+    // Refused before it answered: not billed.
+    expect(tracker.spent()).toEqual({
+      inputTokens: 100,
+      outputTokens: 20,
+      totalTokens: 120,
+    });
+    tracker.onChunk({ chunk: { type: "reasoning-delta", text: "abcdefgh" } });
+    tracker.onChunk({ chunk: { type: "tool-call" } });
+    expect(tracker.spent()).toEqual({
+      inputTokens: 100 + 120,
+      outputTokens: 20 + 2,
+      totalTokens: 242,
+    });
+  });
+
+  it("estimates the first step from the prompt when it is stopped", () => {
+    const tracker = inFlightTracker(400);
+    tracker.onStepStart();
+    expect(tracker.aborted([])).toEqual({
+      inputTokens: 400,
+      outputTokens: 0,
+      totalTokens: 400,
+    });
+    expect(inFlightTracker(400).aborted([])).toEqual({
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+    });
   });
 });

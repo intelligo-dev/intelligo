@@ -378,22 +378,39 @@ export function chargeFor(
 }
 
 /**
- * The ceiling one turn on this model could charge, for admission:
- * the model's own output limit against a 16K input budget (system
- * prompt plus history). Refusing on the ceiling is what stops a turn
- * that cannot be paid for from burning provider tokens first. An
- * embedding model writes nothing, so only the input budget is held.
+ * What a run is expected to send, when the caller knows: the prompt's
+ * size in tokens, and how many model calls it may make (a tool loop
+ * calls the model once per step, each with the prompt).
+ */
+export type Workload = {
+  inputTokens?: number;
+  steps?: number;
+};
+
+/**
+ * The ceiling one run on this model could charge, for admission: per
+ * step, the prompt (`workload.inputTokens`, a 16K budget when unknown)
+ * and the model's own output limit, times the steps it may take.
+ * Refusing on the ceiling is what stops a run that cannot be paid for
+ * from burning provider tokens first. An embedding model writes
+ * nothing, so only the input is held.
  *
  * @throws {UnknownModelError} when the id has no registered price.
  */
 export function estimateWorstCaseCharge(
   modelId: string,
-  rate: BillingRate
+  rate: BillingRate,
+  workload: Workload = {}
 ): Money {
   const pricing = requireModel(modelId);
+  const steps = Math.max(1, Math.floor(workload.steps ?? 1));
+  const input = Math.max(
+    0,
+    Math.ceil(workload.inputTokens ?? ESTIMATE_INPUT_BUDGET)
+  );
   const outputBudget =
     modelKind(pricing) === "embedding" ? 0 : pricing.maxOutputTokens;
-  return chargeFor(modelId, ESTIMATE_INPUT_BUDGET, outputBudget, rate).charged;
+  return chargeFor(modelId, input * steps, outputBudget * steps, rate).charged;
 }
 
 const ESTIMATE_INPUT_BUDGET = 16_000;

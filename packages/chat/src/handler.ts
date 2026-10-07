@@ -251,7 +251,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
   const authenticate = config.authenticate ?? defaultAuthenticate;
   const rateLimit =
     config.rateLimit === undefined ? defaultRateLimit : config.rateLimit;
-  const deriveTitle = config.deriveTitle ?? truncateTitle;
+  const deriveTitle = config.deriveTitle;
   const events = config.onTurn ?? {};
   const withMetadata = config.messageMetadata ?? true;
   const allowedOrigins = new Set(config.cors?.origins ?? []);
@@ -558,6 +558,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     // The writer exists only while the stream is open; a tool that
     // writes outside that window is dropped rather than crashed.
     let writerSlot: UIMessageStreamWriter<ChatUIMessage> | null = null;
+    let inFlight: ReturnType<typeof inFlightTracker> | null = null;
     // Tokens tools spent on their own model calls, settled with the run's.
     let nestedUsage: TokenUsage | null = null;
     // Tokens spent on a named model, by model and capability. Which of
@@ -650,16 +651,16 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     // A title that resolves later is applied after the stream — a
     // model-written title must not delay the first token.
     let pendingTitle: Promise<string | null> | null = null;
+    // A product's title function may call a model: it runs once the turn
+    // is admitted, so a refused turn spends nothing on it.
+    let titleFrom: string | null = null;
 
     if (!loaded.row) {
       const opening = body.messages.find((message) => message.role === "user");
-      const titled = deriveTitle(
-        opening ? extractText(opening.parts) : "",
-        context
-      );
+      const openingText = opening ? extractText(opening.parts) : "";
       let title: string | null = null;
-      if (titled instanceof Promise) pendingTitle = titled;
-      else title = titled;
+      if (deriveTitle) titleFrom = openingText;
+      else title = truncateTitle(openingText);
       try {
         context.conversation = await createConversation(actor, {
           id: body.id,
@@ -734,12 +735,20 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       ...(config.metadata ? config.metadata(turn) : {}),
     };
 
-    // Entitlement, decided against the model that is about to run.
+    // Entitlement, decided against the model that is about to run, held
+    // for this prompt and, with tools, every step the loop may take.
     const run = await config.executions.begin({
       workspaceId: actor.workspaceId,
       userId: actor.userId,
       capability,
       model: modelId,
+      workload: {
+        inputTokens:
+          estimateTokenCount(prepared.system ?? agent.systemPrompt ?? "") +
+          estimateConversationTokens(prepared.messages),
+        steps:
+          agent.tools && Object.keys(agent.tools).length > 0 ? maxSteps : 1,
+      },
       metadata,
     });
 
@@ -780,6 +789,10 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         { ...(run.code ? { reasonCode: run.code } : {}) },
         limitHeaders
       );
+    }
+
+    if (titleFrom !== null && deriveTitle) {
+      pendingTitle = Promise.resolve(deriveTitle(titleFrom, context));
     }
 
     if (trimAfter) {
@@ -869,9 +882,8 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
      * and completed at settlement rather than when the tool reports
      * them: `addUsage` is synchronous inside a tool, and one execution
      * per model per turn keeps a retrieval loop of twenty embedding
-     * calls one row. The tokens are already spent, so a refusal here
-     * (the workspace ran dry mid-turn) cannot stop them; it is logged
-     * and reported as a settlement failure.
+     * calls one row. The tokens are already spent, so the execution is
+     * begun as such: no admission to refuse them, and they are charged.
      */
     const settleOtherModels = async (
       others: ReturnType<typeof takeOtherModelUsage>,
@@ -884,6 +896,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
             userId: actor.userId,
             capability: other.capability,
             model: other.model,
+            alreadySpent: true,
             metadata: {
               ...metadata,
               parentExecutionId: run.id,
@@ -1041,10 +1054,11 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         const system = prepared.system ?? agent.systemPrompt;
         // The step in flight is billed by the provider and reported by
         // no one: followed here, so stopping a reply is not free.
-        const inFlight = inFlightTracker(
+        const tracker = inFlightTracker(
           estimateTokenCount(system ?? "") +
             estimateConversationTokens(modelMessages)
         );
+        inFlight = tracker;
         const result = streamText({
           // Admission held the registered model's `maxOutputTokens`;
           // the same number caps what a step may write unless the
@@ -1084,9 +1098,9 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           // run continues server-side to completion — billed in full
           // for a reply nobody receives — and `onAbort` never fires.
           abortSignal: request.signal,
-          onStepStart: inFlight.onStepStart,
-          onChunk: inFlight.onChunk,
-          onStepFinish: inFlight.onStepFinish,
+          onStepStart: tracker.onStepStart,
+          onChunk: tracker.onChunk,
+          onStepFinish: tracker.onStepFinish,
           onFinish: async ({
             totalUsage,
             finishReason,
@@ -1103,11 +1117,17 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
             };
             // Settled here, where the usage is final, rather than when
             // the UI stream closes: a client that disconnects closes it
-            // first, and the run must still be charged.
-            await settle(captured.usage, { aborted: false });
+            // first, and the run must still be charged. A run that ended
+            // in an error reports no total; its finished steps still count.
+            const reported = captured.usage;
+            const counted =
+              (reported.inputTokens ?? 0) + (reported.outputTokens ?? 0) > 0;
+            await settle(counted ? reported : tracker.spent(), {
+              aborted: false,
+            });
           },
           onAbort: async ({ steps }) => {
-            await settle(inFlight.aborted(steps), { aborted: true });
+            await settle(tracker.aborted(steps), { aborted: true });
           },
         });
 
@@ -1192,7 +1212,14 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         // after a settled stream cannot corrupt the row. The AI SDK
         // does not await this callback, so nothing here is.
         writerSlot = null;
-        void run.fail({ error });
+        // Steps that ran before the error were billed by the provider:
+        // charged, not released. With none, the hold is released.
+        const spent = inFlight?.spent();
+        if (spent && (spent.totalTokens ?? 0) > 0) {
+          void settle(spent, { aborted: true, error: errorMessage(error) });
+        } else {
+          void run.fail({ error });
+        }
         // Another model's tokens were spent whether or not the turn
         // finished; they are that model's execution, not this one's.
         void settleOtherModels(takeOtherModelUsage(), false);

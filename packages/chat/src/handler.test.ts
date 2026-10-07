@@ -797,6 +797,94 @@ describe("POST streaming", () => {
     );
   });
 
+  it("calls no title model for a refused turn", async () => {
+    const deriveTitle = vi.fn(async () => "A model-written title");
+    const fake = fakeExecutions({
+      allowed: false,
+      code: "insufficient_credits",
+      reason: "No credit",
+    });
+    const { POST } = createChatHandler(
+      baseConfig(fake.executions, { deriveTitle })
+    );
+    const response = await POST(turn("hi"));
+    expect(response.status).toBe(402);
+    expect(deriveTitle).not.toHaveBeenCalled();
+  });
+
+  it("charges the steps that ran when a later step errors", async () => {
+    const { jsonSchema, tool } = await import("ai");
+    const usage = (input: number, output: number) => ({
+      inputTokens: {
+        total: input,
+        noCache: undefined,
+        cacheRead: undefined,
+        cacheWrite: undefined,
+      },
+      outputTokens: { total: output, text: output, reasoning: undefined },
+    });
+    let calls = 0;
+    const model = new MockLanguageModelV3({
+      provider: "failing",
+      modelId: MODEL_ID,
+      doStream: async () => {
+        calls++;
+        if (calls > 1) throw new Error("provider overloaded");
+        return {
+          stream: simulateReadableStream({
+            chunkDelayInMs: 0,
+            chunks: [
+              { type: "stream-start", warnings: [] },
+              {
+                type: "tool-call",
+                toolCallId: "c-1",
+                toolName: "ping",
+                input: JSON.stringify({ n: 1 }),
+              },
+              {
+                type: "finish",
+                finishReason: { unified: "tool-calls", raw: undefined },
+                usage: usage(40, 6),
+              },
+            ] as never[],
+          }),
+        };
+      },
+    });
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(
+      baseConfig(fake.executions, {
+        resolveAgent: async () => ({
+          id: "assistant",
+          systemPrompt: "Use tools.",
+          tools: {
+            ping: tool({
+              description: "ping",
+              inputSchema: jsonSchema<{ n: number }>({
+                type: "object",
+                properties: { n: { type: "number" } },
+                required: ["n"],
+              }),
+              execute: async () => ({ ok: true }),
+            }),
+          },
+        }),
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    await (await POST(turn("go"))).text();
+
+    // The second call was refused before it answered: only the first
+    // step is charged, and the hold is not released for nothing.
+    await vi.waitFor(() => expect(fake.complete).toHaveBeenCalled());
+    for (const [settled] of fake.complete.mock.calls) {
+      expect(settled).toMatchObject({
+        usage: expect.objectContaining({ inputTokens: 40, outputTokens: 6 }),
+      });
+    }
+    expect(fake.fail).not.toHaveBeenCalled();
+  });
+
   it("runs the agent's tools and settles whole-run usage", async () => {
     const executed = vi.fn(async () => ({ ok: true }));
     const { jsonSchema, tool } = await import("ai");
@@ -938,6 +1026,8 @@ describe("POST streaming", () => {
       userId: "u-1",
       capability: "chat.embedding",
       model: EMBEDDER,
+      // Already spent: no admission can refuse it.
+      alreadySpent: true,
       metadata: expect.objectContaining({
         conversationId: CONVERSATION_ID,
         parentExecutionId: "e-1",
@@ -1081,6 +1171,46 @@ describe("POST streaming", () => {
 
     expect(model.doStreamCalls).toHaveLength(1);
     expect(model.doStreamCalls[0]!.tools?.map((t) => t.name)).toEqual(["ping"]);
+  });
+
+  it("holds for the prompt and every step a tool loop may take", async () => {
+    const { jsonSchema, tool } = await import("ai");
+    const anyTool = () =>
+      tool({
+        description: "noop",
+        inputSchema: jsonSchema<{ n: number }>({
+          type: "object",
+          properties: { n: { type: "number" } },
+          required: ["n"],
+        }),
+        execute: async () => ({ ok: true }),
+      });
+    const withTools = fakeExecutions();
+    const { POST } = createChatHandler(
+      baseConfig(withTools.executions, {
+        resolveAgent: async () => ({
+          id: "assistant",
+          systemPrompt: "Use tools.",
+          tools: { ping: anyTool() },
+        }),
+        maxSteps: 4,
+      })
+    );
+    await (await POST(turn("go"))).text();
+    const held = withTools.begin.mock.calls[0]![0] as {
+      workload: { inputTokens: number; steps: number };
+    };
+    expect(held.workload.steps).toBe(4);
+    expect(held.workload.inputTokens).toBeGreaterThan(0);
+
+    const plain = fakeExecutions();
+    const { POST: plainPost } = createChatHandler(baseConfig(plain.executions));
+    await (await plainPost(turn("go"))).text();
+    expect(plain.begin).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workload: expect.objectContaining({ steps: 1 }),
+      })
+    );
   });
 
   it("hands the agent's generation settings to the model", async () => {

@@ -356,6 +356,41 @@ describe("estimateWorstCaseCharge", () => {
     );
   });
 
+  it("scales the hold by the run's prompt and its steps", () => {
+    registerModels([
+      {
+        ...DEFAULT_MODELS[0]!,
+        id: "test/flat",
+        costPerMInputTokens: 1,
+        costPerMOutputTokens: 1,
+        maxOutputTokens: 1_000,
+      },
+    ]);
+    const hold = (workload?: { inputTokens?: number; steps?: number }) =>
+      estimateWorstCaseCharge("test/flat", USD_RATE, workload).amount;
+    // $1/M either way at a 4x margin: 4 micros a token.
+    expect(hold()).toBe((16_000 + 1_000) * 4);
+    expect(hold({ inputTokens: 2_000 })).toBe((2_000 + 1_000) * 4);
+    expect(hold({ inputTokens: 2_000, steps: 3 })).toBe(
+      3 * (2_000 + 1_000) * 4
+    );
+    expect(hold({ steps: 2 })).toBe(2 * (16_000 + 1_000) * 4);
+    // At least one step, whole steps, no negative prompt.
+    expect(hold({ steps: 0 })).toBe(hold());
+    expect(hold({ steps: 2.9 })).toBe(hold({ steps: 2 }));
+    expect(hold({ inputTokens: -50 })).toBe(1_000 * 4);
+    expect(hold({ inputTokens: 1.2 })).toBe((2 + 1_000) * 4);
+  });
+
+  it("scales an embedding model's input hold by its steps alone", () => {
+    expect(
+      estimateWorstCaseCharge("openai/text-embedding-3-small", USD_RATE, {
+        inputTokens: 16_000,
+        steps: 2,
+      })
+    ).toEqual(money(2_560, "USD"));
+  });
+
   it("treats a model with no kind as a chat model", () => {
     const { kind: _kind, ...legacy } = DEFAULT_MODELS[0]!;
     expect(modelKind(legacy)).toBe("chat");

@@ -24,13 +24,15 @@ import {
 /** The four execution ports, bound to the quota and credit engine. */
 export function billingExecutionPorts(): Required<ExecutionPorts> {
   return {
-    async checkEntitlement({ workspaceId, requestId, model, price }) {
+    async checkEntitlement({ workspaceId, requestId, model, workload, price }) {
       // Passing requestId makes admission atomic: the worst-case cost —
       // or the fixed price — is reserved in the same transaction that
       // reads the balance, so concurrent requests cannot all pass.
       const quota = await reserveQuota(
         workspaceId,
-        price ? { amount: price, requestId } : { modelId: model, requestId }
+        price
+          ? { amount: price, requestId }
+          : { modelId: model, workload, requestId }
       );
       return {
         allowed: quota.allowed,
