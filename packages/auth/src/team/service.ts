@@ -45,6 +45,16 @@ export type TeamServicePorts = {
     invitationId: string;
     role: string;
   }) => Promise<void>;
+  /**
+   * How many invitations a user may send. Called before every invite;
+   * `allowed: false` refuses it as `rate_limited`. Invitation emails go to
+   * any address from the deployment's own domain, so a binding caps them
+   * per user and per workspace. No port ⇒ no cap beyond the member limit.
+   */
+  checkInvitationRate?: (input: {
+    userId: string;
+    workspaceId: string;
+  }) => Promise<{ allowed: boolean }>;
   /** Notify the workspace owner that a new member joined. */
   notifyMemberJoined?: (input: {
     workspaceId: string;
@@ -189,6 +199,19 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     const { workspace, user } = await callRequireRole(["owner", "admin"]);
     const validated = parseInput(inviteMemberSchema, input);
     const hdrs = await getRequestHeaders();
+
+    if (ports.checkInvitationRate) {
+      const rate = await ports.checkInvitationRate({
+        userId: user.id,
+        workspaceId: workspace.id,
+      });
+      if (!rate.allowed) {
+        throw new TeamServiceError(
+          "rate_limited",
+          "Too many invitations sent. Try again later."
+        );
+      }
+    }
 
     // Member limit, via port only.
     if (ports.checkMemberLimit) {
@@ -405,9 +428,27 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     );
   }
 
-  /** Remove a member from the workspace. Owner/admin only. */
+  /**
+   * Remove a member from the workspace. Owner/admin only, and never the
+   * caller: leaving goes through `leaveWorkspace`, which keeps the sole
+   * owner and the last workspace in place.
+   */
   async function removeMember(memberId: string): Promise<void> {
-    const { workspace } = await callRequireRole(["owner", "admin"]);
+    const { workspace, user, membership } = await callRequireRole([
+      "owner",
+      "admin",
+    ]);
+    const target = memberId.trim().toLowerCase();
+    if (
+      target === membership.id.toLowerCase() ||
+      target === user.id.toLowerCase() ||
+      target === user.email.toLowerCase()
+    ) {
+      throw new TeamServiceError(
+        "forbidden",
+        "Remove yourself by leaving the workspace."
+      );
+    }
     const hdrs = await getRequestHeaders();
 
     await callOrgApi("remove-member", () =>

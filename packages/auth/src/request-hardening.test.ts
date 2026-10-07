@@ -5,6 +5,7 @@ import {
   ipAddressOptions,
   SERVICE_ONLY_ADMIN_PATHS,
   SERVICE_ONLY_ORGANIZATION_PATHS,
+  workspaceNameProblem,
 } from "./request-hardening";
 
 describe("SERVICE_ONLY_ORGANIZATION_PATHS", () => {
@@ -68,5 +69,22 @@ describe("displayNameProblem", () => {
       /link/
     );
     expect(displayNameProblem("see WWW.evil.example")).toMatch(/link/);
+    expect(displayNameProblem("Pay at evil.example/pay")).toMatch(/link/);
+  });
+});
+
+describe("workspaceNameProblem", () => {
+  it("accepts an ordinary workspace name", () => {
+    expect(workspaceNameProblem("Acme Inc.")).toBeNull();
+    expect(workspaceNameProblem("R&D team 2")).toBeNull();
+    expect(workspaceNameProblem(undefined)).toBeNull();
+  });
+
+  it("refuses a name carrying a link, bare domains included", () => {
+    expect(workspaceNameProblem("Pay invoice at evil.example/pay")).toMatch(
+      /link/
+    );
+    expect(workspaceNameProblem("https://evil.example")).toMatch(/link/);
+    expect(workspaceNameProblem("www.evil")).toMatch(/link/);
   });
 });

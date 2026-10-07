@@ -50,6 +50,11 @@ d("conversations service — real DB integration", () => {
          VALUES ($1, 'Conv IT', $2, true, now(), now())`,
         [id, email]
       );
+      await client.query(
+        `INSERT INTO member (id, organization_id, user_id, role, created_at)
+         VALUES ($1, $2, $3, 'member', now())`,
+        [`member-${id}`, workspaceId, id]
+      );
     }
   });
 
@@ -159,6 +164,48 @@ d("conversations service — real DB integration", () => {
     expect(reshared.shareToken).not.toBe(first);
     await expect(service.getPublicConversation(first!)).rejects.toSatisfy(
       notFound
+    );
+  });
+
+  it("a share link stops answering once its author leaves the workspace or deletes their account", async () => {
+    const notFound = (err: unknown) =>
+      isConversationServiceError(err) && err.code === "not_found";
+    const conv = await service.createConversation(otherActor, {
+      agentId: "assistant",
+      modelId: "google/gemini-2.5-flash",
+    });
+    const shared = await service.setConversationVisibility(
+      otherActor,
+      conv.id,
+      "public"
+    );
+    const ref = service.shareRef(shared);
+    expect((await service.getPublicConversation(ref)).id).toBe(conv.id);
+
+    await client.query(`UPDATE users SET deleted_at = now() WHERE id = $1`, [
+      otherUserId,
+    ]);
+    await expect(service.getPublicConversation(ref)).rejects.toSatisfy(
+      notFound
+    );
+    await client.query(`UPDATE users SET deleted_at = NULL WHERE id = $1`, [
+      otherUserId,
+    ]);
+    expect((await service.getPublicConversation(ref)).id).toBe(conv.id);
+
+    await client.query(
+      `DELETE FROM member WHERE user_id = $1 AND organization_id = $2`,
+      [otherUserId, workspaceId]
+    );
+    await expect(service.getPublicConversation(ref)).rejects.toSatisfy(
+      notFound
+    );
+    await expect(service.getPublicMessages(ref)).rejects.toSatisfy(notFound);
+
+    await client.query(
+      `INSERT INTO member (id, organization_id, user_id, role, created_at)
+       VALUES ($1, $2, $3, 'member', now())`,
+      [`member-${otherUserId}`, workspaceId, otherUserId]
     );
   });
 

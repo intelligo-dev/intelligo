@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
   const updateOrganization = vi.fn();
   const deleteOrganization = vi.fn();
   const getFullOrganization = vi.fn();
+  const countOwnedWorkspaces = vi.fn();
 
   const orgApi = {
     "/organization/list": vi.fn(),
@@ -35,6 +36,7 @@ const mocks = vi.hoisted(() => {
     updateOrganization,
     deleteOrganization,
     getFullOrganization,
+    countOwnedWorkspaces,
     orgApi,
   };
 });
@@ -73,6 +75,10 @@ vi.mock("../org-api", () => ({
   orgApi: mocks.orgApi,
 }));
 
+vi.mock("./ownership", () => ({
+  countOwnedWorkspaces: mocks.countOwnedWorkspaces,
+}));
+
 import { createWorkspaceService } from "./service";
 import { isWorkspaceServiceError } from "./errors";
 
@@ -91,6 +97,7 @@ beforeEach(() => {
   mocks.requireRole.mockResolvedValue(baseCtx);
 
   mocks.orgApi["/organization/list"].mockResolvedValue([]);
+  mocks.countOwnedWorkspaces.mockResolvedValue(0);
   mocks.orgApi["/organization/set-active"].mockResolvedValue({});
   mocks.createOrganization.mockResolvedValue({
     id: "ws-new",
@@ -188,8 +195,11 @@ describe("createWorkspace", () => {
     expect(mocks.createOrganization).toHaveBeenCalled();
   });
 
-  it("skips the limit check for the caller's first workspace even when the port is bound", async () => {
-    mocks.orgApi["/organization/list"].mockResolvedValue([]);
+  it("skips the limit check while the caller owns no workspace, even when the port is bound", async () => {
+    mocks.orgApi["/organization/list"].mockResolvedValue([
+      { id: "ws-invited", name: "Client" },
+    ]);
+    mocks.countOwnedWorkspaces.mockResolvedValue(0);
     const checkWorkspaceLimit = vi.fn().mockResolvedValue({
       allowed: false,
       limit: 0,
@@ -203,9 +213,7 @@ describe("createWorkspace", () => {
   });
 
   it("enforces the workspace limit when the port disallows (existing workspaces present)", async () => {
-    mocks.orgApi["/organization/list"].mockResolvedValue([
-      { id: "ws-1", name: "Acme" },
-    ]);
+    mocks.countOwnedWorkspaces.mockResolvedValue(1);
     const checkWorkspaceLimit = vi.fn().mockResolvedValue({
       allowed: false,
       limit: 1,
@@ -222,20 +230,37 @@ describe("createWorkspace", () => {
     expect(mocks.createOrganization).not.toHaveBeenCalled();
   });
 
-  it("proceeds when the limit port allows, passing userId and current count", async () => {
+  it("proceeds when the limit port allows, passing userId and the owned count", async () => {
+    // One owned, three invited into: only the owned one is this plan's.
     mocks.orgApi["/organization/list"].mockResolvedValue([
       { id: "ws-1", name: "Acme" },
+      { id: "ws-a", name: "Client A" },
+      { id: "ws-b", name: "Client B" },
+      { id: "ws-c", name: "Client C" },
     ]);
+    mocks.countOwnedWorkspaces.mockResolvedValue(1);
     const checkWorkspaceLimit = vi.fn().mockResolvedValue({
       allowed: true,
-      limit: 5,
+      limit: 3,
     });
     const service = createWorkspaceService({ checkWorkspaceLimit });
 
     await service.createWorkspace({ name: "Second Co" });
 
+    expect(mocks.countOwnedWorkspaces).toHaveBeenCalledWith("u-1");
     expect(checkWorkspaceLimit).toHaveBeenCalledWith("u-1", 1);
     expect(mocks.createOrganization).toHaveBeenCalled();
+  });
+
+  it("refuses a workspace name carrying a link", async () => {
+    const service = createWorkspaceService();
+
+    const err = await service
+      .createWorkspace({ name: "Pay at evil.example/pay" })
+      .catch((e) => e);
+
+    expect(err.code).toBe("invalid_input");
+    expect(mocks.createOrganization).not.toHaveBeenCalled();
   });
 
   it("throws invalid_input for a too-short name and never calls the provider", async () => {
@@ -439,6 +464,53 @@ describe("deleteWorkspace", () => {
 
     expect(isWorkspaceServiceError(err)).toBe(true);
     expect(err.code).toBe("provider_error");
+  });
+
+  it("settles what the port began once the workspace is deleted", async () => {
+    const order: string[] = [];
+    const settle = vi.fn(async (deleted: boolean) => {
+      order.push(`settle:${deleted}`);
+    });
+    mocks.deleteOrganization.mockImplementation(async () => {
+      order.push("delete");
+      return { success: true };
+    });
+    const service = createWorkspaceService({
+      beforeDeleteWorkspace: async () => {
+        order.push("prepare");
+        return settle;
+      },
+    });
+
+    await service.deleteWorkspace();
+
+    expect(order).toEqual(["prepare", "delete", "settle:true"]);
+  });
+
+  it("settles as not deleted when the delete fails, and still reports the failure", async () => {
+    mocks.deleteOrganization.mockRejectedValue(new Error("boom"));
+    const settle = vi.fn(async () => {});
+    const service = createWorkspaceService({
+      beforeDeleteWorkspace: async () => settle,
+    });
+
+    const err = await service.deleteWorkspace().catch((e) => e);
+
+    expect(err.code).toBe("provider_error");
+    expect(settle).toHaveBeenCalledWith(false);
+  });
+
+  it("does not delete when the port throws", async () => {
+    const service = createWorkspaceService({
+      beforeDeleteWorkspace: async () => {
+        throw new Error("stripe down");
+      },
+    });
+
+    const err = await service.deleteWorkspace().catch((e) => e);
+
+    expect(err.code).toBe("provider_error");
+    expect(mocks.deleteOrganization).not.toHaveBeenCalled();
   });
 });
 
