@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/jobs",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A Postgres-backed job queue: enqueue, claim with SKIP LOCKED, retry with backoff and prune. No Redis.",
   "keywords": [
     "intelligo",
