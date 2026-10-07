@@ -52,7 +52,7 @@
     "zod": "^3.25.76 || ^4.0.0"
   },
   "devDependencies": {
-    "drizzle-orm": "^0.45.2",
+    "drizzle-orm": "^0.45.3",
     "stripe": "^22.6.2",
     "typescript": "^6.0.3",
     "zod": "^4.6.5"
