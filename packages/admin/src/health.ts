@@ -13,6 +13,8 @@ import { executions as executionsTable } from "@intelligo-dev/executions";
 import { jobs } from "@intelligo-dev/jobs";
 import { and, eq, gte, inArray, lt, or, sql } from "drizzle-orm";
 
+import { assertPlatformAdmin } from "./gate";
+
 export type HealthStatus = "ok" | "degraded" | "down" | "unconfigured";
 
 export type IntegrationHealth = {
@@ -162,11 +164,13 @@ const BUILT_IN: IntegrationProbe[] = [
 ];
 
 /**
- * Run every check. Never throws: a probe that fails is reported as
- * `down` with its own error message, because the page exists to be
- * readable while things are broken.
+ * Run every check, for a platform admin only: the rows carry raw error
+ * messages and platform-wide counts. A probe that fails is reported as
+ * `down` with its own error message rather than thrown, because the page
+ * exists to be readable while things are broken.
  */
 export async function getIntegrationHealth(): Promise<IntegrationHealth[]> {
+  await assertPlatformAdmin();
   const all = [...BUILT_IN, ...probes.values()];
 
   return Promise.all(
