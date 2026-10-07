@@ -55,7 +55,8 @@ export function QuotaLimitDialog({
     return format.number(amount, {
       style: "currency",
       currency: CURRENCY,
-      maximumFractionDigits: 0,
+      // A whole price drops its decimals; any other keeps the cents.
+      ...(Number.isInteger(amount) && { maximumFractionDigits: 0 }),
     });
   };
 

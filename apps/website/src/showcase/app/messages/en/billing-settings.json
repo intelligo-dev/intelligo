@@ -37,5 +37,9 @@
   "portalButton": {
     "manageBilling": "Manage billing",
     "redirecting": "Redirecting…"
+  },
+  "creditsReturn": {
+    "success": "Thanks for your purchase. Your credits appear here as soon as the payment is confirmed — usually within a minute.",
+    "cancelled": "Checkout was cancelled. Nothing was charged."
   }
 }

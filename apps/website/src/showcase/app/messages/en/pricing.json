@@ -28,11 +28,6 @@
   "content": {
     "canceled": "Checkout was canceled. You were not charged."
   },
-  "error": {
-    "title": "Something went wrong while loading pricing. Please try again.",
-    "tryAgain": "Try again",
-    "goHome": "Go home"
-  },
   "errors": {
     "invalidPlan": "That plan isn't available.",
     "checkoutUnavailable": "This plan isn't set up for checkout yet. Contact support.",

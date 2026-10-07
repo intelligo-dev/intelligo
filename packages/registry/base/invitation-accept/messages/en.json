@@ -23,11 +23,6 @@
     "decline": "Decline",
     "declinePending": "Declining…"
   },
-  "errorBoundary": {
-    "message": "Something went wrong while loading this invitation. Please try again.",
-    "retry": "Try again",
-    "goHome": "Go home"
-  },
   "errors": {
     "invitationNotFound": "This invitation could not be found. It may have already been used, or the link may be invalid.",
     "acceptVerificationFailed": "We couldn't confirm you joined the workspace. Please try again or contact the workspace owner.",

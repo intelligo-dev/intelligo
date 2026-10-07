@@ -5,6 +5,7 @@ import { getAuthSession } from "@intelligo-dev/auth";
 
 import { redirect } from "@/i18n/navigation";
 import { returnPath } from "@/lib/auth-validation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
 import { LoginForm } from "@/components/auth/login-form";
@@ -35,12 +36,17 @@ async function redirectIfSignedIn(next: string): Promise<void> {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string | string[] }>;
+  searchParams: Promise<{
+    next?: string | string[];
+    reset?: string | string[];
+  }>;
 }) {
+  const params = await searchParams;
   // Where the reader was going — an invitation link, say — when they
   // were sent here to sign in.
-  const raw = (await searchParams).next;
+  const raw = params.next;
   const next = returnPath(Array.isArray(raw) ? raw[0] : raw);
+  const reset = Array.isArray(params.reset) ? params.reset[0] : params.reset;
   await redirectIfSignedIn(next);
 
   const t = await getTranslations("auth-login");
@@ -59,6 +65,12 @@ export default async function LoginPage({
   return (
     <AuthCard title={t("card.title")} description={t("card.description")}>
       <div className="space-y-6">
+        {/* A completed password reset lands here with `?reset=success`. */}
+        {reset === "success" && (
+          <Alert>
+            <AlertDescription>{t("card.passwordReset")}</AlertDescription>
+          </Alert>
+        )}
         <SocialLoginButtons providers={providers} next={next} />
         <LoginForm next={next} />
       </div>

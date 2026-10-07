@@ -30,7 +30,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Client } from "pg";
 
-import { summarizeExecutionsByDay } from "../queries";
+import { summarizeExecutions, summarizeExecutionsByDay } from "../queries";
 
 const PG_URL = process.env.TEST_PG_URL;
 const d = PG_URL ? describe : describe.skip;
@@ -40,6 +40,7 @@ d("summarizeExecutionsByDay (integration)", () => {
   const suffix = Date.now();
   const workspaceId = `tz-it-ws-${suffix}`;
   const userId = `tz-it-user-${suffix}`;
+  const otherUserId = `tz-it-other-${suffix}`;
 
   // Deliberately wide, so that however the driver serialises these
   // bounds against a naive column, no row sits near an edge.
@@ -77,6 +78,11 @@ d("summarizeExecutionsByDay (integration)", () => {
        VALUES ($1, 'TZ IT WS', $2, now(), now())`,
       [workspaceId, `tz-it-${suffix}`]
     );
+    await client.query(
+      `INSERT INTO users (id, name, email, email_verified, created_at, updated_at)
+       VALUES ($1, 'TZ IT other', $2, true, now(), now())`,
+      [otherUserId, `tz-it-other-${suffix}@example.test`]
+    );
 
     for (const [id, startedAt, tokens] of rows) {
       await client.query(
@@ -102,7 +108,9 @@ d("summarizeExecutionsByDay (integration)", () => {
       workspaceId,
     ]);
     await client.query(`DELETE FROM organization WHERE id = $1`, [workspaceId]);
-    await client.query(`DELETE FROM users WHERE id = $1`, [userId]);
+    await client.query(`DELETE FROM users WHERE id = ANY($1)`, [
+      [userId, otherUserId],
+    ]);
     await client.end();
   });
 
@@ -151,6 +159,31 @@ d("summarizeExecutionsByDay (integration)", () => {
 
     expect(twelfth).toMatchObject({ count: 2 });
     expect(twelfth!.charged).toEqual([{ amount: 2000, currency: "USD" }]);
+  });
+
+  it("narrows both summaries to the runs one member started", async () => {
+    await client.query(
+      `INSERT INTO executions
+         (id, workspace_id, user_id, capability, request_id, status,
+          total_tokens, charged_micros, currency, started_at)
+       VALUES ($1, $2, $3, 'test.tz', $4, 'succeeded', 800, 5000, 'USD',
+               '2026-03-12 18:30:00'::timestamp)`,
+      [`tz-it-d-${suffix}`, workspaceId, otherUserId, `tz-it-d-req-${suffix}`]
+    );
+
+    const own = await summarizeExecutionsByDay(workspaceId, window, {
+      userId,
+    });
+    expect(own.map((row) => [row.date, row.totalTokens])).toEqual([
+      ["2026-03-12", 300],
+      ["2026-03-13", 400],
+    ]);
+    const theirs = await summarizeExecutions(workspaceId, window, {
+      userId: otherUserId,
+    });
+    expect(theirs.totals).toMatchObject({ count: 1, totalTokens: 800 });
+    const everyone = await summarizeExecutions(workspaceId, window);
+    expect(everyone.totals).toMatchObject({ count: 4, totalTokens: 1500 });
   });
 
   it("returns the days in ascending order", async () => {
