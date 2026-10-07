@@ -4,7 +4,7 @@
   "title": "Document Viewer",
   "description": "How a saved document reads when nobody is editing it: markdown with maths and diagrams, highlighted code, a sheet's rows, an image, and a sandboxed HTML preview — plus the title-to-language and kind-glyph helpers the chat canvas and the artifacts library share.",
   "dependencies": [
-    "lucide-react"
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-code-block",

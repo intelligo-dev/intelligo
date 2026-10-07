@@ -4,8 +4,8 @@
   "title": "Popover",
   "description": "Floating content in a rounded panel that scales out of its trigger.",
   "dependencies": [
-    "@base-ui/react",
-    "motion"
+    "@base-ui/react@^1.8.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

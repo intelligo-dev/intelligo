@@ -25,6 +25,7 @@ import {
   resolveMigrationsDir,
 } from "../migrations-dir.js";
 import { findWorkspaceRoot, workspacePackages } from "../registry-items.js";
+import { checkSeamBoundaries } from "./doctor-seams.js";
 
 export type CheckResult = {
   name: string;
@@ -44,6 +45,8 @@ export type RegistryRequires = {
   scaffold: string[];
   /** Files an item ships once and the deployment then owns. */
   seams?: Record<string, string>;
+  /** Per seam: `client` when the browser bundles it, else `server`. */
+  boundaries?: Record<string, "client" | "server">;
   items: Record<string, ItemRequires>;
 };
 
@@ -550,6 +553,7 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
     }
 
     results.push(...checkSeamFeatures(root, requires.seams, plans));
+    results.push(...checkSeamBoundaries(root, requires.boundaries));
   }
 
   // 4b. Maintenance route. It refuses to serve without a strong

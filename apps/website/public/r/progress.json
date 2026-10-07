@@ -4,7 +4,7 @@
   "title": "Progress",
   "description": "A rounded bar whose fill glides to each new value.",
   "dependencies": [
-    "@base-ui/react"
+    "@base-ui/react@^1.8.0"
   ],
   "registryDependencies": [],
   "files": [

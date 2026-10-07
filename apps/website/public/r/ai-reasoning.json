@@ -4,8 +4,8 @@
   "title": "AI Reasoning",
   "description": "Streamed reasoning, collapsible, with the time it took.",
   "dependencies": [
-    "lucide-react",
-    "streamdown"
+    "lucide-react@^1.46.0",
+    "streamdown@^2.6.0"
   ],
   "registryDependencies": [
     "@intelligo/collapsible"

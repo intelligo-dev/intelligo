@@ -4,9 +4,9 @@
   "title": "Select Morph",
   "description": "A select whose trigger continues into its list: the list unclips down from the trigger's edge as one surface while its options stagger in.",
   "dependencies": [
-    "@base-ui/react",
-    "motion",
-    "lucide-react"
+    "@base-ui/react@^1.8.0",
+    "motion@^13.4.0",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

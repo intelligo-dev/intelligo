@@ -5,8 +5,8 @@
   "description": "Post-signup email verification status page with a resend control, backed by the Better-Auth client SDK's sendVerificationEmail action. Reads the ?error=/?email= search params Better-Auth's own /verify-email link handler redirects back with. Requires the auth-login item (provides the shared AuthCard shell); install it first.",
   "dependencies": [
     "@intelligo-dev/auth",
-    "lucide-react",
-    "next-intl"
+    "lucide-react@^1.46.0",
+    "next-intl@^4.14.5"
   ],
   "registryDependencies": [
     "alert",

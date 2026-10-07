@@ -5,11 +5,11 @@
   "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first.",
   "dependencies": [
     "@intelligo-dev/auth",
-    "react-hook-form@^7.71.1",
-    "@hookform/resolvers@^5.2.2",
+    "react-hook-form@^7.88.0",
+    "@hookform/resolvers@^5.9.1",
     "zod@^4.6.5",
-    "lucide-react",
-    "next-intl"
+    "lucide-react@^1.46.0",
+    "next-intl@^4.14.5"
   ],
   "registryDependencies": [
     "alert",

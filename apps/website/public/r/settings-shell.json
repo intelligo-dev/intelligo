@@ -4,8 +4,8 @@
   "title": "Settings Shell",
   "description": "The shared frame around every /settings page: layout with heading and width constraint, a configurable tab bar (lib/settings-nav.ts), and a /settings index that redirects to the first tab. Install alongside the settings items - without it they render unframed and plain /settings links 404.",
   "dependencies": [
-    "lucide-react",
-    "next-intl"
+    "lucide-react@^1.46.0",
+    "next-intl@^4.14.5"
   ],
   "registryDependencies": [
     "@intelligo/tabs",

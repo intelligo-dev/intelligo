@@ -4,8 +4,8 @@
   "title": "AI Message Bubble",
   "description": "The speech bubble inside a message row: six surface variants that pop into place, grouped bubbles and a collapsible long body.",
   "dependencies": [
-    "motion",
-    "lucide-react"
+    "motion@^13.4.0",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",

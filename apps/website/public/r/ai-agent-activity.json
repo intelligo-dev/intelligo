@@ -4,8 +4,8 @@
   "title": "AI Agent Activity",
   "description": "One adaptive stream of what the agent is doing: reasoning text, plan steps, web searches with results, tool calls and structured traces, gliding while it works and folding into a summary when done.",
   "dependencies": [
-    "motion",
-    "lucide-react"
+    "motion@^13.4.0",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",

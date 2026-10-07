@@ -4,8 +4,8 @@
   "title": "Command",
   "description": "A searchable list of actions, inline or in a dialog.",
   "dependencies": [
-    "cmdk",
-    "lucide-react"
+    "cmdk@^1.1.1",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/dialog",

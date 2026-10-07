@@ -4,8 +4,8 @@
   "title": "Radio Group",
   "description": "One choice from a set; the dot springs out from the centre.",
   "dependencies": [
-    "@base-ui/react",
-    "motion"
+    "@base-ui/react@^1.8.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

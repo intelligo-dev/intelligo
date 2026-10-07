@@ -4,8 +4,8 @@
   "title": "AI File Diff",
   "description": "A file the agent is changing: the path with live added and removed counts, opening onto a unified diff whose highlighted rows arrive while the change streams.",
   "dependencies": [
-    "motion",
-    "lucide-react"
+    "motion@^13.4.0",
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-code-block",

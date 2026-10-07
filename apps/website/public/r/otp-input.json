@@ -4,8 +4,8 @@
   "title": "OTP Input",
   "description": "A one-time-code input on Base UI's OTP Field whose characters roll into their slots under a blinking caret, shaking on a rejected code and drawing a check on an accepted one.",
   "dependencies": [
-    "@base-ui/react",
-    "motion"
+    "@base-ui/react@^1.8.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

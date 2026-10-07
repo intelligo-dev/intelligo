@@ -5,8 +5,8 @@
   "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply.",
   "dependencies": [
     "ai@^7.0.103",
-    "lucide-react",
-    "motion"
+    "lucide-react@^1.46.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/attachment",

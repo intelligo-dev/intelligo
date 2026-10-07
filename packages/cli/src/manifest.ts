@@ -67,6 +67,12 @@ export type RegistryEntry = {
    * as it is — may need the change too.
    */
   seams?: Record<string, string>;
+  /**
+   * Every message the registry shipped at the last sync, by file and
+   * dotted key, as a short hash of its value: a value that still
+   * matches was never reworded, so a release's new text may replace it.
+   */
+  messages?: Record<string, Record<string, string>>;
 };
 
 export type Manifest = {

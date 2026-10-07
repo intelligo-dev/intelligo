@@ -6,8 +6,8 @@
   "dependencies": [
     "@intelligo-dev/auth",
     "@intelligo-dev/billing",
-    "lucide-react",
-    "next-intl"
+    "lucide-react@^1.46.0",
+    "next-intl@^4.14.5"
   ],
   "registryDependencies": [
     "alert",

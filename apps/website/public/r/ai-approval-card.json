@@ -4,8 +4,8 @@
   "title": "AI Approval Card",
   "description": "A decision surface: approve, reject or request changes, or step through single-choice, multiple-choice and freeform questions and submit the answers.",
   "dependencies": [
-    "lucide-react",
-    "motion"
+    "lucide-react@^1.46.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",

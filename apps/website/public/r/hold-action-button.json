@@ -4,7 +4,7 @@
   "title": "Hold Action Button",
   "description": "A press-and-hold confirmation for a destructive action, by pointer or held Space/Enter, whose fill sweeps across while held and drains on an early release.",
   "dependencies": [
-    "motion"
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion",

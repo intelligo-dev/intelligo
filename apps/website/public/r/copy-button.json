@@ -4,7 +4,7 @@
   "title": "Copy Button",
   "description": "Copy to the clipboard with confirmation and a live announcement; labels are passed in, so it carries no copy of its own.",
   "dependencies": [
-    "lucide-react"
+    "lucide-react@^1.46.0"
   ],
   "registryDependencies": [
     "@intelligo/button"

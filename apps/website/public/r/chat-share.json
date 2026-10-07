@@ -5,7 +5,7 @@
   "description": "A conversation its owner published, readable by anyone with the link at /share/[id]: the same transcript, read-only, minus reasoning, tool details and attachments. Requires the chat item.",
   "dependencies": [
     "ai@^7.0.103",
-    "next-intl",
+    "next-intl@^4.14.5",
     "@intelligo-dev/chat",
     "@intelligo-dev/core"
   ],

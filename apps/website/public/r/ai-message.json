@@ -4,7 +4,7 @@
   "title": "AI Message",
   "description": "One turn of a conversation: the row with its side, optional avatar, content column, header, footer, a centred marker and the typing indicator.",
   "dependencies": [
-    "motion"
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

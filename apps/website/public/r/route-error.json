@@ -4,8 +4,8 @@
   "title": "Route Error States",
   "description": "The app's error surfaces: a shared RouteError component every error.tsx renders, message-based error classification, an (app) group boundary, a translated 404, and a dependency-free global-error. Error reporting goes through the lib/error-reporting.ts seam (a no-op until you bind a reporter), so no SDK enters the registry. Items that ship an error.tsx depend on this one - install it first.",
   "dependencies": [
-    "lucide-react",
-    "next-intl"
+    "lucide-react@^1.46.0",
+    "next-intl@^4.14.5"
   ],
   "registryDependencies": [
     "alert",

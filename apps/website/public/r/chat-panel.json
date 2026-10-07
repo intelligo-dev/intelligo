@@ -5,8 +5,8 @@
   "description": "The chat as a side panel on any page: a sheet that opens the same thread the chat page runs, with the page's context on every turn. Requires the chat item.",
   "dependencies": [
     "ai@^7.0.103",
-    "lucide-react",
-    "next-intl"
+    "lucide-react@^1.46.0",
+    "next-intl@^4.14.5"
   ],
   "registryDependencies": [
     "@intelligo/button",

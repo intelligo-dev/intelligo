@@ -4,8 +4,8 @@
   "title": "Tooltip",
   "description": "A short hint on hover or focus that grows out of its trigger; neighbours open instantly.",
   "dependencies": [
-    "@base-ui/react",
-    "motion"
+    "@base-ui/react@^1.8.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-motion"

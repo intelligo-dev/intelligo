@@ -24,7 +24,7 @@
  */
 
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
@@ -54,9 +54,11 @@ import { withDependencies } from "../registry-items.js";
 import {
   isMessages,
   localeEntries,
-  mergeMessages,
-  missingMessageKeys,
+  messageEntry,
+  messageHashes,
+  restoreKept,
   type Json,
+  type MessageHashes,
 } from "./sync-messages.js";
 import { SCAFFOLD_FEATURE, snapshotScaffold } from "./sync-scaffold.js";
 
@@ -87,8 +89,12 @@ export type SyncFileState =
   | "seam-changed"
   /** recorded by an earlier sync, but no item this app keeps ships it now */
   | "orphaned"
-  /** a message file that lacks keys the registry's has */
+  /** a message file that lacks keys the registry's has, or holds its old text */
   | "messages-behind"
+  /** the app reworded a message whose registry text changed or went; kept */
+  | "messages-changed"
+  /** the app's wording uses an argument the registry's text no longer passes */
+  | "messages-arguments"
   /** another locale's copy of a shipped namespace lacks keys the app's English has */
   | "locale-behind";
 
@@ -96,7 +102,10 @@ export type SyncEntry = {
   item: string;
   path: string;
   state: SyncFileState;
-  /** For `messages-behind` / `locale-behind`: the dotted keys the copy lacks. */
+  /**
+   * For the `messages-*` states and `locale-behind`: the dotted keys
+   * the state is about.
+   */
   missingKeys?: string[];
 };
 
@@ -235,13 +244,13 @@ export function syncCheck(
     const local = readFileSync(abs, "utf8");
 
     if (isMessages(target)) {
-      const missingKeys = missingMessageKeys(
+      return messageEntry(
+        item,
+        target,
         JSON.parse(content) as Json,
-        JSON.parse(local) as Json
+        JSON.parse(local) as Json,
+        manifest?.registry?.messages?.[target]
       );
-      return missingKeys.length > 0
-        ? { item, path: target, state: "messages-behind", missingKeys }
-        : { item, path: target, state: "current" };
     }
 
     if (asInstalled(local) === asInstalled(content)) {
@@ -335,27 +344,6 @@ function run(
   });
 }
 
-/** Put the kept seams back, and merge kept messages over the registry's. */
-function restoreKept(
-  appRoot: string,
-  kept: ReadonlyMap<string, string>,
-  shipped: ReadonlyMap<string, string>
-): void {
-  for (const [target, content] of kept) {
-    const abs = path.join(appRoot, target);
-    mkdirSync(path.dirname(abs), { recursive: true });
-    if (isMessages(target) && shipped.has(target)) {
-      const merged = mergeMessages(
-        JSON.parse(shipped.get(target)!) as Json,
-        JSON.parse(content) as Json
-      );
-      writeFileSync(abs, `${JSON.stringify(merged, null, 2)}\n`);
-    } else {
-      writeFileSync(abs, content);
-    }
-  }
-}
-
 /**
  * Write the synced items and each installed file's hash (seams and
  * message files aside) into the manifest.
@@ -366,13 +354,23 @@ function recordSync(
   after: SyncReport,
   {
     manifest,
-    shippedSeams,
-  }: { manifest: Manifest; shippedSeams: Record<string, string> }
+    shipped,
+    seamTargets,
+  }: {
+    manifest: Manifest;
+    shipped: ReadonlyMap<string, string>;
+    seamTargets: Record<string, string>;
+  }
 ): void {
   const files: Record<string, string> = {};
   const seams: Record<string, string> = {};
-  for (const [target, content] of Object.entries(shippedSeams)) {
-    seams[target] = hashContents(asInstalled(content));
+  const messages: Record<string, MessageHashes> = {};
+  for (const [target, content] of shipped) {
+    if (target in seamTargets) {
+      seams[target] = hashContents(asInstalled(content));
+    } else if (isMessages(target)) {
+      messages[target] = messageHashes(JSON.parse(content) as Json);
+    }
   }
   for (const e of after.entries) {
     if (
@@ -400,6 +398,7 @@ function recordSync(
       items: installOrder([...recordedItems], context.requires),
       files: { ...manifest.registry?.files, ...files },
       seams: { ...manifest.registry?.seams, ...seams },
+      messages: { ...manifest.registry?.messages, ...messages },
     },
   });
 }
@@ -419,6 +418,7 @@ export function recordItems(
   writeManifest(context.appRoot, {
     ...manifest,
     registry: {
+      ...manifest.registry,
       version: manifest.registry?.version ?? context.frameworkVersion,
       items: installOrder([...items], context.requires),
       files: manifest.registry?.files ?? {},
@@ -542,7 +542,12 @@ export async function syncApply(
   const shipped = new Map(
     shippedFiles(context, items).files.map((f) => [f.target, f.content])
   );
-  restoreKept(appRoot, kept, shipped);
+  restoreKept(
+    appRoot,
+    kept,
+    shipped,
+    readManifest(appRoot)?.registry?.messages ?? {}
+  );
 
   if (failed) {
     log(
@@ -554,9 +559,8 @@ export async function syncApply(
   // Record what is on disk now, so the next check can tell an edit.
   const after = syncCheck(items, context);
   recordSync(context, names, after, {
-    shippedSeams: Object.fromEntries(
-      [...shipped].filter(([target]) => target in seams)
-    ),
+    shipped,
+    seamTargets: seams,
     manifest: handOver(
       readManifest(appRoot) ?? emptyManifest(context.frameworkVersion),
       SCAFFOLD_FEATURE,

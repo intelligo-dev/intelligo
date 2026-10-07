@@ -4,7 +4,7 @@
   "title": "Input",
   "description": "A single-line text field whose border and soft ring ease in on focus.",
   "dependencies": [
-    "@base-ui/react"
+    "@base-ui/react@^1.8.0"
   ],
   "registryDependencies": [],
   "files": [

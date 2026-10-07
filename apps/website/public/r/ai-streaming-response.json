@@ -4,8 +4,8 @@
   "title": "AI Streaming Response",
   "description": "An assistant reply as it streams and once it lands: content, copy, retry and feedback actions, and a sources disclosure.",
   "dependencies": [
-    "lucide-react",
-    "motion"
+    "lucide-react@^1.46.0",
+    "motion@^13.4.0"
   ],
   "registryDependencies": [
     "@intelligo/ai-citations",

@@ -18,6 +18,14 @@ it explains a framework decision.
 
 ### Added
 
+- Each config seam declares where it runs (`boundaries` in the
+  registry's `requires.json`): `client` when the browser bundles it,
+  `server` otherwise, derived from the items' imports by an architecture
+  test. `intelligo doctor` warns when a client seam imports server code
+  (`server-only`, a server `@intelligo-dev/*` module, a Node built-in) or
+  reads a non-public environment variable, and the config-seams page says
+  which seams the browser bundles.
+
 - `intelligo --version`, `intelligo <command> --help` for one command's
   usage, and documented exit codes: 0 done, 1 a check found problems or
   the command failed, 2 the command was used wrongly (an unknown command
@@ -73,6 +81,26 @@ it explains a framework decision.
   `getMessage` and `getMessagesByIds`. A turn on a reopened long
   conversation shows the model what the thread holds, windowed as
   before; `turn.history()` still reads everything.
+- Registry items name a version range for every npm dependency. The
+  build pins each one to the range the registry is developed and tested
+  against (its own `package.json`), so an item installs the major it was
+  written for rather than whatever is newest that day; `@intelligo-dev/*`
+  stays unversioned, since `intelligo create` installed it and `sync`
+  refuses another release's pages.
+- `intelligo sync` delivers reworded registry copy. Message files kept
+  the app's value for every key, so a changed sentence or argument never
+  arrived and nothing said so. A sync now records a short hash of each
+  message it shipped (`registry.messages` in the manifest): a value the
+  app never changed takes the new text, and a key the registry dropped
+  goes unless the app reworded it. `sync --check` reports
+  `messages-changed` for the app's own wording of a key whose registry
+  text changed, and fails with `messages-arguments` when that wording
+  uses an ICU argument the registry's text no longer passes. The first
+  sync after upgrading records the hashes and changes nothing.
+- A key a new release adds arrives in English only, and an app whose
+  default locale is not English threw on it until translated: the
+  scaffold's `i18n/request.ts` falls back from the locale to the default
+  locale to English (app-scaffold template 1.21.0).
 
 - The `pricing` and `billing-settings` pages read `actionRoles` from their
   config seams with `in`, so an app whose `lib/plan-card-config.tsx` or

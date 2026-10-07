@@ -655,7 +655,7 @@
       "type": "registry:ui",
       "title": "AI Prompt Input",
       "description": "The chat composer: autosizing textarea that sends on Enter, attachments by picker, drop and paste, an action menu, selects, and a submit that stops a streaming reply.",
-      "dependencies": ["ai@^7.0.103", "lucide-react", "motion"],
+      "dependencies": ["ai", "lucide-react", "motion"],
       "registryDependencies": [
         "@intelligo/attachment",
         "@intelligo/button",
@@ -1654,9 +1654,9 @@
       ],
       "dependencies": [
         "@intelligo-dev/auth",
-        "react-hook-form@^7.71.1",
-        "@hookform/resolvers@^5.2.2",
-        "zod@^4.6.5",
+        "react-hook-form",
+        "@hookform/resolvers",
+        "zod",
         "lucide-react",
         "next-intl"
       ],
@@ -1717,8 +1717,8 @@
       ],
       "dependencies": [
         "@intelligo-dev/auth",
-        "react-hook-form@^7.71.1",
-        "@hookform/resolvers@^5.2.2",
+        "react-hook-form",
+        "@hookform/resolvers",
         "lucide-react",
         "next-intl"
       ],
@@ -1754,8 +1754,8 @@
       ],
       "dependencies": [
         "@intelligo-dev/auth",
-        "react-hook-form@^7.71.1",
-        "@hookform/resolvers@^5.2.2",
+        "react-hook-form",
+        "@hookform/resolvers",
         "lucide-react",
         "next-intl"
       ],
@@ -1968,7 +1968,7 @@
         "@intelligo-dev/auth",
         "@intelligo-dev/billing",
         "@intelligo-dev/next",
-        "zod@^4.6.5",
+        "zod",
         "lucide-react",
         "server-only",
         "next-intl"
@@ -2643,8 +2643,8 @@
         "@intelligo/ai-agent-progress"
       ],
       "dependencies": [
-        "ai@^7.0.103",
-        "@ai-sdk/react@^4.0.106",
+        "ai",
+        "@ai-sdk/react",
         "streamdown",
         "lucide-react",
         "sonner",
@@ -2667,7 +2667,7 @@
         "@codemirror/lang-javascript",
         "@codemirror/lang-python",
         "@codemirror/theme-one-dark",
-        "react-data-grid@7.0.0-beta.61",
+        "react-data-grid",
         "papaparse",
         "@types/papaparse",
         "motion"
@@ -2884,7 +2884,7 @@
       "title": "Chat Panel",
       "description": "The chat as a side panel on any page: a sheet that opens the same thread the chat page runs, with the page's context on every turn. Requires the chat item.",
       "registryDependencies": ["@intelligo/button", "@intelligo/sheet"],
-      "dependencies": ["ai@^7.0.103", "lucide-react", "next-intl"],
+      "dependencies": ["ai", "lucide-react", "next-intl"],
       "files": [
         {
           "path": "base/chat-panel/components/chat-panel.tsx",
@@ -2930,7 +2930,7 @@
       "description": "A conversation its owner published, readable by anyone with the link at /share/[id]: the same transcript, read-only, minus reasoning, tool details and attachments. Requires the chat item.",
       "registryDependencies": ["@intelligo/button"],
       "dependencies": [
-        "ai@^7.0.103",
+        "ai",
         "next-intl",
         "@intelligo-dev/chat",
         "@intelligo-dev/core"
@@ -2963,7 +2963,7 @@
       "type": "registry:lib",
       "title": "Chat: eve binding",
       "description": "eve through the chat transport: a streamTurn for lib/chat-server-config.ts that runs a turn as an eve session over HTTP and NDJSON and maps its events to the AI SDK's chunks — text, reasoning, tool calls, approvals, questions, subagents, authorization — so an eve agent renders through the same tool renderers as any other. Consumer-owned; imports nothing from eve. Requires the chat item.",
-      "dependencies": ["ai@^7.0.103", "@intelligo-dev/chat"],
+      "dependencies": ["ai", "@intelligo-dev/chat"],
       "files": [
         {
           "path": "base/chat-eve/lib/chat-eve.ts",
