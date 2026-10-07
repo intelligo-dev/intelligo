@@ -21,6 +21,14 @@ it explains a framework decision.
 - The logger writes an `Error` passed in its data as its type, message,
   stack, `code` and `cause` chain. It wrote `{}`, so a logged failure such
   as the scaffold's seeding error carried no detail.
+- `settlePendingLocalInvoices` picks its invoices at random rather than
+  oldest first, so an invoice that fails to settle on every run (an
+  amount the provider disputes, a grant that throws) no longer holds back
+  every invoice behind it, and starts no settle after `deadlineMs`
+  (default 45 s), reporting the rest as `deferred`.
+- The `payment-poll` item's callback route answers `{ ok }` only. It
+  returned the settle summary, with each failure's message, to an
+  unauthenticated caller.
 - Stripe amounts for ISK, UGX and MNT. Stripe takes these in hundredths
   although none are in use, and they were sent as whole units — a charge
   at a hundredth of its price, or refused under Stripe's minimum. Credit
