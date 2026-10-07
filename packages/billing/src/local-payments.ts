@@ -20,7 +20,7 @@
  * plan grant and a Stripe credit purchase use.
  */
 
-import { and, asc, eq, gt, isNotNull, isNull, lt, or } from "drizzle-orm";
+import { and, eq, gt, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 
 import { db } from "@intelligo-dev/core/db";
 import { payments, type Payment } from "@intelligo-dev/core/db/schema";
@@ -358,14 +358,27 @@ export type SettlePendingLocalInvoicesInput = {
    * a day for one without.
    */
   openedAfter?: Date;
-  /** At most this many invoices per run, oldest first. Default 100. */
+  /**
+   * At most this many invoices per run, picked at random so an invoice
+   * that fails to settle every time cannot hold the others back. Default
+   * 100.
+   */
   limit?: number;
+  /**
+   * Start no settle after this many milliseconds, so a run fits its
+   * route's time limit; the rest wait for the next run. Default 45 000.
+   */
+  deadlineMs?: number;
 };
 
 export type SettlePendingLocalInvoicesResult = Record<
   LocalPaymentStatus,
   number
-> & { errors: string[] };
+> & {
+  errors: string[];
+  /** Invoices picked but left for the next run when the deadline passed. */
+  deferred: number;
+};
 
 /**
  * Settle the invoices nobody is polling: a buyer who paid in their bank's
@@ -411,7 +424,7 @@ export async function settlePendingLocalInvoices(
     })
     .from(payments)
     .where(where)
-    .orderBy(asc(payments.createdAt))
+    .orderBy(sql`random()`)
     .limit(input.limit ?? 100);
   const rows = found.filter(
     (row): row is { invoiceId: string; workspaceId: string } =>
@@ -423,8 +436,14 @@ export async function settlePendingLocalInvoices(
     pending: 0,
     failed: 0,
     errors: [],
+    deferred: 0,
   };
+  const deadline = now + (input.deadlineMs ?? 45_000);
   for (const row of rows) {
+    if (Date.now() >= deadline) {
+      result.deferred++;
+      continue;
+    }
     try {
       const status = await settleLocalInvoice({
         invoiceId: row.invoiceId,

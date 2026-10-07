@@ -31,14 +31,24 @@ describe("local payment callback", () => {
     provider = { invoiceIdFromCallback: async () => "i-1" };
   });
 
-  it("answers JSON, 200 when settled and 500 when not", async () => {
+  it("answers { ok }, 200 when settled and 500 when not, and nothing more", async () => {
     settle.mockResolvedValue({ paid: 1, pending: 0, failed: 0, errors: [] });
     const ok = await callback();
     expect(ok.status).toBe(200);
-    expect(await ok.json()).toMatchObject({ paid: 1 });
+    expect(await ok.json()).toEqual({ ok: true });
 
-    settle.mockResolvedValue({ paid: 0, pending: 0, failed: 0, errors: ["x"] });
-    expect((await callback()).status).toBe(500);
+    settle.mockResolvedValue({
+      paid: 0,
+      pending: 0,
+      failed: 0,
+      errors: ["i-1: relation payments: connection refused"],
+    });
+    const failed = await callback();
+    expect(failed.status).toBe(500);
+    expect(await failed.json()).toEqual({ ok: false });
+
+    settle.mockRejectedValue({ code: "payment_mismatch" });
+    expect(await (await callback()).json()).toEqual({ ok: false });
   });
 
   it("answers in the provider's form when it names one", async () => {

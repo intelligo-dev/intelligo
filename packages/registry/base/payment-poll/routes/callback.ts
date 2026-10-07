@@ -9,7 +9,9 @@
  * its invoices are settled by the buyer's poll and the settle route.
  *
  * The answer is the provider's `callbackResponse` when it has one, so a
- * provider that expects a particular body gets it; otherwise JSON.
+ * provider that expects a particular body gets it; otherwise `{ ok }`.
+ * It says nothing more: the caller is unauthenticated, and what failed
+ * is in the server log.
  */
 
 import {
@@ -42,13 +44,13 @@ async function handle(request: Request): Promise<Response> {
     const settled = result.errors.length === 0;
     return (
       provider.callbackResponse?.({ settled }) ??
-      Response.json(result, { status: settled ? 200 : 500 })
+      Response.json({ ok: settled }, { status: settled ? 200 : 500 })
     );
   } catch (error) {
     if (!isBillingServiceError(error)) throw error;
     return (
       provider.callbackResponse?.({ settled: false }) ??
-      Response.json({ error: error.code }, { status: 500 })
+      Response.json({ ok: false }, { status: 500 })
     );
   }
 }

@@ -460,7 +460,7 @@ d("local payments (integration)", () => {
 
   describe("settlePendingLocalInvoices", () => {
     const grantCredits = () => ({ credits: credits() });
-    const sweep = (extra: { invoiceId?: string } = {}) =>
+    const sweep = (extra: { invoiceId?: string; deadlineMs?: number } = {}) =>
       local.settlePendingLocalInvoices({
         fulfil: grantCredits,
         openedBefore: new Date(Date.now() + 60_000),
@@ -577,6 +577,40 @@ d("local payments (integration)", () => {
       expect(result.errors.join()).toContain(failing.invoiceId);
       expect((await row(failing.invoiceId))?.fulfilled_at).toBeNull();
       expect((await row(fine.invoiceId))?.fulfilled_at).toBeInstanceOf(Date);
+    });
+
+    it("does not let an invoice that fails every run hold the others back", async () => {
+      const failing = await open();
+      const fine = await open("bundle-ok");
+      payment.mockCompletePayment(failing.invoiceId);
+      payment.mockCompletePayment(fine.invoiceId);
+      const fulfil = (p: { invoiceId: string | null }) => {
+        if (p.invoiceId === failing.invoiceId) throw new Error("unpriced");
+        return grantCredits();
+      };
+
+      // One invoice per run: picked oldest first, the failing one (opened
+      // first) would be the only one ever tried.
+      for (let run = 0; run < 40; run++) {
+        if ((await row(fine.invoiceId))?.fulfilled_at) break;
+        await local.settlePendingLocalInvoices({
+          openedBefore: new Date(Date.now() + 60_000),
+          limit: 1,
+          fulfil,
+        });
+      }
+
+      expect((await row(fine.invoiceId))?.fulfilled_at).toBeInstanceOf(Date);
+    });
+
+    it("starts nothing once its deadline has passed", async () => {
+      const invoice = await open();
+      payment.mockCompletePayment(invoice.invoiceId);
+
+      const result = await sweep({ deadlineMs: 0 });
+
+      expect(result).toMatchObject({ paid: 0, deferred: 1, errors: [] });
+      expect((await row(invoice.invoiceId))?.fulfilled_at).toBeNull();
     });
   });
 });
