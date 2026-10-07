@@ -158,8 +158,8 @@ export async function deleteAttachment(
 
 /**
  * Uploads that never made it into a conversation — a turn that was
- * refused, a tab closed mid-compose. A maintenance job deletes them
- * and their objects.
+ * refused, a tab closed mid-compose, a conversation since deleted.
+ * `sweepAttachments` deletes them and their objects.
  */
 export async function listOrphanAttachments(params: {
   olderThan: Date;

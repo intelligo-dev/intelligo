@@ -1,3 +1,8 @@
+CREATE TABLE "storage_deletions" (
+	"storage_key" text PRIMARY KEY NOT NULL,
+	"queued_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "rate_limits" (
 	"id" text PRIMARY KEY NOT NULL,
 	"key" text NOT NULL,
@@ -74,3 +79,18 @@ $$;
 CREATE TRIGGER audit_events_no_truncate BEFORE TRUNCATE ON public.audit_events FOR EACH STATEMENT EXECUTE FUNCTION public.audit_block_truncate();
 --> statement-breakpoint
 CREATE TRIGGER user_memory_audit_no_truncate BEFORE TRUNCATE ON public.user_memory_audit FOR EACH STATEMENT EXECUTE FUNCTION public.audit_block_truncate();
+--> statement-breakpoint
+-- Whenever an attachment row is deleted — by the sweep, or by a
+-- workspace or user deletion cascading — its object's key is queued
+-- for the maintenance sweep, which deletes the object and then the key.
+CREATE OR REPLACE FUNCTION public.attachments_queue_object_deletion() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	INSERT INTO public.storage_deletions (storage_key) VALUES (OLD.storage_key)
+		ON CONFLICT (storage_key) DO NOTHING;
+	RETURN OLD;
+END;
+$$;
+--> statement-breakpoint
+CREATE TRIGGER attachments_queue_object_deletion AFTER DELETE ON public.attachments FOR EACH ROW EXECUTE FUNCTION public.attachments_queue_object_deletion();

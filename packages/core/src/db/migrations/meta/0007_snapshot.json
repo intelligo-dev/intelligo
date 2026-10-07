@@ -1,5 +1,5 @@
 {
-  "id": "cd05bee3-f00a-4bc9-a5ad-a4f0141449ce",
+  "id": "2c3f635e-2072-496f-bf96-d83c33295fe3",
   "prevId": "e64d7e14-0a32-4b1f-a832-f3d0f60ec5b1",
   "version": "7",
   "dialect": "postgresql",
@@ -702,6 +702,32 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.storage_deletions": {
+      "name": "storage_deletions",
+      "schema": "",
+      "columns": {
+        "storage_key": {
+          "name": "storage_key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "queued_at": {
+          "name": "queued_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},

@@ -124,6 +124,17 @@ export const attachments = pgTable(
   ]
 );
 
+/**
+ * Storage objects whose attachment row is gone and which the maintenance
+ * sweep has yet to delete. The database queues a key whenever an
+ * attachment row is deleted, by any path — a sweep, or a workspace or
+ * user deletion cascading — so no object outlives its row unnoticed.
+ */
+export const storageDeletions = pgTable("storage_deletions", {
+  storageKey: text("storage_key").primaryKey(),
+  queuedAt: timestamp("queued_at").notNull().defaultNow(),
+});
+
 /** One vote per message (composite key on chat and message). */
 export const votes = pgTable(
   "votes",

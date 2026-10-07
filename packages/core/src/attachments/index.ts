@@ -13,6 +13,8 @@ export {
   setExtractedText,
 } from "./service";
 
+export { sweepAttachments, type AttachmentSweepResult } from "./sweep";
+
 export {
   AttachmentServiceError,
   isAttachmentServiceError,

@@ -94,6 +94,15 @@ it explains a framework decision.
 - A local invoice its provider's callback names is asked about again
   even when it was recorded failed, and granted if it was paid after all
   (`settleLocalInvoice({ recheckFailed })`).
+- Uploaded files are deleted. Nothing called `listOrphanAttachments`, and
+  a deleted workspace or user took its attachment rows with it and left
+  the objects in the bucket. The database now queues an object's key
+  whenever its row is deleted (`storage_deletions`), and
+  `sweepAttachments({ storage, olderThan })` from
+  `@intelligo-dev/core/attachments` deletes uploads no conversation
+  claimed, then the queued objects; a key leaves the queue only once
+  storage has deleted it. The maintenance route runs it when a storage
+  adapter is bound (maintenance template 1.3.0).
 - Looking up a request's usage by workspace and request id uses an
   index (`usage_records_workspace_request_idx`) instead of scanning the
   workspace's records.
