@@ -32,6 +32,7 @@ function friendlyMessage(t: Translator): Partial<Record<string, string>> {
     invalid_input: t("errors.invalidInput"),
     not_found: t("errors.notFound"),
     workspace_limit_reached: t("errors.workspaceLimitReached"),
+    last_workspace: t("errors.lastWorkspace"),
     provider_error: t("errors.providerError"),
   };
 }

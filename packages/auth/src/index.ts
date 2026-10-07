@@ -112,3 +112,5 @@ export {
   type OnboardingServiceErrorCode,
 } from "./onboarding/errors";
 export { setStepSchema, type SetStepInput } from "./onboarding/schemas";
+
+export { SERVICE_ONLY_ORGANIZATION_PATHS } from "./request-hardening";

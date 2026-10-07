@@ -90,6 +90,7 @@
     "memberLimitReachedCount": "Your plan includes {limit, plural, one {# seat} other {# seats}}, and they're all taken. Upgrade to invite more people.",
     "invitationNotFound": "That invitation no longer exists.",
     "soleOwner": "You're the only owner of this workspace. Make another member an owner before leaving.",
+    "lastWorkspace": "This is your only workspace, so you can't leave it.",
     "forbidden": "You don't have permission to do that.",
     "acceptVerificationFailed": "We couldn't confirm the invitation. Please try again.",
     "providerError": "Something went wrong. Please try again.",

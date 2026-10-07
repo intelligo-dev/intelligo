@@ -441,11 +441,22 @@ export function createTeamService(ports: TeamServicePorts = {}) {
 
   /**
    * Leave the workspace. The sole owner cannot leave without transferring
-   * ownership first.
+   * ownership first, and no one can leave their last workspace: the next
+   * page would create a new personal one in its place.
    */
   async function leaveWorkspace(): Promise<void> {
     const { workspace, membership } = await callRequireWorkspace();
     const hdrs = await getRequestHeaders();
+
+    const workspaces = await callOrgApi("list", () =>
+      orgApi["/organization/list"]({ headers: hdrs })
+    );
+    if ((workspaces?.length ?? 0) <= 1) {
+      throw new TeamServiceError(
+        "last_workspace",
+        "Cannot leave your only workspace."
+      );
+    }
 
     if (membership.role === "owner") {
       const org = await callOrgApi("getFullOrganization", () =>

@@ -47,6 +47,30 @@ it explains a framework decision.
   before its first step finished — every one-step turn — settled at
   zero while the provider billed it. The step in flight is now estimated
   from its prompt and what it had streamed.
+### Security
+
+- Better-Auth's organization endpoints that the team and workspace
+  services wrap (create, update, delete, invite, accept, reject, cancel,
+  remove, update role, leave) answer 404 over HTTP. Called directly they
+  skipped the plan's member and workspace limits and the
+  `beforeDeleteWorkspace` hook that cancels the subscription. The
+  services, and `set-active` from the workspace switcher, are unaffected.
+  A product that called these through `authClient.organization` calls the
+  services instead.
+- A password reset ends every session that was open before it
+  (`revokeSessionsOnPasswordReset`).
+- `AUTH_IP_HEADERS` and `AUTH_TRUSTED_PROXIES` tell the auth rate limiter
+  where the client address is: without them, an app behind more than one
+  proxy resolved no address and put every client in one bucket.
+
+### Changed
+
+- A workspace that is its owner's only one cannot be deleted, and no one
+  can leave their only workspace (`last_workspace` from the workspace and
+  team services, with messages in `workspace-settings` and
+  `team-settings`). With none left, the next page created a new personal
+  workspace, and with it a new start for whatever the product grants one.
+
 
 ## [1.1.0] — 2026-10-06
 

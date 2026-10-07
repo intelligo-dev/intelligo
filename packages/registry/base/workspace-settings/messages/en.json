@@ -30,6 +30,7 @@
     "forbidden": "You don't have permission to do that.",
     "notFound": "This workspace no longer exists.",
     "workspaceLimitReached": "Your plan's workspace limit has been reached. Upgrade to create more workspaces.",
+    "lastWorkspace": "This is your only workspace, so it can't be deleted.",
     "providerError": "Something went wrong. Please try again.",
     "somethingWentWrong": "Something went wrong.",
     "invalidInput": "Invalid input"

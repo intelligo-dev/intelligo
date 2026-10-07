@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  ipAddressOptions,
+  SERVICE_ONLY_ORGANIZATION_PATHS,
+} from "./request-hardening";
+
+describe("SERVICE_ONLY_ORGANIZATION_PATHS", () => {
+  it("closes every organization endpoint a service applies limits or hooks around", () => {
+    for (const path of [
+      "/organization/create",
+      "/organization/delete",
+      "/organization/invite-member",
+      "/organization/accept-invitation",
+      "/organization/leave",
+      "/organization/remove-member",
+    ]) {
+      expect(SERVICE_ONLY_ORGANIZATION_PATHS).toContain(path);
+    }
+  });
+
+  it("leaves set-active to the browser's workspace switcher", () => {
+    expect(SERVICE_ONLY_ORGANIZATION_PATHS).not.toContain(
+      "/organization/set-active"
+    );
+  });
+});
+
+describe("ipAddressOptions", () => {
+  it("is empty when nothing is configured, leaving Better-Auth's default", () => {
+    expect(ipAddressOptions({})).toEqual({});
+    expect(
+      ipAddressOptions({ AUTH_IP_HEADERS: " ", AUTH_TRUSTED_PROXIES: "" })
+    ).toEqual({});
+  });
+
+  it("reads the headers in order and the trusted proxies as a list", () => {
+    expect(
+      ipAddressOptions({
+        AUTH_IP_HEADERS: "CF-Connecting-IP, x-forwarded-for",
+        AUTH_TRUSTED_PROXIES: "10.0.0.0/8, 173.245.48.0/20",
+      })
+    ).toEqual({
+      ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"],
+      trustedProxies: ["10.0.0.0/8", "173.245.48.0/20"],
+    });
+  });
+});

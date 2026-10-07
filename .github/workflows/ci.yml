@@ -266,7 +266,8 @@ jobs:
             packages/executions/src/__tests__ \
             packages/jobs/src/__tests__ \
             packages/billing/src/__tests__ \
-            packages/admin/src/__tests__
+            packages/admin/src/__tests__ \
+            packages/auth/src/raw-organization-paths.int.test.ts
 
       # The replay applied the files directly with psql, so drizzle has
       # no record of them — exactly the "unmanaged" state a
