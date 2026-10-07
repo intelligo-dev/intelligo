@@ -261,7 +261,9 @@ function cliPage(root) {
     /function usage\(\): string \{\s*return \[([\s\S]*?)\]\.join/
   );
   if (!usageBlock)
-    throw new Error("docs: could not find usage() in packages/cli/src/usage.ts");
+    throw new Error(
+      "docs: could not find usage() in packages/cli/src/usage.ts"
+    );
   const usage = [...usageBlock[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)]
     .map((m) => m[1].replace(/\\"/g, '"'))
     .filter((l) => l !== "")
