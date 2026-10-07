@@ -36,7 +36,10 @@ import {
   zero,
   type Money,
 } from "@intelligo-dev/core/money";
-import { getBillingSettings } from "./billing-settings";
+import {
+  getBillingSettings,
+  type ResolvedBillingSettings,
+} from "./billing-settings";
 import { getWorkspaceBilling } from "./queries";
 import type { BillingReader } from "./reader";
 import type {
@@ -104,9 +107,10 @@ type Pools = {
  */
 async function readPools(
   workspaceId: string,
-  reader: BillingReader = db
+  reader: BillingReader = db,
+  resolved?: ResolvedBillingSettings
 ): Promise<Pools> {
-  const settings = await getBillingSettings();
+  const settings = resolved ?? (await getBillingSettings());
   const billing = await getWorkspaceBilling(workspaceId, reader);
   const monthly = await getCurrentMonthlyUsage(workspaceId, reader);
   const trial = await getActiveTrialGrant(workspaceId, reader);
@@ -252,6 +256,11 @@ export async function reserveQuota(
     throw new Error("reserveQuota requires a requestId to reserve against.");
   }
 
+  // Read before the transaction: a settings cache miss inside it would
+  // take a second connection while this one waits, and a full pool of
+  // admissions doing that waits forever.
+  const settings = await getBillingSettings();
+
   try {
     return await db.transaction(async (tx): Promise<QuotaAdmission> => {
       await tx.execute(
@@ -261,7 +270,7 @@ export async function reserveQuota(
       // Only now read the balances: every settlement holds this same
       // lock for the duration of its writes, so what we read here cannot
       // be consumed between this snapshot and our reservation.
-      const pools = await readPools(workspaceId, tx);
+      const pools = await readPools(workspaceId, tx, settings);
 
       const reservedRows = await tx
         .select({
@@ -285,8 +294,7 @@ export async function reserveQuota(
         workspaceId,
         requestId,
         estimatedMicros: decision.estimated?.amount ?? 0,
-        currency:
-          decision.estimated?.currency ?? (await getBillingSettings()).currency,
+        currency: decision.estimated?.currency ?? settings.currency,
         status: "active",
         expiresAt: new Date(Date.now() + RESERVATION_TTL_MS),
       });

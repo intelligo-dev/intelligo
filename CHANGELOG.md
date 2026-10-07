@@ -31,6 +31,14 @@ it explains a framework decision.
   Stripe id. A plan granted to a workspace whose Stripe subscription
   ended — a local payment, `grantPlan` — now gets its period and lapses,
   instead of being taken for one Stripe still bills.
+- Quota admission no longer needs a second database connection inside its
+  transaction. A billing settings cache miss read the settings through the
+  shared pool while the transaction held its connection, so a pool full of
+  admissions waited on each other forever. The settings are read first.
+- The database pool waits at most 15 seconds for a connection, so an
+  exhausted pool fails requests instead of hanging the process, and logs
+  an idle connection the server dropped instead of letting the unhandled
+  error end the process. `DATABASE_POOL_MAX` sizes it (default 10).
 
 ## [1.1.0] — 2026-10-06
 
