@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/executions",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "The execution lifecycle (admission, running, settlement) and the model cost registry.",
   "keywords": [
     "intelligo",

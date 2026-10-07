@@ -14,7 +14,7 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
-## [Unreleased]
+## [1.1.1] — 2026-10-07
 
 ### Fixed
 
@@ -66,6 +66,7 @@ it explains a framework decision.
   before its first step finished — every one-step turn — settled at
   zero while the provider billed it. The step in flight is now estimated
   from its prompt and what it had streamed.
+
 ### Security
 
 - Better-Auth's organization endpoints that the team and workspace
@@ -94,6 +95,17 @@ it explains a framework decision.
   team services, with messages in `workspace-settings` and
   `team-settings`). With none left, the next page created a new personal
   workspace, and with it a new start for whatever the product grants one.
+
+### Upgrading
+
+Run `intelligo sync team-settings workspace-settings app-shell payment-poll
+chat` for the new error messages, the callback route and the seam notes. Copy
+the `headers()` block from the scaffold's `next.config.mjs` into your own.
+A production deployment that runs on the stub chat model sets
+`INTELLIGO_ALLOW_STUB_MODEL=1`; one behind more than one proxy sets
+`AUTH_IP_HEADERS` / `AUTH_TRUSTED_PROXIES`. Code that called Better-Auth's
+organization endpoints from the browser (`authClient.organization.*`,
+other than `setActive`) calls the team and workspace services instead.
 
 ## [1.1.0] — 2026-10-06
 
