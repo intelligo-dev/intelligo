@@ -99,6 +99,14 @@ export type ExecutionRun = {
   usingTrialCredits: boolean;
   complete(input?: CompleteExecutionInput): Promise<void>;
   fail(input: { error: unknown }): Promise<void>;
+  /**
+   * The usage spent so far, written onto the row while it is still
+   * `running` — after each model call of a multi-step run. Nothing is
+   * charged; it is what `reconcile()` settles if the process dies
+   * before `complete()`. Optional, so a hand-built handle need not
+   * implement it.
+   */
+  progress?(input: { usage: CompleteExecutionInput["usage"] }): Promise<void>;
 };
 
 function errorMessage(error: unknown): string {
@@ -188,6 +196,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         usingTrialCredits,
         async complete() {},
         async fail() {},
+        async progress() {},
       };
     }
 
@@ -360,6 +369,21 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         });
       },
 
+      async progress({ usage }) {
+        const inputTokens = usage?.inputTokens ?? 0;
+        const outputTokens = usage?.outputTokens ?? 0;
+        // Only while `running`: once settlement claimed the row, its
+        // usage is the final one.
+        await db
+          .update(executions)
+          .set({
+            inputTokens,
+            outputTokens,
+            totalTokens: usage?.totalTokens ?? inputTokens + outputTokens,
+          })
+          .where(and(eq(executions.id, id), eq(executions.status, "running")));
+      },
+
       async fail({ error }: { error: unknown }) {
         // Only from `running`. Once complete() has claimed the row for
         // settlement, a late abort must not release a hold that is
@@ -413,7 +437,8 @@ export function createExecutions(ports: ExecutionPorts = {}) {
    * asked first. A charge that exists is confirmed onto the row; one
    * that does not is re-run from the usage the claim recorded. A
    * `running` row older than `abandonRunningAfterMs` (the stream died
-   * without reaching complete()/fail()) is failed and its hold
+   * without reaching complete()/fail()) is settled from the usage its
+   * `progress()` recorded, or, with none recorded, failed and its hold
    * released; without that option `running` rows are left alone.
    *
    * Every transition is the same compare-and-swap the lifecycle uses,
@@ -463,6 +488,39 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         metadata: { requestId: row.requestId, how, ...extra },
       });
 
+    /** Charge the usage on the row and mark it succeeded. */
+    const settleFromRow = async (how: string) => {
+      const settled = await ports.settleUsage!({
+        workspaceId: row.workspaceId,
+        userId: row.userId,
+        requestId: row.requestId,
+        capability: row.capability,
+        model: row.model ?? undefined,
+        inputTokens: row.inputTokens ?? 0,
+        outputTokens: row.outputTokens ?? 0,
+        totalTokens: row.totalTokens ?? 0,
+        // Admission's pool choice is not on the row; a settlement port
+        // takes the pools in its own order rather than trusting this.
+        usingTrialCredits: false,
+        metadata: row.metadata ?? undefined,
+        price:
+          row.priceMicros !== null && row.currency
+            ? money(row.priceMicros, row.currency)
+            : undefined,
+      });
+      const charged = settled?.charged;
+      await cas(
+        "settling",
+        "succeeded",
+        finish({
+          chargedMicros: charged?.amount ?? null,
+          ...(charged ? { currency: charged.currency } : {}),
+        })
+      );
+      await audit(how, { charged });
+      return { action: "settled" as const, charged };
+    };
+
     if (row.status === "running") {
       const cutoff = options.abandonRunningAfterMs;
       if (
@@ -470,6 +528,13 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         Date.now() - row.startedAt.getTime() < cutoff
       ) {
         return { action: "noop", status: "running" };
+      }
+      // A run that recorded its progress (`progress()`) spent those
+      // tokens before it died: they are charged, not released.
+      if (ports.settleUsage && (row.totalTokens ?? 0) > 0) {
+        const claimed = await cas("running", "settling", {});
+        if (!claimed) return { action: "noop", status: "running" };
+        return settleFromRow("abandoned_settled");
       }
       const moved = await cas(
         "running",
@@ -537,35 +602,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       };
     }
 
-    const settled = await ports.settleUsage({
-      workspaceId: row.workspaceId,
-      userId: row.userId,
-      requestId: row.requestId,
-      capability: row.capability,
-      model: row.model ?? undefined,
-      inputTokens: row.inputTokens ?? 0,
-      outputTokens: row.outputTokens ?? 0,
-      totalTokens: row.totalTokens,
-      // Admission's pool choice is not on the row; a settlement port
-      // takes the pools in its own order rather than trusting this.
-      usingTrialCredits: false,
-      metadata: row.metadata ?? undefined,
-      price:
-        row.priceMicros !== null && row.currency
-          ? money(row.priceMicros, row.currency)
-          : undefined,
-    });
-    const charged = settled?.charged;
-    await cas(
-      "settling",
-      "succeeded",
-      finish({
-        chargedMicros: charged?.amount ?? null,
-        ...(charged ? { currency: charged.currency } : {}),
-      })
-    );
-    await audit("settled", { charged });
-    return { action: "settled", charged };
+    return settleFromRow("settled");
   }
 
   return { begin, reconcile };
@@ -579,7 +616,10 @@ export type ReconcileResult =
     }
   /** The ledger already held the charge; the row now says so. */
   | { action: "confirmed"; charged?: Money }
-  /** Settlement was re-run from the recorded usage. */
+  /**
+   * Settlement was re-run from the recorded usage — a stuck `settling`
+   * row, or an abandoned `running` row that recorded its progress.
+   */
   | { action: "settled"; charged?: Money }
   /** A stale `running` row was failed and its hold released. */
   | { action: "abandoned" };

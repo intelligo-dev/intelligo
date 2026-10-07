@@ -2078,8 +2078,10 @@ twice.
 
 `executions.reconcile(executionId, { abandonRunningAfterMs? })` repairs a run
 whose process died: it asks `findSettlement` whether the charge committed,
-confirms it onto the row or re-runs settlement from the recorded usage, and
-fails a `running` row that outlived the threshold. `findStaleExecutions` finds
+confirms it onto the row or re-runs settlement from the recorded usage. A
+`running` row that outlived the threshold is charged the usage `run.progress()`
+recorded on it while the run went on — a multi-step run calls it after each
+model call — and failed, its hold released, when nothing was recorded. `findStaleExecutions` finds
 the candidates; `listExecutions`, `summarizeExecutions` and
 `summarizeExecutionsByDay` read the record for a usage page.
 
@@ -2664,7 +2666,9 @@ cost, reading usage and the model from whatever shape the provider reported.
 `executions` is the instance the composition root builds with
 `createExecutions` from
 [`@intelligo-dev/executions`](https://www.npmjs.com/package/@intelligo-dev/executions);
-naming the `model` sizes the credit hold admission takes.
+naming the `model` sizes the credit hold admission takes, and the run settles
+against that registered id even when the result reports the provider's own
+(kept in the metadata as `reportedModel`).
 
 When entitlement refuses, it throws an `ExecutionRefusedError` carrying the
 `executionId` and the port's `reasonCode`, so a refusal cannot be mistaken for
