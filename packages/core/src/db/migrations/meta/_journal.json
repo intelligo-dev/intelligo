@@ -57,6 +57,13 @@
       "when": 1791339767064,
       "tag": "0007_schema_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791387534871,
+      "tag": "0008_wide_counters_kept_ledgers",
+      "breakpoints": true
     }
   ]
 }

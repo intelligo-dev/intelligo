@@ -270,6 +270,7 @@ jobs:
         run: |
           pnpm vitest run --no-file-parallelism \
             packages/core/src/db/__tests__ \
+            packages/audit/src/__tests__ \
             packages/executions/src/__tests__ \
             packages/jobs/src/__tests__ \
             packages/billing/src/__tests__ \

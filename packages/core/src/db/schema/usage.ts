@@ -29,7 +29,7 @@ export const usageRecords = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     /** Null for work no signed-in user started: a job, an anonymous request. */
     userId: text("user_id").references(() => users.id, {
-      onDelete: "cascade",
+      onDelete: "set null",
     }),
     /** "ai_tokens", "fixed_charge", or "credit" (a refund or goodwill credit, negative). */
     type: text("type").notNull(),
@@ -82,6 +82,7 @@ export const usageRecords = pgTable(
       table.workspaceId,
       table.requestId
     ),
+    index("usage_records_user_id_idx").on(table.userId),
   ]
 );
 
@@ -98,7 +99,7 @@ export const monthlyUsage = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     periodStart: timestamp("period_start").notNull(),
     periodEnd: timestamp("period_end").notNull(),
-    tokensUsed: integer("tokens_used").notNull().default(0),
+    tokensUsed: bigint("tokens_used", { mode: "number" }).notNull().default(0),
     /** The plan allowance spent this period, in micros of `currency`. */
     allowanceUsedMicros: bigint("allowance_used_micros", { mode: "number" })
       .notNull()
@@ -161,6 +162,7 @@ export const trialCredits = pgTable(
   (table) => [
     index("trial_credits_expiry_idx").on(table.status, table.trialEndDate),
     index("trial_credits_normalized_email_idx").on(table.normalizedEmail),
+    index("trial_credits_created_by_ip_idx").on(table.createdByIp),
   ]
 );
 

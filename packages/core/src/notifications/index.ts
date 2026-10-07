@@ -5,7 +5,7 @@
 
 import { db } from "../db";
 import { notifications } from "../db/schema";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count, lt } from "drizzle-orm";
 import type { CreateNotificationParams } from "./types";
 
 export type {
@@ -98,6 +98,24 @@ export async function markAllAsRead(userId: string) {
     .where(
       and(eq(notifications.userId, userId), eq(notifications.isRead, false))
     );
+}
+
+/**
+ * Delete read notifications created before `olderThan`, every user's.
+ * Unread ones stay however old. For the maintenance route; returns the
+ * number deleted.
+ */
+export async function pruneNotifications(olderThan: Date): Promise<number> {
+  const deleted = await db
+    .delete(notifications)
+    .where(
+      and(
+        eq(notifications.isRead, true),
+        lt(notifications.createdAt, olderThan)
+      )
+    )
+    .returning({ id: notifications.id });
+  return deleted.length;
 }
 
 function parseMetadata<T extends { metadata: string | null }>(
