@@ -17,6 +17,7 @@ import {
 } from "@intelligo-dev/core/conversations";
 
 export type SharedConversation = {
+  /** The share link's token: the conversation's own id stays private. */
   id: string;
   title: string | null;
   updatedAt: string;
@@ -30,7 +31,7 @@ export async function loadSharedConversation(
     const conversation = await getPublicConversation(id);
     const rows = await getPublicMessages(id);
     return {
-      id: conversation.id,
+      id,
       title: conversation.title,
       updatedAt: conversation.updatedAt.toISOString(),
       messages: sanitizeForShare(toUIMessages(rows)),

@@ -16,10 +16,13 @@
  * transport, so switching models mid-conversation rebuilds nothing and
  * loses no draft.
  *
- * A `?query=` search param seeds the first turn: another surface (the
- * dashboard's prompt bar, a marketing CTA) can mint a conversation id
- * and link straight into a started conversation. It is sent once, only
- * into an empty conversation, so a refresh doesn't replay it.
+ * Another surface can mint a conversation id and open it already
+ * started: the dashboard's prompt bar leaves the first turn in
+ * `sessionStorage` under `chat:handoff:<id>`, so the prompt never
+ * reaches a URL; a link from outside the app (a marketing CTA) passes
+ * `?query=`, which is dropped from the address once read. Either is
+ * sent once, only into an empty conversation, so a refresh doesn't
+ * replay it.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -44,6 +47,7 @@ import {
 } from "@intelligo-dev/chat/client";
 
 import { loadEarlierMessages } from "@showcase/actions/chat";
+import { Button } from "@showcase/components/ui/button";
 import { useRouter } from "@showcase/i18n/navigation";
 import { chatConfig, type ChatMention } from "@showcase/lib/chat-config";
 import type { CanvasRef, ToolRendererActions } from "@showcase/lib/chat-renderers";
@@ -88,6 +92,27 @@ function refusalFrom(chatError: Error): ChatBlock | null {
 }
 
 const MODEL_STORAGE_KEY = "chat:model";
+
+/** Where another surface leaves a minted conversation's first turn. */
+function handoffKey(conversationId: string) {
+  return `chat:handoff:${conversationId}`;
+}
+
+function readHandoff(conversationId: string): string | null {
+  try {
+    return sessionStorage.getItem(handoffKey(conversationId));
+  } catch {
+    return null;
+  }
+}
+
+function clearHandoff(conversationId: string) {
+  try {
+    sessionStorage.removeItem(handoffKey(conversationId));
+  } catch {
+    // Nothing was stored where storage is unavailable.
+  }
+}
 
 /**
  * When the thread sends the next turn by itself: after the reader
@@ -352,7 +377,14 @@ export function ChatThread({
   const send = useCallback(
     (text: string, files: FileUIPart[] = [], mentions: ChatMention[] = []) => {
       const trimmed = text.trim();
-      if ((!trimmed && files.length === 0) || isStreaming || blocked) return;
+      if (
+        (!trimmed && files.length === 0) ||
+        isStreaming ||
+        blocked ||
+        versions.viewingOlder
+      ) {
+        return;
+      }
       void sendMessage(
         { text: trimmed, ...(files.length > 0 ? { files } : {}) },
         {
@@ -366,7 +398,7 @@ export function ChatThread({
       );
       draft.clear();
     },
-    [isStreaming, blocked, sendMessage, draft]
+    [isStreaming, blocked, versions.viewingOlder, sendMessage, draft]
   );
 
   useEffect(() => {
@@ -393,9 +425,11 @@ export function ChatThread({
       if (at === -1) return;
       versions.beforeEdit(messageId);
       setMessages(messages.slice(0, at));
+      // Named, so the server drops the stored message and what follows
+      // it even when nothing before it is on screen.
       void sendMessage(
         { text, ...(files.length > 0 ? { files } : {}) },
-        { body: bodyRef.current }
+        { body: { ...bodyRef.current, replaces: messageId } }
       );
     },
     [isStreaming, messages, versions, setMessages, sendMessage]
@@ -420,23 +454,33 @@ export function ChatThread({
     isStreaming,
   });
 
-  // Prefill from `?query=`, once, and only into a conversation that has
-  // no messages yet. It waits for the stored model pick, so the turn
-  // runs on the model the reader chose, and a thread that may not send
-  // gets the text as a draft instead.
+  // Prefill from a handoff or `?query=`, once, and only into a
+  // conversation that has no messages yet. It waits for the stored model
+  // pick, so the turn runs on the model the reader chose, and a thread
+  // that may not send gets the text as a draft instead.
   const prefillSent = useRef(false);
   useEffect(() => {
     if (prefillSent.current) return;
-    const query = searchParams.get("query");
+    const handoff = readHandoff(conversationId);
+    const fromUrl = searchParams.get("query");
+    const query = handoff ?? fromUrl;
     if (!query || messages.length > 0) return;
     if (models.length > 0 && modelId === undefined) return;
     prefillSent.current = true;
+    if (handoff !== null) clearHandoff(conversationId);
+    if (fromUrl !== null) {
+      // The prompt leaves the address bar and the history entry.
+      const url = new URL(window.location.href);
+      url.searchParams.delete("query");
+      window.history.replaceState(window.history.state, "", url);
+    }
     if (blocked) {
       draft.setValue(query);
       return;
     }
     void sendMessage({ text: query }, { body: bodyRef.current });
   }, [
+    conversationId,
     searchParams,
     messages.length,
     sendMessage,
@@ -462,7 +506,20 @@ export function ChatThread({
     closeCanvas: () => onCloseCanvas?.(),
   };
 
-  const composer = readOnly ? null : (
+  const composer = readOnly ? null : versions.viewingOlder ? (
+    <div
+      className={
+        compact
+          ? "flex items-center justify-between gap-3 p-3 pt-2 text-sm text-muted-foreground"
+          : "mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 pt-2 pb-4 text-sm text-muted-foreground"
+      }
+    >
+      <p>{t("branch.olderNotice")}</p>
+      <Button variant="outline" size="sm" onClick={versions.showLatest}>
+        {t("branch.showLatest")}
+      </Button>
+    </div>
+  ) : (
     <ChatInput
       conversationId={conversationId}
       value={draft.value}
@@ -523,8 +580,10 @@ export function ChatThread({
                 versions.select(version.anchorId, index),
             };
           }}
-          onRegenerate={readOnly ? undefined : handleRegenerate}
-          onEdit={readOnly ? undefined : handleEdit}
+          onRegenerate={
+            readOnly || versions.viewingOlder ? undefined : handleRegenerate
+          }
+          onEdit={readOnly || versions.viewingOlder ? undefined : handleEdit}
           toolActions={readOnly ? undefined : toolActions}
           compact={compact}
           earlier={

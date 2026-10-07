@@ -341,6 +341,50 @@ d("conversations service — real DB integration", () => {
     expect(remaining.map((m) => m.id)).toEqual([`msg-${suffix}-a`]);
   });
 
+  it("deleteTrailingMessages drops the message itself when inclusive, and only in its conversation", async () => {
+    const conv = await service.createConversation(actor, {
+      agentId: "assistant",
+      modelId: "google/gemini-2.5-flash",
+    });
+    const other = await service.createConversation(actor, {
+      agentId: "assistant",
+      modelId: "google/gemini-2.5-flash",
+    });
+    await service.saveMessages(actor, [
+      {
+        id: `msg-${suffix}-first`,
+        conversationId: conv.id,
+        role: "user",
+        parts: JSON.stringify([{ type: "text", text: "one" }]),
+      },
+      {
+        id: `msg-${suffix}-reply`,
+        conversationId: conv.id,
+        role: "assistant",
+        parts: JSON.stringify([{ type: "text", text: "two" }]),
+      },
+    ]);
+
+    await expect(
+      service.deleteTrailingMessages(actor, {
+        id: `msg-${suffix}-first`,
+        inclusive: true,
+        conversationId: other.id,
+      })
+    ).rejects.toSatisfy(
+      (err: unknown) =>
+        isConversationServiceError(err) && err.code === "not_found"
+    );
+
+    const { deletedCount } = await service.deleteTrailingMessages(actor, {
+      id: `msg-${suffix}-first`,
+      inclusive: true,
+      conversationId: conv.id,
+    });
+    expect(deletedCount).toBe(2);
+    expect(await service.getMessages(actor, conv.id)).toEqual([]);
+  });
+
   it("deleteConversation removes the conversation for the owning actor", async () => {
     const conv = await service.createConversation(actor, {
       agentId: "assistant",

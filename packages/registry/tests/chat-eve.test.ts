@@ -345,6 +345,45 @@ describe("approvalResponsesFrom / userContentFrom", () => {
     }
   );
 
+  it.each([
+    [true, "o2"],
+    [false, "o1"],
+  ])(
+    "reads a negated option as a denial (approved=%s picks %s)",
+    (approved, optionId) => {
+      const messages: UIMessage[] = [
+        {
+          id: "a",
+          role: "assistant",
+          parts: [
+            {
+              type: "dynamic-tool",
+              toolName: "deleteRows",
+              toolCallId: "c9",
+              state: "approval-responded",
+              input: {},
+              approval: { id: "req_A", approved },
+              callProviderMetadata: {
+                eve: {
+                  inputRequest: {
+                    requestId: "req_A",
+                    options: [
+                      { id: "o1", label: "Don't allow" },
+                      { id: "o2", label: "Allow once" },
+                    ],
+                  },
+                },
+              },
+            } as unknown as UIMessage["parts"][number],
+          ],
+        },
+      ];
+      expect(approvalResponsesFrom(messages)).toEqual([
+        { requestId: "req_A", optionId },
+      ]);
+    }
+  );
+
   it("sends text alone as a string and files as parts", () => {
     expect(
       userContentFrom({
@@ -597,5 +636,143 @@ describe("eveStreamTurn", () => {
     const chunks = await drain(produced.stream);
     expect(chunks).toEqual([{ type: "error", errorText: "It broke" }]);
     await expect(produced.usage).rejects.toThrow("It broke");
+  });
+
+  const hello = {
+    messages: [
+      {
+        id: "u",
+        role: "user" as const,
+        parts: [{ type: "text" as const, text: "hello" }],
+      },
+    ],
+  };
+
+  it("settles the tokens of steps that finished before eve failed the turn", async () => {
+    const { fetchImpl } = fakeEve([
+      ev("step.completed", { usage: { inputTokens: 40, outputTokens: 2 } }),
+      ev("turn.failed", { code: "x", message: "It broke" }),
+    ]);
+    const { turn: t } = turn();
+    const produced = await eveStreamTurn({
+      baseUrl: "https://eve.test",
+      fetch: fetchImpl,
+    })(t as never, hello, {
+      modelId: "m",
+      abortSignal: new AbortController().signal,
+      writer: {} as never,
+    });
+    const chunks = await drain(produced.stream);
+    expect(chunks).toContainEqual({ type: "error", errorText: "It broke" });
+    await expect(produced.usage).resolves.toEqual({
+      inputTokens: 40,
+      outputTokens: 2,
+      totalTokens: 42,
+      finishReason: "error",
+    });
+  });
+
+  it("closes eve's stream once the turn has ended", async () => {
+    const cancelled = vi.fn();
+    const encoder = new TextEncoder();
+    const fetchImpl = (async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/stream")) {
+        return new Response(
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(
+                encoder.encode(JSON.stringify(ev("turn.completed", {})) + "\n")
+              );
+            },
+            cancel: cancelled,
+          })
+        );
+      }
+      return Response.json({ sessionId: "wrun_1" }, { status: 202 });
+    }) as unknown as typeof fetch;
+    const { turn: t } = turn();
+    const produced = await eveStreamTurn({
+      baseUrl: "https://eve.test",
+      fetch: fetchImpl,
+    })(t as never, hello, {
+      modelId: "m",
+      abortSignal: new AbortController().signal,
+      writer: {} as never,
+    });
+    await drain(produced.stream);
+    expect(cancelled).toHaveBeenCalled();
+  });
+
+  it("stores the cursor of a stopped turn and passes over the rest of it next turn", async () => {
+    const encoder = new TextEncoder();
+    const abort = new AbortController();
+    const line = (event: EveEvent) =>
+      encoder.encode(JSON.stringify(event) + "\n");
+    const stopped = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/stream")) {
+        return new Response(
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(
+                line(ev("message.appended", { messageDelta: "par" }))
+              );
+              abort.signal.addEventListener("abort", () =>
+                controller.error(new DOMException("aborted", "AbortError"))
+              );
+            },
+          })
+        );
+      }
+      return Response.json({ sessionId: "wrun_1" }, { status: 202 });
+    });
+    const first = turn({ eve: { sessionId: "wrun_1", streamIndex: 4 } });
+    const produced = await eveStreamTurn({
+      baseUrl: "https://eve.test",
+      fetch: stopped as unknown as typeof fetch,
+    })(first.turn as never, hello, {
+      modelId: "m",
+      abortSignal: abort.signal,
+      writer: {} as never,
+    });
+    const reader = produced.stream.getReader();
+    await reader.read();
+    abort.abort();
+    await produced.usage;
+    expect(first.updateMetadata).toHaveBeenCalledWith({
+      eve: { sessionId: "wrun_1", streamIndex: 5, skipStoppedTurn: true },
+    });
+
+    const { fetchImpl, calls } = fakeEve([
+      ev("message.appended", { messageDelta: "tial" }, "old-text"),
+      ev("step.completed", { usage: { inputTokens: 9, outputTokens: 9 } }),
+      ev("turn.cancelled", {}),
+      ev("message.appended", { messageDelta: "new" }, "new-text"),
+      ev("turn.completed", {}),
+    ]);
+    const next = turn({
+      eve: { sessionId: "wrun_1", streamIndex: 5, skipStoppedTurn: true },
+    });
+    const again = await eveStreamTurn({
+      baseUrl: "https://eve.test",
+      fetch: fetchImpl,
+    })(next.turn as never, hello, {
+      modelId: "m",
+      abortSignal: new AbortController().signal,
+      writer: {} as never,
+    });
+    const chunks = await drain(again.stream);
+    expect(calls[1]!.url).toContain("startIndex=5");
+    expect(chunks).toContainEqual({
+      type: "text-delta",
+      id: expect.any(String),
+      delta: "new",
+    });
+    expect(chunks.some((c) => c.type === "abort")).toBe(false);
+    await expect(again.usage).resolves.toMatchObject({ inputTokens: 0 });
+    expect(next.updateMetadata).toHaveBeenCalledWith({
+      eve: { sessionId: "wrun_1", streamIndex: 10 },
+    });
   });
 });

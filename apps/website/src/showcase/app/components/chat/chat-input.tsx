@@ -40,6 +40,7 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
+  usePromptInputAttachments,
   type PromptInputError,
 } from "@showcase/components/ui/ai-prompt-input";
 import { chatConfig, type ChatMention } from "@showcase/lib/chat-config";
@@ -270,13 +271,13 @@ export function ChatInput({
               </PromptInputSelect>
             ) : null}
           </PromptInputTools>
-          <PromptInputSubmit
-            status={
-              isStreaming ? "streaming" : uploading ? "submitted" : "ready"
-            }
+          <ComposerSubmit
+            isStreaming={isStreaming}
+            uploading={uploading}
+            disabled={disabled}
+            hasText={Boolean(value.trim())}
             label={isStreaming ? t("input.stop") : t("input.send")}
-            disabled={!isStreaming && (disabled || uploading || !value.trim())}
-            onClick={isStreaming ? onStop : undefined}
+            onStop={onStop}
           />
         </PromptInputFooter>
       </PromptInput>
@@ -295,5 +296,38 @@ export function ChatInput({
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Send, or stop while a reply streams. A turn needs text or a file:
+ * an attachment alone is a message.
+ */
+function ComposerSubmit({
+  isStreaming,
+  uploading,
+  disabled,
+  hasText,
+  label,
+  onStop,
+}: {
+  isStreaming: boolean;
+  uploading: boolean;
+  disabled: boolean;
+  hasText: boolean;
+  label: string;
+  onStop: () => void;
+}) {
+  const { files } = usePromptInputAttachments();
+  return (
+    <PromptInputSubmit
+      status={isStreaming ? "streaming" : uploading ? "submitted" : "ready"}
+      label={label}
+      disabled={
+        !isStreaming &&
+        (disabled || uploading || (!hasText && files.length === 0))
+      }
+      onClick={isStreaming ? onStop : undefined}
+    />
   );
 }

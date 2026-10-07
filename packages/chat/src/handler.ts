@@ -695,8 +695,18 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     // regenerated, the path an edit replaces. Run only once the turn is
     // admitted: a refused regenerate must leave the old answer in place.
     let trimAfter: string | null = null;
+    let trimFrom: string | null = null;
     if (!loaded.row) {
       // A new conversation has nothing to trim.
+    } else if (
+      body.replaces &&
+      body.trigger !== "regenerate-message" &&
+      body.messages[body.messages.length - 1]!.role === "user"
+    ) {
+      // An edit that names the message it replaces: that message and
+      // everything after it go, even when it is the first one the client
+      // holds and no message before it says where the path forks.
+      trimFrom = body.replaces;
     } else if (body.trigger === "regenerate-message") {
       // The client dropped the reply it is regenerating; drop what the
       // row holds after the user message that gets a second answer.
@@ -813,9 +823,14 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       pendingTitle = Promise.resolve(deriveTitle(titleFrom, context));
     }
 
-    if (trimAfter) {
+    if (trimAfter || trimFrom) {
       try {
-        await deleteTrailingMessages(actor, { id: trimAfter });
+        await deleteTrailingMessages(
+          actor,
+          trimFrom
+            ? { id: trimFrom, inclusive: true, conversationId: body.id }
+            : { id: trimAfter!, conversationId: body.id }
+        );
       } catch (error) {
         // The message may never have been persisted (a failed first
         // attempt). The turn still makes sense.

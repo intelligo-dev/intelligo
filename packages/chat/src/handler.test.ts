@@ -782,7 +782,32 @@ describe("POST streaming", () => {
     await response.text();
     expect(conversations.deleteTrailingMessages).toHaveBeenCalledWith(
       { workspaceId: "ws-1", userId: "u-1" },
-      { id: "m-u" }
+      { id: "m-u", conversationId: CONVERSATION_ID }
+    );
+  });
+
+  it("drops the replaced message and what follows when an edit names it", async () => {
+    const conversations = await import("@intelligo-dev/core/conversations");
+    store.rows.set(CONVERSATION_ID, {
+      id: CONVERSATION_ID,
+      workspaceId: "ws-1",
+      userId: "u-1",
+      agentId: "assistant",
+      modelId: MODEL_ID,
+      title: "t",
+    });
+    const { POST } = createChatHandler(baseConfig(fakeExecutions().executions));
+    const response = await POST(
+      post({
+        id: CONVERSATION_ID,
+        messages: [userMessage("edited first message", "m-u2")],
+        replaces: "m-u1",
+      })
+    );
+    await response.text();
+    expect(conversations.deleteTrailingMessages).toHaveBeenCalledWith(
+      { workspaceId: "ws-1", userId: "u-1" },
+      { id: "m-u1", inclusive: true, conversationId: CONVERSATION_ID }
     );
   });
 

@@ -225,6 +225,12 @@ describe("titleFromUrl", () => {
     );
     expect(titleFromUrl("https://dev.to/")).toBeUndefined();
   });
+
+  it("reads a segment with a stray percent sign as written", () => {
+    expect(titleFromUrl("https://example.com/sale-100%-off")).toBe(
+      "Sale 100% off"
+    );
+  });
 });
 
 describe("primaryInput", () => {
