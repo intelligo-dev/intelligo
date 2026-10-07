@@ -35,41 +35,10 @@ import {
 } from "@intelligo-dev/core/storage";
 
 import { ATTACHMENT_MAX_BYTES, attachmentUrl } from "./body";
+import { readUpTo } from "./read-body";
 
 /** Room for the multipart boundaries and headers around the file. */
 const FORM_OVERHEAD_BYTES = 64 * 1024;
-
-/**
- * The request body, read until it passes `limit` bytes; then the read
- * stops and the upload is refused, so a body of any size costs at most
- * the limit in memory.
- */
-async function readUpTo(
-  request: Request,
-  limit: number
-): Promise<Uint8Array<ArrayBuffer> | "too_large"> {
-  if (!request.body) return new Uint8Array(new ArrayBuffer(0));
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > limit) {
-      await reader.cancel();
-      return "too_large";
-    }
-    chunks.push(value);
-  }
-  const out = new Uint8Array(new ArrayBuffer(total));
-  let offset = 0;
-  for (const chunk of chunks) {
-    out.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return out;
-}
 
 /** Types a browser displays without running anything, served inline. */
 const INLINE_TYPES: ReadonlySet<string> = new Set([
@@ -155,13 +124,6 @@ export function createChatUploadHandler(
     // A declared length over the limit is refused before the body is
     // read; one with none (a chunked upload) is read only up to it.
     const maxBytes = policy.maxBytes ?? ATTACHMENT_MAX_BYTES;
-    const declared = Number(request.headers.get("content-length"));
-    if (
-      Number.isFinite(declared) &&
-      declared > maxBytes + FORM_OVERHEAD_BYTES
-    ) {
-      return refuse("BAD_REQUEST", t("attachmentRejected"));
-    }
     const body = await readUpTo(request, maxBytes + FORM_OVERHEAD_BYTES);
     if (body === "too_large") {
       return refuse("BAD_REQUEST", t("attachmentRejected"));

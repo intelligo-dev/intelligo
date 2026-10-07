@@ -69,7 +69,13 @@ import {
   registeredModelIds,
 } from "@intelligo-dev/executions/pricing";
 
-import { attachmentIdFromUrl, fileAccepted, parseChatBody } from "./body";
+import {
+  ATTACHMENT_MAX_BYTES,
+  attachmentIdFromUrl,
+  fileAccepted,
+  parseChatBody,
+} from "./body";
+import { readJsonUpTo } from "./read-body";
 import type { ChatAttachmentPolicy } from "./body";
 import type { ChatErrorCode, ChatModelOption } from "./client";
 import type {
@@ -123,6 +129,22 @@ const DEFAULT_MAX_STEPS = 5;
  */
 const DEFAULT_WINDOW = { maxMessages: 40, maxTokens: 12_000 } as const;
 const MODEL_URL_SECONDS = 900;
+/** The transcript `useChat` resends each turn: text and tool payloads. */
+const TRANSCRIPT_BODY_BYTES = 8 * 1024 * 1024;
+/** Inline files one request may carry at the policy's size. */
+const INLINE_FILES_PER_BODY = 4;
+/** A DELETE body names one id. */
+const DELETE_BODY_BYTES = 16 * 1024;
+
+/** `maxBodyBytes` when the config names none. */
+function defaultBodyLimit(policy: ChatAttachmentPolicy | false): number {
+  if (policy === false || policy.mode === "stored") {
+    return TRANSCRIPT_BODY_BYTES;
+  }
+  // A data URL carries its bytes as base64: four characters per three.
+  const encoded = Math.ceil((policy.maxBytes ?? ATTACHMENT_MAX_BYTES) / 3) * 4;
+  return TRANSCRIPT_BODY_BYTES + INLINE_FILES_PER_BODY * encoded;
+}
 
 async function defaultAuthenticate(): Promise<ChatActor> {
   const { workspace, user } = await requireWorkspace();
@@ -252,6 +274,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
   const maxMessageLength =
     config.maxMessageLength ?? DEFAULT_MAX_MESSAGE_LENGTH;
   const attachments = config.attachments ?? false;
+  const maxBodyBytes = config.maxBodyBytes ?? defaultBodyLimit(attachments);
   const authenticate = config.authenticate ?? defaultAuthenticate;
   const rateLimit =
     config.rateLimit === undefined ? defaultRateLimit : config.rateLimit;
@@ -487,27 +510,38 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     const cors = corsHeaders(request);
     const nowhere = { actor: null, conversationId: null };
 
-    let json: unknown;
-    try {
-      json = await request.json();
-    } catch {
-      return refusal("BAD_REQUEST", t("invalidBody"), nowhere, {}, cors);
-    }
-    const parsed = parseChatBody(json, { maxMessageLength, attachments });
-    if (!parsed.ok) {
-      const { key, params } = parsed.rejection;
-      return refusal("BAD_REQUEST", t(key, params), nowhere, {}, cors);
-    }
-    const body = parsed.body;
-    const where = { actor: null as ChatActor | null, conversationId: body.id };
-
+    // Who is asking, before the body is read: an anonymous request
+    // costs no more than its headers.
     let actor: ChatActor;
     try {
       actor = await authenticate(request);
     } catch {
-      return refusal("UNAUTHORIZED", t("unauthorized"), where, {}, cors);
+      return refusal("UNAUTHORIZED", t("unauthorized"), nowhere, {}, cors);
     }
-    where.actor = actor;
+
+    const read = await readJsonUpTo(request, maxBodyBytes);
+    if (read === "too_large" || read === "invalid") {
+      return refusal(
+        "BAD_REQUEST",
+        t("invalidBody"),
+        { actor, conversationId: null },
+        {},
+        cors
+      );
+    }
+    const parsed = parseChatBody(read.json, { maxMessageLength, attachments });
+    if (!parsed.ok) {
+      const { key, params } = parsed.rejection;
+      return refusal(
+        "BAD_REQUEST",
+        t(key, params),
+        { actor, conversationId: null },
+        {},
+        cors
+      );
+    }
+    const body = parsed.body;
+    const where = { actor, conversationId: body.id };
 
     let limitHeaders: Record<string, string> = { ...cors };
     if (rateLimit !== false) {
@@ -661,35 +695,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     // A title that resolves later is applied after the stream — a
     // model-written title must not delay the first token.
     let pendingTitle: Promise<string | null> | null = null;
-    // A product's title function may call a model: it runs once the turn
-    // is admitted, so a refused turn spends nothing on it.
-    let titleFrom: string | null = null;
-
-    if (!loaded.row) {
-      const opening = body.messages.find((message) => message.role === "user");
-      const openingText = opening ? extractText(opening.parts) : "";
-      let title: string | null = null;
-      if (deriveTitle) titleFrom = openingText;
-      else title = truncateTitle(openingText);
-      try {
-        context.conversation = await createConversation(actor, {
-          id: body.id,
-          agentId: agent.id,
-          modelId,
-          title,
-        });
-      } catch (error) {
-        // Another actor's id: answer as if it did not exist.
-        if (isConversationServiceError(error) && error.code === "forbidden") {
-          return refusal("NOT_FOUND", t("notFound"), where, {}, cors);
-        }
-        log.error("Failed to create conversation", {
-          conversationId: body.id,
-          error: errorMessage(error),
-        });
-        return refusal("INTERNAL", t("internalError"), where, {}, cors);
-      }
-    }
 
     // What the stored transcript loses to this turn — the reply being
     // regenerated, the path an edit replaces. Run only once the turn is
@@ -726,7 +731,11 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     const turn: ChatTurn = {
       ...context,
       agent,
-      history: async () => toUIMessages(await getMessages(actor, body.id)),
+      // A first turn has no row yet, and so no history.
+      history: async () =>
+        context.conversation
+          ? toUIMessages(await getMessages(actor, body.id))
+          : [],
     };
 
     // Approval answers ride on a continuation; the audit hook sees
@@ -809,8 +818,37 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       );
     }
 
-    if (titleFrom !== null && deriveTitle) {
-      pendingTitle = Promise.resolve(deriveTitle(titleFrom, context));
+    // The row is created once the turn is admitted: a first turn refused
+    // for quota or a rate limit leaves no empty conversation behind.
+    if (!loaded.row) {
+      const opening = body.messages.find((message) => message.role === "user");
+      const openingText = opening ? extractText(opening.parts) : "";
+      try {
+        const row = await createConversation(actor, {
+          id: body.id,
+          agentId: agent.id,
+          modelId,
+          title: deriveTitle ? null : truncateTitle(openingText),
+        });
+        context.conversation = row;
+        turn.conversation = row;
+      } catch (error) {
+        await run.fail({ error });
+        // Another actor's id: answer as if it did not exist.
+        if (isConversationServiceError(error) && error.code === "forbidden") {
+          return refusal("NOT_FOUND", t("notFound"), where, {}, cors);
+        }
+        log.error("Failed to create conversation", {
+          conversationId: body.id,
+          error: errorMessage(error),
+        });
+        return refusal("INTERNAL", t("internalError"), where, {}, cors);
+      }
+      // A product's title function may call a model: it runs only for
+      // an admitted turn, so a refused one spends nothing on it.
+      if (deriveTitle) {
+        pendingTitle = Promise.resolve(deriveTitle(openingText, context));
+      }
     }
 
     if (trimAfter) {
@@ -1244,10 +1282,13 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           void settleOtherModels(takeOtherModelUsage(), false);
         }
 
-        if (config.persist === false) return;
         const userMessage = lastUserMessage(body.messages);
         try {
-          if (config.persist) {
+          // Uploads are tied to the conversation whether or not the
+          // transcript is stored here: an unclaimed upload is swept.
+          if (config.persist === false) {
+            // The transcript is the client's to keep.
+          } else if (config.persist) {
             await config.persist(turn, {
               userMessage,
               responseMessage,
@@ -1313,25 +1354,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     const t = await messagesFor(request);
     const cors = corsHeaders(request);
 
-    let id = new URL(request.url).searchParams.get("id");
-    if (!id) {
-      try {
-        const json = (await request.json()) as { id?: unknown };
-        if (typeof json.id === "string") id = json.id;
-      } catch {
-        // No body: the query string was the only place to look.
-      }
-    }
-    if (!id) {
-      return refusal(
-        "BAD_REQUEST",
-        t("invalidBody"),
-        { actor: null, conversationId: null },
-        {},
-        cors
-      );
-    }
-
     let actor: ChatActor;
     try {
       actor = await authenticate(request);
@@ -1339,7 +1361,26 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       return refusal(
         "UNAUTHORIZED",
         t("unauthorized"),
-        { actor: null, conversationId: id },
+        { actor: null, conversationId: null },
+        {},
+        cors
+      );
+    }
+
+    let id = new URL(request.url).searchParams.get("id");
+    if (!id) {
+      // No body, or not JSON: the query string was the only place to look.
+      const read = await readJsonUpTo(request, DELETE_BODY_BYTES);
+      if (typeof read === "object") {
+        const json = read.json as { id?: unknown } | null;
+        if (typeof json?.id === "string") id = json.id;
+      }
+    }
+    if (!id) {
+      return refusal(
+        "BAD_REQUEST",
+        t("invalidBody"),
+        { actor, conversationId: null },
         {},
         cors
       );
