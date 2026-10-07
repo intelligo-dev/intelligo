@@ -1011,11 +1011,80 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       }
     };
 
+    // The model's stream and the UI stream can both report one failure.
+    let streamFailureReported = false;
+    const reportStreamFailure = async (error: unknown) => {
+      if (streamFailureReported) return;
+      streamFailureReported = true;
+      await emit(() => events.fail?.({ turn, error, phase: "stream" }));
+    };
+
     const finishMetadata = (usage: TokenUsage): ChatMessageMetadata => ({
       modelId: captured?.modelId ?? modelId,
       usage: pickUsage(usage),
       finishedAt: new Date().toISOString(),
     });
+
+    /**
+     * Write what the finished steps spent onto the running execution,
+     * so a run whose process is killed mid-turn is charged that
+     * (`reconcile()`), not released.
+     */
+    const recordProgress = (tracker: ReturnType<typeof inFlightTracker>) => {
+      const spent = tracker.spent();
+      const whole = nestedUsage ? sumUsage(spent, nestedUsage) : spent;
+      run
+        .progress?.({
+          usage: config.normalizeUsage ? config.normalizeUsage(whole) : whole,
+        })
+        .catch((error: unknown) =>
+          log.warn("Could not record the turn's progress", {
+            executionId: run.id,
+            error: errorMessage(error),
+          })
+        );
+    };
+
+    /**
+     * A runtime the consumer bound. It gets the whole prepared turn,
+     * its stored files resolved as the model would see them, and gives
+     * back UI chunks; the frames are ours.
+     */
+    const runBoundTurn = async (
+      streamTurn: NonNullable<ChatServerConfig["streamTurn"]>,
+      writer: UIMessageStreamWriter<ChatUIMessage>,
+      modelMessages: UIMessage[]
+    ) => {
+      writer.write({ type: "start" });
+      const resolved = { ...prepared, messages: modelMessages };
+      const produced = await streamTurn(turn, resolved, {
+        modelId,
+        abortSignal: request.signal,
+        writer,
+      });
+      writer.merge(
+        withoutFrames(
+          produced.stream as ReadableStream<UIMessageChunk>
+        ) as ReadableStream<InferUIMessageChunk<ChatUIMessage>>
+      );
+      const usage = await produced.usage;
+      captured = {
+        usage: pickUsage(usage),
+        ...(usage.modelId ? { modelId: usage.modelId } : {}),
+        ...(usage.finishReason ? { finishReason: usage.finishReason } : {}),
+      };
+      await settle(captured.usage, { aborted: request.signal.aborted });
+      const title = await applyTitle();
+      if (title) {
+        writer.write({ type: "data-chat-title", data: title, transient: true });
+      }
+      writer.write({
+        type: "finish",
+        ...(withMetadata
+          ? { messageMetadata: finishMetadata(captured.usage) }
+          : {}),
+      });
+    };
 
     const stream = createUIMessageStream<ChatUIMessage>({
       // Without this, `onFinish` sees only the reply and a tool-approval
@@ -1030,40 +1099,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         );
 
         if (config.streamTurn) {
-          // A runtime the consumer bound. It gets the whole prepared
-          // turn and gives back UI chunks; the frames are ours.
-          writer.write({ type: "start" });
-          const produced = await config.streamTurn(turn, prepared, {
-            modelId,
-            abortSignal: request.signal,
-            writer,
-          });
-          writer.merge(
-            withoutFrames(
-              produced.stream as ReadableStream<UIMessageChunk>
-            ) as ReadableStream<InferUIMessageChunk<ChatUIMessage>>
-          );
-          const usage = await produced.usage;
-          captured = {
-            usage: pickUsage(usage),
-            ...(usage.modelId ? { modelId: usage.modelId } : {}),
-            ...(usage.finishReason ? { finishReason: usage.finishReason } : {}),
-          };
-          await settle(captured.usage, { aborted: request.signal.aborted });
-          const title = await applyTitle();
-          if (title) {
-            writer.write({
-              type: "data-chat-title",
-              data: title,
-              transient: true,
-            });
-          }
-          writer.write({
-            type: "finish",
-            ...(withMetadata
-              ? { messageMetadata: finishMetadata(captured.usage) }
-              : {}),
-          });
+          await runBoundTurn(config.streamTurn, writer, modelMessages);
           return;
         }
 
@@ -1118,7 +1154,10 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           abortSignal: request.signal,
           onStepStart: tracker.onStepStart,
           onChunk: tracker.onChunk,
-          onStepFinish: tracker.onStepFinish,
+          onStepFinish: (step) => {
+            tracker.onStepFinish(step);
+            recordProgress(tracker);
+          },
           onFinish: async ({
             totalUsage,
             finishReason,
@@ -1137,12 +1176,29 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
             // the UI stream closes: a client that disconnects closes it
             // first, and the run must still be charged. A run that ended
             // in an error reports no total; its finished steps still count.
+            // A step the provider failed partway through reports nothing
+            // either, and is added from the tracker's estimate.
             const reported = captured.usage;
             const counted =
               (reported.inputTokens ?? 0) + (reported.outputTokens ?? 0) > 0;
-            await settle(counted ? reported : tracker.spent(), {
-              aborted: false,
+            await settle(
+              counted
+                ? sumUsage(reported, tracker.unreported())
+                : tracker.spent(),
+              { aborted: false }
+            );
+          },
+          // A provider error mid-stream reaches the client as an error
+          // part and need not be thrown, so the transport's own
+          // `onError` may never see it; the run still settles in
+          // `onFinish`.
+          onError: async ({ error }) => {
+            log.error("Model stream failed", {
+              conversationId: body.id,
+              executionId: run.id,
+              error: errorMessage(error),
             });
+            await reportStreamFailure(error);
           },
           onAbort: async ({ steps }) => {
             await settle(tracker.aborted(steps), { aborted: true });
@@ -1153,6 +1209,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           result.toUIMessageStream({
             sendReasoning: config.reasoning ?? false,
             sendSources: config.sources ?? false,
+            onError: () => t("streamError"),
             ...(withMetadata
               ? {
                   messageMetadata: ({ part }) =>
@@ -1241,7 +1298,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         // Another model's tokens were spent whether or not the turn
         // finished; they are that model's execution, not this one's.
         void settleOtherModels(takeOtherModelUsage(), false);
-        void emit(() => events.fail?.({ turn, error, phase: "stream" }));
+        void reportStreamFailure(error);
         return t("streamError");
       },
     });
