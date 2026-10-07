@@ -59,3 +59,18 @@ export function ipAddressOptions(env: Record<string, string | undefined>): {
     ...(proxies.length > 0 ? { trustedProxies: proxies } : {}),
   };
 }
+
+/**
+ * Why a display name is refused, or null when it is fine. A user's name
+ * reaches other people's inboxes (an invitation names its inviter, a
+ * personal workspace is named after its owner), so the server holds it
+ * to what the sign-up form allows — at most 50 characters — and keeps
+ * links out of it.
+ */
+export function displayNameProblem(name: unknown): string | null {
+  if (typeof name !== "string") return null;
+  const trimmed = name.trim();
+  if (trimmed.length > 50) return "A name is at most 50 characters.";
+  if (/:\/\/|\bwww\./i.test(trimmed)) return "A name cannot contain a link.";
+  return null;
+}

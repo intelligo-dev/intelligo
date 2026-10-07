@@ -9,10 +9,16 @@
  * `mermaid` fence appears in any rendered text, and every `Markdown` on
  * the page picks it up once it lands; until then the source shows as
  * plain text or a code block.
+ *
+ * Images load only from the hosts in `imagePrefixes`, none by default. Model output can be steered by what it
+ * read — a page, a document, a tool result — and an image URL fetches on
+ * render, so an open policy would let that text send the reader's IP, and
+ * anything put in the URL, to any server; a shared chat would do it for
+ * every visitor. Pass the hosts a product trusts.
  */
 
 import * as React from "react";
-import { Streamdown } from "streamdown";
+import { defaultRehypePlugins, Streamdown } from "streamdown";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import "katex/dist/katex.min.css";
@@ -81,9 +87,50 @@ function pluginsFor(math: boolean, mermaid: boolean): Plugins {
   return plugins;
 }
 
-export type MarkdownProps = Omit<StreamdownProps, "plugins">;
+// Streamdown's own hardening plugin, re-optioned: its default lets
+// every image and link through.
+const [harden] = defaultRehypePlugins.harden as unknown as [
+  NonNullable<StreamdownProps["rehypePlugins"]>[number],
+];
 
-export function Markdown({ children, ...props }: MarkdownProps) {
+const rehypeFor = new Map<string, NonNullable<StreamdownProps["rehypePlugins"]>>();
+
+function rehypePluginsFor(imagePrefixes: readonly string[]) {
+  const key = imagePrefixes.join(" ");
+  let plugins = rehypeFor.get(key);
+  if (!plugins) {
+    plugins = [
+      defaultRehypePlugins.raw!,
+      defaultRehypePlugins.sanitize!,
+      [
+        harden,
+        {
+          // Resolves a relative URL, which then matches no allowed host.
+          defaultOrigin: "https://relative.invalid",
+          allowedImagePrefixes: [...imagePrefixes],
+          allowDataImages: true,
+          allowedLinkPrefixes: ["*"],
+          allowedProtocols: ["*"],
+        },
+      ],
+    ] as NonNullable<StreamdownProps["rehypePlugins"]>;
+    rehypeFor.set(key, plugins);
+  }
+  return plugins;
+}
+
+const NO_IMAGE_HOSTS: readonly string[] = [];
+
+export type MarkdownProps = Omit<StreamdownProps, "plugins"> & {
+  /** URL prefixes images may load from, e.g. `https://cdn.example.com/`. */
+  imagePrefixes?: readonly string[];
+};
+
+export function Markdown({
+  children,
+  imagePrefixes = NO_IMAGE_HOSTS,
+  ...props
+}: MarkdownProps) {
   const text = typeof children === "string" ? children : "";
   const needsMath = NEEDS.math.test(text);
   const needsMermaid = NEEDS.mermaid.test(text);
@@ -101,6 +148,7 @@ export function Markdown({ children, ...props }: MarkdownProps) {
         needsMath && "math" in loaded,
         needsMermaid && "mermaid" in loaded
       )}
+      rehypePlugins={rehypePluginsFor(imagePrefixes)}
       {...props}
     >
       {children}

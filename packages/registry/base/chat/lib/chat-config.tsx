@@ -129,6 +129,12 @@ export interface ChatConfig {
   /** The `@` picker. */
   mentions?: ChatMentionsConfig;
   /**
+   * URL prefixes images in a reply may load from, e.g.
+   * `https://cdn.example.com/`. None by default: an image URL fetches on
+   * render, and a reply can be steered by what the model read.
+   */
+  imageHosts?: string[];
+  /**
    * Auto-continuation predicate, passed straight to `useChat`'s
    * `sendAutomaticallyWhen`. Default: continue when the reader answered
    * an approval, or when a card supplied a client-side tool's result.

@@ -77,6 +77,20 @@ it explains a framework decision.
   in `profile-settings`).
 - Email logs mask the recipient in production and leave the subject out,
   which can carry user-written names.
+- Model-written Markdown loads images only from hosts it is given. An
+  image URL fetches on render, and a reply steered by what the model read
+  could send the reader's address, and anything put in the URL, to any
+  server — on a shared chat, for every visitor. The `ai-markdown`
+  component's `Markdown` takes `imagePrefixes` (none by default), and the
+  `chat` item's `lib/chat-config.tsx` takes `imageHosts` for replies.
+- An invitation email's subject no longer carries the inviter's or the
+  workspace's name — user-written text in a line signed with the
+  product's domain — and the server refuses a display name over 50
+  characters or one containing a link, which only the sign-up form did.
+- A chat upload with no declared length is read only up to the limit
+  instead of buffered whole, and a stored attachment is served inline
+  only when it is a kind that runs nothing (raster images, PDF, plain
+  text); an uploaded SVG or HTML page downloads instead.
 
 - Dependencies moved past their published advisories without new
   overrides: Next.js `~16.3.8` (the scaffold's `package.json` too,

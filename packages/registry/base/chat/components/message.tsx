@@ -42,6 +42,7 @@ import {
 import { CitationPill, type CitationItem } from "@/components/ui/ai-citations";
 import { ImageGeneration } from "@/components/ui/ai-image-generation";
 import { Markdown } from "@/components/ui/ai-markdown";
+import { chatConfig } from "@/lib/chat-config";
 import { ReasoningText } from "@/components/ui/ai-reasoning-text";
 import { StreamingResponse } from "@/components/ui/ai-streaming-response";
 import {
@@ -304,6 +305,7 @@ export function Message({
               mode={streamingText ? "streaming" : "static"}
               isAnimating={streamingText}
               components={markdownComponents}
+              imagePrefixes={chatConfig.imageHosts}
             >
               {linkCitations(part.text, new Set(citations.keys()))}
             </Markdown>

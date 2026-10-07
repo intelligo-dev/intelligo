@@ -165,6 +165,28 @@ describe("createChatUploadHandler", () => {
     expect(formData).not.toHaveBeenCalled();
   });
 
+  it("stops reading a body with no declared length once it passes the limit", async () => {
+    const { POST } = createChatUploadHandler(config());
+    let pulled = 0;
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        controller.enqueue(new Uint8Array(16 * 1024));
+      },
+    });
+    const request = new Request("http://app.test/api/chat/attachments", {
+      method: "POST",
+      body: endless,
+      headers: { "content-type": "multipart/form-data; boundary=x" },
+      duplex: "half",
+    } as RequestInit);
+
+    expect((await POST(request)).status).toBe(400);
+    // 1 KB allowed plus 64 KB of form overhead: a handful of chunks.
+    expect(pulled).toBeLessThan(10);
+    expect(memory.objects.size).toBe(0);
+  });
+
   it("applies the default limit when the policy names none", async () => {
     const { POST } = createChatUploadHandler(
       config({ attachments: { accept: ["image/png"], mode: "stored" } })
@@ -257,6 +279,23 @@ describe("createChatAttachmentHandler", () => {
       /^data:image\/png;base64,/
     );
     expect(response.headers.get("cache-control")).toBe("private, no-store");
+  });
+
+  it("serves only kinds that run nothing inline, and the rest as downloads", async () => {
+    const signed = vi.spyOn(memory, "getSignedUrl");
+    const svg = await stored();
+    store.rows.get(svg)!.mediaType = "image/svg+xml";
+    await get(svg);
+    expect(signed).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.objectContaining({ disposition: "attachment" })
+    );
+
+    await get(await stored());
+    expect(signed).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.objectContaining({ disposition: "inline" })
+    );
   });
 
   it("does not reveal another workspace's file", async () => {

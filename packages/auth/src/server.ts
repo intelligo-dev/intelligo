@@ -12,10 +12,12 @@ import { defaultStatements, userAc } from "better-auth/plugins/admin/access";
 import { PLATFORM_ADMIN_ROLE } from "./roles";
 import { resolveTrustedOrigins } from "./trusted-origins";
 import {
+  displayNameProblem,
   ipAddressOptions,
   SERVICE_ONLY_ADMIN_PATHS,
   SERVICE_ONLY_ORGANIZATION_PATHS,
 } from "./request-hardening";
+import { APIError } from "better-auth/api";
 
 /**
  * Access control for the platform role. Better-Auth refuses an `adminRoles`
@@ -162,6 +164,11 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        before: async (user) => {
+          const problem = displayNameProblem(user.name);
+          if (problem) throw new APIError("BAD_REQUEST", { message: problem });
+          return { data: user };
+        },
         after: async (user) => {
           // Provision the personal workspace.
           try {
@@ -207,6 +214,13 @@ export const auth = betterAuth({
           }).catch((err) =>
             console.error("[Auth] Failed to send welcome email:", err)
           );
+        },
+      },
+      update: {
+        before: async (data) => {
+          const problem = displayNameProblem(data.name);
+          if (problem) throw new APIError("BAD_REQUEST", { message: problem });
+          return { data };
         },
       },
     },
