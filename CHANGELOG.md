@@ -22,10 +22,12 @@ it explains a framework decision.
   overrides: Next.js `~16.3.8` (the scaffold's `package.json` too,
   app-scaffold template 1.19.0), and in the lockfile `sharp`, `dompurify`,
   `devalue`, `smol-toml`, `source-map-js`, `http-cache-semantics` and the
-  MCP SDK to their patched releases. `pnpm audit` reports three advisories
-  with no fix to move to: `braces` (through shadcn's build tooling),
-  `sprintf-js` (through `@mastra/core`) and `katex` (held below its fix by
-  `@streamdown/math`).
+  MCP SDK to their patched releases. Two scoped overrides cover what no
+  parent allows yet: `katex` `^0.18.2` (held at 0.16 by `@streamdown/math`)
+  and `js-yaml@3>argparse` `^2.0.1`, which drops `sprintf-js` (js-yaml 3
+  uses argparse only for its command-line binary). `pnpm audit` reports
+  one advisory with no release at all: `braces`, reached through shadcn's
+  build tooling with patterns the developer writes.
 
 ## [1.1.1] — 2026-10-07
 
