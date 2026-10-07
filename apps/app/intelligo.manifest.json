@@ -386,6 +386,32 @@
       "app/[locale]/share/[id]/page.tsx": "a0b5e3495bf98261b3caee288e4a0d115c1cef6cf88dd813dc92e6811d977a25",
       "actions/chat-share.ts": "0e7bd2f80dd8b3de280f48943d1b9bda1c873da3ecaa15636428e4126f305d49",
       "components/chat/shared-conversation.tsx": "eb80c8c29e76eee5ab56a71a99921f83a17c68c64050fd40ed724a6a13f61f13"
+    },
+    "seams": {
+      "lib/error-reporting.ts": "534abd8df58c2e55cbb3ba0394149e3b69046651b77ff89c7ec1a4ad41c50aa4",
+      "lib/billing-config.ts": "3c1eeeaa5199151c411e8a789b25f406d2bb596e7d66d26adc2a152961518d4d",
+      "lib/plan-card-config.tsx": "3bb326b6893dda3296389b2cb9ddd0051c44ea33fa55b7a7ee8b70f7de08e52b",
+      "lib/shell-config.tsx": "8b54eb9246bdbfcc4a2410671599576bcc7b4e55c93dbeebf4930dc98928a018",
+      "lib/nav-config.ts": "d525cfbbfc8ad0d82fc1c1a8c5770d251c6e829966396343303b6f7231676121",
+      "lib/settings-nav.ts": "0b4b43c07000ba2abcb2c5b06f805aebbd128fca8959407ef3a7fb7e061c97a1",
+      "lib/trial-banner-config.ts": "8fb5b12c6253ef3585f5c598f5b93c5917fecde4bd36cd8f94eed4b98ba93acb",
+      "lib/notification-types.tsx": "eb85a0369fe9890764d886fe13ccc8bebd05da9c5e6dc4dd8695f2f0fa8db5b3",
+      "lib/credit-bundle-config.tsx": "b9f760e5e02798b6850907ee811a1ae9c8be9d267ffb3ba50fd2dba318d09dfc",
+      "lib/feature-catalog.ts": "d475da5cfd6afcaeed0ab60727c9dedd4370e4b8ae48a15abcd7212faca8c8ed",
+      "lib/feature-gating-config.ts": "b83f2fcebe1eefe9751f8d6bcbaa166ba0a981ffc40773c415b7acce54a2a7ce",
+      "lib/local-payment.ts": "64c040c39c206b6e34e5337fdf22f8a284c75d56f79cef9885f3532135e46c01",
+      "lib/payment-poll-config.ts": "0bf8b5ba3cfc2b305092bed09665922732fca148db56f3131d128cb53af1d8bc",
+      "lib/onboarding-steps.ts": "f2590077478bfdb00b85a2d6b74ddd93fbac9cc316fbc82f7e587a6d9cdb2de7",
+      "lib/dashboard-config.tsx": "acf58d05150c81339a07c1e523f3544f8667923881f8df3c5e928001dc4bace6",
+      "lib/dashboard-data.ts": "94fdd1fc22936c8e29681062cc80327f00148f7ce5c47dd1f71cdc4bd84b1eac",
+      "lib/document-patterns.ts": "908c14e543f6540cda3a1088fd5b99f52cf927fe27a173f8f4a0fc92ccca3b3c",
+      "lib/chat-model.ts": "2f9f169c8e2e60fcba45efbd1fb07253f300b1533c90562931e3cd17229cef09",
+      "lib/chat-models.ts": "6e0e7af749f3b9c4c54ca06a250e1131c61f26f15a7db69a7ec7024590b70e23",
+      "lib/chat-renderers.tsx": "af8694d45a74309217bb74f1c42bdf6115e592616b72a17dc41b62843adadf0b",
+      "lib/chat-canvas-config.tsx": "4c6c07a5e273c237b0ef7a807ba4226bced2428c7d68787fc5377b597530de86",
+      "lib/chat-config.tsx": "bb431d55a6274680ab62965b9555f4f26c2160771c4b124644e8be38fe6873db",
+      "lib/chat-server-config.ts": "409bea9f45dd7bf970476c554ca2ec1d337ec79376fa7380a4f16043bda70cd3",
+      "lib/chat-widget-config.tsx": "e391c314f6a9ce850686084583cf3d09e21b2bea6827bd31aadddd947a733c94"
     }
   }
 }
