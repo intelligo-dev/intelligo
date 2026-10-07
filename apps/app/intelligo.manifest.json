@@ -23,7 +23,7 @@
         },
         {
           "path": "lib/intelligo.ts",
-          "hash": "6fe7a913a24da70f082e4a0e2866d629580e4de69668d1967151421d30fb9718"
+          "hash": "882d4732bb55ab72b670364d3fa37d10cfedcd9f18d57cbdad592e261743ffcb"
         },
         {
           "path": "instrumentation.ts",
@@ -31,7 +31,7 @@
         },
         {
           "path": "lib/plans.ts",
-          "hash": "21325ae314658f069c7414fb71b019f4c6b3f497b6e2e9802ad7b45050d7e8c1"
+          "hash": "588e12a51b7cffd1233c8bf10130b6dccde944f68b8b8b2f6f9f2d0e1708d4a3"
         },
         {
           "path": "lib/workspace-bootstrap.ts",
@@ -1069,6 +1069,8 @@
         "list.navigationItem": "3afbdac8f728",
         "list.emptyPreview": "be1af94c8c00",
         "list.scrollToEnd": "086ac7c7fb55",
+        "list.showEarlier": "dfdb7f8b4404",
+        "list.earlierFailed": "450ce271cae5",
         "message.reasoning": "5df80278849e",
         "message.thinking": "6b3d668827c1",
         "message.thoughtBriefly": "446825c942d1",

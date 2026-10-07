@@ -6,12 +6,16 @@
  * populates. `monthlyAllowance` is what the credit engine enforces: an
  * amount with its currency, which must be the one your composition root
  * declares to `ensureBillingSettingsRow`.
+ *
+ * `definePlans` makes the slugs a type: every map below that names a plan
+ * is checked against them, so a misspelt slug fails to compile instead
+ * of denying a feature at runtime.
  */
 
 import { fromMajor } from "@intelligo-dev/core/money";
-import type { PlanConfig } from "@intelligo-dev/billing/plans";
+import { definePlans, forPlans } from "@intelligo-dev/billing/plans";
 
-export const PLANS: Record<string, PlanConfig> = {
+export const PLANS = definePlans({
   free: {
     name: "Free",
     slug: "free",
@@ -36,27 +40,38 @@ export const PLANS: Record<string, PlanConfig> = {
     limits: {},
     features: [],
   },
-};
+});
+
+const plans = forPlans(PLANS);
 
 /**
  * Which plans grant which feature. An unregistered feature is denied —
  * a registry item whose `featureKey` is missing here returns 403 on
  * every request, so add the key when you install the item.
  */
-export const FEATURES: Record<string, readonly string[]> = {
+export const FEATURES = plans.features({
   assistant: ["free", "pro"],
   // POST /api/chat (the `chat` registry item). Every plan, so a clean
   // install can chat with no configuration; tighten to ["pro"] to put
   // chat behind a paywall.
   chat: ["free", "pro"],
-};
+});
 
 /**
  * Seats per plan: how many members a workspace on each plan may hold,
  * the owner included. -1 is unlimited. A plan left out gets one seat,
  * which refuses every invitation.
  */
-export const TEAM_MEMBER_LIMITS: Record<string, number> = {
+export const TEAM_MEMBER_LIMITS = plans.values({
   free: 3,
   pro: 25,
-};
+});
+
+/**
+ * Chat requests per minute per workspace, by plan. A plan left out gets
+ * 10, a floor that protects the database rather than a product decision.
+ */
+export const RATE_LIMITS = plans.values({
+  free: 10,
+  pro: 60,
+});

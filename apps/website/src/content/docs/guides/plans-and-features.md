@@ -8,10 +8,12 @@ A new app already has a `free` and a `pro` plan in `lib/plans.ts`, registered by
 
 ## Define your plans
 
-`lib/plans.ts` exports two objects: the plan catalogue and the feature matrix. `composeIntelligo()` in `lib/intelligo.ts` hands both to the billing engine with `registerProductPlans` and `registerProductFeatures`, after `setDefaultProductSlug` names the product they belong to. Setting `INTELLIGO_BILLING_PRODUCT` does the same as that call. With neither, billing throws `BillingNotConfiguredError`.
+`lib/plans.ts` exports the plan catalogue, the feature matrix and the per-plan seat and request limits. `composeIntelligo()` in `lib/intelligo.ts` hands them to the billing engine with `registerProductPlans`, `registerProductFeatures`, `registerTeamMemberLimits` and `registerRateLimits`, after `setDefaultProductSlug` names the product they belong to. Setting `INTELLIGO_BILLING_PRODUCT` does the same as that call. With neither, billing throws `BillingNotConfiguredError`.
+
+`definePlans` makes the catalogue's slugs a type, and `forPlans(PLANS)` (the file's `plans`) checks every map that names a plan against them: a misspelt slug fails to compile.
 
 ```ts title="lib/plans.ts"
-export const PLANS: Record<string, PlanConfig> = {
+export const PLANS = definePlans({
   free: {
     // ...
     limits: { summaries: 5 },
@@ -29,7 +31,9 @@ export const PLANS: Record<string, PlanConfig> = {
     limits: { summaries: -1 },
     features: ["Unlimited summaries", "Exports"],
   },
-};
+});
+
+const plans = forPlans(PLANS);
 ```
 
 | Field                                         | What it is                                                                                                                                              |
@@ -49,13 +53,13 @@ A feature key is a string you choose. The matrix says which plan slugs grant it:
 <!-- snippet: packages/cli/templates/app-scaffold/plans.ts.tpl#FEATURES -->
 
 ```ts title="lib/plans.ts"
-export const FEATURES: Record<string, readonly string[]> = {
+export const FEATURES = plans.features({
   assistant: ["free", "pro"],
   // POST /api/chat (the `chat` registry item). Every plan, so a clean
   // install can chat with no configuration; tighten to ["pro"] to put
   // chat behind a paywall.
   chat: ["free", "pro"],
-};
+});
 ```
 
 Add `exports: ["pro"]` and check it wherever the feature runs, after `requireWorkspace` has resolved the tenant:
@@ -105,10 +109,10 @@ Seats per plan are their own map in `lib/plans.ts`, registered by the compositio
 <!-- snippet: packages/cli/templates/app-scaffold/plans.ts.tpl#TEAM_MEMBER_LIMITS -->
 
 ```ts title="lib/plans.ts"
-export const TEAM_MEMBER_LIMITS: Record<string, number> = {
+export const TEAM_MEMBER_LIMITS = plans.values({
   free: 3,
   pro: 25,
-};
+});
 ```
 
 That call, like the trial and rate-limit calls below, is imported from `@intelligo-dev/billing/plans` and lives inside `composeIntelligo()`. `@intelligo-dev/auth` never imports billing: the `team-settings` block binds `checkTeamMemberLimit` as a port, and the team service calls it before it sends an invitation.

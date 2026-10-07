@@ -18,6 +18,12 @@ it explains a framework decision.
 
 ### Added
 
+- `definePlans` and `forPlans` in `@intelligo-dev/billing/plans` make a
+  catalogue's slugs a type: a plan's `slug` must equal its key, and a
+  feature matrix or per-plan map that names a plan the catalogue lacks
+  (`chat: ["free", "por"]`) fails to compile instead of denying the
+  feature at runtime. The scaffold's `lib/plans.ts` uses them.
+
 - Each config seam declares where it runs (`boundaries` in the
   registry's `requires.json`): `client` when the browser bundles it,
   `server` otherwise, derived from the items' imports by an architecture
@@ -97,6 +103,9 @@ it explains a framework decision.
   text changed, and fails with `messages-arguments` when that wording
   uses an ICU argument the registry's text no longer passes. The first
   sync after upgrading records the hashes and changes nothing.
+- The scaffold registers per-plan chat request limits (`RATE_LIMITS` in
+  `lib/plans.ts`, 10 a minute on free and 60 on pro). It registered
+  none, so every plan got the conservative default of 10.
 - A key a new release adds arrives in English only, and an app whose
   default locale is not English threw on it until translated: the
   scaffold's `i18n/request.ts` falls back from the locale to the default
