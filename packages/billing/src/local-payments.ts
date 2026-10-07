@@ -178,6 +178,13 @@ export type SettleLocalInvoiceInput = {
    * settle to retry.
    */
   fulfil: (payment: Payment) => LocalPaymentGrant | Promise<LocalPaymentGrant>;
+  /**
+   * Ask the provider again about an invoice already recorded failed, and
+   * grant it if it is paid after all — for the provider's own callback,
+   * which can follow a failed or expired status that turned out not to
+   * be final.
+   */
+  recheckFailed?: boolean;
 };
 
 /**
@@ -216,7 +223,7 @@ export async function settleLocalInvoice(
   }
 
   if (payment.fulfilledAt) return "paid";
-  if (payment.status === "failed") return "failed";
+  if (payment.status === "failed" && !input.recheckFailed) return "failed";
 
   const provider = getPaymentProviderFor(payment.provider);
   const check = await provider.checkPayment(input.invoiceId);
@@ -233,6 +240,9 @@ export async function settleLocalInvoice(
     });
     return "failed" as const;
   };
+
+  // Rechecked and still not paid: it stays failed as it was.
+  if (payment.status === "failed" && check.status !== "paid") return "failed";
 
   if (check.status === "failed" || check.status === "expired") {
     return markFailed(check.status);
@@ -398,9 +408,12 @@ export async function settlePendingLocalInvoices(
     eq(payments.status, "pending"),
     isNull(payments.fulfilledAt)
   );
+  // A callback names one invoice, which may already be recorded failed:
+  // its provider is asked again.
   const where = input.invoiceId
     ? and(
-        unfulfilled,
+        or(eq(payments.status, "pending"), eq(payments.status, "failed")),
+        isNull(payments.fulfilledAt),
         or(
           eq(payments.invoiceId, input.invoiceId),
           eq(payments.id, input.invoiceId)
@@ -449,6 +462,7 @@ export async function settlePendingLocalInvoices(
         invoiceId: row.invoiceId,
         workspaceId: row.workspaceId,
         fulfil: input.fulfil,
+        recheckFailed: input.invoiceId !== undefined,
       });
       result[status]++;
     } catch (error) {

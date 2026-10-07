@@ -247,6 +247,40 @@ export function createExecutions(ports: ExecutionPorts = {}) {
             totalTokens,
           }))
         ) {
+          // Usage that arrives after the run was failed — abandoned by
+          // the stale sweep while it still ran — was spent and is not
+          // charged now. Said so, rather than lost without a trace.
+          if (totalTokens > 0) {
+            const [current] = await db
+              .select({ status: executions.status })
+              .from(executions)
+              .where(eq(executions.id, id))
+              .limit(1);
+            if (current?.status === "failed") {
+              log.warn("Usage reported after the execution failed", {
+                executionId: id,
+                requestId,
+                model: model ?? null,
+                inputTokens,
+                outputTokens,
+              });
+              await recordAuditEvent({
+                workspaceId: input.workspaceId,
+                actorId: input.userId ?? null,
+                action: "execution.usage_after_failure",
+                resourceKind: "execution",
+                resourceId: id,
+                outcome: "failed",
+                metadata: {
+                  capability: input.capability,
+                  requestId,
+                  model: model ?? null,
+                  inputTokens,
+                  outputTokens,
+                },
+              });
+            }
+          }
           return;
         }
 

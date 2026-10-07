@@ -579,6 +579,37 @@ d("local payments (integration)", () => {
       expect((await row(fine.invoiceId))?.fulfilled_at).toBeInstanceOf(Date);
     });
 
+    it("grants an invoice its callback names after a failed read proved wrong", async () => {
+      const invoice = await open();
+      await payment.mockPaymentProvider.cancelPayment(invoice.invoiceId);
+      await local.settleLocalInvoice({
+        invoiceId: invoice.invoiceId,
+        workspaceId: WORKSPACE,
+        fulfil: grantCredits,
+      });
+      expect((await row(invoice.invoiceId))?.status).toBe("failed");
+
+      // The bank completes it after all; the provider calls back.
+      payment.getMockPayment(invoice.invoiceId)!.status = "paid";
+      expect((await sweep()).paid).toBe(0);
+      const result = await sweep({ invoiceId: invoice.invoiceId });
+
+      expect(result.paid).toBe(1);
+      expect(await row(invoice.invoiceId)).toMatchObject({ status: "paid" });
+      expect(await balanceMicros()).toBe(credits().amount);
+    });
+
+    it("leaves a failed invoice failed when its callback finds it still unpaid", async () => {
+      const invoice = await open();
+      await payment.mockPaymentProvider.cancelPayment(invoice.invoiceId);
+      await sweep({ invoiceId: invoice.invoiceId });
+
+      const result = await sweep({ invoiceId: invoice.invoiceId });
+
+      expect(result).toMatchObject({ paid: 0, failed: 1 });
+      expect((await row(invoice.invoiceId))?.status).toBe("failed");
+    });
+
     it("does not let an invoice that fails every run hold the others back", async () => {
       const failing = await open();
       const fine = await open("bundle-ok");

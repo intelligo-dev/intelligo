@@ -143,6 +143,30 @@ d("execution lifecycle (integration)", () => {
     expect(await auditActions(run.id)).toEqual(["execution.failed"]);
   });
 
+  it("records usage that arrives after the run failed instead of losing it silently", async () => {
+    const settled: string[] = [];
+    const executions = createExecutions({
+      settleUsage: async ({ requestId }) => {
+        settled.push(requestId);
+        return {};
+      },
+    });
+    const run = await executions.begin({
+      workspaceId,
+      userId,
+      capability: "test.late",
+    });
+    await run.fail({ error: new Error("abandoned") });
+
+    await run.complete({ usage: { inputTokens: 30, outputTokens: 5 } });
+
+    expect(settled).toEqual([]);
+    expect(await auditActions(run.id)).toEqual([
+      "execution.failed",
+      "execution.usage_after_failure",
+    ]);
+  });
+
   it("charges exactly once when two completes race — the real CAS, not a mock", async () => {
     let charges = 0;
     const executions = createExecutions({
