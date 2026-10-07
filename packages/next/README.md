@@ -25,11 +25,19 @@ composition root:
 
 ```ts
 // lib/intelligo.ts
-import { setRequestContextSource } from "@intelligo-dev/core/request-context";
-import { nextRequestContext } from "@intelligo-dev/next";
+import {
+  setBackgroundTaskRunner,
+  setRequestContextSource,
+} from "@intelligo-dev/core/request-context";
+import { nextBackgroundTasks, nextRequestContext } from "@intelligo-dev/next";
 
 setRequestContextSource(nextRequestContext);
+setBackgroundTaskRunner(nextBackgroundTasks);
 ```
+
+`nextBackgroundTasks` hands the work the framework starts without awaiting it
+— auth emails, a new workspace's bootstrap, notification emails — to Next's
+`after()`, so a serverless host keeps the function alive until it finishes.
 
 Mount Better-Auth's HTTP handlers:
 
