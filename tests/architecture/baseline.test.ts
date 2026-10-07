@@ -34,12 +34,17 @@ const SCHEMA_FILES = [
 
 const sqlFiles = readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql"));
 
-/** SQL with comments stripped, so prose about rows is not a row. */
+/**
+ * SQL with comments stripped, so prose about rows is not a row, and with
+ * function bodies (`$$ … $$`) stripped: a trigger's statements run when
+ * the application writes, not when the migration does.
+ */
 function statements(file: string): string {
   return readFileSync(path.join(MIGRATIONS, file), "utf8")
     .split("\n")
     .filter((line) => !line.trimStart().startsWith("--"))
-    .join("\n");
+    .join("\n")
+    .replace(/\$\$[\s\S]*?\$\$/g, "$$$$");
 }
 
 describe("the framework's migrations describe schema, not a deployment", () => {

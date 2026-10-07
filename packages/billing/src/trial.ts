@@ -10,7 +10,7 @@ import {
   trialCredits,
   notificationHistory,
 } from "@intelligo-dev/core/db/schema";
-import { eq, and, gt, gte, lt } from "drizzle-orm";
+import { eq, and, gt, gte, isNotNull, lt } from "drizzle-orm";
 import type { TrialCredit } from "@intelligo-dev/core/db/schema";
 import { sendTrialExpiryEmail } from "@intelligo-dev/core/email";
 import { getBillingSettings } from "./billing-settings";
@@ -318,18 +318,21 @@ export async function processTrialExpirations(): Promise<{
     .where(
       and(
         eq(trialCredits.status, "active"),
+        isNotNull(trialCredits.workspaceId),
         gte(trialCredits.trialEndDate, reminderDayStart),
         lt(trialCredits.trialEndDate, reminderDayEnd)
       )
     );
 
   for (const trial of trialsNeedingReminder) {
+    const workspaceId = trial.workspaceId;
+    if (!workspaceId) continue;
     try {
       const result = await db
         .insert(notificationHistory)
         .values({
           id: crypto.randomUUID(),
-          workspaceId: trial.workspaceId,
+          workspaceId,
           type: "trial_expiry_reminder",
           periodKey: "trial",
           channel: "email",
@@ -340,7 +343,7 @@ export async function processTrialExpirations(): Promise<{
         .onConflictDoNothing();
 
       if (result.rowCount && result.rowCount > 0) {
-        const owner = await getWorkspaceOwner(trial.workspaceId);
+        const owner = await getWorkspaceOwner(workspaceId);
         if (owner && trial.trialEndDate) {
           const expiryDate = trial.trialEndDate.toLocaleDateString("en-US", {
             year: "numeric",
@@ -391,7 +394,15 @@ export async function processTrialExpirations(): Promise<{
         .returning({ id: trialCredits.id });
       if (expired.length === 0) continue;
 
-      const sub = await getWorkspaceSubscription(trial.workspaceId);
+      // A trial whose workspace was deleted only expires: there is no
+      // subscription to fall back to and nobody to tell.
+      const workspaceId = trial.workspaceId;
+      if (!workspaceId) {
+        expiredCount++;
+        continue;
+      }
+
+      const sub = await getWorkspaceSubscription(workspaceId);
       if (
         sub &&
         sub.plan?.slug !== "free" &&
@@ -400,9 +411,9 @@ export async function processTrialExpirations(): Promise<{
         continue; // Paid workspaces: skip expiry email (already upgraded)
       }
 
-      await ensureFreeSubscription(trial.workspaceId);
+      await ensureFreeSubscription(workspaceId);
 
-      const owner = await getWorkspaceOwner(trial.workspaceId);
+      const owner = await getWorkspaceOwner(workspaceId);
       if (owner && trial.trialEndDate) {
         const expiryDate = trial.trialEndDate.toLocaleDateString("en-US", {
           year: "numeric",

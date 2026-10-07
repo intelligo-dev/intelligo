@@ -78,6 +78,10 @@ export const usageRecords = pgTable(
     index("usage_records_workspace_type_idx").on(table.workspaceId, table.type),
     index("usage_records_conversation_id_idx").on(table.conversationId),
     index("usage_records_execution_id_idx").on(table.executionId),
+    index("usage_records_workspace_request_idx").on(
+      table.workspaceId,
+      table.requestId
+    ),
   ]
 );
 
@@ -121,10 +125,14 @@ export const trialCredits = pgTable(
   "trial_credits",
   {
     id: text("id").primaryKey(),
+    /**
+     * Null once the workspace is deleted. The row stays (set null, not
+     * cascade) because the abuse check counts grants by email and IP,
+     * and deleting a workspace must not hand its owner a fresh trial.
+     */
     workspaceId: text("workspace_id")
-      .notNull()
       .unique()
-      .references(() => organization.id, { onDelete: "cascade" }),
+      .references(() => organization.id, { onDelete: "set null" }),
     initialCredits: integer("initial_credits").notNull().default(100000),
     creditsUsed: integer("credits_used").notNull().default(0),
     creditsRemaining: integer("credits_remaining").notNull().default(100000),

@@ -33,6 +33,10 @@
  *   (`grantPlan({ days })`, a one-time local payment) stays on until
  *   this step moves it back.
  * - **Prune finished jobs** older than a week.
+ * - **Delete what uploads leave behind**, when a storage adapter is
+ *   bound: uploads no conversation claimed within a day, and the
+ *   objects of attachment rows deleted since — by a deleted chat, or a
+ *   workspace or user deletion cascading — which the database queues.
  *
  * Draining the job queue is NOT done here: `drain` needs your handlers,
  * so give it its own route (or call it below once you have some).
@@ -48,6 +52,11 @@ import {
   processExpiredPlanGrants,
   processTrialExpirations,
 } from "@intelligo-dev/billing";
+import { sweepAttachments } from "@intelligo-dev/core/attachments";
+import {
+  getStorageAdapter,
+  hasStorageAdapter,
+} from "@intelligo-dev/core/storage";
 import { findStaleExecutions } from "@intelligo-dev/executions";
 import { pruneJobs } from "@intelligo-dev/jobs";
 import { createLogger } from "@intelligo-dev/core/logger";
@@ -62,6 +71,8 @@ export const maxDuration = 60;
 const STALE_AFTER_MS = 10 * 60_000;
 /** Finished jobs older than this are pruned. */
 const PRUNE_JOBS_AFTER_MS = 7 * 24 * 60 * 60_000;
+/** An upload no conversation claimed within this long is deleted. */
+const UNCLAIMED_UPLOAD_AFTER_MS = 24 * 60 * 60_000;
 
 /** Constant-time bearer comparison; length is compared too. */
 function bearerMatches(header: string | null, secret: string): boolean {
@@ -116,6 +127,14 @@ export async function GET(request: Request) {
     jobsPruned: await step("pruneJobs", () =>
       pruneJobs(new Date(Date.now() - PRUNE_JOBS_AFTER_MS))
     ),
+    attachments: hasStorageAdapter()
+      ? await step("sweepAttachments", () =>
+          sweepAttachments({
+            storage: getStorageAdapter(),
+            olderThan: new Date(Date.now() - UNCLAIMED_UPLOAD_AFTER_MS),
+          })
+        )
+      : null,
     errors,
   };
 

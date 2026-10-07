@@ -41,6 +41,12 @@ export const conversations = pgTable(
     title: text("title"), // Nullable until the product sets one
     modelId: text("model_id"), // e.g., "openai/gpt-4o"
     visibility: text("visibility").notNull().default("private"), // "private" | "public"
+    /**
+     * The unguessable part of a public link, issued fresh each time the
+     * conversation is shared, so unsharing and sharing again retires
+     * every link handed out before.
+     */
+    shareToken: text("share_token"),
     metadata: jsonb("metadata"), // ConversationMetadata
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -56,6 +62,7 @@ export const conversations = pgTable(
       table.workspaceId,
       table.userId
     ),
+    uniqueIndex("conversations_share_token_idx").on(table.shareToken),
   ]
 );
 
@@ -116,6 +123,17 @@ export const attachments = pgTable(
     uniqueIndex("attachments_storage_key_idx").on(table.storageKey),
   ]
 );
+
+/**
+ * Storage objects whose attachment row is gone and which the maintenance
+ * sweep has yet to delete. The database queues a key whenever an
+ * attachment row is deleted, by any path — a sweep, or a workspace or
+ * user deletion cascading — so no object outlives its row unnoticed.
+ */
+export const storageDeletions = pgTable("storage_deletions", {
+  storageKey: text("storage_key").primaryKey(),
+  queuedAt: timestamp("queued_at").notNull().defaultNow(),
+});
 
 /** One vote per message (composite key on chat and message). */
 export const votes = pgTable(

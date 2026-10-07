@@ -37,6 +37,7 @@ import {
   listConversations,
   renameConversation as renameConversationRow,
   setConversationVisibility,
+  shareRef,
   updateConversationMetadata,
 } from "@intelligo-dev/core/conversations";
 import type { ActionResult } from "@intelligo-dev/next";
@@ -239,13 +240,20 @@ export async function voteMessage(
   }
 }
 
-/** Whether the conversation is published at `/share/<id>`. */
+/**
+ * Whether the conversation is published, and the path segment of its
+ * public link: `/share/<ref>`.
+ */
 export async function getShareState(
   id: string
-): Promise<ChatActionResult<{ shared: boolean }>> {
+): Promise<ChatActionResult<{ shared: boolean; ref: string | null }>> {
   try {
     const row = await getConversation(await actor(), id);
-    return { success: true, data: { shared: row.visibility === "public" } };
+    const shared = row.visibility === "public";
+    return {
+      success: true,
+      data: { shared, ref: shared ? shareRef(row) : null },
+    };
   } catch (error) {
     return {
       success: false,
@@ -257,15 +265,21 @@ export async function getShareState(
 export async function setConversationShared(
   id: string,
   shared: boolean
-): Promise<ChatActionResult<{ shared: boolean }>> {
+): Promise<ChatActionResult<{ shared: boolean; ref: string | null }>> {
   try {
+    const owner = await actor();
+    const before = await getConversation(owner, id);
     const row = await setConversationVisibility(
-      await actor(),
+      owner,
       id,
       shared ? "public" : "private"
     );
-    revalidatePath(`/share/${id}`);
-    return { success: true, data: { shared: row.visibility === "public" } };
+    revalidatePath(`/share/${shareRef(before)}`);
+    const published = row.visibility === "public";
+    return {
+      success: true,
+      data: { shared: published, ref: published ? shareRef(row) : null },
+    };
   } catch (error) {
     return {
       success: false,

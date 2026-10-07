@@ -82,13 +82,13 @@ export async function voteMessage(
 }
 export async function getShareState(
   ..._args: unknown[]
-): Promise<ChatActionResult<{ shared: boolean }>> {
+): Promise<ChatActionResult<{ shared: boolean; ref: string | null }>> {
   await wait();
-  return { success: true, data: { shared: false } };
+  return { success: true, data: { shared: false, ref: null } };
 }
 export async function setConversationShared(
   ..._args: unknown[]
-): Promise<ChatActionResult<{ shared: boolean }>> {
+): Promise<ChatActionResult<{ shared: boolean; ref: string | null }>> {
   await wait();
   return {
     success: false,

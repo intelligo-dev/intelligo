@@ -42,6 +42,7 @@ import {
   organization as organizationTable,
   member,
   invitation,
+  rateLimits,
 } from "@intelligo-dev/core/db/schema";
 import {
   ConsoleProvider,
@@ -83,6 +84,7 @@ export const auth = betterAuth({
       organization: organizationTable,
       member: member,
       invitation: invitation,
+      rateLimit: rateLimits,
     },
   }),
 
@@ -151,6 +153,15 @@ export const auth = betterAuth({
   },
 
   trustedOrigins: TRUSTED_ORIGINS,
+
+  // Counted in the database rather than per process: a deployment with
+  // several instances, or a serverless one that starts a new process per
+  // burst, otherwise gives every instance its own allowance of sign-in
+  // and reset attempts.
+  rateLimit: {
+    storage: "database",
+    modelName: "rateLimit",
+  },
 
   disabledPaths: [
     ...SERVICE_ONLY_ORGANIZATION_PATHS,

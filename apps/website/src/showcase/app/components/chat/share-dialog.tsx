@@ -35,19 +35,21 @@ export function ShareDialog({ conversationId }: ShareDialogProps) {
   const t = useTranslations("chat");
   const [open, setOpen] = useState(false);
   const [shared, setShared] = useState<boolean | null>(null);
+  const [shareRef, setShareRef] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!open) return;
     void getShareState(conversationId).then((result) => {
       setShared(result.success ? result.data.shared : false);
+      setShareRef(result.success ? result.data.ref : null);
     });
   }, [open, conversationId]);
 
   const url =
-    typeof window === "undefined"
+    typeof window === "undefined" || !shareRef
       ? ""
-      : `${window.location.origin}/share/${conversationId}`;
+      : `${window.location.origin}/share/${shareRef}`;
 
   function toggle(next: boolean) {
     startTransition(async () => {
@@ -56,7 +58,8 @@ export function ShareDialog({ conversationId }: ShareDialogProps) {
         toast.error(result.error);
         return;
       }
-      setShared(next);
+      setShared(result.data.shared);
+      setShareRef(result.data.ref);
     });
   }
 
