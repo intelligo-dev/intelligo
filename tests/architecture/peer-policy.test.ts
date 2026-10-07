@@ -29,6 +29,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   PACKAGES_DIR,
+  ROOT,
   importSpecifiers,
   listPublishedWorkspaces,
   walk,
@@ -182,3 +183,28 @@ function sourceImportsNext(dir: string): boolean {
     /\.tsx?$/.test(name)
   ).some((file) => reachesNext(readFileSync(file, "utf8")));
 }
+
+describe("pnpm.overrides", () => {
+  it("raises a floor within the major already in the tree", () => {
+    // An open `>=` floor lets the next major in on any re-resolve, and
+    // forces it on every dependent that asked for the current one.
+    const overrides = (
+      JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8")) as {
+        pnpm?: { overrides?: Record<string, string> };
+      }
+    ).pnpm?.overrides;
+    expect(overrides).toBeDefined();
+    const open = Object.entries(overrides!)
+      .filter(
+        ([, range]) =>
+          range === "*" ||
+          range === "latest" ||
+          (/>=?/.test(range) && !/</.test(range))
+      )
+      .map(([name, range]) => `${name}: ${range}`);
+    expect(
+      open,
+      `overrides with no upper bound; scope each to its major (^x.y.z, or name@major as for ajv@6):\n  ${open.join("\n  ")}`
+    ).toEqual([]);
+  });
+});
