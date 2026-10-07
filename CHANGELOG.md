@@ -29,6 +29,17 @@ it explains a framework decision.
 - The `payment-poll` item's callback route answers `{ ok }` only. It
   returned the settle summary, with each failure's message, to an
   unauthenticated caller.
+- The scaffold's assistant route answered every request with 429: its
+  stand-in model `example/echo-1` had no registered price, so admission
+  refused it as `unknown_model`. The scaffold registers the stand-in at
+  no cost, and the route answers a refusal only the deployment can fix
+  with 503 and one the workspace can fix by paying with 402, and lets a
+  failure other than a refused guard through instead of answering 401.
+- The stub chat model refuses to reply in a production build, so a
+  deployment that never bound a real model in `lib/chat-model.ts` fails
+  loudly instead of billing its users for an echo.
+  `INTELLIGO_ALLOW_STUB_MODEL=1`, or `allowInProduction` in code, lets a
+  deployment meant to run on it do so.
 - Stripe amounts for ISK, UGX and MNT. Stripe takes these in hundredths
   although none are in use, and they were sent as whole units — a charge
   at a hundredth of its price, or refused under Stripe's minimum. Credit
@@ -79,6 +90,14 @@ it explains a framework decision.
   `team-settings`). With none left, the next page created a new personal
   workspace, and with it a new start for whatever the product grants one.
 
+
+### Security
+
+- The scaffold's `next.config.mjs` sends `frame-ancestors 'none'`,
+  `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` and
+  `Strict-Transport-Security` on every response. An existing app adds the
+  `headers()` block to its own config (`intelligo upgrade --check` shows
+  the template changed).
 
 ## [1.1.0] — 2026-10-06
 
