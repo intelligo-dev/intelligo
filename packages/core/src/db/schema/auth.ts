@@ -9,6 +9,8 @@ import {
   text,
   timestamp,
   boolean,
+  integer,
+  bigint,
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
@@ -107,6 +109,18 @@ export const verifications = pgTable("verifications", {
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * Better-Auth's request counters, kept in the database so every instance
+ * of a deployment counts against the same limit. `last_request` is epoch
+ * milliseconds.
+ */
+export const rateLimits = pgTable("rate_limits", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });
 
 /** Workspaces, managed by Better-Auth's organization plugin. */

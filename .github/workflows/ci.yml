@@ -113,7 +113,13 @@ jobs:
       # is kept, so it can migrate ahead of the deploy. 0005 drops a NOT
       # NULL (payments.invoice_id) and adds one nullable column
       # (payments.expires_at): nothing renamed or removed. 0006 adds one
-      # nullable column (payments.grant_terms).
+      # nullable column (payments.grant_terms). 0007 adds one table
+      # (rate_limits), two nullable columns (conversations.share_token,
+      # audit_events.actor_email) and two indexes, drops a NOT NULL
+      # (trial_credits.workspace_id) and re-creates that column's foreign
+      # key as set null instead of cascade; the unique constraint the
+      # previous release's trial insert conflicts on is kept. Its
+      # triggers only fill the new column and refuse TRUNCATE.
       #
       # Raising it again: confirm `intelligo migrate --check` reports
       # zero pending, then raise FROZEN_AT in the same commit as the
@@ -121,7 +127,7 @@ jobs:
       - name: The migration chain is frozen
         run: |
           set -euo pipefail
-          FROZEN_AT=7
+          FROZEN_AT=8
           entries=$(node -p "require('./packages/core/src/db/migrations/meta/_journal.json').entries.length")
           echo "journal has $entries entries, frozen at $FROZEN_AT"
           if [ "$entries" -gt "$FROZEN_AT" ]; then

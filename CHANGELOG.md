@@ -94,6 +94,9 @@ it explains a framework decision.
 - A local invoice its provider's callback names is asked about again
   even when it was recorded failed, and granted if it was paid after all
   (`settleLocalInvoice({ recheckFailed })`).
+- Looking up a request's usage by workspace and request id uses an
+  index (`usage_records_workspace_request_idx`) instead of scanning the
+  workspace's records.
 
 ### Security
 
@@ -135,6 +138,24 @@ it explains a framework decision.
   instead of buffered whole, and a stored attachment is served inline
   only when it is a kind that runs nothing (raster images, PDF, plain
   text); an uploaded SVG or HTML page downloads instead.
+- Deleting a workspace no longer deletes its trial grant: the row stays,
+  detached (`trial_credits.workspace_id` is set null), so the per-email
+  and per-address trial limits still count it and a deleted workspace is
+  not a way to a fresh trial. The expiry sweep expires a detached grant
+  and tells nobody.
+- Better-Auth counts sign-in, sign-up and reset attempts in the database
+  (`rate_limits`) instead of in each process, so several instances, or a
+  serverless deployment, share one limit.
+- Every audit row keeps its actor's email as it was when the row was
+  written (`audit_events.actor_email`, filled by the database), so the
+  trail still names someone after the account is deleted, and both audit
+  tables refuse `TRUNCATE`.
+- A shared conversation's link is a random token rather than its id
+  (`conversations.share_token`), and sharing it again after unsharing
+  issues a new one, so a link handed out before stops working.
+  `getPublicConversation` and `getPublicMessages` take the link's
+  segment, and `shareRef(row)` gives it; a conversation shared before
+  this release keeps answering to its id until it is shared again.
 
 - Dependencies moved past their published advisories without new
   overrides: Next.js `~16.3.8` (the scaffold's `package.json` too,

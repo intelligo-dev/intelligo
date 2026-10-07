@@ -41,6 +41,12 @@ export const conversations = pgTable(
     title: text("title"), // Nullable until the product sets one
     modelId: text("model_id"), // e.g., "openai/gpt-4o"
     visibility: text("visibility").notNull().default("private"), // "private" | "public"
+    /**
+     * The unguessable part of a public link, issued fresh each time the
+     * conversation is shared, so unsharing and sharing again retires
+     * every link handed out before.
+     */
+    shareToken: text("share_token"),
     metadata: jsonb("metadata"), // ConversationMetadata
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -56,6 +62,7 @@ export const conversations = pgTable(
       table.workspaceId,
       table.userId
     ),
+    uniqueIndex("conversations_share_token_idx").on(table.shareToken),
   ]
 );
 

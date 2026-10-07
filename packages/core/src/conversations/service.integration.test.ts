@@ -21,7 +21,7 @@ d("conversations service — real DB integration", () => {
   const userId = `conv-it-user-${suffix}`;
   const otherUserId = `conv-it-user-other-${suffix}`;
 
-  let service: typeof import("./service");
+  let service: typeof import("./service") & typeof import("./sharing");
   let isConversationServiceError: typeof import("./errors").isConversationServiceError;
 
   const actor = { workspaceId, userId };
@@ -29,7 +29,10 @@ d("conversations service — real DB integration", () => {
 
   beforeAll(async () => {
     process.env.DATABASE_URL = DATABASE_URL;
-    service = await import("./service");
+    service = {
+      ...(await import("./service")),
+      ...(await import("./sharing")),
+    };
     ({ isConversationServiceError } = await import("./errors"));
 
     await client.connect();
@@ -110,6 +113,66 @@ d("conversations service — real DB integration", () => {
       (err: unknown) =>
         isConversationServiceError(err) && err.code === "forbidden"
     );
+  });
+
+  it("a share link is a token that sharing again after unsharing replaces", async () => {
+    const conv = await service.createConversation(actor, {
+      agentId: "assistant",
+      modelId: "google/gemini-2.5-flash",
+    });
+    const notFound = (err: unknown) =>
+      isConversationServiceError(err) && err.code === "not_found";
+
+    const shared = await service.setConversationVisibility(
+      actor,
+      conv.id,
+      "public"
+    );
+    const first = shared.shareToken;
+    expect(first).toMatch(/^[A-Za-z0-9_-]{24}$/);
+    expect(service.shareRef(shared)).toBe(first);
+    expect((await service.getPublicConversation(first!)).id).toBe(conv.id);
+    await expect(service.getPublicConversation(conv.id)).rejects.toSatisfy(
+      notFound
+    );
+
+    const again = await service.setConversationVisibility(
+      actor,
+      conv.id,
+      "public"
+    );
+    expect(again.shareToken).toBe(first);
+
+    const unshared = await service.setConversationVisibility(
+      actor,
+      conv.id,
+      "private"
+    );
+    expect(unshared.shareToken).toBeNull();
+    await expect(service.getPublicMessages(first!)).rejects.toSatisfy(notFound);
+
+    const reshared = await service.setConversationVisibility(
+      actor,
+      conv.id,
+      "public"
+    );
+    expect(reshared.shareToken).not.toBe(first);
+    await expect(service.getPublicConversation(first!)).rejects.toSatisfy(
+      notFound
+    );
+  });
+
+  it("a conversation shared before tokens existed still answers to its id", async () => {
+    const conv = await service.createConversation(actor, {
+      agentId: "assistant",
+      modelId: "google/gemini-2.5-flash",
+    });
+    await client.query(
+      `UPDATE conversations SET visibility = 'public', share_token = NULL WHERE id = $1`,
+      [conv.id]
+    );
+    expect((await service.getPublicConversation(conv.id)).id).toBe(conv.id);
+    expect(await service.getPublicMessages(conv.id)).toEqual([]);
   });
 
   it("listConversations only returns the actor's own conversations", async () => {

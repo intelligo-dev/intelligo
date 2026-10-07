@@ -50,6 +50,13 @@
       "when": 1791294273940,
       "tag": "0006_local_invoice_grant",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791338698852,
+      "tag": "0007_schema_hardening",
+      "breakpoints": true
     }
   ]
 }

@@ -27,6 +27,12 @@ export const auditEvents = pgTable(
     actorId: text("actor_id").references(() => users.id, {
       onDelete: "set null",
     }),
+    /**
+     * The actor's email when the row was written, filled by the database
+     * from `users`, so the trail still names a person after the account
+     * is deleted and `actor_id` is cleared.
+     */
+    actorEmail: text("actor_email"),
     /** "user" | "system" | "support" — who initiated the action. */
     actorKind: text("actor_kind").notNull().default("user"),
     /** Dotted verb: "execution.completed", "credits.reserved", … */

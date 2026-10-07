@@ -15,11 +15,14 @@ export {
   getVotes,
   clearVote,
   updateConversationMetadata,
+} from "./service";
+export {
   setConversationVisibility,
   getPublicConversation,
   getPublicMessages,
-} from "./service";
-export type { ConversationVisibility } from "./service";
+  shareRef,
+} from "./sharing";
+export type { ConversationVisibility } from "./sharing";
 
 export {
   ConversationServiceError,
