@@ -64,6 +64,27 @@ describe("Logger", () => {
       expect(output).toContain("something broke");
     });
 
+    it("logs an Error's message, stack, code and cause instead of {}", async () => {
+      const { _createLoggerWithStream } = await import("./logger");
+      const { stream, getLines } = createTestStream();
+      const log = _createLoggerWithStream("TestModule", stream);
+      const cause = Object.assign(new Error("socket hang up"), {
+        code: "ECONNRESET",
+      });
+      log.error("Seeding failed", {
+        error: Object.assign(new TypeError("bad row"), { cause }),
+      });
+      const { error } = JSON.parse(getLines()[0]!) as {
+        error: Record<string, unknown>;
+      };
+      expect(error).toMatchObject({
+        type: "TypeError",
+        message: "bad row",
+        cause: { type: "Error", message: "socket hang up", code: "ECONNRESET" },
+      });
+      expect(String(error.stack)).toContain("bad row");
+    });
+
     it("logs warn level messages", async () => {
       const { _createLoggerWithStream } = await import("./logger");
       const { stream, getOutput } = createTestStream();

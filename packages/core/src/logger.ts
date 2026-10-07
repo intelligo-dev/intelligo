@@ -77,11 +77,30 @@ function isIdKey(key: string): boolean {
 /** Nested objects and arrays are walked, to this depth, so a credential inside one is still found. */
 const MAX_REDACT_DEPTH = 6;
 
+/**
+ * An `Error` as data. Its fields are not own enumerable properties, so
+ * logged as-is it prints `{}`: the name, message, stack, a `code` and the
+ * `cause` chain are copied out.
+ */
+function serializeError(error: Error, depth: number): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    type: error.name,
+    message: error.message,
+  };
+  if (error.stack) out.stack = error.stack;
+  const code = (error as { code?: unknown }).code;
+  if (code !== undefined) out.code = code;
+  const cause = (error as { cause?: unknown }).cause;
+  if (cause !== undefined) out.cause = redactValue("cause", cause, depth + 1);
+  return out;
+}
+
 function redactValue(key: string, value: unknown, depth: number): unknown {
   if (isCredentialKey(key)) return "[REDACTED]";
 
   if (value !== null && typeof value === "object") {
     if (depth >= MAX_REDACT_DEPTH) return "[TRUNCATED]";
+    if (value instanceof Error) return serializeError(value, depth);
     if (Array.isArray(value)) {
       return value.map((item) => redactValue(key, item, depth + 1));
     }
