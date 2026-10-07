@@ -259,7 +259,8 @@ export async function requireRole(
  * The authority is `users.role`. PLATFORM_ADMIN_EMAILS is the bootstrap:
  * an allowlisted user is promoted into the column on first use, so every
  * later check, Better-Auth's admin plugin included, reads the same row.
- * Closed by default: no allowlist and no role means no admin.
+ * Closed by default: no allowlist and no role means no admin. `promoted`
+ * says this call made the promotion, for the caller to audit.
  *
  * @throws AuthGuardError `unauthenticated` when there is no session,
  *   `forbidden` ("Insufficient permissions") when the user is not a
@@ -268,6 +269,7 @@ export async function requireRole(
 export async function requirePlatformAdmin(): Promise<{
   session: Session;
   user: User;
+  promoted: boolean;
 }> {
   const { session, user } = await requireAuth();
 
@@ -286,10 +288,15 @@ export async function requirePlatformAdmin(): Promise<{
   // Promote on first use so the row, not the environment, is what
   // every other check reads. A failure here must not lock an admin out
   // mid-incident — they are already authorized by the allowlist.
+  let promoted = false;
   if (allowlisted && !hasRole) {
     const next = [...roles, PLATFORM_ADMIN_ROLE].join(",");
     try {
       await db.update(users).set({ role: next }).where(eq(users.id, user.id));
+      promoted = true;
+      log.warn("Promoted an allowlisted user to platform admin", {
+        userId: user.id,
+      });
     } catch (error) {
       log.error("Failed to promote allowlisted platform admin", {
         userId: user.id,
@@ -298,5 +305,5 @@ export async function requirePlatformAdmin(): Promise<{
     }
   }
 
-  return { session, user };
+  return { session, user, promoted };
 }

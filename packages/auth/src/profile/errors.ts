@@ -8,9 +8,14 @@
  * - `invalid_input` — schema validation failed.
  * - `provider_error` — the underlying Better-Auth user API call itself
  *   failed (network, upstream API error, etc.).
+ * - `reauthentication_required` — deleting the account needs a session
+ *   signed in within the last day, and one that is not an impersonation.
  */
 export type ProfileServiceErrorCode =
-  "forbidden" | "invalid_input" | "provider_error";
+  | "forbidden"
+  | "invalid_input"
+  | "provider_error"
+  | "reauthentication_required";
 
 export interface ProfileServiceErrorMeta {
   [key: string]: unknown;

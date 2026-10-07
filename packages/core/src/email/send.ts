@@ -1,6 +1,11 @@
 import { render } from "@react-email/components";
 import type React from "react";
+import { createLogger } from "../logger";
 import { getEmailProvider, type EmailTemplateRef } from "./provider";
+
+// Recipients go out as `recipientEmail`, which the logger masks in
+// production; subjects can carry user-written names, so they stay out.
+const log = createLogger("Email");
 
 // Wraps the provider with the deployment's sender (EMAIL_FROM), React Email
 // rendering, and up to 3 attempts with exponential backoff (1s, 2s, 4s) on
@@ -111,7 +116,7 @@ export async function sendEmail(
           renderError instanceof Error
             ? renderError.message
             : String(renderError);
-        console.error(`[Email] Failed to render React component: ${message}`);
+        log.error("Failed to render React component", { error: message });
         return { success: false, error: `Template render failed: ${message}` };
       }
     } else {
@@ -137,15 +142,19 @@ export async function sendEmail(
         const message = error instanceof Error ? error.message : String(error);
 
         if (isClientError(error)) {
-          console.error(
-            `[Email] Send failed for ${recipient} (client error, not retrying): ${message}`
-          );
+          log.error("Send failed (client error, not retrying)", {
+            recipientEmail: recipient,
+            error: message,
+          });
           return { success: false, error: message };
         }
 
-        console.warn(
-          `[Email] Send attempt ${attempt}/${MAX_ATTEMPTS} failed for ${recipient}: ${message}`
-        );
+        log.warn("Send attempt failed", {
+          recipientEmail: recipient,
+          attempt,
+          maxAttempts: MAX_ATTEMPTS,
+          error: message,
+        });
 
         if (attempt < MAX_ATTEMPTS) {
           await delay(BASE_DELAY_MS * Math.pow(2, attempt - 1));
@@ -155,15 +164,17 @@ export async function sendEmail(
 
     const finalMessage =
       lastError instanceof Error ? lastError.message : String(lastError);
-    console.error(
-      `[Email] All ${MAX_ATTEMPTS} attempts failed for ${recipient}: ${params.subject}`
-    );
+    log.error("All send attempts failed", {
+      recipientEmail: recipient,
+      attempts: MAX_ATTEMPTS,
+      error: finalMessage,
+    });
 
     return { success: false, error: finalMessage };
   } catch (error) {
     // Catch-all for unexpected errors (e.g., getEmailProvider() failing)
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[Email] Unexpected error: ${message}`);
+    log.error("Unexpected error", { error: message });
     return { success: false, error: message };
   }
 }

@@ -28,8 +28,11 @@ import {
 } from "./commands/app-chain-check.js";
 import {
   formatGrantResult,
+  formatRevokeResult,
   grantExitCode,
   grantPlatformAdmin,
+  revokeExitCode,
+  revokePlatformAdmin,
 } from "./commands/admin.js";
 import { exitCodeFor, formatResults, runChecks } from "./commands/doctor.js";
 import {
@@ -104,6 +107,7 @@ function usage(): string {
     "                    (--json: one object whose `state` is up_to_date | pending |",
     "                    fresh | ahead | unmanaged | legacy)",
     "  admin grant <email>  Make a signed-up user a platform admin (--force in production)",
+    "  admin revoke <email> Take platform admin away and end its sessions (--force in production)",
     "  add <feature>     Generate consumer-owned source (--force to overwrite)",
     "  upgrade --check   Show what a template upgrade would change",
     "  sync [items…]     Install registry pages from this release's registry",
@@ -196,13 +200,17 @@ async function runMigrate(
 async function runAdmin(rest: readonly string[]): Promise<number> {
   if (!flagsOk("admin", rest, ["--force"])) return 2;
   const [action, email, ...extra] = rest.filter((a) => !a.startsWith("--"));
-  if (action !== "grant" || !email || extra.length > 0) {
-    console.error("Usage: intelligo admin grant <email> [--force]");
+  if (
+    (action !== "grant" && action !== "revoke") ||
+    !email ||
+    extra.length > 0
+  ) {
+    console.error("Usage: intelligo admin grant|revoke <email> [--force]");
     return 2;
   }
   const url = process.env.DATABASE_URL;
   if (!url) {
-    console.error("DATABASE_URL is required for `admin grant`.");
+    console.error(`DATABASE_URL is required for \`admin ${action}\`.`);
     return 1;
   }
 
@@ -210,14 +218,21 @@ async function runAdmin(rest: readonly string[]): Promise<number> {
   const client = new Client({ connectionString: url });
   await client.connect();
   try {
-    const result = await grantPlatformAdmin(
-      email,
-      async (sql, params) => (await client.query(sql, params)).rows,
-      {
-        production: process.env.NODE_ENV === "production",
-        force: rest.includes("--force"),
-      }
-    );
+    const query = async (sql: string, params?: unknown[]) =>
+      (await client.query(sql, params)).rows;
+    const options = {
+      production: process.env.NODE_ENV === "production",
+      force: rest.includes("--force"),
+    };
+    if (action === "revoke") {
+      const result = await revokePlatformAdmin(email, query, {
+        ...options,
+        allowlist: process.env.PLATFORM_ADMIN_EMAILS,
+      });
+      console.log(formatRevokeResult(result));
+      return revokeExitCode(result);
+    }
+    const result = await grantPlatformAdmin(email, query, options);
     console.log(formatGrantResult(result));
     return grantExitCode(result);
   } finally {

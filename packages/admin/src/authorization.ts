@@ -18,6 +18,27 @@ export type AdminActor = {
 };
 
 /**
+ * The platform admin behind this request, recording the promotion when
+ * `PLATFORM_ADMIN_EMAILS` just made one, so the trail says when and who.
+ */
+async function platformAdmin(): Promise<AdminActor> {
+  const { user, promoted } = await requirePlatformAdmin();
+  const actor: AdminActor = { userId: user.id, email: user.email ?? "" };
+  if (promoted) {
+    await recordAuditEvent({
+      workspaceId: null,
+      actorId: actor.userId,
+      actorKind: "system",
+      action: "admin.platform_admin.granted",
+      resourceKind: "user",
+      resourceId: actor.userId,
+      metadata: { email: actor.email, via: "allowlist" },
+    });
+  }
+  return actor;
+}
+
+/**
  * Authorize an admin action and record that it happened.
  *
  * @param action dotted verb for the audit trail, e.g. "admin.executions.viewed"
@@ -27,9 +48,7 @@ export async function requireAdmin(
   action: string,
   resource?: { kind: string; id?: string; workspaceId?: string }
 ): Promise<AdminActor> {
-  const { user } = await requirePlatformAdmin();
-
-  const actor: AdminActor = { userId: user.id, email: user.email ?? "" };
+  const actor = await platformAdmin();
 
   // Non-blocking: an audit write failing must not deny a support
   // engineer access mid-incident. Destructive actions use
@@ -57,10 +76,10 @@ export async function requireAdmin(
  */
 export async function requireAdminOrRefuse(
   action: string,
-  resource: { kind: string; id?: string; workspaceId?: string }
+  resource: { kind: string; id?: string; workspaceId?: string },
+  metadata?: Record<string, unknown>
 ): Promise<AdminActor> {
-  const { user } = await requirePlatformAdmin();
-  const actor: AdminActor = { userId: user.id, email: user.email ?? "" };
+  const actor = await platformAdmin();
 
   await recordAuditEventOrThrow({
     workspaceId: resource.workspaceId ?? null,
@@ -69,6 +88,7 @@ export async function requireAdminOrRefuse(
     action,
     resourceKind: resource.kind,
     resourceId: resource.id ?? null,
+    ...(metadata ? { metadata } : {}),
   });
 
   return actor;

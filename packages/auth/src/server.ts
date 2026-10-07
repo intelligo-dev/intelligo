@@ -8,25 +8,28 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, organization } from "better-auth/plugins";
 import { createAccessControl } from "better-auth/plugins/access";
-import {
-  adminAc,
-  defaultStatements,
-  userAc,
-} from "better-auth/plugins/admin/access";
+import { defaultStatements, userAc } from "better-auth/plugins/admin/access";
 import { PLATFORM_ADMIN_ROLE } from "./roles";
 import { resolveTrustedOrigins } from "./trusted-origins";
 import {
   ipAddressOptions,
+  SERVICE_ONLY_ADMIN_PATHS,
   SERVICE_ONLY_ORGANIZATION_PATHS,
 } from "./request-hardening";
 
 /**
  * Access control for the platform role. Better-Auth refuses an `adminRoles`
- * entry no role definition backs ("Invalid admin roles"); `platform-admin`
- * takes the plugin's own admin statements unchanged.
+ * entry no role definition backs ("Invalid admin roles"). `platform-admin`
+ * may find users and impersonate one, which the admin package wraps with a
+ * reason and an audit event, and nothing else of the plugin's: setting a
+ * role, a password or an email, banning and deleting would happen with
+ * neither.
  */
 const accessControl = createAccessControl(defaultStatements);
-const platformAdminRole = accessControl.newRole(adminAc.statements);
+const platformAdminRole = accessControl.newRole({
+  user: ["impersonate", "list", "get"],
+  session: ["list"],
+});
 const userRole = accessControl.newRole(userAc.statements);
 import { db } from "@intelligo-dev/core/db";
 import {
@@ -147,7 +150,10 @@ export const auth = betterAuth({
 
   trustedOrigins: TRUSTED_ORIGINS,
 
-  disabledPaths: [...SERVICE_ONLY_ORGANIZATION_PATHS],
+  disabledPaths: [
+    ...SERVICE_ONLY_ORGANIZATION_PATHS,
+    ...SERVICE_ONLY_ADMIN_PATHS,
+  ],
 
   advanced: {
     ipAddress: ipAddressOptions(process.env),

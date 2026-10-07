@@ -430,9 +430,11 @@ describe("requirePlatformAdmin", () => {
       user: userFixture,
     });
 
+    // Promoted by this call, which says so for the caller to audit.
     await expect(requirePlatformAdmin()).resolves.toEqual({
       session: sessionFixture,
       user: userFixture,
+      promoted: true,
     });
   });
 

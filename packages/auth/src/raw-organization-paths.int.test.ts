@@ -8,7 +8,10 @@
 
 import { describe, expect, it } from "vitest";
 
-import { SERVICE_ONLY_ORGANIZATION_PATHS } from "./request-hardening";
+import {
+  SERVICE_ONLY_ADMIN_PATHS,
+  SERVICE_ONLY_ORGANIZATION_PATHS,
+} from "./request-hardening";
 
 const d = process.env.TEST_PG_URL ? describe : describe.skip;
 
@@ -25,9 +28,12 @@ d("organization endpoints over HTTP (integration)", () => {
     );
   };
 
-  it.each([...SERVICE_ONLY_ORGANIZATION_PATHS])("closes %s", async (path) => {
-    expect((await post(path)).status).toBe(404);
-  });
+  it.each([...SERVICE_ONLY_ORGANIZATION_PATHS, ...SERVICE_ONLY_ADMIN_PATHS])(
+    "closes %s",
+    async (path) => {
+      expect((await post(path)).status).toBe(404);
+    }
+  );
 
   it("keeps set-active routed", async () => {
     expect((await post("/organization/set-active")).status).not.toBe(404);

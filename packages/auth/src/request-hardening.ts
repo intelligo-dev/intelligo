@@ -27,6 +27,13 @@ export const SERVICE_ONLY_ORGANIZATION_PATHS = [
   "/organization/leave",
 ] as const;
 
+/**
+ * Admin endpoints the framework wraps: impersonation goes through
+ * `impersonateUser` (the allowlist check) and `@intelligo-dev/admin`'s
+ * `startImpersonation` (the reason and the audit event).
+ */
+export const SERVICE_ONLY_ADMIN_PATHS = ["/admin/impersonate-user"] as const;
+
 const list = (value: string | undefined) =>
   (value ?? "")
     .split(",")

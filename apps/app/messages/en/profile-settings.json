@@ -29,6 +29,7 @@
   "errors": {
     "forbidden": "You don't have permission to do that.",
     "providerError": "Something went wrong. Please try again.",
+    "reauthenticationRequired": "For your security, sign out and sign in again, then delete your account.",
     "somethingWentWrong": "Something went wrong.",
     "invalidInput": "Invalid input"
   },

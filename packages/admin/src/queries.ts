@@ -1,17 +1,20 @@
 import "server-only";
 
 /**
- * Admin read models. Cross-tenant by design, so every caller must pass
- * through `requireAdmin` first. They read through the owning packages' APIs
+ * Admin read models. Cross-tenant by design: each checks that a platform
+ * admin is asking, and the page calls `requireAdmin` first to record the
+ * visit. They read through the owning packages' APIs
  * where those exist, so the console never redefines what an execution is.
  */
 
 import { db } from "@intelligo-dev/core/db";
+
+import { assertPlatformAdmin } from "./gate";
 import { organization, users } from "@intelligo-dev/core/db/schema";
 import { executions, findStaleExecutions } from "@intelligo-dev/executions";
 import { PLATFORM_ADMIN_ROLE } from "@intelligo-dev/auth";
-import { queryAuditEvents } from "@intelligo-dev/audit";
-import { listFailedJobs } from "@intelligo-dev/jobs";
+import { queryAuditEvents as readAuditEvents } from "@intelligo-dev/audit";
+import { listFailedJobs as readFailedJobs } from "@intelligo-dev/jobs";
 import { desc, eq, gte, sql } from "drizzle-orm";
 import { money, type Money } from "@intelligo-dev/core/money";
 
@@ -38,6 +41,7 @@ export type PlatformOverview = {
  * nothing in an error dashboard.
  */
 export async function getPlatformOverview(): Promise<PlatformOverview> {
+  await assertPlatformAdmin();
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const [[workspaceCount], [userCount], statusRows] = await Promise.all([
@@ -91,6 +95,7 @@ export type WorkspaceRow = {
 };
 
 export async function listWorkspaces(limit = 50): Promise<WorkspaceRow[]> {
+  await assertPlatformAdmin();
   return db
     .select({
       id: organization.id,
@@ -119,6 +124,7 @@ export type UserRow = {
  * only produces a confusing failure.
  */
 export async function listUsers(limit = 50): Promise<UserRow[]> {
+  await assertPlatformAdmin();
   // Filtered in SQL, before the limit, so the page is full of users
   // who can be impersonated.
   return db
@@ -142,11 +148,13 @@ export async function listUsers(limit = 50): Promise<UserRow[]> {
  * the question "is settlement broken right now" is platform-wide.
  */
 export async function listUnsettledExecutions(olderThanMs = 600_000) {
+  await assertPlatformAdmin();
   return findStaleExecutions(new Date(Date.now() - olderThanMs));
 }
 
 /** Recent executions for one workspace — the support-ticket view. */
 export async function listWorkspaceExecutions(workspaceId: string, limit = 50) {
+  await assertPlatformAdmin();
   return db
     .select()
     .from(executions)
@@ -155,4 +163,18 @@ export async function listWorkspaceExecutions(workspaceId: string, limit = 50) {
     .limit(Math.min(limit, 200));
 }
 
-export { queryAuditEvents, listFailedJobs };
+/** The audit trail, across tenants. */
+export async function queryAuditEvents(
+  ...args: Parameters<typeof readAuditEvents>
+): ReturnType<typeof readAuditEvents> {
+  await assertPlatformAdmin();
+  return readAuditEvents(...args);
+}
+
+/** Jobs that exhausted their attempts, across tenants. */
+export async function listFailedJobs(
+  ...args: Parameters<typeof readFailedJobs>
+): ReturnType<typeof readFailedJobs> {
+  await assertPlatformAdmin();
+  return readFailedJobs(...args);
+}

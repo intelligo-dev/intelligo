@@ -71,6 +71,9 @@ function parseInput<T>(schema: ZodType<T>, input: unknown): T {
   return result.data;
 }
 
+/** How recently a session must have signed in to delete its account. */
+const FRESH_SESSION_MS = 24 * 60 * 60 * 1000;
+
 export function createProfileService(ports: ProfileServicePorts = {}) {
   async function callRequireAuth() {
     try {
@@ -151,9 +154,26 @@ export function createProfileService(ports: ProfileServicePorts = {}) {
    * Delete the caller's own account: soft delete (`users.deletedAt`),
    * invalidate every session (force logout), then fire the
    * `onAccountDeleted` port, if bound, without waiting on it.
+   *
+   * Only from a session signed in within the last day — a stolen or
+   * forgotten one should not end the account — and never from an
+   * impersonation, which acts for the user without being them.
    */
   async function deleteAccount(): Promise<void> {
-    const { user } = await callRequireAuth();
+    const { user, session } = await callRequireAuth();
+    const current = session as {
+      createdAt?: Date | string | null;
+      impersonatedBy?: string | null;
+    };
+    const signedInAt = current.createdAt
+      ? new Date(current.createdAt).getTime()
+      : 0;
+    if (current.impersonatedBy || Date.now() - signedInAt > FRESH_SESSION_MS) {
+      throw new ProfileServiceError(
+        "reauthentication_required",
+        "Sign in again to delete your account."
+      );
+    }
 
     try {
       await db
@@ -162,6 +182,7 @@ export function createProfileService(ports: ProfileServicePorts = {}) {
         .where(eq(users.id, user.id));
 
       await db.delete(sessions).where(eq(sessions.userId, user.id));
+      log.warn("Account deleted by its user", { userId: user.id });
     } catch (error) {
       log.error("deleteAccount failed", { error: errorMessage(error) });
       throw new ProfileServiceError(

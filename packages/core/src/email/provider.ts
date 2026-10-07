@@ -1,5 +1,9 @@
 import { Resend } from "resend";
 
+import { createLogger } from "../logger";
+
+const log = createLogger("Email");
+
 // The provider is chosen at runtime from EMAIL_PROVIDER or the API keys set:
 //   - ResendProvider sends the rendered React Email HTML.
 //   - LoopsProvider sends by template id (Loops accepts no raw HTML).
@@ -182,10 +186,13 @@ export class ConsoleProvider implements EmailProvider {
       ? params.to.join(", ")
       : params.to;
 
-    console.log(
-      `[Email] Would send to: ${recipient}, subject: ${params.subject}`
-    );
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV === "production") {
+      // Masked by the logger; the subject can carry user-written names.
+      log.info("Would send (no email provider)", { recipientEmail: recipient });
+    } else {
+      console.log(
+        `[Email] Would send to: ${recipient}, subject: ${params.subject}`
+      );
       for (const [key, value] of Object.entries(
         params.template?.variables ?? {}
       )) {

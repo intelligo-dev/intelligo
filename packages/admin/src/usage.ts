@@ -3,8 +3,8 @@ import "server-only";
 /**
  * Cross-tenant usage, revenue and plan read models for a platform
  * console: what the platform spent on providers, on which models, for
- * which users, what it was paid, and which plans its workspaces are on. Cross-tenant by design — every
- * caller passes through `requireAdmin` first.
+ * which users, what it was paid, and which plans its workspaces are on.
+ * Cross-tenant by design: each checks that a platform admin is asking.
  *
  * Amounts are `Money`: provider cost is always USD micros, and a charge
  * is in the currency it was recorded in. A product converts or formats
@@ -13,6 +13,8 @@ import "server-only";
  */
 
 import { db } from "@intelligo-dev/core/db";
+
+import { assertPlatformAdmin } from "./gate";
 import {
   financeEvents,
   organization,
@@ -43,6 +45,7 @@ const usd = (micros: unknown): Money =>
 
 /** Provider cost across every recorded request. */
 export async function getProviderCostTotal(): Promise<Money> {
+  await assertPlatformAdmin();
   const [row] = await db.select({ micros: costSum }).from(usageRecords);
   return usd(row?.micros);
 }
@@ -57,6 +60,7 @@ export type UsageByModelRow = {
 
 /** The models that cost the most, with their token totals. */
 export async function getUsageByModel(limit = 20): Promise<UsageByModelRow[]> {
+  await assertPlatformAdmin();
   const rows = await db
     .select({
       model: usageRecords.model,
@@ -92,6 +96,7 @@ export type UsageByUserRow = {
 
 /** The users who cost the most, across every workspace. */
 export async function getUsageByUser(limit = 20): Promise<UsageByUserRow[]> {
+  await assertPlatformAdmin();
   const rows = await db
     .select({
       userId: usageRecords.userId,
@@ -144,6 +149,7 @@ end`;
  * converted into another.
  */
 export async function getRevenue(): Promise<Money[]> {
+  await assertPlatformAdmin();
   const [stripe, local] = await Promise.all([
     db
       .select({
@@ -184,6 +190,7 @@ export type PlanDistributionRow = {
 
 /** How many workspaces hold a subscription on each plan. */
 export async function getPlanDistribution(): Promise<PlanDistributionRow[]> {
+  await assertPlatformAdmin();
   const rows = await db
     .select({ planSlug: plans.slug, n: count() })
     .from(subscriptions)
@@ -221,6 +228,7 @@ export type UsageRecordRow = {
 
 /** The most recent usage records, each with its charge audited. */
 export async function listUsageRecords(limit = 200): Promise<UsageRecordRow[]> {
+  await assertPlatformAdmin();
   const rows = await db
     .select({
       id: usageRecords.id,

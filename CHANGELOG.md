@@ -53,6 +53,31 @@ it explains a framework decision.
 
 ### Security
 
+- The `platform-admin` role keeps only what the console uses of
+  Better-Auth's admin plugin — finding users and impersonating one — and
+  `/admin/impersonate-user` is closed over HTTP
+  (`SERVICE_ONLY_ADMIN_PATHS`): setting roles, passwords and emails,
+  banning, deleting and raw impersonation went around the reason and the
+  audit event.
+- An impersonation's reason is recorded on its `admin.impersonation.started`
+  event, and one that the session then refused leaves an
+  `admin.impersonation.refused` event instead of a start that never
+  happened (`requireAdminOrRefuse` takes `metadata`).
+- A promotion from `PLATFORM_ADMIN_EMAILS` is audited
+  (`admin.platform_admin.granted`, via the allowlist), and
+  `intelligo admin revoke <email>` takes the role away, ends the user's
+  sessions and audits it, warning when the allowlist would promote the
+  address again. `requirePlatformAdmin` returns `promoted`.
+- `@intelligo-dev/admin`'s cross-tenant read models check that a platform
+  admin is asking, so a page that forgot `requireAdmin` refuses instead of
+  listing every tenant. Calling them outside a request (a script) reads the
+  tables directly instead.
+- Deleting an account needs a session signed in within the last day and
+  refuses an impersonated one (`reauthentication_required`, with a message
+  in `profile-settings`).
+- Email logs mask the recipient in production and leave the subject out,
+  which can carry user-written names.
+
 - Dependencies moved past their published advisories without new
   overrides: Next.js `~16.3.8` (the scaffold's `package.json` too,
   app-scaffold template 1.19.0), and in the lockfile `sharp`, `dompurify`,

@@ -40,12 +40,33 @@ export async function startImpersonation(input: {
     );
   }
 
-  await requireAdminOrRefuse("admin.impersonation.started", {
-    kind: "user",
-    id: input.targetUserId,
-  });
+  const actor = await requireAdminOrRefuse(
+    "admin.impersonation.started",
+    { kind: "user", id: input.targetUserId },
+    { reason }
+  );
 
-  return impersonateUser(input.targetUserId);
+  try {
+    return await impersonateUser(input.targetUserId);
+  } catch (error) {
+    // The start was recorded before the session existed; say that it
+    // never did, so the trail does not show an impersonation that did
+    // not happen.
+    await recordAuditEventOrThrow({
+      workspaceId: null,
+      actorId: actor.userId,
+      actorKind: "support",
+      action: "admin.impersonation.refused",
+      resourceKind: "user",
+      resourceId: input.targetUserId,
+      outcome: "failed",
+      metadata: {
+        reason,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    });
+    throw error;
+  }
 }
 
 /**
