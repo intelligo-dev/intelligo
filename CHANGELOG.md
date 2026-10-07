@@ -81,6 +81,11 @@ it explains a framework decision.
 - `AUTH_IP_HEADERS` and `AUTH_TRUSTED_PROXIES` tell the auth rate limiter
   where the client address is: without them, an app behind more than one
   proxy resolved no address and put every client in one bucket.
+- The scaffold's `next.config.mjs` sends `frame-ancestors 'none'`,
+  `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` and
+  `Strict-Transport-Security` on every response. An existing app adds the
+  `headers()` block to its own config (`intelligo upgrade --check` shows
+  the template changed).
 
 ### Changed
 
@@ -89,15 +94,6 @@ it explains a framework decision.
   team services, with messages in `workspace-settings` and
   `team-settings`). With none left, the next page created a new personal
   workspace, and with it a new start for whatever the product grants one.
-
-
-### Security
-
-- The scaffold's `next.config.mjs` sends `frame-ancestors 'none'`,
-  `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` and
-  `Strict-Transport-Security` on every response. An existing app adds the
-  `headers()` block to its own config (`intelligo upgrade --check` shows
-  the template changed).
 
 ## [1.1.0] — 2026-10-06
 
