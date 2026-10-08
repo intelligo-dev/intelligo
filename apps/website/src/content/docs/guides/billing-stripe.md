@@ -88,12 +88,14 @@ The handler verifies the `stripe-signature` header against `STRIPE_WEBHOOK_SECRE
 | `checkout.session.completed`               | Subscription: upserts the workspace's `subscriptions` row, marks a trial converted, clears the feature cache, emails the owner. Payment: when `payment_status` is `paid`, adds the grant to `credit_balances` and completes the `credit_purchases` row |
 | `invoice.paid`                             | Status `active`, the new period dates, and a fresh monthly usage row                                                                                                                                                                                   |
 | `invoice.payment_failed`                   | Status `past_due`, and an email to the owner                                                                                                                                                                                                           |
-| `customer.subscription.updated`            | Status, period, cancel-at-period-end, and the plan whose Stripe price the subscription now carries                                                                                                                                                     |
+| `customer.subscription.updated`            | Status, period, cancel-at-period-end, and the plan whose Stripe price the subscription now carries, read back from Stripe so a late delivery cannot undo a newer change                                                                                |
 | `customer.subscription.deleted`            | Status `canceled`, which resolves the workspace to the free plan                                                                                                                                                                                       |
 | `checkout.session.async_payment_succeeded` | A delayed payment method cleared: grants the bundle, once, even if `completed` already did                                                                                                                                                             |
 | `checkout.session.async_payment_failed`    | Marks the pending credit purchase failed                                                                                                                                                                                                               |
+| `charge.refunded`                          | Takes the refunded share of a credit purchase's grant back out of `credit_balances`, never below zero; a full refund marks the purchase `refunded`                                                                                                     |
+| `charge.dispute.created`                   | Takes the disputed share of a credit purchase's grant back out of `credit_balances` and marks the purchase `disputed`                                                                                                                                  |
 
-Enable exactly these seven on the dashboard endpoint. Other types are recorded and acknowledged.
+Enable exactly these nine on the dashboard endpoint. Other types are recorded and acknowledged.
 
 Entitlement follows the subscription's status: `active`, `trialing` and `past_due` keep the plan — Stripe is still retrying the payment — and any other status resolves the workspace to the free plan. Pass `onEvent` to `createStripeWebhookHandler` for anything of your own; it runs after the built-in handler for every event, and throwing makes Stripe retry.
 
@@ -122,7 +124,7 @@ The subscription handlers take the plan from the subscription's price id, looked
 ## Going live
 
 - Set the live `STRIPE_SECRET_KEY` and live price ids. A `sk_test_` key under `NODE_ENV=production` logs `STRIPE_SECRET_KEY is a test key in production environment` at startup.
-- Add a dashboard endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` with the seven events, and set its signing secret as `STRIPE_WEBHOOK_SECRET`.
+- Add a dashboard endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` with the nine events, and set its signing secret as `STRIPE_WEBHOOK_SECRET`.
 
 ## Payments outside Stripe
 

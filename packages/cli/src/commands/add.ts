@@ -11,6 +11,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { backUp } from "./backup.js";
 import {
   emptyManifest,
   hashContents,
@@ -50,6 +51,11 @@ export type AddResult = {
   skippedCustomized: string[];
   /** Present but not ours (no manifest record) — left untouched. */
   skippedUnknown: string[];
+  /**
+   * With --force: where the app's copies of the files it replaced went
+   * (customized ones and ones Intelligo never generated).
+   */
+  backedUp?: { dir: string; files: string[] };
   /**
    * The feature's schedule and what became of it: `written` to a new
    * vercel.json, already `present` in the app's own, or `manual` — the
@@ -176,6 +182,26 @@ export function addFeature(feature: string, options: AddOptions): AddResult {
     }
   }
 
+  if (options.force) {
+    // What --force is about to replace that is not the template's own
+    // untouched output: kept under .intelligo/backup first.
+    const replaced = spec.files
+      .filter((file) => !handedOver.has(file.target))
+      .filter((file) => {
+        const target = path.join(options.appRoot, file.target);
+        if (!existsSync(target)) return false;
+        const current = hashContents(readFileSync(target, "utf8"));
+        return current !== previousByPath.get(file.target)?.hash;
+      })
+      .map((file) => file.target);
+    if (replaced.length > 0) {
+      result.backedUp = {
+        dir: backUp(options.appRoot, replaced),
+        files: replaced,
+      };
+    }
+  }
+
   for (const file of spec.files) {
     // A registry item replaced it; `intelligo sync` keeps it now.
     if (handedOver.has(file.target)) continue;
@@ -227,6 +253,11 @@ export function formatAddResult(r: AddResult): string {
   const lines = [`${r.feature}:`];
   if (r.deprecated) lines.push(`  ⚠ deprecated: ${r.deprecated}`);
   for (const f of r.written) lines.push(`  + ${f}`);
+  if (r.backedUp) {
+    lines.push(
+      `  (your copies of ${r.backedUp.files.join(", ")} are in ${r.backedUp.dir})`
+    );
+  }
   for (const f of r.skippedCustomized)
     lines.push(`  = ${f} (yours — left alone; use --force to overwrite)`);
   for (const f of r.skippedUnknown)

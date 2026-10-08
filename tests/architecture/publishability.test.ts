@@ -24,6 +24,7 @@ import {
   PACKAGES_DIR,
   ROOT,
   TOOLS_DIR,
+  importSpecifiers,
   listWorkspaces,
   walk,
 } from "./tree";
@@ -454,7 +455,20 @@ describe("publishability", () => {
     // `import "server-only"`, which is the guard that stops server code
     // reaching a client bundle. Those packages declare nothing and keep
     // the conservative default.
-    const importsServerOnly = new Set(["admin", "auth", "next"]);
+    const importsServerOnly = new Set(
+      PUBLISHED.filter((pkg) =>
+        walk(path.join(PACKAGES_DIR, pkg, "src"), (name) =>
+          /\.tsx?$/.test(name)
+        ).some(
+          (file) =>
+            !/\.test\.tsx?$/.test(file) &&
+            importSpecifiers(readFileSync(file, "utf8")).includes("server-only")
+        )
+      )
+    );
+    expect([...importsServerOnly].sort()).toEqual(
+      expect.arrayContaining(["admin", "auth", "next"])
+    );
 
     for (const pkg of PUBLISHED) {
       const declared = manifest(pkg).sideEffects;
@@ -507,6 +521,48 @@ describe("publishability", () => {
       notes.trim().length,
       `CHANGELOG.md has no section for ${version}`
     ).toBeGreaterThan(0);
+  });
+
+  it("publishes every package after the packages it depends on", () => {
+    // The release publishes in scripts/publish-order.mjs's order, so a
+    // version on npm never names a sibling version not there yet.
+    const order = execFileSync(
+      process.execPath,
+      [path.join(ROOT, "scripts/publish-order.mjs")],
+      { encoding: "utf8" }
+    )
+      .trim()
+      .split("\n");
+    const published = PUBLISHED.map((dir) => `packages/${dir}`);
+    expect([...order].sort()).toEqual([...published].sort());
+
+    const nameOf = (dir: string) =>
+      (
+        JSON.parse(
+          readFileSync(path.join(ROOT, dir, "package.json"), "utf8")
+        ) as {
+          name: string;
+        }
+      ).name;
+    const position = new Map(order.map((dir, i) => [nameOf(dir), i]));
+    for (const dir of order) {
+      const manifest = JSON.parse(
+        readFileSync(path.join(ROOT, dir, "package.json"), "utf8")
+      ) as Record<string, Record<string, string> | undefined>;
+      for (const field of [
+        "dependencies",
+        "peerDependencies",
+        "optionalDependencies",
+      ]) {
+        for (const dep of Object.keys(manifest[field] ?? {})) {
+          if (!position.has(dep)) continue;
+          expect(
+            position.get(dep)!,
+            `${dir} is published before ${dep}, which it depends on`
+          ).toBeLessThan(position.get(nameOf(dir))!);
+        }
+      }
+    }
   });
 
   it("ships a LICENSE and the governance documents", () => {

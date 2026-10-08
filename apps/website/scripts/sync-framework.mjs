@@ -17,8 +17,14 @@
  *                            and the version npm serves
  *   src/data/package-edges.json
  *                            each package's declared @intelligo-dev/* dependencies
- *   public/r/*.json          the built registry items — intelligo.dev/r/<item>.json
- *                            is the hosted registry consumers install from
+ *   public/r/<version>/*.json
+ *                            every release's items, frozen once npm has it
+ *   public/r/*.json          the items of the release npm serves —
+ *                            intelligo.dev/r/<item>.json is the hosted
+ *                            registry consumers install from
+ *   src/showcase/app/…       the items' client components, rebuilt from
+ *                            scratch on every run
+ *   src/components/ui/…      the site chrome's copies of Intelligo components
  *   public/llms.txt          a curated Markdown index of the docs, for an
  *   public/llms-full.txt     LLM/agent (llmstxt.org) — the docs concatenated
  */
@@ -26,12 +32,15 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
   readdirSync,
   rmSync,
   statSync,
   writeFileSync,
 } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -44,6 +53,11 @@ import {
   generateLlmsTxt,
   isGenerated,
 } from "./docs.mjs";
+import {
+  compareVersions,
+  fromRelease,
+  toRelease,
+} from "./registry-release.mjs";
 
 const SITE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 // apps/website lives inside the framework repository: two directories up.
@@ -79,9 +93,18 @@ if (!existsSync(built)) {
   );
   process.exit(1);
 }
-rmSync(join(SITE, "public/r"), { recursive: true, force: true });
-cpSync(built, join(SITE, "public/r"), { recursive: true });
-console.log(`public/r: ${readdirSync(built).length} items`);
+// The hosted registry is released, not built from main: a consumer on a
+// release installs items whose imports that release's packages export.
+// public/r/<version>/ keeps every release's items. The tree's version is
+// rewritten from the build until npm has it, and frozen from then on;
+// public/r/*.json, what the `@intelligo` namespace resolves, is the copy
+// of the release npm serves. Within a versioned copy an `@intelligo/<x>`
+// dependency names the same release's file, so installing from it never
+// mixes releases.
+const builtItems = readdirSync(built).filter((f) => f.endsWith(".json"));
+const registryRoot = join(SITE, "public/r");
+const releaseDir = (v) => join(registryRoot, v);
+mkdirSync(registryRoot, { recursive: true });
 
 // --- counts ---------------------------------------------------------------
 const testFiles = [
@@ -166,6 +189,94 @@ async function publishedVersion() {
   }
 }
 const published = await publishedVersion();
+
+function writeRelease(release, sourceDir) {
+  rmSync(releaseDir(release), { recursive: true, force: true });
+  mkdirSync(releaseDir(release), { recursive: true });
+  for (const f of readdirSync(sourceDir).filter((n) => n.endsWith(".json"))) {
+    writeFileSync(
+      join(releaseDir(release), f),
+      toRelease(readFileSync(join(sourceDir, f), "utf8"), release)
+    );
+  }
+}
+
+/**
+ * A released version's items, built from its `v<release>` tag with that
+ * tree's own registry build: a release whose copy is missing gets the
+ * source it shipped, not whatever this tree has become.
+ */
+function buildFromTag(release) {
+  const tag = `v${release}`;
+  try {
+    execFileSync("git", ["rev-parse", "--verify", `${tag}^{commit}`], {
+      cwd: FRAMEWORK,
+      stdio: "ignore",
+    });
+  } catch {
+    throw new Error(
+      `public/r/${release} is missing and the tag ${tag} is not here. Run \`git fetch --tags\` and sync again.`
+    );
+  }
+  const tmp = mkdtempSync(join(tmpdir(), "intelligo-registry-"));
+  try {
+    const archive = execFileSync("git", ["archive", tag, "packages/registry"], {
+      cwd: FRAMEWORK,
+      maxBuffer: 1 << 30,
+    });
+    execFileSync("tar", ["-x", "-C", tmp], { input: archive });
+    const root = join(tmp, "packages/registry");
+    const build = JSON.parse(readFileSync(join(root, "package.json"), "utf8"))
+      .scripts.build;
+    execFileSync("sh", ["-c", build], {
+      cwd: root,
+      stdio: ["ignore", "ignore", "inherit"],
+      env: {
+        ...process.env,
+        PATH: `${join(FRAMEWORK, "packages/registry/node_modules/.bin")}:${process.env.PATH}`,
+      },
+    });
+    writeRelease(release, join(root, "public/r"));
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// `node scripts/sync-framework.mjs --release <version>` adds an earlier
+// release's copy from its tag, and changes nothing else.
+const releaseFlag = process.argv.indexOf("--release");
+if (releaseFlag !== -1) {
+  const release = process.argv[releaseFlag + 1];
+  if (!release) throw new Error("--release needs a version");
+  buildFromTag(release);
+  console.log(`public/r/${release}: built from v${release}`);
+  process.exit(0);
+}
+
+const released =
+  published !== undefined && compareVersions(published, version) >= 0;
+if (!released) writeRelease(version, built);
+for (const v of new Set([version, published].filter(Boolean))) {
+  if (!existsSync(releaseDir(v))) buildFromTag(v);
+}
+// What the namespace serves: the release npm has, or this tree's version
+// while npm has none.
+const current = published ?? version;
+for (const f of readdirSync(registryRoot)) {
+  if (f.endsWith(".json")) rmSync(join(registryRoot, f));
+}
+for (const f of readdirSync(releaseDir(current))) {
+  writeFileSync(
+    join(registryRoot, f),
+    fromRelease(readFileSync(join(releaseDir(current), f), "utf8"), current)
+  );
+}
+const releases = readdirSync(registryRoot)
+  .filter((f) => statSync(join(registryRoot, f)).isDirectory())
+  .sort(compareVersions);
+console.log(
+  `public/r: ${builtItems.length} items built, /r serves ${current}, releases kept: ${releases.join(", ")}`
+);
 
 const proof = {
   sampledAt: new Date().toISOString().slice(0, 10),
@@ -259,6 +370,9 @@ function install(sourcePath, target) {
   writeFileSync(dest, /\.(ts|tsx)$/.test(target) ? rewrite(raw) : raw);
 }
 
+// Rebuilt from nothing, so a file whose source is gone goes too.
+rmSync(showcaseRoot, { recursive: true, force: true });
+
 let installed = 0;
 for (const name of SHOWCASE_ITEMS) {
   const item = registry.items.find((i) => i.name === name);
@@ -311,7 +425,9 @@ for (const item of registry.items.filter((i) => i.type === "registry:ui")) {
   }
 }
 
-// Hand-written stubs and mocks, copied last so they win.
+// Hand-written stubs and mocks, and the shadcn components the catalog
+// shows that neither an item nor the reference app installs, copied last
+// so they win.
 const overrides = join(SITE, "src/showcase/overrides");
 if (existsSync(overrides)) cpSync(overrides, showcaseRoot, { recursive: true });
 

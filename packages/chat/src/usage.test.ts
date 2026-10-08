@@ -76,4 +76,25 @@ describe("inFlightTracker", () => {
       totalTokens: 0,
     });
   });
+
+  it("estimates a step that finished without usage once it had begun to answer", () => {
+    const tracker = inFlightTracker(400);
+    tracker.onStepStart();
+    tracker.onChunk({ chunk: { type: "text-delta", text: "abcdefgh" } });
+    tracker.onStepFinish({ usage: {} });
+    const estimate = { inputTokens: 400, outputTokens: 2, totalTokens: 402 };
+    expect(tracker.unreported()).toEqual(estimate);
+    expect(tracker.spent()).toEqual(estimate);
+
+    // A step that reported nothing and wrote nothing was not answered.
+    const silent = inFlightTracker(400);
+    silent.onStepStart();
+    silent.onStepFinish({ usage: {} });
+    expect(silent.unreported()).toEqual({});
+    expect(silent.spent()).toEqual({
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+    });
+  });
 });

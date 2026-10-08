@@ -10,6 +10,7 @@ export {
   saveProfileSnapshot,
   exportIdentity,
   getAuditTrail,
+  eraseUserFromMemoryAudit,
 } from "./service";
 
 export {

@@ -14,12 +14,17 @@ import type { CheckResult } from "./doctor.js";
 /**
  * Framework modules a client bundle may import: dependency-free leaves
  * and the client entry points. Every other `@intelligo-dev/*` module
- * reaches the database or a server SDK.
+ * reaches the database or a server SDK. The architecture suite holds
+ * this list to the leaves it asserts and every package's `./client`.
  */
-const CLIENT_SAFE = new Set([
+export const CLIENT_SAFE_MODULES: ReadonlySet<string> = new Set([
+  "@intelligo-dev/auth/client",
   "@intelligo-dev/chat/client",
   "@intelligo-dev/core/money",
   "@intelligo-dev/core/registry",
+  "@intelligo-dev/core/prompt",
+  "@intelligo-dev/core/request-context",
+  "@intelligo-dev/executions/pricing",
   "@intelligo-dev/billing/plans",
   "@intelligo-dev/billing/plan-registry",
   "@intelligo-dev/billing/payment",
@@ -52,7 +57,8 @@ export function serverReach(source: string): string[] {
       specifier === "server-only" ||
       specifier.startsWith("node:") ||
       NODE_BUILTINS.has(specifier) ||
-      (specifier.startsWith("@intelligo-dev/") && !CLIENT_SAFE.has(specifier))
+      (specifier.startsWith("@intelligo-dev/") &&
+        !CLIENT_SAFE_MODULES.has(specifier))
     ) {
       found.add(specifier);
     }

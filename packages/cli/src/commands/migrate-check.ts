@@ -33,7 +33,7 @@
  *                    tables: an empty database, `migrate` applies the chain;
  *   - `unmanaged`  — the tables exist with no records (`db:push`);
  *   - `ahead`      — applied migrations this checkout does not contain;
- *   - `legacy`     — the pre-1.0 chain; `adoptable` says whether
+ *   - `legacy`     — the pre-1.0 chain, not yet adopted; `adoptable` says whether
  *                    `migrate` can take it over.
  *
  * Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
@@ -278,7 +278,9 @@ export function migrateState(
   schemaExists: boolean
 ): MigrateState {
   if (r.unknown.length > 0) return "ahead";
-  if (r.legacy.length > 0) return "legacy";
+  const baseline = r.chain[0];
+  const adopted = baseline !== undefined && r.applied.includes(baseline);
+  if (r.legacy.length > 0 && !adopted) return "legacy";
   if (r.unmanaged) return schemaExists ? "unmanaged" : "fresh";
   return r.pending.length > 0 ? "pending" : "up_to_date";
 }

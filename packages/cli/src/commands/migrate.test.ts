@@ -14,6 +14,7 @@ import path from "node:path";
 
 import { hashMigration } from "./migrate-check.js";
 import {
+  MIGRATIONS_TABLE_PROBE_SQL,
   SCHEMA_PROBE_SQL,
   applyExitCode,
   applyMigrations,
@@ -57,6 +58,9 @@ function database(opts: { applied: number | "no-table"; schema: boolean }) {
   return async (sql: string) => {
     if (sql === SCHEMA_PROBE_SQL) {
       return [{ rel: opts.schema ? "users" : null }];
+    }
+    if (sql === MIGRATIONS_TABLE_PROBE_SQL) {
+      return [{ rel: opts.applied === "no-table" ? null : "t" }];
     }
     if (opts.applied === "no-table") throw new Error("relation missing");
     return tags
@@ -172,6 +176,7 @@ describe("applyMigrations", () => {
     const r = await applyMigrations({
       migrationsDir: dir,
       query: database({ applied: "no-table", schema: false }),
+      transaction: (body) => body(),
       run: async (pending) => {
         runs++;
         received = pending;
@@ -197,6 +202,7 @@ describe("applyMigrations", () => {
     const r = await applyMigrations({
       migrationsDir: dir,
       query: database({ applied: "no-table", schema: true }),
+      transaction: (body) => body(),
       run: async () => {
         runs++;
       },
@@ -213,6 +219,7 @@ describe("applyMigrations", () => {
     const r = await applyMigrations({
       migrationsDir: dir,
       query: database({ applied: 2, schema: true }),
+      transaction: (body) => body(),
       run: async (pending) => {
         received = pending;
       },
@@ -236,9 +243,11 @@ describe("applyMigrations", () => {
     const r = await applyMigrations({
       migrationsDir: dir,
       query: async (sql: string) => {
-        if (sql === SCHEMA_PROBE_SQL) return [{ rel: "users" }];
+        if (sql === SCHEMA_PROBE_SQL || sql === MIGRATIONS_TABLE_PROBE_SQL)
+          return [{ rel: "users" }];
         return old.map((tag) => ({ hash: hashMigration(sqlFor(tag)) }));
       },
+      transaction: (body) => body(),
       run: async (pending) => {
         received = pending;
       },
@@ -258,6 +267,7 @@ describe("applyMigrations", () => {
     const r = await applyMigrations({
       migrationsDir: dir,
       query: database({ applied: 2, schema: true }),
+      transaction: (body) => body(),
       run: async () => {
         runs++;
       },
@@ -265,5 +275,29 @@ describe("applyMigrations", () => {
     expect(r.action).toBe("noop");
     expect(runs).toBe(0);
     expect(formatApplyResult(r)).toContain("Nothing to apply (2/2");
+  });
+
+  it("reads the pending set and runs it inside the transaction", async () => {
+    chain(["0000_a", "0001_b"]);
+    const events: string[] = [];
+    const query = database({ applied: 1, schema: true });
+    await applyMigrations({
+      migrationsDir: dir,
+      query: async (sql) => {
+        events.push("query");
+        return query(sql);
+      },
+      transaction: async (body) => {
+        events.push("begin");
+        const result = await body();
+        events.push("commit");
+        return result;
+      },
+      run: async () => {
+        events.push("run");
+      },
+    });
+    expect(events[0]).toBe("begin");
+    expect(events.slice(-2)).toEqual(["run", "commit"]);
   });
 });

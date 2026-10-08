@@ -130,6 +130,11 @@ describe("hand-written docs", () => {
   const registry = JSON.parse(
     readFileSync(path.join(PACKAGES_DIR, "registry/registry.json"), "utf8")
   ) as { items: { name: string; type: string }[] };
+  const docRoute = (f: string) =>
+    `/docs/${f.replace(/\.md$/, "").replace(/\/?index$/, "")}`.replace(
+      /\/$/,
+      ""
+    );
   const routes = new Set([
     "/",
     "/product",
@@ -138,23 +143,76 @@ describe("hand-written docs", () => {
     "/components",
     "/architecture",
     "/why",
+    "/compare/boilerplates",
     "/docs",
     ...registry.items
       .filter((i) => i.type === "registry:block" && i.name !== "smoke")
       .map((i) => `/blocks/${i.name}`),
-    ...files.map(
-      (f) => `/docs/${f.replace(/\.md$/, "").replace(/\/?index$/, "")}`
-    ),
+    ...registry.items
+      .filter((i) => i.type === "registry:ui")
+      .map((i) => `/components/${i.name}`),
+    ...files.map(docRoute),
   ]);
+
+  /** The anchor a heading gets: lower case, punctuation dropped, spaces to hyphens. */
+  const slug = (heading: string) =>
+    heading
+      .replace(/`([^`]*)`/g, "$1")
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .trim()
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s_-]/gu, "")
+      .replace(/\s/g, "-");
+  const anchors = new Map(
+    files.map((f) => [
+      docRoute(f),
+      new Set(
+        [
+          ...read(f)
+            .replace(/```[\s\S]*?```/g, "")
+            .matchAll(/^#{1,6}\s+(.+?)\s*#*$/gm),
+        ].map((m) => slug(m[1]!))
+      ),
+    ])
+  );
 
   it("every internal link lands on a page the site builds", () => {
     const broken = files.flatMap((f) =>
       [...read(f).matchAll(/\]\((\/[^)\s#?]*)/g)]
         .map((m) => m[1]!.replace(/\/$/, "") || "/")
-        .filter((href) => !routes.has(href) && !href.startsWith("/r/"))
+        .filter((href) =>
+          href.startsWith("/r/")
+            ? !existsSync(path.join(SITE, "public", href))
+            : !routes.has(href)
+        )
         .map((href) => `${f}: ${href}`)
     );
     expect(broken).toEqual([]);
+  });
+
+  it("every link to a heading names one the page has", () => {
+    const broken = files.flatMap((f) =>
+      [...read(f).matchAll(/\]\((\/[^)\s#?]*)?#([^)\s]+)\)/g)]
+        .map(([, target, fragment]) => ({
+          route: target ? target.replace(/\/$/, "") || "/" : docRoute(f),
+          fragment: decodeURIComponent(fragment!),
+        }))
+        .filter(
+          ({ route, fragment }) =>
+            anchors.has(route) && !anchors.get(route)!.has(fragment)
+        )
+        .map(({ route, fragment }) => `${f}: ${route}#${fragment}`)
+    );
+    expect(broken).toEqual([]);
+  });
+
+  it("checks the links it is given", () => {
+    expect(slug("Which release you install")).toBe("which-release-you-install");
+    expect(slug("`intelligo sync`, and drift")).toBe(
+      "intelligo-sync-and-drift"
+    );
+    expect(anchors.get("/docs/registry")).toContain("install-order");
+    expect(routes).toContain("/components/ai-message-bubble");
   });
 
   /** Every name any framework source declares or mentions: packages, registry, scaffold, reference app. */

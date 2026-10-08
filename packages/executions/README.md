@@ -75,8 +75,10 @@ twice.
 
 `executions.reconcile(executionId, { abandonRunningAfterMs? })` repairs a run
 whose process died: it asks `findSettlement` whether the charge committed,
-confirms it onto the row or re-runs settlement from the recorded usage, and
-fails a `running` row that outlived the threshold. `findStaleExecutions` finds
+confirms it onto the row or re-runs settlement from the recorded usage. A
+`running` row that outlived the threshold is charged the usage `run.progress()`
+recorded on it while the run went on — a multi-step run calls it after each
+model call — and failed, its hold released, when nothing was recorded. `findStaleExecutions` finds
 the candidates; `listExecutions`, `summarizeExecutions` and
 `summarizeExecutionsByDay` read the record for a usage page.
 

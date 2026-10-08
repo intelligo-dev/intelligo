@@ -169,6 +169,23 @@ d("grantPlan (integration)", () => {
     expect(second - first).toBeLessThanOrEqual(30 * DAY + 1000);
   });
 
+  it("starts a grant from now when the same plan's Stripe subscription was canceled", async () => {
+    await client.query(
+      `INSERT INTO subscriptions (id, workspace_id, plan_id, status, stripe_subscription_id, current_period_end)
+       VALUES ('sub_grant_test', $1, 'plan_plan-grant-pro', 'canceled', NULL, now() + interval '25 days')`,
+      [WORKSPACE]
+    );
+    await grant.grantPlan({
+      workspaceId: WORKSPACE,
+      planSlug: "plan-grant-pro",
+      reason: "local payment",
+      days: 30,
+    });
+
+    const end = (await period())!.current_period_end!;
+    expect(Math.abs(end - (Date.now() + 30 * DAY))).toBeLessThan(60_000);
+  });
+
   it("adds two grants made at the same moment one after the other", async () => {
     const grantThirty = () =>
       grant.grantPlan({
