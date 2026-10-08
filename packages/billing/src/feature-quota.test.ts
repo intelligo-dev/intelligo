@@ -184,6 +184,7 @@ vi.mock("@intelligo-dev/core/db", () => ({
 
 vi.mock("@intelligo-dev/core/db/schema", () => ({
   userQuotas: {
+    id: "id",
     userId: "userId",
     workspaceId: "workspaceId",
     plan: "plan",
@@ -255,6 +256,7 @@ function resetChainMocks() {
 
 import {
   checkFeatureQuota,
+  consumeFeatureQuota,
   recordFeatureUsage,
   getUserQuotaStats,
 } from "./feature-quota";
@@ -597,6 +599,194 @@ describe("recordFeatureUsage", () => {
     await expect(
       recordFeatureUsage("u1", "ws-1", "chat")
     ).resolves.not.toThrow();
+  });
+});
+
+describe("the first check for a user", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetChainMocks();
+  });
+
+  it("inserts the row keyed on user and workspace, and reads nothing back", async () => {
+    const conflict = vi.fn();
+    const returning = vi.fn();
+    mocks.mockInsertValues.mockImplementation(() => ({
+      onConflictDoNothing: (options: unknown) => {
+        conflict(options);
+        return {
+          returning: async (shape: unknown) => {
+            returning(shape);
+            return [{ id: "row" }];
+          },
+        };
+      },
+    }));
+
+    const result = await checkFeatureQuota("u1", "ws-1", "free", "chat");
+
+    expect(result.used).toBe(0);
+    expect(conflict).toHaveBeenCalledWith({
+      target: ["userId", "workspaceId"],
+    });
+    expect(returning).toHaveBeenCalledWith({ id: "id" });
+    expect(mocks.mockSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads the row a concurrent first check wrote", async () => {
+    mocks.mockInsertValues.mockImplementation(() => ({
+      onConflictDoNothing: () => ({
+        returning: async () => {
+          mocks.setRow({ userId: "u1", usage: { chat: 3 } });
+          return [];
+        },
+      }),
+    }));
+
+    const result = await checkFeatureQuota("u1", "ws-1", "free", "chat");
+
+    expect(result.used).toBe(3);
+    expect(mocks.mockSelect).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("consumeFeatureQuota", () => {
+  type Sql = { raw: string; values: unknown[] };
+  type Condition = { op?: string; conditions?: unknown[] } & Partial<Sql>;
+
+  /** The SQL limit the UPDATE carries, or null when it has none. */
+  function limitIn(condition: Condition): number | null {
+    for (const part of condition.conditions ?? []) {
+      const sql = part as Partial<Sql>;
+      if (typeof sql.raw === "string" && sql.raw.includes("<")) {
+        return sql.values![1] as number;
+      }
+    }
+    return null;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetChainMocks();
+    // The conditional UPDATE, as Postgres runs it: count only while
+    // the counter is under the limit the statement names.
+    mocks.mockUpdateWhere.mockImplementation((condition: Condition) => ({
+      returning: async (shape: Record<string, unknown>) => {
+        const row = mocks.state.rows.find(
+          (r) => r.userId === mocks.getLastWhereUserId()
+        );
+        if (!row) return [];
+        const set = mocks.mockUpdateSet.mock.lastCall![0] as {
+          usage: Sql;
+        };
+        // COALESCE(usage, '{}') || jsonb_build_object(<action>, <counter> + 1)
+        const action = set.usage.values[1] as string;
+        const used = row.usage[action] ?? 0;
+        const limit = limitIn(condition);
+        if (limit !== null && used >= limit) return [];
+        row.usage = { ...row.usage, [action]: used + 1 };
+        return [
+          Object.fromEntries(
+            Object.keys(shape).map((key) => [key, row[key as keyof typeof row]])
+          ),
+        ];
+      },
+    }));
+  });
+
+  it("counts a use under the limit and reports the count after it", async () => {
+    mocks.setRow({ userId: "u1", usage: { chat: 5 } });
+
+    const result = await consumeFeatureQuota(
+      "u1",
+      "ws-1",
+      "free",
+      "chat",
+      0.25
+    );
+
+    expect(result).toEqual({
+      allowed: true,
+      action: "chat",
+      used: 6,
+      limit: 30,
+      remaining: 24,
+      percentage: 20,
+      nearingLimit: false,
+    });
+    expect(mocks.state.rows[0]!.usage.chat).toBe(6);
+
+    const set = mocks.mockUpdateSet.mock.calls[0]![0] as {
+      usage: Sql;
+      totalCostUsd: Sql;
+      updatedAt: Date;
+    };
+    expect(set.usage.raw).toContain("jsonb_build_object");
+    expect(set.usage.raw).toContain("COALESCE");
+    const counter = set.usage.values.find(
+      (value) => typeof value === "object" && value !== null && "raw" in value
+    ) as Sql;
+    expect(counter.raw).toContain("->>");
+    expect(set.totalCostUsd.raw).toContain("+");
+    expect(set.totalCostUsd.values).toContain(0.25);
+    expect(set.updatedAt).toBeInstanceOf(Date);
+  });
+
+  it("allows the last use the limit has, without an upgrade prompt", async () => {
+    mocks.setRow({ userId: "u1", usage: { chat: 29 } });
+
+    const result = await consumeFeatureQuota("u1", "ws-1", "free", "chat");
+
+    expect(result.allowed).toBe(true);
+    expect(result.used).toBe(30);
+    expect(result.remaining).toBe(0);
+    expect(result).not.toHaveProperty("upgradeMessage");
+  });
+
+  it("refuses at the limit and counts nothing", async () => {
+    mocks.setRow({ userId: "u1", usage: { chat: 30 } });
+
+    const result = await consumeFeatureQuota("u1", "ws-1", "free", "chat");
+
+    expect(result.allowed).toBe(false);
+    expect(result.used).toBe(30);
+    expect(result.upgradeMessage).toContain("Standard");
+    expect(mocks.state.rows[0]!.usage.chat).toBe(30);
+  });
+
+  it("reports a count already past the limit as it is", async () => {
+    mocks.setRow({ userId: "u1", usage: { chat: 35 } });
+
+    const result = await consumeFeatureQuota("u1", "ws-1", "free", "chat");
+
+    expect(result.allowed).toBe(false);
+    expect(result.used).toBe(35);
+  });
+
+  it("holds a limit of one", async () => {
+    mocks.setRow({ userId: "u1", usage: { assessment: 1 } });
+
+    const result = await consumeFeatureQuota(
+      "u1",
+      "ws-1",
+      "free",
+      "assessment"
+    );
+
+    expect(result.allowed).toBe(false);
+    expect(mocks.state.rows[0]!.usage.assessment).toBe(1);
+  });
+
+  it("counts an unlimited action with no limit in the statement", async () => {
+    mocks.setRow({ userId: "u1", plan: "pro", usage: { assessment: 40 } });
+
+    const result = await consumeFeatureQuota("u1", "ws-1", "pro", "assessment");
+
+    expect(result.allowed).toBe(true);
+    expect(result.used).toBe(41);
+    expect(result.limit).toBe(-1);
+    const condition = mocks.mockUpdateWhere.mock.calls[0]![0] as Condition;
+    expect(limitIn(condition)).toBeNull();
   });
 });
 
