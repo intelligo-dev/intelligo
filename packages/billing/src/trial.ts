@@ -10,7 +10,7 @@ import {
   trialCredits,
   notificationHistory,
 } from "@intelligo-dev/core/db/schema";
-import { eq, and, gt, gte, isNotNull, lt } from "drizzle-orm";
+import { eq, and, gt, gte, isNotNull, lt, notExists } from "drizzle-orm";
 import type { TrialCredit } from "@intelligo-dev/core/db/schema";
 import { sendTrialExpiryEmail } from "@intelligo-dev/core/email";
 import { getBillingSettings } from "./billing-settings";
@@ -24,6 +24,11 @@ import { normalizeEmailForAbuseCheck, checkTrialAbuse } from "./trial-abuse";
 import { deductTrialCredits } from "./trial-deduction";
 import type { BillingReader } from "./reader";
 import { getWorkspaceOwner } from "./webhook-helpers";
+
+/** Reminders one maintenance run sends at most. */
+const REMINDER_LIMIT = 50;
+/** How long one run spends sending reminders before leaving the rest. */
+const REMINDER_BUDGET_MS = 20_000;
 
 // Re-export config accessor and types
 export { getTrialConfig, NO_TRIAL } from "./trial-types";
@@ -139,10 +144,15 @@ export async function getTrialStatus(
   }
 
   const trial = rows[0];
+  // The money grant is what admission spends, so its share decides; the
+  // token counters, which are for display, only when there is no grant.
+  const initialMicros = Number(trial.initialMicros ?? 0);
   const percentageRemaining =
-    trial.initialCredits > 0
-      ? trial.creditsRemaining / trial.initialCredits
-      : 0;
+    initialMicros > 0
+      ? Math.max(0, Number(trial.remainingMicros ?? 0)) / initialMicros
+      : trial.initialCredits > 0
+        ? trial.creditsRemaining / trial.initialCredits
+        : 0;
 
   const trialEndDate = trial.trialEndDate;
   const now = new Date();
@@ -279,25 +289,16 @@ export async function hasActiveTrial(workspaceId: string): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 /**
- * Process trial expirations and reminders.
- *
- * Called by daily cron job. Performs two operations:
- * 1. Send reminder emails for trials expiring in the registered
- *    grant's `reminderDaysBeforeExpiry` days
- * 2. Expire trials that have passed their trialEndDate
- *
- * Returns a summary of actions taken for logging.
+ * Send the reminders due today, up to `limit` and until `deadline`;
+ * returns how many were sent and adds a line to `errors` per failure.
  */
-export async function processTrialExpirations(): Promise<{
-  remindersSent: number;
-  expired: number;
-  errors: string[];
-}> {
-  const errors: string[] = [];
-  let remindersSent = 0;
-  let expiredCount = 0;
-
-  const now = new Date();
+async function sendTrialReminders(
+  now: Date,
+  limit: number,
+  deadline: number,
+  errors: string[]
+): Promise<number> {
+  let sent = 0;
 
   // The reminder day is a UTC day, so hosts in different time zones
   // remind the same trials.
@@ -320,18 +321,33 @@ export async function processTrialExpirations(): Promise<{
         eq(trialCredits.status, "active"),
         isNotNull(trialCredits.workspaceId),
         gte(trialCredits.trialEndDate, reminderDayStart),
-        lt(trialCredits.trialEndDate, reminderDayEnd)
+        lt(trialCredits.trialEndDate, reminderDayEnd),
+        notExists(
+          db
+            .select({ id: notificationHistory.id })
+            .from(notificationHistory)
+            .where(
+              and(
+                eq(notificationHistory.workspaceId, trialCredits.workspaceId),
+                eq(notificationHistory.type, "trial_expiry_reminder"),
+                eq(notificationHistory.periodKey, "trial")
+              )
+            )
+        )
       )
-    );
+    )
+    .limit(limit);
 
   for (const trial of trialsNeedingReminder) {
+    if (Date.now() >= deadline) break;
     const workspaceId = trial.workspaceId;
     if (!workspaceId) continue;
+    const reminderId = crypto.randomUUID();
     try {
       const result = await db
         .insert(notificationHistory)
         .values({
-          id: crypto.randomUUID(),
+          id: reminderId,
           workspaceId,
           type: "trial_expiry_reminder",
           periodKey: "trial",
@@ -353,15 +369,25 @@ export async function processTrialExpirations(): Promise<{
 
           const upgradeUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/billing`;
 
-          await sendTrialExpiryEmail({
+          const email = await sendTrialExpiryEmail({
             to: owner.email,
             workspaceName: owner.workspaceName,
             expiryDate,
             daysRemaining: getTrialConfig().reminderDaysBeforeExpiry,
             upgradeUrl,
-          });
+          }).catch((error: unknown) => ({
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          }));
+          if (!email.success) {
+            // Not sent: drop the record so a later run tries again.
+            await db
+              .delete(notificationHistory)
+              .where(eq(notificationHistory.id, reminderId));
+            throw new Error(email.error ?? "email not sent");
+          }
 
-          remindersSent++;
+          sent++;
         }
       }
     } catch (error) {
@@ -370,6 +396,44 @@ export async function processTrialExpirations(): Promise<{
       console.error(`[Trial Expiry] ${errorMsg}`);
     }
   }
+
+  return sent;
+}
+
+/**
+ * Process trial expirations and reminders.
+ *
+ * Called from the maintenance route. Performs two operations:
+ * 1. Send reminder emails for trials expiring in the registered
+ *    grant's `reminderDaysBeforeExpiry` days — at most `reminderLimit`
+ *    per run, and none once `reminderBudgetMs` has passed, so the rest
+ *    of the run still happens; the next run picks up the ones left
+ * 2. Expire trials that have passed their trialEndDate
+ *
+ * A reminder is recorded in `notification_history` before it is sent,
+ * so two runs never both send it, and the record is dropped again when
+ * the send fails, so a later run retries it.
+ *
+ * Returns a summary of actions taken for logging.
+ */
+export async function processTrialExpirations(
+  options: { reminderLimit?: number; reminderBudgetMs?: number } = {}
+): Promise<{
+  remindersSent: number;
+  expired: number;
+  errors: string[];
+}> {
+  const errors: string[] = [];
+  let expiredCount = 0;
+
+  const now = new Date();
+
+  const remindersSent = await sendTrialReminders(
+    now,
+    options.reminderLimit ?? REMINDER_LIMIT,
+    Date.now() + (options.reminderBudgetMs ?? REMINDER_BUDGET_MS),
+    errors
+  );
 
   const expiredTrials = await db
     .select()

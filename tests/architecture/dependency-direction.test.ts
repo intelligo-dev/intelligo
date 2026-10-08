@@ -30,6 +30,7 @@ import {
   listWorkspaces,
   walk,
 } from "./tree";
+import { CLIENT_SAFE_MODULES } from "../../packages/cli/src/commands/doctor-seams";
 
 /** Accepted @intelligo-dev/* dependency edges, by package directory name. */
 const ALLOWED_DEPS: Record<string, readonly string[]> = {
@@ -445,6 +446,29 @@ describe("leaf subpaths", () => {
       }
       return { files: [...files], bare: [...bare] };
     }
+
+    it("doctor's client-safe list is these leaves and every ./client entry", () => {
+      const clientEntries = listPublishedWorkspaces(PACKAGES_DIR).flatMap(
+        (dir) => {
+          const manifest = JSON.parse(
+            readFileSync(path.join(PACKAGES_DIR, dir, "package.json"), "utf8")
+          ) as { name: string; exports?: Record<string, unknown> };
+          return "./client" in (manifest.exports ?? {})
+            ? [`${manifest.name}/client`]
+            : [];
+        }
+      );
+      const expected = [
+        "@intelligo-dev/core/money",
+        "@intelligo-dev/core/registry",
+        "@intelligo-dev/core/prompt",
+        "@intelligo-dev/core/request-context",
+        "@intelligo-dev/executions/pricing",
+        ...PURE.map((entry) => `@intelligo-dev/billing/${entry}`),
+        ...clientEntries,
+      ];
+      expect([...CLIENT_SAFE_MODULES].sort()).toEqual(expected.sort());
+    });
 
     it.each(PURE)("%s reaches only core's own leaves", (entry) => {
       const { files, bare } = reachable(entry);

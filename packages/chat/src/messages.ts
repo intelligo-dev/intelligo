@@ -44,18 +44,25 @@ export function lastUserMessage(
  * Puts back the files a client elided from earlier messages
  * (`elideEarlierFiles`), taking each from the stored copy of its
  * message: the n-th file part takes the stored message's n-th file.
- * A part with no stored file to take — the message was never stored,
- * or the deployment persists elsewhere — is dropped, so the model sees
- * the message without it rather than a placeholder.
+ * The stored copy must have the same role, and each file it gives back
+ * must pass `accepts` as a file of that role. A part with no stored file
+ * to take — the message was never stored, or the deployment persists
+ * elsewhere — is dropped, so the model sees the message without it
+ * rather than a placeholder.
  */
 export function restoreElidedFiles(
   messages: UIMessage[],
-  stored: ReadonlyArray<UIMessage>
+  stored: ReadonlyArray<UIMessage>,
+  accepts: (
+    part: { mediaType?: unknown; url?: unknown },
+    role: UIMessage["role"]
+  ) => boolean
 ): UIMessage[] {
   const byId = new Map(stored.map((message) => [message.id, message]));
   return messages.map((message) => {
     if (!hasElidedFile(message)) return message;
-    const files = (byId.get(message.id)?.parts ?? []).filter(
+    const copy = byId.get(message.id);
+    const files = (copy?.role === message.role ? copy.parts : []).filter(
       (part) => part.type === "file"
     );
     let fileIndex = 0;
@@ -68,7 +75,7 @@ export function restoreElidedFiles(
       const original = files[fileIndex++];
       if ((part as { url?: unknown }).url !== ELIDED_FILE_URL) {
         parts.push(part);
-      } else if (original) {
+      } else if (original && accepts(original, message.role)) {
         parts.push(original);
       }
     }

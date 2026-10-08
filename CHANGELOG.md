@@ -14,6 +14,28 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
+## [Unreleased]
+
+### Fixed
+
+- A tool-approval continuation resumes the assistant message the model
+  wrote. The handler takes the stored message and copies only the
+  client's answers onto it: an approval or denial for a call awaiting
+  one, under that call's approval id and with the input the model
+  proposed, or the output of a tool the client runs. Any other change,
+  a call the model never made, or a message stored under another role
+  refuses the turn, and the finished reply is persisted from the stored
+  message rather than the client's copy. A call that already ran or was
+  denied can no longer be approved again.
+- A user message carries text, files and `data-*` parts only. A file
+  part's `providerReference` and `providerMetadata` are dropped, so the
+  model reads the file whose URL was checked; an assistant message's
+  file must carry its bytes as a data URL. An elided file is restored
+  only from a stored message of the same role, and only when the
+  attachment policy still accepts it.
+- `upsertMessages` in `@intelligo-dev/core/conversations` no longer
+  rewrites a stored message under a different role.
+
 ## [1.1.2] — 2026-10-07
 
 ### Added

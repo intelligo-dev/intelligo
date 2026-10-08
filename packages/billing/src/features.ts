@@ -41,6 +41,18 @@ export type FeatureKey = string;
  * on error).
  */
 export async function getWorkspacePlan(workspaceId: string): Promise<string> {
+  return (await resolveWorkspacePlan(workspaceId)).plan;
+}
+
+/**
+ * A plan or feature answer, and whether a failed read decided it. A
+ * degraded answer is returned but never cached.
+ */
+type Resolved<T> = { value: T; degraded: boolean };
+
+async function resolveWorkspacePlan(
+  workspaceId: string
+): Promise<{ plan: string; degraded: boolean }> {
   try {
     const subscriptionData = await getWorkspaceSubscription(workspaceId);
     const paidSlug =
@@ -49,22 +61,22 @@ export async function getWorkspacePlan(workspaceId: string): Promise<string> {
         ? subscriptionData.plan.slug
         : null;
     if (paidSlug && paidSlug !== "free") {
-      return paidSlug;
+      return { plan: paidSlug, degraded: false };
     }
 
     // Every workspace carries a free subscription row, so the trial is
     // checked for a free plan as well as for no row at all.
     if (await hasActiveTrial(workspaceId)) {
-      return getTrialPlanSlug();
+      return { plan: getTrialPlanSlug(), degraded: false };
     }
 
-    return "free";
+    return { plan: "free", degraded: false };
   } catch (error) {
     console.error(
       "[getWorkspacePlan] Failed to query subscription data:",
       error
     );
-    return "free";
+    return { plan: "free", degraded: true };
   }
 }
 
@@ -73,10 +85,32 @@ export async function getWorkspacePlan(workspaceId: string): Promise<string> {
  * least once; without a cache that is a subscription + feature_flags
  * round-trip per message. A 60-second TTL is safe because the inputs
  * only change on a billing webhook or admin toggle, both of which call
- * invalidateFeatureCache.
+ * invalidateFeatureCache. An answer computed while a read failed is not
+ * cached, so the next call asks again. An expired entry is dropped when
+ * it is read, expired entries are swept once the cache reaches
+ * `FEATURE_CACHE_MAX_ENTRIES`, and past that the oldest entries go.
  */
 const FEATURE_CACHE_TTL_MS = 60 * 1000;
+const FEATURE_CACHE_MAX_ENTRIES = 10_000;
 const featureCache = new Map<string, { value: boolean; expiresAt: number }>();
+
+function cacheFeature(key: string, value: boolean, now: number): void {
+  if (featureCache.size >= FEATURE_CACHE_MAX_ENTRIES) {
+    for (const [cachedKey, entry] of featureCache) {
+      if (entry.expiresAt <= now) featureCache.delete(cachedKey);
+    }
+    for (const oldest of featureCache.keys()) {
+      if (featureCache.size < FEATURE_CACHE_MAX_ENTRIES) break;
+      featureCache.delete(oldest);
+    }
+  }
+  featureCache.set(key, { value, expiresAt: now + FEATURE_CACHE_TTL_MS });
+}
+
+/** How many answers the cache holds, expired ones included. */
+export function featureCacheSize(): number {
+  return featureCache.size;
+}
 
 function featureCacheKey(workspaceId: string, feature: string): string {
   return `${workspaceId}:${feature}`;
@@ -106,7 +140,8 @@ export function invalidateFeatureCache(workspaceId?: string): void {
  * blocks the feature globally (kill switch), otherwise its
  * `enabledPlans` JSON array decides. With no row, or on a DB error, the
  * registered matrix decides. Results are cached in-process for 60
- * seconds (see invalidateFeatureCache).
+ * seconds (see invalidateFeatureCache); one decided after a failed read
+ * is not.
  */
 export async function hasFeature(
   workspaceId: string,
@@ -115,20 +150,22 @@ export async function hasFeature(
   const now = Date.now();
   const key = featureCacheKey(workspaceId, feature);
   const cached = featureCache.get(key);
-  if (cached && cached.expiresAt > now) {
-    return cached.value;
+  if (cached) {
+    if (cached.expiresAt > now) return cached.value;
+    featureCache.delete(key);
   }
 
-  const value = await computeHasFeature(workspaceId, feature);
-  featureCache.set(key, { value, expiresAt: now + FEATURE_CACHE_TTL_MS });
+  const { value, degraded } = await computeHasFeature(workspaceId, feature);
+  if (!degraded) cacheFeature(key, value, now);
   return value;
 }
 
 async function computeHasFeature(
   workspaceId: string,
   feature: string
-): Promise<boolean> {
-  const plan = await getWorkspacePlan(workspaceId);
+): Promise<Resolved<boolean>> {
+  const { plan, degraded } = await resolveWorkspacePlan(workspaceId);
+  const answer = (value: boolean): Resolved<boolean> => ({ value, degraded });
 
   try {
     const dbFlagResult = await db
@@ -142,12 +179,12 @@ async function computeHasFeature(
 
       // Kill switch: if isActive=false, block globally
       if (!dbFlag.isActive) {
-        return false;
+        return answer(false);
       }
 
       try {
         const enabledPlans = JSON.parse(dbFlag.enabledPlans) as string[];
-        return enabledPlans.includes(plan);
+        return answer(enabledPlans.includes(plan));
       } catch (parseError) {
         console.error(
           `[hasFeature] Failed to parse enabledPlans for feature "${feature}":`,
@@ -159,17 +196,20 @@ async function computeHasFeature(
 
     // No DB record or parse error: fall back to the registered matrix
     const allowed = featureMatrix()[feature];
-    if (!allowed) return false;
-    return allowed.includes(plan);
+    return answer(allowed ? allowed.includes(plan) : false);
   } catch (error) {
     console.error(
       `[hasFeature] DB query failed for feature "${feature}", falling back to the registered matrix:`,
       error
     );
-    // Graceful degradation: use the registered matrix on DB error
+    // Graceful degradation: use the registered matrix on DB error, and
+    // do not cache it — a kill switch the read missed must apply as
+    // soon as the database answers again.
     const allowed = featureMatrix()[feature];
-    if (!allowed) return false;
-    return allowed.includes(plan);
+    return {
+      value: allowed ? allowed.includes(plan) : false,
+      degraded: true,
+    };
   }
 }
 

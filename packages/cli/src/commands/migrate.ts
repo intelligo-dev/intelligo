@@ -160,7 +160,13 @@ export type ApplyMigrationsOptions = {
   /** Runs a read-only query and returns its rows. */
   query: QueryFn;
   /**
-   * Applies the given migrations in order, all in one transaction,
+   * Runs `body` in one transaction that holds the migrate lock
+   * (`MIGRATE_LOCK_SQL`), so the pending set is read and applied by one
+   * run at a time: a run that waited on another sees what it recorded.
+   */
+  transaction: <T>(body: () => Promise<T>) => Promise<T>;
+  /**
+   * Applies the given migrations in order, inside `transaction`,
    * recording each in `drizzle.__drizzle_migrations` as it goes.
    */
   run: (pending: PendingMigration[]) => Promise<void>;
@@ -177,32 +183,97 @@ export type ApplyMigrationsResult = ApplyDecision & {
  */
 export const SCHEMA_PROBE_SQL = `SELECT to_regclass('public.users') AS rel`;
 
+/**
+ * Whether the records table exists. Asked instead of letting the read
+ * fail, because a failed statement aborts the transaction it runs in.
+ */
+export const MIGRATIONS_TABLE_PROBE_SQL = `SELECT to_regclass('drizzle.__drizzle_migrations') AS rel`;
+
+/**
+ * Taken first in the migrate transaction and released when it ends, so
+ * concurrent `intelligo migrate` runs against one database apply the
+ * chain once, one after the other.
+ */
+export const MIGRATE_LOCK_SQL = `SELECT pg_advisory_xact_lock(hashtext('intelligo.migrate'))`;
+
 export async function applyMigrations(
   options: ApplyMigrationsOptions
 ): Promise<ApplyMigrationsResult> {
-  const check = await migrateCheck(
-    options.migrationsDir,
-    async (sql) => (await options.query(sql)) as Array<{ hash: string }>
-  );
+  return options.transaction(async () => {
+    const table = await options.query(MIGRATIONS_TABLE_PROBE_SQL);
+    const tableExists = table.length > 0 && table[0]!.rel != null;
+    const check = await migrateCheck(options.migrationsDir, async (sql) => {
+      if (!tableExists) throw new Error("no migration records table");
+      return (await options.query(sql)) as Array<{ hash: string }>;
+    });
 
-  const probe = await options.query(SCHEMA_PROBE_SQL);
-  const schemaExists = probe.length > 0 && probe[0]!.rel != null;
+    const probe = await options.query(SCHEMA_PROBE_SQL);
+    const schemaExists = probe.length > 0 && probe[0]!.rel != null;
 
-  const decision = decideApply(check, schemaExists);
-  if (decision.action === "apply") {
-    // An adopted migration is recorded with no statements: its schema is
-    // already in the database.
-    const adopted = readPendingMigrations(
-      options.migrationsDir,
-      decision.adopted
-    ).map((m) => ({ ...m, statements: [] }));
-    await options.run([
-      ...adopted,
-      ...readPendingMigrations(options.migrationsDir, decision.pending),
-    ]);
-  }
+    const decision = decideApply(check, schemaExists);
+    if (decision.action === "apply") {
+      // An adopted migration is recorded with no statements: its schema
+      // is already in the database.
+      const adopted = readPendingMigrations(
+        options.migrationsDir,
+        decision.adopted
+      ).map((m) => ({ ...m, statements: [] }));
+      await options.run([
+        ...adopted,
+        ...readPendingMigrations(options.migrationsDir, decision.pending),
+      ]);
+    }
 
-  return { ...decision, chainLength: check.chain.length };
+    return { ...decision, chainLength: check.chain.length };
+  });
+}
+
+/** The part of a `pg` client `migrateDatabase` uses. */
+export type MigrateClient = {
+  query: (
+    sql: string,
+    params?: unknown[]
+  ) => Promise<{ rows: Array<Record<string, unknown>> }>;
+};
+
+/**
+ * Applies the framework's chain through one connection: the pending set
+ * is read and applied in a single transaction that holds the migrate
+ * lock, so a failure part-way leaves neither statements nor records
+ * behind, and a second run waits and then finds nothing left to do.
+ */
+export function migrateDatabase(
+  client: MigrateClient,
+  migrationsDir: string
+): Promise<ApplyMigrationsResult> {
+  return applyMigrations({
+    migrationsDir,
+    query: async (sql) => (await client.query(sql)).rows,
+    transaction: async (body) => {
+      await client.query("BEGIN");
+      try {
+        await client.query(MIGRATE_LOCK_SQL);
+        const result = await body();
+        await client.query("COMMIT");
+        return result;
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+    },
+    run: async (pending) => {
+      for (const ddl of MIGRATIONS_TABLE_SQL) await client.query(ddl);
+      for (const migration of pending) {
+        for (const statement of migration.statements) {
+          await client.query(statement);
+        }
+        await client.query(
+          `INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at") VALUES ($1, $2)`,
+          [migration.hash, migration.createdAt]
+        );
+      }
+    },
+  });
 }
 
 export function formatApplyResult(r: ApplyMigrationsResult): string {
