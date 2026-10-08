@@ -40,8 +40,8 @@
     "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {
-    "@types/node": "^26.6.1",
-    "drizzle-orm": "^0.45.2",
+    "@types/node": "^26.6.4",
+    "drizzle-orm": "^0.45.3",
     "typescript": "^6.0.3"
   },
   "files": [
