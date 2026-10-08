@@ -10,7 +10,6 @@
     "next-intl@^4.14.5"
   ],
   "registryDependencies": [
-    "alert",
     "@intelligo/button",
     "card",
     "@intelligo/spinner",
@@ -25,13 +24,13 @@
     },
     {
       "path": "base/checkout/error.tsx",
-      "content": "\"use client\";\n\nimport { useEffect } from \"react\";\nimport { useTranslations } from \"next-intl\";\n\nimport { Link } from \"@/i18n/navigation\";\nimport { Alert, AlertDescription } from \"@/components/ui/alert\";\nimport { Button } from \"@/components/ui/button\";\n\nexport default function CheckoutSuccessError({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: () => void;\n}) {\n  const t = useTranslations(\"checkout\");\n\n  useEffect(() => {\n    console.error(\"[checkout/success] error boundary caught:\", error);\n  }, [error]);\n\n  return (\n    <div className=\"flex min-h-96 items-center justify-center p-4\">\n      <div className=\"w-full max-w-md space-y-4\">\n        <Alert variant=\"destructive\">\n          <AlertDescription>{t(\"error.description\")}</AlertDescription>\n        </Alert>\n\n        <div className=\"flex justify-center gap-3\">\n          <Button onClick={reset}>{t(\"actions.tryAgain\")}</Button>\n          <Button\n            variant=\"outline\"\n            render={<Link href=\"/settings/billing\" />}\n            nativeButton={false}\n          >\n            {t(\"actions.viewBillingSettings\")}\n          </Button>\n        </div>\n      </div>\n    </div>\n  );\n}\n",
+      "content": "\"use client\";\n\n/**\n * Renders the shared `RouteError` from the `route-error` item — install\n * it alongside this one.\n */\n\nimport { RouteError } from \"@/components/shared/route-error\";\n\nexport default function SegmentError({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: () => void;\n}) {\n  return (\n    <RouteError\n      error={error}\n      reset={reset}\n      scope=\"checkout\"\n      homeHref=\"/settings/billing\"\n      homeKey=\"goToBilling\"\n      fallback=\"payment\"\n    />\n  );\n}\n",
       "type": "registry:page",
       "target": "app/[locale]/(app)/checkout/success/error.tsx"
     },
     {
       "path": "base/checkout/messages/en.json",
-      "content": "{\n  \"actions\": {\n    \"tryAgain\": \"Try again\",\n    \"goToDashboard\": \"Go to dashboard\",\n    \"viewBillingSettings\": \"View billing settings\",\n    \"checkBillingSettings\": \"Check billing settings\"\n  },\n  \"error\": {\n    \"description\": \"Something went wrong while confirming your payment. If you were charged, it will still be applied — check your billing settings.\"\n  },\n  \"success\": {\n    \"title\": \"You're all set\",\n    \"subscriptionActive\": \"Your subscription is active.\",\n    \"planActive\": \"You're now on the {planName} plan.\",\n    \"planLabel\": \"{planName} plan\",\n    \"billedMonthly\": \"Billed monthly\",\n    \"billedYearly\": \"Billed yearly\",\n    \"status\": \"Active\",\n    \"receiptSent\": \"A receipt was sent to {email}.\"\n  },\n  \"pending\": {\n    \"title\": \"Finishing up\",\n    \"description\": \"We're confirming your payment. This usually takes a few seconds.\"\n  },\n  \"received\": {\n    \"title\": \"Payment received\",\n    \"description\": \"Your payment went through. It may take a moment to reflect in your billing settings.\"\n  },\n  \"fallback\": {\n    \"title\": \"Thank you\",\n    \"description\": \"Your payment is being processed.\",\n    \"note\": \"Check your billing settings for the latest status.\"\n  }\n}\n",
+      "content": "{\n  \"actions\": {\n    \"goToDashboard\": \"Go to dashboard\",\n    \"viewBillingSettings\": \"View billing settings\",\n    \"checkBillingSettings\": \"Check billing settings\"\n  },\n  \"success\": {\n    \"title\": \"You're all set\",\n    \"subscriptionActive\": \"Your subscription is active.\",\n    \"planActive\": \"You're now on the {planName} plan.\",\n    \"planLabel\": \"{planName} plan\",\n    \"billedMonthly\": \"Billed monthly\",\n    \"billedYearly\": \"Billed yearly\",\n    \"status\": \"Active\",\n    \"receiptSent\": \"A receipt was sent to {email}.\"\n  },\n  \"pending\": {\n    \"title\": \"Finishing up\",\n    \"description\": \"We're confirming your payment. This usually takes a few seconds.\"\n  },\n  \"received\": {\n    \"title\": \"Payment received\",\n    \"description\": \"Your payment went through. It may take a moment to reflect in your billing settings.\"\n  },\n  \"fallback\": {\n    \"title\": \"Thank you\",\n    \"description\": \"Your payment is being processed.\",\n    \"note\": \"Check your billing settings for the latest status.\"\n  }\n}\n",
       "type": "registry:file",
       "target": "messages/en/checkout.json"
     }
