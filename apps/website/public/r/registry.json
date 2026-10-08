@@ -1644,7 +1644,7 @@
       "name": "auth-login",
       "type": "registry:block",
       "title": "Auth: Login",
-      "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first.",
+      "description": "Email/password and OAuth login, and the restore screen an account scheduled for deletion lands on after signing in. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first.",
       "registryDependencies": [
         "alert",
         "@intelligo/button",
@@ -1654,6 +1654,7 @@
       ],
       "dependencies": [
         "@intelligo-dev/auth",
+        "@intelligo-dev/next",
         "react-hook-form",
         "@hookform/resolvers",
         "zod",
@@ -1700,6 +1701,21 @@
           "path": "base/auth-login/auth-error.tsx",
           "type": "registry:page",
           "target": "app/[locale]/(auth)/error.tsx"
+        },
+        {
+          "path": "base/auth-login/restore-account.tsx",
+          "type": "registry:page",
+          "target": "app/[locale]/(auth)/restore-account/page.tsx"
+        },
+        {
+          "path": "base/auth-login/components/restore-account-form.tsx",
+          "type": "registry:component",
+          "target": "components/auth/restore-account-form.tsx"
+        },
+        {
+          "path": "base/auth-login/actions.ts",
+          "type": "registry:file",
+          "target": "actions/account-restore.ts"
         }
       ]
     },
@@ -2057,7 +2073,6 @@
       "title": "Checkout",
       "description": "Checkout-success page that verifies the Stripe session directly through the framework's checkout service, covering the webhook-race window between the browser redirect and Stripe's webhook delivery.",
       "registryDependencies": [
-        "alert",
         "@intelligo/button",
         "card",
         "@intelligo/spinner",
@@ -2287,6 +2302,7 @@
       ],
       "dependencies": [
         "@intelligo-dev/auth",
+        "@intelligo-dev/billing",
         "@intelligo-dev/core",
         "@intelligo-dev/next",
         "sonner",
@@ -2469,7 +2485,6 @@
       "title": "Artifacts",
       "description": "Browse and manage AI-generated document artifacts: filterable list, full-content preview, copy-to-clipboard, and version delete, backed by the framework's document persistence service.",
       "registryDependencies": [
-        "alert",
         "badge",
         "@intelligo/button",
         "card",
