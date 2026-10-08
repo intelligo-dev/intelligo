@@ -16,6 +16,67 @@ it explains a framework decision.
 
 ## [Unreleased]
 
+### Added
+
+- Account deletion with a grace period. Deleting an account schedules it
+  for 30 days (`ACCOUNT_DELETION_GRACE_DAYS`); signing in during that
+  time leads to a "Restore your account" screen, and afterwards
+  `purgeDeletedAccounts`, called from the maintenance route, removes the
+  user's private conversations, facts, memories and profile snapshots
+  while usage, billing and execution rows stay with the user cleared.
+  Deletion is refused while the user is the only owner of a workspace
+  other people belong to; workspaces only they belong to are deleted
+  with the account and their subscriptions ended.
+- Audit trails can be pseudonymized: `eraseUserFromMemoryAudit` and
+  `eraseActorFromAuditEvents` clear what the trails hold about a person
+  (ids, recorded values, the actor's email) and keep what happened. The
+  append-only triggers allow exactly that change.
+- `consumeFeatureQuota` in `@intelligo-dev/billing` checks a feature
+  quota and counts the use in one statement, so concurrent requests
+  cannot exceed the limit.
+- Credit purchases are reversed when refunded or disputed:
+  `charge.refunded` and `charge.dispute.created` take the refunded or
+  disputed share back from the balance, never below zero, as a `credit`
+  usage row and a `billing.credit_reversed` audit event.
+- `runInBackground` and `setBackgroundTaskRunner`, with
+  `nextBackgroundTasks` from `@intelligo-dev/next`: work the framework
+  starts without awaiting (auth emails, a new workspace's bootstrap,
+  notification emails) keeps running after the response on a serverless
+  host.
+- The chat upload route takes `upload.rateLimit`, `maxUnclaimedBytes`
+  and `admitUpload`, and honours the chat feature gate. The chat route
+  takes `maxBodyBytes`.
+- `run.progress({ usage })` records a running execution's usage so far,
+  and `reconcile()` charges an abandoned run that recorded usage instead
+  of releasing its hold.
+- `pruneNotifications` removes old read notifications;
+  `pruneJobs(before, { failedBefore })` also deletes failed jobs.
+- `summarizeExecutions` and `summarizeExecutionsByDay` take an optional
+  `userId`.
+- intelligo.dev/r keeps every release's items at
+  `/r/<version>/<item>.json`, and the site sends a content security
+  policy, refuses framing and serves the registry as JSON to any origin.
+
+### Changed
+
+- intelligo.dev/r serves the items of the latest release on npm instead
+  of main.
+- The usage page follows the caller's role: owners and admins see the
+  workspace's usage, spend, quota and trial credit; members see only the
+  runs they started.
+- Older reply versions are read-only: the composer, edit and regenerate
+  return on the latest version, which is the one stored.
+- `@intelligo-dev/auth` and `@intelligo-dev/billing` declare `react` as
+  a peer dependency, since they send email rendered with React.
+- The workspace limit counts the workspaces a user owns, not the ones
+  they were invited into. Workspace names cannot contain links, and
+  invitations are rate-limited per sender and per workspace.
+- The release workflow publishes from a job that runs no install, build
+  or test and holds only npm's OIDC identity, in dependency order;
+  tagging and the GitHub release run in a job that holds only the write
+  token, and point at the release commit. A hand-pushed `v*` tag
+  publishes only when it points at the release commit on main.
+
 ### Fixed
 
 - A tool-approval continuation resumes the assistant message the model
@@ -35,6 +96,101 @@ it explains a framework decision.
   attachment policy still accepts it.
 - `upsertMessages` in `@intelligo-dev/core/conversations` no longer
   rewrites a stored message under a different role.
+- Usage and money counters no longer overflow: a month's token count and
+  Stripe, local-payment and credit-pack amounts are 64-bit.
+- Deleting a user or a workspace no longer fails because of the memory
+  audit, and deleting a fact no longer keeps its content there.
+  Notifications are deleted with their user or workspace.
+- `customer.subscription.updated` writes the subscription's current
+  state, read back from Stripe, so an older update retried after a newer
+  one no longer restores the earlier plan. A local payment refuses to
+  sell a plan to a workspace a live Stripe subscription bills
+  (`subscription_active`), a days grant after a canceled subscription
+  starts from now, and two subscription checkouts started together no
+  longer both open a session. Deleting a workspace cancels its
+  subscription only once the workspace is gone.
+- `hasFeature` no longer caches an answer decided while the database
+  could not be read, and its cache drops expired entries.
+  `getBillingSettings` throws instead of answering with USD defaults
+  when the row has never been read. Settlement treats a usage row in
+  another currency as an exhausted allowance. The first quota row for a
+  user is created once; `recordFeatureUsage` works on Postgres again.
+- A trial's warning and remaining share follow its money grant; trial
+  reminders are sent at most 50 per run and retried when the email was
+  not sent; a usage or trial notice that could not be delivered is
+  retried by the next check. The rate-limit and reservation cleanups
+  delete in batches.
+- A chat file part is estimated by what the model reads, not its base64,
+  so an inline image no longer inflates the admission hold, empties the
+  window or inflates a stopped reply's charge. The default window keeps
+  the user message an over-budget continued assistant message answers. A
+  step the provider fails partway through is charged from what ran.
+  `streamTurn` receives stored files as the model sees them.
+- The chat route authenticates before reading the body. A first turn
+  refused at admission leaves no empty conversation (`turn.conversation`
+  is `null` on a first turn, as documented). The share page leaves out a
+  failed call's raw input and provider metadata, and no longer carries
+  the conversation id. With `persist: false`, uploads are no longer
+  swept as unclaimed. `sendWithoutEarlierFiles` keeps the bytes of a
+  message no reply answered.
+- Editing a message drops it and everything after it on the server,
+  including the first message of a conversation or of the loaded page.
+  Reopened chat panels and widgets continue from what is stored.
+  chat-eve stores a stopped turn's cursor, settles steps finished before
+  a failure, closes eve's stream after each turn and reads "Don't allow"
+  as a denial. A malformed percent escape in a source URL no longer
+  breaks rendering; an attachment can be sent on its own; the dashboard
+  prompt no longer travels in the URL.
+- `mastra` settles against the admitted model; a differing reported id
+  is kept as `metadata.reportedModel`.
+- A job claimed in a batch runs once, and a failed status write no
+  longer re-runs a handler or stops the batch.
+- Requests to the bucket and the email providers time out. An upload
+  whose row cannot be written removes its object, and a key the bucket
+  keeps refusing no longer holds back other deletions. Request headers
+  stay with their own call when two request contexts start at once
+  outside Next.
+- A shared conversation stops being public when its author leaves the
+  workspace or deletes their account. Admins cannot remove themselves
+  from a workspace; they leave it.
+- `intelligo sync` keeps the app's seams and messages when an install is
+  interrupted (under `.intelligo/sync-restore/`), backs up shadcn's own
+  files an install replaced, and runs on Windows from a path with a
+  space; `intelligo remove` and `intelligo add --force` back up what
+  they replace. `intelligo migrate` takes an advisory lock; `migrate
+--check` reports an adopted pre-1.0 database as `up_to_date` or
+  `pending`. `intelligo doctor` accepts every client-safe framework
+  module.
+- `getIntegrationHealth` refuses a caller who is not a platform admin.
+- Signup's verification link lands on /verify-email; a failed fact
+  deletion comes back into the privacy list with the error; plan prices
+  show their cents; the pricing, checkout, artifacts and invitation
+  error boundaries render `RouteError`; a timed-out QR payment checks
+  the same invoice again; the login page confirms a password reset and
+  billing settings confirm a credit purchase; the trial banner survives
+  storage that throws.
+- Accessibility: settings tabs are single links, the onboarding card
+  group has a name, paywalled content is inert, a press-and-hold button
+  confirms on a screen reader's click, and `Spinner` takes a translated
+  `label` and is otherwise decorative.
+
+### Upgrading
+
+Run `intelligo migrate` before deploying:
+`0008_wide_counters_kept_ledgers` widens four counters to bigint, keeps
+memory-audit and usage rows when a user or workspace is deleted, adds
+foreign keys on notifications and eight indexes. Nothing is renamed or
+removed; widening a column rewrites its table under a lock, so run it in
+a quiet window.
+
+Bind `setBackgroundTaskRunner(nextBackgroundTasks)` in
+`lib/intelligo.ts` (app-scaffold 1.22.0 does). Call
+`purgeDeletedAccounts` and `pruneNotifications` from the maintenance
+route, as the reference app does. Enable `charge.refunded` and
+`charge.dispute.created` on the Stripe webhook endpoint.
+
+Run `intelligo sync` for every item. After a release, commit `pnpm sync`
+on main so intelligo.dev/r serves it.
 
 ## [1.1.2] — 2026-10-07
 
