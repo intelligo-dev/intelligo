@@ -6,6 +6,9 @@
     "title": "Usage",
     "description": "Track this workspace's AI usage, charges, and plan quota."
   },
+  "scope": {
+    "own": "You're seeing the requests you made in this workspace. Owners and admins see the workspace's totals, spend and plan quota."
+  },
   "emptyState": {
     "defaultTitle": "No usage yet",
     "defaultDescription": "Usage will show up here once this workspace starts making AI requests.",

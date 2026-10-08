@@ -13,11 +13,6 @@
     "genericError": "Something went wrong.",
     "invalidTimestamp": "Invalid artifact timestamp."
   },
-  "error": {
-    "description": "Something went wrong while loading your artifacts. Please try again.",
-    "retry": "Try again",
-    "goHome": "Go home"
-  },
   "filters": {
     "all": "All",
     "reports": "Reports",
@@ -58,6 +53,7 @@
     "deleteDialogDescription": "This removes the version shown here. If this artifact has earlier saved versions, it reverts to the previous one instead of disappearing entirely. Artifacts older than 30 days can't be deleted from this page.",
     "cancel": "Cancel",
     "delete": "Delete",
+    "deleting": "Deleting…",
     "deleteSuccess": "Artifact deleted"
   },
   "noContent": "No content available for this artifact."

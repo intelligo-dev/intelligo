@@ -8,7 +8,8 @@
  * The "Reports" tab filters on `doc.isReport`, computed server-side from
  * the patterns in `@/lib/document-patterns`; the kind tabs come from the
  * kinds present, so a custom kind gets its own tab. A deleted item is
- * dropped from local state once the server action succeeds.
+ * dropped from local state once the server action succeeds, and the list
+ * follows the server's again once the page refreshes.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -95,6 +96,11 @@ function KindTile({ kind, large }: { kind: string; large?: boolean }) {
 export function DocumentList({ documents }: DocumentListProps) {
   const t = useTranslations("artifacts");
   const [items, setItems] = useState(documents);
+  // Deleting the latest version of a document that has an earlier one
+  // reverts it rather than removing it; the refreshed list says which.
+  useEffect(() => {
+    setItems(documents);
+  }, [documents]);
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<"preview" | "source">("preview");

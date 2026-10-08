@@ -66,6 +66,9 @@ async function UsageOverviewSection() {
 
   return (
     <div className="space-y-8">
+      {data.scope === "own" ? (
+        <p className="text-sm text-muted-foreground">{t("scope.own")}</p>
+      ) : null}
       <UsageSummaryCards
         initialPeriodSummary={data.currentPeriod}
         plan={data.plan}

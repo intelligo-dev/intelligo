@@ -95,7 +95,7 @@ describe("runCreate --no-install", () => {
     const printed = out.join("\n");
     expect(printed).toMatch(/^ {2}pnpm install$/m);
     expect(printed).toMatch(
-      /pnpm exec intelligo sync intelligo pricing route-error usage --force/
+      /pnpm exec intelligo sync intelligo route-error pricing usage --force/
     );
   });
 
@@ -106,8 +106,8 @@ describe("runCreate --no-install", () => {
     ) as { registry: { items: string[]; files: object } };
     expect(manifest.registry.items).toEqual([
       "intelligo",
-      "pricing",
       "route-error",
+      "pricing",
       "usage",
     ]);
     expect(manifest.registry.files).toEqual({});

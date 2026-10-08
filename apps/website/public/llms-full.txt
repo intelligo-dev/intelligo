@@ -581,9 +581,9 @@ pnpm exec shadcn add @intelligo/chat-share
 | --- | --- | --- | --- |
 | [route-error](/blocks/route-error) | — | `i18n/navigation` | — |
 | [team-settings](/blocks/team-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
-| [pricing](/blocks/pricing) | — | `i18n/navigation` | — |
+| [pricing](/blocks/pricing) | [route-error](/blocks/route-error) | — | — |
 | [usage](/blocks/usage) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
-| [invitation-accept](/blocks/invitation-accept) | [team-settings](/blocks/team-settings) | `i18n/navigation` | — |
+| [invitation-accept](/blocks/invitation-accept) | [route-error](/blocks/route-error), [team-settings](/blocks/team-settings) | `i18n/navigation` | — |
 | [app-shell](/blocks/app-shell) | — | `i18n/navigation`, `lib/utils` | — |
 | [settings-shell](/blocks/settings-shell) | — | `i18n/navigation` | — |
 | [workspace-settings](/blocks/workspace-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
@@ -594,14 +594,14 @@ pnpm exec shadcn add @intelligo/chat-share
 | [language-switcher](/blocks/language-switcher) | — | `i18n/navigation`, `i18n/routing` | — |
 | [trial-banner](/blocks/trial-banner) | — | `i18n/navigation` | — |
 | [notifications](/blocks/notifications) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
-| [checkout](/blocks/checkout) | — | `i18n/navigation` | — |
+| [checkout](/blocks/checkout) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [billing-settings](/blocks/billing-settings) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [feature-gating](/blocks/feature-gating) | [pricing](/blocks/pricing) | `i18n/navigation`, `lib/utils` | — |
 | [payment-poll](/blocks/payment-poll) | [pricing](/blocks/pricing) | `i18n/navigation`, `lib/intelligo` | — |
 | [profile-settings](/blocks/profile-settings) | [route-error](/blocks/route-error) | `i18n/navigation`, `i18n/routing` | — |
 | [onboarding](/blocks/onboarding) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [dashboard](/blocks/dashboard) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
-| [artifacts](/blocks/artifacts) | — | `i18n/navigation` | — |
+| [artifacts](/blocks/artifacts) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [privacy-settings](/blocks/privacy-settings) | [route-error](/blocks/route-error) | — | — |
 | [chat](/blocks/chat) | [route-error](/blocks/route-error) | `hooks/use-mobile`, `i18n/navigation`, `i18n/routing`, `lib/intelligo`, `lib/utils` | — |
 | [chat-panel](/blocks/chat-panel) | [chat](/blocks/chat) | `lib/utils` | — |

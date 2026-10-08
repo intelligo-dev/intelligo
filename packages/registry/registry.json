@@ -2057,7 +2057,6 @@
       "title": "Checkout",
       "description": "Checkout-success page that verifies the Stripe session directly through the framework's checkout service, covering the webhook-race window between the browser redirect and Stripe's webhook delivery.",
       "registryDependencies": [
-        "alert",
         "@intelligo/button",
         "card",
         "@intelligo/spinner",
@@ -2469,7 +2468,6 @@
       "title": "Artifacts",
       "description": "Browse and manage AI-generated document artifacts: filterable list, full-content preview, copy-to-clipboard, and version delete, backed by the framework's document persistence service.",
       "registryDependencies": [
-        "alert",
         "badge",
         "@intelligo/button",
         "card",

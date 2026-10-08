@@ -50,7 +50,9 @@ export function SignupForm({ next = "/dashboard" }: { next?: string }) {
         name: data.name,
         email: data.email,
         password: data.password,
-        callbackURL: next,
+        // The emailed link lands on /verify-email, which shows an expired
+        // or invalid token and offers a resend, then forwards to `next`.
+        callbackURL: `/verify-email?next=${encodeURIComponent(next)}`,
       });
 
       if (result.error) {
@@ -64,7 +66,9 @@ export function SignupForm({ next = "/dashboard" }: { next?: string }) {
       }
 
       if (!result.data?.token) {
-        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        router.push(
+          `/verify-email?email=${encodeURIComponent(data.email)}&next=${encodeURIComponent(next)}`
+        );
         return;
       }
 

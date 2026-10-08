@@ -1,12 +1,8 @@
 {
   "actions": {
-    "tryAgain": "Try again",
     "goToDashboard": "Go to dashboard",
     "viewBillingSettings": "View billing settings",
     "checkBillingSettings": "Check billing settings"
-  },
-  "error": {
-    "description": "Something went wrong while confirming your payment. If you were charged, it will still be applied — check your billing settings."
   },
   "success": {
     "title": "You're all set",

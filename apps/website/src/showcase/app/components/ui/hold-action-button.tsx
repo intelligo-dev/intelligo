@@ -4,7 +4,9 @@
  * A press-and-hold confirmation for a destructive action: a fill sweeps
  * across the button for as long as it is held and the action fires when it
  * is full; releasing early drains it and nothing happens. Holding Space or
- * Enter works the same way.
+ * Enter works the same way. A click with no pointer or key behind it — how
+ * a screen reader activates a control — confirms at once, since that
+ * reader cannot hold.
  */
 
 import * as React from "react";
@@ -90,6 +92,7 @@ export function HoldActionButton({
   const [holding, setHolding] = React.useState(false);
   const [completed, setCompleted] = React.useState(false);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastHoldKeyAt = React.useRef(0);
   const onConfirmRef = React.useRef(onConfirm);
   onConfirmRef.current = onConfirm;
 
@@ -124,6 +127,17 @@ export function HoldActionButton({
     clearTimer();
     setHolding(false);
     setCompleted(false);
+  };
+
+  // A click that no pointer press started (`detail` 0) and no held key
+  // is behind: assistive technology activating the button.
+  const confirmFromAssistiveClick = (event: React.MouseEvent) => {
+    if (disabled || event.detail !== 0 || timerRef.current !== null) return;
+    // A browser that still clicks on a released Space or Enter is a key
+    // hold ending, not a confirmation.
+    if (event.timeStamp - lastHoldKeyAt.current < 500) return;
+    setCompleted(true);
+    onConfirmRef.current?.();
   };
 
   const active = holding || completed;
@@ -168,14 +182,17 @@ export function HoldActionButton({
         onKeyDown={(event) => {
           if (!isHoldKey(event.key)) return;
           event.preventDefault();
+          lastHoldKeyAt.current = event.timeStamp;
           if (!event.repeat) startHold();
         }}
         onKeyUp={(event) => {
           if (!isHoldKey(event.key)) return;
           event.preventDefault();
+          lastHoldKeyAt.current = event.timeStamp;
           cancelHold();
         }}
         onBlur={cancelHold}
+        onClick={confirmFromAssistiveClick}
         onContextMenu={(event) => event.preventDefault()}
         className={cn(
           "relative isolate touch-none overflow-hidden select-none",

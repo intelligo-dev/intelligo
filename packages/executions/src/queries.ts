@@ -74,10 +74,13 @@ export async function getExecutionByRequestId(requestId: string) {
  * Aggregate counts, tokens, and charge for a workspace over a window.
  * Refused executions are counted separately — they consumed no tokens
  * but they are the signal that a plan's limits are biting.
+ *
+ * `userId` narrows it to the runs one member started.
  */
 export async function summarizeExecutions(
   workspaceId: string,
-  window: { from: Date; to: Date }
+  window: { from: Date; to: Date },
+  options: { userId?: string } = {}
 ) {
   const rows = await db
     .select({
@@ -91,6 +94,7 @@ export async function summarizeExecutions(
     .where(
       and(
         eq(executions.workspaceId, workspaceId),
+        options.userId ? eq(executions.userId, options.userId) : undefined,
         gte(executions.startedAt, window.from),
         lte(executions.startedAt, window.to)
       )
@@ -146,12 +150,13 @@ export async function summarizeExecutions(
  *
  * `date` is a `YYYY-MM-DD` string in `timeZone`, which defaults to UTC.
  * Pass the reader's own zone: bucketing a +08:00 reader's 00:36 turn in
- * UTC files it on the previous day.
+ * UTC files it on the previous day. `userId` narrows it to the runs one
+ * member started.
  */
 export async function summarizeExecutionsByDay(
   workspaceId: string,
   window: { from: Date; to: Date },
-  options: { timeZone?: string } = {}
+  options: { timeZone?: string; userId?: string } = {}
 ): Promise<
   Array<{
     date: string;
@@ -183,6 +188,7 @@ export async function summarizeExecutionsByDay(
     .where(
       and(
         eq(executions.workspaceId, workspaceId),
+        options.userId ? eq(executions.userId, options.userId) : undefined,
         gte(executions.startedAt, window.from),
         lte(executions.startedAt, window.to)
       )

@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { getAuthSession } from "@intelligo-dev/auth";
 
 import { Link } from "@/i18n/navigation";
+import { returnPath } from "@/lib/auth-validation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ResendVerificationButton } from "@/components/auth/resend-verification-button";
@@ -17,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 interface Props {
-  searchParams: Promise<{ error?: string; email?: string }>;
+  searchParams: Promise<{ error?: string; email?: string; next?: string }>;
 }
 
 /**
@@ -40,7 +41,9 @@ function errorMessageFor(
 }
 
 export default async function VerifyEmailPage({ searchParams }: Props) {
-  const { error, email } = await searchParams;
+  const { error, email, next: rawNext } = await searchParams;
+  // Where signup was headed; the verified state continues there.
+  const next = returnPath(rawNext);
   const authSession = await getAuthSession();
   const t = await getTranslations("auth-email-verification");
 
@@ -55,7 +58,7 @@ export default async function VerifyEmailPage({ searchParams }: Props) {
             <AlertDescription>{t("verifiedState.message")}</AlertDescription>
           </Alert>
           <Link
-            href="/dashboard"
+            href={next}
             className="block text-center text-sm font-medium text-primary hover:text-primary/80"
           >
             {t("verifiedState.dashboardLink")}
@@ -79,7 +82,7 @@ export default async function VerifyEmailPage({ searchParams }: Props) {
           </Alert>
         )}
 
-        <ResendVerificationButton email={email} />
+        <ResendVerificationButton email={email} next={next} />
 
         <div className="text-center">
           <Link
