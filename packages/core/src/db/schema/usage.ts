@@ -31,7 +31,7 @@ export const usageRecords = pgTable(
     userId: text("user_id").references(() => users.id, {
       onDelete: "cascade",
     }),
-    /** "ai_tokens", "fixed_charge", or "credit" (a refund or goodwill credit, negative). */
+    /** "ai_tokens", "fixed_charge", or "credit": a refund or goodwill credit (negative) or purchased credit taken back (positive). */
     type: text("type").notNull(),
     model: text("model"), // "gpt-4o", "gpt-4o-mini"
     agent: text("agent"), // the product's agent slug

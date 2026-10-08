@@ -131,7 +131,7 @@ export const creditPurchases = pgTable(
     grantedCurrency: text("granted_currency"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
     stripeCheckoutSessionId: text("stripe_checkout_session_id"),
-    status: text("status").notNull().default("pending"), // pending|completed|failed
+    status: text("status").notNull().default("pending"), // pending|completed|failed|refunded|disputed
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [index("credit_purchases_workspace_id_idx").on(table.workspaceId)]
