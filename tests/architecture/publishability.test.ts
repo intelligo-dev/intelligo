@@ -509,6 +509,48 @@ describe("publishability", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("publishes every package after the packages it depends on", () => {
+    // The release publishes in scripts/publish-order.mjs's order, so a
+    // version on npm never names a sibling version not there yet.
+    const order = execFileSync(
+      process.execPath,
+      [path.join(ROOT, "scripts/publish-order.mjs")],
+      { encoding: "utf8" }
+    )
+      .trim()
+      .split("\n");
+    const published = PUBLISHED.map((dir) => `packages/${dir}`);
+    expect([...order].sort()).toEqual([...published].sort());
+
+    const nameOf = (dir: string) =>
+      (
+        JSON.parse(
+          readFileSync(path.join(ROOT, dir, "package.json"), "utf8")
+        ) as {
+          name: string;
+        }
+      ).name;
+    const position = new Map(order.map((dir, i) => [nameOf(dir), i]));
+    for (const dir of order) {
+      const manifest = JSON.parse(
+        readFileSync(path.join(ROOT, dir, "package.json"), "utf8")
+      ) as Record<string, Record<string, string> | undefined>;
+      for (const field of [
+        "dependencies",
+        "peerDependencies",
+        "optionalDependencies",
+      ]) {
+        for (const dep of Object.keys(manifest[field] ?? {})) {
+          if (!position.has(dep)) continue;
+          expect(
+            position.get(dep)!,
+            `${dir} is published before ${dep}, which it depends on`
+          ).toBeLessThan(position.get(nameOf(dir))!);
+        }
+      }
+    }
+  });
+
   it("ships a LICENSE and the governance documents", () => {
     for (const file of [
       "LICENSE",
