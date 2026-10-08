@@ -16,6 +16,7 @@
 import { db } from "@intelligo-dev/core/db";
 import { rateLimitEntries } from "@intelligo-dev/core/db/schema";
 import { sql } from "drizzle-orm";
+import { deleteInBatches } from "./batched-delete";
 import { getRateLimit } from "./plan-registry";
 
 // ---------------------------------------------------------------------------
@@ -184,12 +185,8 @@ export async function cleanupRateLimitEntries(): Promise<number> {
   // Date bound in raw SQL would arrive as the server's local time.
   const cutoff = new Date(Date.now() - 60_000).toISOString();
 
-  const deleted = await db
-    .delete(rateLimitEntries)
-    .where(
-      sql`${rateLimitEntries.minuteBucket} + ${rateLimitEntries.windowSeconds} * interval '1 second' < ${cutoff}::timestamp`
-    )
-    .returning();
-
-  return deleted.length;
+  return deleteInBatches(
+    rateLimitEntries,
+    sql`${rateLimitEntries.minuteBucket} + ${rateLimitEntries.windowSeconds} * interval '1 second' < ${cutoff}::timestamp`
+  );
 }

@@ -486,7 +486,7 @@ export type BillingRate = {
 
 A turn of 2,000 input and 500 output tokens on `google/gemini-2.5-flash` costs the provider 1,850 micros. At 4× that is 7,400 micros, $0.0074 charged. A euro deployment at `920_000` charges 6,808 micros EUR.
 
-The rate is a fixed number you state, not a live feed. It lives in the single `billing_settings` row. `ensureBillingSettingsRow` in `composeIntelligo()` seeds that row and leaves an existing one alone, so editing the call after the first boot changes nothing. To change them later, call `updateBillingSettings({ usdRateMicros, marginBp })` — from an admin action or a script; it validates the values and drops the cache. Changing `currency` does not convert the balances a ledger already holds. `getBillingSettings` caches it for 60 seconds per process. Each `usage_records` row stores the provider cost, margin and rate it was charged at, so a later change never rewrites history.
+The rate is a fixed number you state, not a live feed. It lives in the single `billing_settings` row. `ensureBillingSettingsRow` in `composeIntelligo()` seeds that row and leaves an existing one alone, so editing the call after the first boot changes nothing. To change them later, call `updateBillingSettings({ usdRateMicros, marginBp })` — from an admin action or a script; it validates the values and drops the cache. Changing `currency` does not convert the balances a ledger already holds. `getBillingSettings` caches it for 60 seconds per process. When the row cannot be read it answers with the last reading the process made; with none, it throws, so admission and settlement fail and are retried rather than charge in another currency. Each `usage_records` row stores the provider cost, margin and rate it was charged at, so a later change never rewrites history.
 
 ## What the workspace sees
 
@@ -3375,22 +3375,28 @@ export async function exportConversations() {
 
 `hasFeature(workspaceId, feature)` resolves the workspace's plan (its subscription's plan while the subscription is `active`, `trialing` or `past_due`; the trial's `planSlug`, `pro` by default, during an active trial; `free` otherwise) and returns a boolean. `requireFeature` takes the same arguments and throws a `FeatureNotAvailableError` instead, which names the feature, the current plan and the plans that grant it. A key that is missing from the matrix is denied on every plan, so a registry item with a `featureKey` you have not added answers 403.
 
-A row in the `feature_flags` table overrides the matrix for its feature name, and an inactive row turns the feature off for everyone. Answers are cached in-process for 60 seconds; `invalidateFeatureCache(workspaceId)` drops them.
+A row in the `feature_flags` table overrides the matrix for its feature name, and an inactive row turns the feature off for everyone. Answers are cached in-process for 60 seconds; `invalidateFeatureCache(workspaceId)` drops them. An answer given while the database could not be read is not cached.
 
 ## Cap how often a feature runs
 
-`checkFeatureQuota(userId, workspaceId, plan, action)` compares a counter with the plan's limit. The limit is the key in `limits` named after the action — `summaries` above — unless `registerActionLimitKeys` maps the action to another key. `recordFeatureUsage(userId, workspaceId, action)` increments the counter in one SQL statement.
+`consumeFeatureQuota(userId, workspaceId, plan, action)` counts one use when the plan's limit still allows it and refuses it otherwise, in one SQL statement, so requests arriving together never take the counter past the limit. The limit is the key in `limits` named after the action — `summaries` above — unless `registerActionLimitKeys` maps the action to another key.
 
 ```ts title="actions/summaries.ts"
 const { workspace, user } = await requireWorkspace();
 const plan = await getWorkspacePlan(workspace.id);
 
-const quota = await checkFeatureQuota(user.id, workspace.id, plan, "summaries");
+const quota = await consumeFeatureQuota(
+  user.id,
+  workspace.id,
+  plan,
+  "summaries"
+);
 if (!quota.allowed) return { success: false as const, quota };
 
 const summary = await summarize(input);
-await recordFeatureUsage(user.id, workspace.id, "summaries");
 ```
+
+`checkFeatureQuota(userId, workspaceId, plan, action)` only reads the counter, for display, and `recordFeatureUsage(userId, workspaceId, action)` only adds to it. Checking with one and counting with the other lets requests that run at once each pass the check.
 
 The result is a `FeatureQuotaResult`: `allowed`, `used`, `limit`, `remaining`, `percentage`, `nearingLimit` from 80 percent, and on refusal the `upgradeMessage` you registered with `registerUpgradeMessages`.
 

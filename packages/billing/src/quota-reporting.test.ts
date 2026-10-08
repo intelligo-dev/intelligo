@@ -10,7 +10,7 @@
  * which is an empty object rather than null. Getting that wrong either
  * charges a workspace twice or drops a charge.
  *
- * Its own file because these need `delete().where().returning()`, a
+ * Its own file because these need a batched delete, a
  * bare `update().set().where()` and grouped selects, which the db fakes
  * in `quota.test.ts` and `quota-settlement.test.ts` are not shaped for.
  */
@@ -32,7 +32,7 @@ const mocks = vi.hoisted(() => ({
 const state = vi.hoisted(() => ({
   /** Rows `select(...).from(usageRecords)` returns, per call, in order. */
   selectRows: [] as unknown[][],
-  /** Rows the `delete(...).returning()` chain reports as removed. */
+  /** Rows the batched delete reports as removed. */
   deleted: [] as unknown[],
   calls: [] as string[],
   /** The `set(...)` payload of the last update. */
@@ -57,6 +57,12 @@ vi.mock("./billing-settings", () => ({
 }));
 vi.mock("./notifications", () => ({
   checkNotificationTriggers: vi.fn(),
+}));
+vi.mock("./batched-delete", () => ({
+  deleteInBatches: vi.fn(async (t: { __name: string }) => {
+    state.calls.push(`delete ${t.__name}`);
+    return state.deleted.length;
+  }),
 }));
 vi.mock("./quota-plan", async () => {
   const { money } = await import("@intelligo-dev/core/money");
@@ -118,14 +124,6 @@ vi.mock("@intelligo-dev/core/db", () => {
   return {
     db: {
       select: vi.fn(() => selectChain()),
-      delete: vi.fn((t: { __name: string }) => ({
-        where: vi.fn(() => ({
-          returning: vi.fn(async () => {
-            state.calls.push(`delete ${t.__name}`);
-            return state.deleted;
-          }),
-        })),
-      })),
       update: vi.fn((t: { __name: string }) => ({
         set: vi.fn((payload: Record<string, unknown>) => ({
           where: vi.fn(async () => {

@@ -14,10 +14,14 @@ const mocks = vi.hoisted(() => ({
   triggerTrialNotification: vi.fn(),
   insertValues: vi.fn(),
   onConflictDoNothing: vi.fn(),
+  deleted: vi.fn(),
 }));
 
 vi.mock("@intelligo-dev/core/db", () => ({
   db: {
+    delete: () => ({
+      where: async (condition: unknown) => mocks.deleted(condition),
+    }),
     insert: () => ({
       values: (row: unknown) => {
         mocks.insertValues(row);
@@ -44,7 +48,7 @@ vi.mock("@intelligo-dev/core/db", () => ({
   },
 }));
 vi.mock("@intelligo-dev/core/db/schema", () => ({
-  notificationHistory: {},
+  notificationHistory: { id: "notification_history.id" },
   organization: {},
   users: {},
   member: {},
@@ -59,6 +63,10 @@ vi.mock("./billing-settings", () => ({
   getBillingSettings: mocks.getBillingSettings,
 }));
 vi.mock("./quota-usage", () => ({ getCurrentPeriodKey: () => "2026-08" }));
+vi.mock("drizzle-orm", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("drizzle-orm")>()),
+  eq: (col: unknown, val: unknown) => ({ op: "eq", col, val }),
+}));
 
 import { money } from "@intelligo-dev/core/money";
 import { checkNotificationTriggers } from "./notifications";
@@ -179,6 +187,33 @@ describe("checkNotificationTriggers", () => {
     await checkNotificationTriggers("ws-1");
 
     expect(mocks.triggerQuotaNotification).not.toHaveBeenCalled();
+  });
+
+  it("gives the period's claim back when the notice could not be delivered", async () => {
+    mocks.getQuotaThresholds.mockResolvedValue(
+      thresholds(12_150_000, 15_000_000)
+    );
+    mocks.triggerQuotaNotification.mockRejectedValue(new Error("db reset"));
+
+    await checkNotificationTriggers("ws-1");
+
+    const claimed = mocks.insertValues.mock.calls[0]![0] as { id: string };
+    expect(mocks.deleted).toHaveBeenCalledWith({
+      op: "eq",
+      col: "notification_history.id",
+      val: claimed.id,
+    });
+  });
+
+  it("keeps the claim once the notice was delivered", async () => {
+    mocks.getQuotaThresholds.mockResolvedValue(
+      thresholds(12_150_000, 15_000_000)
+    );
+
+    await checkNotificationTriggers("ws-1");
+
+    expect(mocks.triggerQuotaNotification).toHaveBeenCalledTimes(1);
+    expect(mocks.deleted).not.toHaveBeenCalled();
   });
 
   it("stays quiet below the warning threshold", async () => {
