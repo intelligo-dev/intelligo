@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/next",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "The Next.js adapter: the one Intelligo package that imports next/*, binding request context, auth routes and Route Handler guards.",
   "keywords": [
     "intelligo",

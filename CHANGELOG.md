@@ -14,7 +14,7 @@ untagged milestones that followed. None of them were released to npm —
 happened alongside the framework is out of scope and noted only where
 it explains a framework decision.
 
-## [Unreleased]
+## [1.2.0] — 2026-10-08
 
 ### Added
 

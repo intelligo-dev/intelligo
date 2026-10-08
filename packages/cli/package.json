@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/cli",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "The Intelligo CLI: scaffold an AI SaaS app, generate owned source, and check its migrations and upgrades.",
   "keywords": [
     "intelligo",
