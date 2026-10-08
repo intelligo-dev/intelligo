@@ -6,6 +6,15 @@ import { describe, expect, it } from "vitest";
 import { checkSeamBoundaries, serverReach } from "./doctor-seams.js";
 
 describe("serverReach", () => {
+  it("lets the auth client and core's prompt and request-context leaves through", () => {
+    const source = [
+      'import { useSession } from "@intelligo-dev/auth/client";',
+      'import { sanitizeForSystemPrompt } from "@intelligo-dev/core/prompt";',
+      'import { getRequestContext } from "@intelligo-dev/core/request-context";',
+    ].join("\n");
+    expect(serverReach(source)).toEqual([]);
+  });
+
   it("finds server modules and secrets, and lets types and client leaves through", () => {
     const source = [
       'import "server-only";',

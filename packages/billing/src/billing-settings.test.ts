@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
   row: null as Record<string, unknown> | null,
   selects: 0,
   writes: 0,
+  failReads: false,
   lastConflictSet: null as Record<string, unknown> | null,
 }));
 
@@ -22,6 +23,7 @@ vi.mock("@intelligo-dev/core/db", () => ({
         where: () => ({
           limit: async () => {
             state.selects += 1;
+            if (state.failReads) throw new Error("connection timeout");
             return state.row ? [state.row] : [];
           },
         }),
@@ -65,7 +67,28 @@ beforeEach(() => {
   state.selects = 0;
   state.writes = 0;
   state.lastConflictSet = null;
+  state.failReads = false;
   invalidateBillingSettingsCache();
+});
+
+describe("getBillingSettings when the row cannot be read", () => {
+  it("throws rather than answer with another currency's defaults", async () => {
+    state.failReads = true;
+    await expect(getBillingSettings()).rejects.toThrow("connection timeout");
+  });
+
+  it("answers with the last reading, however old", async () => {
+    vi.useFakeTimers();
+    try {
+      expect((await getBillingSettings()).currency).toBe("EUR");
+      vi.advanceTimersByTime(10 * 60_000);
+      state.failReads = true;
+      expect((await getBillingSettings()).currency).toBe("EUR");
+      expect(state.selects).toBe(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("updateBillingSettings", () => {

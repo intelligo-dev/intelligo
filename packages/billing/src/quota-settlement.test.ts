@@ -27,6 +27,8 @@ const mocks = vi.hoisted(() => ({
 const state = vi.hoisted(() => ({
   /** null = no monthly_usage row yet for this period. */
   allowanceUsedMicros: null as number | null,
+  /** The period row's currency. */
+  periodCurrency: "MNT",
   /** null = no active trial row. */
   trialRemainingMicros: null as number | null,
   /** null = no credit_balances row. */
@@ -94,6 +96,7 @@ vi.mock("@intelligo-dev/core/db/schema", () => {
       "tokensUsed",
       "allowanceUsedMicros",
       "requestCount",
+      "currency",
     ]),
     creditBalances: table("credit_balances", [
       "workspaceId",
@@ -126,7 +129,12 @@ vi.mock("@intelligo-dev/core/db", () => {
     if (t.__name === "monthly_usage") {
       return state.allowanceUsedMicros === null
         ? []
-        : [{ allowanceUsedMicros: state.allowanceUsedMicros }];
+        : [
+            {
+              allowanceUsedMicros: state.allowanceUsedMicros,
+              currency: state.periodCurrency,
+            },
+          ];
     }
     if (t.__name === "trial_credits") {
       return state.trialRemainingMicros === null
@@ -221,6 +229,7 @@ const updates = () => state.log.filter((l) => l.startsWith("update "));
 beforeEach(() => {
   vi.clearAllMocks();
   state.allowanceUsedMicros = null;
+  state.periodCurrency = "MNT";
   state.trialRemainingMicros = null;
   state.topupBalanceMicros = null;
   state.settledMicros = null;
@@ -283,6 +292,20 @@ describe("recordTokenUsage", () => {
     });
     expect(updates()).toContain("update credit_balances");
     expect(updates()).not.toContain("update trial_credits");
+  });
+
+  it("funds nothing from a period row in another currency, as admission reads it", async () => {
+    state.periodCurrency = "USD";
+    state.allowanceUsedMicros = 5_000_000; // $5 used before the switch
+    const out = await settle();
+    expect(out).toEqual({
+      charged: CHARGED,
+      plan: zero("MNT"),
+      topup: CHARGED,
+      trial: zero("MNT"),
+      replayed: false,
+    });
+    expect(updates()).toContain("update credit_balances");
   });
 
   it("debits the trial grant when the top-up holds nothing", async () => {

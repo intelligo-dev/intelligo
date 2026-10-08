@@ -81,22 +81,28 @@ export async function exportConversations() {
 
 `hasFeature(workspaceId, feature)` resolves the workspace's plan (its subscription's plan while the subscription is `active`, `trialing` or `past_due`; the trial's `planSlug`, `pro` by default, during an active trial; `free` otherwise) and returns a boolean. `requireFeature` takes the same arguments and throws a `FeatureNotAvailableError` instead, which names the feature, the current plan and the plans that grant it. A key that is missing from the matrix is denied on every plan, so a registry item with a `featureKey` you have not added answers 403.
 
-A row in the `feature_flags` table overrides the matrix for its feature name, and an inactive row turns the feature off for everyone. Answers are cached in-process for 60 seconds; `invalidateFeatureCache(workspaceId)` drops them.
+A row in the `feature_flags` table overrides the matrix for its feature name, and an inactive row turns the feature off for everyone. Answers are cached in-process for 60 seconds; `invalidateFeatureCache(workspaceId)` drops them. An answer given while the database could not be read is not cached.
 
 ## Cap how often a feature runs
 
-`checkFeatureQuota(userId, workspaceId, plan, action)` compares a counter with the plan's limit. The limit is the key in `limits` named after the action — `summaries` above — unless `registerActionLimitKeys` maps the action to another key. `recordFeatureUsage(userId, workspaceId, action)` increments the counter in one SQL statement.
+`consumeFeatureQuota(userId, workspaceId, plan, action)` counts one use when the plan's limit still allows it and refuses it otherwise, in one SQL statement, so requests arriving together never take the counter past the limit. The limit is the key in `limits` named after the action — `summaries` above — unless `registerActionLimitKeys` maps the action to another key.
 
 ```ts title="actions/summaries.ts"
 const { workspace, user } = await requireWorkspace();
 const plan = await getWorkspacePlan(workspace.id);
 
-const quota = await checkFeatureQuota(user.id, workspace.id, plan, "summaries");
+const quota = await consumeFeatureQuota(
+  user.id,
+  workspace.id,
+  plan,
+  "summaries"
+);
 if (!quota.allowed) return { success: false as const, quota };
 
 const summary = await summarize(input);
-await recordFeatureUsage(user.id, workspace.id, "summaries");
 ```
+
+`checkFeatureQuota(userId, workspaceId, plan, action)` only reads the counter, for display, and `recordFeatureUsage(userId, workspaceId, action)` only adds to it. Checking with one and counting with the other lets requests that run at once each pass the check.
 
 The result is a `FeatureQuotaResult`: `allowed`, `used`, `limit`, `remaining`, `percentage`, `nearingLimit` from 80 percent, and on refusal the `upgradeMessage` you registered with `registerUpgradeMessages`.
 

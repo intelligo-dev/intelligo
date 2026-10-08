@@ -8,7 +8,7 @@
  *     pnpm vitest run packages/core/src/documents/service.integration.test.ts
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { Client } from "pg";
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -104,6 +104,25 @@ d("documents service — real DB integration", () => {
     });
     expect(edited.conversationId).toBe("conv-abc");
     expect((await getDocument(actor, id)).conversationId).toBe("conv-abc");
+  });
+
+  it("keeps every save of one document made in the same millisecond", async () => {
+    const id = `doc-${suffix}-same-ms`;
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      await Promise.all(
+        ["a", "b", "c"].map((content) =>
+          saveDocument(actor, { id, title: "Same ms", content, kind: "text" })
+        )
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+    const { rows } = await client.query<{ content: string }>(
+      `SELECT content FROM documents WHERE id = $1 ORDER BY content`,
+      [id]
+    );
+    expect(rows.map((r) => r.content)).toEqual(["a", "b", "c"]);
   });
 
   it("reports no conversation for a document nothing linked", async () => {

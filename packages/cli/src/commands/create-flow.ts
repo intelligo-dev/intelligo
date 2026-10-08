@@ -26,6 +26,7 @@ import {
 } from "./create.js";
 import { recordItems, syncApply, type SyncContext } from "./sync.js";
 import { resolveRegistryDir } from "../registry-bundle.js";
+import { spawnCommand } from "../spawn-command.js";
 import {
   detectPackageManager,
   findWorkspaceRoot,
@@ -118,11 +119,11 @@ function bail(
 }
 
 function run(c: Command, cwd: string): boolean {
-  const result = spawnSync(c.command, c.args, {
+  const spawned = spawnCommand(c.command, c.args);
+  const result = spawnSync(spawned.command, spawned.args, {
     cwd,
     stdio: "inherit",
-    // pnpm, npx and friends are .cmd shims on Windows.
-    shell: process.platform === "win32",
+    shell: spawned.shell,
   });
   return result.status === 0;
 }

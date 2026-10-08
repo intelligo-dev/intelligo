@@ -20,10 +20,14 @@
  * plan grant and a Stripe credit purchase use.
  */
 
-import { and, eq, gt, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@intelligo-dev/core/db";
-import { payments, type Payment } from "@intelligo-dev/core/db/schema";
+import {
+  payments,
+  subscriptions,
+  type Payment,
+} from "@intelligo-dev/core/db/schema";
 import { createLogger } from "@intelligo-dev/core/logger";
 import { money, toMinor, type Money } from "@intelligo-dev/core/money";
 
@@ -94,8 +98,14 @@ export type OpenLocalInvoiceInput = {
  * refuses leaves the row `failed`. Returns the provider's invoice: its
  * id, and the QR code and app deeplinks the buyer pays with.
  *
+ * A plan is not sold this way to a workspace a Stripe subscription
+ * still bills: the subscription's next webhook would put its own plan
+ * back over the one paid for.
+ *
  * @throws {BillingServiceError} `invalid_bundle` for a price that is
- *   not positive; whatever the provider throws when it refuses.
+ *   not positive; `subscription_active` for a plan offered to a
+ *   workspace with a live Stripe subscription; whatever the provider
+ *   throws when it refuses.
  */
 export async function openLocalInvoice(
   input: OpenLocalInvoiceInput
@@ -106,6 +116,26 @@ export async function openLocalInvoice(
       "invalid_bundle",
       `A local invoice needs a positive price; "${input.reference}" is priced at ${amountMinor}.`
     );
+  }
+
+  if (input.grant && "plan" in input.grant) {
+    const [billed] = await db
+      .select({ id: subscriptions.id })
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.workspaceId, input.workspaceId),
+          isNotNull(subscriptions.stripeSubscriptionId),
+          ne(subscriptions.status, "canceled")
+        )
+      )
+      .limit(1);
+    if (billed) {
+      throw new BillingServiceError(
+        "subscription_active",
+        `Workspace ${input.workspaceId} is billed by a Stripe subscription; its plan changes through Stripe.`
+      );
+    }
   }
 
   const mode = currentPaymentMode();

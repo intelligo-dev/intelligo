@@ -43,11 +43,10 @@ import {
   migrateCheckExitCode,
 } from "./commands/migrate-check.js";
 import {
-  MIGRATIONS_TABLE_SQL,
   SCHEMA_PROBE_SQL,
   applyExitCode,
-  applyMigrations,
   formatApplyResult,
+  migrateDatabase,
 } from "./commands/migrate.js";
 import {
   formatSyncReport,
@@ -151,31 +150,8 @@ async function runMigrate(
 
     // Applied here rather than by drizzle's migrator: the pending set is
     // chosen by content hash — what `migrate --check` compares — and
-    // recorded in drizzle's own table, in one transaction, so a failure
-    // part-way leaves neither statements nor records behind.
-    const result = await applyMigrations({
-      migrationsDir,
-      query: async (sql) => (await client.query(sql)).rows,
-      run: async (pending) => {
-        await client.query("BEGIN");
-        try {
-          for (const ddl of MIGRATIONS_TABLE_SQL) await client.query(ddl);
-          for (const migration of pending) {
-            for (const statement of migration.statements) {
-              await client.query(statement);
-            }
-            await client.query(
-              `INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at") VALUES ($1, $2)`,
-              [migration.hash, migration.createdAt]
-            );
-          }
-          await client.query("COMMIT");
-        } catch (error) {
-          await client.query("ROLLBACK");
-          throw error;
-        }
-      },
-    });
+    // recorded in drizzle's own table.
+    const result = await migrateDatabase(client, migrationsDir);
     console.log(formatApplyResult(result));
     return applyExitCode(result);
   } finally {
