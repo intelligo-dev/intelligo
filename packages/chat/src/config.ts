@@ -190,6 +190,11 @@ export interface PreparedTurn {
  * `usage` settles the execution: it resolves once the run is over,
  * with the whole run's tokens. On a client abort the transport settles
  * with whatever `usage` resolves to; reject it and the turn is failed.
+ *
+ * The `prepared` messages a `StreamTurn` receives are what a model is
+ * shown: in stored attachment mode a file part carries a short-lived
+ * signed URL and a document's extracted text follows it as a text part.
+ * The persisted transcript keeps the app URL.
  */
 export interface TurnStream {
   stream: ReadableStream<UIMessageChunk>;

@@ -64,13 +64,41 @@ export function readModel(
   return undefined;
 }
 
+/**
+ * The model and metadata a run settles with. The model admission priced
+ * wins: a runtime reports the provider's own id (unprefixed, often
+ * dated), which the pricing registry has no entry for, and settling
+ * against it would throw and leave the run unsettled. A reported id
+ * that differs is kept in the metadata. With no model admitted, the
+ * reported one is all there is.
+ */
+function settlement(
+  options: RunWithExecutionOptions,
+  result: NativeResult | undefined
+): { model?: string; metadata?: Record<string, unknown> } {
+  const reported = readModel(result);
+  if (options.model === undefined) {
+    return { model: reported, metadata: options.metadata };
+  }
+  return {
+    model: options.model,
+    metadata:
+      reported !== undefined && reported !== options.model
+        ? { ...options.metadata, reportedModel: reported }
+        : options.metadata,
+  };
+}
+
 export type RunWithExecutionOptions = {
   executions: Executions;
   workspaceId: string;
   userId?: string | null;
   /** Product-defined verb, e.g. "support.reply". */
   capability: string;
-  /** Model the run intends to use — sizes the credit hold. */
+  /**
+   * Model the run intends to use — sizes the credit hold, and is the
+   * model the run is settled against, whatever id the result reports.
+   */
   model?: string;
   requestId?: string;
   metadata?: Record<string, unknown>;
@@ -135,8 +163,7 @@ export async function runWithExecution<T extends NativeResult>(
 
   await execution.complete({
     usage: readUsage(result),
-    model: readModel(result) ?? options.model,
-    metadata: options.metadata,
+    ...settlement(options, result),
   });
 
   return result;
@@ -193,8 +220,7 @@ export async function streamWithExecution<T extends NativeResult>(
     settle: (result) =>
       execution.complete({
         usage: readUsage(result ?? stream),
-        model: readModel(result ?? stream) ?? options.model,
-        metadata: options.metadata,
+        ...settlement(options, result ?? stream),
       }),
     abort: (error) =>
       execution.fail({ error: error ?? new Error("Stream aborted") }),
