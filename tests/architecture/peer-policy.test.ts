@@ -27,7 +27,13 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { PACKAGES_DIR, listPublishedWorkspaces, walk } from "./tree";
+import {
+  PACKAGES_DIR,
+  ROOT,
+  importSpecifiers,
+  listPublishedWorkspaces,
+  walk,
+} from "./tree";
 
 /**
  * Packages whose identity must be shared, with why — the note is the
@@ -126,6 +132,18 @@ describe("the framework's one door to Next.js", () => {
     ).toMatch(/from "next\/headers"/);
   });
 
+  it("recognises every way of importing next", () => {
+    for (const source of [
+      'import { cookies } from "next/headers";',
+      'import "next/server";',
+      'const { cookies } = await import("next/headers");',
+      'const next = require("next");',
+    ]) {
+      expect(reachesNext(source), source).toBe(true);
+    }
+    expect(reachesNext('import x from "next-intl";')).toBe(false);
+  });
+
   it("is the only package that imports next/*", () => {
     // Every other package has to be usable from a queue worker, a Hono
     // API, a test, or a product built on something that is not Next.
@@ -140,7 +158,7 @@ describe("the framework's one door to Next.js", () => {
         const rel = path.relative(PACKAGES_DIR, file);
         if (`packages/${rel}`.split(path.sep).join("/").startsWith(ALLOWED))
           continue;
-        if (/from\s+["']next(\/[^"']+)?["']/.test(readFileSync(file, "utf8"))) {
+        if (reachesNext(readFileSync(file, "utf8"))) {
           offenders.push(`packages/${rel}`);
         }
       }
@@ -153,10 +171,135 @@ describe("the framework's one door to Next.js", () => {
   });
 });
 
+/** Any import of next or next/* — static, side-effect, dynamic or require. */
+function reachesNext(source: string): boolean {
+  return importSpecifiers(source).some(
+    (spec) => spec === "next" || spec.startsWith("next/")
+  );
+}
+
 function sourceImportsNext(dir: string): boolean {
   return walk(path.join(PACKAGES_DIR, dir, "src"), (name) =>
     /\.tsx?$/.test(name)
-  ).some((file) =>
-    /from\s+["']next(\/[^"']+)?["']/.test(readFileSync(file, "utf8"))
+  ).some((file) => reachesNext(readFileSync(file, "utf8")));
+}
+
+describe("pnpm.overrides", () => {
+  it("raises a floor within the major already in the tree", () => {
+    // An open `>=` floor lets the next major in on any re-resolve, and
+    // forces it on every dependent that asked for the current one.
+    const overrides = (
+      JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8")) as {
+        pnpm?: { overrides?: Record<string, string> };
+      }
+    ).pnpm?.overrides;
+    expect(overrides).toBeDefined();
+    const open = Object.entries(overrides!)
+      .filter(
+        ([, range]) =>
+          range === "*" ||
+          range === "latest" ||
+          (/>=?/.test(range) && !/</.test(range))
+      )
+      .map(([name, range]) => `${name}: ${range}`);
+    expect(
+      open,
+      `overrides with no upper bound; scope each to its major (^x.y.z, or name@major as for ajv@6):\n  ${open.join("\n  ")}`
+    ).toEqual([]);
+  });
+});
+
+/** A specifier's package: `react/jsx-runtime` → `react`, `@a/b/c` → `@a/b`. */
+function packageOf(spec: string): string {
+  const parts = spec.split("/");
+  return spec.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0]!;
+}
+
+/** Specifiers a module loads at runtime: type-only imports and exports load nothing. */
+function runtimeSpecifiers(source: string): string[] {
+  return importSpecifiers(
+    source.replace(
+      /(?:^|\n)\s*(?:import|export)\s+type\s[^;]*?from\s*["'][^"']+["']/g,
+      ""
+    )
   );
 }
+
+/** The packages a module reaches at load, following its relative imports. */
+function reachedPackages(entry: string): Set<string> {
+  const seen = new Set<string>();
+  const reached = new Set<string>();
+  const queue = [entry];
+  while (queue.length > 0) {
+    const file = queue.pop()!;
+    if (seen.has(file)) continue;
+    seen.add(file);
+    for (const spec of runtimeSpecifiers(readFileSync(file, "utf8"))) {
+      if (!spec.startsWith(".")) {
+        reached.add(packageOf(spec));
+        continue;
+      }
+      const base = path.resolve(path.dirname(file), spec);
+      const next = [
+        base,
+        `${base}.ts`,
+        `${base}.tsx`,
+        path.join(base, "index.ts"),
+        path.join(base, "index.tsx"),
+      ].find((candidate) => {
+        try {
+          return /\.tsx?$/.test(candidate) && readFileSync(candidate) !== null;
+        } catch {
+          return false;
+        }
+      });
+      if (next) queue.push(next);
+    }
+  }
+  return reached;
+}
+
+describe("peers reached through another package", () => {
+  it.each(packages)(
+    "$dir declares the optional peers its @intelligo-dev imports load",
+    ({ dir, manifest }) => {
+      // An optional peer is optional for the subpaths that never load
+      // it. A package that imports such a subpath at load time needs the
+      // peer as surely as if it imported it itself, and must say so, or
+      // a consumer without it fails to start.
+      const byName = new Map(packages.map((p) => [p.manifest.name, p]));
+      const missing = new Set<string>();
+      for (const file of walk(path.join(PACKAGES_DIR, dir, "src"), (name) =>
+        /\.tsx?$/.test(name)
+      )) {
+        if (/\.test\.tsx?$/.test(file)) continue;
+        for (const spec of runtimeSpecifiers(readFileSync(file, "utf8"))) {
+          const owner = byName.get(packageOf(spec));
+          if (!owner || owner.dir === dir) continue;
+          const subpath = `.${spec.slice(packageOf(spec).length)}`;
+          const target = (
+            owner.manifest as Manifest & { exports?: Record<string, unknown> }
+          ).exports?.[subpath === "." ? "." : subpath];
+          if (typeof target !== "string") continue;
+          const reached = reachedPackages(
+            path.join(PACKAGES_DIR, owner.dir, target)
+          );
+          // A required peer is installed with the package that declares
+          // it; an optional one is not.
+          for (const peer of Object.keys(
+            owner.manifest.peerDependenciesMeta ?? {}
+          ).filter(
+            (name) => owner.manifest.peerDependenciesMeta?.[name]?.optional
+          )) {
+            if (
+              reached.has(peer) &&
+              !(peer in (manifest.peerDependencies ?? {}))
+            )
+              missing.add(`${peer} (through ${spec})`);
+          }
+        }
+      }
+      expect([...missing].sort()).toEqual([]);
+    }
+  );
+});

@@ -13,7 +13,33 @@ CHECK=false
 cd "$R"
 
 KEEP="$(mktemp -d)"
-trap 'rm -rf "$KEEP"' EXIT
+KEPT=false
+
+restore_owned() {
+  node -e '
+    const fs = require("fs"), path = require("path");
+    const [app, keep, list] = process.argv.slice(1);
+    for (const file of Object.keys(JSON.parse(fs.readFileSync(list, "utf8")).files)) {
+      fs.mkdirSync(path.dirname(path.join(app, file)), { recursive: true });
+      fs.copyFileSync(path.join(keep, file), path.join(app, file));
+    }
+  ' "$APP" "$KEEP" "$R/scripts/reference-app-owned.json"
+}
+
+# On success the copies go. On a failure after they were taken, they
+# are written back into apps/app and left where they are, so an
+# uncommitted edit to an owned file survives a failed run.
+on_exit() {
+  status=$?
+  if [ "$status" -eq 0 ] || ! $KEPT; then
+    rm -rf "$KEEP"
+  else
+    restore_owned || true
+    echo "! regeneration failed; the owned files are back in apps/app and copied in $KEEP" >&2
+  fi
+  exit "$status"
+}
+trap on_exit EXIT
 
 # Recreating the app makes pnpm resolve its importer again, which can
 # move versions nobody asked to move. The lockfile is put back unless
@@ -31,6 +57,7 @@ node -e '
     fs.copyFileSync(from, path.join(keep, file));
   }
 ' "$APP" "$KEEP" "$R/scripts/reference-app-owned.json"
+KEPT=true
 
 echo "› intelligo create apps/app"
 for i in 1 2 3 4 5; do rm -rf "$APP" 2>/dev/null && break; sleep 1; done
@@ -58,14 +85,7 @@ cd "$R"
 
 echo "› restoring the files the app owns"
 cd "$R"
-node -e '
-  const fs = require("fs"), path = require("path");
-  const [app, keep, list] = process.argv.slice(1);
-  for (const file of Object.keys(JSON.parse(fs.readFileSync(list, "utf8")).files)) {
-    fs.mkdirSync(path.dirname(path.join(app, file)), { recursive: true });
-    fs.copyFileSync(path.join(keep, file), path.join(app, file));
-  }
-' "$APP" "$KEEP" "$R/scripts/reference-app-owned.json"
+restore_owned
 pnpm install --no-frozen-lockfile >/dev/null
 
 LOCK_CHANGED=false

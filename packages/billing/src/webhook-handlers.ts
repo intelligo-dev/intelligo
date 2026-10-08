@@ -12,8 +12,12 @@ import type Stripe from "stripe";
 import { db } from "@intelligo-dev/core/db";
 import { subscriptions, creditPurchases } from "@intelligo-dev/core/db/schema";
 import { money } from "@intelligo-dev/core/money";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, notInArray } from "drizzle-orm";
 import { creditPurchasedBalance } from "./credit-ledger";
+import {
+  REVERSED_PURCHASE_STATUSES,
+  reverseCreditPurchase,
+} from "./credit-reversal";
 import { getStripe } from "./stripe";
 import { getProductPlans, getRegisteredProductSlugs } from "./plan-registry";
 import { planRowId } from "./plan-rows";
@@ -303,6 +307,22 @@ async function findCreditPurchase(session: Stripe.Checkout.Session) {
 
 class LedgerCurrencyMismatch extends Error {}
 
+/** Statuses a purchase is never granted from: granted, refunded, disputed. */
+const FINISHED_PURCHASE_STATUSES: string[] = [
+  "completed",
+  ...REVERSED_PURCHASE_STATUSES,
+];
+
+function isFinished(status: string): boolean {
+  return FINISHED_PURCHASE_STATUSES.includes(status);
+}
+
+/** The id of a Stripe reference that may arrive expanded. */
+function idOf(reference: string | { id: string } | null | undefined) {
+  if (!reference) return null;
+  return typeof reference === "string" ? reference : reference.id;
+}
+
 /**
  * Credit a paid purchase to the workspace, exactly once.
  *
@@ -318,6 +338,7 @@ async function grantCreditPurchase(
   workspaceId: string
 ) {
   const checkoutSessionId = session.id;
+  const paymentIntentId = idOf(session.payment_intent);
   const purchase = await findCreditPurchase(session);
 
   if (!purchase) {
@@ -330,6 +351,13 @@ async function grantCreditPurchase(
 
   if (purchase.status === "completed") {
     log.info("Credit purchase already completed, skipping", { workspaceId });
+    return;
+  }
+  if (isFinished(purchase.status)) {
+    log.info("Credit purchase was refunded or disputed; not granted", {
+      workspaceId,
+      purchaseId: purchase.id,
+    });
     return;
   }
 
@@ -360,11 +388,14 @@ async function grantCreditPurchase(
         .set({
           status: "completed",
           stripeCheckoutSessionId: checkoutSessionId,
+          ...(paymentIntentId
+            ? { stripePaymentIntentId: paymentIntentId }
+            : {}),
         })
         .where(
           and(
             eq(creditPurchases.id, purchase.id),
-            ne(creditPurchases.status, "completed")
+            notInArray(creditPurchases.status, FINISHED_PURCHASE_STATUSES)
           )
         )
         .returning({ id: creditPurchases.id });
@@ -525,11 +556,16 @@ export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
  *
  * Triggered when subscription details change (plan, status, etc.).
  * Updates local subscription record to match Stripe state.
+ *
+ * Stripe does not deliver events in order, and retries a failed one
+ * after later ones have landed, so the payload may describe a state the
+ * subscription has since left. The subscription is read back from
+ * Stripe and its current state written, whichever delivery runs last.
  */
 export async function handleSubscriptionUpdated(
-  subscription: Stripe.Subscription
+  delivered: Stripe.Subscription
 ) {
-  const stripeSubscriptionId = subscription.id;
+  const stripeSubscriptionId = delivered.id;
 
   const localSub = await getSubscriptionByStripeId(stripeSubscriptionId);
   if (!localSub) {
@@ -538,6 +574,9 @@ export async function handleSubscriptionUpdated(
     });
     return;
   }
+
+  const subscription =
+    await getStripe().subscriptions.retrieve(stripeSubscriptionId);
 
   // Status and period follow Stripe even when the plan cannot be
   // resolved; the stored plan is then kept.
@@ -605,4 +644,74 @@ export async function handleSubscriptionDeleted(
   for (const row of ended) invalidateFeatureCache(row.workspaceId);
 
   log.info("Subscription cancelled", { stripeSubscriptionId });
+}
+
+// ---------------------------------------------------------------------------
+// charge.refunded / charge.dispute.created
+// ---------------------------------------------------------------------------
+
+/** The Checkout session that took a payment, asked of Stripe. */
+async function checkoutSessionFor(paymentIntentId: string) {
+  const sessions = await getStripe().checkout.sessions.list({
+    payment_intent: paymentIntentId,
+    limit: 1,
+  });
+  return sessions.data[0]?.id ?? null;
+}
+
+/**
+ * Handle charge.refunded
+ *
+ * A credit purchase refunded in whole or in part takes the matching
+ * share of its credit back out of the workspace's balance. The charge
+ * carries what has been refunded so far, so every partial refund
+ * reverses up to that total and a redelivery reverses nothing more. A
+ * full refund marks the purchase `refunded`.
+ */
+export async function handleChargeRefunded(charge: Stripe.Charge) {
+  const paymentIntentId = idOf(charge.payment_intent);
+  if (!paymentIntentId || charge.amount_refunded <= 0) return;
+
+  const result = await reverseCreditPurchase({
+    paymentIntentId,
+    checkoutSessionId: await checkoutSessionFor(paymentIntentId),
+    covered: charge.amount_refunded,
+    paid: charge.amount,
+    key: `refund:${charge.id}`,
+    status: charge.refunded ? "refunded" : null,
+    reason: "refund",
+  });
+  if (result.outcome === "no_purchase") {
+    log.debug("Refunded charge bought no credit", { chargeId: charge.id });
+  }
+}
+
+/**
+ * Handle charge.dispute.created
+ *
+ * A disputed credit purchase is marked `disputed` and the disputed share
+ * of its credit is taken back out of the workspace's balance at once,
+ * rather than when the dispute is decided.
+ */
+export async function handleChargeDisputeCreated(dispute: Stripe.Dispute) {
+  const charge =
+    typeof dispute.charge === "string"
+      ? await getStripe().charges.retrieve(dispute.charge)
+      : dispute.charge;
+  const paymentIntentId =
+    idOf(dispute.payment_intent) ?? idOf(charge.payment_intent);
+  if (!paymentIntentId) return;
+
+  const result = await reverseCreditPurchase({
+    paymentIntentId,
+    checkoutSessionId: await checkoutSessionFor(paymentIntentId),
+    covered: dispute.amount,
+    paid: charge.amount,
+    key: `dispute:${dispute.id}`,
+    status: "disputed",
+    reason: "dispute",
+  });
+  if (result.outcome === "no_purchase") {
+    log.debug("Disputed charge bought no credit", { disputeId: dispute.id });
+  }
 }

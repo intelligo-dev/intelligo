@@ -125,7 +125,7 @@ d("local payments (integration)", () => {
       workspace_id: WORKSPACE,
       user_id: USER,
       reference: "bundle-5",
-      amount_minor: 1250,
+      amount_minor: "1250",
       currency: "USD",
       status: "pending",
       fulfilled_at: null,
@@ -302,6 +302,55 @@ d("local payments (integration)", () => {
       [WORKSPACE]
     );
     expect(Number(rows[0]!.days)).toBe(7);
+  });
+
+  it("refuses to sell a plan to a workspace a Stripe subscription bills, and still sells it credit", async () => {
+    await client.query(
+      `INSERT INTO subscriptions (id, workspace_id, plan_id, status, stripe_subscription_id)
+       VALUES ($1, $2, $3, 'active', 'sub_live')`,
+      [`sub_${WORKSPACE}`, WORKSPACE, `plan_${PLAN}`]
+    );
+    await expect(
+      local.openLocalInvoice({
+        workspaceId: WORKSPACE,
+        userId: USER,
+        reference: "plan-offer",
+        price: fromMajor(12.5, "USD"),
+        grant: { plan: PLAN, days: 30 },
+      })
+    ).rejects.toMatchObject({ code: "subscription_active" });
+    const { rows } = await client.query(
+      `SELECT 1 FROM payments WHERE reference = 'plan-offer' AND workspace_id = $1`,
+      [WORKSPACE]
+    );
+    expect(rows).toEqual([]);
+
+    await expect(
+      local.openLocalInvoice({
+        workspaceId: WORKSPACE,
+        userId: USER,
+        reference: "credit-offer",
+        price: fromMajor(12.5, "USD"),
+        grant: { credits: credits() },
+      })
+    ).resolves.toMatchObject({ invoiceId: expect.any(String) });
+  });
+
+  it("sells a plan to a workspace whose Stripe subscription was canceled", async () => {
+    await client.query(
+      `INSERT INTO subscriptions (id, workspace_id, plan_id, status, stripe_subscription_id)
+       VALUES ($1, $2, $3, 'canceled', NULL)`,
+      [`sub_${WORKSPACE}`, WORKSPACE, `plan_${PLAN}`]
+    );
+    await expect(
+      local.openLocalInvoice({
+        workspaceId: WORKSPACE,
+        userId: USER,
+        reference: "plan-offer",
+        price: fromMajor(12.5, "USD"),
+        grant: { plan: PLAN, days: 30 },
+      })
+    ).resolves.toMatchObject({ invoiceId: expect.any(String) });
   });
 
   it("reports an unpaid invoice as pending and grants nothing", async () => {

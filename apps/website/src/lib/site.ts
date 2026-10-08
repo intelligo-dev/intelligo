@@ -23,7 +23,11 @@ export const SITE = {
   /** Where every "Get started" lands. */
   start: "/docs/getting-started",
   npm: "https://www.npmjs.com/org/intelligo-dev",
-  /** The hosted registry, which a scaffold's components.json names `@intelligo`. */
+  /**
+   * The hosted registry, which a scaffold's components.json names
+   * `@intelligo`: the items of the release npm serves. Every release's
+   * stay at `/r/<version>/<item>.json`.
+   */
   registryBase: "https://intelligo.dev/r",
   /**
    * What npm serves, read from its dist-tags by `pnpm sync` — not this
@@ -82,7 +86,7 @@ export const FOOTER: {
       { href: "/ui", label: "Intelligo UI" },
       { href: "/blocks", label: "Pages" },
       { href: "/components", label: "Components" },
-      { href: "/r/intelligo.json", label: "Hosted registry" },
+      { href: "/r/registry.json", label: "Hosted registry" },
     ],
   },
   {

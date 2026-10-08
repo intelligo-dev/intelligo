@@ -157,6 +157,28 @@ describe("migrateState", () => {
     expect(migrateState(ahead, true)).toBe("ahead");
   });
 
+  it("reports an adopted database by its chain, not as legacy", async () => {
+    chain(["0000_a", "0001_b"]);
+    writeFileSync(path.join(dir, "0001_b.sql"), "SELECT 2;");
+    writeFileSync(
+      path.join(dir, "legacy-chain.json"),
+      JSON.stringify({ entries: [{ tag: "0000_old", hash: "0ld" }] })
+    );
+
+    const behind = await migrateCheck(dir, async () => [
+      { hash: "0ld" },
+      { hash: hashMigration(SQL) },
+    ]);
+    const current = await migrateCheck(dir, async () => [
+      { hash: "0ld" },
+      { hash: hashMigration(SQL) },
+      { hash: hashMigration("SELECT 2;") },
+    ]);
+
+    expect(migrateState(behind, true)).toBe("pending");
+    expect(migrateState(current, true)).toBe("up_to_date");
+  });
+
   it("recognises a legacy migration by an alternate hash", async () => {
     chain(["0000_a"]);
     writeFileSync(

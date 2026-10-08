@@ -120,6 +120,7 @@ export const attachments = pgTable(
   (table) => [
     index("attachments_workspace_id_idx").on(table.workspaceId),
     index("attachments_conversation_id_idx").on(table.conversationId),
+    index("attachments_user_id_idx").on(table.userId),
     uniqueIndex("attachments_storage_key_idx").on(table.storageKey),
   ]
 );

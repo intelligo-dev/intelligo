@@ -128,9 +128,12 @@ export async function writePlanGrant(
   const now = new Date();
   let endsAt = input.endsAt ?? null;
   if (input.days !== undefined) {
+    // Only a running grant is extended: a canceled Stripe subscription
+    // keeps its plan and period end, which no longer entitle anything.
     const running =
       existing?.planId === plan.id &&
       !stripeBilled &&
+      existing.status !== "canceled" &&
       existing.currentPeriodEnd &&
       existing.currentPeriodEnd > now
         ? existing.currentPeriodEnd

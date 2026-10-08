@@ -62,6 +62,7 @@ const TEXT_MEDIA_TYPE =
 function dataUrlBytes(url: string): number | null {
   if (!url.startsWith("data:")) return null;
   const comma = url.indexOf(",");
+  // Stryker disable next-line EqualityOperator: equivalent — a data URL starts with "data:", so a comma is never at index 0.
   if (comma < 0) return 0;
   const payload = url.length - comma - 1;
   if (!url.slice(0, comma).endsWith(";base64")) return payload;
@@ -77,6 +78,7 @@ function dataUrlBytes(url: string): number | null {
  * decoded size, never under the floor.
  */
 function estimateFileTokens(part: { mediaType?: unknown; url?: unknown }) {
+  // Stryker disable next-line StringLiteral: equivalent — any fallback that is neither an image nor a text type is counted the same.
   const mediaType = typeof part.mediaType === "string" ? part.mediaType : "";
   if (mediaType.startsWith("image/")) return IMAGE_TOKEN_ESTIMATE;
   const bytes = typeof part.url === "string" ? dataUrlBytes(part.url) : null;
@@ -149,6 +151,7 @@ export function applyConversationWindow(
   if (turns[start]?.role !== "user") {
     let question = start - 1;
     while (question >= 0 && turns[question]!.role !== "user") question--;
+    // Stryker disable next-line ConditionalExpression: equivalent — with no user message question is -1, and slicing from -1 keeps the same last turn.
     if (question >= 0) start = question;
   }
 
