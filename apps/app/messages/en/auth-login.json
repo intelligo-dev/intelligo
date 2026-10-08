@@ -6,7 +6,8 @@
   },
   "card": {
     "title": "Welcome back",
-    "description": "Log in to your account"
+    "description": "Log in to your account",
+    "passwordReset": "Your password was updated. Sign in with the new one."
   },
   "loginForm": {
     "emailLabel": "Email",

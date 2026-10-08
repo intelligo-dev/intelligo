@@ -6,12 +6,15 @@
  * breaks a line (IME-safe), dictation appends to the draft.
  *
  * Both affordances — the composer and the starter cards — mint a
- * client-side UUID and navigate to `${chatBasePath}/${id}?query=…`; the
- * chat panel sends that as the first turn. Nothing is written here, so
- * an abandoned prompt leaves no empty conversation behind.
+ * client-side UUID, leave the prompt in `sessionStorage` under
+ * `chat:handoff:<id>` and navigate to `${chatBasePath}/${id}`; the chat
+ * thread sends it as the first turn. The prompt stays out of the URL,
+ * the history and the server's logs; only where storage is unavailable
+ * does it travel as `?query=`. Nothing is written to the server here,
+ * so an abandoned prompt leaves no empty conversation behind.
  *
- * No attachments: the handoff to the chat surface is a URL, which
- * carries text only, so a file picked here would be dropped.
+ * No attachments: the handoff carries text only, so a file picked here
+ * would be dropped.
  */
 
 import { useState } from "react";
@@ -41,7 +44,18 @@ export function PromptBar() {
 
   function start(prompt: string) {
     const id = crypto.randomUUID();
-    router.push(`${chatBasePath}/${id}?query=${encodeURIComponent(prompt)}`);
+    let handedOver = false;
+    try {
+      sessionStorage.setItem(`chat:handoff:${id}`, prompt);
+      handedOver = true;
+    } catch {
+      // Storage is unavailable: the prompt rides in the URL instead.
+    }
+    router.push(
+      handedOver
+        ? `${chatBasePath}/${id}`
+        : `${chatBasePath}/${id}?query=${encodeURIComponent(prompt)}`
+    );
   }
 
   return (

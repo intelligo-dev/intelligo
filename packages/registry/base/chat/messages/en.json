@@ -151,7 +151,9 @@
   },
   "branch": {
     "previous": "Previous version",
-    "next": "Next version"
+    "next": "Next version",
+    "olderNotice": "You're viewing an earlier version. The conversation continues from the latest one.",
+    "showLatest": "Show latest"
   },
   "route": {
     "invalidBody": "Invalid request body.",
@@ -249,6 +251,7 @@
   "share": {
     "title": "Share this conversation",
     "description": "Anyone with the link can read it. Reasoning, tool details and attachments stay private.",
+    "loading": "Loading the share link…",
     "enable": "Create link",
     "disable": "Stop sharing",
     "copyLink": "Copy link",

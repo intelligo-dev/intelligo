@@ -185,7 +185,11 @@ export function DocumentActions({
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? <Spinner /> : t("documentActions.delete")}
+              {isDeleting ? (
+                <Spinner label={t("documentActions.deleting")} />
+              ) : (
+                t("documentActions.delete")
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

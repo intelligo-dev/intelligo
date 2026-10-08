@@ -55,7 +55,11 @@ beforeEach(() => {
   // Mid-month, so the current-period window is a known 12-day span.
   vi.setSystemTime(new Date("2026-03-12T10:00:00Z"));
 
-  mocks.requireWorkspace.mockResolvedValue({ workspace: { id: "ws_1" } });
+  mocks.requireWorkspace.mockResolvedValue({
+    workspace: { id: "ws_1" },
+    user: { id: "user_1" },
+    membership: { role: "owner" },
+  });
   mocks.summarizeExecutions.mockResolvedValue({
     // `charged` is one entry per currency; a workspace that spent
     // nothing has none.
@@ -200,4 +204,59 @@ describe("getUsageOverview in the reader's time zone", () => {
       "2026-03-12"
     );
   });
+});
+
+/**
+ * What the page shows follows the caller's role: an owner or admin reads
+ * the workspace, anyone else only the runs they started and none of the
+ * workspace's billing state.
+ */
+describe("getUsageOverview by role", () => {
+  async function overviewAs(role: string) {
+    mocks.requireWorkspace.mockResolvedValue({
+      workspace: { id: "ws_1" },
+      user: { id: "user_1" },
+      membership: { role },
+    });
+    const result = await getUsageOverview();
+    if (!result.success) throw new Error(result.error);
+    return result.data;
+  }
+
+  it("shows a member only their own runs, with no quota or trial credit", async () => {
+    const data = await overviewAs("member");
+
+    expect(data.scope).toBe("own");
+    expect(data.quota).toBeNull();
+    expect(data.trial).toBeNull();
+    expect(mocks.getTrialStatus).not.toHaveBeenCalled();
+    expect(mocks.getQuotaThresholds).not.toHaveBeenCalled();
+    expect(mocks.listExecutions).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: "ws_1", userId: "user_1" })
+    );
+    expect(mocks.summarizeExecutions).toHaveBeenCalledWith(
+      "ws_1",
+      expect.anything(),
+      { userId: "user_1" }
+    );
+    expect(mocks.summarizeExecutionsByDay).toHaveBeenCalledWith(
+      "ws_1",
+      expect.anything(),
+      expect.objectContaining({ userId: "user_1" })
+    );
+  });
+
+  it.each(["owner", "admin"])(
+    "shows an %s the workspace's usage, quota and trial credit",
+    async (role) => {
+      const data = await overviewAs(role);
+
+      expect(data.scope).toBe("workspace");
+      expect(data.quota).not.toBeNull();
+      expect(data.trial).not.toBeNull();
+      expect(mocks.listExecutions).toHaveBeenCalledWith(
+        expect.not.objectContaining({ userId: expect.anything() })
+      );
+    }
+  );
 });

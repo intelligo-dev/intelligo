@@ -4,12 +4,14 @@
   "timeout": "That took too long to respond. Try again in a moment.",
   "server": "The server had a problem handling that. We've been notified — try again shortly.",
   "conversation": "We couldn't load this conversation. Try again, or start a new one.",
+  "payment": "We couldn't confirm your payment here. If you were charged, it will still be applied — check your billing settings.",
   "retry": "Try again",
   "goToDashboard": "Go to dashboard",
   "goHome": "Go home",
   "goToChat": "Back to chat",
   "goToPricing": "Back to plans",
   "goToLogin": "Back to sign in",
+  "goToBilling": "Go to billing settings",
   "notFound": {
     "title": "Page not found",
     "description": "The page you're looking for doesn't exist or has moved."

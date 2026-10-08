@@ -4,9 +4,10 @@
  * Not zod: a schema library in a package's public surface would have
  * to be a peer (its `instanceof` fails across copies), and the body
  * has four fields. The shape is the AI SDK's `DefaultChatTransport`
- * one — `id`, `messages`, `trigger`, `messageId` — plus whatever the
- * application's transport added, which is handed back untouched as
- * `extra` for `resolveAgent` to read (an `agentId`, a model choice).
+ * one — `id`, `messages`, `trigger`, `messageId` — plus `replaces`,
+ * the stored message an edit replaces, plus whatever the application's
+ * transport added, which is handed back untouched as `extra` for
+ * `resolveAgent` to read (an `agentId`, a model choice).
  */
 
 import type { UIMessage } from "ai";
@@ -74,6 +75,11 @@ export type ChatBody = {
   messages: UIMessage[];
   trigger: "submit-message" | "regenerate-message" | undefined;
   messageId: string | undefined;
+  /**
+   * The stored message an edit replaces: it and everything after it
+   * leave the transcript before the edited message is stored.
+   */
+  replaces: string | undefined;
   /** Fields the application's transport added beyond the SDK's own. */
   extra: Record<string, unknown>;
 };
@@ -95,7 +101,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * send one could rewrite the agent's instructions.
  */
 const ROLES = new Set(["user", "assistant"]);
-const SDK_FIELDS = new Set(["id", "messages", "trigger", "messageId"]);
+const SDK_FIELDS = new Set([
+  "id",
+  "messages",
+  "trigger",
+  "messageId",
+  "replaces",
+]);
 const ID_PLACEHOLDER = "__ATTACHMENT_ID__";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -273,6 +285,12 @@ export function parseChatBody(
   if (json.messageId !== undefined && typeof json.messageId !== "string") {
     return invalid;
   }
+  if (
+    json.replaces !== undefined &&
+    (typeof json.replaces !== "string" || !json.replaces)
+  ) {
+    return invalid;
+  }
 
   const messages = (json.messages as UIMessage[]).map(withoutProviderFields);
   // Every message, not only the new one: the history is the client's
@@ -323,6 +341,7 @@ export function parseChatBody(
       messages,
       trigger: json.trigger as ChatBody["trigger"],
       messageId: json.messageId as string | undefined,
+      replaces: json.replaces as string | undefined,
       extra,
     },
   };

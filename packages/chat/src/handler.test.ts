@@ -360,6 +360,69 @@ describe("POST refusals", () => {
     await response.text();
   });
 
+  it("answers 401 without reading the body of a request with no session", async () => {
+    mocks.requireWorkspace.mockRejectedValue(new Error("No active workspace"));
+    const pulled = vi.fn();
+    // No high-water mark: nothing is pulled until a reader asks.
+    const body = new ReadableStream(
+      {
+        pull(controller) {
+          pulled();
+          controller.enqueue(new TextEncoder().encode("{"));
+        },
+      },
+      { highWaterMark: 0 }
+    );
+    const { POST } = createChatHandler(baseConfig(fakeExecutions().executions));
+    const response = await POST(
+      new Request("http://app.test/api/chat", {
+        method: "POST",
+        body,
+        duplex: "half",
+      } as RequestInit)
+    );
+    expect(response.status).toBe(401);
+    expect(pulled).not.toHaveBeenCalled();
+  });
+
+  it("refuses a body over the limit, declared or streamed", async () => {
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(
+      baseConfig(fake.executions, { maxBodyBytes: 512 })
+    );
+    const declared = await POST(
+      post(
+        { id: CONVERSATION_ID, messages: [userMessage("hi")] },
+        {
+          headers: {
+            "content-type": "application/json",
+            "content-length": "9999999",
+          },
+        }
+      )
+    );
+    expect(declared.status).toBe(400);
+    expect((await declared.json()).code).toBe("BAD_REQUEST");
+
+    const streamed = await POST(turn("x".repeat(600)));
+    expect(streamed.status).toBe(400);
+    expect(fake.begin).not.toHaveBeenCalled();
+
+    const fits = await POST(turn("hi"));
+    expect(fits.status).toBe(200);
+    await fits.text();
+  });
+
+  it("leaves no conversation behind when the first turn is refused", async () => {
+    const refused = fakeExecutions({
+      allowed: false,
+      code: "insufficient_credits",
+    });
+    const { POST } = createChatHandler(baseConfig(refused.executions));
+    expect((await POST(turn("first words"))).status).toBe(402);
+    expect(store.rows.has(CONVERSATION_ID)).toBe(false);
+  });
+
   it("answers 402 with the entitlement code when admission refuses", async () => {
     const refused = fakeExecutions({
       allowed: false,
@@ -782,7 +845,32 @@ describe("POST streaming", () => {
     await response.text();
     expect(conversations.deleteTrailingMessages).toHaveBeenCalledWith(
       { workspaceId: "ws-1", userId: "u-1" },
-      { id: "m-u" }
+      { id: "m-u", conversationId: CONVERSATION_ID }
+    );
+  });
+
+  it("drops the replaced message and what follows when an edit names it", async () => {
+    const conversations = await import("@intelligo-dev/core/conversations");
+    store.rows.set(CONVERSATION_ID, {
+      id: CONVERSATION_ID,
+      workspaceId: "ws-1",
+      userId: "u-1",
+      agentId: "assistant",
+      modelId: MODEL_ID,
+      title: "t",
+    });
+    const { POST } = createChatHandler(baseConfig(fakeExecutions().executions));
+    const response = await POST(
+      post({
+        id: CONVERSATION_ID,
+        messages: [userMessage("edited first message", "m-u2")],
+        replaces: "m-u1",
+      })
+    );
+    await response.text();
+    expect(conversations.deleteTrailingMessages).toHaveBeenCalledWith(
+      { workspaceId: "ws-1", userId: "u-1" },
+      { id: "m-u1", inclusive: true, conversationId: CONVERSATION_ID }
     );
   });
 
@@ -1521,6 +1609,17 @@ describe("DELETE", () => {
       baseConfig(fakeExecutions().executions)
     );
     expect((await DELETE(del(CONVERSATION_ID))).status).toBe(401);
+    // Before the body is looked at: no id is a 401 too, not a 400.
+    expect(
+      (
+        await DELETE(
+          new Request("http://app.test/api/chat", {
+            method: "DELETE",
+            body: "x".repeat(100_000),
+          })
+        )
+      ).status
+    ).toBe(401);
   });
 });
 
@@ -2018,6 +2117,48 @@ describe("stored attachments", () => {
         { ids: ["att-1"], conversationId: CONVERSATION_ID }
       )
     );
+  });
+
+  it("ties an upload to the conversation when the transcript is kept elsewhere", async () => {
+    attachmentRows.rows = [
+      {
+        id: "att-1",
+        workspaceId: "ws-1",
+        storageKey: "ws/ws-1/att/att-1",
+        filename: "photo.png",
+        mediaType: "image/png",
+        extractedText: null,
+      },
+    ];
+    const { POST } = createChatHandler(
+      baseConfig(fakeExecutions().executions, {
+        attachments: policy,
+        persist: false,
+      })
+    );
+    const message: UIMessage = {
+      id: "m-user-1",
+      role: "user",
+      parts: [
+        { type: "text", text: "Look" },
+        {
+          type: "file",
+          mediaType: "image/png",
+          url: "/api/chat/attachments/att-1",
+        },
+      ],
+    };
+    await (
+      await POST(post({ id: CONVERSATION_ID, messages: [message] }))
+    ).text();
+
+    await vi.waitFor(() =>
+      expect(attachmentRows.attached).toHaveBeenCalledWith(
+        expect.objectContaining({ workspaceId: "ws-1" }),
+        { ids: ["att-1"], conversationId: CONVERSATION_ID }
+      )
+    );
+    expect(store.messages).toEqual([]);
   });
 
   it("hands a bound runtime the signed file and its extracted text", async () => {

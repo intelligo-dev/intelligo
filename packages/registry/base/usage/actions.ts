@@ -5,6 +5,10 @@
  * charge aggregation) and `@intelligo-dev/billing` (quota, trial, plan).
  * They authenticate the caller and reshape the result for the page.
  *
+ * What a caller sees follows their role: an owner or admin reads the
+ * workspace's usage, spend, quota and trial credit; anyone else reads
+ * only the runs they started, with no workspace billing state.
+ *
  * Error fallbacks are translated and always generic — a thrown
  * `Error#message` can carry internals (SQL, hostnames).
  */
@@ -81,18 +85,44 @@ export type UsageDailyPoint = {
   requestCount: number;
 };
 
+/** Whose usage the page shows: the workspace's, or the caller's own. */
+export type UsageScope = "workspace" | "own";
+
 export type UsageOverview = {
+  scope: UsageScope;
   plan: UsagePlan;
   billingMode: "subscription" | "credit";
   currentPeriod: UsagePeriodSummary;
-  quota: UsageQuotaState;
-  trial: UsageTrialState;
+  /** Null when the caller reads only their own usage. */
+  quota: UsageQuotaState | null;
+  /** Null when the caller reads only their own usage. */
+  trial: UsageTrialState | null;
   /** One point per day in the current period, gaps filled with zero. */
   daily: UsageDailyPoint[];
   records: UsageRecord[];
 };
 
 export type ActionResult<T> = BaseActionResult<T>;
+
+/** The roles that read the workspace's usage and billing state. */
+const WORKSPACE_USAGE_ROLES: ReadonlySet<string> = new Set(["owner", "admin"]);
+
+/** The caller's workspace and the filter their role puts on its usage. */
+async function usageReader(): Promise<{
+  workspaceId: string;
+  scope: UsageScope;
+  filter: { userId?: string };
+}> {
+  const { workspace, user, membership } = await requireWorkspace();
+  if (WORKSPACE_USAGE_ROLES.has(membership.role)) {
+    return { workspaceId: workspace.id, scope: "workspace", filter: {} };
+  }
+  return {
+    workspaceId: workspace.id,
+    scope: "own",
+    filter: { userId: user.id },
+  };
+}
 
 /**
  * The reader's own time zone, from the cookie the app shell writes.
@@ -200,11 +230,13 @@ function periodWindow(
 async function summarizePeriod(
   workspaceId: string,
   period: UsagePeriod,
-  timeZone: string
+  timeZone: string,
+  filter: { userId?: string }
 ): Promise<UsagePeriodSummary> {
   const summary = await summarizeExecutions(
     workspaceId,
-    periodWindow(period, timeZone)
+    periodWindow(period, timeZone),
+    filter
   );
   return {
     tokensUsed: summary.totals.totalTokens,
@@ -258,19 +290,20 @@ export async function getUsageOverview(): Promise<ActionResult<UsageOverview>> {
   const t = await getTranslations("usage");
 
   try {
-    const { workspace } = await requireWorkspace();
+    const { workspaceId, scope, filter } = await usageReader();
+    const ownOnly = scope === "own";
 
     const timeZone = await readerTimeZone();
     const window = periodWindow("current", timeZone);
 
     const [currentPeriod, quota, trial, billing, recent, daily] =
       await Promise.all([
-        summarizePeriod(workspace.id, "current", timeZone),
-        getQuotaThresholds(workspace.id),
-        getTrialStatus(workspace.id),
-        getWorkspaceBilling(workspace.id),
-        listExecutions({ workspaceId: workspace.id, limit: 25 }),
-        summarizeExecutionsByDay(workspace.id, window, { timeZone }),
+        summarizePeriod(workspaceId, "current", timeZone, filter),
+        ownOnly ? null : getQuotaThresholds(workspaceId),
+        ownOnly ? null : getTrialStatus(workspaceId),
+        getWorkspaceBilling(workspaceId),
+        listExecutions({ workspaceId, ...filter, limit: 25 }),
+        summarizeExecutionsByDay(workspaceId, window, { timeZone, ...filter }),
       ]);
 
     // The plan's name in the reader's language, when the deployment's
@@ -281,6 +314,7 @@ export async function getUsageOverview(): Promise<ActionResult<UsageOverview>> {
     return {
       success: true,
       data: {
+        scope,
         plan: {
           name: planName(
             tPlans,
@@ -292,7 +326,7 @@ export async function getUsageOverview(): Promise<ActionResult<UsageOverview>> {
         billingMode: billing.billingMode,
         currentPeriod,
         quota,
-        trial: {
+        trial: trial && {
           hasTrialCredits: trial.hasTrialCredits,
           status: trial.status,
           creditsRemaining: trial.creditsRemaining,
@@ -340,11 +374,12 @@ export async function getUsagePeriodSummary(
   const t = await getTranslations("usage");
 
   try {
-    const { workspace } = await requireWorkspace();
+    const { workspaceId, filter } = await usageReader();
     const data = await summarizePeriod(
-      workspace.id,
+      workspaceId,
       period,
-      await readerTimeZone()
+      await readerTimeZone(),
+      filter
     );
     return { success: true, data };
   } catch {

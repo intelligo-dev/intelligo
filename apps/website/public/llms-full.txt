@@ -581,9 +581,9 @@ pnpm exec shadcn add @intelligo/chat-share
 | --- | --- | --- | --- |
 | [route-error](/blocks/route-error) | — | `i18n/navigation` | — |
 | [team-settings](/blocks/team-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
-| [pricing](/blocks/pricing) | — | `i18n/navigation` | — |
+| [pricing](/blocks/pricing) | [route-error](/blocks/route-error) | — | — |
 | [usage](/blocks/usage) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
-| [invitation-accept](/blocks/invitation-accept) | [team-settings](/blocks/team-settings) | `i18n/navigation` | — |
+| [invitation-accept](/blocks/invitation-accept) | [route-error](/blocks/route-error), [team-settings](/blocks/team-settings) | `i18n/navigation` | — |
 | [app-shell](/blocks/app-shell) | — | `i18n/navigation`, `lib/utils` | — |
 | [settings-shell](/blocks/settings-shell) | — | `i18n/navigation` | — |
 | [workspace-settings](/blocks/workspace-settings) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
@@ -594,14 +594,14 @@ pnpm exec shadcn add @intelligo/chat-share
 | [language-switcher](/blocks/language-switcher) | — | `i18n/navigation`, `i18n/routing` | — |
 | [trial-banner](/blocks/trial-banner) | — | `i18n/navigation` | — |
 | [notifications](/blocks/notifications) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
-| [checkout](/blocks/checkout) | — | `i18n/navigation` | — |
+| [checkout](/blocks/checkout) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [billing-settings](/blocks/billing-settings) | [pricing](/blocks/pricing), [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [feature-gating](/blocks/feature-gating) | [pricing](/blocks/pricing) | `i18n/navigation`, `lib/utils` | — |
 | [payment-poll](/blocks/payment-poll) | [pricing](/blocks/pricing) | `i18n/navigation`, `lib/intelligo` | — |
 | [profile-settings](/blocks/profile-settings) | [route-error](/blocks/route-error) | `i18n/navigation`, `i18n/routing` | — |
 | [onboarding](/blocks/onboarding) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [dashboard](/blocks/dashboard) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
-| [artifacts](/blocks/artifacts) | — | `i18n/navigation` | — |
+| [artifacts](/blocks/artifacts) | [route-error](/blocks/route-error) | `i18n/navigation` | — |
 | [privacy-settings](/blocks/privacy-settings) | [route-error](/blocks/route-error) | — | — |
 | [chat](/blocks/chat) | [route-error](/blocks/route-error) | `hooks/use-mobile`, `i18n/navigation`, `i18n/routing`, `lib/intelligo`, `lib/utils` | — |
 | [chat-panel](/blocks/chat-panel) | [chat](/blocks/chat) | `lib/utils` | — |
@@ -1363,7 +1363,13 @@ streamTurn: async (turn, prepared, { abortSignal }) => {
     version: "v7",
     params: {
       messages: prepared.messages,
-      memory: { thread: turn.conversationId, resource: turn.userId },
+      // Scoped to the workspace and the user, like every stored
+      // row: a resource of the user alone shares working memory
+      // and recall across every workspace they belong to.
+      memory: {
+        thread: turn.conversationId,
+        resource: `${turn.workspaceId}:${turn.userId}`,
+      },
       abortSignal,
     },
   });
@@ -1636,8 +1642,7 @@ if (storage) setStorageAdapter(storage);
 `STORAGE_ENDPOINT` (R2's `https://<account>.r2.cloudflarestorage.com`, a MinIO
 URL; unset means AWS). A custom endpoint is addressed path-style; pass
 `createS3Storage({ …, pathStyle })` to choose. Uploads are buffered to be
-hashed. A request the bucket does not answer within `timeoutMs` (default 30
-seconds) is abandoned and the call throws.
+hashed.
 
 ## Environment
 
@@ -2204,7 +2209,8 @@ route to get:
 | `models`                      | The models a request may pick; anything else is `FEATURE_GATED` (`model_not_allowed`)                                                                                                                                               |
 | `prepareMessages(turn, msgs)` | What the model is shown — windowing, summaries, injected context                                                                                                                                                                    |
 | `agent.generation`            | How the model samples — temperature, a token ceiling, a tool choice, a seed: an allowlist of the `streamText` options that do not touch settlement. `maxOutputTokens` defaults to the registered model's, the figure admission held |
-| `attachments`                 | Which file parts are accepted; `mode: "stored"` uploads them through the storage port and signs URLs for the model only. The upload route applies its own `rateLimit`, the `featureKey` gate, `maxUnclaimedBytes` and `admitUpload` |
+| `attachments`                 | Which file parts are accepted; `mode: "stored"` uploads them through the storage port and signs URLs for the model only                                                                                                             |
+| `maxBodyBytes`                | The largest request body read, after the caller is authenticated; 8 MiB plus four inline files at the policy's size by default                                                                                                      |
 | `reasoning`, `sources`        | Whether reasoning and source parts stream to the client                                                                                                                                                                             |
 | `messageMetadata`             | `{ modelId, usage, finishedAt }` on the reply (default on)                                                                                                                                                                          |
 | `cors`                        | Origins an embedded widget may call from                                                                                                                                                                                            |
@@ -2297,7 +2303,9 @@ modelIds })` reads it once per model a picker offers.
   `sendWithoutEarlierFiles`: a `prepareSendMessagesRequest` for
   `DefaultChatTransport` that sends earlier messages' inline files without
   their bytes, which the handler restores from the stored transcript, so a
-  conversation with an image in it does not re-send the image every turn.
+  conversation with an image in it does not re-send the image every turn. A
+  message no reply answered — a turn refused before it ran — keeps its bytes,
+  since the server never stored it.
   Pulls in no server code.
 - `@intelligo-dev/chat/testing` — `createStubLanguageModel`, a deterministic
   model that streams with no API key.
@@ -2332,19 +2340,11 @@ composition root:
 
 ```ts
 // lib/intelligo.ts
-import {
-  setBackgroundTaskRunner,
-  setRequestContextSource,
-} from "@intelligo-dev/core/request-context";
-import { nextBackgroundTasks, nextRequestContext } from "@intelligo-dev/next";
+import { setRequestContextSource } from "@intelligo-dev/core/request-context";
+import { nextRequestContext } from "@intelligo-dev/next";
 
 setRequestContextSource(nextRequestContext);
-setBackgroundTaskRunner(nextBackgroundTasks);
 ```
-
-`nextBackgroundTasks` hands the work the framework starts without awaiting it
-— auth emails, a new workspace's bootstrap, notification emails — to Next's
-`after()`, so a serverless host keeps the function alive until it finishes.
 
 Mount Better-Auth's HTTP handlers:
 

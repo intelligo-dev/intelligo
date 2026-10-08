@@ -41,7 +41,7 @@ export function PaywallBlur({
 
   return (
     <div className="relative">
-      <div aria-hidden className="pointer-events-none select-none blur-sm">
+      <div inert className="pointer-events-none select-none blur-sm">
         {children}
       </div>
 

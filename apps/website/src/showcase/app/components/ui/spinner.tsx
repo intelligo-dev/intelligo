@@ -1,18 +1,30 @@
 /*
  * The spinner: a faint ring with a bright arc running round it, in the
  * current colour.
+ *
+ * Decorative unless named: a spinner beside text that already says what is
+ * happening stays hidden from assistive technology, and one that stands in
+ * for that text takes a translated `label` and is announced as a status.
  */
 
 import * as React from "react";
 
 import { cn } from "@showcase/lib/utils";
 
-function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
+function Spinner({
+  className,
+  label,
+  ...props
+}: React.ComponentProps<"svg"> & {
+  /** What is loading, in the reader's language; omit when decorative. */
+  label?: string;
+}) {
+  const name = label ?? props["aria-label"];
   return (
     <svg
       data-slot="spinner"
-      role="status"
-      aria-label="Loading"
+      role={name ? "status" : undefined}
+      aria-hidden={name ? undefined : true}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -20,6 +32,7 @@ function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
       strokeLinecap="round"
       className={cn("size-4 animate-spin", className)}
       {...props}
+      aria-label={name}
     >
       <circle cx="12" cy="12" r="9" className="opacity-20" />
       <path d="M21 12a9 9 0 0 0-9-9" />

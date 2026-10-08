@@ -83,7 +83,7 @@ export function ShareDialog({ conversationId }: ShareDialogProps) {
           <DialogDescription>{t("share.description")}</DialogDescription>
         </DialogHeader>
         {shared === null ? (
-          <Spinner />
+          <Spinner label={t("share.loading")} />
         ) : shared ? (
           <div className="flex items-center gap-2">
             <Input readOnly value={url} aria-label={t("share.copyLink")} />

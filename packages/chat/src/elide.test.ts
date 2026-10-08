@@ -27,6 +27,10 @@ function message(id: string, ...urls: string[]): UIMessage {
   };
 }
 
+function reply(id: string, ...urls: string[]): UIMessage {
+  return { ...message(id, ...urls), role: "assistant" };
+}
+
 const urls = (m: UIMessage) =>
   m.parts.flatMap((part) =>
     part.type === "file" ? [(part as { url: string }).url] : []
@@ -36,20 +40,40 @@ describe("elideEarlierFiles", () => {
   it("replaces earlier messages' inline bytes and leaves the rest", () => {
     const out = elideEarlierFiles([
       message("a", DATA, STORED),
+      reply("r1", DATA),
       message("b"),
+      reply("r2"),
       message("c", DATA),
     ]);
     expect(urls(out[0]!)).toEqual([ELIDED_FILE_URL, STORED]);
-    expect(out[1]).toEqual(message("b"));
-    expect(urls(out[2]!)).toEqual([DATA]);
+    expect(urls(out[1]!)).toEqual([ELIDED_FILE_URL]);
+    expect(out[2]).toEqual(message("b"));
+    expect(urls(out[4]!)).toEqual([DATA]);
     expect(hasElidedFile(out[0]!)).toBe(true);
-    expect(hasElidedFile(out[2]!)).toBe(false);
+    expect(hasElidedFile(out[4]!)).toBe(false);
+  });
+
+  it("keeps the bytes of a message no reply answered", () => {
+    // A turn refused before it ran leaves its message in the client's
+    // transcript and nowhere else: there is no stored copy to restore.
+    const out = elideEarlierFiles([message("refused", DATA), message("well?")]);
+    expect(urls(out[0]!)).toEqual([DATA]);
+    expect(hasElidedFile(out[0]!)).toBe(false);
+
+    const later = elideEarlierFiles([
+      message("refused", DATA),
+      message("again", DATA),
+      reply("r1"),
+      message("next"),
+    ]);
+    expect(urls(later[0]!)).toEqual([DATA]);
+    expect(urls(later[1]!)).toEqual([ELIDED_FILE_URL]);
   });
 
   it("builds the request the default transport would, elided", () => {
     const request = sendWithoutEarlierFiles({
       id: "conv",
-      messages: [message("a", DATA), message("b")],
+      messages: [message("a", DATA), reply("r1"), message("b")],
       body: { agentId: "assistant" },
       trigger: "submit-message",
       messageId: undefined,
@@ -65,6 +89,7 @@ describe("elideEarlierFiles", () => {
             { type: "file", mediaType: "image/png", url: ELIDED_FILE_URL },
           ],
         },
+        reply("r1"),
         message("b"),
       ],
       trigger: "submit-message",

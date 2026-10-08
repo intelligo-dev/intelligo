@@ -27,6 +27,14 @@ describe("parseChatBody", () => {
     expect(parsed.body.trigger).toBe("submit-message");
   });
 
+  it("reads the message an edit replaces apart from the extras", () => {
+    const parsed = parseChatBody(body({ replaces: "m-old" }), opts);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.body.replaces).toBe("m-old");
+    expect(parsed.body.extra).toEqual({});
+  });
+
   it("rejects what is not a turn", () => {
     for (const bad of [
       null,
@@ -36,6 +44,8 @@ describe("parseChatBody", () => {
       body({ messages: [{ id: "m", role: "tool", parts: [] }] }),
       body({ messages: [{ id: "m", role: "user", parts: ["text"] }] }),
       body({ trigger: "something-else" }),
+      body({ replaces: 42 }),
+      body({ replaces: "" }),
     ]) {
       const parsed = parseChatBody(bad, opts);
       expect(parsed.ok).toBe(false);

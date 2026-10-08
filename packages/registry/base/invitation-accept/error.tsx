@@ -1,43 +1,27 @@
 "use client";
 
-import { useEffect } from "react";
-import { useTranslations } from "next-intl";
+/**
+ * Renders the shared `RouteError` from the `route-error` item — install
+ * it alongside this one.
+ */
 
-import { Link } from "@/i18n/navigation";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { RouteError } from "@/components/shared/route-error";
 
-export default function AcceptInvitationError({
+export default function SegmentError({
   error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const t = useTranslations("invitation-accept");
-
-  useEffect(() => {
-    console.error("[accept-invitation] error boundary caught:", error);
-  }, [error]);
-
   return (
-    <div className="flex min-h-96 items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-4">
-        <Alert variant="destructive">
-          <AlertDescription>{t("errorBoundary.message")}</AlertDescription>
-        </Alert>
-
-        <div className="flex justify-center gap-3">
-          <Button onClick={reset}>{t("errorBoundary.retry")}</Button>
-          <Button
-            variant="outline"
-            render={<Link href="/" />}
-            nativeButton={false}
-          >
-            {t("errorBoundary.goHome")}
-          </Button>
-        </div>
-      </div>
-    </div>
+    <RouteError
+      error={error}
+      reset={reset}
+      scope="accept-invitation"
+      homeHref="/"
+      homeKey="goHome"
+      fullScreen
+    />
   );
 }
