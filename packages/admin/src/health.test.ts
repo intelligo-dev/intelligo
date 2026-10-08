@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  assertPlatformAdmin: vi.fn(),
   execute: vi.fn(),
   counts: [] as number[],
 }));
@@ -50,6 +51,7 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 vi.mock("server-only", () => ({}));
+vi.mock("./gate", () => ({ assertPlatformAdmin: mocks.assertPlatformAdmin }));
 
 import {
   clearIntegrationProbes,
@@ -84,12 +86,23 @@ function find(
 beforeEach(() => {
   vi.clearAllMocks();
   clearIntegrationProbes();
+  mocks.assertPlatformAdmin.mockResolvedValue(undefined);
   mocks.execute.mockResolvedValue(undefined);
   vi.unstubAllEnvs();
   queueCounts();
 });
 
 describe("getIntegrationHealth", () => {
+  it("refuses a caller who is not a platform admin, before any check runs", async () => {
+    mocks.assertPlatformAdmin.mockRejectedValue(new Error("forbidden"));
+    const probe = vi.fn();
+    registerIntegrationProbe({ key: "stripe", label: "Stripe", check: probe });
+
+    await expect(getIntegrationHealth()).rejects.toThrow("forbidden");
+    expect(mocks.execute).not.toHaveBeenCalled();
+    expect(probe).not.toHaveBeenCalled();
+  });
+
   it("reports the built-in integrations", async () => {
     const rows = await getIntegrationHealth();
 

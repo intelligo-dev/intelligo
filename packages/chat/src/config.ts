@@ -190,6 +190,11 @@ export interface PreparedTurn {
  * `usage` settles the execution: it resolves once the run is over,
  * with the whole run's tokens. On a client abort the transport settles
  * with whatever `usage` resolves to; reject it and the turn is failed.
+ *
+ * The `prepared` messages a `StreamTurn` receives are what a model is
+ * shown: in stored attachment mode a file part carries a short-lived
+ * signed URL and a document's extracted text follows it as a text part.
+ * The persisted transcript keeps the app URL.
  */
 export interface TurnStream {
   stream: ReadableStream<UIMessageChunk>;
@@ -317,6 +322,12 @@ export interface ChatServerConfig {
   capability?: string;
   /** Longest user message accepted, in characters. Default 8000. */
   maxMessageLength?: number;
+  /**
+   * Largest request body read, in bytes; a larger one is refused before
+   * it is parsed. Default 8 MiB for the transcript, plus room for four
+   * files at the policy's `maxBytes` when attachments travel inline.
+   */
+  maxBodyBytes?: number;
   /** Model steps one turn may take (a tool call and the reply using it are two). Default 5. */
   maxSteps?: number;
 

@@ -49,14 +49,20 @@ export function abortedUsage(
 ): TokenUsage {
   const done = sumStepUsage(steps);
   if (!inFlight) return done;
+  return sumUsage(done, inFlightStepUsage(steps, inFlight));
+}
+
+/** The estimate `abortedUsage` adds for the step in flight. */
+function inFlightStepUsage(
+  steps: ReadonlyArray<{ usage?: TokenUsage }>,
+  inFlight: { promptTokens: number; streamedTokens: number }
+): TokenUsage {
   const previous = steps[steps.length - 1]?.usage;
   const inputTokens = previous
     ? (previous.inputTokens ?? 0) + (previous.outputTokens ?? 0)
     : inFlight.promptTokens;
-  return sumUsage(done, {
-    inputTokens,
-    outputTokens: inFlight.streamedTokens,
-  });
+  const outputTokens = inFlight.streamedTokens;
+  return { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
 }
 
 /**
@@ -66,10 +72,16 @@ export function abortedUsage(
  * steps it saw finish, plus the step in flight only if the provider had
  * begun to answer it: a call refused outright was not billed.
  * `promptTokens` estimates what the first step reads.
+ *
+ * A step that finishes without usage — the provider failed partway
+ * through it, and the SDK records it with none — is estimated like the
+ * step in flight, once the provider had begun to answer. `unreported()`
+ * is the sum of those estimates, which a run's reported total lacks.
  */
 export function inFlightTracker(promptTokens: number) {
   let streamed: string | null = null;
   const finished: { usage?: TokenUsage }[] = [];
+  let unreported: TokenUsage = {};
   const aborted = (steps: ReadonlyArray<{ usage?: TokenUsage }>) =>
     abortedUsage(
       steps,
@@ -90,11 +102,23 @@ export function inFlightTracker(promptTokens: number) {
       }
     },
     onStepFinish: (step: { usage?: TokenUsage }) => {
+      const reported =
+        (step.usage?.inputTokens ?? 0) + (step.usage?.outputTokens ?? 0) > 0;
+      if (!reported && streamed) {
+        const estimate = inFlightStepUsage(finished, {
+          promptTokens,
+          streamedTokens: estimateTokenCount(streamed),
+        });
+        unreported = sumUsage(unreported, estimate);
+        finished.push({ usage: estimate });
+      } else {
+        finished.push({ usage: step.usage });
+      }
       streamed = null;
-      finished.push({ usage: step.usage });
     },
     aborted,
     spent: () => (streamed ? aborted(finished) : abortedUsage(finished, null)),
+    unreported: () => unreported,
   };
 }
 

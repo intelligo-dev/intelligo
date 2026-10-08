@@ -21,7 +21,8 @@
  *
  * The eve session id and stream cursor live in the conversation's
  * `metadata.eve`, so a conversation continues its session across
- * turns and a cancelled turn resumes from where the stream stopped.
+ * turns. A stopped turn stores where its stream stopped; the next turn
+ * reads on from there and passes over what is left of the stopped one.
  *
  * Nothing here is framework code and nothing imports eve: the wire
  * protocol is HTTP + NDJSON (`/eve/v1/session`, `/stream`, `/cancel`),
@@ -76,7 +77,23 @@ type EveMetadata = {
   streamIndex?: number;
   /** A question the run paused on; the next user message answers it. */
   pendingQuestion?: { requestId: string; options?: EveInputRequest["options"] };
+  /**
+   * The cursor stops inside a turn the reader stopped: the next turn
+   * skips its events up to and including the one that ends it.
+   */
+  skipStoppedTurn?: boolean;
 };
+
+/** The events that end a turn's stream. */
+const TURN_ENDS = new Set([
+  "step.failed",
+  "turn.failed",
+  "session.failed",
+  "turn.cancelled",
+  "turn.completed",
+  "session.waiting",
+  "session.completed",
+]);
 
 function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null
@@ -89,25 +106,28 @@ function str(value: unknown, fallback = ""): string {
 }
 
 const APPROVING = /\b(approve|allow|yes|confirm|accept|ok)\b/i;
-const DENYING = /\b(deny|reject|no|not|cancel|decline|disallow|never|stop)\b/i;
+const DENYING =
+  /\b(deny|reject|no|not|cancel|decline|disallow|never|stop|don['’]?t|do not)\b/i;
 
 /**
  * The option an approval answer picks: eve names them; we match by
- * intent, on whole words, so "Approve now" is not read as "no". An
- * answer never lands on an option that says the opposite: with none that
- * matches, it is undefined and the answer goes back as text.
+ * intent, on whole words, so "Approve now" is not read as "no". A
+ * negation wins: "Don't allow" denies. An answer never lands on an
+ * option that says the opposite: with none that matches, or more than
+ * one, it is undefined and the answer goes back as text.
  */
 function optionFor(
   options: EveInputRequest["options"] | undefined,
   approved: boolean
 ): string | undefined {
   if (!options?.length) return undefined;
-  const [wanted, opposite] = approved
-    ? [APPROVING, DENYING]
-    : [DENYING, APPROVING];
   const says = (o: { id: string; label: string }, pattern: RegExp) =>
     pattern.test(o.id) || pattern.test(o.label);
-  return options.find((o) => says(o, wanted) && !says(o, opposite))?.id;
+  const denies = (o: { id: string; label: string }) => says(o, DENYING);
+  const approves = (o: { id: string; label: string }) =>
+    says(o, APPROVING) && !denies(o);
+  const matching = options.filter(approved ? approves : denies);
+  return matching.length === 1 ? matching[0]!.id : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -612,31 +632,37 @@ async function* ndjson(
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let newline = buffer.indexOf("\n");
-    while (newline !== -1) {
-      const line = buffer.slice(0, newline).trim();
-      buffer = buffer.slice(newline + 1);
-      if (line) {
-        try {
-          yield JSON.parse(line) as EveEvent;
-        } catch {
-          // A torn line is not an event.
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let newline = buffer.indexOf("\n");
+      while (newline !== -1) {
+        const line = buffer.slice(0, newline).trim();
+        buffer = buffer.slice(newline + 1);
+        if (line) {
+          try {
+            yield JSON.parse(line) as EveEvent;
+          } catch {
+            // A torn line is not an event.
+          }
         }
+        newline = buffer.indexOf("\n");
       }
-      newline = buffer.indexOf("\n");
     }
-  }
-  const tail = buffer.trim();
-  if (tail) {
-    try {
-      yield JSON.parse(tail) as EveEvent;
-    } catch {
-      // A torn tail is not an event.
+    const tail = buffer.trim();
+    if (tail) {
+      try {
+        yield JSON.parse(tail) as EveEvent;
+      } catch {
+        // A torn tail is not an event.
+      }
     }
+  } finally {
+    // The caller stops reading once the turn ends while eve may keep
+    // the stream open for the next one: close the connection.
+    await reader.cancel().catch(() => {});
   }
 }
 
@@ -735,6 +761,22 @@ export function eveStreamTurn(options: EveStreamTurnOptions): StreamTurn {
     const stream = new ReadableStream<UIMessageChunk>({
       async start(controller) {
         let count = 0;
+        let skipping = eve.skipStoppedTurn === true;
+        const saveCursor = (stopped: boolean) =>
+          turn
+            .updateMetadata({
+              eve: {
+                sessionId: fixedSessionId,
+                streamIndex: streamIndex + count,
+                ...(stopped ? { skipStoppedTurn: true } : {}),
+                ...(mapper.state.pendingQuestion
+                  ? { pendingQuestion: mapper.state.pendingQuestion }
+                  : clearQuestion
+                    ? { pendingQuestion: null }
+                    : {}),
+              },
+            })
+            .catch(() => {});
         try {
           const live = await doFetch(url.stream(fixedSessionId, streamIndex), {
             headers,
@@ -745,24 +787,30 @@ export function eveStreamTurn(options: EveStreamTurnOptions): StreamTurn {
           }
           for await (const event of ndjson(live.body)) {
             count += 1;
+            if (skipping) {
+              if (TURN_ENDS.has(event.type)) skipping = false;
+              continue;
+            }
             for (const chunk of mapper.map(event)) controller.enqueue(chunk);
             if (mapper.state.done) break;
           }
-          await turn
-            .updateMetadata({
-              eve: {
-                sessionId: fixedSessionId,
-                streamIndex: streamIndex + count,
-                ...(mapper.state.pendingQuestion
-                  ? { pendingQuestion: mapper.state.pendingQuestion }
-                  : clearQuestion
-                    ? { pendingQuestion: null }
-                    : {}),
-              },
-            })
-            .catch(() => {});
-          if (mapper.state.failed) {
+          await saveCursor(false);
+          const spent =
+            (mapper.state.usage.inputTokens ?? 0) +
+              (mapper.state.usage.outputTokens ?? 0) >
+            0;
+          if (mapper.state.failed && !spent) {
             fail(new Error(mapper.state.failed));
+          } else if (mapper.state.failed) {
+            // The steps that finished before the failure were billed by
+            // the provider; the turn settles them and still shows the error.
+            settle({
+              ...mapper.state.usage,
+              ...(mapper.state.modelId
+                ? { modelId: mapper.state.modelId }
+                : {}),
+              finishReason: "error",
+            });
           } else {
             settle({
               ...mapper.state.usage,
@@ -777,6 +825,7 @@ export function eveStreamTurn(options: EveStreamTurnOptions): StreamTurn {
           controller.close();
         } catch (error) {
           if (context.abortSignal.aborted) {
+            await saveCursor(skipping || !mapper.state.done);
             settle(mapper.state.usage);
             controller.close();
           } else {

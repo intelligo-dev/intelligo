@@ -161,5 +161,5 @@ The design system and AI components, installable in any shadcn project the same 
 - [Why Intelligo](https://intelligo.dev/why): the half of every AI SaaS that is not the AI, and how Intelligo compares to a boilerplate or an agent platform.
 - [Intelligo vs a SaaS boilerplate](https://intelligo.dev/compare/boilerplates): upgrades, migrations, AI cost and credits, audit, and when a boilerplate is the better choice.
 - [Architecture](https://intelligo.dev/architecture): the package graph, the rules the tests enforce, and who owns which file.
-- [Hosted registry](https://intelligo.dev/r/intelligo.json): install any item with the shadcn CLI.
+- [Hosted registry](https://intelligo.dev/r/registry.json): every item the shadcn CLI installs, from the latest release; `https://intelligo.dev/r/<version>/<item>.json` is a given release's.
 - [Source](https://github.com/intelligo-dev/intelligo)

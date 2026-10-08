@@ -11,16 +11,16 @@ const mocks = vi.hoisted(() => ({
   onConflictDoUpdate: vi.fn(),
   insertValues: vi.fn(),
   insert: vi.fn(),
-  deleteReturning: vi.fn(),
-  deleteWhere: vi.fn(),
-  del: vi.fn(),
+  deleteInBatches: vi.fn(),
 }));
 
 vi.mock("@intelligo-dev/core/db", () => ({
   db: {
     insert: mocks.insert,
-    delete: mocks.del,
   },
+}));
+vi.mock("./batched-delete", () => ({
+  deleteInBatches: mocks.deleteInBatches,
 }));
 
 vi.mock("@intelligo-dev/core/db/schema", () => ({
@@ -62,8 +62,6 @@ beforeEach(() => {
   mocks.onConflictDoUpdate.mockReturnValue({
     returning: mocks.insertReturning,
   });
-  mocks.del.mockReturnValue({ where: mocks.deleteWhere });
-  mocks.deleteWhere.mockReturnValue({ returning: mocks.deleteReturning });
 });
 
 describe("checkRateLimit", () => {
@@ -270,12 +268,12 @@ describe("checkRateLimit with a subject and a window", () => {
 
 describe("cleanupRateLimitEntries", () => {
   it("returns the number of deleted rows", async () => {
-    mocks.deleteReturning.mockResolvedValue([{ id: "a" }, { id: "b" }]);
+    mocks.deleteInBatches.mockResolvedValue(2);
     await expect(cleanupRateLimitEntries()).resolves.toBe(2);
   });
 
   it("returns 0 when nothing is stale", async () => {
-    mocks.deleteReturning.mockResolvedValue([]);
+    mocks.deleteInBatches.mockResolvedValue(0);
     await expect(cleanupRateLimitEntries()).resolves.toBe(0);
   });
 });

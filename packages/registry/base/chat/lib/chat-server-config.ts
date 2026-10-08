@@ -83,7 +83,13 @@ import "server-only";
  *       version: "v7",
  *       params: {
  *         messages: prepared.messages,
- *         memory: { thread: turn.conversationId, resource: turn.userId },
+ *         // Scoped to the workspace and the user, like every stored
+ *         // row: a resource of the user alone shares working memory
+ *         // and recall across every workspace they belong to.
+ *         memory: {
+ *           thread: turn.conversationId,
+ *           resource: `${turn.workspaceId}:${turn.userId}`,
+ *         },
  *         abortSignal,
  *       },
  *     });

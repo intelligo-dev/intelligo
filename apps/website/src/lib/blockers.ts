@@ -34,7 +34,7 @@ export const BLOCKERS = [
     evidence: [
       "$ pnpm vitest run tests/architecture",
       "✓ package dependency direction",
-      "✓ every model id used in the source is in the shipped catalogue",
+      "✓ every model id used in the source is registered",
       "✓ imports no unpublished, dissolved, or @intelligo-dev/ui path",
     ],
   },

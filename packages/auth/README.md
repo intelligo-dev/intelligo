@@ -12,11 +12,12 @@ application needs. Documentation:
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/auth better-auth drizzle-orm zod
+pnpm add @intelligo-dev/auth better-auth drizzle-orm react zod
 ```
 
-`better-auth`, `drizzle-orm` and `zod` are peers: the guards read the
-Better-Auth instance and the database client the application already has.
+`better-auth`, `drizzle-orm`, `react` and `zod` are peers: the guards read the
+Better-Auth instance and the database client the application already has,
+and the verification and reset emails render with React.
 
 ## What it owns
 

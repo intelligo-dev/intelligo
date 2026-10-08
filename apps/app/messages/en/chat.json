@@ -156,7 +156,9 @@
   },
   "branch": {
     "previous": "Previous version",
-    "next": "Next version"
+    "next": "Next version",
+    "olderNotice": "You're viewing an earlier version. The conversation continues from the latest one.",
+    "showLatest": "Show latest"
   },
   "route": {
     "invalidBody": "Invalid request body.",

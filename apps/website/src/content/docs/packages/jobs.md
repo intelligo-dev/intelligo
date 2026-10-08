@@ -55,7 +55,13 @@ const result = await drain(
 ## What the queue guarantees
 
 - **No double-processing.** Claiming is `FOR UPDATE SKIP LOCKED`, so several
-  workers drain the same queue and each takes different rows.
+  workers drain the same queue and each takes different rows. A worker writes
+  to a job only while it still holds the claim: a job another worker claimed
+  again while it waited in a batch is skipped, and a late outcome never
+  overwrites the newer one.
+- **A recorded outcome.** A handler runs once per attempt: a failed status
+  write is retried rather than counted as a handler failure, and one job's
+  failed write does not stop the rest of the batch.
 - **Retry with backoff.** A handler that throws puts the job back, one more
   minute later per attempt; after `maxAttempts` it is `failed` and keeps its
   last error. `listFailedJobs()` reads them, newest first.
@@ -69,8 +75,9 @@ const result = await drain(
   back without spending an attempt, a minute behind the jobs the worker can
   run — another deployment may know it.
 
-`pruneJobs(before)` deletes succeeded jobs older than the cutoff and returns
-how many. `postgresJobQueue` is the same `enqueue` and `drain` as one
+`pruneJobs(before, { failedBefore })` deletes succeeded jobs finished before
+`before` and failed ones finished before `failedBefore` (the same cutoff when
+omitted), in bounded batches, and returns how many. `postgresJobQueue` is the same `enqueue` and `drain` as one
 `JobQueue` value; a different queue implements that type, and call sites stay
 as they are.
 

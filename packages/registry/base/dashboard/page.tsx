@@ -7,8 +7,8 @@
  * for this product). Neither requires editing a file this item ships.
  *
  * Pairs with the `chat` item: the composer and the starters open
- * `${chatBasePath}/<new-uuid>?query=…`, which the chat panel sends as
- * the first turn. Without a chat surface installed, set `chatBasePath`
+ * `${chatBasePath}/<new-uuid>` with the prompt handed over in
+ * `sessionStorage`, which the chat thread sends as the first turn. Without a chat surface installed, set `chatBasePath`
  * or drop those affordances.
  *
  * `requireWorkspace()` is allowed to throw: the `app-shell` layout

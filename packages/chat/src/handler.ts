@@ -69,7 +69,13 @@ import {
   registeredModelIds,
 } from "@intelligo-dev/executions/pricing";
 
-import { attachmentIdFromUrl, parseChatBody } from "./body";
+import {
+  ATTACHMENT_MAX_BYTES,
+  attachmentIdFromUrl,
+  fileAccepted,
+  parseChatBody,
+} from "./body";
+import { readJsonUpTo } from "./read-body";
 import type { ChatAttachmentPolicy } from "./body";
 import type { ChatErrorCode, ChatModelOption } from "./client";
 import type {
@@ -85,6 +91,7 @@ import { CHAT_ERROR_STATUS, DEFAULT_CHAT_MESSAGES, refuse } from "./errors";
 import type { ChatMessages } from "./errors";
 import { pickGenerationOptions } from "./generation";
 import { hasElidedFile } from "./elide";
+import { trustedContinuation } from "./continuation";
 import { lastUserMessage, restoreElidedFiles, toUIMessages } from "./messages";
 import type {
   ChatDataChunk,
@@ -122,6 +129,22 @@ const DEFAULT_MAX_STEPS = 5;
  */
 const DEFAULT_WINDOW = { maxMessages: 40, maxTokens: 12_000 } as const;
 const MODEL_URL_SECONDS = 900;
+/** The transcript `useChat` resends each turn: text and tool payloads. */
+const TRANSCRIPT_BODY_BYTES = 8 * 1024 * 1024;
+/** Inline files one request may carry at the policy's size. */
+const INLINE_FILES_PER_BODY = 4;
+/** A DELETE body names one id. */
+const DELETE_BODY_BYTES = 16 * 1024;
+
+/** `maxBodyBytes` when the config names none. */
+function defaultBodyLimit(policy: ChatAttachmentPolicy | false): number {
+  if (policy === false || policy.mode === "stored") {
+    return TRANSCRIPT_BODY_BYTES;
+  }
+  // A data URL carries its bytes as base64: four characters per three.
+  const encoded = Math.ceil((policy.maxBytes ?? ATTACHMENT_MAX_BYTES) / 3) * 4;
+  return TRANSCRIPT_BODY_BYTES + INLINE_FILES_PER_BODY * encoded;
+}
 
 async function defaultAuthenticate(): Promise<ChatActor> {
   const { workspace, user } = await requireWorkspace();
@@ -251,6 +274,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
   const maxMessageLength =
     config.maxMessageLength ?? DEFAULT_MAX_MESSAGE_LENGTH;
   const attachments = config.attachments ?? false;
+  const maxBodyBytes = config.maxBodyBytes ?? defaultBodyLimit(attachments);
   const authenticate = config.authenticate ?? defaultAuthenticate;
   const rateLimit =
     config.rateLimit === undefined ? defaultRateLimit : config.rateLimit;
@@ -453,45 +477,29 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
   }
 
   /**
-   * An approval answer runs the tool it approves with the input it
-   * carries, so that input must be what the model proposed. With the
-   * transport's own persistence the stored assistant message is that
-   * proposal: a continuation whose approved call is missing from it, or
-   * carries other input, is refused. A deployment that persists
-   * elsewhere (`persist`) makes this check in its own `prepareMessages`.
+   * A continuation resumes an assistant message the model wrote, and
+   * the client's copy of it is not trusted: an approval answer runs the
+   * tool it approves with the input it carries, and the finished reply
+   * is persisted from this message. With the transport's own persistence
+   * the stored message is taken and only the client's answers are copied
+   * onto it (`trustedContinuation`); null refuses the turn. A deployment
+   * that persists elsewhere (`persist`) makes this check in its own
+   * `prepareMessages`.
    */
-  async function approvalsMatchStored(
+  async function storedContinuation(
     actor: ChatActor,
     body: { id: string; messages: UIMessage[] }
-  ): Promise<boolean> {
-    if (config.persist !== undefined) return true;
+  ): Promise<UIMessage | null> {
     const last = body.messages[body.messages.length - 1]!;
-    let stored: UIMessage | undefined;
     try {
       const row = await getMessage(actor, body.id, last.id);
-      stored = row ? toUIMessages([row])[0] : undefined;
-    } catch {
-      return false;
-    }
-    if (!stored) return false;
-
-    const proposed = new Map<string, Record<string, unknown>>();
-    for (const raw of stored.parts) {
-      const part = raw as unknown as Record<string, unknown>;
-      if (typeof part.toolCallId === "string") {
-        proposed.set(part.toolCallId, part);
-      }
-    }
-    return last.parts.every((raw) => {
-      const part = raw as unknown as Record<string, unknown>;
-      if (part.state !== "approval-responded") return true;
-      const original = proposed.get(String(part.toolCallId));
-      return (
-        original !== undefined &&
-        original.type === part.type &&
-        JSON.stringify(original.input) === JSON.stringify(part.input)
+      return trustedContinuation(
+        row ? toUIMessages([row])[0] : undefined,
+        last
       );
-    });
+    } catch {
+      return null;
+    }
   }
 
   // POST: stream a reply.
@@ -502,27 +510,38 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     const cors = corsHeaders(request);
     const nowhere = { actor: null, conversationId: null };
 
-    let json: unknown;
-    try {
-      json = await request.json();
-    } catch {
-      return refusal("BAD_REQUEST", t("invalidBody"), nowhere, {}, cors);
-    }
-    const parsed = parseChatBody(json, { maxMessageLength, attachments });
-    if (!parsed.ok) {
-      const { key, params } = parsed.rejection;
-      return refusal("BAD_REQUEST", t(key, params), nowhere, {}, cors);
-    }
-    const body = parsed.body;
-    const where = { actor: null as ChatActor | null, conversationId: body.id };
-
+    // Who is asking, before the body is read: an anonymous request
+    // costs no more than its headers.
     let actor: ChatActor;
     try {
       actor = await authenticate(request);
     } catch {
-      return refusal("UNAUTHORIZED", t("unauthorized"), where, {}, cors);
+      return refusal("UNAUTHORIZED", t("unauthorized"), nowhere, {}, cors);
     }
-    where.actor = actor;
+
+    const read = await readJsonUpTo(request, maxBodyBytes);
+    if (read === "too_large" || read === "invalid") {
+      return refusal(
+        "BAD_REQUEST",
+        t("invalidBody"),
+        { actor, conversationId: null },
+        {},
+        cors
+      );
+    }
+    const parsed = parseChatBody(read.json, { maxMessageLength, attachments });
+    if (!parsed.ok) {
+      const { key, params } = parsed.rejection;
+      return refusal(
+        "BAD_REQUEST",
+        t(key, params),
+        { actor, conversationId: null },
+        {},
+        cors
+      );
+    }
+    const body = parsed.body;
+    const where = { actor, conversationId: body.id };
 
     let limitHeaders: Record<string, string> = { ...cors };
     if (rateLimit !== false) {
@@ -566,7 +585,11 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           config.persist === undefined && loaded.row
             ? toUIMessages(await getMessagesByIds(actor, body.id, elided))
             : [];
-        body.messages = restoreElidedFiles(body.messages, stored);
+        body.messages = restoreElidedFiles(
+          body.messages,
+          stored,
+          (part, role) => fileAccepted(part, role, attachments)
+        );
       } catch (error) {
         log.error("Failed to restore elided files", {
           conversationId: body.id,
@@ -672,42 +695,23 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     // A title that resolves later is applied after the stream — a
     // model-written title must not delay the first token.
     let pendingTitle: Promise<string | null> | null = null;
-    // A product's title function may call a model: it runs once the turn
-    // is admitted, so a refused turn spends nothing on it.
-    let titleFrom: string | null = null;
-
-    if (!loaded.row) {
-      const opening = body.messages.find((message) => message.role === "user");
-      const openingText = opening ? extractText(opening.parts) : "";
-      let title: string | null = null;
-      if (deriveTitle) titleFrom = openingText;
-      else title = truncateTitle(openingText);
-      try {
-        context.conversation = await createConversation(actor, {
-          id: body.id,
-          agentId: agent.id,
-          modelId,
-          title,
-        });
-      } catch (error) {
-        // Another actor's id: answer as if it did not exist.
-        if (isConversationServiceError(error) && error.code === "forbidden") {
-          return refusal("NOT_FOUND", t("notFound"), where, {}, cors);
-        }
-        log.error("Failed to create conversation", {
-          conversationId: body.id,
-          error: errorMessage(error),
-        });
-        return refusal("INTERNAL", t("internalError"), where, {}, cors);
-      }
-    }
 
     // What the stored transcript loses to this turn — the reply being
     // regenerated, the path an edit replaces. Run only once the turn is
     // admitted: a refused regenerate must leave the old answer in place.
     let trimAfter: string | null = null;
+    let trimFrom: string | null = null;
     if (!loaded.row) {
       // A new conversation has nothing to trim.
+    } else if (
+      body.replaces &&
+      body.trigger !== "regenerate-message" &&
+      body.messages[body.messages.length - 1]!.role === "user"
+    ) {
+      // An edit that names the message it replaces: that message and
+      // everything after it go, even when it is the first one the client
+      // holds and no message before it says where the path forks.
+      trimFrom = body.replaces;
     } else if (body.trigger === "regenerate-message") {
       // The client dropped the reply it is regenerating; drop what the
       // row holds after the user message that gets a second answer.
@@ -721,15 +725,27 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       trimAfter = body.messages[body.messages.length - 2]!.id;
     }
 
-    const answers = approvalAnswers(body.messages);
-    if (answers.length > 0 && !(await approvalsMatchStored(actor, body))) {
-      return refusal("BAD_REQUEST", t("invalidBody"), where, {}, cors);
+    if (
+      config.persist === undefined &&
+      body.messages[body.messages.length - 1]!.role === "assistant"
+    ) {
+      const resumed = await storedContinuation(actor, body);
+      if (!resumed) {
+        return refusal("BAD_REQUEST", t("invalidBody"), where, {}, cors);
+      }
+      body.messages = [...body.messages.slice(0, -1), resumed];
     }
+
+    const answers = approvalAnswers(body.messages);
 
     const turn: ChatTurn = {
       ...context,
       agent,
-      history: async () => toUIMessages(await getMessages(actor, body.id)),
+      // A first turn has no row yet, and so no history.
+      history: async () =>
+        context.conversation
+          ? toUIMessages(await getMessages(actor, body.id))
+          : [],
     };
 
     // Approval answers ride on a continuation; the audit hook sees
@@ -812,13 +828,47 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       );
     }
 
-    if (titleFrom !== null && deriveTitle) {
-      pendingTitle = Promise.resolve(deriveTitle(titleFrom, context));
+    // The row is created once the turn is admitted: a first turn refused
+    // for quota or a rate limit leaves no empty conversation behind.
+    if (!loaded.row) {
+      const opening = body.messages.find((message) => message.role === "user");
+      const openingText = opening ? extractText(opening.parts) : "";
+      try {
+        const row = await createConversation(actor, {
+          id: body.id,
+          agentId: agent.id,
+          modelId,
+          title: deriveTitle ? null : truncateTitle(openingText),
+        });
+        context.conversation = row;
+        turn.conversation = row;
+      } catch (error) {
+        await run.fail({ error });
+        // Another actor's id: answer as if it did not exist.
+        if (isConversationServiceError(error) && error.code === "forbidden") {
+          return refusal("NOT_FOUND", t("notFound"), where, {}, cors);
+        }
+        log.error("Failed to create conversation", {
+          conversationId: body.id,
+          error: errorMessage(error),
+        });
+        return refusal("INTERNAL", t("internalError"), where, {}, cors);
+      }
+      // A product's title function may call a model: it runs only for
+      // an admitted turn, so a refused one spends nothing on it.
+      if (deriveTitle) {
+        pendingTitle = Promise.resolve(deriveTitle(openingText, context));
+      }
     }
 
-    if (trimAfter) {
+    if (trimAfter || trimFrom) {
       try {
-        await deleteTrailingMessages(actor, { id: trimAfter });
+        await deleteTrailingMessages(
+          actor,
+          trimFrom
+            ? { id: trimFrom, inclusive: true, conversationId: body.id }
+            : { id: trimAfter!, conversationId: body.id }
+        );
       } catch (error) {
         // The message may never have been persisted (a failed first
         // attempt). The turn still makes sense.
@@ -1014,11 +1064,80 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       }
     };
 
+    // The model's stream and the UI stream can both report one failure.
+    let streamFailureReported = false;
+    const reportStreamFailure = async (error: unknown) => {
+      if (streamFailureReported) return;
+      streamFailureReported = true;
+      await emit(() => events.fail?.({ turn, error, phase: "stream" }));
+    };
+
     const finishMetadata = (usage: TokenUsage): ChatMessageMetadata => ({
       modelId: captured?.modelId ?? modelId,
       usage: pickUsage(usage),
       finishedAt: new Date().toISOString(),
     });
+
+    /**
+     * Write what the finished steps spent onto the running execution,
+     * so a run whose process is killed mid-turn is charged that
+     * (`reconcile()`), not released.
+     */
+    const recordProgress = (tracker: ReturnType<typeof inFlightTracker>) => {
+      const spent = tracker.spent();
+      const whole = nestedUsage ? sumUsage(spent, nestedUsage) : spent;
+      run
+        .progress?.({
+          usage: config.normalizeUsage ? config.normalizeUsage(whole) : whole,
+        })
+        .catch((error: unknown) =>
+          log.warn("Could not record the turn's progress", {
+            executionId: run.id,
+            error: errorMessage(error),
+          })
+        );
+    };
+
+    /**
+     * A runtime the consumer bound. It gets the whole prepared turn,
+     * its stored files resolved as the model would see them, and gives
+     * back UI chunks; the frames are ours.
+     */
+    const runBoundTurn = async (
+      streamTurn: NonNullable<ChatServerConfig["streamTurn"]>,
+      writer: UIMessageStreamWriter<ChatUIMessage>,
+      modelMessages: UIMessage[]
+    ) => {
+      writer.write({ type: "start" });
+      const resolved = { ...prepared, messages: modelMessages };
+      const produced = await streamTurn(turn, resolved, {
+        modelId,
+        abortSignal: request.signal,
+        writer,
+      });
+      writer.merge(
+        withoutFrames(
+          produced.stream as ReadableStream<UIMessageChunk>
+        ) as ReadableStream<InferUIMessageChunk<ChatUIMessage>>
+      );
+      const usage = await produced.usage;
+      captured = {
+        usage: pickUsage(usage),
+        ...(usage.modelId ? { modelId: usage.modelId } : {}),
+        ...(usage.finishReason ? { finishReason: usage.finishReason } : {}),
+      };
+      await settle(captured.usage, { aborted: request.signal.aborted });
+      const title = await applyTitle();
+      if (title) {
+        writer.write({ type: "data-chat-title", data: title, transient: true });
+      }
+      writer.write({
+        type: "finish",
+        ...(withMetadata
+          ? { messageMetadata: finishMetadata(captured.usage) }
+          : {}),
+      });
+    };
 
     const stream = createUIMessageStream<ChatUIMessage>({
       // Without this, `onFinish` sees only the reply and a tool-approval
@@ -1033,40 +1152,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         );
 
         if (config.streamTurn) {
-          // A runtime the consumer bound. It gets the whole prepared
-          // turn and gives back UI chunks; the frames are ours.
-          writer.write({ type: "start" });
-          const produced = await config.streamTurn(turn, prepared, {
-            modelId,
-            abortSignal: request.signal,
-            writer,
-          });
-          writer.merge(
-            withoutFrames(
-              produced.stream as ReadableStream<UIMessageChunk>
-            ) as ReadableStream<InferUIMessageChunk<ChatUIMessage>>
-          );
-          const usage = await produced.usage;
-          captured = {
-            usage: pickUsage(usage),
-            ...(usage.modelId ? { modelId: usage.modelId } : {}),
-            ...(usage.finishReason ? { finishReason: usage.finishReason } : {}),
-          };
-          await settle(captured.usage, { aborted: request.signal.aborted });
-          const title = await applyTitle();
-          if (title) {
-            writer.write({
-              type: "data-chat-title",
-              data: title,
-              transient: true,
-            });
-          }
-          writer.write({
-            type: "finish",
-            ...(withMetadata
-              ? { messageMetadata: finishMetadata(captured.usage) }
-              : {}),
-          });
+          await runBoundTurn(config.streamTurn, writer, modelMessages);
           return;
         }
 
@@ -1121,7 +1207,10 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           abortSignal: request.signal,
           onStepStart: tracker.onStepStart,
           onChunk: tracker.onChunk,
-          onStepFinish: tracker.onStepFinish,
+          onStepFinish: (step) => {
+            tracker.onStepFinish(step);
+            recordProgress(tracker);
+          },
           onFinish: async ({
             totalUsage,
             finishReason,
@@ -1140,12 +1229,29 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
             // the UI stream closes: a client that disconnects closes it
             // first, and the run must still be charged. A run that ended
             // in an error reports no total; its finished steps still count.
+            // A step the provider failed partway through reports nothing
+            // either, and is added from the tracker's estimate.
             const reported = captured.usage;
             const counted =
               (reported.inputTokens ?? 0) + (reported.outputTokens ?? 0) > 0;
-            await settle(counted ? reported : tracker.spent(), {
-              aborted: false,
+            await settle(
+              counted
+                ? sumUsage(reported, tracker.unreported())
+                : tracker.spent(),
+              { aborted: false }
+            );
+          },
+          // A provider error mid-stream reaches the client as an error
+          // part and need not be thrown, so the transport's own
+          // `onError` may never see it; the run still settles in
+          // `onFinish`.
+          onError: async ({ error }) => {
+            log.error("Model stream failed", {
+              conversationId: body.id,
+              executionId: run.id,
+              error: errorMessage(error),
             });
+            await reportStreamFailure(error);
           },
           onAbort: async ({ steps }) => {
             await settle(tracker.aborted(steps), { aborted: true });
@@ -1156,6 +1262,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           result.toUIMessageStream({
             sendReasoning: config.reasoning ?? false,
             sendSources: config.sources ?? false,
+            onError: () => t("streamError"),
             ...(withMetadata
               ? {
                   messageMetadata: ({ part }) =>
@@ -1190,10 +1297,13 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           void settleOtherModels(takeOtherModelUsage(), false);
         }
 
-        if (config.persist === false) return;
         const userMessage = lastUserMessage(body.messages);
         try {
-          if (config.persist) {
+          // Uploads are tied to the conversation whether or not the
+          // transcript is stored here: an unclaimed upload is swept.
+          if (config.persist === false) {
+            // The transcript is the client's to keep.
+          } else if (config.persist) {
             await config.persist(turn, {
               userMessage,
               responseMessage,
@@ -1244,7 +1354,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         // Another model's tokens were spent whether or not the turn
         // finished; they are that model's execution, not this one's.
         void settleOtherModels(takeOtherModelUsage(), false);
-        void emit(() => events.fail?.({ turn, error, phase: "stream" }));
+        void reportStreamFailure(error);
         return t("streamError");
       },
     });
@@ -1259,25 +1369,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     const t = await messagesFor(request);
     const cors = corsHeaders(request);
 
-    let id = new URL(request.url).searchParams.get("id");
-    if (!id) {
-      try {
-        const json = (await request.json()) as { id?: unknown };
-        if (typeof json.id === "string") id = json.id;
-      } catch {
-        // No body: the query string was the only place to look.
-      }
-    }
-    if (!id) {
-      return refusal(
-        "BAD_REQUEST",
-        t("invalidBody"),
-        { actor: null, conversationId: null },
-        {},
-        cors
-      );
-    }
-
     let actor: ChatActor;
     try {
       actor = await authenticate(request);
@@ -1285,7 +1376,26 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       return refusal(
         "UNAUTHORIZED",
         t("unauthorized"),
-        { actor: null, conversationId: id },
+        { actor: null, conversationId: null },
+        {},
+        cors
+      );
+    }
+
+    let id = new URL(request.url).searchParams.get("id");
+    if (!id) {
+      // No body, or not JSON: the query string was the only place to look.
+      const read = await readJsonUpTo(request, DELETE_BODY_BYTES);
+      if (typeof read === "object") {
+        const json = read.json as { id?: unknown } | null;
+        if (typeof json?.id === "string") id = json.id;
+      }
+    }
+    if (!id) {
+      return refusal(
+        "BAD_REQUEST",
+        t("invalidBody"),
+        { actor, conversationId: null },
         {},
         cors
       );

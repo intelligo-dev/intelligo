@@ -9,6 +9,8 @@
  * Called fire-and-forget after recordTokenUsage.
  */
 
+import { eq } from "drizzle-orm";
+
 import { db } from "@intelligo-dev/core/db";
 import { notificationHistory } from "@intelligo-dev/core/db/schema";
 import { formatMoney, money } from "@intelligo-dev/core/money";
@@ -48,9 +50,11 @@ const MESSAGE_LOCALE = "en";
  * Check all notification thresholds and record triggered notifications.
  *
  * Detects four threshold types: quota_warning_80, quota_warning_100,
- * trial_warning_20 (20% of trial credits remaining) and trial_depleted.
- * A unique constraint on (workspaceId, type, periodKey) with
- * onConflictDoNothing makes each one fire once per period.
+ * trial_warning_20 (20% of the trial grant remaining) and
+ * trial_depleted. A unique constraint on (workspaceId, type, periodKey)
+ * with onConflictDoNothing makes each one fire once per period: the row
+ * is claimed first, and dropped again when the notice could not be
+ * delivered, so a later call retries it.
  *
  * Returns the newly triggered notifications (empty if all already sent).
  */
@@ -104,7 +108,7 @@ export async function checkNotificationTriggers(
     notifications.push({
       type: "trial_warning_20",
       workspaceId,
-      message: `Only ${trial.creditsRemaining.toLocaleString()} trial credits remaining.`,
+      message: `Only ${trial.percentageRemaining}% of your trial remains.`,
       data: {
         creditsRemaining: trial.creditsRemaining,
         percentageRemaining: trial.percentageRemaining,
@@ -120,11 +124,12 @@ export async function checkNotificationTriggers(
       ? "trial"
       : monthlyPeriodKey;
 
+    const id = crypto.randomUUID();
     try {
       const result = await db
         .insert(notificationHistory)
         .values({
-          id: crypto.randomUUID(),
+          id,
           workspaceId: notification.workspaceId,
           type: notification.type,
           periodKey,
@@ -133,51 +138,44 @@ export async function checkNotificationTriggers(
         })
         .onConflictDoNothing();
 
-      // Only trigger notification if this is a new notification (not a duplicate)
-      if (result.rowCount && result.rowCount > 0) {
+      // Only a call that claimed the row sends; the others see it taken.
+      if (!result.rowCount) continue;
+
+      try {
         const owner = await getWorkspaceOwner(workspaceId);
-        if (owner) {
-          // Route to correct trigger based on notification type
-          if (
-            notification.type === "quota_warning_80" ||
-            notification.type === "quota_warning_100"
-          ) {
-            triggerQuotaNotification({
-              userId: owner.userId,
-              userEmail: owner.email,
-              workspaceId,
-              workspaceName: owner.workspaceName,
-              percentageUsed: thresholds.percentage,
-              used,
-              allowance,
-              isExceeded: notification.type === "quota_warning_100",
-            }).catch((err) =>
-              console.error(
-                `[Notification] Quota trigger failed for ${notification.type}:`,
-                err
-              )
-            );
-          } else if (
-            notification.type === "trial_warning_20" ||
-            notification.type === "trial_depleted"
-          ) {
-            triggerTrialNotification({
-              userId: owner.userId,
-              userEmail: owner.email,
-              workspaceId,
-              workspaceName: owner.workspaceName,
-              creditsRemaining: trial.creditsRemaining,
-              totalCredits: trial.initialCredits,
-              percentageRemaining: trial.percentageRemaining,
-              isDepleted: notification.type === "trial_depleted",
-            }).catch((err) =>
-              console.error(
-                `[Notification] Trial trigger failed for ${notification.type}:`,
-                err
-              )
-            );
-          }
+        if (!owner) continue;
+        if (
+          notification.type === "quota_warning_80" ||
+          notification.type === "quota_warning_100"
+        ) {
+          await triggerQuotaNotification({
+            userId: owner.userId,
+            userEmail: owner.email,
+            workspaceId,
+            workspaceName: owner.workspaceName,
+            percentageUsed: thresholds.percentage,
+            used,
+            allowance,
+            isExceeded: notification.type === "quota_warning_100",
+          });
+        } else {
+          await triggerTrialNotification({
+            userId: owner.userId,
+            userEmail: owner.email,
+            workspaceId,
+            workspaceName: owner.workspaceName,
+            creditsRemaining: trial.creditsRemaining,
+            totalCredits: trial.initialCredits,
+            percentageRemaining: trial.percentageRemaining,
+            isDepleted: notification.type === "trial_depleted",
+          });
         }
+      } catch (deliveryError) {
+        // Not delivered: give the claim back so the next check retries.
+        await db
+          .delete(notificationHistory)
+          .where(eq(notificationHistory.id, id));
+        throw deliveryError;
       }
     } catch (error) {
       // Non-critical: don't block the request if notification recording fails

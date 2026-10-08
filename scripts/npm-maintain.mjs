@@ -27,6 +27,20 @@ const dryRun = process.argv.includes("--dry-run");
 const viaShell = process.platform === "win32";
 
 /**
+ * The arguments as the shell must see them. Node joins them for
+ * `cmd.exe` unquoted, so a deprecation message with spaces would reach
+ * npm as several arguments; each one that needs it is quoted instead.
+ */
+function shellArgs(args) {
+  if (!viaShell) return args;
+  return args.map((arg) =>
+    arg !== "" && !/[\s"&|<>^()%!,;=]/.test(arg)
+      ? arg
+      : `"${arg.replace(/"/g, '""')}"`
+  );
+}
+
+/**
  * `npm view <spec> <field> --json`, or undefined when the registry has
  * no such package or version. Anything else — no network, no auth, no
  * npm — throws: reading it as "never published" would skip the work and
@@ -34,11 +48,15 @@ const viaShell = process.platform === "win32";
  */
 function view(spec, field) {
   try {
-    const out = execFileSync("npm", ["view", spec, field, "--json"], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-      shell: viaShell,
-    }).trim();
+    const out = execFileSync(
+      "npm",
+      shellArgs(["view", spec, field, "--json"]),
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        shell: viaShell,
+      }
+    ).trim();
     return out ? JSON.parse(out) : undefined;
   } catch (error) {
     const said = `${error.stdout ?? ""}${error.stderr ?? ""}`;
@@ -50,7 +68,10 @@ function view(spec, field) {
 function npm(args) {
   console.log(`$ npm ${args.map((a) => JSON.stringify(a)).join(" ")}`);
   if (dryRun) return;
-  const result = spawnSync("npm", args, { stdio: "inherit", shell: viaShell });
+  const result = spawnSync("npm", shellArgs(args), {
+    stdio: "inherit",
+    shell: viaShell,
+  });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 

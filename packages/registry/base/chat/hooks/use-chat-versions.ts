@@ -9,7 +9,9 @@
  * pager. Versions live in this tab (mirrored to `sessionStorage`, so a
  * refresh within the tab keeps them); the server persists the latest
  * path only. That is a deliberate scope: the row stays a list, no
- * migration, and a reload shows what was last said.
+ * migration, and a reload shows what was last said. An older version
+ * is for reading: the thread continues from the latest one, so what
+ * the reader sees next to a follow-up is what the server stored.
  *
  * An *anchor* is the message just before the point that branched — the
  * user message a reply answers, or the message before an edited user
@@ -66,6 +68,24 @@ function anchorIndex(messages: UIMessage[], anchorId: string): number {
   return messages.findIndex((message) => message.id === anchorId);
 }
 
+/**
+ * The outermost version set on screen that shows an older version — the
+ * reader is off the stored path — or null when every one shows its latest.
+ */
+export function olderVersionOnScreen(
+  versions: Record<string, { tails: unknown[]; active: number }>,
+  messages: UIMessage[]
+): { anchorId: string } | null {
+  let found: { anchorId: string; at: number } | null = null;
+  for (const [anchorId, set] of Object.entries(versions)) {
+    if (set.active >= set.tails.length - 1) continue;
+    const at = anchorIndex(messages, anchorId);
+    if (at === -1 && anchorId !== ROOT_ANCHOR) continue;
+    if (!found || at < found.at) found = { anchorId, at };
+  }
+  return found && { anchorId: found.anchorId };
+}
+
 export function useChatVersions({
   conversationId,
   messages,
@@ -81,8 +101,13 @@ export function useChatVersions({
   const pending = useRef<Pending | null>(null);
   const hydrated = useRef(false);
 
+  // The thread opens on the stored path — every version set's latest.
   useEffect(() => {
-    setVersions(readStored(conversationId));
+    const stored = readStored(conversationId);
+    for (const set of Object.values(stored)) {
+      set.active = Math.max(set.tails.length - 1, 0);
+    }
+    setVersions(stored);
     hydrated.current = true;
   }, [conversationId]);
 
@@ -131,8 +156,8 @@ export function useChatVersions({
 
   // When the turn that followed a snapshot settles, the tail on screen
   // becomes the newest version. While idle, the active version tracks
-  // whatever the thread now holds after its anchor, so a follow-up sent
-  // on an older version grows that version rather than being lost.
+  // whatever the thread now holds after its anchor, so a follow-up
+  // grows the version it was sent on.
   useEffect(() => {
     if (status !== "ready") return;
     const commit = pending.current;
@@ -180,6 +205,18 @@ export function useChatVersions({
     [versions, messages, setMessages]
   );
 
+  const older = useMemo(
+    () => olderVersionOnScreen(versions, messages),
+    [versions, messages]
+  );
+
+  /** Back to the stored path from an older version. */
+  const showLatest = useCallback(() => {
+    if (!older) return;
+    const set = versions[older.anchorId];
+    if (set) select(older.anchorId, set.tails.length - 1);
+  }, [older, versions, select]);
+
   /** The pager state for the message that follows `anchorId`, if it has versions. */
   const versionOf = useMemo(() => {
     const byFirstMessage = new Map<
@@ -201,5 +238,13 @@ export function useChatVersions({
     return (messageId: string) => byFirstMessage.get(messageId) ?? null;
   }, [versions, messages]);
 
-  return { beforeRegenerate, beforeEdit, select, versionOf };
+  return {
+    beforeRegenerate,
+    beforeEdit,
+    select,
+    versionOf,
+    /** An older version is on screen: the thread is read-only until `showLatest`. */
+    viewingOlder: older !== null,
+    showLatest,
+  };
 }

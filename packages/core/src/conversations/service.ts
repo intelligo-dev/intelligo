@@ -11,7 +11,7 @@
  * done it. Failures throw `ConversationServiceError`.
  */
 
-import { and, asc, desc, eq, gt, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, lt, sql } from "drizzle-orm";
 import { db } from "../db";
 import { conversations, messages, votes } from "../db/schema";
 import { ConversationServiceError } from "./errors";
@@ -389,7 +389,9 @@ export async function upsertMessages(
       set: {
         parts: sql`excluded.parts`,
       },
-      setWhere: sql`${messages.conversationId} = excluded.conversation_id`,
+      // A message keeps its role: a user message sent under an
+      // assistant message's id must not rewrite what the model said.
+      setWhere: sql`${messages.conversationId} = excluded.conversation_id and ${messages.role} = excluded.role`,
     });
 }
 
@@ -426,10 +428,14 @@ export async function updateMessage(
   return updated;
 }
 
-/** Delete all messages created after a specific message. */
+/**
+ * Delete all messages created after a specific message — and the
+ * message itself with `inclusive`. With `conversationId`, a message of
+ * any other conversation is not found.
+ */
 export async function deleteTrailingMessages(
   actor: ConversationActor,
-  params: { id: string }
+  params: { id: string; inclusive?: boolean; conversationId?: string }
 ): Promise<{ deletedCount: number }> {
   const [message] = await db
     .select()
@@ -437,7 +443,11 @@ export async function deleteTrailingMessages(
     .where(eq(messages.id, params.id))
     .limit(1);
 
-  if (!message) {
+  if (
+    !message ||
+    (params.conversationId !== undefined &&
+      message.conversationId !== params.conversationId)
+  ) {
     throw new ConversationServiceError("not_found", "Message not found");
   }
 
@@ -453,7 +463,7 @@ export async function deleteTrailingMessages(
     .where(
       and(
         eq(messages.conversationId, message.conversationId),
-        gt(
+        (params.inclusive ? gte : gt)(
           messages.createdAt,
           sql`(select ${messages.createdAt} from ${messages} where ${messages.id} = ${params.id})`
         )

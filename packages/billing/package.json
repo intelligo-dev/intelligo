@@ -48,11 +48,13 @@
   },
   "peerDependencies": {
     "drizzle-orm": "^0.45.1",
+    "react": "^19.0.0",
     "stripe": ">=20.3.1 <23",
     "zod": "^3.25.76 || ^4.0.0"
   },
   "devDependencies": {
     "drizzle-orm": "^0.45.2",
+    "react": "^19.3.0",
     "stripe": "^22.6.2",
     "typescript": "^6.0.3",
     "zod": "^4.6.5"

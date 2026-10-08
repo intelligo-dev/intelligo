@@ -22,10 +22,13 @@
  * - A bad or missing signature is 400 — that is Stripe's own contract,
  *   and it reveals nothing a caller without the secret did not know.
  *
- * Ordering between events is not guaranteed by Stripe. The handlers
- * write the state they are given, with one exception that is terminal
- * in Stripe too: a canceled subscription is never made active again by
- * a late `invoice.paid` or `customer.subscription.updated`.
+ * Ordering between events is not guaranteed by Stripe.
+ * `customer.subscription.updated` reads the subscription back from
+ * Stripe and writes its current state rather than the payload's, so a
+ * retried older update cannot undo a newer one. A canceled subscription
+ * is never made active again by a late `invoice.paid` or
+ * `customer.subscription.updated`. A refund or dispute of a credit
+ * purchase takes the purchased credit back out of the balance.
  */
 
 import type Stripe from "stripe";
@@ -43,6 +46,8 @@ import {
   handleInvoicePaymentFailed,
   handleSubscriptionUpdated,
   handleSubscriptionDeleted,
+  handleChargeRefunded,
+  handleChargeDisputeCreated,
 } from "./webhook-handlers";
 
 const log = createLogger("StripeWebhook");
@@ -134,6 +139,12 @@ export async function dispatchStripeEvent(event: Stripe.Event): Promise<void> {
       return;
     case "customer.subscription.deleted":
       await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+      return;
+    case "charge.refunded":
+      await handleChargeRefunded(event.data.object as Stripe.Charge);
+      return;
+    case "charge.dispute.created":
+      await handleChargeDisputeCreated(event.data.object as Stripe.Dispute);
       return;
     default:
       log.debug("Unhandled event type", { eventType: event.type });

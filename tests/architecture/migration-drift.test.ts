@@ -19,6 +19,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
+import ts from "typescript";
 
 const ROOT = path.resolve(__dirname, "../..");
 const MIGRATIONS = path.join(ROOT, "packages/core/src/db/migrations");
@@ -44,25 +45,73 @@ function schemaFiles(): string[] {
 
 type Column = { table: string; column: string; file: string };
 
-function declaredColumns(): Column[] {
-  const out: Column[] = [];
+/** The call a column's builder chain starts from: `text("x")` in `text("x").notNull().references(…)`. */
+function chainRoot(node: ts.Expression): ts.CallExpression | undefined {
+  let e: ts.Expression = node;
+  while (ts.isCallExpression(e) && ts.isPropertyAccessExpression(e.expression))
+    e = e.expression.expression;
+  return ts.isCallExpression(e) && ts.isIdentifier(e.expression)
+    ? e
+    : undefined;
+}
+
+type Table = { table: string; file: string; keys: number; columns: Column[] };
+
+/**
+ * Every `pgTable("name", { … })` in the schema, parsed with the compiler
+ * so a nested object or a multi-line `.references()` cannot end a table
+ * early: `keys` is the object's top-level property count, which each
+ * table's columns must account for.
+ */
+function declaredTables(): Table[] {
+  const out: Table[] = [];
   for (const file of schemaFiles()) {
-    const src = readFileSync(file, "utf8");
-    const tableRe =
-      /pgTable\(\s*"([a-z_0-9]+)"\s*,\s*\{([\s\S]*?)\n\s*\}\s*[,)]/g;
-    let t: RegExpExecArray | null;
-    while ((t = tableRe.exec(src))) {
-      const [, table, body] = t;
-      const colRe = /^\s+([a-zA-Z0-9]+):\s*[a-zA-Z]+\((?:"([a-z_0-9]+)")?/gm;
-      let c: RegExpExecArray | null;
-      while ((c = colRe.exec(body!))) {
-        out.push({
-          table: table!,
-          column: c[2] ?? snake(c[1]!),
-          file: path.relative(ROOT, file),
-        });
+    const rel = path.relative(ROOT, file);
+    const sf = ts.createSourceFile(
+      file,
+      readFileSync(file, "utf8"),
+      ts.ScriptTarget.Latest,
+      true
+    );
+    const visit = (node: ts.Node): void => {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === "pgTable"
+      ) {
+        const [name, shape] = node.arguments;
+        if (
+          name &&
+          ts.isStringLiteral(name) &&
+          shape &&
+          ts.isObjectLiteralExpression(shape)
+        ) {
+          const columns: Column[] = [];
+          for (const prop of shape.properties) {
+            if (!ts.isPropertyAssignment(prop)) continue;
+            const root = chainRoot(prop.initializer);
+            if (!root) continue;
+            const explicit = root.arguments[0];
+            columns.push({
+              table: name.text,
+              column:
+                explicit && ts.isStringLiteral(explicit)
+                  ? explicit.text
+                  : snake(prop.name.getText(sf)),
+              file: rel,
+            });
+          }
+          out.push({
+            table: name.text,
+            file: rel,
+            keys: shape.properties.length,
+            columns,
+          });
+        }
       }
-    }
+      ts.forEachChild(node, visit);
+    };
+    visit(sf);
   }
   return out;
 }
@@ -72,7 +121,8 @@ describe("migration drift", () => {
     .filter((f) => f.endsWith(".sql"))
     .map((f) => readFileSync(path.join(MIGRATIONS, f), "utf8"))
     .join("\n");
-  const columns = declaredColumns();
+  const tables = declaredTables();
+  const columns = tables.flatMap((t) => t.columns);
   const mentions = (name: string) =>
     new RegExp(`(^|[^a-z_0-9])"?${name}"?([^a-z_0-9]|$)`, "m").test(migrations);
 
@@ -81,9 +131,16 @@ describe("migration drift", () => {
     expect(new Set(columns.map((c) => c.table)).size).toBeGreaterThan(20);
   });
 
+  it("reads every column of every table", () => {
+    const short = tables
+      .filter((t) => t.columns.length !== t.keys)
+      .map((t) => `${t.table}: ${t.columns.length} of ${t.keys} (${t.file})`);
+    expect(short).toEqual([]);
+  });
+
   it("every table the schema declares is created by a migration", () => {
-    const tables = [...new Set(columns.map((c) => c.table))];
-    expect(tables.filter((t) => !mentions(t))).toEqual([]);
+    const names = tables.map((t) => t.table);
+    expect(names.filter((t) => !mentions(t))).toEqual([]);
   });
 
   it("every column the schema declares is created by a migration", () => {

@@ -160,6 +160,45 @@ describe("hasFeature in-process cache", () => {
     // Two cache misses total — pre-upgrade and post-invalidate.
     expect(mocks.getWorkspaceSubscription).toHaveBeenCalledTimes(2);
   });
+
+  it("does not cache a denial decided while the plan could not be read", async () => {
+    mocks.getWorkspaceSubscription.mockRejectedValueOnce(new Error("reset"));
+    expect(await hasFeature("ws-1", "detailed_assessment")).toBe(false);
+
+    mocks.getWorkspaceSubscription.mockResolvedValue(onPlan("pro"));
+    expect(await hasFeature("ws-1", "detailed_assessment")).toBe(true);
+  });
+
+  it("does not cache the matrix's answer when the kill-switch read failed", async () => {
+    mocks.getWorkspaceSubscription.mockResolvedValue(onPlan("pro"));
+    mocks.selectLimit.mockRejectedValueOnce(new Error("reset"));
+    expect(await hasFeature("ws-1", "web_search")).toBe(true);
+
+    mocks.selectLimit.mockResolvedValue([
+      { name: "web_search", isActive: false, enabledPlans: '["pro"]' },
+    ]);
+    expect(await hasFeature("ws-1", "web_search")).toBe(false);
+  });
+
+  it("drops expired answers instead of keeping every key it ever saw", async () => {
+    vi.useFakeTimers();
+    try {
+      const { featureCacheSize } = await import("./features");
+      for (let i = 0; i < 10_000; i++) await hasFeature(`ws-${i}`, "advisor");
+      expect(featureCacheSize()).toBe(10_000);
+
+      vi.advanceTimersByTime(61_000);
+      await hasFeature("ws-new", "advisor");
+      expect(featureCacheSize()).toBe(1);
+
+      await hasFeature("ws-new", "advisor");
+      vi.advanceTimersByTime(61_000);
+      await hasFeature("ws-new", "advisor");
+      expect(featureCacheSize()).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("getWorkspacePlan", () => {

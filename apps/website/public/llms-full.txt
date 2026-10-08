@@ -486,7 +486,7 @@ export type BillingRate = {
 
 A turn of 2,000 input and 500 output tokens on `google/gemini-2.5-flash` costs the provider 1,850 micros. At 4× that is 7,400 micros, $0.0074 charged. A euro deployment at `920_000` charges 6,808 micros EUR.
 
-The rate is a fixed number you state, not a live feed. It lives in the single `billing_settings` row. `ensureBillingSettingsRow` in `composeIntelligo()` seeds that row and leaves an existing one alone, so editing the call after the first boot changes nothing. To change them later, call `updateBillingSettings({ usdRateMicros, marginBp })` — from an admin action or a script; it validates the values and drops the cache. Changing `currency` does not convert the balances a ledger already holds. `getBillingSettings` caches it for 60 seconds per process. Each `usage_records` row stores the provider cost, margin and rate it was charged at, so a later change never rewrites history.
+The rate is a fixed number you state, not a live feed. It lives in the single `billing_settings` row. `ensureBillingSettingsRow` in `composeIntelligo()` seeds that row and leaves an existing one alone, so editing the call after the first boot changes nothing. To change them later, call `updateBillingSettings({ usdRateMicros, marginBp })` — from an admin action or a script; it validates the values and drops the cache. Changing `currency` does not convert the balances a ledger already holds. `getBillingSettings` caches it for 60 seconds per process. When the row cannot be read it answers with the last reading the process made; with none, it throws, so admission and settlement fail and are retried rather than charge in another currency. Each `usage_records` row stores the provider cost, margin and rate it was charged at, so a later change never rewrites history.
 
 ## What the workspace sees
 
@@ -515,6 +515,12 @@ pnpm exec shadcn add @intelligo/team-settings
 
 The app `intelligo create` scaffolds is already registry-ready: shadcn base-nova, Tailwind 4, next-intl routing under `app/[locale]`, the `@/i18n/navigation` helpers the blocks import, and a `components.json` that names the hosted registry `@intelligo`. `create` also installs the `intelligo` base item — the design tokens, fonts and base-nova config every block is drawn with — before any block. Installing into an app it did not make, add that registry entry and run `pnpm exec shadcn add @intelligo/intelligo` first.
 
+## Which release you install
+
+`https://intelligo.dev/r/<item>.json`, the address `@intelligo` names, serves the items of the latest release on npm. Every release's items also stay at `https://intelligo.dev/r/<version>/<item>.json`, and a block installed from there takes the components it builds on from the same release. An app whose `@intelligo-dev/*` packages are older than the latest release installs from its own: `pnpm exec shadcn add https://intelligo.dev/r/<version>/team-settings.json`, with the version its `package.json` names.
+
+`intelligo sync` installs from the registry bundled with the CLI, which is always its own release's.
+
 ## Install order
 
 Some blocks import files another block ships, so install the dependency first — `route-error` before any page, `auth-login` before the other auth flows, `pricing` before the commerce blocks, `chat` before the other chat surfaces. [Install order](/docs/registry/install-order) is the full list with the scaffold files and feature keys each block needs, generated from `packages/registry/requires.json` — the same file CI installs from and `intelligo doctor` checks against.
@@ -529,7 +535,7 @@ A block that gates on a feature needs that key granted to a plan in `lib/plans.t
 
 ## Taking an update
 
-A block is yours once installed. To take a newer version, commit first and run `shadcn add` for the block again; it asks before overwriting each file that already exists. Components you never edited can be overwritten safely. Your config and message files are where your changes live, so keep yours or merge them from the diff.
+A block is yours once installed. To take a newer version, upgrade the `@intelligo-dev/*` packages to the release it comes from, commit, and run `shadcn add` for the block again; it asks before overwriting each file that already exists. Components you never edited can be overwritten safely. Your config and message files are where your changes live, so keep yours or merge them from the diff.
 
 ---
 
@@ -1357,7 +1363,13 @@ streamTurn: async (turn, prepared, { abortSignal }) => {
     version: "v7",
     params: {
       messages: prepared.messages,
-      memory: { thread: turn.conversationId, resource: turn.userId },
+      // Scoped to the workspace and the user, like every stored
+      // row: a resource of the user alone shares working memory
+      // and recall across every workspace they belong to.
+      memory: {
+        thread: turn.conversationId,
+        resource: `${turn.workspaceId}:${turn.userId}`,
+      },
       abortSignal,
     },
   });
@@ -1680,11 +1692,12 @@ Source: https://intelligo.dev/docs/packages/auth
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/auth better-auth drizzle-orm zod
+pnpm add @intelligo-dev/auth better-auth drizzle-orm react zod
 ```
 
-`better-auth`, `drizzle-orm` and `zod` are peers: the guards read the
-Better-Auth instance and the database client the application already has.
+`better-auth`, `drizzle-orm`, `react` and `zod` are peers: the guards read the
+Better-Auth instance and the database client the application already has,
+and the verification and reset emails render with React.
 
 ## What it owns
 
@@ -1757,10 +1770,11 @@ Source: https://intelligo.dev/docs/packages/billing
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/billing drizzle-orm stripe zod
+pnpm add @intelligo-dev/billing drizzle-orm react stripe zod
 ```
 
-`drizzle-orm`, `stripe` and `zod` are peers.
+`drizzle-orm`, `react`, `stripe` and `zod` are peers; the trial and payment
+emails render with React.
 
 ## What it owns
 
@@ -1983,6 +1997,9 @@ place of the provider's own id.
 Give a real provider its `currency`: `createPayment` takes bare minor units, and
 only a provider that names its currency makes `openLocalInvoice` refuse a price
 in another one (`currency_mismatch`) instead of sending that number as its own.
+A plan is not sold through a local invoice to a workspace a live Stripe
+subscription bills: `openLocalInvoice` refuses it (`subscription_active`),
+since the subscription's next webhook would put its own plan back.
 Registering one without it in production logs a warning.
 
 ## Granting a plan
@@ -2002,6 +2019,14 @@ writes the receipt before running handlers, claims the event with
 `UPDATE … WHERE processed_at IS NULL` so two concurrent deliveries cannot both
 run, and answers 500 on a handler error so Stripe retries. Answering 202 to an
 error tells Stripe the event was handled and silently drops it.
+
+Stripe does not deliver events in order. `customer.subscription.updated` reads
+the subscription back from Stripe and writes what it holds now, so a retried
+older update cannot undo a newer one. `charge.refunded` and
+`charge.dispute.created` take the refunded or disputed share of a credit
+purchase's grant back out of the balance, never below zero, recorded as a
+`credit` usage row and a `billing.credit_reversed` audit event; a purchase
+refunded or disputed before it was granted is never granted.
 
 ## Entry points
 
@@ -2087,8 +2112,10 @@ twice.
 
 `executions.reconcile(executionId, { abandonRunningAfterMs? })` repairs a run
 whose process died: it asks `findSettlement` whether the charge committed,
-confirms it onto the row or re-runs settlement from the recorded usage, and
-fails a `running` row that outlived the threshold. `findStaleExecutions` finds
+confirms it onto the row or re-runs settlement from the recorded usage. A
+`running` row that outlived the threshold is charged the usage `run.progress()`
+recorded on it while the run went on — a multi-step run calls it after each
+model call — and failed, its hold released, when nothing was recorded. `findStaleExecutions` finds
 the candidates; `listExecutions`, `summarizeExecutions` and
 `summarizeExecutionsByDay` read the record for a usage page.
 
@@ -2192,6 +2219,7 @@ route to get:
 | `prepareMessages(turn, msgs)` | What the model is shown — windowing, summaries, injected context                                                                                                                                                                    |
 | `agent.generation`            | How the model samples — temperature, a token ceiling, a tool choice, a seed: an allowlist of the `streamText` options that do not touch settlement. `maxOutputTokens` defaults to the registered model's, the figure admission held |
 | `attachments`                 | Which file parts are accepted; `mode: "stored"` uploads them through the storage port and signs URLs for the model only                                                                                                             |
+| `maxBodyBytes`                | The largest request body read, after the caller is authenticated; 8 MiB plus four inline files at the policy's size by default                                                                                                      |
 | `reasoning`, `sources`        | Whether reasoning and source parts stream to the client                                                                                                                                                                             |
 | `messageMetadata`             | `{ modelId, usage, finishedAt }` on the reply (default on)                                                                                                                                                                          |
 | `cors`                        | Origins an embedded widget may call from                                                                                                                                                                                            |
@@ -2284,7 +2312,9 @@ modelIds })` reads it once per model a picker offers.
   `sendWithoutEarlierFiles`: a `prepareSendMessagesRequest` for
   `DefaultChatTransport` that sends earlier messages' inline files without
   their bytes, which the handler restores from the stored transcript, so a
-  conversation with an image in it does not re-send the image every turn.
+  conversation with an image in it does not re-send the image every turn. A
+  message no reply answered — a turn refused before it ran — keeps its bytes,
+  since the server never stored it.
   Pulls in no server code.
 - `@intelligo-dev/chat/testing` — `createStubLanguageModel`, a deterministic
   model that streams with no API key.
@@ -2516,7 +2546,13 @@ const result = await drain(
 ## What the queue guarantees
 
 - **No double-processing.** Claiming is `FOR UPDATE SKIP LOCKED`, so several
-  workers drain the same queue and each takes different rows.
+  workers drain the same queue and each takes different rows. A worker writes
+  to a job only while it still holds the claim: a job another worker claimed
+  again while it waited in a batch is skipped, and a late outcome never
+  overwrites the newer one.
+- **A recorded outcome.** A handler runs once per attempt: a failed status
+  write is retried rather than counted as a handler failure, and one job's
+  failed write does not stop the rest of the batch.
 - **Retry with backoff.** A handler that throws puts the job back, one more
   minute later per attempt; after `maxAttempts` it is `failed` and keeps its
   last error. `listFailedJobs()` reads them, newest first.
@@ -2530,8 +2566,9 @@ const result = await drain(
   back without spending an attempt, a minute behind the jobs the worker can
   run — another deployment may know it.
 
-`pruneJobs(before)` deletes succeeded jobs older than the cutoff and returns
-how many. `postgresJobQueue` is the same `enqueue` and `drain` as one
+`pruneJobs(before, { failedBefore })` deletes succeeded jobs finished before
+`before` and failed ones finished before `failedBefore` (the same cutoff when
+omitted), in bounded batches, and returns how many. `postgresJobQueue` is the same `enqueue` and `drain` as one
 `JobQueue` value; a different queue implements that type, and call sites stay
 as they are.
 
@@ -2673,7 +2710,9 @@ cost, reading usage and the model from whatever shape the provider reported.
 `executions` is the instance the composition root builds with
 `createExecutions` from
 [`@intelligo-dev/executions`](https://www.npmjs.com/package/@intelligo-dev/executions);
-naming the `model` sizes the credit hold admission takes.
+naming the `model` sizes the credit hold admission takes, and the run settles
+against that registered id even when the result reports the provider's own
+(kept in the metadata as `reportedModel`).
 
 When entitlement refuses, it throws an `ExecutionRefusedError` carrying the
 `executionId` and the port's `reasonCode`, so a refusal cannot be mistaken for
@@ -2991,7 +3030,7 @@ JSON object on stdout, same exit code, whose `state` is
                    tables: an empty database, `migrate` applies the chain;
   - `unmanaged`  — the tables exist with no records (`db:push`);
   - `ahead`      — applied migrations this checkout does not contain;
-  - `legacy`     — the pre-1.0 chain; `adoptable` says whether
+  - `legacy`     — the pre-1.0 chain, not yet adopted; `adoptable` says whether
                    `migrate` can take it over.
 
 Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
@@ -3029,7 +3068,11 @@ shadcn cannot know:
   hash, so `--check` can tell a file edited by hand from one a newer
   registry replaced. Scaffold files an install replaces (globals.css,
   the theme provider) leave the `app-scaffold` record for this one,
-  so `upgrade --check` stops calling them customized.
+  so `upgrade --check` stops calling them customized;
+- the app's copies: seams and message files wait under
+  `.intelligo/sync-restore/` while the install runs, and a file of
+  shadcn's own items (`utils`, `card`…) the install replaced is saved
+  under `.intelligo/backup/`.
 
 `--check` installs nothing and exits 1 when any installed file is
 missing, edited or behind the registry — the gate CI runs.
@@ -3362,22 +3405,28 @@ export async function exportConversations() {
 
 `hasFeature(workspaceId, feature)` resolves the workspace's plan (its subscription's plan while the subscription is `active`, `trialing` or `past_due`; the trial's `planSlug`, `pro` by default, during an active trial; `free` otherwise) and returns a boolean. `requireFeature` takes the same arguments and throws a `FeatureNotAvailableError` instead, which names the feature, the current plan and the plans that grant it. A key that is missing from the matrix is denied on every plan, so a registry item with a `featureKey` you have not added answers 403.
 
-A row in the `feature_flags` table overrides the matrix for its feature name, and an inactive row turns the feature off for everyone. Answers are cached in-process for 60 seconds; `invalidateFeatureCache(workspaceId)` drops them.
+A row in the `feature_flags` table overrides the matrix for its feature name, and an inactive row turns the feature off for everyone. Answers are cached in-process for 60 seconds; `invalidateFeatureCache(workspaceId)` drops them. An answer given while the database could not be read is not cached.
 
 ## Cap how often a feature runs
 
-`checkFeatureQuota(userId, workspaceId, plan, action)` compares a counter with the plan's limit. The limit is the key in `limits` named after the action — `summaries` above — unless `registerActionLimitKeys` maps the action to another key. `recordFeatureUsage(userId, workspaceId, action)` increments the counter in one SQL statement.
+`consumeFeatureQuota(userId, workspaceId, plan, action)` counts one use when the plan's limit still allows it and refuses it otherwise, in one SQL statement, so requests arriving together never take the counter past the limit. The limit is the key in `limits` named after the action — `summaries` above — unless `registerActionLimitKeys` maps the action to another key.
 
 ```ts title="actions/summaries.ts"
 const { workspace, user } = await requireWorkspace();
 const plan = await getWorkspacePlan(workspace.id);
 
-const quota = await checkFeatureQuota(user.id, workspace.id, plan, "summaries");
+const quota = await consumeFeatureQuota(
+  user.id,
+  workspace.id,
+  plan,
+  "summaries"
+);
 if (!quota.allowed) return { success: false as const, quota };
 
 const summary = await summarize(input);
-await recordFeatureUsage(user.id, workspace.id, "summaries");
 ```
+
+`checkFeatureQuota(userId, workspaceId, plan, action)` only reads the counter, for display, and `recordFeatureUsage(userId, workspaceId, action)` only adds to it. Checking with one and counting with the other lets requests that run at once each pass the check.
 
 The result is a `FeatureQuotaResult`: `allowed`, `used`, `limit`, `remaining`, `percentage`, `nearingLimit` from 80 percent, and on refusal the `upgradeMessage` you registered with `registerUpgradeMessages`.
 
@@ -3569,12 +3618,14 @@ The handler verifies the `stripe-signature` header against `STRIPE_WEBHOOK_SECRE
 | `checkout.session.completed`               | Subscription: upserts the workspace's `subscriptions` row, marks a trial converted, clears the feature cache, emails the owner. Payment: when `payment_status` is `paid`, adds the grant to `credit_balances` and completes the `credit_purchases` row |
 | `invoice.paid`                             | Status `active`, the new period dates, and a fresh monthly usage row                                                                                                                                                                                   |
 | `invoice.payment_failed`                   | Status `past_due`, and an email to the owner                                                                                                                                                                                                           |
-| `customer.subscription.updated`            | Status, period, cancel-at-period-end, and the plan whose Stripe price the subscription now carries                                                                                                                                                     |
+| `customer.subscription.updated`            | Status, period, cancel-at-period-end, and the plan whose Stripe price the subscription now carries, read back from Stripe so a late delivery cannot undo a newer change                                                                                |
 | `customer.subscription.deleted`            | Status `canceled`, which resolves the workspace to the free plan                                                                                                                                                                                       |
 | `checkout.session.async_payment_succeeded` | A delayed payment method cleared: grants the bundle, once, even if `completed` already did                                                                                                                                                             |
 | `checkout.session.async_payment_failed`    | Marks the pending credit purchase failed                                                                                                                                                                                                               |
+| `charge.refunded`                          | Takes the refunded share of a credit purchase's grant back out of `credit_balances`, never below zero; a full refund marks the purchase `refunded`                                                                                                     |
+| `charge.dispute.created`                   | Takes the disputed share of a credit purchase's grant back out of `credit_balances` and marks the purchase `disputed`                                                                                                                                  |
 
-Enable exactly these seven on the dashboard endpoint. Other types are recorded and acknowledged.
+Enable exactly these nine on the dashboard endpoint. Other types are recorded and acknowledged.
 
 Entitlement follows the subscription's status: `active`, `trialing` and `past_due` keep the plan — Stripe is still retrying the payment — and any other status resolves the workspace to the free plan. Pass `onEvent` to `createStripeWebhookHandler` for anything of your own; it runs after the built-in handler for every event, and throwing makes Stripe retry.
 
@@ -3603,7 +3654,7 @@ The subscription handlers take the plan from the subscription's price id, looked
 ## Going live
 
 - Set the live `STRIPE_SECRET_KEY` and live price ids. A `sk_test_` key under `NODE_ENV=production` logs `STRIPE_SECRET_KEY is a test key in production environment` at startup.
-- Add a dashboard endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` with the seven events, and set its signing secret as `STRIPE_WEBHOOK_SECRET`.
+- Add a dashboard endpoint at `NEXT_PUBLIC_APP_URL` + `/api/webhooks/stripe` with the nine events, and set its signing secret as `STRIPE_WEBHOOK_SECRET`.
 
 ## Payments outside Stripe
 

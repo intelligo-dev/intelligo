@@ -12,7 +12,7 @@
 
 import type Stripe from "stripe";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import { db } from "@intelligo-dev/core/db";
 import { users, creditPurchases } from "@intelligo-dev/core/db/schema";
@@ -28,11 +28,12 @@ import type { LocalPaymentOffer } from "./local-payments";
 import { getStripe, toStripeLocale } from "./stripe";
 import { getPlanBySlug } from "./plans";
 import { planRowId } from "./plan-rows";
+import { getOrCreateStripeCustomer, getWorkspaceBilling } from "./queries";
 import {
-  getOrCreateStripeCustomer,
-  getWorkspaceBilling,
-  getWorkspaceSubscription,
-} from "./queries";
+  liveSubscription,
+  planChangeFlow,
+  withoutQuery,
+} from "./subscription-portal";
 
 /** Micros are millionths of one major unit; whole units × this. */
 const MICROS_PER_UNIT = 1_000_000;
@@ -50,7 +51,8 @@ export type BillingServiceErrorCode =
   | "provider_error"
   | "payment_not_found"
   | "payment_mismatch"
-  | "currency_mismatch";
+  | "currency_mismatch"
+  | "subscription_active";
 
 /** Typed error every function in this module throws instead of a bare `Error`. */
 export class BillingServiceError extends Error {
@@ -116,7 +118,9 @@ export type CheckoutSessionResult = { url: string };
  * Stripe is asked as well as the local row, which the webhook fills in
  * after the redirect. Any subscription checkout still open for the
  * customer is expired before a new one is created, so two tabs cannot
- * both be paid.
+ * both be paid. Checkouts for one workspace take turns from that check
+ * to the new session, so two requests at once cannot both find nothing
+ * open and each open a session.
  */
 export async function createSubscriptionCheckout(
   input: CreateSubscriptionCheckoutInput
@@ -175,6 +179,43 @@ export async function createSubscriptionCheckout(
     locale ?? userRow?.preferredLanguage ?? undefined
   );
 
+  return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext(${`subscription-checkout:${workspaceId}`}))`
+    );
+    return openSubscriptionCheckout({
+      workspaceId,
+      customerId,
+      planId,
+      stripePriceId,
+      stripeLocale,
+      successUrl,
+      cancelUrl,
+      returnUrl,
+    });
+  });
+}
+
+async function openSubscriptionCheckout(params: {
+  workspaceId: string;
+  customerId: string;
+  planId: string;
+  stripePriceId: string;
+  stripeLocale: string;
+  successUrl: string;
+  cancelUrl: string;
+  returnUrl: string | undefined;
+}): Promise<CheckoutSessionResult> {
+  const {
+    workspaceId,
+    customerId,
+    planId,
+    stripePriceId,
+    stripeLocale,
+    successUrl,
+    cancelUrl,
+    returnUrl,
+  } = params;
   const stripe = getStripe();
 
   const live = await liveSubscription(workspaceId, customerId);
@@ -228,87 +269,7 @@ export async function createSubscriptionCheckout(
 }
 
 type CheckoutLocale = Stripe.Checkout.SessionCreateParams.Locale;
-type PortalParams = Stripe.BillingPortal.SessionCreateParams;
 type PortalLocale = Stripe.BillingPortal.SessionCreateParams.Locale;
-
-/**
- * Statuses in which the Stripe subscription still exists and bills.
- * `canceled`, `incomplete` and `incomplete_expired` are absent: nothing
- * is left to change, so those workspaces go through checkout again.
- */
-const STRIPE_SUBSCRIPTION_OPEN: ReadonlySet<string> = new Set([
-  "active",
-  "trialing",
-  "past_due",
-  "unpaid",
-  "paused",
-]);
-
-/**
- * The subscription that still bills this workspace: the local row's, or
- * — before its webhook lands — one Stripe already holds for the customer.
- */
-async function liveSubscription(
-  workspaceId: string,
-  customerId: string
-): Promise<{ id: string; status: string } | null> {
-  const local = (await getWorkspaceSubscription(workspaceId))?.subscription;
-  if (
-    local?.stripeSubscriptionId &&
-    STRIPE_SUBSCRIPTION_OPEN.has(local.status)
-  ) {
-    return { id: local.stripeSubscriptionId, status: local.status };
-  }
-  const remote = await getStripe().subscriptions.list({
-    customer: customerId,
-    status: "all",
-    limit: 100,
-  });
-  const found = remote.data.find((sub) =>
-    STRIPE_SUBSCRIPTION_OPEN.has(sub.status)
-  );
-  return found ? { id: found.id, status: found.status } : null;
-}
-
-function withoutQuery(url: string): string {
-  const parsed = new URL(url);
-  parsed.search = "";
-  return parsed.toString();
-}
-
-/**
- * The portal flow for moving a subscription to another price. Empty —
- * the portal's home — when the subscription is not in good standing, is
- * already on that price, or has no item to move.
- */
-async function planChangeFlow(params: {
-  stripeSubscriptionId: string;
-  status: string;
-  stripePriceId: string;
-  returnUrl: string;
-}): Promise<Pick<PortalParams, "flow_data">> {
-  if (params.status !== "active" && params.status !== "trialing") return {};
-
-  const subscription = await getStripe().subscriptions.retrieve(
-    params.stripeSubscriptionId
-  );
-  const item = subscription.items.data[0];
-  if (!item || item.price.id === params.stripePriceId) return {};
-
-  return {
-    flow_data: {
-      type: "subscription_update_confirm",
-      subscription_update_confirm: {
-        subscription: subscription.id,
-        items: [{ id: item.id, price: params.stripePriceId, quantity: 1 }],
-      },
-      after_completion: {
-        type: "redirect",
-        redirect: { return_url: params.returnUrl },
-      },
-    },
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Credit checkout

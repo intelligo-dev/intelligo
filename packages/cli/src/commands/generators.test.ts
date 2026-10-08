@@ -116,6 +116,33 @@ describe("addFeature", () => {
 
     expect(result.written).toEqual(["app/demo/page.tsx"]);
     expect(readFileSync(target(), "utf8")).toBe(TEMPLATE_BODY);
+    expect(result.backedUp?.files).toEqual(["app/demo/page.tsx"]);
+    expect(
+      readFileSync(
+        path.join(appRoot, result.backedUp!.dir, "app/demo/page.tsx"),
+        "utf8"
+      )
+    ).toBe("// mine\n");
+    expect(formatAddResult(result)).toContain(result.backedUp!.dir);
+  });
+
+  it("backs up a file it never generated before force replaces it", () => {
+    mkdirSync(path.dirname(target()), { recursive: true });
+    writeFileSync(target(), "// not ours\n");
+
+    const result = add(true);
+
+    expect(
+      readFileSync(
+        path.join(appRoot, result.backedUp!.dir, "app/demo/page.tsx"),
+        "utf8"
+      )
+    ).toBe("// not ours\n");
+  });
+
+  it("takes no backup when force replaces its own untouched output", () => {
+    add();
+    expect(add(true).backedUp).toBeUndefined();
   });
 
   it("refuses a path occupied by a file it never generated", () => {

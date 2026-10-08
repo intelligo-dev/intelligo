@@ -139,6 +139,7 @@ export type { FeatureKey } from "./features";
 // Feature-based quota enforcement, keyed by the product's own actions
 export {
   checkFeatureQuota,
+  consumeFeatureQuota,
   recordFeatureUsage,
   getUserQuotaStats,
 } from "./feature-quota";

@@ -4,9 +4,10 @@
  * Not zod: a schema library in a package's public surface would have
  * to be a peer (its `instanceof` fails across copies), and the body
  * has four fields. The shape is the AI SDK's `DefaultChatTransport`
- * one — `id`, `messages`, `trigger`, `messageId` — plus whatever the
- * application's transport added, which is handed back untouched as
- * `extra` for `resolveAgent` to read (an `agentId`, a model choice).
+ * one — `id`, `messages`, `trigger`, `messageId` — plus `replaces`,
+ * the stored message an edit replaces, plus whatever the application's
+ * transport added, which is handed back untouched as `extra` for
+ * `resolveAgent` to read (an `agentId`, a model choice).
  */
 
 import type { UIMessage } from "ai";
@@ -47,6 +48,11 @@ export type ChatBody = {
   messages: UIMessage[];
   trigger: "submit-message" | "regenerate-message" | undefined;
   messageId: string | undefined;
+  /**
+   * The stored message an edit replaces: it and everything after it
+   * leave the transcript before the edited message is stored.
+   */
+  replaces: string | undefined;
   /** Fields the application's transport added beyond the SDK's own. */
   extra: Record<string, unknown>;
 };
@@ -68,7 +74,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * send one could rewrite the agent's instructions.
  */
 const ROLES = new Set(["user", "assistant"]);
-const SDK_FIELDS = new Set(["id", "messages", "trigger", "messageId"]);
+const SDK_FIELDS = new Set([
+  "id",
+  "messages",
+  "trigger",
+  "messageId",
+  "replaces",
+]);
 const ID_PLACEHOLDER = "__ATTACHMENT_ID__";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -132,6 +144,38 @@ export function attachmentIdFromUrl(
   return id && !id.includes("/") ? id : null;
 }
 
+/**
+ * Whether a file part a client sent may reach the model in a message
+ * of this role. A user's file must fit the policy: in `stored` mode an
+ * upload's URL, inline a data URL within `maxBytes`. An assistant's
+ * file is one the model produced and only ever travels inline; any
+ * other URL would have the server fetch whatever the client named.
+ */
+export function fileAccepted(
+  part: { mediaType?: unknown; url?: unknown },
+  role: UIMessage["role"],
+  policy: ChatAttachmentPolicy | false
+): boolean {
+  if (typeof part.url !== "string") return false;
+  if (role === "assistant") return part.url.startsWith("data:");
+  if (role !== "user" || policy === false) return false;
+  if (
+    typeof part.mediaType !== "string" ||
+    !policy.accept.includes(part.mediaType)
+  ) {
+    return false;
+  }
+  if (policy.mode === "stored") {
+    // A stored part names an upload; the row is checked by the
+    // handler, which knows the tenant. A data URL here bypassed the
+    // upload route and its limits, so it is refused.
+    return attachmentIdFromUrl(policy, part.url) !== null;
+  }
+  // An inline part carries its bytes, so its size is known here.
+  const bytes = dataUrlBytes(part.url);
+  return bytes !== null && bytes <= (policy.maxBytes ?? ATTACHMENT_MAX_BYTES);
+}
+
 function rejectedAttachment(
   message: UIMessage,
   policy: ChatAttachmentPolicy | false,
@@ -139,32 +183,53 @@ function rejectedAttachment(
 ): boolean {
   for (const part of message.parts) {
     if (part.type !== "file") continue;
-    if (policy === false) return true;
     const file = part as { mediaType?: unknown; url?: unknown };
-    if (
-      typeof file.mediaType !== "string" ||
-      !policy.accept.includes(file.mediaType)
-    ) {
-      return true;
-    }
-    if (typeof file.url !== "string") return true;
     // An earlier message's file sent without its bytes: the handler
     // restores the stored copy, or drops the part.
-    if (earlier && file.url === ELIDED_FILE_URL) continue;
-    if (policy.mode === "stored") {
-      // A stored part names an upload; the row is checked by the
-      // handler, which knows the tenant. A data URL here bypassed the
-      // upload route and its limits, so it is refused.
-      if (attachmentIdFromUrl(policy, file.url) === null) return true;
+    if (earlier && file.url === ELIDED_FILE_URL) {
+      if (message.role === "user" && policy === false) return true;
       continue;
     }
-    // An inline part carries its bytes, so its size is known here.
-    const bytes = dataUrlBytes(file.url);
-    if (bytes === null || bytes > (policy.maxBytes ?? ATTACHMENT_MAX_BYTES)) {
-      return true;
-    }
+    if (!fileAccepted(file, message.role, policy)) return true;
   }
   return false;
+}
+
+/**
+ * A user writes text and attaches files; tool calls, reasoning and
+ * sources are the model's. A user message carrying one would be stored
+ * as sent and read back as if the model had written it.
+ */
+function isUserPart(part: { type: string }): boolean {
+  return (
+    part.type === "text" ||
+    part.type === "file" ||
+    part.type.startsWith("data-")
+  );
+}
+
+/**
+ * A file part as the client may send it. A provider reference makes
+ * the AI SDK hand the provider that file in place of the URL checked
+ * here, so it is dropped with the provider metadata.
+ */
+function withoutProviderFields(message: UIMessage): UIMessage {
+  if (!message.parts.some((part) => part.type === "file")) return message;
+  return {
+    ...message,
+    parts: message.parts.map((part) => {
+      if (part.type !== "file") return part;
+      const {
+        providerReference: _reference,
+        providerMetadata: _metadata,
+        ...rest
+      } = part as typeof part & {
+        providerReference?: unknown;
+        providerMetadata?: unknown;
+      };
+      return rest as typeof part;
+    }),
+  };
 }
 
 export function parseChatBody(
@@ -193,12 +258,25 @@ export function parseChatBody(
   if (json.messageId !== undefined && typeof json.messageId !== "string") {
     return invalid;
   }
+  if (
+    json.replaces !== undefined &&
+    (typeof json.replaces !== "string" || !json.replaces)
+  ) {
+    return invalid;
+  }
 
-  const messages = json.messages as UIMessage[];
-  // Every user message, not only the new one: the history is the
-  // client's too, and a turn is billed for all of it.
+  const messages = (json.messages as UIMessage[]).map(withoutProviderFields);
+  // Every message, not only the new one: the history is the client's
+  // too, and a turn is billed for all of it.
   for (const [index, message] of messages.entries()) {
-    if (message.role !== "user") continue;
+    const earlier = index < messages.length - 1;
+    if (message.role !== "user") {
+      if (rejectedAttachment(message, options.attachments, earlier)) {
+        return { ok: false, rejection: { key: "attachmentRejected" } };
+      }
+      continue;
+    }
+    if (!message.parts.every(isUserPart)) return invalid;
     const length = extractText(message.parts).length;
     if (length > options.maxMessageLength) {
       return {
@@ -209,7 +287,6 @@ export function parseChatBody(
         },
       };
     }
-    const earlier = index < messages.length - 1;
     if (rejectedAttachment(message, options.attachments, earlier)) {
       return { ok: false, rejection: { key: "attachmentRejected" } };
     }
@@ -237,6 +314,7 @@ export function parseChatBody(
       messages,
       trigger: json.trigger as ChatBody["trigger"],
       messageId: json.messageId as string | undefined,
+      replaces: json.replaces as string | undefined,
       extra,
     },
   };

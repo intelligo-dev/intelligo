@@ -71,8 +71,12 @@ export async function enqueue(input: EnqueueInput): Promise<string> {
  * handler started more than `ABANDONED_AFTER_MS` ago and is still
  * `running` belongs to a worker that died mid-handler, and is claimed
  * again — so a handler must finish well within that.
+ *
+ * The `startedAt` a claim writes is the claiming worker's hold on the
+ * row: every later write by that worker matches it, and a worker that
+ * claims the row again writes a different one.
  */
-async function claim(limit: number): Promise<Job[]> {
+async function claim(limit: number): Promise<{ claimed: Job[]; at: Date }> {
   const now = new Date();
   const abandonedBefore = new Date(now.getTime() - ABANDONED_AFTER_MS);
   const abandoned = and(
@@ -102,7 +106,7 @@ async function claim(limit: number): Promise<Job[]> {
     .limit(limit)
     .for("update", { skipLocked: true });
 
-  return db
+  const claimed = await db
     .update(jobs)
     .set({
       status: "running",
@@ -111,6 +115,47 @@ async function claim(limit: number): Promise<Job[]> {
     })
     .where(inArray(jobs.id, due))
     .returning();
+  return { claimed, at: now };
+}
+
+/** Matches the row only while the worker that wrote `startedAt` holds it. */
+function held(id: string, startedAt: Date) {
+  return and(
+    eq(jobs.id, id),
+    eq(jobs.status, "running"),
+    eq(jobs.startedAt, startedAt)
+  );
+}
+
+const OUTCOME_WRITE_ATTEMPTS = 3;
+
+/**
+ * Write a job's outcome, retrying a failed write: a row left `running`
+ * would be claimed again once abandoned and its handler run a second
+ * time.
+ */
+async function writeOutcome(
+  job: Job,
+  startedAt: Date,
+  fields: Partial<typeof jobs.$inferInsert>
+): Promise<void> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await db.update(jobs).set(fields).where(held(job.id, startedAt));
+      return;
+    } catch (error) {
+      if (attempt >= OUTCOME_WRITE_ATTEMPTS) {
+        log.error("Job outcome not recorded", {
+          jobId: job.id,
+          kind: job.kind,
+          status: String(fields.status),
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, attempt * 100));
+    }
+  }
 }
 
 /**
@@ -118,6 +163,10 @@ async function claim(limit: number): Promise<Job[]> {
  * that long after the drain began, so a run fits its route's time limit;
  * the claimed jobs it did not start go back, attempt unspent, as
  * `deferred`.
+ *
+ * A job runs only while this worker still holds it: one that waited in
+ * the batch long enough for another worker to claim it as abandoned is
+ * skipped here, and none of this worker's writes land on it.
  */
 export async function drain(
   handlers: Record<string, JobHandler>,
@@ -127,7 +176,9 @@ export async function drain(
     options.deadlineMs === undefined
       ? Number.POSITIVE_INFINITY
       : Date.now() + options.deadlineMs;
-  const claimedJobs = await claim(options.limit ?? 10);
+  const { claimed: claimedJobs, at: claimedAt } = await claim(
+    options.limit ?? 10
+  );
   const result: DrainResult = {
     claimed: claimedJobs.length,
     succeeded: 0,
@@ -137,78 +188,106 @@ export async function drain(
   };
 
   for (const job of claimedJobs) {
-    if (Date.now() >= deadline) {
-      result.deferred += 1;
-      await db
-        .update(jobs)
-        .set({
-          status: "pending",
-          attempts: sql`${jobs.attempts} - 1`,
-          startedAt: null,
-        })
-        .where(eq(jobs.id, job.id));
-      continue;
-    }
-    const handler = handlers[job.kind];
-
-    if (!handler) {
-      // Put it back rather than burning an attempt on a kind this
-      // worker simply doesn't know about — another deployment might.
-      // Moving `runAt` sends it behind the due jobs this worker can run,
-      // so a backlog of unknown kinds cannot fill every claim.
-      result.unhandled.push(job.kind);
-      await db
-        .update(jobs)
-        .set({
-          status: "pending",
-          attempts: sql`${jobs.attempts} - 1`,
-          runAt: new Date(Date.now() + UNHANDLED_DELAY_MS),
-        })
-        .where(eq(jobs.id, job.id));
-      continue;
-    }
-
     try {
-      // A batch runs one job at a time; the clock that decides a job was
-      // abandoned starts when its own handler does.
-      await db
-        .update(jobs)
-        .set({ startedAt: new Date() })
-        .where(eq(jobs.id, job.id));
-      await handler(job);
-      await db
-        .update(jobs)
-        .set({ status: "succeeded", finishedAt: new Date(), lastError: null })
-        .where(eq(jobs.id, job.id));
-      result.succeeded += 1;
+      await runClaimed(job, claimedAt, handlers, deadline, result);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const exhausted = job.attempts >= job.maxAttempts;
-      await db
-        .update(jobs)
-        .set({
-          status: exhausted ? "failed" : "pending",
-          finishedAt: exhausted ? new Date() : null,
-          // Back off linearly; a failing dependency shouldn't be
-          // hammered every drain.
-          runAt: exhausted
-            ? job.runAt
-            : new Date(Date.now() + job.attempts * 60_000),
-          lastError: message.slice(0, 1000),
-        })
-        .where(eq(jobs.id, job.id));
-      result.failed += 1;
-      log.error("Job failed", {
+      // A bookkeeping write failed; the job stays `running` and is
+      // claimed again once abandoned. The rest of the batch still runs.
+      log.error("Job bookkeeping failed", {
         jobId: job.id,
         kind: job.kind,
-        attempt: String(job.attempts),
-        exhausted: String(exhausted),
-        error: message,
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }
 
   return result;
+}
+
+async function runClaimed(
+  job: Job,
+  claimedAt: Date,
+  handlers: Record<string, JobHandler>,
+  deadline: number,
+  result: DrainResult
+): Promise<void> {
+  if (Date.now() >= deadline) {
+    result.deferred += 1;
+    await db
+      .update(jobs)
+      .set({
+        status: "pending",
+        attempts: sql`${jobs.attempts} - 1`,
+        startedAt: null,
+      })
+      .where(held(job.id, claimedAt));
+    return;
+  }
+  const handler = handlers[job.kind];
+
+  if (!handler) {
+    // Put it back rather than burning an attempt on a kind this
+    // worker simply doesn't know about — another deployment might.
+    // Moving `runAt` sends it behind the due jobs this worker can run,
+    // so a backlog of unknown kinds cannot fill every claim.
+    result.unhandled.push(job.kind);
+    await db
+      .update(jobs)
+      .set({
+        status: "pending",
+        attempts: sql`${jobs.attempts} - 1`,
+        startedAt: null,
+        runAt: new Date(Date.now() + UNHANDLED_DELAY_MS),
+      })
+      .where(held(job.id, claimedAt));
+    return;
+  }
+
+  // A batch runs one job at a time; the clock that decides a job was
+  // abandoned starts when its own handler does. The restamp is also the
+  // check that the row is still this worker's to run.
+  const startedAt = new Date(Math.max(Date.now(), claimedAt.getTime() + 1));
+  const started = await db
+    .update(jobs)
+    .set({ startedAt })
+    .where(held(job.id, claimedAt))
+    .returning({ id: jobs.id });
+  if (started.length === 0) return;
+
+  let failure: string | undefined;
+  try {
+    await handler(job);
+  } catch (error) {
+    failure = error instanceof Error ? error.message : String(error);
+  }
+
+  if (failure === undefined) {
+    result.succeeded += 1;
+    await writeOutcome(job, startedAt, {
+      status: "succeeded",
+      finishedAt: new Date(),
+      lastError: null,
+    });
+    return;
+  }
+
+  const exhausted = job.attempts >= job.maxAttempts;
+  result.failed += 1;
+  log.error("Job failed", {
+    jobId: job.id,
+    kind: job.kind,
+    attempt: String(job.attempts),
+    exhausted: String(exhausted),
+    error: failure,
+  });
+  await writeOutcome(job, startedAt, {
+    status: exhausted ? "failed" : "pending",
+    finishedAt: exhausted ? new Date() : null,
+    // Back off linearly; a failing dependency shouldn't be
+    // hammered every drain.
+    runAt: exhausted ? job.runAt : new Date(Date.now() + job.attempts * 60_000),
+    lastError: failure.slice(0, 1000),
+  });
 }
 
 /** Jobs that exhausted their attempts, newest first — surfaced in the admin console. */
@@ -221,13 +300,35 @@ export async function listFailedJobs(limit = 50) {
     .limit(limit);
 }
 
-/** Delete succeeded jobs older than the cutoff. */
-export async function pruneJobs(before: Date): Promise<number> {
-  const deleted = await db
-    .delete(jobs)
-    .where(and(eq(jobs.status, "succeeded"), lte(jobs.finishedAt, before)))
-    .returning();
-  return deleted.length;
+const PRUNE_BATCH = 1_000;
+
+/**
+ * Delete finished jobs older than the cutoff — succeeded ones finished
+ * before `before`, failed ones before `failedBefore` (default: the same
+ * cutoff) — and return how many. Rows go in bounded batches, and only
+ * their count comes back.
+ */
+export async function pruneJobs(
+  before: Date,
+  options: { failedBefore?: Date } = {}
+): Promise<number> {
+  const failedBefore = options.failedBefore ?? before;
+  const finished = or(
+    and(eq(jobs.status, "succeeded"), lte(jobs.finishedAt, before)),
+    and(eq(jobs.status, "failed"), lte(jobs.finishedAt, failedBefore))
+  );
+  let total = 0;
+  for (;;) {
+    const batch = db
+      .select({ id: jobs.id })
+      .from(jobs)
+      .where(finished)
+      .limit(PRUNE_BATCH);
+    const { rowCount } = await db.delete(jobs).where(inArray(jobs.id, batch));
+    const deleted = rowCount ?? 0;
+    total += deleted;
+    if (deleted < PRUNE_BATCH) return total;
+  }
 }
 
 /** The default Postgres-backed queue. */
