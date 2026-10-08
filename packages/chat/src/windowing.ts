@@ -48,17 +48,59 @@ export function estimateTokenCount(text: string): number {
   return Math.ceil(latin / 4 + nonLatin / 2);
 }
 
+/** What a model reads of one image, whatever its encoded size. */
+export const IMAGE_TOKEN_ESTIMATE = 1_600;
+/** The least a document costs, and all a linked one is counted at. */
+const DOCUMENT_TOKEN_FLOOR = 1_600;
+/** Bytes of a binary document per token: pages carry markup and images. */
+const DOCUMENT_BYTES_PER_TOKEN = 16;
+
+const TEXT_MEDIA_TYPE =
+  /^(text\/|application\/(json|xml|csv|x-ndjson|yaml)\b|[^;]*\+(json|xml)\b)/;
+
+/** The decoded size of a data URL's payload; null for any other URL. */
+function dataUrlBytes(url: string): number | null {
+  if (!url.startsWith("data:")) return null;
+  const comma = url.indexOf(",");
+  // Stryker disable next-line EqualityOperator: equivalent — a data URL starts with "data:", so a comma is never at index 0.
+  if (comma < 0) return 0;
+  const payload = url.length - comma - 1;
+  if (!url.slice(0, comma).endsWith(";base64")) return payload;
+  const padding = url.endsWith("==") ? 2 : url.endsWith("=") ? 1 : 0;
+  return Math.floor((payload * 3) / 4) - padding;
+}
+
+/**
+ * A file part's cost, by what the model reads rather than how the part
+ * is encoded: counted by its base64, a 1 MB inline image would weigh
+ * hundreds of thousands of tokens. An image is a flat estimate; a text
+ * file its decoded length at the Latin rate; any other document its
+ * decoded size, never under the floor.
+ */
+function estimateFileTokens(part: { mediaType?: unknown; url?: unknown }) {
+  // Stryker disable next-line StringLiteral: equivalent — any fallback that is neither an image nor a text type is counted the same.
+  const mediaType = typeof part.mediaType === "string" ? part.mediaType : "";
+  if (mediaType.startsWith("image/")) return IMAGE_TOKEN_ESTIMATE;
+  const bytes = typeof part.url === "string" ? dataUrlBytes(part.url) : null;
+  if (bytes === null) return DOCUMENT_TOKEN_FLOOR;
+  if (TEXT_MEDIA_TYPE.test(mediaType)) return Math.ceil(bytes / 4);
+  return Math.max(
+    DOCUMENT_TOKEN_FLOOR,
+    Math.ceil(bytes / DOCUMENT_BYTES_PER_TOKEN)
+  );
+}
+
 export function estimateConversationTokens(
   messages: ReadonlyArray<UIMessage>
 ): number {
   let total = 0;
   for (const message of messages) {
-    // Tool payloads are not text but still cost tokens; count their
-    // serialised size at the Latin rate.
     for (const part of message.parts) {
-      total += isTextPart(part)
-        ? estimateTokenCount(part.text)
-        : Math.ceil(JSON.stringify(part).length / 4);
+      if (isTextPart(part)) total += estimateTokenCount(part.text);
+      else if (part.type === "file") total += estimateFileTokens(part);
+      // Tool payloads are not text but still cost tokens; count their
+      // serialised size at the Latin rate.
+      else total += Math.ceil(JSON.stringify(part).length / 4);
     }
   }
   return total;
@@ -102,6 +144,16 @@ export function applyConversationWindow(
   // window of nothing is worse than one that opens mid-exchange.
   // Stryker disable next-line OptionalChaining: equivalent — the condition to its left has already proved the index is in range.
   while (start < turns.length - 1 && turns[start]?.role !== "user") start++;
+  // A window with no user message in it — an approval continuation
+  // whose assistant message alone is over budget — reaches back to the
+  // nearest one: a transcript without the question is one a provider
+  // may refuse and a model cannot answer, whatever the budget says.
+  if (turns[start]?.role !== "user") {
+    let question = start - 1;
+    while (question >= 0 && turns[question]!.role !== "user") question--;
+    // Stryker disable next-line ConditionalExpression: equivalent — with no user message question is -1, and slicing from -1 keeps the same last turn.
+    if (question >= 0) start = question;
+  }
 
   return {
     windowed: [...system, ...turns.slice(start)],

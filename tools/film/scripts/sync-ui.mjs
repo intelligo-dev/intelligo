@@ -276,7 +276,10 @@ const FILES = [
   ["apps/app/components/ui/select.tsx", "components/ui/select.tsx"],
   ["apps/app/components/ui/separator.tsx", "components/ui/separator.tsx"],
   ["apps/app/components/ui/sheet.tsx", "components/ui/sheet.tsx"],
-  ["apps/app/components/ui/sidebar.tsx", "components/ui/sidebar.tsx"],
+  [
+    "packages/registry/base/ui/sidebar/sidebar.tsx",
+    "components/ui/sidebar.tsx",
+  ],
   ["apps/app/components/ui/skeleton.tsx", "components/ui/skeleton.tsx"],
   ["apps/app/components/ui/spinner.tsx", "components/ui/spinner.tsx"],
   ["apps/app/components/ui/stat-card.tsx", "components/ui/stat-card.tsx"],
@@ -301,6 +304,18 @@ function rewrite(source) {
       // no viewport to collapse against wants the non-collapsing one.
       .replace(/<Sidebar collapsible="icon">/, '<Sidebar collapsible="none">')
   );
+}
+
+// Every source is checked before anything is written: a missing one
+// would otherwise leave src/ui half-replaced, without its overrides.
+const missing = FILES.map(([rel]) => rel).filter(
+  (rel) => !existsSync(join(FRAMEWORK, rel)),
+);
+if (missing.length > 0) {
+  console.error(
+    `sync-ui: no such source, nothing written:\n  ${missing.join("\n  ")}`,
+  );
+  process.exit(1);
 }
 
 let copied = 0;

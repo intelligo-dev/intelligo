@@ -432,6 +432,32 @@ describe("fail", () => {
   });
 });
 
+describe("progress", () => {
+  it("writes the usage so far onto the running row, and charges nothing", async () => {
+    const settleUsage = vi.fn();
+    const executions = createExecutions({ settleUsage });
+    const run = await executions.begin(beginInput);
+
+    await run.progress!({ usage: { inputTokens: 30, outputTokens: 12 } });
+
+    expect(updatedFields(0)).toEqual({
+      inputTokens: 30,
+      outputTokens: 12,
+      totalTokens: 42,
+    });
+    // Only a running row: a claimed or finished row keeps its usage.
+    expect(mocks.updateWhere).toHaveBeenCalledWith({
+      op: "and",
+      args: [
+        { op: "eq", col: "id", val: run.id },
+        { op: "eq", col: "status", val: "running" },
+      ],
+    });
+    expect(settleUsage).not.toHaveBeenCalled();
+    expect(auditActions()).toEqual([]);
+  });
+});
+
 describe("reconcile", () => {
   const settlingRow = (over: Record<string, unknown> = {}) => ({
     id: "e-1",
@@ -505,11 +531,46 @@ describe("reconcile", () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
+  it("charges an abandoned running row the usage its progress recorded", async () => {
+    mocks.selectRows.mockResolvedValue([
+      settlingRow({
+        status: "running",
+        startedAt: new Date(Date.now() - 3_600_000),
+      }),
+    ]);
+    const releaseHold = vi.fn();
+    const settleUsage = vi.fn().mockResolvedValue({ charged: money(9, "MNT") });
+    const executions = createExecutions({ releaseHold, settleUsage });
+
+    const r = await executions.reconcile("e-1", {
+      abandonRunningAfterMs: 600_000,
+    });
+
+    expect(r).toEqual({ action: "settled", charged: money(9, "MNT") });
+    expect(updatedFields(0)).toMatchObject({ status: "settling" });
+    expect(settleUsage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestId: "req-1",
+        inputTokens: 100,
+        outputTokens: 50,
+        totalTokens: 150,
+      })
+    );
+    expect(updatedFields(1)).toMatchObject({
+      status: "succeeded",
+      chargedMicros: 9,
+    });
+    expect(releaseHold).not.toHaveBeenCalled();
+  });
+
   it("abandons a running row past the cutoff and releases its hold", async () => {
     mocks.selectRows.mockResolvedValue([
       settlingRow({
         status: "running",
         startedAt: new Date(Date.now() - 3_600_000),
+        inputTokens: null,
+        outputTokens: null,
+        totalTokens: null,
       }),
     ]);
     const releaseHold = vi.fn();

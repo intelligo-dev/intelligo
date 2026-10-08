@@ -297,6 +297,24 @@ jobs:
           pnpm registry:build
           scripts/consumer-smoke.sh "$RUNNER_TEMP/consumer-smoke"
 
+      # intelligo.dev/r/<version>/ keeps this release's items, and is
+      # frozen once npm has the version: what it holds must be this
+      # commit's registry, or the site would serve another tree under the
+      # release's name for good.
+      - name: The hosted registry is this release's
+        if: steps.check.outputs.published != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          pnpm sync
+          git checkout -- apps/website/src/data/proof.json
+          if [ -n "$(git status --porcelain -- "apps/website/public/r/$VERSION")" ]; then
+            git status --porcelain -- "apps/website/public/r/$VERSION"
+            echo "::error::apps/website/public/r/$VERSION is not this commit's registry. Run pnpm sync in the release commit."
+            exit 1
+          fi
+
       # `pnpm pack` rewrites workspace:* ranges to the version and swaps
       # in publishConfig. The tarballs are packed from a fresh build and
       # listed in dependency order (scripts/publish-order.mjs): a package
@@ -446,3 +464,11 @@ jobs:
           prerelease=""
           if [ "$DIST_TAG" != "latest" ]; then prerelease="--prerelease"; fi
           gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --verify-tag --title "v$VERSION" --notes-file "$RUNNER_TEMP/release/notes.md" $prerelease
+
+      # The site's /r and version follow what npm serves, read by `pnpm
+      # sync`; main's protection keeps this run from committing it.
+      - name: The site still describes the previous release
+        if: needs.publish.result == 'success'
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: echo "::notice title=Sync intelligo.dev::/r and the site's version follow npm once synced. Commit pnpm sync on main to serve $VERSION; CI's site check fails until then."

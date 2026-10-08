@@ -4,7 +4,7 @@
   "published": "1.1.2",
   "packages": 11,
   "testFiles": 143,
-  "testCases": 1456,
-  "architectureTests": 16,
+  "testCases": 1446,
+  "architectureTests": 18,
   "registryItems": 28
 }

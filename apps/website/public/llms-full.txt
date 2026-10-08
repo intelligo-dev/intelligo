@@ -515,6 +515,12 @@ pnpm exec shadcn add @intelligo/team-settings
 
 The app `intelligo create` scaffolds is already registry-ready: shadcn base-nova, Tailwind 4, next-intl routing under `app/[locale]`, the `@/i18n/navigation` helpers the blocks import, and a `components.json` that names the hosted registry `@intelligo`. `create` also installs the `intelligo` base item — the design tokens, fonts and base-nova config every block is drawn with — before any block. Installing into an app it did not make, add that registry entry and run `pnpm exec shadcn add @intelligo/intelligo` first.
 
+## Which release you install
+
+`https://intelligo.dev/r/<item>.json`, the address `@intelligo` names, serves the items of the latest release on npm. Every release's items also stay at `https://intelligo.dev/r/<version>/<item>.json`, and a block installed from there takes the components it builds on from the same release. An app whose `@intelligo-dev/*` packages are older than the latest release installs from its own: `pnpm exec shadcn add https://intelligo.dev/r/<version>/team-settings.json`, with the version its `package.json` names.
+
+`intelligo sync` installs from the registry bundled with the CLI, which is always its own release's.
+
 ## Install order
 
 Some blocks import files another block ships, so install the dependency first — `route-error` before any page, `auth-login` before the other auth flows, `pricing` before the commerce blocks, `chat` before the other chat surfaces. [Install order](/docs/registry/install-order) is the full list with the scaffold files and feature keys each block needs, generated from `packages/registry/requires.json` — the same file CI installs from and `intelligo doctor` checks against.
@@ -529,7 +535,7 @@ A block that gates on a feature needs that key granted to a plan in `lib/plans.t
 
 ## Taking an update
 
-A block is yours once installed. To take a newer version, commit first and run `shadcn add` for the block again; it asks before overwriting each file that already exists. Components you never edited can be overwritten safely. Your config and message files are where your changes live, so keep yours or merge them from the diff.
+A block is yours once installed. To take a newer version, upgrade the `@intelligo-dev/*` packages to the release it comes from, commit, and run `shadcn add` for the block again; it asks before overwriting each file that already exists. Components you never edited can be overwritten safely. Your config and message files are where your changes live, so keep yours or merge them from the diff.
 
 ---
 
@@ -1686,11 +1692,12 @@ Source: https://intelligo.dev/docs/packages/auth
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/auth better-auth drizzle-orm zod
+pnpm add @intelligo-dev/auth better-auth drizzle-orm react zod
 ```
 
-`better-auth`, `drizzle-orm` and `zod` are peers: the guards read the
-Better-Auth instance and the database client the application already has.
+`better-auth`, `drizzle-orm`, `react` and `zod` are peers: the guards read the
+Better-Auth instance and the database client the application already has,
+and the verification and reset emails render with React.
 
 ## What it owns
 
@@ -1754,10 +1761,11 @@ Source: https://intelligo.dev/docs/packages/billing
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/billing drizzle-orm stripe zod
+pnpm add @intelligo-dev/billing drizzle-orm react stripe zod
 ```
 
-`drizzle-orm`, `stripe` and `zod` are peers.
+`drizzle-orm`, `react`, `stripe` and `zod` are peers; the trial and payment
+emails render with React.
 
 ## What it owns
 
@@ -2095,8 +2103,10 @@ twice.
 
 `executions.reconcile(executionId, { abandonRunningAfterMs? })` repairs a run
 whose process died: it asks `findSettlement` whether the charge committed,
-confirms it onto the row or re-runs settlement from the recorded usage, and
-fails a `running` row that outlived the threshold. `findStaleExecutions` finds
+confirms it onto the row or re-runs settlement from the recorded usage. A
+`running` row that outlived the threshold is charged the usage `run.progress()`
+recorded on it while the run went on — a multi-step run calls it after each
+model call — and failed, its hold released, when nothing was recorded. `findStaleExecutions` finds
 the candidates; `listExecutions`, `summarizeExecutions` and
 `summarizeExecutionsByDay` read the record for a usage page.
 
@@ -2688,7 +2698,9 @@ cost, reading usage and the model from whatever shape the provider reported.
 `executions` is the instance the composition root builds with
 `createExecutions` from
 [`@intelligo-dev/executions`](https://www.npmjs.com/package/@intelligo-dev/executions);
-naming the `model` sizes the credit hold admission takes.
+naming the `model` sizes the credit hold admission takes, and the run settles
+against that registered id even when the result reports the provider's own
+(kept in the metadata as `reportedModel`).
 
 When entitlement refuses, it throws an `ExecutionRefusedError` carrying the
 `executionId` and the port's `reasonCode`, so a refusal cannot be mistaken for

@@ -36,7 +36,9 @@ cost, reading usage and the model from whatever shape the provider reported.
 `executions` is the instance the composition root builds with
 `createExecutions` from
 [`@intelligo-dev/executions`](https://www.npmjs.com/package/@intelligo-dev/executions);
-naming the `model` sizes the credit hold admission takes.
+naming the `model` sizes the credit hold admission takes, and the run settles
+against that registered id even when the result reports the provider's own
+(kept in the metadata as `reportedModel`).
 
 When entitlement refuses, it throws an `ExecutionRefusedError` carrying the
 `executionId` and the port's `reasonCode`, so a refusal cannot be mistaken for

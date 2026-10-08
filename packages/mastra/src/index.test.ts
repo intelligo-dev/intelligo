@@ -157,6 +157,33 @@ describe("runWithExecution", () => {
     expect(complete.mock.calls[0]![0]!.model).toBe("google/gemini-2.5-flash");
   });
 
+  it("settles against the admitted model, not the provider's reported id", async () => {
+    const { executions, complete } = fakeExecutions();
+
+    await runWithExecution(
+      {
+        ...base,
+        executions,
+        model: "anthropic/claude-sonnet-4-6",
+        metadata: { conversationId: "c-1" },
+      },
+      async () => ({
+        usage: { inputTokens: 3, outputTokens: 4 },
+        model: { modelId: "claude-sonnet-4-6-20260214" },
+      })
+    );
+
+    expect(complete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: "anthropic/claude-sonnet-4-6",
+        metadata: {
+          conversationId: "c-1",
+          reportedModel: "claude-sonnet-4-6-20260214",
+        },
+      })
+    );
+  });
+
   it("throws ExecutionRefusedError instead of running when entitlement refuses", async () => {
     const { executions, complete } = fakeExecutions({
       allowed: false,
@@ -236,6 +263,26 @@ describe("streamWithExecution", () => {
       expect.objectContaining({
         usage: expect.objectContaining({ totalTokens: 42 }),
         model: "gpt-5",
+      })
+    );
+  });
+
+  it("settles a finished stream against the admitted model", async () => {
+    const { executions, complete } = fakeExecutions();
+    const handle = await streamWithExecution(
+      { ...base, executions, model: "openai/gpt-5-mini" },
+      async () => ({})
+    );
+
+    await handle.settle({
+      usage: { totalTokens: 9 },
+      model: { modelId: "gpt-5-mini-2025-08-07" },
+    });
+
+    expect(complete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: "openai/gpt-5-mini",
+        metadata: { reportedModel: "gpt-5-mini-2025-08-07" },
       })
     );
   });
