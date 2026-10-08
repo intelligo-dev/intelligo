@@ -235,6 +235,15 @@ export function linkCitations(
   });
 }
 
+/** A path segment decoded, or as written when its escapes are malformed. */
+function decodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
 /**
  * A readable name for a page that came with none — search grounding
  * often gives only the domain: the last meaningful path segment,
@@ -250,7 +259,7 @@ export function titleFromUrl(url: string | undefined): string | undefined {
     return undefined;
   }
   for (const segment of segments.reverse()) {
-    const words = decodeURIComponent(segment)
+    const words = decodeSegment(segment)
       .replace(/\.(html?|php|aspx?)$/i, "")
       .replace(/[-_+]+/g, " ")
       .trim();

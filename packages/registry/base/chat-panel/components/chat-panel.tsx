@@ -8,9 +8,10 @@
  * Each open conversation is a real one: a fresh id is minted when the
  * panel first opens (the row appears on the first message, like the
  * page) and kept for the page's lifetime, so closing and reopening the
- * panel continues the same thread. Pass `conversationId` to pin it to
- * an existing conversation instead, and `body` to give the agent the
- * page's context on every turn (`resolveAgent` reads it).
+ * panel continues the same thread — every open loads what the thread
+ * holds now. Pass `conversationId` to pin it to an existing
+ * conversation instead, and `body` to give the agent the page's context
+ * on every turn (`resolveAgent` reads it).
  *
  * Installed from the `chat-panel` item; requires the `chat` item.
  */
@@ -60,23 +61,30 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const t = useTranslations("chat-panel");
   const [open, setOpen] = useState(false);
+  // Counts opens: the thread unmounts on close, so each open starts
+  // from what the conversation holds then, not from the last open's.
+  const [opening, setOpening] = useState(0);
   const [minted] = useState(() => crypto.randomUUID());
   const id = conversationId ?? minted;
-  // A pinned conversation opens on its history, loaded once per id; a
-  // minted one has none. `null` while it is still loading.
+  // A minted id has nothing stored before its first open.
+  const fresh = !conversationId && opening <= 1;
   const [history, setHistory] = useState<{
     id: string;
+    opening: number;
     messages: UIMessage[];
     hasEarlier: boolean;
   } | null>(null);
+  const loaded =
+    history !== null && history.id === id && history.opening === opening;
 
   useEffect(() => {
-    if (!open || !conversationId || history?.id === conversationId) return;
+    if (!open || fresh || loaded) return;
     let current = true;
-    void loadConversationForChat(conversationId).then((result) => {
+    void loadConversationForChat(id).then((result) => {
       if (!current) return;
       setHistory({
-        id: conversationId,
+        id,
+        opening,
         messages: result.success ? result.data.messages : [],
         hasEarlier: result.success ? result.data.hasEarlier : false,
       });
@@ -84,16 +92,18 @@ export function ChatPanel({
     return () => {
       current = false;
     };
-  }, [open, conversationId, history?.id]);
+  }, [open, fresh, loaded, id, opening]);
 
-  const initialMessages = conversationId
-    ? history?.id === conversationId
-      ? history.messages
-      : null
-    : [];
+  // `null` while the history is still loading.
+  const initialMessages = fresh ? [] : loaded ? history.messages : null;
+
+  function handleOpenChange(next: boolean) {
+    if (next) setOpening((count) => count + 1);
+    setOpen(next);
+  }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger
         render={
           trigger ? (
@@ -127,11 +137,7 @@ export function ChatPanel({
               key={id}
               conversationId={id}
               initialMessages={initialMessages}
-              hasEarlier={
-                history !== null && history.id === conversationId
-                  ? history.hasEarlier
-                  : false
-              }
+              hasEarlier={loaded ? history.hasEarlier : false}
               variant="panel"
               agentId={agentId}
               body={body}
