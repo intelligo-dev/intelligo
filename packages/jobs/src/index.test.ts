@@ -11,6 +11,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   claimed: vi.fn(),
+  started: vi.fn(),
   select: vi.fn(),
   insertValues: vi.fn(),
   insert: vi.fn(),
@@ -41,6 +42,7 @@ vi.mock("./db/schema", () => ({
     id: "id",
     status: "status",
     attempts: "attempts",
+    startedAt: "startedAt",
     runAt: "runAt",
     finishedAt: "finishedAt",
   },
@@ -87,15 +89,47 @@ function job(overrides: Partial<FakeJob> = {}): FakeJob {
   };
 }
 
+type Cond = { op: string; col?: unknown; val?: unknown; args?: Cond[] };
+
+/** The job id an update's where clause names, if any. */
+function idOf(cond: Cond | undefined): unknown {
+  if (!cond) return undefined;
+  if (cond.op === "eq" && cond.col === "id") return cond.val;
+  return cond.args?.map(idOf).find((v) => v !== undefined);
+}
+
+/** The startedAt value an update's where clause requires, if any. */
+function heldAt(cond: Cond | undefined): unknown {
+  if (!cond) return undefined;
+  if (cond.op === "eq" && cond.col === "startedAt") return cond.val;
+  return cond.args?.map(heldAt).find((v) => v !== undefined);
+}
+
 /** set() payload of the last update for a given job id — its outcome. */
 function setFor(id: string) {
-  const ids = mocks.updateWhere.mock.calls.map(
-    (c) => (c[0] as { val?: string }).val
-  );
+  const ids = mocks.updateWhere.mock.calls.map((c) => idOf(c[0] as Cond));
   const idx = ids.lastIndexOf(id);
   return idx >= 0
     ? (mocks.updateSet.mock.calls[idx]![0]! as Record<string, unknown>)
     : undefined;
+}
+
+/** Outcome writes: updates that set a status after the handler ran. */
+function outcomeWrites(id: string) {
+  return mocks.updateWhere.mock.calls
+    .map((c, i) => ({
+      id: idOf(c[0] as Cond),
+      held: heldAt(c[0] as Cond),
+      set: mocks.updateSet.mock.calls[i]![0]! as Record<string, unknown>,
+    }))
+    .filter((w) => w.id === id && "lastError" in w.set);
+}
+
+function updateResult(cond: Cond) {
+  return Object.assign(Promise.resolve(undefined), {
+    returning: (fields?: unknown) =>
+      fields ? mocks.started(idOf(cond)) : mocks.claimed(),
+  });
 }
 
 beforeEach(() => {
@@ -104,10 +138,10 @@ beforeEach(() => {
   mocks.insertValues.mockResolvedValue(undefined);
   mocks.update.mockReturnValue({ set: mocks.updateSet });
   mocks.updateSet.mockReturnValue({ where: mocks.updateWhere });
-  // The claim is the one update that ends in `.returning()`.
-  mocks.updateWhere.mockImplementation(() =>
-    Object.assign(Promise.resolve(undefined), { returning: mocks.claimed })
-  );
+  // The claim returns whole rows; the per-job start returns the ids this
+  // worker still holds.
+  mocks.updateWhere.mockImplementation(updateResult);
+  mocks.started.mockImplementation(async (id: unknown) => [{ id }]);
   const chain = {
     from: () => chain,
     where: () => chain,
@@ -226,6 +260,77 @@ describe("drain", () => {
     });
 
     expect((setFor("j-1")!.lastError as string).length).toBe(1000);
+  });
+
+  it("skips a job another worker claimed while it waited in the batch", async () => {
+    mocks.claimed.mockResolvedValue([job({ id: "j-1" }), job({ id: "j-2" })]);
+    mocks.started.mockImplementation(async (id: unknown) =>
+      id === "j-2" ? [] : [{ id }]
+    );
+    const handler = vi.fn().mockResolvedValue(undefined);
+
+    const result = await drain({ "credits.cleanup": handler });
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler.mock.calls[0]![0]).toMatchObject({ id: "j-1" });
+    expect(outcomeWrites("j-2")).toEqual([]);
+    expect(result).toMatchObject({ claimed: 2, succeeded: 1, failed: 0 });
+  });
+
+  it("writes the outcome only over the start this worker stamped", async () => {
+    mocks.claimed.mockResolvedValue([job()]);
+
+    await drain({ "credits.cleanup": vi.fn().mockResolvedValue(undefined) });
+
+    const start = mocks.updateSet.mock.calls.findIndex(
+      (c) => Object.keys(c[0] as object).join() === "startedAt"
+    );
+    const stamped = (
+      mocks.updateSet.mock.calls[start]![0] as {
+        startedAt: Date;
+      }
+    ).startedAt;
+    const [write] = outcomeWrites("j-1");
+    expect(write!.held).toBe(stamped);
+  });
+
+  it("does not re-queue a job whose handler succeeded when the status write fails", async () => {
+    mocks.claimed.mockResolvedValue([job()]);
+    let failures = 1;
+    mocks.updateWhere.mockImplementation((cond: Cond) => {
+      const fields = mocks.updateSet.mock.lastCall![0] as {
+        status?: string;
+      };
+      if (fields.status === "succeeded" && failures-- > 0) {
+        return Object.assign(Promise.reject(new Error("connection lost")), {
+          returning: vi.fn(),
+        });
+      }
+      return updateResult(cond);
+    });
+    const handler = vi.fn().mockResolvedValue(undefined);
+
+    const result = await drain({ "credits.cleanup": handler });
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({ succeeded: 1, failed: 0 });
+    const statuses = outcomeWrites("j-1").map((w) => w.set.status);
+    expect(statuses).toEqual(["succeeded", "succeeded"]);
+  });
+
+  it("keeps draining the batch when a job's bookkeeping write throws", async () => {
+    mocks.claimed.mockResolvedValue([job({ id: "j-1" }), job({ id: "j-2" })]);
+    mocks.started.mockImplementation(async (id: unknown) => {
+      if (id === "j-1") throw new Error("connection lost");
+      return [{ id }];
+    });
+    const handler = vi.fn().mockResolvedValue(undefined);
+
+    const result = await drain({ "credits.cleanup": handler });
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler.mock.calls[0]![0]).toMatchObject({ id: "j-2" });
+    expect(result).toMatchObject({ claimed: 2, succeeded: 1 });
   });
 
   it("reports an empty batch without touching handlers", async () => {
