@@ -5,6 +5,7 @@ import { requireWorkspace } from "@intelligo-dev/auth";
 import { getBillingOverview } from "@intelligo-dev/billing";
 
 import { Link } from "@/i18n/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { CreditBundles } from "@/components/billing/credit-bundles";
 import { formatMoney } from "@/lib/format-money";
@@ -44,8 +45,15 @@ export async function generateMetadata(): Promise<Metadata> {
  * plain `string` mirrored from Stripe's open-ended status vocabulary, so
  * keying a translation off it risks a missing-message error.
  */
-export default async function BillingSettingsPage() {
+export default async function BillingSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ credits?: string | string[] }>;
+}) {
   const t = await getTranslations("billing-settings");
+  // Where a credit checkout returns: `?credits=success|cancelled`.
+  const credits = (await searchParams).credits;
+  const creditsReturn = Array.isArray(credits) ? credits[0] : credits;
   const format = await getFormatter();
   const { workspace, membership } = await requireWorkspace();
   const overview = await getBillingOverview({
@@ -68,6 +76,17 @@ export default async function BillingSettingsPage() {
           </PageHeaderDescription>
         </PageHeaderContent>
       </PageHeader>
+
+      {creditsReturn === "success" && (
+        <Alert>
+          <AlertDescription>{t("creditsReturn.success")}</AlertDescription>
+        </Alert>
+      )}
+      {creditsReturn === "cancelled" && (
+        <Alert>
+          <AlertDescription>{t("creditsReturn.cancelled")}</AlertDescription>
+        </Alert>
+      )}
 
       {overview.role === "member" && (
         <Card className="space-y-2 p-6">

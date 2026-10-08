@@ -115,4 +115,29 @@ d("attachments service — real DB integration", () => {
     const deleted = await service.deleteAttachment(actor, created.id);
     expect(deleted.id).toBe(created.id);
   });
+
+  it("sums a workspace's unclaimed uploads, and only its own", async () => {
+    await client.query(`DELETE FROM attachments WHERE workspace_id = ANY($1)`, [
+      [workspaceId, otherWorkspaceId],
+    ]);
+    expect(await service.unclaimedAttachmentBytes(actor)).toBe(0);
+
+    for (const [n, size, ws] of [
+      [3, 100, workspaceId],
+      [4, 250, workspaceId],
+      [5, 999, otherWorkspaceId],
+    ] as const) {
+      await service.createAttachment(
+        { workspaceId: ws, userId },
+        {
+          storageKey: `ws/${ws}/att/${suffix}-${n}`,
+          filename: "f.bin",
+          mediaType: "application/octet-stream",
+          sizeBytes: size,
+        }
+      );
+    }
+
+    expect(await service.unclaimedAttachmentBytes(actor)).toBe(350);
+  });
 });

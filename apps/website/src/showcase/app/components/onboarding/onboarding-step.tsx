@@ -66,7 +66,12 @@ export function OnboardingStep({
       <div className="space-y-5">
         {(step.fields ?? []).map((field) => (
           <div key={field.id} className="space-y-2">
-            <Label htmlFor={field.id}>{tAny(field.labelKey)}</Label>
+            <Label
+              id={`${field.id}-label`}
+              htmlFor={field.type === "text" ? field.id : undefined}
+            >
+              {tAny(field.labelKey)}
+            </Label>
 
             {field.type === "text" ? (
               <Input
@@ -84,7 +89,7 @@ export function OnboardingStep({
               <div
                 className="space-y-2"
                 role="radiogroup"
-                aria-labelledby={field.id}
+                aria-labelledby={`${field.id}-label`}
               >
                 {(field.options ?? []).map((option) => {
                   const selected = answers[field.id] === option.value;

@@ -54,8 +54,12 @@ export function TrialBanner({
   // Dismissed-today check runs in an effect: localStorage doesn't exist
   // during SSR, and reading it during render would desync hydration.
   useEffect(() => {
-    if (localStorage.getItem(DISMISSED_KEY) === today()) {
-      setIsVisible(false);
+    try {
+      if (localStorage.getItem(DISMISSED_KEY) === today()) {
+        setIsVisible(false);
+      }
+    } catch {
+      // Unreadable storage leaves the banner showing.
     }
   }, []);
 
@@ -65,7 +69,11 @@ export function TrialBanner({
   if (hidden || !isVisible) return null;
 
   function handleDismiss() {
-    localStorage.setItem(DISMISSED_KEY, today());
+    try {
+      localStorage.setItem(DISMISSED_KEY, today());
+    } catch {
+      // Unwritable storage dismisses the banner for this page view only.
+    }
     setIsVisible(false);
   }
 

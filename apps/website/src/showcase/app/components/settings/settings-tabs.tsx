@@ -10,7 +10,8 @@
  * contract as `chatConfig.starters` — so a tab a consumer adds can
  * point into any namespace it owns, not just this item's.
  *
- * Navigation goes through `@/i18n/navigation`: `Link`
+ * Each tab is rendered as the link itself (one focus stop, no control
+ * nested in another). Navigation goes through `@/i18n/navigation`: `Link`
  * localizes the href, and `usePathname` returns the locale-stripped
  * path, so `endsWith` matching works identically in every locale.
  */
@@ -45,15 +46,16 @@ export function SettingsTabs() {
         {settingsTabs.map((tab) => {
           const Icon = tab.icon;
           return (
-            <Link key={tab.value} href={tab.href}>
-              <TabsTrigger
-                value={tab.value}
-                className="gap-2 data-active:bg-card data-active:shadow-sm"
-              >
-                <Icon className="size-4" />
-                {t(tab.titleKey)}
-              </TabsTrigger>
-            </Link>
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              render={<Link href={tab.href} />}
+              nativeButton={false}
+              className="flex-none gap-2 data-active:bg-card data-active:shadow-sm"
+            >
+              <Icon className="size-4" />
+              {t(tab.titleKey)}
+            </TabsTrigger>
           );
         })}
       </TabsList>

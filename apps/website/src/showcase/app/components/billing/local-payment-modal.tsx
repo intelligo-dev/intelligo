@@ -5,8 +5,10 @@
  * their banking app, wait for the provider to confirm.
  *
  * Four states: preparing the invoice, waiting for payment, paid, and
- * failed. Polling stops at `timeoutMs` with a "still waiting?" message
- * and a retry, rather than spinning forever.
+ * failed. Polling stops at `timeoutMs` with a "still waiting?" message,
+ * rather than spinning forever: "check again" resumes polling the same
+ * invoice, so a slow confirmation is not paid twice, and starting a new
+ * payment is a separate, explicit choice.
  *
  * Provider work happens server-side through `@/actions/payment`: the
  * browser never sees provider credentials, never says who is paying —
@@ -225,9 +227,17 @@ export function LocalPaymentModal({
               <p className="text-sm text-muted-foreground">
                 {t("timedOutHelp")}
               </p>
-              <Button onClick={() => setAttempt((n) => n + 1)}>
-                {t("retry")}
-              </Button>
+              <div className="flex justify-center gap-2">
+                <Button onClick={() => setStep("waiting")}>
+                  {t("checkAgain")}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setAttempt((n) => n + 1)}
+                >
+                  {t("newPayment")}
+                </Button>
+              </div>
             </div>
           ) : null}
 

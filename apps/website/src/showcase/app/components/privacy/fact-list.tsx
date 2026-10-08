@@ -13,12 +13,14 @@
  *
  * Deletion is optimistic — the row disappears immediately — while the
  * `deleteFact` server action records the deletion in the audit trail
- * and revalidates the page server-side.
+ * and revalidates the page server-side. A deletion the server refuses
+ * puts the row back where it was and says why.
  */
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "use-intl";
 import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@showcase/components/ui/button";
 import { deleteFact } from "@showcase/actions/privacy";
@@ -64,9 +66,20 @@ export function FactList({
   const grouped = groupByCategory(facts);
 
   function handleDelete(factId: string) {
+    const index = facts.findIndex((fact) => fact.id === factId);
+    const removed = facts[index];
+    if (!removed) return;
     setFacts((current) => current.filter((fact) => fact.id !== factId));
     startTransition(async () => {
-      await deleteFact(factId);
+      const result = await deleteFact(factId).catch(() => null);
+      if (result?.success) return;
+      setFacts((current) => {
+        if (current.some((fact) => fact.id === factId)) return current;
+        const next = [...current];
+        next.splice(Math.min(index, next.length), 0, removed);
+        return next;
+      });
+      toast.error(result?.error ?? t("errors.somethingWentWrong"));
     });
   }
 

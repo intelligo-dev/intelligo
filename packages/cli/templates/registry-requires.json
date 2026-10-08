@@ -80,7 +80,7 @@
     },
     "invitation-accept": {
       "marker": "app/[locale]/accept-invitation/[id]/page.tsx",
-      "items": ["team-settings"],
+      "items": ["route-error", "team-settings"],
       "files": ["i18n/navigation"]
     },
     "app-shell": {
@@ -131,10 +131,11 @@
     },
     "pricing": {
       "marker": "app/[locale]/(app)/pricing/page.tsx",
-      "files": ["i18n/navigation"]
+      "items": ["route-error"]
     },
     "checkout": {
       "marker": "app/[locale]/(app)/checkout/success/page.tsx",
+      "items": ["route-error"],
       "files": ["i18n/navigation"]
     },
     "billing-settings": {
@@ -169,6 +170,7 @@
     },
     "artifacts": {
       "marker": "app/[locale]/(app)/artifacts/page.tsx",
+      "items": ["route-error"],
       "files": ["i18n/navigation"]
     },
     "privacy-settings": {

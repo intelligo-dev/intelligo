@@ -5,6 +5,8 @@
   "orChooseApp": "Or open your banking app",
   "timedOutHelp": "We stopped checking after a few minutes. If you've already paid, it may still land — otherwise start a new payment.",
   "retry": "Try again",
+  "checkAgain": "Check again",
+  "newPayment": "Start a new payment",
   "close": "Close",
   "paidTitle": "Payment received",
   "paidBody": "{label} is active.",

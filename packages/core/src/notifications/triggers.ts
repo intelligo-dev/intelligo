@@ -10,6 +10,7 @@ import {
   sendPaymentFailedEmail,
 } from "../email/senders";
 import { formatMoney, type Money } from "../money";
+import { runInBackground } from "../request-context";
 
 /** The locale the framework's own notification and email copy is written in. */
 const COPY_LOCALE = "en";
@@ -50,16 +51,18 @@ export async function triggerQuotaNotification(params: {
     },
   });
 
-  sendQuotaWarningEmail({
-    to: params.userEmail,
-    workspaceName: params.workspaceName,
-    percentageUsed: params.percentageUsed,
-    used: params.used,
-    allowance: params.allowance,
-    upgradeUrl,
-    isExceeded: params.isExceeded,
-  }).catch((err) =>
-    console.error("[Email] Failed to send quota warning:", err)
+  runInBackground(
+    sendQuotaWarningEmail({
+      to: params.userEmail,
+      workspaceName: params.workspaceName,
+      percentageUsed: params.percentageUsed,
+      used: params.used,
+      allowance: params.allowance,
+      upgradeUrl,
+      isExceeded: params.isExceeded,
+    }).catch((err) =>
+      console.error("[Email] Failed to send quota warning:", err)
+    )
   );
 }
 
@@ -93,16 +96,18 @@ export async function triggerTrialNotification(params: {
     },
   });
 
-  sendTrialWarningEmail({
-    to: params.userEmail,
-    workspaceName: params.workspaceName,
-    creditsRemaining: params.creditsRemaining,
-    totalCredits: params.totalCredits,
-    percentageRemaining: params.percentageRemaining,
-    upgradeUrl,
-    isDepleted: params.isDepleted,
-  }).catch((err) =>
-    console.error("[Email] Failed to send trial warning:", err)
+  runInBackground(
+    sendTrialWarningEmail({
+      to: params.userEmail,
+      workspaceName: params.workspaceName,
+      creditsRemaining: params.creditsRemaining,
+      totalCredits: params.totalCredits,
+      percentageRemaining: params.percentageRemaining,
+      upgradeUrl,
+      isDepleted: params.isDepleted,
+    }).catch((err) =>
+      console.error("[Email] Failed to send trial warning:", err)
+    )
   );
 }
 
@@ -127,13 +132,15 @@ export async function triggerPaymentFailedNotification(params: {
     },
   });
 
-  sendPaymentFailedEmail({
-    to: params.userEmail,
-    workspaceName: params.workspaceName,
-    amount: params.amount,
-    updatePaymentUrl,
-  }).catch((err) =>
-    console.error("[Email] Failed to send payment failed:", err)
+  runInBackground(
+    sendPaymentFailedEmail({
+      to: params.userEmail,
+      workspaceName: params.workspaceName,
+      amount: params.amount,
+      updatePaymentUrl,
+    }).catch((err) =>
+      console.error("[Email] Failed to send payment failed:", err)
+    )
   );
 }
 

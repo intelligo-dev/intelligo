@@ -31,7 +31,18 @@ type Row = {
   extractedText: string | null;
 };
 
-const store = vi.hoisted(() => ({ rows: new Map<string, Row>() }));
+const store = vi.hoisted(() => ({
+  rows: new Map<string, Row>(),
+  insertFails: false,
+}));
+
+const billing = vi.hoisted(() => ({
+  checkRateLimit: vi.fn(),
+  getWorkspaceBilling: vi.fn(),
+  hasFeature: vi.fn(),
+}));
+
+vi.mock("@intelligo-dev/billing", () => billing);
 
 class FakeAttachmentError extends Error {
   constructor(public code: string) {
@@ -45,10 +56,15 @@ vi.mock("@intelligo-dev/core/attachments", () => ({
     actor: { workspaceId: string; userId: string },
     params: Omit<Row, "workspaceId" | "userId" | "extractedText">
   ) => {
+    if (store.insertFails) throw new Error("connection lost");
     const row = { ...params, ...actor, extractedText: null };
     store.rows.set(row.id, row);
     return row;
   },
+  unclaimedAttachmentBytes: async (actor: { workspaceId: string }) =>
+    [...store.rows.values()]
+      .filter((row) => row.workspaceId === actor.workspaceId)
+      .reduce((sum, row) => sum + row.sizeBytes, 0),
   getAttachment: async (actor: { workspaceId: string }, id: string) => {
     const row = store.rows.get(id);
     if (!row || row.workspaceId !== actor.workspaceId) {
@@ -109,6 +125,10 @@ let memory: ReturnType<typeof createMemoryStorage>;
 
 beforeEach(() => {
   store.rows.clear();
+  store.insertFails = false;
+  billing.getWorkspaceBilling.mockResolvedValue({ plan: { slug: "pro" } });
+  billing.checkRateLimit.mockResolvedValue({ allowed: true });
+  billing.hasFeature.mockResolvedValue(true);
   memory = createMemoryStorage();
   setStorageAdapter(memory);
 });
@@ -244,6 +264,102 @@ describe("createChatUploadHandler", () => {
 
     await POST(upload(png()));
     expect(extractText).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a workspace over its upload rate before reading the file", async () => {
+    billing.checkRateLimit.mockResolvedValue({
+      allowed: false,
+      retryAfterSeconds: 12,
+    });
+    const { POST } = createChatUploadHandler(config());
+
+    const response = await POST(upload(png()));
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("12");
+    expect(billing.checkRateLimit).toHaveBeenCalledWith(
+      "ws-1",
+      "pro",
+      "chat-upload"
+    );
+    expect(memory.objects.size).toBe(0);
+  });
+
+  it("uses the policy's own rate limit, and none when the config disables it", async () => {
+    const rateLimit = vi.fn(async () => ({ allowed: false }));
+    const own = createChatUploadHandler(
+      config({
+        attachments: { accept: ["image/png"], mode: "stored", rateLimit },
+      })
+    );
+    expect((await own.POST(upload(png()))).status).toBe(429);
+    expect(rateLimit).toHaveBeenCalledWith(actor);
+
+    billing.checkRateLimit.mockResolvedValue({ allowed: false });
+    const off = createChatUploadHandler(config({ rateLimit: false }));
+    expect((await off.POST(upload(png()))).status).toBe(201);
+  });
+
+  it("refuses a workspace without the chat feature", async () => {
+    billing.hasFeature.mockResolvedValue(false);
+    const { POST } = createChatUploadHandler(config());
+
+    expect((await POST(upload(png()))).status).toBe(403);
+    expect(billing.hasFeature).toHaveBeenCalledWith("ws-1", "chat");
+    expect(memory.objects.size).toBe(0);
+
+    const ungated = createChatUploadHandler(config({ featureKey: null }));
+    expect((await ungated.POST(upload(png()))).status).toBe(201);
+  });
+
+  it("refuses an upload past the workspace's unclaimed bytes", async () => {
+    const { POST } = createChatUploadHandler(
+      config({
+        attachments: {
+          accept: ["image/png"],
+          mode: "stored",
+          maxUnclaimedBytes: 6,
+        },
+      })
+    );
+
+    expect((await POST(upload(png()))).status).toBe(201);
+    expect((await POST(upload(png()))).status).toBe(402);
+    expect(memory.objects.size).toBe(1);
+  });
+
+  it("caps unclaimed uploads at ten files' worth by default", async () => {
+    const { POST } = createChatUploadHandler(config());
+    const full = new Blob([new Uint8Array(1024)], { type: "image/png" });
+    for (let i = 0; i < 10; i++) {
+      expect((await POST(upload(full))).status).toBe(201);
+    }
+    expect((await POST(upload(png()))).status).toBe(402);
+  });
+
+  it("asks the deployment's quota before storing anything", async () => {
+    const admitUpload = vi.fn(async () => false);
+    const { POST } = createChatUploadHandler(
+      config({
+        attachments: { accept: ["image/png"], mode: "stored", admitUpload },
+      })
+    );
+
+    expect((await POST(upload(png()))).status).toBe(402);
+    expect(admitUpload).toHaveBeenCalledWith(actor, {
+      filename: "photo.png",
+      mediaType: "image/png",
+      size: 4,
+    });
+    expect(memory.objects.size).toBe(0);
+  });
+
+  it("deletes the stored object when its row cannot be written", async () => {
+    store.insertFails = true;
+    const { POST } = createChatUploadHandler(config());
+
+    expect((await POST(upload(png()))).status).toBe(500);
+    expect(memory.objects.size).toBe(0);
   });
 });
 

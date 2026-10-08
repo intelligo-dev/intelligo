@@ -81,7 +81,8 @@ export function PlanCard({
     : format.number(price, {
         style: "currency",
         currency: CURRENCY,
-        maximumFractionDigits: 0,
+        // A whole price drops its decimals; any other keeps the cents.
+        ...(Number.isInteger(price) && { maximumFractionDigits: 0 }),
       });
 
   return (

@@ -57,6 +57,7 @@ import { eq } from "drizzle-orm";
 import { invitationLinks } from "./invitation-links";
 import { personalWorkspaceSlug } from "./workspace-slug";
 import { workspaceCreated } from "./workspace-bootstrap";
+import { runInBackground } from "@intelligo-dev/core/request-context";
 
 /**
  * The origin this app is served from. `NEXT_PUBLIC_APP_URL` is required, but
@@ -111,24 +112,28 @@ export const auth = betterAuth({
     // password: every session open before it ends with it.
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
-      sendPasswordResetEmail({
-        to: user.email,
-        userName: user.name || user.email,
-        resetUrl: url,
-      }).catch((err) =>
-        console.error("[Auth] Failed to send password reset email:", err)
+      runInBackground(
+        sendPasswordResetEmail({
+          to: user.email,
+          userName: user.name || user.email,
+          resetUrl: url,
+        }).catch((err) =>
+          console.error("[Auth] Failed to send password reset email:", err)
+        )
       );
     },
   },
 
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
-      sendVerifyEmail({
-        to: user.email,
-        userName: user.name || user.email,
-        verificationUrl: url,
-      }).catch((err) =>
-        console.error("[Auth] Failed to send verification email:", err)
+      runInBackground(
+        sendVerifyEmail({
+          to: user.email,
+          userName: user.name || user.email,
+          verificationUrl: url,
+        }).catch((err) =>
+          console.error("[Auth] Failed to send verification email:", err)
+        )
       );
     },
     sendOnSignUp: true,
@@ -228,12 +233,14 @@ export const auth = betterAuth({
 
           // Fire-and-forget: no retry or outbox, a failure is only logged.
           const dashboardUrl = `${APP_URL}/dashboard`;
-          sendWelcomeEmail({
-            to: user.email,
-            userName: user.name || user.email,
-            dashboardUrl,
-          }).catch((err) =>
-            console.error("[Auth] Failed to send welcome email:", err)
+          runInBackground(
+            sendWelcomeEmail({
+              to: user.email,
+              userName: user.name || user.email,
+              dashboardUrl,
+            }).catch((err) =>
+              console.error("[Auth] Failed to send welcome email:", err)
+            )
           );
         },
       },
@@ -292,15 +299,17 @@ export const auth = betterAuth({
       creatorRole: "owner",
       sendInvitationEmail: async (data) => {
         const { acceptUrl, declineUrl } = invitationLinks(APP_URL, data.id);
-        sendInvitationEmail({
-          to: data.email,
-          inviterName: data.inviter?.user?.name || "A team member",
-          workspaceName: data.organization?.name || "a workspace",
-          role: data.role || "member",
-          acceptUrl,
-          declineUrl,
-        }).catch((err) =>
-          console.error("[Auth] Failed to send invitation email:", err)
+        runInBackground(
+          sendInvitationEmail({
+            to: data.email,
+            inviterName: data.inviter?.user?.name || "A team member",
+            workspaceName: data.organization?.name || "a workspace",
+            role: data.role || "member",
+            acceptUrl,
+            declineUrl,
+          }).catch((err) =>
+            console.error("[Auth] Failed to send invitation email:", err)
+          )
         );
       },
       invitationExpiresIn: 60 * 60 * 24 * 7,

@@ -28,6 +28,7 @@ const currentHeaders = { value: new Headers() as Headers };
 
 vi.mock("@intelligo-dev/core/request-context", () => ({
   getRequestHeaders: async () => currentHeaders.value,
+  runInBackground: () => undefined,
 }));
 
 function asUser(cookie: string) {

@@ -31,7 +31,14 @@ export type S3StorageOptions = {
    * a subdomain. Default: true with a custom `endpoint`, false on AWS.
    */
   pathStyle?: boolean;
+  /**
+   * How long one request to the bucket may take before it is abandoned
+   * and the call throws, in milliseconds. Default 30 000.
+   */
+  timeoutMs?: number;
 };
+
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 const encoder = new TextEncoder();
 
@@ -185,6 +192,7 @@ export function createS3Storage(options: S3StorageOptions): StorageAdapter & {
       method: input.method,
       headers,
       body: body as BodyInit | undefined,
+      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
     });
     if (!response.ok) {
       const detail = (await response.text()).slice(0, 300);

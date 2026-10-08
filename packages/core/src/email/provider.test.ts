@@ -87,6 +87,20 @@ describe("ResendProvider", () => {
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("fails a send the provider never answers, as retryable", async () => {
+    vi.stubGlobal("fetch", () => new Promise(() => {}));
+
+    const provider = new ResendProvider("re_key", 20);
+    await expect(
+      provider.send({
+        to: "user@example.com",
+        subject: "Welcome",
+        html: "",
+        from: "App <noreply@app.test>",
+      })
+    ).rejects.toMatchObject({ statusCode: 504 });
+  });
 });
 
 describe("LoopsProvider", () => {
@@ -215,6 +229,27 @@ describe("LoopsProvider", () => {
       statusCode: 404,
       message: expect.stringContaining("Transactional email not found"),
     });
+  });
+
+  it("gives up on a request the API never answers", async () => {
+    fetchMock.mockImplementation(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () =>
+            reject(init.signal!.reason)
+          );
+        })
+    );
+
+    const provider = new LoopsProvider("loops-key", { welcome: "tx_1" }, 20);
+    await expect(
+      provider.send({
+        to: "user@example.com",
+        subject: "Welcome",
+        html: "",
+        template: { key: "welcome" },
+      })
+    ).rejects.toMatchObject({ name: "TimeoutError" });
   });
 });
 

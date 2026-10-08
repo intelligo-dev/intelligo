@@ -38,8 +38,10 @@ export function UsageSummaryCards({
   initialPeriodSummary: UsagePeriodSummary;
   plan: UsagePlan;
   billingMode: "subscription" | "credit";
-  quota: UsageQuotaState;
-  trial: UsageTrialState;
+  /** Null when the reader sees only their own usage. */
+  quota: UsageQuotaState | null;
+  /** Null when the reader sees only their own usage. */
+  trial: UsageTrialState | null;
 }) {
   const t = useTranslations("usage");
   const format = useFormatter();
@@ -66,12 +68,12 @@ export function UsageSummaryCards({
     });
   }
 
-  const quotaBadge = quota.criticalThreshold
+  const quotaBadge = quota?.criticalThreshold
     ? {
         label: t("summaryCards.quotaBadge.limitReached"),
         status: "destructive" as const,
       }
-    : quota.warningThreshold
+    : quota?.warningThreshold
       ? {
           label: t("summaryCards.quotaBadge.nearingLimit"),
           status: "warning" as const,
@@ -136,35 +138,37 @@ export function UsageSummaryCards({
           </StatCard>
         </AnimatedListItem>
 
-        <AnimatedListItem as="div" className="grid">
-          <StatCard>
-            <StatCardHeader>
-              <StatCardLabel>{t("summaryCards.planQuota")}</StatCardLabel>
-              <StatCardAction>
-                <StatusBadge status={quotaBadge.status}>
-                  {quotaBadge.label}
-                </StatusBadge>
-              </StatCardAction>
-            </StatCardHeader>
-            <CardContent className="space-y-2">
-              <Progress value={Math.min(quota.percentage, 100)} />
-              <p className="text-xs text-muted-foreground">
-                {billingMode === "credit"
-                  ? t("summaryCards.quotaAllowanceCredit", {
-                      percentage: quota.percentage,
-                      planName: plan.name,
-                    })
-                  : t("summaryCards.quotaAllowance", {
-                      percentage: quota.percentage,
-                      planName: plan.name,
-                    })}
-              </p>
-            </CardContent>
-          </StatCard>
-        </AnimatedListItem>
+        {quota ? (
+          <AnimatedListItem as="div" className="grid">
+            <StatCard>
+              <StatCardHeader>
+                <StatCardLabel>{t("summaryCards.planQuota")}</StatCardLabel>
+                <StatCardAction>
+                  <StatusBadge status={quotaBadge.status}>
+                    {quotaBadge.label}
+                  </StatusBadge>
+                </StatCardAction>
+              </StatCardHeader>
+              <CardContent className="space-y-2">
+                <Progress value={Math.min(quota.percentage, 100)} />
+                <p className="text-xs text-muted-foreground">
+                  {billingMode === "credit"
+                    ? t("summaryCards.quotaAllowanceCredit", {
+                        percentage: quota.percentage,
+                        planName: plan.name,
+                      })
+                    : t("summaryCards.quotaAllowance", {
+                        percentage: quota.percentage,
+                        planName: plan.name,
+                      })}
+                </p>
+              </CardContent>
+            </StatCard>
+          </AnimatedListItem>
+        ) : null}
       </AnimatedList>
 
-      {trial.hasTrialCredits && trial.status === "active" ? (
+      {trial?.hasTrialCredits && trial.status === "active" ? (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">

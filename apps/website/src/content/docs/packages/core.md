@@ -99,7 +99,8 @@ if (storage) setStorageAdapter(storage);
 `STORAGE_ENDPOINT` (R2's `https://<account>.r2.cloudflarestorage.com`, a MinIO
 URL; unset means AWS). A custom endpoint is addressed path-style; pass
 `createS3Storage({ …, pathStyle })` to choose. Uploads are buffered to be
-hashed.
+hashed. A request the bucket does not answer within `timeoutMs` (default 30
+seconds) is abandoned and the call throws.
 
 ## Environment
 

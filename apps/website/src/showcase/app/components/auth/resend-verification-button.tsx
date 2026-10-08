@@ -21,10 +21,13 @@ import { Spinner } from "@showcase/components/ui/spinner";
 
 interface ResendVerificationButtonProps {
   email?: string;
+  /** Where the verified visitor continues — a path on this site. */
+  next?: string;
 }
 
 export function ResendVerificationButton({
   email: knownEmail,
+  next,
 }: ResendVerificationButtonProps) {
   const t = useTranslations("auth-email-verification");
   const [email, setEmail] = useState(knownEmail ?? "");
@@ -45,7 +48,9 @@ export function ResendVerificationButton({
 
       const result = await authClient.sendVerificationEmail({
         email,
-        callbackURL: "/verify-email",
+        callbackURL: next
+          ? `/verify-email?next=${encodeURIComponent(next)}`
+          : "/verify-email",
       });
 
       if (result.error) {

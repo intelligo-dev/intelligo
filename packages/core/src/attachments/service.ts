@@ -9,7 +9,7 @@
  * for a signed URL to it.
  */
 
-import { and, eq, inArray, isNull, lt } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 
 import { db } from "../db";
 import { attachments } from "../db/schema";
@@ -154,6 +154,28 @@ export async function deleteAttachment(
     throw new AttachmentServiceError("not_found", "Attachment not found");
   }
   return row;
+}
+
+/**
+ * Bytes a workspace holds in uploads no conversation has claimed yet —
+ * what an upload route caps, so storage between a file's upload and the
+ * sweep stays bounded.
+ */
+export async function unclaimedAttachmentBytes(
+  actor: Pick<AttachmentActor, "workspaceId">
+): Promise<number> {
+  const [row] = await db
+    .select({
+      total: sql<string | null>`sum(${attachments.sizeBytes})`,
+    })
+    .from(attachments)
+    .where(
+      and(
+        eq(attachments.workspaceId, actor.workspaceId),
+        isNull(attachments.conversationId)
+      )
+    );
+  return Number(row?.total ?? 0);
 }
 
 /**

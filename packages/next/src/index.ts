@@ -6,8 +6,12 @@
  */
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 
-import type { RequestContextSource } from "@intelligo-dev/core/request-context";
+import type {
+  BackgroundTaskRunner,
+  RequestContextSource,
+} from "@intelligo-dev/core/request-context";
 
 /**
  * Reads the current request's headers from Next's request scope.
@@ -17,6 +21,16 @@ import type { RequestContextSource } from "@intelligo-dev/core/request-context";
  *     setRequestContextSource(nextRequestContext);
  */
 export const nextRequestContext: RequestContextSource = () => headers();
+
+/**
+ * Keeps work the framework starts without awaiting — an auth email, a
+ * new workspace's bootstrap, a notification — running after the
+ * response, through Next's `after()`. Bind it once, from the
+ * composition root:
+ *
+ *     setBackgroundTaskRunner(nextBackgroundTasks);
+ */
+export const nextBackgroundTasks: BackgroundTaskRunner = (task) => after(task);
 
 /**
  * What a Server Action returns to its form: the data, or an error
