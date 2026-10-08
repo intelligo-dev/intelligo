@@ -24,6 +24,7 @@ import {
   PACKAGES_DIR,
   ROOT,
   TOOLS_DIR,
+  importSpecifiers,
   listWorkspaces,
   walk,
 } from "./tree";
@@ -454,7 +455,20 @@ describe("publishability", () => {
     // `import "server-only"`, which is the guard that stops server code
     // reaching a client bundle. Those packages declare nothing and keep
     // the conservative default.
-    const importsServerOnly = new Set(["admin", "auth", "next"]);
+    const importsServerOnly = new Set(
+      PUBLISHED.filter((pkg) =>
+        walk(path.join(PACKAGES_DIR, pkg, "src"), (name) =>
+          /\.tsx?$/.test(name)
+        ).some(
+          (file) =>
+            !/\.test\.tsx?$/.test(file) &&
+            importSpecifiers(readFileSync(file, "utf8")).includes("server-only")
+        )
+      )
+    );
+    expect([...importsServerOnly].sort()).toEqual(
+      expect.arrayContaining(["admin", "auth", "next"])
+    );
 
     for (const pkg of PUBLISHED) {
       const declared = manifest(pkg).sideEffects;

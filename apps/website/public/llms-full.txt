@@ -1686,11 +1686,12 @@ Source: https://intelligo.dev/docs/packages/auth
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/auth better-auth drizzle-orm zod
+pnpm add @intelligo-dev/auth better-auth drizzle-orm react zod
 ```
 
-`better-auth`, `drizzle-orm` and `zod` are peers: the guards read the
-Better-Auth instance and the database client the application already has.
+`better-auth`, `drizzle-orm`, `react` and `zod` are peers: the guards read the
+Better-Auth instance and the database client the application already has,
+and the verification and reset emails render with React.
 
 ## What it owns
 
@@ -1754,10 +1755,11 @@ Source: https://intelligo.dev/docs/packages/billing
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/billing drizzle-orm stripe zod
+pnpm add @intelligo-dev/billing drizzle-orm react stripe zod
 ```
 
-`drizzle-orm`, `stripe` and `zod` are peers.
+`drizzle-orm`, `react`, `stripe` and `zod` are peers; the trial and payment
+emails render with React.
 
 ## What it owns
 

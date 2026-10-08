@@ -12,10 +12,11 @@ application needs. Documentation:
 ## Install
 
 ```bash
-pnpm add @intelligo-dev/billing drizzle-orm stripe zod
+pnpm add @intelligo-dev/billing drizzle-orm react stripe zod
 ```
 
-`drizzle-orm`, `stripe` and `zod` are peers.
+`drizzle-orm`, `react`, `stripe` and `zod` are peers; the trial and payment
+emails render with React.
 
 ## What it owns
 

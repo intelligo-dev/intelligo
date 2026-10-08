@@ -295,7 +295,9 @@ jobs:
             packages/jobs/src/__tests__ \
             packages/billing/src/__tests__ \
             packages/admin/src/__tests__ \
-            packages/auth/src/raw-organization-paths.int.test.ts
+            packages/auth/src/raw-organization-paths.int.test.ts \
+            packages/core/src/attachments/sweep.integration.test.ts \
+            packages/cli/src/commands/migrate.int.test.ts
 
       # The replay applied the files directly with psql, so drizzle has
       # no record of them — exactly the "unmanaged" state a
@@ -356,6 +358,7 @@ jobs:
         run: |
           pnpm vitest run \
             packages/core/src/conversations/service.integration.test.ts \
+            packages/core/src/conversations/history.integration.test.ts \
             packages/core/src/documents/service.integration.test.ts \
             packages/core/src/identity/service.integration.test.ts \
             packages/core/src/attachments/service.integration.test.ts \

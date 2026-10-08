@@ -43,12 +43,14 @@
   "peerDependencies": {
     "better-auth": "~1.6.30",
     "drizzle-orm": "^0.45.1",
+    "react": "^19.0.0",
     "zod": "^3.25.76 || ^4.0.0"
   },
   "devDependencies": {
     "@types/react": "19.2.18",
     "better-auth": "~1.6.33",
     "drizzle-orm": "^0.45.2",
+    "react": "^19.3.0",
     "typescript": "^6.0.3",
     "zod": "^4.6.5"
   },

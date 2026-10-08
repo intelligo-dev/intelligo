@@ -6,13 +6,18 @@
  * `calculateCost` throws on an id it cannot price rather than guessing;
  * `intelligo doctor` checks a consumer's composition root. This is the
  * rule for *this* repository, whose composition roots register
- * `DEFAULT_MODELS` and nothing else — an unregistered literal here
- * throws at request time.
+ * `DEFAULT_MODELS` and the ids they list beside it in a
+ * `registerModels([...])` call — an unregistered literal here throws at
+ * request time. A test registers or deliberately omits its own fixture
+ * ids, so in a test only an id from a provider the catalogue or a
+ * composition root prices is checked.
  */
 
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
+
+import { importSpecifiers } from "./tree";
 
 const ROOT = path.resolve(__dirname, "../..");
 
@@ -58,11 +63,63 @@ const IGNORED_TREES = ["apps/website"];
 
 /**
  * A provider-prefixed model id. Matching the shape rather than a list
- * of known providers is deliberate: a typo'd provider is exactly the
- * mistake worth catching.
+ * of known providers is deliberate: a typo'd provider, or one nobody
+ * listed, is exactly the mistake worth catching. `notAModelId` removes
+ * the other strings of that shape.
  */
-const MODEL_ID =
-  /"((?:openai|anthropic|google|xai|mistral|meta)\/[a-z0-9._-]+)"/g;
+const MODEL_ID = /"([a-z][a-z0-9-]*\/[a-z0-9._-]+)"/g;
+
+/** Top-level media types: `image/png` is a MIME type, not a model. */
+const MEDIA_TYPES = new Set([
+  "application",
+  "audio",
+  "font",
+  "image",
+  "multipart",
+  "text",
+  "video",
+]);
+
+/** The workspaces' own names: `billing/plans` names a registry, not a model. */
+const WORKSPACES = new Set(
+  ["packages", "apps", "tools"].flatMap((dir) =>
+    readdirSync(path.join(ROOT, dir))
+  )
+);
+
+/** First segments that make a string a path in a project tree. */
+const PATH_ROOTS = new Set([
+  "app",
+  "apps",
+  "components",
+  "lib",
+  "packages",
+  "tools",
+]);
+
+function notAModelId(id: string, specifiers: Set<string>): boolean {
+  const [head] = id.split("/");
+  return (
+    specifiers.has(id) ||
+    MEDIA_TYPES.has(head!) ||
+    WORKSPACES.has(head!) ||
+    PATH_ROOTS.has(head!) ||
+    // Tailwind: an opacity (`bg-primary/10`) or a named group or peer.
+    /\/[0-9.]+$/.test(id) ||
+    /^(group|peer)$/.test(head!) ||
+    /\.(tsx?|jsx?|mjs|json|md|css|tpl)$/.test(id)
+  );
+}
+
+/** Module specifiers, including the ones `vi.mock` and `declare module` name. */
+function moduleSpecifiers(text: string): Set<string> {
+  const specs = new Set(importSpecifiers(text));
+  for (const m of text.matchAll(
+    /\b(?:vi\.(?:do)?mock|vi\.importActual|module)\s*\(?\s*["']([^"']+)["']/g
+  ))
+    specs.add(m[1]!);
+  return specs;
+}
 
 /**
  * Ids that are deliberately not registered. None: a stub that reaches
@@ -109,33 +166,53 @@ describe("model registry", () => {
     expect(known.has("google/gemini-2.5-flash")).toBe(true);
   });
 
-  it("every model id used in the source is in the shipped catalogue", () => {
+  it("every model id used in the source is registered", () => {
+    const files = ROOTS.flatMap((root) => walk(path.join(ROOT, root)))
+      .map((file) => ({
+        relative: path.relative(ROOT, file).split(path.sep).join("/"),
+        text: stripComments(readFileSync(file, "utf8")),
+      }))
+      .filter(
+        ({ relative }) =>
+          !IGNORED_TREES.some((t) => relative.startsWith(t + "/")) &&
+          // pricing.ts defines the catalogue; this file names ids to
+          // describe the rule.
+          relative !== MODELS_FILE &&
+          relative !== "tests/architecture/model-registry.test.ts"
+      );
+    const isTest = (relative: string) => /\.test\.tsx?$/.test(relative);
+
     const known = catalogueModelIds();
+    for (const { relative, text } of files) {
+      if (isTest(relative) || !text.includes("registerModels(")) continue;
+      for (const m of text.matchAll(/\bid:\s*"([a-z0-9-]+\/[a-z0-9._-]+)"/g))
+        known.add(m[1]!);
+    }
+    const providers = new Set([...known].map((id) => id.split("/")[0]!));
+
     const offenders: string[] = [];
-
-    for (const root of ROOTS) {
-      for (const file of walk(path.join(ROOT, root))) {
-        const rel = path.relative(ROOT, file).split(path.sep).join("/");
-        if (IGNORED_TREES.some((t) => rel.startsWith(t + "/"))) continue;
-        // pricing.ts defines the catalogue; the audit that scans for
-        // unregistered ids necessarily names one.
-        const relative = path.relative(ROOT, file);
-        if (relative === MODELS_FILE) continue;
-        if (relative.endsWith("tests/architecture/model-registry.test.ts"))
-          continue;
-
-        const text = stripComments(readFileSync(file, "utf8"));
-        for (const match of text.matchAll(MODEL_ID)) {
-          const id = match[1]!;
-          if (known.has(id) || ALLOWED_UNREGISTERED.has(id)) continue;
-          offenders.push(`${relative}: ${id}`);
-        }
+    for (const { relative, text } of files) {
+      const specifiers = moduleSpecifiers(text);
+      for (const match of text.matchAll(MODEL_ID)) {
+        const id = match[1]!;
+        if (known.has(id) || ALLOWED_UNREGISTERED.has(id)) continue;
+        if (notAModelId(id, specifiers)) continue;
+        if (isTest(relative) && !providers.has(id.split("/")[0]!)) continue;
+        offenders.push(`${relative}: ${id}`);
       }
     }
 
     expect(
       [...new Set(offenders)],
-      `model ids that are not in DEFAULT_MODELS — nothing in this repository registers them, so pricing them throws at request time:\n  ${offenders.join("\n  ")}`
+      `model ids nothing in this repository registers, so pricing them throws at request time:\n  ${offenders.join("\n  ")}`
     ).toEqual([]);
+  });
+
+  it("checks an id from a provider nobody listed", () => {
+    expect(notAModelId("deepseek/deepseek-chat", new Set())).toBe(false);
+    expect(notAModelId("groq/llama-3.3-70b", new Set())).toBe(false);
+    expect(notAModelId("image/png", new Set())).toBe(true);
+    expect(notAModelId("bg-primary/10", new Set())).toBe(true);
+    expect(notAModelId("ai/test", new Set(["ai/test"]))).toBe(true);
   });
 });
