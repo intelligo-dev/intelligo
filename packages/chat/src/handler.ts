@@ -69,7 +69,7 @@ import {
   registeredModelIds,
 } from "@intelligo-dev/executions/pricing";
 
-import { attachmentIdFromUrl, parseChatBody } from "./body";
+import { attachmentIdFromUrl, fileAccepted, parseChatBody } from "./body";
 import type { ChatAttachmentPolicy } from "./body";
 import type { ChatErrorCode, ChatModelOption } from "./client";
 import type {
@@ -85,6 +85,7 @@ import { CHAT_ERROR_STATUS, DEFAULT_CHAT_MESSAGES, refuse } from "./errors";
 import type { ChatMessages } from "./errors";
 import { pickGenerationOptions } from "./generation";
 import { hasElidedFile } from "./elide";
+import { trustedContinuation } from "./continuation";
 import { lastUserMessage, restoreElidedFiles, toUIMessages } from "./messages";
 import type {
   ChatDataChunk,
@@ -453,45 +454,29 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
   }
 
   /**
-   * An approval answer runs the tool it approves with the input it
-   * carries, so that input must be what the model proposed. With the
-   * transport's own persistence the stored assistant message is that
-   * proposal: a continuation whose approved call is missing from it, or
-   * carries other input, is refused. A deployment that persists
-   * elsewhere (`persist`) makes this check in its own `prepareMessages`.
+   * A continuation resumes an assistant message the model wrote, and
+   * the client's copy of it is not trusted: an approval answer runs the
+   * tool it approves with the input it carries, and the finished reply
+   * is persisted from this message. With the transport's own persistence
+   * the stored message is taken and only the client's answers are copied
+   * onto it (`trustedContinuation`); null refuses the turn. A deployment
+   * that persists elsewhere (`persist`) makes this check in its own
+   * `prepareMessages`.
    */
-  async function approvalsMatchStored(
+  async function storedContinuation(
     actor: ChatActor,
     body: { id: string; messages: UIMessage[] }
-  ): Promise<boolean> {
-    if (config.persist !== undefined) return true;
+  ): Promise<UIMessage | null> {
     const last = body.messages[body.messages.length - 1]!;
-    let stored: UIMessage | undefined;
     try {
       const row = await getMessage(actor, body.id, last.id);
-      stored = row ? toUIMessages([row])[0] : undefined;
-    } catch {
-      return false;
-    }
-    if (!stored) return false;
-
-    const proposed = new Map<string, Record<string, unknown>>();
-    for (const raw of stored.parts) {
-      const part = raw as unknown as Record<string, unknown>;
-      if (typeof part.toolCallId === "string") {
-        proposed.set(part.toolCallId, part);
-      }
-    }
-    return last.parts.every((raw) => {
-      const part = raw as unknown as Record<string, unknown>;
-      if (part.state !== "approval-responded") return true;
-      const original = proposed.get(String(part.toolCallId));
-      return (
-        original !== undefined &&
-        original.type === part.type &&
-        JSON.stringify(original.input) === JSON.stringify(part.input)
+      return trustedContinuation(
+        row ? toUIMessages([row])[0] : undefined,
+        last
       );
-    });
+    } catch {
+      return null;
+    }
   }
 
   // POST: stream a reply.
@@ -566,7 +551,11 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           config.persist === undefined && loaded.row
             ? toUIMessages(await getMessagesByIds(actor, body.id, elided))
             : [];
-        body.messages = restoreElidedFiles(body.messages, stored);
+        body.messages = restoreElidedFiles(
+          body.messages,
+          stored,
+          (part, role) => fileAccepted(part, role, attachments)
+        );
       } catch (error) {
         log.error("Failed to restore elided files", {
           conversationId: body.id,
@@ -721,10 +710,18 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       trimAfter = body.messages[body.messages.length - 2]!.id;
     }
 
-    const answers = approvalAnswers(body.messages);
-    if (answers.length > 0 && !(await approvalsMatchStored(actor, body))) {
-      return refusal("BAD_REQUEST", t("invalidBody"), where, {}, cors);
+    if (
+      config.persist === undefined &&
+      body.messages[body.messages.length - 1]!.role === "assistant"
+    ) {
+      const resumed = await storedContinuation(actor, body);
+      if (!resumed) {
+        return refusal("BAD_REQUEST", t("invalidBody"), where, {}, cors);
+      }
+      body.messages = [...body.messages.slice(0, -1), resumed];
     }
+
+    const answers = approvalAnswers(body.messages);
 
     const turn: ChatTurn = {
       ...context,
