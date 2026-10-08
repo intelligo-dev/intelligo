@@ -81,20 +81,15 @@ d("identity service — real DB integration", () => {
     );
   });
 
-  // `user_memory_audit` is append-only: a BEFORE DELETE trigger raises on
-  // every row, including the ones a cascade reaches. Its foreign keys to
-  // `users` and `organization` are ON DELETE CASCADE, so deleting either
-  // parent of an audited row raises too. The audit rows, the workspace and
-  // the users therefore stay; the run's ids are unique, so a later run
-  // never meets them. Facts carry no audit constraint and are removed.
+  // `user_memory_audit` is append-only, so its rows stay; deleting the
+  // workspace and the users clears their references, and the facts and
+  // snapshots go with them.
   afterAll(async () => {
-    await client.query(`DELETE FROM user_facts WHERE workspace_id = $1`, [
-      workspaceId,
+    await client.query(`DELETE FROM organization WHERE id = $1`, [workspaceId]);
+    await client.query(`DELETE FROM users WHERE id IN ($1, $2)`, [
+      userId,
+      otherUserId,
     ]);
-    await client.query(
-      `DELETE FROM user_profile_snapshots WHERE workspace_id = $1`,
-      [workspaceId]
-    );
     await client.end();
   });
 
@@ -127,6 +122,8 @@ d("identity service — real DB integration", () => {
     expect(audit[0]?.action).toBe("delete");
     expect(audit[0]?.targetKind).toBe("fact");
     expect(audit[0]?.actorId).toBe(userId);
+    expect(audit[0]?.beforeValue).toBeNull();
+    expect(audit[0]?.afterValue).toBeNull();
   });
 
   it("exportIdentity aggregates the actor's data and records an export audit row", async () => {

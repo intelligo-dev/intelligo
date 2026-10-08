@@ -129,6 +129,9 @@ export async function getDocumentVersions(
   return rows.map(toListItem);
 }
 
+/** How many version keys one save tries before giving up. */
+const SAVE_ATTEMPTS = 10;
+
 /**
  * Saves a document as a new version.
  * Throws DocumentServiceError("forbidden") if a document with this id
@@ -176,19 +179,29 @@ export async function saveDocument(
     existingDocs.map((doc) => conversationIdOf(doc.metadata)).find(Boolean) ??
     null;
 
-  const [newDocument] = await db
-    .insert(documents)
-    .values({
-      id: params.id,
-      userId: actor.userId,
-      workspaceId: actor.workspaceId,
-      title: params.title,
-      content: params.content,
-      kind: params.kind,
-      createdAt: new Date(),
-      metadata: conversationId ? { conversationId } : null,
-    })
-    .returning();
+  // A version is keyed on (id, created_at), so two saves of one document
+  // in the same millisecond would share a key. A taken key moves the new
+  // version a millisecond later, and it is always later than the newest
+  // version already read.
+  const latest = Math.max(0, ...existingDocs.map((d) => d.createdAt.getTime()));
+  const createdAt = Math.max(Date.now(), latest + 1);
+  let newDocument: typeof documents.$inferSelect | undefined;
+  for (let attempt = 0; attempt < SAVE_ATTEMPTS && !newDocument; attempt++) {
+    [newDocument] = await db
+      .insert(documents)
+      .values({
+        id: params.id,
+        userId: actor.userId,
+        workspaceId: actor.workspaceId,
+        title: params.title,
+        content: params.content,
+        kind: params.kind,
+        createdAt: new Date(createdAt + attempt),
+        metadata: conversationId ? { conversationId } : null,
+      })
+      .onConflictDoNothing({ target: [documents.id, documents.createdAt] })
+      .returning();
+  }
 
   if (!newDocument) {
     throw new DocumentServiceError("database_error", "Failed to save document");

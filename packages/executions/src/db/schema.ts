@@ -86,6 +86,7 @@ export const executions = pgTable(
     ),
     index("executions_status_idx").on(table.status, table.startedAt),
     index("executions_capability_idx").on(table.capability, table.startedAt),
+    index("executions_user_id_idx").on(table.userId),
   ]
 );
 

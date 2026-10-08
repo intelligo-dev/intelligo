@@ -213,12 +213,17 @@ export const userMemoryAudit = pgTable(
   "user_memory_audit",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    workspaceId: text("workspace_id")
-      .notNull()
-      .references(() => organization.id, { onDelete: "cascade" }),
+    /**
+     * Null once the user is deleted or erased: the row outlives its
+     * subject (set null, not cascade), with nothing left that names them.
+     */
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    /** Null once the workspace is deleted; the row stays, as above. */
+    workspaceId: text("workspace_id").references(() => organization.id, {
+      onDelete: "set null",
+    }),
 
     targetKind: text("target_kind").$type<AuditTargetKind>().notNull(),
     targetId: text("target_id").notNull(),
