@@ -16,11 +16,32 @@ import "server-only";
  */
 
 import { createTeamService } from "@intelligo-dev/auth";
-import { checkTeamMemberLimit } from "@intelligo-dev/billing";
+import { checkRateLimit, checkTeamMemberLimit } from "@intelligo-dev/billing";
 import { triggerTeamMemberJoinedNotification } from "@intelligo-dev/core/notifications";
+
+/** Invitations one person, and one workspace, may send per hour. */
+const INVITATIONS_PER_HOUR = { user: 20, workspace: 50 };
+const HOUR_MS = 60 * 60 * 1000;
 
 export const team = createTeamService({
   checkMemberLimit: checkTeamMemberLimit,
+  // Invitation emails reach any address from this deployment's domain,
+  // so they are capped per sender and per workspace.
+  checkInvitationRate: async ({ userId, workspaceId }) => {
+    const [byUser, byWorkspace] = await Promise.all([
+      checkRateLimit(`user:${userId}`, {
+        limit: INVITATIONS_PER_HOUR.user,
+        windowMs: HOUR_MS,
+        endpoint: "invitation",
+      }),
+      checkRateLimit(workspaceId, {
+        limit: INVITATIONS_PER_HOUR.workspace,
+        windowMs: HOUR_MS,
+        endpoint: "invitation",
+      }),
+    ]);
+    return { allowed: byUser.allowed && byWorkspace.allowed };
+  },
   notifyMemberJoined: ({ workspaceId, memberName, memberEmail, ownerId }) =>
     triggerTeamMemberJoinedNotification({
       userId: ownerId,

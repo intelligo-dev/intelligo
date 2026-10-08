@@ -4,7 +4,8 @@ import "server-only";
  * Binds billing into the workspace service (`@intelligo-dev/auth`): the
  * plan's workspace limit (`checkPlanLimit`), and ending the Stripe
  * subscription of a workspace before it is deleted
- * (`cancelWorkspaceSubscription`).
+ * (`beginWorkspaceSubscriptionCancellation`: scheduled to end first, cancelled
+ * once the workspace is gone, renewing again if the deletion failed).
  *
  * `checkPlanLimit` is keyed by `workspaceId`, but the service's
  * `checkWorkspaceLimit` port is keyed by `userId`: a new workspace has
@@ -19,7 +20,7 @@ import { db } from "@intelligo-dev/core/db";
 import { member } from "@intelligo-dev/core/db/schema";
 import { createWorkspaceService } from "@intelligo-dev/auth";
 import {
-  cancelWorkspaceSubscription,
+  beginWorkspaceSubscriptionCancellation,
   checkPlanLimit,
 } from "@intelligo-dev/billing";
 
@@ -47,5 +48,5 @@ export const workspace = createWorkspaceService({
     );
     return { allowed: result.allowed, limit: result.limit };
   },
-  beforeDeleteWorkspace: cancelWorkspaceSubscription,
+  beforeDeleteWorkspace: beginWorkspaceSubscriptionCancellation,
 });

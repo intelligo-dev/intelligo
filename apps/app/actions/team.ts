@@ -41,6 +41,7 @@ function friendlyMessage(
     forbidden: t("errors.forbidden"),
     invalid_input: t("errors.invalidInput"),
     accept_verification_failed: t("errors.acceptVerificationFailed"),
+    rate_limited: t("errors.rateLimited"),
     provider_error: t("errors.providerError"),
   };
 }

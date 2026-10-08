@@ -14,6 +14,12 @@ import { users, sessions } from "@intelligo-dev/core/db/schema";
 
 import { auth } from "../server";
 import { requireAuth } from "../helpers";
+import { accountDeletionGraceMs } from "../account-deletion";
+import {
+  deleteWorkspaceWithPort,
+  type BeforeDeleteWorkspace,
+} from "../workspace/delete";
+import { ownedWorkspaces } from "../workspace/ownership";
 import {
   preferredLanguageSchema,
   updateProfileSchema,
@@ -43,7 +49,17 @@ export type ProfileServicePorts = {
     userId: string;
     email: string;
     name: string;
+    /** When the account is purged; it can be restored until then. */
+    restorableUntil: Date;
   }) => Promise<void>;
+  /**
+   * Runs before each workspace the account owns alone is deleted with it —
+   * the same port the workspace service takes, and bound to the same thing:
+   * a paid subscription keeps billing otherwise.
+   */
+  beforeDeleteWorkspace?: BeforeDeleteWorkspace;
+  /** Defaults to `accountDeletionGraceMs()`. */
+  graceMs?: number;
 };
 
 function errorMessage(error: unknown): string {
@@ -151,9 +167,17 @@ export function createProfileService(ports: ProfileServicePorts = {}) {
   }
 
   /**
-   * Delete the caller's own account: soft delete (`users.deletedAt`),
-   * invalidate every session (force logout), then fire the
-   * `onAccountDeleted` port, if bound, without waiting on it.
+   * Schedule the caller's own account for deletion: soft delete
+   * (`users.deletedAt`), invalidate every session (force logout), then
+   * fire the `onAccountDeleted` port, if bound, without waiting on it.
+   * Signing in and confirming restores the account until the grace
+   * period ends (`restoreAccount`); `purgeDeletedAccounts` deletes it
+   * after that.
+   *
+   * Refused as `sole_owner` while the caller is the only owner of a
+   * workspace that has other members: those members would be left with
+   * nobody who can manage or pay for it. Workspaces the caller owns alone
+   * are deleted with the account, each through `beforeDeleteWorkspace`.
    *
    * Only from a session signed in within the last day — a stolen or
    * forgotten one should not end the account — and never from an
@@ -175,10 +199,51 @@ export function createProfileService(ports: ProfileServicePorts = {}) {
       );
     }
 
+    const owned = await ownedWorkspaces(user.id).catch((error: unknown) => {
+      log.error("deleteAccount: reading owned workspaces failed", {
+        error: errorMessage(error),
+      });
+      throw new ProfileServiceError(
+        "provider_error",
+        "Failed to delete account",
+        { cause: error }
+      );
+    });
+    const blocking = owned.filter((w) => w.owners === 1 && w.members > 1);
+    if (blocking.length > 0) {
+      throw new ProfileServiceError(
+        "sole_owner",
+        "Transfer ownership of, or delete, the workspaces you alone own before deleting your account.",
+        { meta: { workspaces: blocking.map((w) => w.name) } }
+      );
+    }
+
+    const hdrs = await getRequestHeaders();
+    for (const workspace of owned.filter((w) => w.members === 1)) {
+      try {
+        await deleteWorkspaceWithPort(
+          workspace.id,
+          hdrs,
+          ports.beforeDeleteWorkspace
+        );
+      } catch (error) {
+        log.error("deleteAccount: deleting an owned workspace failed", {
+          workspaceId: workspace.id,
+          error: errorMessage(error),
+        });
+        throw new ProfileServiceError(
+          "provider_error",
+          "Failed to delete account",
+          { cause: error }
+        );
+      }
+    }
+
+    const deletedAt = new Date();
     try {
       await db
         .update(users)
-        .set({ deletedAt: new Date(), updatedAt: new Date() })
+        .set({ deletedAt, updatedAt: deletedAt })
         .where(eq(users.id, user.id));
 
       await db.delete(sessions).where(eq(sessions.userId, user.id));
@@ -198,6 +263,9 @@ export function createProfileService(ports: ProfileServicePorts = {}) {
           userId: user.id,
           email: user.email,
           name: user.name || "",
+          restorableUntil: new Date(
+            deletedAt.getTime() + (ports.graceMs ?? accountDeletionGraceMs())
+          ),
         })
         .catch((err) =>
           log.error("onAccountDeleted port failed", {

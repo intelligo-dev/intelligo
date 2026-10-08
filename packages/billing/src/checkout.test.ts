@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   billingPortalSessionsCreate: vi.fn(),
   subscriptionsRetrieve: vi.fn(),
   subscriptionsCancel: vi.fn(),
+  subscriptionsUpdate: vi.fn(),
   subscriptionsList: vi.fn(),
   checkoutSessionsList: vi.fn(),
   checkoutSessionsExpire: vi.fn(),
@@ -89,6 +90,7 @@ import {
   createCreditCheckout,
   creditBundleOffer,
   createBillingPortal,
+  beginWorkspaceSubscriptionCancellation,
   cancelWorkspaceSubscription,
   getCheckoutSession,
   isBillingServiceError,
@@ -129,6 +131,7 @@ beforeEach(() => {
     subscriptions: {
       retrieve: mocks.subscriptionsRetrieve,
       cancel: mocks.subscriptionsCancel,
+      update: mocks.subscriptionsUpdate,
       list: mocks.subscriptionsList,
     },
   });
@@ -615,6 +618,44 @@ describe("cancelWorkspaceSubscription", () => {
     });
     mocks.subscriptionsCancel.mockRejectedValue({ code: "resource_missing" });
     await expect(cancelWorkspaceSubscription("ws_1")).resolves.toBeUndefined();
+  });
+});
+
+describe("beginWorkspaceSubscriptionCancellation", () => {
+  beforeEach(() => {
+    mocks.getWorkspaceBilling.mockResolvedValue({
+      subscription: { status: "active", stripeSubscriptionId: "sub_1" },
+    });
+    mocks.subscriptionsUpdate.mockResolvedValue({});
+    mocks.subscriptionsCancel.mockResolvedValue({});
+  });
+
+  it("only schedules the end until the deletion is known to have happened", async () => {
+    const settle = await beginWorkspaceSubscriptionCancellation("ws_1");
+    expect(mocks.subscriptionsUpdate).toHaveBeenCalledWith("sub_1", {
+      cancel_at_period_end: true,
+    });
+    expect(mocks.subscriptionsCancel).not.toHaveBeenCalled();
+
+    await settle!(true);
+    expect(mocks.subscriptionsCancel).toHaveBeenCalledWith("sub_1");
+  });
+
+  it("lets the subscription renew again when the deletion failed", async () => {
+    const settle = await beginWorkspaceSubscriptionCancellation("ws_1");
+    await settle!(false);
+    expect(mocks.subscriptionsCancel).not.toHaveBeenCalled();
+    expect(mocks.subscriptionsUpdate).toHaveBeenLastCalledWith("sub_1", {
+      cancel_at_period_end: false,
+    });
+  });
+
+  it("has nothing to settle for a workspace without a live subscription", async () => {
+    mocks.getWorkspaceBilling.mockResolvedValue({ subscription: null });
+    expect(
+      await beginWorkspaceSubscriptionCancellation("ws_1")
+    ).toBeUndefined();
+    expect(mocks.subscriptionsUpdate).not.toHaveBeenCalled();
   });
 });
 

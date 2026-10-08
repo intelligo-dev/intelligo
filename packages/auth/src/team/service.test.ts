@@ -96,7 +96,7 @@ import { isTeamServiceError } from "./errors";
 const baseCtx = {
   workspace: { id: "ws-1", name: "Acme" },
   user: { id: "u-1", name: "User One", email: "u@example.com" },
-  membership: { role: "owner" },
+  membership: { id: "mem-self", role: "owner" },
 };
 
 beforeEach(() => {
@@ -184,6 +184,22 @@ describe("inviteMember", () => {
 
     expect(isTeamServiceError(err)).toBe(true);
     expect(err.code).toBe("forbidden");
+    expect(mocks.orgApi["/organization/invite-member"]).not.toHaveBeenCalled();
+  });
+
+  it("refuses as rate_limited when the invitation-rate port says so", async () => {
+    const checkInvitationRate = vi.fn().mockResolvedValue({ allowed: false });
+    const service = createTeamService({ checkInvitationRate });
+
+    const err = await service
+      .inviteMember({ email: "new@test.com", role: "member" })
+      .catch((e) => e);
+
+    expect(err.code).toBe("rate_limited");
+    expect(checkInvitationRate).toHaveBeenCalledWith({
+      userId: "u-1",
+      workspaceId: "ws-1",
+    });
     expect(mocks.orgApi["/organization/invite-member"]).not.toHaveBeenCalled();
   });
 
@@ -491,6 +507,16 @@ describe("removeMember + updateMemberRole", () => {
     await service.removeMember("mem-1");
 
     expect(mocks.requireRole).toHaveBeenCalledWith(["owner", "admin"]);
+  });
+
+  it("removeMember refuses the caller's own membership, by id or email", async () => {
+    const service = createTeamService();
+
+    for (const self of ["mem-self", "u@example.com", "U@Example.com"]) {
+      const err = await service.removeMember(self).catch((e) => e);
+      expect(err.code).toBe("forbidden");
+    }
+    expect(mocks.orgApi["/organization/remove-member"]).not.toHaveBeenCalled();
   });
 
   it("removeMember is forbidden for a plain member", async () => {

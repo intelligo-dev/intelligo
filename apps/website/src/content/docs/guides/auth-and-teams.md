@@ -97,6 +97,23 @@ In client components, import from `@intelligo-dev/auth/client`: `authClient`, pl
 ```ts title="lib/team.ts"
 export const team = createTeamService({
   checkMemberLimit: checkTeamMemberLimit,
+  // Invitation emails reach any address from this deployment's domain,
+  // so they are capped per sender and per workspace.
+  checkInvitationRate: async ({ userId, workspaceId }) => {
+    const [byUser, byWorkspace] = await Promise.all([
+      checkRateLimit(`user:${userId}`, {
+        limit: INVITATIONS_PER_HOUR.user,
+        windowMs: HOUR_MS,
+        endpoint: "invitation",
+      }),
+      checkRateLimit(workspaceId, {
+        limit: INVITATIONS_PER_HOUR.workspace,
+        windowMs: HOUR_MS,
+        endpoint: "invitation",
+      }),
+    ]);
+    return { allowed: byUser.allowed && byWorkspace.allowed };
+  },
   notifyMemberJoined: ({ workspaceId, memberName, memberEmail, ownerId }) =>
     triggerTeamMemberJoinedNotification({
       userId: ownerId,

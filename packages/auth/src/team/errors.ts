@@ -16,6 +16,8 @@
  * - `accept_verification_failed` — Better-Auth's accept-invitation call
  *   returned without the caller actually becoming a member (defence in
  *   depth against a stolen invitation id — see `acceptInvitation`).
+ * - `rate_limited` — the caller has sent as many invitations as the
+ *   `checkInvitationRate` port allows for now.
  * - `provider_error` — the underlying Better-Auth org-plugin call
  *   itself failed (network, upstream API error, etc.).
  * - `last_workspace` — leaving would leave the caller with no workspace,
@@ -29,6 +31,7 @@ export type TeamServiceErrorCode =
   | "forbidden"
   | "invalid_input"
   | "accept_verification_failed"
+  | "rate_limited"
   | "provider_error";
 
 export interface TeamServiceErrorMeta {

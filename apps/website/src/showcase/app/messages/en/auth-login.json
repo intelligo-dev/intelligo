@@ -29,6 +29,21 @@
     "orContinueWith": "Or continue with",
     "failed": "Couldn't start that sign-in. Please try again or use your email."
   },
+  "restore": {
+    "metadataTitle": "Restore your account",
+    "title": "Restore your account",
+    "description": "The account {email} is scheduled for deletion on {date}. Restore it to keep using it, or sign out to leave it scheduled.",
+    "expired": "The account {email} was deleted and can no longer be restored.",
+    "confirm": "Restore account",
+    "restoring": "Restoring…",
+    "signOut": "Sign out",
+    "errors": {
+      "expired": "This account can no longer be restored.",
+      "reauthenticate": "Sign out, sign in again, then restore your account.",
+      "notScheduled": "This account isn't scheduled for deletion.",
+      "failed": "We couldn't restore your account. Please try again."
+    }
+  },
   "validation": {
     "emailInvalid": "Please enter a valid email address",
     "passwordTooShort": "Password must be at least 8 characters"

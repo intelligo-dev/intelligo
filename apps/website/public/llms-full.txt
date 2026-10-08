@@ -1745,6 +1745,15 @@ organization plugin; the plugin's own mutating endpoints answer 404 over HTTP
 (headers to read the client address from, in order) and
 `AUTH_TRUSTED_PROXIES` (CIDRs) let the auth rate limiter tell clients apart.
 
+Deleting an account (`createProfileService().deleteAccount`) schedules it:
+it is refused while the user is the only owner of a workspace other people
+belong to, and the workspaces they own alone are deleted with it. Until the
+grace period ends — `ACCOUNT_DELETION_GRACE_DAYS`, 30 by default — signing
+in leads to a restore screen (`getPendingDeletion`, `restoreAccount`);
+every other guard treats that session as signed out. After it,
+`purgeDeletedAccounts`, called from the maintenance route, deletes the
+account and erases the user from the memory audit.
+
 ## Entry points
 
 - `@intelligo-dev/auth`
@@ -3452,6 +3461,23 @@ That call, like the trial and rate-limit calls below, is imported from `@intelli
 ```ts title="lib/team.ts"
 export const team = createTeamService({
   checkMemberLimit: checkTeamMemberLimit,
+  // Invitation emails reach any address from this deployment's domain,
+  // so they are capped per sender and per workspace.
+  checkInvitationRate: async ({ userId, workspaceId }) => {
+    const [byUser, byWorkspace] = await Promise.all([
+      checkRateLimit(`user:${userId}`, {
+        limit: INVITATIONS_PER_HOUR.user,
+        windowMs: HOUR_MS,
+        endpoint: "invitation",
+      }),
+      checkRateLimit(workspaceId, {
+        limit: INVITATIONS_PER_HOUR.workspace,
+        windowMs: HOUR_MS,
+        endpoint: "invitation",
+      }),
+    ]);
+    return { allowed: byUser.allowed && byWorkspace.allowed };
+  },
   notifyMemberJoined: ({ workspaceId, memberName, memberEmail, ownerId }) =>
     triggerTeamMemberJoinedNotification({
       userId: ownerId,
@@ -3748,6 +3774,23 @@ In client components, import from `@intelligo-dev/auth/client`: `authClient`, pl
 ```ts title="lib/team.ts"
 export const team = createTeamService({
   checkMemberLimit: checkTeamMemberLimit,
+  // Invitation emails reach any address from this deployment's domain,
+  // so they are capped per sender and per workspace.
+  checkInvitationRate: async ({ userId, workspaceId }) => {
+    const [byUser, byWorkspace] = await Promise.all([
+      checkRateLimit(`user:${userId}`, {
+        limit: INVITATIONS_PER_HOUR.user,
+        windowMs: HOUR_MS,
+        endpoint: "invitation",
+      }),
+      checkRateLimit(workspaceId, {
+        limit: INVITATIONS_PER_HOUR.workspace,
+        windowMs: HOUR_MS,
+        endpoint: "invitation",
+      }),
+    ]);
+    return { allowed: byUser.allowed && byWorkspace.allowed };
+  },
   notifyMemberJoined: ({ workspaceId, memberName, memberEmail, ownerId }) =>
     triggerTeamMemberJoinedNotification({
       userId: ownerId,

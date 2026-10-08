@@ -15,8 +15,12 @@ const mocks = vi.hoisted(() => {
 
   const updateSetWhereMock = vi.fn();
   const deleteWhereMock = vi.fn();
+  const ownedWorkspaces = vi.fn();
+  const deleteWorkspaceWithPort = vi.fn();
 
   return {
+    ownedWorkspaces,
+    deleteWorkspaceWithPort,
     requireAuth,
     headersMock,
     updateUser,
@@ -61,6 +65,18 @@ vi.mock("../helpers", () => ({
   requireAuth: mocks.requireAuth,
 }));
 
+vi.mock("../workspace/ownership", () => ({
+  ownedWorkspaces: mocks.ownedWorkspaces,
+}));
+
+vi.mock("../workspace/delete", () => ({
+  deleteWorkspaceWithPort: mocks.deleteWorkspaceWithPort,
+}));
+
+vi.mock("../account-deletion", () => ({
+  accountDeletionGraceMs: () => 30 * 24 * 60 * 60 * 1000,
+}));
+
 vi.mock("../server", () => ({
   auth: {
     api: {
@@ -84,6 +100,8 @@ beforeEach(() => {
   vi.resetAllMocks();
 
   mocks.headersMock.mockImplementation(async () => new Headers());
+  mocks.ownedWorkspaces.mockResolvedValue([]);
+  mocks.deleteWorkspaceWithPort.mockResolvedValue(undefined);
   mocks.requireAuth.mockResolvedValue({
     user: baseUser,
     session: { createdAt: new Date() },
@@ -257,7 +275,61 @@ describe("deleteAccount", () => {
       userId: "u-1",
       email: "ada@example.com",
       name: "Ada Lovelace",
+      restorableUntil: expect.any(Date),
     });
+    const { restorableUntil } = onAccountDeleted.mock.calls[0]![0];
+    const [values] = mocks.updateSetWhereMock.mock.calls[0]!;
+    expect(restorableUntil.getTime() - values.deletedAt.getTime()).toBe(
+      30 * 24 * 60 * 60 * 1000
+    );
+  });
+
+  it("refuses as sole_owner while the caller alone owns a workspace with other members", async () => {
+    mocks.ownedWorkspaces.mockResolvedValue([
+      { id: "ws-team", name: "Team", members: 4, owners: 1 },
+      { id: "ws-shared", name: "Shared", members: 3, owners: 2 },
+      { id: "ws-solo", name: "Solo", members: 1, owners: 1 },
+    ]);
+    const service = createProfileService();
+
+    const err = await service.deleteAccount().catch((e) => e);
+
+    expect(err.code).toBe("sole_owner");
+    expect(err.meta).toEqual({ workspaces: ["Team"] });
+    expect(mocks.deleteWorkspaceWithPort).not.toHaveBeenCalled();
+    expect(mocks.updateSetWhereMock).not.toHaveBeenCalled();
+  });
+
+  it("deletes the workspaces the caller owns alone, through the port, before the account", async () => {
+    mocks.ownedWorkspaces.mockResolvedValue([
+      { id: "ws-shared", name: "Shared", members: 3, owners: 2 },
+      { id: "ws-solo", name: "Solo", members: 1, owners: 1 },
+    ]);
+    const beforeDeleteWorkspace = vi.fn();
+    const service = createProfileService({ beforeDeleteWorkspace });
+
+    await service.deleteAccount();
+
+    expect(mocks.deleteWorkspaceWithPort).toHaveBeenCalledTimes(1);
+    expect(mocks.deleteWorkspaceWithPort).toHaveBeenCalledWith(
+      "ws-solo",
+      expect.any(Headers),
+      beforeDeleteWorkspace
+    );
+    expect(mocks.updateSetWhereMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the account when deleting an owned workspace fails", async () => {
+    mocks.ownedWorkspaces.mockResolvedValue([
+      { id: "ws-solo", name: "Solo", members: 1, owners: 1 },
+    ]);
+    mocks.deleteWorkspaceWithPort.mockRejectedValue(new Error("stripe down"));
+    const service = createProfileService();
+
+    await expect(service.deleteAccount()).rejects.toMatchObject({
+      code: "provider_error",
+    });
+    expect(mocks.updateSetWhereMock).not.toHaveBeenCalled();
   });
 
   it("does not reject deleteAccount when the onAccountDeleted port fails", async () => {

@@ -296,6 +296,7 @@ jobs:
             packages/billing/src/__tests__ \
             packages/admin/src/__tests__ \
             packages/auth/src/raw-organization-paths.int.test.ts \
+            packages/auth/src/account-deletion.int.test.ts \
             packages/core/src/attachments/sweep.integration.test.ts \
             packages/cli/src/commands/migrate.int.test.ts
 

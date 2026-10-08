@@ -71,6 +71,27 @@ export function displayNameProblem(name: unknown): string | null {
   if (typeof name !== "string") return null;
   const trimmed = name.trim();
   if (trimmed.length > 50) return "A name is at most 50 characters.";
-  if (/:\/\/|\bwww\./i.test(trimmed)) return "A name cannot contain a link.";
+  if (containsLink(trimmed)) return "A name cannot contain a link.";
+  return null;
+}
+
+/**
+ * Whether text holds something a mail client would turn into a link: a
+ * scheme (`https://`), a `www.` host, or a bare domain (`example.com`,
+ * `pay.example.co/x`). A dot between two words with no space after it
+ * counts as a domain, which is the price of catching the bare form.
+ */
+export function containsLink(text: string): boolean {
+  return /:\/\/|\bwww\.|\b[a-z0-9-]+\.[a-z]{2,}\b/i.test(text);
+}
+
+/**
+ * Why a workspace name is refused, or null when it is fine. It is printed
+ * in invitation emails sent to any address, so it is held to the same
+ * rule as a person's name: no links.
+ */
+export function workspaceNameProblem(name: unknown): string | null {
+  if (typeof name !== "string") return null;
+  if (containsLink(name)) return "A workspace name cannot contain a link.";
   return null;
 }

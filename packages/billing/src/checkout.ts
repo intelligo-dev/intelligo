@@ -1,7 +1,8 @@
 /**
- * Checkout service: Stripe checkout/portal session creation, the pending
- * credit-purchase row, and ending a subscription. The role-shaped
- * overview read is `./billing-overview`.
+ * Checkout service: Stripe checkout/portal session creation and the
+ * pending credit-purchase row. Ending a subscription is
+ * `./subscription-cancellation`; the role-shaped overview read is
+ * `./billing-overview`.
  *
  * These functions take resolved `workspaceId`/`userId`/`role` values and
  * never call `requireWorkspace`/`requireRole` (billing cannot depend on
@@ -488,27 +489,10 @@ export async function createBillingPortal(
   return { url: session.url };
 }
 
-/**
- * End a workspace's Stripe subscription at once. For a workspace about
- * to be deleted: its `subscriptions` row goes with it, and Stripe would
- * keep charging the customer for a workspace nobody can reach. A
- * workspace with no live Stripe subscription is left as it is.
- */
-export async function cancelWorkspaceSubscription(
-  workspaceId: string
-): Promise<void> {
-  const { subscription } = await getWorkspaceBilling(workspaceId);
-  if (!subscription?.stripeSubscriptionId) return;
-  if (subscription.status === "canceled") return;
-
-  try {
-    await getStripe().subscriptions.cancel(subscription.stripeSubscriptionId);
-  } catch (error) {
-    // Canceled or removed on Stripe's side already.
-    if ((error as { code?: string }).code === "resource_missing") return;
-    throw error;
-  }
-}
+export {
+  beginWorkspaceSubscriptionCancellation,
+  cancelWorkspaceSubscription,
+} from "./subscription-cancellation";
 
 // ---------------------------------------------------------------------------
 // Checkout session read (checkout-success page)

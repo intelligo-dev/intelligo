@@ -20,6 +20,12 @@ import {
   type UpdateWorkspaceInput,
 } from "./schemas";
 import { WorkspaceServiceError, isWorkspaceServiceError } from "./errors";
+import {
+  deleteWorkspaceWithPort,
+  WorkspacePreparationError,
+  type BeforeDeleteWorkspace,
+} from "./delete";
+import { countOwnedWorkspaces } from "./ownership";
 
 const log = createLogger("WorkspaceService");
 
@@ -35,20 +41,18 @@ export interface WorkspaceRecord {
 export type WorkspaceServicePorts = {
   /**
    * Plan-defined workspace cap for the caller. No port ⇒ unlimited. Not
-   * consulted for the caller's first workspace. Keyed by `userId` because
-   * the workspace being created has no plan yet; how "this user's plan" is
-   * resolved is the binding's decision.
+   * consulted while the caller owns no workspace. Keyed by `userId`
+   * because the workspace being created has no plan yet; how "this
+   * user's plan" is resolved is the binding's decision. `currentCount` is
+   * the number of workspaces the caller owns — ones they were invited
+   * into are someone else's plan.
    */
   checkWorkspaceLimit?: (
     userId: string,
     currentCount: number
   ) => Promise<{ allowed: boolean; limit: number }>;
-  /**
-   * Runs before a workspace is deleted, after the owner check. Whatever
-   * outlives the row has to be ended here — a paid subscription keeps
-   * billing the customer otherwise. A throw stops the deletion.
-   */
-  beforeDeleteWorkspace?: (workspaceId: string) => Promise<void>;
+  /** See `BeforeDeleteWorkspace`. */
+  beforeDeleteWorkspace?: BeforeDeleteWorkspace;
 };
 
 function errorMessage(error: unknown): string {
@@ -145,8 +149,9 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
   /**
    * Create a new workspace. Auto-generates a slug from the name if not
    * provided, and appends a uniqueness suffix (Better-Auth requires
-   * unique slugs). The caller's first workspace is always allowed; the
-   * limit port, when bound, gates every workspace after that. The new
+   * unique slugs). While the caller owns no workspace, creating one is
+   * always allowed; the limit port, when bound, gates every one after
+   * that, counting only the workspaces the caller owns. The new
    * workspace is auto-activated on success.
    */
   async function createWorkspace(
@@ -156,16 +161,12 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
     const validated = parseInput(createWorkspaceSchema, input);
     const hdrs = await getRequestHeaders();
 
-    const existing = await callOrgApi("list", () =>
-      orgApi["/organization/list"]({ headers: hdrs })
-    );
-    const existingCount = existing?.length ?? 0;
+    const ownedCount = ports.checkWorkspaceLimit
+      ? await callOrgApi("count-owned", () => countOwnedWorkspaces(user.id))
+      : 0;
 
-    if (ports.checkWorkspaceLimit && existingCount > 0) {
-      const limitCheck = await ports.checkWorkspaceLimit(
-        user.id,
-        existingCount
-      );
+    if (ports.checkWorkspaceLimit && ownedCount > 0) {
+      const limitCheck = await ports.checkWorkspaceLimit(user.id, ownedCount);
       if (!limitCheck.allowed) {
         throw new WorkspaceServiceError(
           "workspace_limit_reached",
@@ -273,24 +274,30 @@ export function createWorkspaceService(ports: WorkspaceServicePorts = {}) {
       );
     }
 
-    if (ports.beforeDeleteWorkspace) {
-      try {
-        await ports.beforeDeleteWorkspace(workspace.id);
-      } catch (error) {
+    try {
+      await deleteWorkspaceWithPort(
+        workspace.id,
+        hdrs,
+        ports.beforeDeleteWorkspace
+      );
+    } catch (error) {
+      if (error instanceof WorkspacePreparationError) {
         throw new WorkspaceServiceError(
           "provider_error",
-          `Could not prepare the workspace for deletion: ${errorMessage(error)}`,
+          `Could not prepare the workspace for deletion: ${error.message}`,
           { cause: error }
         );
       }
+      log.error("Org API call failed", {
+        context: "delete",
+        error: errorMessage(error),
+      });
+      throw new WorkspaceServiceError(
+        "provider_error",
+        "Better-Auth organization API call failed (delete)",
+        { cause: error }
+      );
     }
-
-    await callOrgApi("delete", () =>
-      auth.api.deleteOrganization({
-        headers: hdrs,
-        body: { organizationId: workspace.id },
-      })
-    );
 
     const orgs = await callOrgApi("list", () =>
       orgApi["/organization/list"]({ headers: hdrs })

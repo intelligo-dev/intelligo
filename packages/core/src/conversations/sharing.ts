@@ -5,7 +5,7 @@
 
 import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "../db";
-import { conversations, messages } from "../db/schema";
+import { conversations, member, messages, users } from "../db/schema";
 import { ConversationServiceError } from "./errors";
 import { getConversation } from "./service";
 import type { Conversation, ConversationActor, Message } from "./types";
@@ -71,6 +71,11 @@ export function shareRef(row: {
  * conversation shared before tokens existed, and not re-shared since,
  * still answers to its id. Everything else about the row stays
  * private: only what a shared page shows is projected.
+ *
+ * The link answers only while its author is a member of the
+ * conversation's workspace and their account is not deleted: once they
+ * leave, are removed, or delete their account, nobody is left who could
+ * unshare it, so it stops being public by itself.
  */
 export async function getPublicConversation(ref: string): Promise<{
   id: string;
@@ -88,6 +93,17 @@ export async function getPublicConversation(ref: string): Promise<{
       updatedAt: conversations.updatedAt,
     })
     .from(conversations)
+    .innerJoin(
+      users,
+      and(eq(users.id, conversations.userId), isNull(users.deletedAt))
+    )
+    .innerJoin(
+      member,
+      and(
+        eq(member.userId, conversations.userId),
+        eq(member.organizationId, conversations.workspaceId)
+      )
+    )
     .where(
       and(
         eq(conversations.visibility, "public"),

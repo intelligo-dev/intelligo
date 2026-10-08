@@ -16,10 +16,10 @@
   },
   "dangerZone": {
     "title": "Danger zone",
-    "description": "Deleting your account schedules it for permanent removal and signs you out everywhere. This cannot be undone.",
+    "description": "Deleting your account signs you out everywhere and schedules it for permanent removal. Workspaces only you belong to are deleted with it. You can restore your account by signing in before it is removed.",
     "trigger": "Delete account",
     "dialogTitle": "Delete account",
-    "dialogDescription": "This will schedule your account for deletion and sign you out of every session. Type <token>{token}</token> to confirm.",
+    "dialogDescription": "This will schedule your account for deletion and sign you out of every session. Sign in again before it is removed to restore it. Type <token>{token}</token> to confirm.",
     "confirmLabel": "Type {token} to confirm",
     "cancel": "Cancel",
     "confirm": "Delete account",
@@ -31,12 +31,14 @@
     "providerError": "Something went wrong. Please try again.",
     "reauthenticationRequired": "For your security, sign out and sign in again, then delete your account.",
     "somethingWentWrong": "Something went wrong.",
-    "invalidInput": "Invalid input"
+    "invalidInput": "Invalid input",
+    "soleOwner": "You're the only owner of {count, plural, one {the workspace} other {the workspaces}} {workspaces}, which other people belong to. Make another member an owner, or delete the workspace, before deleting your account."
   },
   "email": {
     "subject": "Your account has been scheduled for deletion",
-    "heading": "Account deletion confirmed",
-    "body": "Your account ({email}) has been scheduled for deletion.",
-    "warning": "If this wasn't you, contact support right away."
+    "heading": "Account deletion scheduled",
+    "body": "Your account ({email}) has been scheduled for deletion and will be removed permanently on {date, date, long}.",
+    "restore": "Changed your mind? Sign in before then and confirm to restore it.",
+    "warning": "If this wasn't you, sign in and restore your account, then change your password."
   }
 }

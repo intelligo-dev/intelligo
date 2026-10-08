@@ -30,7 +30,7 @@
     },
     "auth-login": {
       "title": "Auth: Login",
-      "description": "Email/password and OAuth login. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first."
+      "description": "Email/password and OAuth login, and the restore screen an account scheduled for deletion lands on after signing in. Ships the shared auth route layout, the de-branded AuthCard shell, and the auth-validation.ts zod schemas reused by auth-signup, auth-password-reset, and auth-email-verification - install this item first."
     },
     "auth-signup": {
       "title": "Auth: Signup",

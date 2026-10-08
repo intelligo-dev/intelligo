@@ -187,6 +187,7 @@ export {
   creditBundleOffer,
   createBillingPortal,
   cancelWorkspaceSubscription,
+  beginWorkspaceSubscriptionCancellation,
   getCheckoutSession,
   creditBundleSchema,
 } from "./checkout";

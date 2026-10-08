@@ -20,40 +20,11 @@ import { requireAuth, requireRole, requireWorkspace } from "../helpers";
 import { orgApi, type OrgInvitation, type OrgMember } from "../org-api";
 import { inviteMemberSchema, updateRoleSchema } from "./schemas";
 import { TeamServiceError, isTeamServiceError } from "./errors";
+import type { TeamServicePorts } from "./ports";
 
 const log = createLogger("TeamService");
 
-export type TeamServicePorts = {
-  /**
-   * Plan-defined member cap for a workspace. No port ⇒ unlimited.
-   * `currentCount` is the seats already spoken for: members plus pending
-   * invitations when inviting, members when an invitation is accepted.
-   */
-  checkMemberLimit?: (
-    workspaceId: string,
-    currentCount: number
-  ) => Promise<{ allowed: boolean; limit: number }>;
-  /**
-   * Send the invitation email. Bind it only when the org plugin's own
-   * `sendInvitationEmail` hook in `server.ts` is disabled: that hook fires
-   * on every invite, and binding both sends two emails.
-   */
-  sendInvitationEmail?: (input: {
-    to: string;
-    inviterName: string;
-    workspaceName: string;
-    invitationId: string;
-    role: string;
-  }) => Promise<void>;
-  /** Notify the workspace owner that a new member joined. */
-  notifyMemberJoined?: (input: {
-    workspaceId: string;
-    workspaceName: string;
-    memberName: string;
-    memberEmail: string;
-    ownerId: string;
-  }) => Promise<void>;
-};
+export type { TeamServicePorts } from "./ports";
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -189,6 +160,19 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     const { workspace, user } = await callRequireRole(["owner", "admin"]);
     const validated = parseInput(inviteMemberSchema, input);
     const hdrs = await getRequestHeaders();
+
+    if (ports.checkInvitationRate) {
+      const rate = await ports.checkInvitationRate({
+        userId: user.id,
+        workspaceId: workspace.id,
+      });
+      if (!rate.allowed) {
+        throw new TeamServiceError(
+          "rate_limited",
+          "Too many invitations sent. Try again later."
+        );
+      }
+    }
 
     // Member limit, via port only.
     if (ports.checkMemberLimit) {
@@ -405,9 +389,27 @@ export function createTeamService(ports: TeamServicePorts = {}) {
     );
   }
 
-  /** Remove a member from the workspace. Owner/admin only. */
+  /**
+   * Remove a member from the workspace. Owner/admin only, and never the
+   * caller: leaving goes through `leaveWorkspace`, which keeps the sole
+   * owner and the last workspace in place.
+   */
   async function removeMember(memberId: string): Promise<void> {
-    const { workspace } = await callRequireRole(["owner", "admin"]);
+    const { workspace, user, membership } = await callRequireRole([
+      "owner",
+      "admin",
+    ]);
+    const target = memberId.trim().toLowerCase();
+    if (
+      target === membership.id.toLowerCase() ||
+      target === user.id.toLowerCase() ||
+      target === user.email.toLowerCase()
+    ) {
+      throw new TeamServiceError(
+        "forbidden",
+        "Remove yourself by leaving the workspace."
+      );
+    }
     const hdrs = await getRequestHeaders();
 
     await callOrgApi("remove-member", () =>
