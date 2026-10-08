@@ -104,6 +104,74 @@ describe("estimateConversationTokens", () => {
   });
 });
 
+describe("estimateConversationTokens — file payloads", () => {
+  const text = (url: string, mediaType = "text/plain"): UIMessage => ({
+    id: "f",
+    role: "user",
+    parts: [{ type: "file", mediaType, url }],
+  });
+
+  it("subtracts base64 padding from the decoded size", () => {
+    // 12 base64 characters are 9 bytes, 8 with one pad and 6 with two.
+    expect(
+      estimateConversationTokens([text("data:text/plain;base64,AAAAAAAAAAAA")])
+    ).toBe(3);
+    expect(
+      estimateConversationTokens([text("data:text/plain;base64,AAAAAAAAAAA=")])
+    ).toBe(2);
+    expect(
+      estimateConversationTokens([text("data:text/plain;base64,AAAAAA==")])
+    ).toBe(1);
+  });
+
+  it("counts a data URL with no payload as empty", () => {
+    expect(estimateConversationTokens([text("data:text/plain")])).toBe(0);
+  });
+
+  it("counts a linked text file at the floor, not by its URL", () => {
+    expect(
+      estimateConversationTokens([text("https://files.test/notes.txt")])
+    ).toBe(1_600);
+  });
+
+  it("counts a file part with no URL or media type at the floor", () => {
+    const bare: UIMessage = {
+      id: "f",
+      role: "user",
+      parts: [{ type: "file" } as unknown as UIMessage["parts"][number]],
+    };
+    expect(estimateConversationTokens([bare])).toBe(1_600);
+    expect(
+      estimateConversationTokens([
+        {
+          id: "g",
+          role: "user",
+          parts: [
+            {
+              type: "file",
+              url: `data:,${"x".repeat(400)}`,
+            } as unknown as UIMessage["parts"][number],
+          ],
+        },
+      ])
+    ).toBe(1_600);
+  });
+
+  it("reads a structured-syntax suffix as text, and only a leading text/", () => {
+    const payload = `,${"x".repeat(400)}`;
+    expect(
+      estimateConversationTokens([
+        text(`data:application/ld+json${payload}`, "application/ld+json"),
+      ])
+    ).toBe(100);
+    expect(
+      estimateConversationTokens([
+        text(`data:application/x.text/foo${payload}`, "application/x.text/foo"),
+      ])
+    ).toBe(1_600);
+  });
+});
+
 describe("applyConversationWindow", () => {
   const transcript = [
     m("system", "sys"),
@@ -180,6 +248,36 @@ describe("applyConversationWindow", () => {
     });
     expect(windowed.map((x) => x.id)).toEqual(["u2", "a2"]);
     expect(pruned.map((x) => x.id)).toEqual(["u1", "a1"]);
+  });
+
+  it("keeps the last message when no user message is anywhere in it", () => {
+    const replies = [
+      m("assistant", "a".repeat(400), "a1"),
+      m("assistant", "b".repeat(400), "a2"),
+      m("assistant", "c".repeat(400), "a3"),
+    ];
+    const { windowed, pruned } = applyConversationWindow(replies, {
+      maxMessages: 10,
+      maxTokens: 1,
+    });
+    expect(windowed.map((x) => x.id)).toEqual(["a3"]);
+    expect(pruned.map((x) => x.id)).toEqual(["a1", "a2"]);
+  });
+
+  it("reaches back to a question at the very start", () => {
+    const { windowed } = applyConversationWindow(
+      [m("user", "q", "u1"), m("assistant", "r".repeat(400), "a1")],
+      { maxMessages: 10, maxTokens: 1 }
+    );
+    expect(windowed.map((x) => x.id)).toEqual(["u1", "a1"]);
+  });
+
+  it("keeps the system messages of a transcript with no turns", () => {
+    const { windowed } = applyConversationWindow([m("system", "sys")], {
+      maxMessages: 5,
+      maxTokens: 10,
+    });
+    expect(windowed.map((x) => x.id)).toEqual(["sys"]);
   });
 
   it("drops from the front until a token budget fits", () => {
