@@ -120,7 +120,7 @@ export const creditPurchases = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     /** What the buyer paid, in minor units of `priceCurrency`. */
-    priceMinor: integer("price_minor"),
+    priceMinor: bigint("price_minor", { mode: "number" }),
     priceCurrency: text("price_currency"),
     /**
      * What the workspace was granted, in micros of `grantedCurrency`.
@@ -131,7 +131,7 @@ export const creditPurchases = pgTable(
     grantedCurrency: text("granted_currency"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
     stripeCheckoutSessionId: text("stripe_checkout_session_id"),
-    status: text("status").notNull().default("pending"), // pending|completed|failed
+    status: text("status").notNull().default("pending"), // pending|completed|failed|refunded|disputed
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [index("credit_purchases_workspace_id_idx").on(table.workspaceId)]
@@ -164,7 +164,7 @@ export const payments = pgTable(
     /** What was bought, in the product's words: a plan slug, a bundle id. */
     reference: text("reference").notNull(),
     /** The price, in minor units of `currency`. */
-    amountMinor: integer("amount_minor").notNull(),
+    amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
     currency: text("currency").notNull(),
     status: text("status").notNull().default("pending"), // opening|pending|paid|failed
     /** When the provider stops accepting payment for the invoice. */
@@ -186,26 +186,30 @@ export const payments = pgTable(
 );
 
 /** Every Stripe event, for idempotent webhook processing and audit. */
-export const financeEvents = pgTable("finance_events", {
-  id: text("id").primaryKey(),
-  workspaceId: text("workspace_id").references(() => organization.id, {
-    onDelete: "set null",
-  }),
-  stripeEventId: text("stripe_event_id").notNull().unique(),
-  type: text("type").notNull(), // e.g., "checkout.session.completed", "invoice.paid"
-  /** Stripe's own amount, in the minor units of `currency`. */
-  amountMinor: integer("amount_minor"),
-  currency: text("currency").default("USD"),
-  metadata: text("metadata"), // JSON string
-  /**
-   * When a delivery took the event for processing. A lease: a claim
-   * older than the webhook's lease is taken as a delivery that died.
-   */
-  claimedAt: timestamp("claimed_at"),
-  /** Set once the handlers finished; the event is never run again. */
-  processedAt: timestamp("processed_at"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export const financeEvents = pgTable(
+  "finance_events",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").references(() => organization.id, {
+      onDelete: "set null",
+    }),
+    stripeEventId: text("stripe_event_id").notNull().unique(),
+    type: text("type").notNull(), // e.g., "checkout.session.completed", "invoice.paid"
+    /** Stripe's own amount, in the minor units of `currency`. */
+    amountMinor: bigint("amount_minor", { mode: "number" }),
+    currency: text("currency").default("USD"),
+    metadata: text("metadata"), // JSON string
+    /**
+     * When a delivery took the event for processing. A lease: a claim
+     * older than the webhook's lease is taken as a delivery that died.
+     */
+    claimedAt: timestamp("claimed_at"),
+    /** Set once the handlers finished; the event is never run again. */
+    processedAt: timestamp("processed_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("finance_events_workspace_id_idx").on(table.workspaceId)]
+);
 
 /**
  * Closes the admission → settlement race. Admission inserts a reservation

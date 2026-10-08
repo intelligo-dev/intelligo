@@ -46,11 +46,12 @@ d("user_memory_audit append-only trigger", () => {
     );
   });
 
+  // The audit rows cannot be deleted — that is what the trigger under
+  // test enforces — but their user and workspace can: the rows stay,
+  // with both references cleared.
   afterAll(async () => {
-    // The audit row itself cannot be deleted — that is what the
-    // trigger under test enforces — so the fixture user and workspace
-    // stay too, since the row references them. Both are keyed by
-    // timestamp, so repeated runs do not collide.
+    await client.query(`DELETE FROM organization WHERE id = $1`, [workspaceId]);
+    await client.query(`DELETE FROM users WHERE id = $1`, [userId]);
     await client.end();
   });
 
@@ -73,6 +74,57 @@ d("user_memory_audit append-only trigger", () => {
       code: "P0001",
       message: expect.stringContaining("append-only"),
     });
+  });
+
+  it("allows clearing the columns that describe a person, and nothing else", async () => {
+    const erasedId = `${rowId}-erased`;
+    await client.query(
+      `INSERT INTO user_memory_audit
+         (id, user_id, workspace_id, target_kind, target_id, action, actor_kind,
+          actor_id, before_value, after_value, reason)
+       VALUES ($1, $2, $3, 'fact', 'fact-1', 'update', 'user', $2,
+               '{"value":"before"}', '{"value":"after"}', 'user edit')`,
+      [erasedId, userId, workspaceId]
+    );
+
+    await expect(
+      client.query(
+        `UPDATE user_memory_audit SET before_value = '{"value":"other"}' WHERE id = $1`,
+        [erasedId]
+      )
+    ).rejects.toMatchObject({ code: "P0001" });
+    await expect(
+      client.query(
+        `UPDATE user_memory_audit SET user_id = NULL, action = 'delete' WHERE id = $1`,
+        [erasedId]
+      )
+    ).rejects.toMatchObject({ code: "P0001" });
+
+    await client.query(
+      `UPDATE user_memory_audit
+          SET user_id = NULL, actor_id = NULL, before_value = NULL,
+              after_value = NULL, reason = NULL
+        WHERE id = $1`,
+      [erasedId]
+    );
+    const { rows } = await client.query(
+      `SELECT user_id, workspace_id, actor_id, before_value, after_value,
+              reason, target_id, action
+         FROM user_memory_audit WHERE id = $1`,
+      [erasedId]
+    );
+    expect(rows).toEqual([
+      {
+        user_id: null,
+        workspace_id: workspaceId,
+        actor_id: null,
+        before_value: null,
+        after_value: null,
+        reason: null,
+        target_id: "fact-1",
+        action: "update",
+      },
+    ]);
   });
 
   it("allows INSERT of fresh audit rows", async () => {
@@ -130,6 +182,37 @@ d("audit_events append-only trigger", () => {
     await expect(
       client.query(`DELETE FROM audit_events WHERE id = $1`, [rowId])
     ).rejects.toMatchObject({ code: "P0001" });
+  });
+
+  it("allows the actor's email to be cleared, and to be changed to nothing else", async () => {
+    const emailRowId = `${rowId}-email`;
+    await client.query(
+      `INSERT INTO audit_events (id, workspace_id, actor_email, actor_kind, action, resource_kind)
+       VALUES ($1, $2, 'someone@example.test', 'user', 'test.event', 'test')`,
+      [emailRowId, workspaceId]
+    );
+    await expect(
+      client.query(
+        `UPDATE audit_events SET actor_email = 'other@example.test' WHERE id = $1`,
+        [emailRowId]
+      )
+    ).rejects.toMatchObject({ code: "P0001" });
+    await expect(
+      client.query(
+        `UPDATE audit_events SET actor_email = NULL, outcome = 'failed' WHERE id = $1`,
+        [emailRowId]
+      )
+    ).rejects.toMatchObject({ code: "P0001" });
+
+    await client.query(
+      `UPDATE audit_events SET actor_email = NULL WHERE id = $1`,
+      [emailRowId]
+    );
+    const { rows } = await client.query(
+      `SELECT actor_email, action FROM audit_events WHERE id = $1`,
+      [emailRowId]
+    );
+    expect(rows).toEqual([{ actor_email: null, action: "test.event" }]);
   });
 
   it("keeps the row, with workspace_id nulled, when its workspace is deleted", async () => {

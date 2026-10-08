@@ -189,6 +189,26 @@ export async function queryAuditEvents(options: QueryAuditEventsOptions = {}) {
     .limit(Math.min(options.limit ?? 50, 500));
 }
 
+/**
+ * Clear who a user was from every audit event they acted in: the actor
+ * and the email recorded with it. The events themselves stay — what was
+ * done, to what, and when — which is the one change the append-only
+ * trigger allows. Returns the number of rows changed. For an account's
+ * erasure, called before the user row is deleted: afterwards the rows no
+ * longer name the user's id and cannot be found by it.
+ */
+export async function eraseActorFromAuditEvents(
+  userId: string
+): Promise<number> {
+  if (!userId) throw new Error("eraseActorFromAuditEvents: userId is required");
+  const rows = await db
+    .update(auditEvents)
+    .set({ actorId: null, actorEmail: null })
+    .where(eq(auditEvents.actorId, userId))
+    .returning({ id: auditEvents.id });
+  return rows.length;
+}
+
 export { auditEvents } from "./db/schema";
 export type { AuditEvent, InsertAuditEvent } from "./db/schema";
 

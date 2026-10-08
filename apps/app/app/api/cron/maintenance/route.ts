@@ -24,6 +24,7 @@
  *   (`grantPlan({ days })`, a one-time local payment) stays on until
  *   this step moves it back.
  * - **Prune finished jobs** older than a week.
+ * - **Prune read notifications** older than 90 days. Unread ones stay.
  *
  * Draining the job queue is NOT done here: `drain` needs your handlers,
  * so give it its own route (or call it below once you have some).
@@ -42,6 +43,7 @@ import {
 import { findStaleExecutions } from "@intelligo-dev/executions";
 import { pruneJobs } from "@intelligo-dev/jobs";
 import { createLogger } from "@intelligo-dev/core/logger";
+import { pruneNotifications } from "@intelligo-dev/core/notifications";
 
 import { composeIntelligo, executions } from "@/lib/intelligo";
 
@@ -53,6 +55,8 @@ export const maxDuration = 60;
 const STALE_AFTER_MS = 10 * 60_000;
 /** Finished jobs older than this are pruned. */
 const PRUNE_JOBS_AFTER_MS = 7 * 24 * 60 * 60_000;
+/** Read notifications older than this are pruned. */
+const PRUNE_NOTIFICATIONS_AFTER_MS = 90 * 24 * 60 * 60_000;
 
 /** Constant-time bearer comparison; length is compared too. */
 function bearerMatches(header: string | null, secret: string): boolean {
@@ -119,6 +123,9 @@ export async function GET(request: Request) {
     ),
     jobsPruned: await step("pruneJobs", () =>
       pruneJobs(new Date(Date.now() - PRUNE_JOBS_AFTER_MS))
+    ),
+    notificationsPruned: await step("pruneNotifications", () =>
+      pruneNotifications(new Date(Date.now() - PRUNE_NOTIFICATIONS_AFTER_MS))
     ),
     errors,
   };

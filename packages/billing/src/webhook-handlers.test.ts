@@ -64,6 +64,12 @@ vi.mock("@intelligo-dev/core/db/schema", () => ({
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn((col: unknown, val: unknown) => ({ op: "eq", col, val })),
   ne: vi.fn((col: unknown, val: unknown) => ({ op: "ne", col, val })),
+  notInArray: vi.fn((col: unknown, val: unknown) => ({
+    op: "notIn",
+    col,
+    val,
+  })),
+  like: vi.fn((col: unknown, val: unknown) => ({ op: "like", col, val })),
   and: vi.fn((...conds: unknown[]) => ({ op: "and", conds })),
   sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
     strings,
@@ -279,9 +285,48 @@ describe("planIdForPrice", () => {
   });
 });
 
+/** An update whose payload is also what Stripe holds now. */
+const updated = (sub: Stripe.Subscription) => {
+  mocks.subscriptionsRetrieve.mockResolvedValue(sub);
+  return handleSubscriptionUpdated(sub);
+};
+
+const onPrice = (priceId: string) =>
+  subscription({
+    items: {
+      data: [
+        {
+          id: "si_1",
+          price: { id: priceId, metadata: {} },
+          current_period_start: START,
+          current_period_end: END,
+        },
+      ],
+    },
+  });
+
 describe("handleSubscriptionUpdated", () => {
+  it("writes the subscription Stripe holds now, not an older delivered state", async () => {
+    // Moved to pro and back to standard; the pro event is retried last.
+    mocks.subscriptionsRetrieve.mockResolvedValue(onPrice("price_std_m"));
+    await handleSubscriptionUpdated(onPrice("price_pro_m"));
+
+    expect(mocks.subscriptionsRetrieve).toHaveBeenCalledWith("sub_1");
+    expect(mocks.state.subscriptionSets[0]).toMatchObject({
+      planId: "plan_standard",
+    });
+  });
+
+  it("fails the delivery, writing nothing, when Stripe cannot be read", async () => {
+    mocks.subscriptionsRetrieve.mockRejectedValue(new Error("unavailable"));
+    await expect(
+      handleSubscriptionUpdated(onPrice("price_pro_m"))
+    ).rejects.toThrow("unavailable");
+    expect(mocks.state.subscriptionSets).toEqual([]);
+  });
+
   it("takes the plan from the price, over stale planId metadata", async () => {
-    await handleSubscriptionUpdated(
+    await updated(
       subscription({
         items: {
           data: [
@@ -306,7 +351,7 @@ describe("handleSubscriptionUpdated", () => {
   });
 
   it("falls back to metadata for a price outside the catalogue", async () => {
-    await handleSubscriptionUpdated(
+    await updated(
       subscription({
         items: { data: [{ id: "si_1", price: { id: "price_legacy" } }] },
         current_period_start: START,
@@ -321,7 +366,7 @@ describe("handleSubscriptionUpdated", () => {
   });
 
   it("still records the status, and keeps the stored plan and period, when neither can be resolved", async () => {
-    await handleSubscriptionUpdated(
+    await updated(
       subscription({
         status: "unpaid",
         metadata: {},
@@ -383,7 +428,7 @@ describe("status-changing events drop the workspace's feature cache", () => {
     const guard = expect.objectContaining({ op: "ne", val: "canceled" });
     await handleInvoicePaid(invoice);
     await handleInvoicePaymentFailed(invoice);
-    await handleSubscriptionUpdated(subscription());
+    await updated(subscription());
     for (const where of mocks.state.subscriptionWheres) {
       expect(where).toMatchObject({
         op: "and",

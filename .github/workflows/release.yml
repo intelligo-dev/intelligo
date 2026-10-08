@@ -6,10 +6,10 @@ name: Release
 # A release is one commit: bump every packages/*/package.json to the
 # new version and head CHANGELOG.md with a section for it. Once CI has
 # passed on that commit, this workflow builds, runs the full suite,
-# packs each package and publishes it, pushes the `vX.Y.Z` tag and
-# creates a GitHub release whose notes are that CHANGELOG section.
-# Nothing here is a second source of truth: the version is what the
-# manifests say, the notes are what the changelog says.
+# packs each package and publishes it, tags the release commit
+# `vX.Y.Z` and creates a GitHub release whose notes are that CHANGELOG
+# section. Nothing here is a second source of truth: the version is
+# what the manifests say, the notes are what the changelog says.
 #
 # There is no npm token. Every @intelligo-dev package names this file,
 # in the `npm` environment of intelligo-dev/intelligo, as its trusted
@@ -20,9 +20,17 @@ name: Release
 # maintainer runs. After a prerelease the publish job says on the run
 # when `latest` is behind it.
 #
-# Only the release commit publishes: a version still missing from npm
-# on a later commit fails the run instead of shipping a tree its
-# changelog does not describe.
+# Three jobs, each holding only what it needs. `verify` installs,
+# builds and tests with a read-only token and packs the tarballs;
+# `publish` holds the OIDC identity and runs no install, build or
+# test — it publishes the packed tarballs; `release` holds the write
+# token and runs only `gh` against the API to tag and release.
+#
+# What ships is the release commit's own tree: the commit that set the
+# manifests' version, on main, with a green CI run. Whichever run gets
+# there — the release commit's own, or a later commit's when the
+# release commit's run was cancelled or failed — builds and publishes
+# that commit, never whatever main has become.
 #
 # Pushing a `v*` tag by hand still works and is the fallback; the tag
 # must equal the manifests' version and point at the release commit.
@@ -44,13 +52,15 @@ on:
 permissions: {}
 
 # One release at a time, and never cancelled halfway through a publish.
+# A queued run can still replace another queued one; every run builds
+# the release commit, so the one that survives publishes the same tree.
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
-  publish:
-    name: Publish to npm
+  verify:
+    name: Build, test and pack
     # A green CI run for a push to main, a version tag, or a manual run
     # from main. A branch or a pull request cannot reach the publish.
     if: >-
@@ -60,33 +70,26 @@ jobs:
       (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
-    # Raised from 30: the scaffold checks CI used to carry run here now,
-    # and they take roughly eighteen minutes of it.
+    # The scaffold checks take roughly eighteen minutes of it.
     timeout-minutes: 60
-    environment: npm
     permissions:
-      contents: write # the tag and the GitHub release
-      id-token: write # npm trusted publishing and provenance
+      contents: read
+      actions: read # the release commit's CI result
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      dist-tag: ${{ steps.version.outputs.dist-tag }}
+      published: ${{ steps.check.outputs.published }}
+      release-sha: ${{ steps.check.outputs.release-sha }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # workflow_run checks out main's newest commit; publish the
+          # workflow_run checks out main's newest commit; start from the
           # commit CI actually passed.
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
-
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0 — pnpm version from packageManager
-
-      # No dependency cache: a release builds from a clean install.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 22
-
-      # Trusted publishing needs npm 11.5.1 or newer; Node 22 ships 10.
-      - run: npm install -g npm@11.19.1
-
-      - run: pnpm install --frozen-lockfile
+          # Nothing in this job writes to the repository.
+          persist-credentials: false
 
       # The version is the manifests'. Every published workspace must
       # agree (a private one — packages/registry — is skipped), a hand
@@ -121,18 +124,24 @@ jobs:
             echo "$version would publish under dist-tag \"$dist_tag\"; use a named prerelease (1.0.0-beta.1)"
             exit 1
           fi
-          node scripts/release-notes.mjs "$version" > "$RUNNER_TEMP/release-notes.md"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "dist-tag=$dist_tag" >> "$GITHUB_OUTPUT"
           echo "$version under dist-tag $dist_tag"
 
       # Most CI runs on main are not releases: every package is already
-      # on npm at this version and there is nothing to do. A tag pushed
-      # after a maintainer published from a workstation lands here too.
+      # on npm at this version and there is nothing to publish. A tag
+      # pushed after a maintainer published from a workstation lands
+      # here too.
+      #
+      # The release commit is the one that set the version. It must be
+      # on main (a hand-pushed tag on another branch publishes nothing)
+      # and, when this run is to publish it, have passed CI as a push to
+      # main. The rest of this job builds that commit's tree.
       - name: Already on npm?
         id: check
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           published=true
@@ -144,21 +153,51 @@ jobs:
               published=false
             fi
           done
-          echo "published=$published" >> "$GITHUB_OUTPUT"
 
-          # What ships is the release commit's own tree. A version that
-          # did not publish from its release commit (a red CI, a failed
-          # check below) does not publish later from whatever main has
-          # become: the changelog section describes the older tree. Such
-          # a commit fails here until a new release commit bumps the
-          # version. A re-run of the release commit's run passes.
+          release=$(git log -1 --format=%H -S"\"version\": \"$VERSION\"" -- packages/core/package.json)
+          if [ -z "$release" ]; then
+            echo "::error::no commit sets packages/core to $VERSION"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$release" origin/main; then
+            echo "::error::$VERSION was set by $release, which is not on main"
+            exit 1
+          fi
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$(git rev-parse HEAD)" != "$release" ]; then
+            echo "::error::v$VERSION points at $(git rev-parse --short HEAD), not at $release, the commit that set the version"
+            exit 1
+          fi
           if [ "$published" != "true" ]; then
-            previous=$(git show HEAD~1:packages/core/package.json | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).version")
-            if [ "$previous" = "$VERSION" ]; then
-              echo "::error::$VERSION is not on npm and $(git rev-parse --short HEAD) is not the commit that set it. Bump every manifest and head CHANGELOG.md with the new version in one commit."
+            green=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$release&event=push&branch=main&status=success" --jq '.total_count')
+            if [ "$green" = "0" ]; then
+              echo "::error::$VERSION is not on npm and its release commit $release has no green CI run on main yet. Its own run publishes once CI passes; if CI failed there, bump every manifest and head CHANGELOG.md with a new version in one commit."
               exit 1
             fi
+            git checkout --quiet "$release"
           fi
+          echo "published=$published" >> "$GITHUB_OUTPUT"
+          echo "release-sha=$release" >> "$GITHUB_OUTPUT"
+          echo "release commit $release; published=$published"
+
+      - name: Release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/release"
+          node scripts/release-notes.mjs "$VERSION" > "$RUNNER_TEMP/release/notes.md"
+
+      - if: steps.check.outputs.published != 'true'
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0 — pnpm version from packageManager
+
+      # No dependency cache: a release builds from a clean install.
+      - if: steps.check.outputs.published != 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - if: steps.check.outputs.published != 'true'
+        run: pnpm install --frozen-lockfile
 
       - if: steps.check.outputs.published != 'true'
         run: pnpm turbo build
@@ -174,13 +213,12 @@ jobs:
           DATABASE_URL: ""
           INTELLIGO_PRIVATE_VOCABULARY: ${{ secrets.PRIVATE_VOCABULARY }}
 
-      # The three checks below ran on every push until they were the
-      # reason CI took twenty-two minutes. What they prove is that a
-      # consumer can install this — the packed tarballs resolve, the
-      # CLI scaffolds an app that boots, every registry item installs
-      # into it, and the reference app is still exactly the CLI's
-      # output. That is a question about publishing, so it is asked
-      # here, where a failure stops the publish instead of a commit.
+      # The three checks below prove that a consumer can install this —
+      # the packed tarballs resolve, the CLI scaffolds an app that
+      # boots, every registry item installs into it, and the reference
+      # app is still exactly the CLI's output. That is a question about
+      # publishing, so it is asked here, where a failure stops the
+      # publish instead of a commit.
       - name: Packed-package compatibility
         if: steps.check.outputs.published != 'true'
         run: |
@@ -260,30 +298,74 @@ jobs:
           scripts/consumer-smoke.sh "$RUNNER_TEMP/consumer-smoke"
 
       # `pnpm pack` rewrites workspace:* ranges to the version and swaps
-      # in publishConfig; `npm publish` of the tarball is what speaks
-      # trusted publishing. core goes first because every other package
-      # depends on it, and a version already on the registry is skipped,
-      # so a re-run after a partial failure is safe.
-      - name: Publish
+      # in publishConfig. The tarballs are packed from a fresh build and
+      # listed in dependency order (scripts/publish-order.mjs): a package
+      # is published after every @intelligo-dev package it names, so npm
+      # never serves a version whose sibling is not there yet.
+      - name: Pack
         if: steps.check.outputs.published != 'true'
-        env:
-          DIST_TAG: ${{ steps.version.outputs.dist-tag }}
         run: |
           set -euo pipefail
-          out="$RUNNER_TEMP/pack"
-          mkdir -p "$out"
-          for dir in packages/core/ $(ls -d packages/*/ | grep -vx 'packages/core/'); do
-            if [ "$(node -p "require('./$dir/package.json').private === true")" = "true" ]; then continue; fi
+          pnpm turbo build
+          out="$RUNNER_TEMP/release"
+          : > "$out/order.txt"
+          for dir in $(node scripts/publish-order.mjs); do
             name=$(node -p "require('./$dir/package.json').name")
-            version=$(node -p "require('./$dir/package.json').version")
-            if npm view "$name@$version" version >/dev/null 2>&1; then
-              echo "$name@$version is already on npm"
+            mkdir -p "$out/$name"
+            (cd "$dir" && pnpm pack --pack-destination "$out/$name" >/dev/null)
+            echo "$name" >> "$out/order.txt"
+          done
+          cat "$out/order.txt"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish to npm
+    needs: verify
+    if: needs.verify.outputs.published != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm
+    # The OIDC identity npm trusts, and nothing else: no checkout, no
+    # install, no build — only the tarballs verify packed.
+    permissions:
+      id-token: write # npm trusted publishing and provenance
+
+    steps:
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      # Trusted publishing needs npm 11.5.1 or newer; Node 22 ships 10.
+      - run: npm install -g --ignore-scripts npm@11.19.1
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+
+      # In dependency order, each under the version's dist-tag. A version
+      # already on the registry is skipped, so a re-run after a partial
+      # failure is safe.
+      - name: Publish
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          DIST_TAG: ${{ needs.verify.outputs.dist-tag }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/release"
+          while read -r name; do
+            if npm view "$name@$VERSION" version >/dev/null 2>&1; then
+              echo "$name@$VERSION is already on npm"
               continue
             fi
-            rm -f "$out"/*.tgz
-            (cd "$dir" && pnpm pack --pack-destination "$out" >/dev/null)
-            npm publish "$out"/*.tgz --access public --tag "$DIST_TAG"
-          done
+            npm publish "$out/$name"/*.tgz --access public --tag "$DIST_TAG"
+          done < "$out/order.txt"
 
       # While no stable version exists, `latest` should follow the newest
       # prerelease, so a bare `npx @intelligo-dev/cli` does not resolve to
@@ -291,13 +373,13 @@ jobs:
       # only, so the move is the maintainer's; this step reads the tag and,
       # when it is behind, says so on the run with the command to run.
       - name: Is latest behind the prerelease?
-        if: steps.check.outputs.published != 'true' && contains(steps.version.outputs.version, '-')
+        if: contains(needs.verify.outputs.version, '-')
         timeout-minutes: 2
         # A reminder: npm failing to answer must not skip the tag and the
         # GitHub release of packages already published.
         continue-on-error: true
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.verify.outputs.version }}
         run: |
           set -euo pipefail
           versions=$(npm view @intelligo-dev/core versions --json)
@@ -310,37 +392,57 @@ jobs:
             echo "::notice title=latest is $latest::npm latest still points at $latest, not $VERSION. A maintainer runs: node scripts/npm-maintain.mjs"
           fi
 
-      # The tag records which commit shipped; a push by GITHUB_TOKEN
-      # does not trigger this workflow again. Runs whether or not this
-      # run published, so a release whose run failed after publishing
-      # still gets its tag on the next run — and does nothing when the
-      # tag exists (a hand-pushed one included).
+  release:
+    name: Tag and GitHub release
+    needs: [verify, publish]
+    # After a publish, or when everything was already on npm: a release
+    # whose run failed after publishing still gets its tag and release
+    # on the next run. Never after a failed or skipped-for-error publish.
+    if: >-
+      always() &&
+      needs.verify.result == 'success' &&
+      (needs.publish.result == 'success' || needs.publish.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Only `gh` against the API runs here: no checkout, no install.
+    permissions:
+      contents: write # the tag and the GitHub release
+
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+
+      # The tag goes on the release commit — the tree npm shipped — not
+      # on whichever commit this run started from. A tag created with
+      # GITHUB_TOKEN does not trigger this workflow again; one that
+      # exists (a hand-pushed one included) is left as it is.
       - name: Tag
-        if: "!startsWith(github.ref, 'refs/tags/')"
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.verify.outputs.version }}
+          SHA: ${{ needs.verify.outputs.release-sha }}
         run: |
           set -euo pipefail
-          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$VERSION" >/dev/null 2>&1; then
             echo "tag v$VERSION exists"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "v$VERSION"
-          git push origin "v$VERSION"
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/v$VERSION" -f "sha=$SHA" >/dev/null
+          echo "tagged $SHA as v$VERSION"
 
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
-          DIST_TAG: ${{ steps.version.outputs.dist-tag }}
+          VERSION: ${{ needs.verify.outputs.version }}
+          DIST_TAG: ${{ needs.verify.outputs.dist-tag }}
         run: |
           set -euo pipefail
-          if gh release view "v$VERSION" >/dev/null 2>&1; then
+          if gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "release v$VERSION exists"
             exit 0
           fi
           prerelease=""
           if [ "$DIST_TAG" != "latest" ]; then prerelease="--prerelease"; fi
-          gh release create "v$VERSION" --title "v$VERSION" --notes-file "$RUNNER_TEMP/release-notes.md" $prerelease
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --verify-tag --title "v$VERSION" --notes-file "$RUNNER_TEMP/release/notes.md" $prerelease

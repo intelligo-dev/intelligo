@@ -150,7 +150,7 @@ JSON object on stdout, same exit code, whose `state` is
                    tables: an empty database, `migrate` applies the chain;
   - `unmanaged`  — the tables exist with no records (`db:push`);
   - `ahead`      — applied migrations this checkout does not contain;
-  - `legacy`     — the pre-1.0 chain; `adoptable` says whether
+  - `legacy`     — the pre-1.0 chain, not yet adopted; `adoptable` says whether
                    `migrate` can take it over.
 
 Beside `state` it carries `exitCode`, `chain`, `applied`, `pending`,
@@ -188,7 +188,11 @@ shadcn cannot know:
   hash, so `--check` can tell a file edited by hand from one a newer
   registry replaced. Scaffold files an install replaces (globals.css,
   the theme provider) leave the `app-scaffold` record for this one,
-  so `upgrade --check` stops calling them customized.
+  so `upgrade --check` stops calling them customized;
+- the app's copies: seams and message files wait under
+  `.intelligo/sync-restore/` while the install runs, and a file of
+  shadcn's own items (`utils`, `card`…) the install replaced is saved
+  under `.intelligo/backup/`.
 
 `--check` installs nothing and exits 1 when any installed file is
 missing, edited or behind the registry — the gate CI runs.

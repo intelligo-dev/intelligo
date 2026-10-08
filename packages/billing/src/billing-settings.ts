@@ -55,8 +55,12 @@ const LEGACY_SEED = {
 /**
  * Get the current billing settings (currency, rate + margin).
  * Returns cached value when within TTL; otherwise re-reads the DB row
- * with id="default" and refreshes the cache. Failures fall through to
- * the in-memory default so a transient DB outage never blocks billing.
+ * with id="default" and refreshes the cache. A failed read answers with
+ * the last reading this process made, however old; with none, it
+ * throws rather than guess the currency.
+ *
+ * @throws the read's error when the row could not be read and nothing
+ *   was cached.
  */
 export async function getBillingSettings(): Promise<ResolvedBillingSettings> {
   const now = Date.now();
@@ -84,15 +88,15 @@ export async function getBillingSettings(): Promise<ResolvedBillingSettings> {
     cached = { value, expiresAt: now + CACHE_TTL_MS };
     return value;
   } catch (error) {
-    // Never block billing on a transient outage — and never silently
-    // change what a deployment bills in either. An expired reading of
-    // the real row is still right about the currency; DEFAULTS is USD,
-    // so on a deployment in any other currency falling back to it
-    // would charge every turn at the wrong rate until the database
-    // came back.
+    // Never silently change what a deployment bills in. An expired
+    // reading of the real row is still right about the currency;
+    // DEFAULTS is USD, so on a deployment in any other currency
+    // answering with it would price and record charges in the wrong
+    // currency. With no reading, admission and settlement fail and
+    // are retried instead.
     console.error("[BillingSettings] DB read failed:", error);
     if (cached) return cached.value;
-    return DEFAULTS;
+    throw error;
   }
 }
 

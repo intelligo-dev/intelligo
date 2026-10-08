@@ -49,4 +49,30 @@ d("rate limit (integration)", () => {
     );
     expect(rows).toEqual([{ count: 8 }]);
   });
+
+  it("deletes a closed-window backlog larger than one batch, and counts it", async () => {
+    const stale = `${subject}-stale`;
+    await client.query(
+      `INSERT INTO rate_limit_entries (id, workspace_id, endpoint, minute_bucket, window_seconds, count)
+       SELECT $1 || g, $1, 'chat', now() - interval '1 day' - g * interval '1 minute', 60, 1
+         FROM generate_series(1, 25) g`,
+      [stale]
+    );
+    const { deleteInBatches } = await import("../batched-delete");
+    const { rateLimitEntries } = await import("@intelligo-dev/core/db/schema");
+    const { eq } = await import("drizzle-orm");
+
+    await expect(
+      deleteInBatches(
+        rateLimitEntries,
+        eq(rateLimitEntries.workspaceId, stale),
+        10
+      )
+    ).resolves.toBe(25);
+    const { rows } = await client.query(
+      `SELECT 1 FROM rate_limit_entries WHERE workspace_id = $1`,
+      [stale]
+    );
+    expect(rows).toEqual([]);
+  });
 });

@@ -41,6 +41,7 @@ import {
   getBillingSettings,
   type ResolvedBillingSettings,
 } from "./billing-settings";
+import { deleteInBatches } from "./batched-delete";
 import { getWorkspaceBilling } from "./queries";
 import type { BillingReader } from "./reader";
 import type {
@@ -468,13 +469,10 @@ export async function cleanupExpiredReservations(): Promise<number> {
   // UTC wall clock, as drizzle writes the naive `timestamp` columns; a
   // Date bound in raw SQL would arrive as the server's local time.
   const cutoff = new Date(Date.now() - RESERVATION_TTL_MS).toISOString();
-  const deleted = await db
-    .delete(creditReservations)
-    .where(
-      sql`${creditReservations.status} = 'settled' OR ${creditReservations.expiresAt} < ${cutoff}::timestamp`
-    )
-    .returning();
-  return deleted.length;
+  return deleteInBatches(
+    creditReservations,
+    sql`${creditReservations.status} = 'settled' OR ${creditReservations.expiresAt} < ${cutoff}::timestamp`
+  );
 }
 
 /**
@@ -713,7 +711,10 @@ async function settleCharge(
       });
 
     const periodRows = await tx
-      .select({ allowanceUsedMicros: monthlyUsage.allowanceUsedMicros })
+      .select({
+        allowanceUsedMicros: monthlyUsage.allowanceUsedMicros,
+        currency: monthlyUsage.currency,
+      })
       .from(monthlyUsage)
       .where(
         and(
@@ -727,11 +728,13 @@ async function settleCharge(
     // The allowance takes the lesser of the charge and what is left of
     // it; whatever remains goes to exactly one of trial or top-up, never
     // both. Taking the remainder by subtraction keeps
-    // `charged === plan + topup + trial` exact.
-    const allowanceUsed = money(
-      Number(periodRows[0]?.allowanceUsedMicros ?? 0),
-      rate.currency
-    );
+    // `charged === plan + topup + trial` exact. A period row in another
+    // currency leaves no allowance, as admission reads it.
+    const periodCurrency = periodRows[0]?.currency ?? rate.currency;
+    const allowanceUsed =
+      periodCurrency === rate.currency
+        ? money(Number(periodRows[0]?.allowanceUsedMicros ?? 0), rate.currency)
+        : allowance;
     const allowanceLeft = subtract(allowance, allowanceUsed);
     const plan = isNegative(allowanceLeft)
       ? zero(rate.currency)

@@ -106,9 +106,10 @@ export async function getAuditTrail(
 }
 
 /**
- * Delete a fact and record the deletion in the audit trail. Throws
- * `invalid_input` for an empty id and `not_found` for anything outside
- * the actor's scope. Does not re-trigger profile synthesis.
+ * Delete a fact and record the deletion in the audit trail. The audit row
+ * names the fact by id and kind only — what the fact said is gone with
+ * it. Throws `invalid_input` for an empty id and `not_found` for anything
+ * outside the actor's scope. Does not re-trigger profile synthesis.
  */
 export async function deleteFact(
   actor: IdentityActor,
@@ -118,7 +119,7 @@ export async function deleteFact(
     throw new IdentityServiceError("invalid_input", "factId is required");
   }
 
-  const existing = await verifyFact(actor, factId);
+  await verifyFact(actor, factId);
 
   await db.transaction(async (tx) => {
     await tx.delete(userFacts).where(eq(userFacts.id, factId));
@@ -131,7 +132,6 @@ export async function deleteFact(
         action: "delete",
         actorKind: "user",
         actorId: actor.userId,
-        beforeValue: existing,
         reason: "user requested deletion",
       },
       tx
@@ -292,6 +292,42 @@ export async function saveProfileSnapshot(
     );
 
     return row;
+  });
+}
+
+/**
+ * Clear everything the memory-audit trail holds about a user, in every
+ * workspace: on the rows about them, the subject, the recorded values and
+ * the reason (and the actor, when it was them); on the rows where they
+ * acted on someone else, the actor. What happened, to which target and
+ * when stays. The append-only trigger lets exactly this through. Returns
+ * the number of rows changed. For an account's erasure, called before the
+ * user row is deleted — afterwards nothing links the rows to them.
+ */
+export async function eraseUserFromMemoryAudit(
+  userId: string
+): Promise<number> {
+  if (!userId) {
+    throw new IdentityServiceError("invalid_input", "userId is required");
+  }
+  return db.transaction(async (tx) => {
+    const subject = await tx
+      .update(userMemoryAudit)
+      .set({
+        userId: null,
+        actorId: sql`CASE WHEN ${userMemoryAudit.actorId} = ${userId} THEN NULL ELSE ${userMemoryAudit.actorId} END`,
+        beforeValue: null,
+        afterValue: null,
+        reason: null,
+      })
+      .where(eq(userMemoryAudit.userId, userId))
+      .returning({ id: userMemoryAudit.id });
+    const actor = await tx
+      .update(userMemoryAudit)
+      .set({ actorId: null })
+      .where(eq(userMemoryAudit.actorId, userId))
+      .returning({ id: userMemoryAudit.id });
+    return subject.length + actor.length;
   });
 }
 

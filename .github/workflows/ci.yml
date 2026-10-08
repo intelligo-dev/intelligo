@@ -120,7 +120,18 @@ jobs:
       # key as set null instead of cascade; the unique constraint the
       # previous release's trial insert conflicts on is kept. Its
       # triggers fill the new column, refuse TRUNCATE on the audit
-      # tables and queue a deleted attachment's object key.
+      # tables and queue a deleted attachment's object key. 0008 widens
+      # four integer columns to bigint (monthly_usage.tokens_used and
+      # the minor-unit amounts of credit_purchases, finance_events and
+      # payments), drops two NOT NULLs (user_memory_audit.user_id and
+      # workspace_id) and re-creates three foreign keys as set null
+      # instead of cascade, adds two NOT VALID foreign keys on
+      # notifications and eight indexes, and relaxes the two audit
+      # triggers so that only clearing a personal reference passes:
+      # nothing renamed or removed, and the previous release's code
+      # reads a widened column through Drizzle's integer mapper, which
+      # parses the string a bigint arrives as. Widening a column
+      # rewrites its table under a lock, so run it in a quiet window.
       #
       # Raising it again: confirm `intelligo migrate --check` reports
       # zero pending, then raise FROZEN_AT in the same commit as the
@@ -128,7 +139,7 @@ jobs:
       - name: The migration chain is frozen
         run: |
           set -euo pipefail
-          FROZEN_AT=8
+          FROZEN_AT=9
           entries=$(node -p "require('./packages/core/src/db/migrations/meta/_journal.json').entries.length")
           echo "journal has $entries entries, frozen at $FROZEN_AT"
           if [ "$entries" -gt "$FROZEN_AT" ]; then
@@ -270,6 +281,7 @@ jobs:
         run: |
           pnpm vitest run --no-file-parallelism \
             packages/core/src/db/__tests__ \
+            packages/audit/src/__tests__ \
             packages/executions/src/__tests__ \
             packages/jobs/src/__tests__ \
             packages/billing/src/__tests__ \
