@@ -18,7 +18,9 @@ pnpm sync                     # repository root: builds packages/registry/public
                               # (reads ../../packages/registry, ../../packages, ../../apps/app)
 ```
 
-It writes `src/data/registry.json`, `src/data/proof.json` and `public/r/*.json`, and installs the registry items' real client components into `src/showcase/app/` — the hero walkthrough and the registry explorer render those, not mock-ups. Four import specifiers are rewritten on install so they run outside Next.js (`@/` → `@showcase/`, `next-intl` → `use-intl`, `next/navigation` and `@intelligo-dev/auth/client` → shims); `src/showcase/overrides/` holds the shims, type stubs and stand-in server actions with fixture data, and is copied last. Re-run `pnpm sync` after a framework release and commit the result.
+It writes `src/data/*.json`, the generated docs pages and `public/llms*.txt`, and the hosted registry: `public/r/<version>/` keeps every release's items (rewritten from the build until npm has that version, frozen from then on, and built from the `v<version>` tag when missing), and `public/r/*.json` is the copy of the release npm serves. `node scripts/sync-framework.mjs --release <version>` adds an earlier release's copy. The sync also installs the registry items' real client components into `src/showcase/app/`, rebuilt from scratch each run — the hero walkthrough and the registry explorer render those, not mock-ups. Four import specifiers are rewritten on install so they run outside Next.js (`@/` → `@showcase/`, `next-intl` → `use-intl`, `next/navigation` and `@intelligo-dev/auth/client` → shims); `src/showcase/overrides/` holds the shims, type stubs, stand-in server actions with fixture data and the shadcn components the catalog shows that nothing installs, and is copied last.
+
+CI re-runs the sync and fails when anything under `apps/website` differs, or when `proof.json` names another version or another npm release than the sync reads. After a release, commit `pnpm sync` so the site serves it.
 
 ## Deploying
 
@@ -26,15 +28,14 @@ Static assets on Cloudflare Workers (`wrangler.jsonc`: assets only, no Worker sc
 
 ## Pages
 
-- `/` — the homepage as a film: a title card (headline, `create` command, a scroll cue), then four scenes on one pinned stage with one continuous state (`src/components/film.tsx`): **01 the build** (pages created group by group, packages installed, the parts lock into a running application), **02 the run** (a message is admitted, answered by the agent, settled — credits, usage and audit move in the same frame), **03 make it yours** (the chat page opens as source; one config line changes and the app follows), **04 time passes** (a release lands; migrations, doctor, customised files kept). Then the count + open source, the quickstart with the closing CTA, and the FAQ. Architecture, ownership and the boundary as prose live on /architecture and /why-intelligo.
-- `/404` — the not-found page wrangler serves for unknown routes (`src/pages/404.astro`).
-- `/pages` — the registry explorer, every page family with its install command.
-- `/architecture` — the full package graph, the architecture rules as tests, ownership.
-- `/why-intelligo` — the other half counted in full, and the agent objection.
-- `/compare` — the alternatives.
-- `/r/<item>.json` — the hosted registry.
-- `/og/<path>.png`, `/favicon.svg`, `/robots.txt`, `/sitemap-index.xml` — a social card per page, the icon, crawler hints and the sitemap `@astrojs/sitemap` writes at build time. The cards are drawn after the build from each page's heading and description (`src/lib/og-images.mjs`), so there is nothing to regenerate by hand.
+- `/` — the homepage: the film, the count and open source, the quickstart and the FAQ.
+- `/product`, `/why`, `/architecture`, `/compare/boilerplates` — what it does, why, the package graph and the rules the tests enforce, and the comparison with a boilerplate.
+- `/ui`, `/blocks`, `/blocks/<item>`, `/components`, `/components/<name>` — the registry: every page family and component, live, with its install command.
+- `/docs/…` — the documentation (`src/content/docs`; generated pages come from the repository through `scripts/docs.mjs`), with a Markdown copy of each page at `.md` and the search index at `/docs/search.json`.
+- `/r/<item>.json`, `/r/registry.json`, `/r/<version>/<item>.json` — the hosted registry: the latest release's items, its index, and every release's.
+- `/404` — the not-found page wrangler serves for unknown routes.
+- `/og/<path>.png`, `/favicon.svg`, `/robots.txt`, `/sitemap-index.xml`, `/llms.txt` — a social card per page (drawn after the build by `src/lib/og-images.mjs`), the icon, crawler hints, the sitemap and the agent-readable index.
 
-Every command the homepage shows is verified against the published packages: `pnpm dlx @intelligo-dev/cli create`, `pnpm exec shadcn add https://intelligo.dev/r/<item>.json`, `pnpm dev`. The scaffold's `components.json` ships an empty `registries` map, so the URL form is the one that works — do not document `shadcn add @intelligo-dev/<item>` until a namespace is configured.
+The build writes `dist/_headers` (`src/lib/headers.mjs`): a content security policy that allows the inline scripts that build emitted by their hashes and refuses framing, and JSON with open CORS for `/r/*`. `public/_redirects` holds the moved paths.
 
-See [BRIEF.md](BRIEF.md) for the copywriting brief.
+Install commands are spelled once, in `src/lib/install.ts`: `pnpm exec shadcn add @intelligo/<item>`, which the scaffold's `components.json` resolves to `https://intelligo.dev/r/<item>.json`.

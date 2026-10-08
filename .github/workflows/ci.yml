@@ -156,18 +156,27 @@ jobs:
       # this job used to run, and what they prove — that a consumer can
       # install what we publish — is a question about a release, not
       # about a commit. A release cannot publish without them.
-      # apps/website serves packages/registry/public/r as intelligo.dev/r and renders
-      # the items' real components, both as committed copies made by
-      # `sync`. A registry change without a re-sync would deploy a stale
-      # registry. proof.json is excluded: its sampled date is refreshed
-      # by hand at release time.
+      # apps/website serves the released registry as intelligo.dev/r and
+      # renders the items' real components, all as committed copies made
+      # by `sync`; so are its data files, generated docs, llms.txt and the
+      # chrome's Intelligo components. Every one of them is compared here.
+      # proof.json is compared on the version it describes and the one npm
+      # serves, and not on its counts and sampled date: after a release
+      # this step fails until the site is synced to it.
       - name: Site sync output is committed
         run: |
           set -euo pipefail
           pnpm sync
+          described() { node -p "const p = JSON.parse(require('fs').readFileSync(0, 'utf8')); p.version + ' ' + p.published"; }
+          committed=$(git show HEAD:apps/website/src/data/proof.json | described)
+          synced=$(described < apps/website/src/data/proof.json)
           git checkout -- apps/website/src/data/proof.json
-          git status --porcelain -- apps/website/public/r apps/website/src/data/registry.json apps/website/src/showcase/app
-          test -z "$(git status --porcelain -- apps/website/public/r apps/website/src/data/registry.json apps/website/src/showcase/app)"
+          if [ "$committed" != "$synced" ]; then
+            echo "proof.json describes $committed; the tree and npm say $synced. Run pnpm sync and commit."
+            exit 1
+          fi
+          git status --porcelain -- apps/website
+          test -z "$(git status --porcelain -- apps/website)"
 
       - name: Check formatting
         run: pnpm format:check
