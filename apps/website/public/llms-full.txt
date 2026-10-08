@@ -2210,6 +2210,7 @@ route to get:
 | `prepareMessages(turn, msgs)` | What the model is shown — windowing, summaries, injected context                                                                                                                                                                    |
 | `agent.generation`            | How the model samples — temperature, a token ceiling, a tool choice, a seed: an allowlist of the `streamText` options that do not touch settlement. `maxOutputTokens` defaults to the registered model's, the figure admission held |
 | `attachments`                 | Which file parts are accepted; `mode: "stored"` uploads them through the storage port and signs URLs for the model only                                                                                                             |
+| `maxBodyBytes`                | The largest request body read, after the caller is authenticated; 8 MiB plus four inline files at the policy's size by default                                                                                                      |
 | `reasoning`, `sources`        | Whether reasoning and source parts stream to the client                                                                                                                                                                             |
 | `messageMetadata`             | `{ modelId, usage, finishedAt }` on the reply (default on)                                                                                                                                                                          |
 | `cors`                        | Origins an embedded widget may call from                                                                                                                                                                                            |
@@ -2302,7 +2303,9 @@ modelIds })` reads it once per model a picker offers.
   `sendWithoutEarlierFiles`: a `prepareSendMessagesRequest` for
   `DefaultChatTransport` that sends earlier messages' inline files without
   their bytes, which the handler restores from the stored transcript, so a
-  conversation with an image in it does not re-send the image every turn.
+  conversation with an image in it does not re-send the image every turn. A
+  message no reply answered — a turn refused before it ran — keeps its bytes,
+  since the server never stored it.
   Pulls in no server code.
 - `@intelligo-dev/chat/testing` — `createStubLanguageModel`, a deterministic
   model that streams with no API key.

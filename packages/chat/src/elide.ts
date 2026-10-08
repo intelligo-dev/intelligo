@@ -23,10 +23,29 @@ function hasInlineFile(message: UIMessage): boolean {
   );
 }
 
-/** Every message but the last, with its inline files' bytes replaced. */
+/**
+ * Whether the server holds this message: a reply it streamed, or a
+ * user message a reply answered. A user message with no reply after it
+ * may never have been stored — a turn refused for quota or a rate limit
+ * keeps the message in the client's transcript and nowhere else — so
+ * its files keep their bytes.
+ */
+function answered<M extends UIMessage>(messages: M[], index: number): boolean {
+  if (messages[index]!.role === "assistant") return true;
+  return messages[index + 1]?.role === "assistant";
+}
+
+/**
+ * Every message but the last, with its inline files' bytes replaced —
+ * for the messages the server already holds (`answered`).
+ */
 export function elideEarlierFiles<M extends UIMessage>(messages: M[]): M[] {
   return messages.map((message, index) => {
-    if (index === messages.length - 1 || !hasInlineFile(message)) {
+    if (
+      index === messages.length - 1 ||
+      !hasInlineFile(message) ||
+      !answered(messages, index)
+    ) {
       return message;
     }
     return {

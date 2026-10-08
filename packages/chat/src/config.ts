@@ -322,6 +322,12 @@ export interface ChatServerConfig {
   capability?: string;
   /** Longest user message accepted, in characters. Default 8000. */
   maxMessageLength?: number;
+  /**
+   * Largest request body read, in bytes; a larger one is refused before
+   * it is parsed. Default 8 MiB for the transcript, plus room for four
+   * files at the policy's `maxBytes` when attachments travel inline.
+   */
+  maxBodyBytes?: number;
   /** Model steps one turn may take (a tool call and the reply using it are two). Default 5. */
   maxSteps?: number;
 

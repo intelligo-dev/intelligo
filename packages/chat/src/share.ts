@@ -35,6 +35,18 @@ function toolNameOf(part: Record<string, unknown>): string | null {
   return null;
 }
 
+/** The named fields a part has, and no others. */
+function pick(
+  part: Record<string, unknown>,
+  keys: readonly string[]
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of keys) {
+    if (part[key] !== undefined) out[key] = part[key];
+  }
+  return out;
+}
+
 export function sanitizeForShare(
   messages: ReadonlyArray<UIMessage>,
   policy: SharePolicy = {}
@@ -75,19 +87,16 @@ export function sanitizeForShare(
       }
       const toolName = toolNameOf(part);
       if (toolName !== null) {
+        // Built from the fields a card needs to say a tool ran, not
+        // copied minus a list: a field the SDK adds later (the raw input
+        // of a call that failed validation, the result's provider
+        // metadata) stays off the shared page until named here.
         const kept = keepTools.has(toolName);
-        const {
-          input,
-          output,
-          errorText: _e,
-          providerMetadata: _pm,
-          callProviderMetadata: _cpm,
-          providerExecuted: _pe,
-          approval: _a,
-          ...rest
-        } = part;
+        const { input, output } = part;
         parts.push({
-          ...rest,
+          type,
+          ...(type === "dynamic-tool" ? { toolName } : {}),
+          ...pick(part, ["toolCallId", "state", "title"]),
           ...(kept && input !== undefined ? { input } : {}),
           ...(kept && output !== undefined ? { output } : {}),
         } as unknown as UIMessage["parts"][number]);
