@@ -10,6 +10,7 @@
 
 import { createLogger } from "@intelligo-dev/core/logger";
 import { createRegistryRef } from "@intelligo-dev/core/registry";
+import { runInBackground } from "@intelligo-dev/core/request-context";
 
 const log = createLogger("WorkspaceBootstrap");
 
@@ -41,17 +42,20 @@ export function clearWorkspaceCreatedHandler(): void {
 
 /**
  * Runs the handler without waiting for it: a failed bootstrap is
- * logged and never fails the signup that created the workspace.
+ * logged and never fails the signup that created the workspace. The
+ * bound background runner keeps it running after the response.
  */
 export function workspaceCreated(
   created: WorkspaceCreated,
   run: WorkspaceCreatedHandler | null = handler.get()
 ): void {
   if (!run) return;
-  run(created).catch((error) =>
-    log.error("Workspace bootstrap failed", {
-      workspaceId: created.workspaceId,
-      error: error instanceof Error ? error.message : String(error),
-    })
+  runInBackground(
+    run(created).catch((error) =>
+      log.error("Workspace bootstrap failed", {
+        workspaceId: created.workspaceId,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    )
   );
 }

@@ -11,6 +11,7 @@ export {
   getAttachments,
   listOrphanAttachments,
   setExtractedText,
+  unclaimedAttachmentBytes,
 } from "./service";
 
 export { sweepAttachments, type AttachmentSweepResult } from "./sweep";

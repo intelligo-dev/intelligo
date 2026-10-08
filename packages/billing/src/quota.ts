@@ -56,6 +56,7 @@ import { getPlanMessageLimit, getPlanMonthlyAllowance } from "./quota-plan";
 import { BillingNotConfiguredError } from "./plan-registry";
 import { ChargeError } from "./charge-error";
 import { createLogger } from "@intelligo-dev/core/logger";
+import { runInBackground } from "@intelligo-dev/core/request-context";
 import { isUniqueViolation, requestIdTaken } from "@intelligo-dev/executions";
 
 export type {
@@ -781,8 +782,10 @@ async function settleCharge(
 
   if (outcome.replayed) return outcome;
 
-  checkNotificationTriggers(params.workspaceId).catch((err) =>
-    console.error("[Notifications] Error checking triggers:", err)
+  runInBackground(
+    checkNotificationTriggers(params.workspaceId).catch((err) =>
+      console.error("[Notifications] Error checking triggers:", err)
+    )
   );
 
   return outcome;

@@ -1,10 +1,13 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   RequestContextUnavailableError,
+  clearBackgroundTaskRunner,
   clearRequestContextSource,
   getRequestHeaders,
   hasRequestContextSource,
+  runInBackground,
+  setBackgroundTaskRunner,
   setRequestContextSource,
   withRequestHeaders,
 } from "./request-context";
@@ -114,5 +117,68 @@ describe("withRequestHeaders under concurrency", () => {
 
     expect(concurrent).toBe("request-b");
     expect(await job).toBe("job");
+  });
+});
+
+describe("withRequestHeaders on its first concurrent calls", () => {
+  it("gives every caller its own headers while the storage is still being created", async () => {
+    // A process with no global AsyncLocalStorage creates the storage on
+    // first use; start from that state.
+    const slots = globalThis as unknown as Record<
+      symbol,
+      { map: Map<string, unknown> } | undefined
+    >;
+    slots[
+      Symbol.for("@intelligo-dev/registry/ref/core/request-headers-scope")
+    ]!.map.set("value", undefined);
+
+    const read = (name: string) =>
+      withRequestHeaders(new Headers({ a: name }), async () =>
+        (await getRequestHeaders()).get("a")
+      );
+
+    expect(await Promise.all([read("one"), read("two")])).toEqual([
+      "one",
+      "two",
+    ]);
+  });
+});
+
+describe("runInBackground", () => {
+  afterEach(() => {
+    clearBackgroundTaskRunner();
+  });
+
+  it("hands the task to the bound runner", async () => {
+    const runner = vi.fn();
+    setBackgroundTaskRunner(runner);
+
+    runInBackground(Promise.resolve("done"));
+
+    expect(runner).toHaveBeenCalledTimes(1);
+    await expect(runner.mock.calls[0]![0]).resolves.toBeUndefined();
+  });
+
+  it("never hands the runner a rejection", async () => {
+    const runner = vi.fn();
+    setBackgroundTaskRunner(runner);
+    const failing = Promise.reject(new Error("boom"));
+    failing.catch(() => {});
+
+    runInBackground(failing);
+
+    await expect(runner.mock.calls[0]![0]).resolves.toBeUndefined();
+  });
+
+  it("lets the task run where the runner has no request to extend", () => {
+    setBackgroundTaskRunner(() => {
+      throw new Error("outside a request scope");
+    });
+
+    expect(() => runInBackground(Promise.resolve())).not.toThrow();
+  });
+
+  it("does nothing with no runner bound", () => {
+    expect(() => runInBackground(Promise.resolve())).not.toThrow();
   });
 });

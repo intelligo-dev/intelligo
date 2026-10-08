@@ -42,10 +42,40 @@ function statusError(message: string, statusCode: number): Error {
   return err;
 }
 
+/** How long one call to a provider may take before it counts as failed. */
+const EMAIL_PROVIDER_TIMEOUT_MS = 10_000;
+
+/**
+ * `work`, or a retryable 504 once `ms` pass without it settling — so a
+ * provider that accepts the connection and never answers fails the
+ * attempt instead of holding the request.
+ */
+async function withTimeout<T>(
+  work: Promise<T>,
+  ms: number,
+  what: string
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(
+      () => reject(statusError(`${what} timed out after ${ms} ms`, 504)),
+      ms
+    );
+  });
+  try {
+    return await Promise.race([work, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export class ResendProvider implements EmailProvider {
   private client: Resend;
 
-  constructor(apiKey: string) {
+  constructor(
+    apiKey: string,
+    private timeoutMs: number = EMAIL_PROVIDER_TIMEOUT_MS
+  ) {
     this.client = new Resend(apiKey);
   }
 
@@ -58,13 +88,17 @@ export class ResendProvider implements EmailProvider {
         400
       );
     }
-    const { data, error } = await this.client.emails.send({
-      from: params.from,
-      to: Array.isArray(params.to) ? params.to : [params.to],
-      subject: params.subject,
-      html: params.html,
-      replyTo: params.replyTo,
-    });
+    const { data, error } = await withTimeout(
+      this.client.emails.send({
+        from: params.from,
+        to: Array.isArray(params.to) ? params.to : [params.to],
+        subject: params.subject,
+        html: params.html,
+        replyTo: params.replyTo,
+      }),
+      this.timeoutMs,
+      "Resend send"
+    );
 
     if (error) {
       const err = new Error(error.message) as Error & { statusCode?: number };
@@ -96,7 +130,8 @@ const LOOPS_API_URL = "https://app.loops.so/api/v1/transactional";
 export class LoopsProvider implements EmailProvider {
   constructor(
     private apiKey: string,
-    private transactionalIds?: Record<string, string>
+    private transactionalIds?: Record<string, string>,
+    private timeoutMs: number = EMAIL_PROVIDER_TIMEOUT_MS
   ) {}
 
   private resolveTransactionalId(key: string): string | undefined {
@@ -148,6 +183,7 @@ export class LoopsProvider implements EmailProvider {
           email,
           dataVariables: template.variables ?? {},
         }),
+        signal: AbortSignal.timeout(this.timeoutMs),
       });
 
       if (!response.ok) {

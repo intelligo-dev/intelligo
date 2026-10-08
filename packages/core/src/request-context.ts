@@ -62,14 +62,13 @@ const scope = createRegistryRef<HeaderScope | undefined>(
   undefined
 );
 
-/**
- * The runtime's `AsyncLocalStorage`: the global one Next.js and edge
- * runtimes provide, or Node's own, loaded only when there is none — a
- * script, a worker or a test.
- */
-async function headerScope(): Promise<HeaderScope> {
-  const existing = scope.get();
-  if (existing) return existing;
+/** The scope being created, shared by every caller that arrives meanwhile. */
+const pendingScope = createRegistryRef<Promise<HeaderScope> | undefined>(
+  "core/request-headers-scope-pending",
+  undefined
+);
+
+async function createHeaderScope(): Promise<HeaderScope> {
   const Storage =
     (globalThis as { AsyncLocalStorage?: new () => HeaderScope })
       .AsyncLocalStorage ??
@@ -77,6 +76,25 @@ async function headerScope(): Promise<HeaderScope> {
   const created = new Storage() as HeaderScope;
   scope.set(created);
   return created;
+}
+
+/**
+ * The runtime's `AsyncLocalStorage`: the global one Next.js and edge
+ * runtimes provide, or Node's own, loaded only when there is none — a
+ * script, a worker or a test. Concurrent first callers share one
+ * storage, so none of them runs in a scope the others cannot read.
+ */
+function headerScope(): Promise<HeaderScope> {
+  const existing = scope.get();
+  if (existing) return Promise.resolve(existing);
+  let pending = pendingScope.get();
+  if (!pending) {
+    pending = createHeaderScope().finally(() => {
+      pendingScope.set(undefined);
+    });
+    pendingScope.set(pending);
+  }
+  return pending;
 }
 
 export function setRequestContextSource(next: RequestContextSource): void {
@@ -135,3 +153,46 @@ export async function withRequestHeaders<T>(
   const storage = await headerScope();
   return await storage.run(headers, async () => await fn());
 }
+
+/**
+ * Keeps work started during a request alive after its response is sent.
+ * On a serverless host a promise nobody awaits can be frozen with the
+ * function once the response is out; Next's `after()` (bound as
+ * `nextBackgroundTasks` from `@intelligo-dev/next`) or a platform's
+ * `waitUntil` extends the invocation until the promise settles.
+ */
+export type BackgroundTaskRunner = (task: Promise<unknown>) => void;
+
+const backgroundRunner = createRegistryRef<BackgroundTaskRunner | undefined>(
+  "core/background-task-runner",
+  undefined
+);
+
+/** Bound once, from the composition root. */
+export function setBackgroundTaskRunner(runner: BackgroundTaskRunner): void {
+  backgroundRunner.set(runner);
+}
+
+/** Forget the bound runner. For tests composing a fresh root. */
+export function clearBackgroundTaskRunner(): void {
+  backgroundRunner.set(undefined);
+}
+
+/**
+ * Hands work nobody awaits to the bound runner, so it outlives the
+ * response. The task runs either way: with no runner bound, or outside a
+ * request the runner can extend (a worker, a script), it continues on
+ * this process as an ordinary promise. The runner never sees a
+ * rejection; the caller handles its own failures.
+ */
+export function runInBackground(task: Promise<unknown>): void {
+  const runner = backgroundRunner.get();
+  if (!runner) return;
+  try {
+    runner(task.then(noop, noop));
+  } catch {
+    // Outside a request scope the runner has nothing to extend.
+  }
+}
+
+function noop(): void {}

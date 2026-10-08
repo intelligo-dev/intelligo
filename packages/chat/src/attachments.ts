@@ -22,10 +22,16 @@
 
 import { requireWorkspace } from "@intelligo-dev/auth";
 import {
+  checkRateLimit,
+  getWorkspaceBilling,
+  hasFeature,
+} from "@intelligo-dev/billing";
+import {
   createAttachment,
   getAttachment,
   isAttachmentServiceError,
   setExtractedText,
+  unclaimedAttachmentBytes,
 } from "@intelligo-dev/core/attachments";
 import { createLogger } from "@intelligo-dev/core/logger";
 import {
@@ -50,12 +56,31 @@ const INLINE_TYPES: ReadonlySet<string> = new Set([
   "application/pdf",
   "text/plain",
 ]);
-import type { ChatActor, ChatServerConfig } from "./config";
+import type { ChatActor, ChatServerConfig, RateLimitDecision } from "./config";
 import { DEFAULT_CHAT_MESSAGES, refuse } from "./errors";
 
 const log = createLogger("Chat");
 
 const SIGNED_URL_SECONDS = 900;
+
+const DEFAULT_FEATURE_KEY = "chat";
+
+/** The rate-limit bucket uploads count in, apart from chat turns. */
+const UPLOAD_RATE_LIMIT_ENDPOINT = "chat-upload";
+
+/** Unclaimed bytes a workspace may hold, as a multiple of `maxBytes`. */
+const DEFAULT_UNCLAIMED_FILES = 10;
+
+async function defaultUploadRateLimit(
+  actor: ChatActor
+): Promise<RateLimitDecision> {
+  const billing = await getWorkspaceBilling(actor.workspaceId);
+  return checkRateLimit(
+    actor.workspaceId,
+    billing.plan?.slug ?? "free",
+    UPLOAD_RATE_LIMIT_ENDPOINT
+  );
+}
 
 export type ChatUploadResult = {
   id: string;
@@ -92,15 +117,25 @@ function errorMessage(error: unknown): string {
 
 /**
  * `POST multipart/form-data` with one `file` field → an attachment row
- * and the URL the composer puts in the file part. Refuses a type the
- * policy does not accept, a file over `maxBytes`, and anything without
- * a session.
+ * and the URL the composer puts in the file part. Refuses anything
+ * without a session, a workspace over its upload rate or without the
+ * chat feature, a type the policy does not accept, a file over
+ * `maxBytes`, and a file that would take the workspace's unclaimed
+ * uploads past `maxUnclaimedBytes` or that `admitUpload` refuses.
  */
 export function createChatUploadHandler(
   config: ChatServerConfig
 ): ChatUploadHandler {
   const authenticate = config.authenticate ?? defaultAuthenticate;
   const policy = config.attachments;
+  const rateLimit =
+    policy && policy.rateLimit !== undefined
+      ? policy.rateLimit
+      : config.rateLimit === false
+        ? false
+        : defaultUploadRateLimit;
+  const featureKey =
+    config.featureKey === undefined ? DEFAULT_FEATURE_KEY : config.featureKey;
 
   async function messagesFor(request: Request) {
     return config.messages ? config.messages(request) : DEFAULT_CHAT_MESSAGES;
@@ -119,6 +154,26 @@ export function createChatUploadHandler(
       actor = await authenticate(request);
     } catch {
       return refuse("UNAUTHORIZED", t("unauthorized"));
+    }
+
+    // Both before the body is read, so a refused upload costs no read.
+    if (rateLimit !== false) {
+      const decision = await rateLimit(actor);
+      if (!decision.allowed) {
+        const seconds = decision.retryAfterSeconds ?? 60;
+        return refuse(
+          "RATE_LIMITED",
+          t("rateLimited", { seconds }),
+          { retryAfterSeconds: seconds },
+          { "Retry-After": String(seconds) }
+        );
+      }
+    }
+    if (
+      featureKey !== null &&
+      !(await hasFeature(actor.workspaceId, featureKey))
+    ) {
+      return refuse("FEATURE_GATED", t("featureGated"));
     }
 
     // A declared length over the limit is refused before the body is
@@ -148,6 +203,28 @@ export function createChatUploadHandler(
     if (file.size > maxBytes) {
       return refuse("BAD_REQUEST", t("attachmentRejected"));
     }
+    const filename = safeFilename(
+      typeof (file as File).name === "string" ? (file as File).name : "file"
+    );
+
+    const maxUnclaimed =
+      policy.maxUnclaimedBytes ?? maxBytes * DEFAULT_UNCLAIMED_FILES;
+    if (
+      maxUnclaimed !== false &&
+      (await unclaimedAttachmentBytes(actor)) + file.size > maxUnclaimed
+    ) {
+      return refuse("QUOTA_EXCEEDED", t("quotaExceeded"));
+    }
+    if (
+      policy.admitUpload &&
+      !(await policy.admitUpload(actor, {
+        filename,
+        mediaType,
+        size: file.size,
+      }))
+    ) {
+      return refuse("QUOTA_EXCEEDED", t("quotaExceeded"));
+    }
 
     let storage;
     try {
@@ -161,9 +238,6 @@ export function createChatUploadHandler(
     }
 
     const id = crypto.randomUUID();
-    const filename = safeFilename(
-      typeof (file as File).name === "string" ? (file as File).name : "file"
-    );
     const key = attachmentStorageKey(actor.workspaceId, id);
 
     try {
@@ -173,6 +247,11 @@ export function createChatUploadHandler(
         contentType: mediaType,
         contentLength: file.size,
       });
+    } catch (error) {
+      log.error("Attachment upload failed", { error: errorMessage(error) });
+      return refuse("INTERNAL", t("internalError"));
+    }
+    try {
       await createAttachment(actor, {
         id,
         storageKey: key,
@@ -182,6 +261,13 @@ export function createChatUploadHandler(
       });
     } catch (error) {
       log.error("Attachment upload failed", { error: errorMessage(error) });
+      // No row means the sweep never learns of the object; delete it now.
+      await storage.delete(key).catch((deleteError: unknown) =>
+        log.error("Stored object left without its row", {
+          storageKey: key,
+          error: errorMessage(deleteError),
+        })
+      );
       return refuse("INTERNAL", t("internalError"));
     }
 
