@@ -44,9 +44,9 @@
     "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
-    "drizzle-orm": "^0.45.3",
+    "drizzle-orm": "^0.45.4",
     "pg": "8.23.1",
     "typescript": "^6.0.3"
   },

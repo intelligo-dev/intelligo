@@ -65,7 +65,7 @@
     "dotenv": "^17.4.2",
     "pg": "8.23.1",
     "pino": "^10.4.0",
-    "resend": "^6.32.0"
+    "resend": "^6.32.1"
   },
   "peerDependencies": {
     "drizzle-orm": "^0.45.1",
@@ -80,8 +80,8 @@
     "@types/pg": "^8.23.1",
     "@types/react": "19.3.0",
     "drizzle-kit": "^0.31.11",
-    "drizzle-orm": "^0.45.3",
-    "next": "~16.3.8",
+    "drizzle-orm": "^0.45.4",
+    "next": "~16.4.0",
     "pino-pretty": "^13.2.0",
     "react": "^19.3.0",
     "tsx": "^4.23.15",
