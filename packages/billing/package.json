@@ -55,7 +55,7 @@
   "devDependencies": {
     "drizzle-orm": "^0.45.3",
     "react": "^19.3.0",
-    "stripe": "^22.6.2",
+    "stripe": "^23.0.0",
     "typescript": "^6.0.3",
     "zod": "^4.6.5"
   },
