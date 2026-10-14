@@ -62,7 +62,7 @@
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
     "@react-email/components": "^1.0.12",
-    "dotenv": "^17.4.2",
+    "dotenv": "^18.0.7",
     "pg": "8.23.1",
     "pino": "^10.4.0",
     "resend": "^6.32.0"
