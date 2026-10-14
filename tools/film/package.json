@@ -10,7 +10,7 @@
     "@remotion/google-fonts": "4.0.532",
     "@remotion/tailwind-v4": "4.0.532",
     "@streamdown/cjk": "^1.0.4",
-    "@streamdown/code": "^1.1.1",
+    "@streamdown/code": "^2.0.0",
     "@streamdown/math": "^1.0.3",
     "@streamdown/mermaid": "^1.0.3",
     "class-variance-authority": "^0.7.1",

@@ -35,7 +35,7 @@
     "@intelligo-dev/next": "workspace:*",
     "@shadcn/react": "^0.3.1",
     "@streamdown/cjk": "^1.0.4",
-    "@streamdown/code": "^1.1.1",
+    "@streamdown/code": "^2.0.0",
     "@streamdown/math": "^1.0.3",
     "@streamdown/mermaid": "^1.0.3",
     "@types/papaparse": "^5.5.2",
