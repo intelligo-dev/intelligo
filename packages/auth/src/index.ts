@@ -29,6 +29,13 @@ export type {
 export type { WorkspaceRole } from "./helpers";
 export { PLATFORM_ADMIN_ROLE } from "./roles";
 export {
+  listOAuthProviders,
+  registerOAuthProfileMapper,
+  type OAuthMappedUser,
+  type OAuthProfile,
+  type OAuthProfileMapper,
+} from "./oauth-providers";
+export {
   impersonateUser,
   isImpersonating,
   stopImpersonating,

@@ -21,6 +21,20 @@ none, or what a consumer changes (with the steps under `### Upgrading`);
 since the previous stable release, or for a prerelease since the
 previous tag of its series.
 
+## [Unreleased]
+
+### Added
+
+- **Any OAuth 2.0 or OpenID Connect provider beside Google and GitHub.**
+  - `OAUTH_PROVIDERS` names the providers. Each one's endpoints come from `OAUTH_<ID>_*`: client id and secret, plus authorization, token and user-info URLs, or one discovery URL. Scopes, a display name, `PKCE=false` and `SUBJECT_FIELD` are optional. `SUBJECT_FIELD` names the field that identifies the account, for a plain OAuth provider that answers with `sub` rather than `id`.
+  - They reach Better-Auth through its `genericOAuth` plugin, as social providers. This needs `better-auth` 1.7 or later in the app. The callback is `/api/auth/callback/<id>`.
+  - `registerOAuthProfileMapper(providerId, mapper)` from `@intelligo-dev/auth` maps a provider's profile to the user from the composition root. Use it for a provider with phone-only accounts, which have no email. It is read on every sign-in.
+  - `listOAuthProviders()` lists the declared providers. `readOAuthProviders(env)` in `@intelligo-dev/core/env` parses them.
+  - A provider configured by half is left out, and `validateEnv` warns naming what is missing.
+- **`auth-login` and `auth-signup` show one button per declared provider.**
+  - `SocialLoginButtons` takes `oauthProviders` and signs in with `authClient.signIn.social`.
+  - The `auth-login` namespace gains `socialLogin.continueWith`.
+
 ## [1.3.0-next.1] — 2026-10-22
 
 - **Upgrade:** recommended — the chat transport no longer reads client-sent history on a new conversation's first turn
