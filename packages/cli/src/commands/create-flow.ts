@@ -22,6 +22,7 @@ import {
   deriveNames,
   formatCreateResult,
   formatNextSteps,
+  currencyVariables,
   isOccupied,
   localeVariables,
 } from "./create.js";
@@ -60,6 +61,10 @@ export type CreateFlags = {
   name?: string;
   /** `--locales en,mn` — the app's locales, the default first. */
   locales?: string[];
+  /** `--currency MNT` — what the app bills in. */
+  currency?: string;
+  /** `--usd-rate 3450` — what one USD costs in that currency. */
+  usdRate?: string;
   /** Flags `create` does not know. */
   unknown: string[];
 };
@@ -77,9 +82,30 @@ export function parseCreateFlags(args: readonly string[]): CreateFlags {
   let items: string[] | undefined;
   let name: string | undefined;
   let locales: string[] | undefined;
+  let currency: string | undefined;
+  let usdRate: string | undefined;
   const unknown: string[] = [];
+  /** `--flag value` or `--flag=value`; a missing value is an unknown flag. */
+  const valueOf = (arg: string, flag: string, i: number) => {
+    const value = arg === flag ? args[i + 1] : arg.slice(flag.length + 1);
+    return { value, next: arg === flag ? i + 1 : i };
+  };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
+    if (
+      arg === "--currency" ||
+      arg.startsWith("--currency=") ||
+      arg === "--usd-rate" ||
+      arg.startsWith("--usd-rate=")
+    ) {
+      const flag = arg.startsWith("--currency") ? "--currency" : "--usd-rate";
+      const { value, next } = valueOf(arg, flag, i);
+      i = next;
+      if (!value?.trim() || value.startsWith("-")) unknown.push(arg);
+      else if (flag === "--currency") currency = value.trim();
+      else usdRate = value.trim();
+      continue;
+    }
     if (arg === "--items" || arg.startsWith("--items=")) {
       const list = arg === "--items" ? (args[++i] ?? "") : arg.slice(8);
       items = list
@@ -110,6 +136,8 @@ export function parseCreateFlags(args: readonly string[]): CreateFlags {
     items,
     name,
     locales,
+    currency,
+    usdRate,
     unknown,
     all: args.includes("--all"),
     yes: args.includes("--yes") || args.includes("-y"),
@@ -201,7 +229,7 @@ export async function runCreate(
   if (!target) {
     if (!interactive) {
       console.error(
-        "Usage: intelligo create <directory> [--items a,b | --all] [--locales en,mn] [--yes] [--no-install] [--name <name>]"
+        "Usage: intelligo create <directory> [--items a,b | --all] [--locales en,mn] [--currency MNT --usd-rate 3450] [--yes] [--no-install] [--name <name>]"
       );
       return 1;
     }
@@ -225,6 +253,7 @@ export async function runCreate(
   // app that is then refused.
   assertNotOccupied(target);
   localeVariables(flags.locales);
+  currencyVariables(flags.currency, flags.usdRate);
 
   // 2. What.
   let selected: string[] = [];
@@ -259,6 +288,8 @@ export async function runCreate(
     name: flags.name,
     packageManager,
     locales: flags.locales,
+    currency: flags.currency,
+    usdRate: flags.usdRate,
   });
   const appRoot = path.resolve(target);
   if (interactive) {

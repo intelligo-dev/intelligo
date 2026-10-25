@@ -19,6 +19,10 @@
  * `--locales en,mn` routes those locales, the first as the default. The
  * registry ships English and Mongolian copy; another locale renders in
  * English until the app translates it.
+ *
+ * `--currency MNT --usd-rate 3450` bills in that currency at that rate
+ * per USD from the first boot; the composition root seeds it once.
+ * Without them the app bills in USD.
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
@@ -65,6 +69,10 @@ export type CreateOptions = {
    * the app translates it. English alone when unset.
    */
   locales?: string[];
+  /** The ISO 4217 code the app bills in; USD when unset. */
+  currency?: string;
+  /** What one USD costs in `currency`, as typed — `"3450"`. Required for any currency but USD. */
+  usdRate?: string;
 };
 
 /** A package name and product slug derived from the directory name. */
@@ -168,6 +176,7 @@ export function createApp(options: CreateOptions): AddResult {
       ...workspaceRootVariable(target),
       ...registryVariable(options.frameworkVersion, options.linkWorkspace),
       ...localeVariables(options.locales),
+      ...currencyVariables(options.currency, options.usdRate),
     },
   });
 
@@ -210,6 +219,46 @@ export function localeVariables(
   return {
     __LOCALES__: JSON.stringify(unique),
     __DEFAULT_LOCALE__: JSON.stringify(unique[0]),
+  };
+}
+
+/** `3450000000` → `3_450_000_000`, as the template writes a micros literal. */
+function groupedLiteral(value: number): string {
+  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, "_");
+}
+
+/**
+ * `__CURRENCY__` and `__USD_RATE_MICROS__` for the composition root's
+ * billing settings: what the app bills in, and what one USD costs in
+ * it. Provider prices are USD, so another currency needs its rate
+ * stated — the CLI never guesses one. None given leaves USD at 1.
+ */
+export function currencyVariables(
+  code: string | undefined,
+  usdRate: string | undefined
+): Record<string, string> {
+  if (code === undefined && usdRate === undefined) return {};
+  const upper = (code ?? "USD").toUpperCase();
+  if (!/^[A-Z]{3}$/.test(upper)) {
+    throw new Error(
+      `--currency takes an ISO 4217 code such as MNT or EUR — not ${code}.`
+    );
+  }
+  if (upper === "USD") {
+    if (usdRate !== undefined && Number(usdRate) !== 1) {
+      throw new Error("A USD app converts at 1; leave out --usd-rate.");
+    }
+    return { __CURRENCY__: '"USD"', __USD_RATE_MICROS__: "1_000_000" };
+  }
+  const rate = Number(usdRate);
+  if (usdRate === undefined || !Number.isFinite(rate) || rate <= 0) {
+    throw new Error(
+      `--currency ${upper} needs --usd-rate: what one USD costs in ${upper}, e.g. --usd-rate 3450.`
+    );
+  }
+  return {
+    __CURRENCY__: JSON.stringify(upper),
+    __USD_RATE_MICROS__: groupedLiteral(Math.round(rate * 1_000_000)),
   };
 }
 

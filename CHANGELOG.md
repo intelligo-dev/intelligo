@@ -31,6 +31,11 @@ previous tag of its series.
 - **`intelligo create --locales en,mn` routes the app in those locales, with the first as the default.**
   - The scaffold's `i18n/routing.ts` takes them from the new `__LOCALES__` and `__DEFAULT_LOCALE__` template variables. An app made without the flag renders as before, English alone, and re-generating it changes nothing.
   - app-scaffold template 1.24.0.
+- **`intelligo create --currency MNT --usd-rate 3450` bills in that currency from the first boot.**
+  - The composition root's `ensureBillingSettingsRow` call takes them through `__CURRENCY__` and `__USD_RATE_MICROS__`. Before this, the call was always USD and its rate, seeded once, had to be edited before the first boot.
+  - A currency other than USD without a rate is refused, because the CLI never guesses one. A bad code is refused before any question is asked.
+  - An app made without the flags renders as before, in USD at 1.
+  - app-scaffold template 1.25.0.
 
 ## [1.3.0-next.1] — 2026-10-22
 

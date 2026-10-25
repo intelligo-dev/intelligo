@@ -27,6 +27,28 @@ describe("parseCreateFlags", () => {
     });
   });
 
+  it("reads --locales, --currency and --usd-rate, with or without =", () => {
+    expect(
+      parseCreateFlags([
+        "acme",
+        "--locales",
+        "mn,en",
+        "--currency=MNT",
+        "--usd-rate",
+        "3450",
+      ])
+    ).toMatchObject({
+      target: "acme",
+      locales: ["mn", "en"],
+      currency: "MNT",
+      usdRate: "3450",
+      unknown: [],
+    });
+    expect(parseCreateFlags(["acme", "--usd-rate"]).unknown).toEqual([
+      "--usd-rate",
+    ]);
+  });
+
   it("reads --name, and collects what it does not know", () => {
     expect(
       parseCreateFlags([".", "--name", "Acme Audit", "--al", "extra"])
