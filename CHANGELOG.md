@@ -21,6 +21,17 @@ none, or what a consumer changes (with the steps under `### Upgrading`);
 since the previous stable release, or for a prerelease since the
 previous tag of its series.
 
+## [Unreleased]
+
+### Added
+
+- **`numberCheck` in the chat server config: a reply's numbers must come from what the model was shown.**
+  - When a reply ends, each of its numbers is compared by value and unit with the system prompt, the reader's own messages and every tool output on record, this turn's included. A reply holding any other number gets `note(numbers, turn)` as one more text part of the same message. It runs on `streamText` and `streamTurn` replies alike, and is off when unset.
+  - A tool part the client posted counts only as the stored transcript says it ran. The assistant's earlier words are never a source.
+  - Values match however they are written (`$2,500,000`, `2.5 million`), and units must match: currency signs and codes, `%`, field names such as `priceUsd` and `sharePercent`, and the vocabulary's words. Small counts and years said as years pass bare. Dates are checked whole. Amounts spelled out in words are refused. Ids, links and UUIDs source nothing.
+  - `vocabularies` sets the languages read. `ENGLISH_NUMBERS` is the default and `MONGOLIAN_NUMBERS` ships too. `NumberVocabulary` describes another language.
+  - `numberCheckStream`, `unsourcedNumbers`, `onRecord`, `sourcesOf` and `createNumberReader` are exported for checks outside the transport.
+
 ## [1.3.0-next.1] — 2026-10-22
 
 - **Upgrade:** recommended — the chat transport no longer reads client-sent history on a new conversation's first turn
