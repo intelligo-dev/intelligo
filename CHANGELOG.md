@@ -21,6 +21,14 @@ none, or what a consumer changes (with the steps under `### Upgrading`);
 since the previous stable release, or for a prerelease since the
 previous tag of its series.
 
+## [Unreleased]
+
+### Added
+
+- **A "Reference data" guide covering tables every workspace reads and none owns.**
+  - Covers the global table, why it may hold nothing that belongs to a workspace or a user, a script that replaces its rows in one transaction (`node --env-file=.env.local scripts/load-*.ts`), and reading it from a tool.
+  - The scaffold's `lib/db/schema.ts` comment names the exception beside its "scope them to a workspace" rule. app-scaffold template 1.24.0.
+
 ## [1.3.0-next.1] — 2026-10-22
 
 - **Upgrade:** recommended — the chat transport no longer reads client-sent history on a new conversation's first turn
