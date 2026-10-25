@@ -21,6 +21,15 @@ none, or what a consumer changes (with the steps under `### Upgrading`);
 since the previous stable release, or for a prerelease since the
 previous tag of its series.
 
+## [Unreleased]
+
+### Added
+
+- **Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 in `DEFAULT_MODELS`.**
+  - The ids are `anthropic/claude-haiku-5-5` ($0.10 / $0.50 per million tokens), `anthropic/claude-sonnet-5-5` ($2 / $10) and `anthropic/claude-opus-5-5` ($4 / $20), each with every capability. An app that registered them by hand can drop its own entries.
+  - Haiku 5.5 carries the rate for prompts of 100K tokens or fewer. A product that sends longer prompts registers it at Anthropic's higher rate ($0.50 / $2.50).
+  - `anthropic/claude-sonnet-4-6` stays.
+
 ## [1.3.0-next.1] — 2026-10-22
 
 - **Upgrade:** recommended — the chat transport no longer reads client-sent history on a new conversation's first turn
