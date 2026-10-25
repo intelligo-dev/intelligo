@@ -21,6 +21,17 @@ none, or what a consumer changes (with the steps under `### Upgrading`);
 since the previous stable release, or for a prerelease since the
 previous tag of its series.
 
+## [Unreleased]
+
+### Added
+
+- **Mongolian copy for every registry item.**
+  - Each item ships `messages/mn/<item>.json` beside its English file. An architecture test holds each translation to the English keys and ICU arguments, so a key added in English fails the build until it is translated.
+  - `intelligo sync` updates a shipped translation the same way it updates English: values the app has not changed take the new text, and reworded ones are kept.
+- **`intelligo create --locales en,mn` routes the app in those locales, with the first as the default.**
+  - The scaffold's `i18n/routing.ts` takes them from the new `__LOCALES__` and `__DEFAULT_LOCALE__` template variables. An app made without the flag renders as before, English alone, and re-generating it changes nothing.
+  - app-scaffold template 1.24.0.
+
 ## [1.3.0-next.1] — 2026-10-22
 
 - **Upgrade:** recommended — the chat transport no longer reads client-sent history on a new conversation's first turn

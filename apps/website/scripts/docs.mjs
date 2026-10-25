@@ -613,7 +613,11 @@ function extract(root, path, symbol) {
   if (!existsSync(file)) throw new Error(`snippet: ${path} does not exist`);
   let text = readFileSync(file, "utf8");
   if (path.endsWith(".tpl"))
-    text = text.replace(/__APP_(NAME|SLUG)__/g, "my-app");
+    text = text
+      .replace(/__APP_(NAME|SLUG)__/g, "my-app")
+      // What `create` writes without `--locales`.
+      .replace(/__LOCALES__/g, '["en"]')
+      .replace(/__DEFAULT_LOCALE__/g, '"en"');
   if (!symbol) {
     // The whole file, without the doc comment it opens with.
     return text

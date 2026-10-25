@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "title": "Бүртгүүлэх",
+    "description": "Бүртгэл үүсгэх."
+  },
+  "card": {
+    "title": "Бүртгэл үүсгэх",
+    "description": "Үнэгүй эхлээрэй"
+  },
+  "signupForm": {
+    "nameLabel": "Нэр",
+    "emailLabel": "Имэйл",
+    "passwordLabel": "Нууц үг",
+    "confirmPasswordLabel": "Нууц үгээ давтах",
+    "submit": "Бүртгэл үүсгэх",
+    "submitting": "Бүртгэл үүсгэж байна…",
+    "alreadyHaveAccount": "Бүртгэлтэй юу?",
+    "logInLink": "Нэвтрэх",
+    "errors": {
+      "accountExists": "Энэ имэйлтэй бүртгэл аль хэдийн байна.",
+      "unexpected": "Алдаа гарлаа. Дахин оролдоно уу."
+    }
+  },
+  "validation": {
+    "nameTooShort": "Нэр дор хаяж 2 тэмдэгт байх ёстой",
+    "nameTooLong": "Нэр 50 тэмдэгтээс бага байх ёстой",
+    "emailInvalid": "Зөв имэйл хаяг оруулна уу",
+    "passwordTooShort": "Нууц үг дор хаяж 8 тэмдэгт байх ёстой",
+    "passwordTooLong": "Нууц үг 128 тэмдэгтээс бага байх ёстой",
+    "passwordWeak": "Нууц үгэнд дор хаяж 1 том үсэг, 1 жижиг үсэг, 1 тоо орсон байх ёстой",
+    "passwordMismatch": "Нууц үг таарахгүй байна"
+  }
+}

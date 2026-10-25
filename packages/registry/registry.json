@@ -1245,6 +1245,11 @@
           "path": "base/smoke/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/smoke.json"
+        },
+        {
+          "path": "base/smoke/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/smoke.json"
         }
       ],
       "dependencies": ["next-intl"]
@@ -1296,6 +1301,11 @@
           "path": "base/route-error/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/route-error.json"
+        },
+        {
+          "path": "base/route-error/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/route-error.json"
         }
       ]
     },
@@ -1378,6 +1388,11 @@
           "target": "messages/en/team-settings.json"
         },
         {
+          "path": "base/team-settings/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/team-settings.json"
+        },
+        {
           "path": "base/team-settings/error.tsx",
           "type": "registry:page",
           "target": "app/[locale]/(app)/settings/team/error.tsx"
@@ -1452,6 +1467,11 @@
           "target": "messages/en/usage.json"
         },
         {
+          "path": "base/usage/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/usage.json"
+        },
+        {
           "path": "base/usage/error.tsx",
           "type": "registry:page",
           "target": "app/[locale]/(app)/usage/error.tsx"
@@ -1511,6 +1531,11 @@
           "path": "base/invitation-accept/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/invitation-accept.json"
+        },
+        {
+          "path": "base/invitation-accept/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/invitation-accept.json"
         }
       ]
     },
@@ -1589,6 +1614,11 @@
           "target": "messages/en/app-shell.json"
         },
         {
+          "path": "base/app-shell/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/app-shell.json"
+        },
+        {
           "path": "base/app-shell/lib/nav-config.ts",
           "type": "registry:file",
           "target": "lib/nav-config.ts"
@@ -1627,6 +1657,11 @@
           "path": "base/settings-shell/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/settings-shell.json"
+        },
+        {
+          "path": "base/settings-shell/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/settings-shell.json"
         }
       ]
     },
@@ -1685,6 +1720,11 @@
           "path": "base/workspace-settings/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/workspace-settings.json"
+        },
+        {
+          "path": "base/workspace-settings/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/workspace-settings.json"
         },
         {
           "path": "base/workspace-settings/error.tsx",
@@ -1751,6 +1791,11 @@
           "target": "messages/en/auth-login.json"
         },
         {
+          "path": "base/auth-login/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/auth-login.json"
+        },
+        {
           "path": "base/auth-login/auth-error.tsx",
           "type": "registry:page",
           "target": "app/[locale]/(auth)/error.tsx"
@@ -1806,6 +1851,11 @@
           "path": "base/auth-signup/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/auth-signup.json"
+        },
+        {
+          "path": "base/auth-signup/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/auth-signup.json"
         }
       ]
     },
@@ -1853,6 +1903,11 @@
           "path": "base/auth-password-reset/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/auth-password-reset.json"
+        },
+        {
+          "path": "base/auth-password-reset/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/auth-password-reset.json"
         }
       ]
     },
@@ -1884,6 +1939,11 @@
           "path": "base/auth-email-verification/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/auth-email-verification.json"
+        },
+        {
+          "path": "base/auth-email-verification/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/auth-email-verification.json"
         }
       ]
     },
@@ -1904,6 +1964,11 @@
           "path": "base/language-switcher/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/language-switcher.json"
+        },
+        {
+          "path": "base/language-switcher/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/language-switcher.json"
         }
       ]
     },
@@ -1940,6 +2005,11 @@
           "path": "base/trial-banner/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/trial-banner.json"
+        },
+        {
+          "path": "base/trial-banner/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/trial-banner.json"
         }
       ]
     },
@@ -2011,6 +2081,11 @@
           "path": "base/notifications/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/notifications.json"
+        },
+        {
+          "path": "base/notifications/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/notifications.json"
         },
         {
           "path": "base/notifications/error.tsx",
@@ -2114,9 +2189,19 @@
           "target": "messages/en/pricing.json"
         },
         {
+          "path": "base/pricing/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/pricing.json"
+        },
+        {
           "path": "base/pricing/messages/plans/en.json",
           "type": "registry:file",
           "target": "messages/en/plans.json"
+        },
+        {
+          "path": "base/pricing/messages/plans/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/plans.json"
         }
       ]
     },
@@ -2152,6 +2237,11 @@
           "path": "base/checkout/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/checkout.json"
+        },
+        {
+          "path": "base/checkout/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/checkout.json"
         }
       ]
     },
@@ -2200,6 +2290,11 @@
           "path": "base/billing-settings/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/billing-settings.json"
+        },
+        {
+          "path": "base/billing-settings/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/billing-settings.json"
         },
         {
           "path": "base/billing-settings/error.tsx",
@@ -2269,6 +2364,11 @@
           "path": "base/feature-gating/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/feature-gating.json"
+        },
+        {
+          "path": "base/feature-gating/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/feature-gating.json"
         }
       ]
     },
@@ -2336,6 +2436,11 @@
           "path": "base/payment-poll/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/payment-poll.json"
+        },
+        {
+          "path": "base/payment-poll/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/payment-poll.json"
         }
       ]
     },
@@ -2392,6 +2497,11 @@
           "path": "base/profile-settings/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/profile-settings.json"
+        },
+        {
+          "path": "base/profile-settings/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/profile-settings.json"
         },
         {
           "path": "base/profile-settings/error.tsx",
@@ -2461,6 +2571,11 @@
           "target": "messages/en/onboarding.json"
         },
         {
+          "path": "base/onboarding/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/onboarding.json"
+        },
+        {
           "path": "base/onboarding/error.tsx",
           "type": "registry:page",
           "target": "app/[locale]/onboarding/error.tsx"
@@ -2504,6 +2619,11 @@
           "path": "base/dashboard/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/dashboard.json"
+        },
+        {
+          "path": "base/dashboard/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/dashboard.json"
         },
         {
           "path": "base/dashboard/error.tsx",
@@ -2598,6 +2718,11 @@
           "path": "base/artifacts/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/artifacts.json"
+        },
+        {
+          "path": "base/artifacts/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/artifacts.json"
         }
       ],
       "css": {
@@ -2653,6 +2778,11 @@
           "path": "base/privacy-settings/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/privacy-settings.json"
+        },
+        {
+          "path": "base/privacy-settings/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/privacy-settings.json"
         },
         {
           "path": "base/privacy-settings/error.tsx",
@@ -2940,6 +3070,11 @@
           "path": "base/chat/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/chat.json"
+        },
+        {
+          "path": "base/chat/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/chat.json"
         }
       ],
       "css": {
@@ -2963,6 +3098,11 @@
           "path": "base/chat-panel/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/chat-panel.json"
+        },
+        {
+          "path": "base/chat-panel/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/chat-panel.json"
         }
       ]
     },
@@ -2988,6 +3128,11 @@
           "path": "base/chat-widget/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/chat-widget.json"
+        },
+        {
+          "path": "base/chat-widget/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/chat-widget.json"
         }
       ]
     },
@@ -3024,6 +3169,11 @@
           "path": "base/chat-share/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/chat-share.json"
+        },
+        {
+          "path": "base/chat-share/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/chat-share.json"
         }
       ]
     },
@@ -3219,6 +3369,11 @@
           "path": "base/admin-console/messages/en.json",
           "type": "registry:file",
           "target": "messages/en/admin-console.json"
+        },
+        {
+          "path": "base/admin-console/messages/mn.json",
+          "type": "registry:file",
+          "target": "messages/mn/admin-console.json"
         }
       ]
     }

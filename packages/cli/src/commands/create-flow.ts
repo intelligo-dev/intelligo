@@ -23,6 +23,7 @@ import {
   formatCreateResult,
   formatNextSteps,
   isOccupied,
+  localeVariables,
 } from "./create.js";
 import { recordItems, syncApply, type SyncContext } from "./sync.js";
 import { resolveRegistryDir } from "../registry-bundle.js";
@@ -57,6 +58,8 @@ export type CreateFlags = {
   linkWorkspace: boolean;
   /** `--name <name>` — the project name, when it is not the directory's. */
   name?: string;
+  /** `--locales en,mn` — the app's locales, the default first. */
+  locales?: string[];
   /** Flags `create` does not know. */
   unknown: string[];
 };
@@ -73,6 +76,7 @@ export function parseCreateFlags(args: readonly string[]): CreateFlags {
   let target: string | undefined;
   let items: string[] | undefined;
   let name: string | undefined;
+  let locales: string[] | undefined;
   const unknown: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
@@ -82,6 +86,13 @@ export function parseCreateFlags(args: readonly string[]): CreateFlags {
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
+    } else if (arg === "--locales" || arg.startsWith("--locales=")) {
+      const list = arg === "--locales" ? (args[++i] ?? "") : arg.slice(10);
+      locales = list
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (locales.length === 0) unknown.push(arg);
     } else if (arg === "--name" || arg.startsWith("--name=")) {
       const value = arg === "--name" ? args[++i] : arg.slice(7);
       if (!value?.trim() || value.startsWith("-")) unknown.push(arg);
@@ -98,6 +109,7 @@ export function parseCreateFlags(args: readonly string[]): CreateFlags {
     target,
     items,
     name,
+    locales,
     unknown,
     all: args.includes("--all"),
     yes: args.includes("--yes") || args.includes("-y"),
@@ -189,7 +201,7 @@ export async function runCreate(
   if (!target) {
     if (!interactive) {
       console.error(
-        "Usage: intelligo create <directory> [--items a,b | --all] [--yes] [--no-install] [--name <name>]"
+        "Usage: intelligo create <directory> [--items a,b | --all] [--locales en,mn] [--yes] [--no-install] [--name <name>]"
       );
       return 1;
     }
@@ -212,6 +224,7 @@ export async function runCreate(
   // Before any question about items, so nobody chooses pages for an
   // app that is then refused.
   assertNotOccupied(target);
+  localeVariables(flags.locales);
 
   // 2. What.
   let selected: string[] = [];
@@ -245,6 +258,7 @@ export async function runCreate(
     linkWorkspace: flags.linkWorkspace,
     name: flags.name,
     packageManager,
+    locales: flags.locales,
   });
   const appRoot = path.resolve(target);
   if (interactive) {

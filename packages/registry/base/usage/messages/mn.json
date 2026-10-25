@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "title": "Хэрэглээ"
+  },
+  "page": {
+    "title": "Хэрэглээ",
+    "description": "Энэ ажлын орон зайн AI хэрэглээ, төлбөр болон багцын хязгаарыг хянах."
+  },
+  "scope": {
+    "own": "Та энэ ажлын орон зайд өөрийн илгээсэн хүсэлтүүдийг харж байна. Эзэмшигч болон админууд ажлын орон зайн нийт дүн, зардал болон багцын хязгаарыг хардаг."
+  },
+  "emptyState": {
+    "defaultTitle": "Одоогоор хэрэглээ алга",
+    "defaultDescription": "Энэ ажлын орон зай AI хүсэлт илгээж эхэлмэгц хэрэглээ энд харагдана.",
+    "cta": "Чат эхлүүлэх"
+  },
+  "recordsTable": {
+    "title": "Сүүлийн хүсэлтүүд",
+    "emptyTitle": "Одоогоор хүсэлт алга",
+    "emptyDescription": "Энэ ажлын орон зайн сүүлийн AI хүсэлтүүд энд харагдана.",
+    "empty": "—",
+    "columns": {
+      "started": "Эхэлсэн",
+      "capability": "Чадвар",
+      "model": "Загвар",
+      "status": "Төлөв",
+      "tokens": "Токен",
+      "chargedAmount": "Төлбөрийн дүн"
+    },
+    "status": {
+      "succeeded": "Амжилттай",
+      "running": "Ажиллаж байна",
+      "settling": "Тооцоо хийгдэж байна",
+      "failed": "Амжилтгүй",
+      "refused": "Татгалзсан"
+    }
+  },
+  "summaryCards": {
+    "periods": {
+      "7d": "Сүүлийн 7 хоног",
+      "30d": "Сүүлийн 30 хоног",
+      "current": "Энэ сар"
+    },
+    "tokensUsed": "Ашигласан токен",
+    "chargedAmount": "Төлбөрийн дүн",
+    "requests": "Хүсэлт",
+    "planQuota": "Багцын хязгаар",
+    "quotaBadge": {
+      "limitReached": "Хязгаарт хүрсэн",
+      "nearingLimit": "Хязгаарт ойртож байна",
+      "withinLimit": "Хязгаарын дотор"
+    },
+    "quotaAllowance": "{planName} багцын сарын хязгаарын {percentage}%",
+    "quotaAllowanceCredit": "{planName} багцын сарын хязгаарын {percentage}% (кредитийн үлдэгдэл)",
+    "trialCredits": "Туршилтын кредит",
+    "trialRemaining": "{count} үлдсэн",
+    "trialOf": "нийт {count}",
+    "periodFailed": "Тэр хугацааг ачаалж чадсангүй. Өмнөх хугацааг харуулж байна.",
+    "noPlan": "Багцгүй"
+  },
+  "unavailable": {
+    "title": "Хэрэглээ харах боломжгүй"
+  },
+  "errors": {
+    "loadOverview": "Хэрэглээг ачаалж чадсангүй",
+    "loadSummary": "Хэрэглээний хураангуйг ачаалж чадсангүй"
+  },
+  "chart": {
+    "title": "Өдөр тутмын токен",
+    "ariaLabel": "Энэ хугацаанд өдөр бүр ашигласан токен",
+    "tokensOnDay": "{tokens, number} токен",
+    "tableCaption": "Энэ хугацааны өдөр тутмын хэрэглээ",
+    "columns": {
+      "date": "Огноо",
+      "tokens": "Токен",
+      "requests": "Хүсэлт"
+    }
+  }
+}

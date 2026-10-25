@@ -1,0 +1,31 @@
+{
+  "genericFeature": "Энэ боломж",
+  "genericPlan": "төлбөртэй багц",
+  "prompt": {
+    "title": "{feature}-д {plan} шаардлагатай",
+    "description": "{feature} нь {plan} багцаас дээш багцад багтдаг. Үүнийг нээхийн тулд багцаа ахиулна уу.",
+    "currentPlan": "Та одоо <strong>{plan}</strong> багц ашиглаж байна.",
+    "cta": "{plan} руу ахиулах"
+  },
+  "inline": {
+    "message": "{feature}-г ашиглахын тулд {plan} руу ахиулна уу",
+    "cta": "Багц ахиулах"
+  },
+  "quota": {
+    "remaining": "{count, plural, one {# удаа үлдсэн} other {# удаа үлдсэн}}",
+    "exhausted": "Та багцдаа багтсан бүх хэрэглээгээ ашиглаж дууслаа."
+  },
+  "paywall": {
+    "title": "Бүрэн хувилбарыг үзэх",
+    "description": "Үүнийг бүтнээр нь уншиж, үүсгэсэн бүх зүйлээ хадгалахын тулд багцаа ахиулна уу.",
+    "cta": "Багц ахиулах"
+  },
+  "limitDialog": {
+    "title": "Та бүх {action}-аа ашиглаж дууслаа",
+    "genericAction": "багтсан хэрэглээ",
+    "description": "Та {limit}-аас {used}-г ашигласан. Багцаа ахиулбал хязгаар шууд нэмэгдэнэ.",
+    "planCta": "{plan} руу ахиулах — {price}",
+    "planCtaNoPrice": "{plan} руу ахиулах",
+    "dismiss": "Одоо биш"
+  }
+}

@@ -22,6 +22,7 @@ import {
   deriveNames,
   formatNextSteps,
   linksWorkspace,
+  localeVariables,
   packageNameFor,
   registryVariable,
 } from "./create.js";
@@ -251,6 +252,63 @@ describe("createApp", () => {
     expect(readFileSync(path.join(target, "package.json"), "utf8")).toContain(
       '"@intelligo-dev/core": "workspace:*"'
     );
+  });
+});
+
+describe("locales", () => {
+  function writeRoutingTemplate() {
+    writeFileSync(
+      path.join(templatesDir, "app-scaffold", "routing.tpl"),
+      "locales: __LOCALES__, defaultLocale: __DEFAULT_LOCALE__\n"
+    );
+    const catalogue = JSON.parse(
+      readFileSync(path.join(templatesDir, "manifest.json"), "utf8")
+    ) as { "app-scaffold": { files: unknown[] } };
+    catalogue["app-scaffold"].files.push({
+      template: "app-scaffold/routing.tpl",
+      target: "i18n/routing.ts",
+    });
+    writeFileSync(
+      path.join(templatesDir, "manifest.json"),
+      JSON.stringify(catalogue)
+    );
+  }
+
+  it("routes the locales asked for, the first as the default", () => {
+    writeRoutingTemplate();
+    const target = path.join(workdir, "acme");
+    createApp({
+      target,
+      templatesDir,
+      frameworkVersion: "1.2.3",
+      locales: ["mn", "en"],
+    });
+    expect(readFileSync(path.join(target, "i18n/routing.ts"), "utf8")).toBe(
+      'locales: ["mn","en"], defaultLocale: "mn"\n'
+    );
+    expect(
+      readManifest(target)!.features["app-scaffold"]!.variables
+    ).toMatchObject({ __LOCALES__: '["mn","en"]', __DEFAULT_LOCALE__: '"mn"' });
+  });
+
+  it("routes English alone when none are asked for, as an app made before the flag", () => {
+    writeRoutingTemplate();
+    const target = path.join(workdir, "acme");
+    create(target);
+    expect(readFileSync(path.join(target, "i18n/routing.ts"), "utf8")).toBe(
+      'locales: ["en"], defaultLocale: "en"\n'
+    );
+  });
+
+  it("refuses what is not a language tag", () => {
+    expect(() => localeVariables(["en", "Mongolian"])).toThrow(
+      /--locales takes language tags/
+    );
+    expect(localeVariables(["en", "pt-BR", "en"])).toEqual({
+      __LOCALES__: '["en","pt-BR"]',
+      __DEFAULT_LOCALE__: '"en"',
+    });
+    expect(localeVariables(undefined)).toEqual({});
   });
 });
 
