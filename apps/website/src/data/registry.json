@@ -3042,6 +3042,25 @@
       ]
     },
     {
+      "name": "chat-mastra",
+      "type": "registry:lib",
+      "title": "Chat: Mastra binding",
+      "description": "A Mastra agent through the chat transport: a streamTurn for lib/chat-server-config.ts that runs a turn with agent.stream, renders it through @mastra/ai-sdk as the AI SDK's chunks, and settles the whole run's usage — every step of a tool loop, and the finished steps of a stopped or failed turn. Optional Mastra memory scoped to the conversation, the workspace and the user. Consumer-owned. Requires the chat item.",
+      "dependencies": [
+        "ai",
+        "@mastra/ai-sdk",
+        "@mastra/core",
+        "@intelligo-dev/chat"
+      ],
+      "files": [
+        {
+          "path": "base/chat-mastra/lib/chat-mastra.ts",
+          "type": "registry:lib",
+          "target": "lib/chat-mastra.ts"
+        }
+      ]
+    },
+    {
       "name": "admin-console",
       "type": "registry:block",
       "title": "Admin Console",

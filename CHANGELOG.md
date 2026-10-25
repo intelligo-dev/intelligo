@@ -21,6 +21,16 @@ none, or what a consumer changes (with the steps under `### Upgrading`);
 since the previous stable release, or for a prerelease since the
 previous tag of its series.
 
+## [Unreleased]
+
+### Added
+
+- **The `chat-mastra` item: a Mastra agent through the chat transport.**
+  - `mastraStreamTurn({ agent, maxSteps, memory, streamOptions })` is a `streamTurn` for `lib/chat-server-config.ts`. It runs the turn with `agent.stream` and renders it through `@mastra/ai-sdk` as the AI SDK's chunks. Auth, admission, persistence and settlement stay the transport's.
+  - Usage settles from the whole run: every step of a tool loop, never the last step alone. A stopped turn, or one that failed after a step finished, settles the steps that finished. A reader that cancels the stream no longer leaves the turn waiting on Mastra's `totalUsage`.
+  - `memory: true` keeps the thread in Mastra memory, with the conversation as the thread and the workspace and the user as the resource, and sends only the new message. `agent` may be a function of the turn, such as `mastra.getAgent(turn.agent.id)`.
+  - The `chat` item's server config points at the item instead of a hand-written binding.
+
 ## [1.3.0-next.1] — 2026-10-22
 
 - **Upgrade:** recommended — the chat transport no longer reads client-sent history on a new conversation's first turn

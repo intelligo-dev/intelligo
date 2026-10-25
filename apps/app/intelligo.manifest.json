@@ -444,7 +444,7 @@
       "lib/chat-renderers.tsx": "af8694d45a74309217bb74f1c42bdf6115e592616b72a17dc41b62843adadf0b",
       "lib/chat-canvas-config.tsx": "4c6c07a5e273c237b0ef7a807ba4226bced2428c7d68787fc5377b597530de86",
       "lib/chat-config.tsx": "3b31beb464512b132dff5e188614e226c74d4e1f3ac5a39d54bf406744685230",
-      "lib/chat-server-config.ts": "2caf2b5c26594123f2ff08fc4d38f8595b3026f429ef6b88bee6379776fb8504",
+      "lib/chat-server-config.ts": "343ef3079d2c32f97ad72fe73895cdaf1e95b17d500498adcb5c87b48666186c",
       "lib/chat-widget-config.tsx": "e391c314f6a9ce850686084583cf3d09e21b2bea6827bd31aadddd947a733c94",
       "lib/admin-nav.ts": "f35d1b91e572ce9ce930b5b80c263857cdfe96d71c6238d265b72269f03d2d48",
       "lib/admin-config.tsx": "462af2d9883e3ec6559cbb1f8a216d4fe6f769c506ed46a2b449cb0c051f9925"
