@@ -25,6 +25,10 @@ previous tag of its series.
 
 ### Added
 
+- **Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 in `DEFAULT_MODELS`.**
+  - The ids are `anthropic/claude-haiku-5-5` ($0.10 / $0.50 per million tokens), `anthropic/claude-sonnet-5-5` ($2 / $10) and `anthropic/claude-opus-5-5` ($4 / $20), each with every capability. An app that registered them by hand can drop its own entries.
+  - Haiku 5.5 carries the rate for prompts of 100K tokens or fewer. A product that sends longer prompts registers it at Anthropic's higher rate ($0.50 / $2.50).
+  - `anthropic/claude-sonnet-4-6` stays.
 - **`numberCheck` in the chat server config: a reply's numbers must come from what the model was shown.**
   - When a reply ends, each of its numbers is compared by value and unit with the system prompt, the reader's own messages and every tool output on record, this turn's included. A reply holding any other number gets `note(numbers, turn)` as one more text part of the same message. It runs on `streamText` and `streamTurn` replies alike, and is off when unset.
   - A tool part the client posted counts only as the stored transcript says it ran. The assistant's earlier words are never a source.
