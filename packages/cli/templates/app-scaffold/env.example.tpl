@@ -35,6 +35,26 @@ INTELLIGO_BILLING_PRODUCT=__APP_SLUG__
 # GITHUB_CLIENT_ID=
 # GITHUB_CLIENT_SECRET=
 
+# Any other OAuth 2.0 or OpenID Connect provider: list its id, then its
+# OAUTH_<ID>_* values (better-auth 1.7 or later). Its button appears once
+# they are complete; the callback URL is NEXT_PUBLIC_APP_URL +
+# /api/auth/callback/<id>.
+# DISCOVERY_URL replaces the three endpoint URLs for an OIDC provider. A
+# provider whose profile lacks an email for some accounts needs a profile
+# mapper (registerOAuthProfileMapper in the composition root).
+# OAUTH_PROVIDERS=
+# OAUTH_<ID>_CLIENT_ID=
+# OAUTH_<ID>_CLIENT_SECRET=
+# OAUTH_<ID>_AUTHORIZATION_URL=
+# OAUTH_<ID>_TOKEN_URL=
+# OAUTH_<ID>_USERINFO_URL=
+# OAUTH_<ID>_DISCOVERY_URL=
+# OAUTH_<ID>_SCOPES=
+# OAUTH_<ID>_NAME=
+# The profile field identifying the account when it is not `id` (plain
+# OAuth) or `sub` (OpenID Connect), e.g. a plain provider answering `sub`.
+# OAUTH_<ID>_SUBJECT_FIELD=
+
 # Behind proxies: the headers the auth rate limiter reads the client's
 # address from, in order (default x-forwarded-for), and the proxies'
 # CIDRs, so a forwarded chain is read up to the first hop not among them.

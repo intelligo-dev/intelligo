@@ -3,11 +3,11 @@
   "frameworkVersion": "1.3.0-next.1",
   "features": {
     "app-scaffold": {
-      "templateVersion": "1.24.0",
+      "templateVersion": "1.25.0",
       "files": [
         {
           "path": "package.json",
-          "hash": "e2cd3a4dd33a9afb57f573c396c492df8c200ec9361c5c73f15d948419a72f42"
+          "hash": "daf9372b35b285068fb113ca9d9e4c1d78f47089782b1e32470496abadd1c046"
         },
         {
           "path": "next.config.mjs",
@@ -19,7 +19,7 @@
         },
         {
           "path": ".env.example",
-          "hash": "7debe7d6be9226a8d2618552029c1e3ca9de7216c343c1cc90340e2058726f5b"
+          "hash": "4fd96eac8924e24728131d43eab9b079e997138f9f3c0a306896d73e8cfe3054"
         },
         {
           "path": "lib/intelligo.ts",
@@ -240,16 +240,16 @@
       "app/[locale]/(app)/settings/workspace/error.tsx": "ef783e42d0d3e8e650984b9982570a1601a02345eb2b0e9e86b50b771b1fa861",
       "components/ui/spinner.tsx": "d7b69424289bb620d4c5a6d1d6c8c41c2bd76ab12ef59122287c79a525514c51",
       "app/[locale]/(auth)/layout.tsx": "60a72838a1dac208430ff5426dacfebcd16e626327116e676ce4912c53b54481",
-      "app/[locale]/(auth)/login/page.tsx": "004aaba7464357a9fd46c17075a5f12ace00bc45255a43844d46585f6ad740c5",
+      "app/[locale]/(auth)/login/page.tsx": "085911f1888784ecf3c919cd430b960369b722e23afe469ff2ec71ffb07e715a",
       "components/auth/auth-card.tsx": "caf6515a15f636910b8249f3012777fc0487c02f9ceeab0ad03d6677fc36ee77",
       "components/auth/login-form.tsx": "7694be4c158ff87337f1e0c543407098a786c1d0a520ed250c677e8b24a52c8d",
-      "components/auth/social-login-buttons.tsx": "fdb76e236bae1c106bbefe59838f55c52a5954c8e0f425444660d51b042d64bb",
+      "components/auth/social-login-buttons.tsx": "346191b656b69d75b76fbc24b23bedcd9c9cf27653208d88a97f5b0625022a5f",
       "lib/auth-validation.ts": "673531325e3c0b99f9cb2bc9ee5e62c91bcabc4e67b43523fba5bb942879dc7f",
       "app/[locale]/(auth)/error.tsx": "80a8be834add636005e53ff20bfe6be5568f3c3d0a4ab3b0479974a0bb13cbae",
       "app/[locale]/(auth)/restore-account/page.tsx": "59fe7e0028dda71000b42d2a3aef5a88d70e2d60e2a4dcadf1239f78427f0849",
       "components/auth/restore-account-form.tsx": "75467817d10b97f0b50b426986d33414962b71e31ffcd0a0252ebd91bb44bb41",
       "actions/account-restore.ts": "cfd586007b778e81377ff849a30bb5d41e143e59fcf6a756805568dadaad5e9b",
-      "app/[locale]/(auth)/signup/page.tsx": "3c268dd749957e5d0ca620158298222b531bc8196fbedbc022e768052a5f1adc",
+      "app/[locale]/(auth)/signup/page.tsx": "b198385c34d2e0804db07db14cd4f5de5ec4c721cb0542c222b510284ff9d60a",
       "components/auth/signup-form.tsx": "f79f6ce393b66f332d2463a8424ffc6e49f410b8c4766cd6312215603cb0b984",
       "app/[locale]/(auth)/forgot-password/page.tsx": "e462df6ad068a6dcf64653bbdb789a1e1047dfafeb6a4f75c07e2eeb53dc066d",
       "app/[locale]/(auth)/reset-password/page.tsx": "250b28a41e3acba041e4045372152c9797a8408ee1e17c9c39858780806fd818",
@@ -728,6 +728,7 @@
         "socialLogin.connecting": "c461411bac27",
         "socialLogin.continueWithGoogle": "5f8da8223b29",
         "socialLogin.continueWithGithub": "5a241ad50ade",
+        "socialLogin.continueWith": "f899a2aaca3d",
         "socialLogin.orContinueWith": "c13e366aca09",
         "socialLogin.failed": "2187275dd0d7",
         "restore.metadataTitle": "056d6fd80c0e",

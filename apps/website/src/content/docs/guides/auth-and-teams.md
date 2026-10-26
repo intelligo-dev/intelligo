@@ -83,8 +83,44 @@ For an earlier redirect, `hasSessionCookie(request)` from `@intelligo-dev/auth/e
 | Password reset     | Always; the link goes through the same email provider                   |
 | Google             | `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set                   |
 | GitHub             | `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set                   |
+| Any OAuth/OIDC     | `OAUTH_PROVIDERS` names it and its `OAUTH_<ID>_*` values are complete   |
 
 Without an email provider the verification link only reaches the server console, which is why it is not required then. The login and signup pages show a provider's button only when its variables are set; [Environment](/docs/getting-started/environment) lists them. Sessions last seven days and extend while in use.
+
+### Another identity provider
+
+A product built on a market's own platform signs in with that platform: a national job site, a bank, a company's SSO. Declare it in the environment, and its button joins Google's and GitHub's:
+
+```ini title=".env.local"
+OAUTH_PROVIDERS=acme
+OAUTH_ACME_NAME=Acme
+OAUTH_ACME_CLIENT_ID=…
+OAUTH_ACME_CLIENT_SECRET=…
+OAUTH_ACME_AUTHORIZATION_URL=https://id.example.com/oauth/authorize
+OAUTH_ACME_TOKEN_URL=https://id.example.com/oauth/token
+OAUTH_ACME_USERINFO_URL=https://id.example.com/oauth/user-info
+OAUTH_ACME_SUBJECT_FIELD=sub
+```
+
+`SUBJECT_FIELD` names the profile field that identifies the account at the provider for good. Better-Auth reads `id` from a plain OAuth provider and `sub` from an OpenID Connect one; a plain provider that answers with `sub`, as this one does, says so here. An account whose profile lacks the field is refused, never signed in without an identity.
+
+Register `NEXT_PUBLIC_APP_URL` + `/api/auth/callback/acme` with the provider. Declared providers need `better-auth` 1.7 or later in the app, where they are social providers like Google's. An OpenID Connect provider takes `OAUTH_<ID>_DISCOVERY_URL` instead of the three endpoints. PKCE is on unless `OAUTH_<ID>_PKCE=false`. A provider configured by half is left out, and `validateEnv` says what it is missing.
+
+The endpoints are configuration; how the provider's profile becomes a user is code. Register a mapper from the composition root when the profile's fields are not `email`, `name` and `image`, or when some accounts have no email, which Better-Auth requires:
+
+```ts title="lib/intelligo.ts"
+import { registerOAuthProfileMapper } from "@intelligo-dev/auth";
+
+registerOAuthProfileMapper("acme", (profile) => ({
+  name: [profile.first_name, profile.last_name].filter(Boolean).join(" "),
+  image: typeof profile.picture === "string" ? profile.picture : undefined,
+  // Phone-only accounts: an address nobody receives mail at, unverified.
+  email: profile.email ?? `${String(profile.sub)}@users.acme.invalid`,
+  emailVerified: Boolean(profile.email) && profile.email_verified === true,
+}));
+```
+
+The mapper is read on every sign-in, so registering it after the auth module loaded is in time.
 
 In client components, import from `@intelligo-dev/auth/client`: `authClient`, plus `useSession`, `signIn`, `signUp` and `signOut` taken from it. Server code never imports this subpath.
 

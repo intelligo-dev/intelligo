@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { getAuthSession } from "@intelligo-dev/auth";
+import { getAuthSession, listOAuthProviders } from "@intelligo-dev/auth";
 
 import { redirect } from "@/i18n/navigation";
 import { returnPath } from "@/lib/auth-validation";
@@ -71,7 +71,11 @@ export default async function LoginPage({
             <AlertDescription>{t("card.passwordReset")}</AlertDescription>
           </Alert>
         )}
-        <SocialLoginButtons providers={providers} next={next} />
+        <SocialLoginButtons
+          providers={providers}
+          oauthProviders={listOAuthProviders()}
+          next={next}
+        />
         <LoginForm next={next} />
       </div>
     </AuthCard>

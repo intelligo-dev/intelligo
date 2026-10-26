@@ -30,6 +30,15 @@ previous tag of its series.
   - Usage settles from the whole run: every step of a tool loop, never the last step alone. A stopped turn, or one that failed after a step finished, settles the steps that finished. A reader that cancels the stream no longer leaves the turn waiting on Mastra's `totalUsage`.
   - `memory: true` keeps the thread in Mastra memory, with the conversation as the thread and the workspace and the user as the resource, and sends only the new message. `agent` may be a function of the turn, such as `mastra.getAgent(turn.agent.id)`.
   - The `chat` item's server config points at the item instead of a hand-written binding.
+- **Any OAuth 2.0 or OpenID Connect provider beside Google and GitHub.**
+  - `OAUTH_PROVIDERS` names the providers. Each one's endpoints come from `OAUTH_<ID>_*`: client id and secret, plus authorization, token and user-info URLs, or one discovery URL. Scopes, a display name, `PKCE=false` and `SUBJECT_FIELD` are optional. `SUBJECT_FIELD` names the field that identifies the account, for a plain OAuth provider that answers with `sub` rather than `id`.
+  - They reach Better-Auth through its `genericOAuth` plugin, as social providers. This needs `better-auth` 1.7 or later in the app: `@intelligo-dev/auth` and `@intelligo-dev/next` now accept `~1.7.0` beside `~1.6.30`, and a new app is scaffolded with `~1.7.11` (app-scaffold template 1.25.0). An app on 1.6 keeps Google and GitHub and upgrades `better-auth` to add others. The callback is `/api/auth/callback/<id>`.
+  - `registerOAuthProfileMapper(providerId, mapper)` from `@intelligo-dev/auth` maps a provider's profile to the user from the composition root. Use it for a provider with phone-only accounts, which have no email. It is read on every sign-in.
+  - `listOAuthProviders()` lists the declared providers. `readOAuthProviders(env)` in `@intelligo-dev/core/env` parses them.
+  - A provider configured by half is left out, and `validateEnv` warns naming what is missing.
+- **`auth-login` and `auth-signup` show one button per declared provider.**
+  - `SocialLoginButtons` takes `oauthProviders` and signs in with `authClient.signIn.social`.
+  - The `auth-login` namespace gains `socialLogin.continueWith`.
 - **A "Reference data" guide covering tables every workspace reads and none owns.**
   - Covers the global table, why it may hold nothing that belongs to a workspace or a user, a script that replaces its rows in one transaction (`node --env-file=.env.local scripts/load-*.ts`), and reading it from a tool.
   - The scaffold's `lib/db/schema.ts` comment names the exception beside its "scope them to a workspace" rule. app-scaffold template 1.24.0.

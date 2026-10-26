@@ -23,6 +23,169 @@ const ENV_PAIRS: ReadonlyArray<readonly string[]> = [
   ["STORAGE_BUCKET", "STORAGE_ACCESS_KEY_ID", "STORAGE_SECRET_ACCESS_KEY"],
 ];
 
+/**
+ * An OAuth 2.0 or OpenID Connect provider declared in the environment,
+ * beside the built-in Google and GitHub: an identity provider of the
+ * product's own market (a national platform, a company's SSO).
+ *
+ *   OAUTH_PROVIDERS=acme
+ *   OAUTH_ACME_CLIENT_ID=…
+ *   OAUTH_ACME_CLIENT_SECRET=…
+ *   OAUTH_ACME_AUTHORIZATION_URL=https://…/oauth/authorize
+ *   OAUTH_ACME_TOKEN_URL=https://…/oauth/token
+ *   OAUTH_ACME_USERINFO_URL=https://…/oauth/user-info
+ *   # OAUTH_ACME_DISCOVERY_URL replaces the three URLs for an OIDC provider
+ *   # OAUTH_ACME_SCOPES="profile email"   OAUTH_ACME_NAME=Acme
+ *   # OAUTH_ACME_PKCE=false               for a provider that rejects PKCE
+ *   # OAUTH_ACME_SUBJECT_FIELD=sub        the profile field naming the account
+ *
+ * The endpoints are configuration; how a provider's profile becomes a
+ * user (a provider that has no email for some accounts) is code, and is
+ * registered from the composition root with `registerOAuthProfileMapper`
+ * from `@intelligo-dev/auth`.
+ */
+export interface OAuthProviderEnv {
+  /** Lowercase, `[a-z][a-z0-9-]*`; the callback is `/api/auth/callback/<id>`. */
+  id: string;
+  /** What the sign-in button says. Defaults to the id. */
+  name: string;
+  clientId: string;
+  clientSecret?: string;
+  discoveryUrl?: string;
+  authorizationUrl?: string;
+  tokenUrl?: string;
+  userInfoUrl?: string;
+  scopes?: string[];
+  pkce: boolean;
+  /**
+   * The profile field that identifies the account at the provider, for
+   * good: Better-Auth reads `sub` from an OpenID Connect provider and `id`
+   * from a plain OAuth one, and a plain one that answers with `sub` (or
+   * `user_id`) names it here. Never a field that can change, like email.
+   */
+  subjectField?: string;
+}
+
+const OAUTH_PROVIDER_ID = /^[a-z][a-z0-9-]{0,31}$/;
+const PROFILE_FIELD = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
+/** Ids Better-Auth's own social providers answer to; a generic one may not take them. */
+const BUILT_IN_OAUTH_IDS = new Set(["google", "github", "credential"]);
+
+function oauthUrl(value: string | undefined): string | undefined | null {
+  const v = value?.trim();
+  if (!v) return undefined;
+  try {
+    const url = new URL(v);
+    const local = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    return url.protocol === "https:" || (url.protocol === "http:" && local)
+      ? v
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The providers `OAUTH_PROVIDERS` names, each read from its
+ * `OAUTH_<ID>_*` variables. A provider configured incompletely is left
+ * out and named in `problems`: a button that cannot sign anyone in is
+ * worse than none.
+ */
+export function readOAuthProviders(
+  env: Record<string, string | undefined> = process.env
+): { providers: OAuthProviderEnv[]; problems: string[] } {
+  const providers: OAuthProviderEnv[] = [];
+  const problems: string[] = [];
+  const ids = (env.OAUTH_PROVIDERS ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+  for (const id of ids) {
+    if (!OAUTH_PROVIDER_ID.test(id)) {
+      problems.push(
+        `OAUTH_PROVIDERS names "${id}" — an id is lowercase letters, digits and dashes, starting with a letter`
+      );
+      continue;
+    }
+    if (BUILT_IN_OAUTH_IDS.has(id)) {
+      problems.push(
+        `OAUTH_PROVIDERS names "${id}", a built-in provider — configure it with its own variables`
+      );
+      continue;
+    }
+    if (providers.some((p) => p.id === id)) {
+      problems.push(`OAUTH_PROVIDERS names "${id}" twice`);
+      continue;
+    }
+
+    const prefix = `OAUTH_${id.toUpperCase().replace(/-/g, "_")}_`;
+    const read = (key: string) => env[prefix + key]?.trim() || undefined;
+    const urlKeys = {
+      discoveryUrl: "DISCOVERY_URL",
+      authorizationUrl: "AUTHORIZATION_URL",
+      tokenUrl: "TOKEN_URL",
+      userInfoUrl: "USERINFO_URL",
+    } as const;
+    const urls = Object.fromEntries(
+      Object.entries(urlKeys).map(([field, key]) => [
+        field,
+        oauthUrl(read(key)),
+      ])
+    ) as Record<keyof typeof urlKeys, string | undefined | null>;
+    const bad = (Object.keys(urlKeys) as (keyof typeof urlKeys)[])
+      .filter((field) => urls[field] === null)
+      .map((field) => prefix + urlKeys[field]);
+    const clientId = read("CLIENT_ID");
+    const missing: string[] = [];
+    if (!clientId) missing.push(`${prefix}CLIENT_ID`);
+    if (!urls.discoveryUrl) {
+      if (!urls.authorizationUrl) missing.push(`${prefix}AUTHORIZATION_URL`);
+      if (!urls.tokenUrl) missing.push(`${prefix}TOKEN_URL`);
+      if (!urls.userInfoUrl) missing.push(`${prefix}USERINFO_URL`);
+    }
+    if (bad.length > 0) {
+      problems.push(
+        `${bad.join(", ")} not an https URL (http is accepted for localhost only) — OAuth provider "${id}" is off`
+      );
+      continue;
+    }
+    if (missing.length > 0) {
+      problems.push(
+        `OAuth provider "${id}" is off until ${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} set${urls.discoveryUrl === undefined && missing.length > 1 ? ` (or ${prefix}DISCOVERY_URL for an OpenID Connect provider)` : ""}`
+      );
+      continue;
+    }
+    const subjectField = read("SUBJECT_FIELD");
+    if (subjectField && !PROFILE_FIELD.test(subjectField)) {
+      problems.push(
+        `${prefix}SUBJECT_FIELD is "${subjectField}", not a field name — OAuth provider "${id}" is off`
+      );
+      continue;
+    }
+
+    const scopes = read("SCOPES")
+      ?.split(/[\s,]+/)
+      .filter(Boolean);
+    providers.push({
+      id,
+      name: read("NAME") ?? id,
+      clientId: clientId!,
+      ...(read("CLIENT_SECRET") ? { clientSecret: read("CLIENT_SECRET") } : {}),
+      ...(urls.discoveryUrl ? { discoveryUrl: urls.discoveryUrl } : {}),
+      ...(urls.authorizationUrl
+        ? { authorizationUrl: urls.authorizationUrl }
+        : {}),
+      ...(urls.tokenUrl ? { tokenUrl: urls.tokenUrl } : {}),
+      ...(urls.userInfoUrl ? { userInfoUrl: urls.userInfoUrl } : {}),
+      ...(scopes && scopes.length > 0 ? { scopes } : {}),
+      pkce: read("PKCE")?.toLowerCase() !== "false",
+      ...(subjectField ? { subjectField } : {}),
+    });
+  }
+  return { providers, problems };
+}
+
 // Only variables the framework itself reads. A model provider's key is
 // absent on purpose: which provider a deployment calls is the product's
 // choice, and its SDK reports a missing key on the first request.
@@ -182,6 +345,8 @@ export function validateEnv(options: { extra?: readonly EnvVar[] } = {}): {
       );
     }
   }
+
+  warnings.push(...readOAuthProviders().problems);
 
   for (const group of ENV_PAIRS) {
     const set = group.filter((name) => process.env[name]?.trim());
