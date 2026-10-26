@@ -1354,35 +1354,19 @@ cap — stay the transport's and cannot be overridden from here.
 Another runtime than `streamText` — a Mastra agent, an eve session —
 binds `streamTurn` and keeps everything else: auth, the rate limit,
 the gate, admission, persistence and settlement stay the transport's
-(the framework carries no helper for any AI framework; the
-binding is yours, here). Mastra, natively, through `@mastra/ai-sdk`:
+(no package imports an AI framework; the binding is a file you own).
+
+Mastra: install the `chat-mastra` item and bind `mastraStreamTurn`
+from `@/lib/chat-mastra` — it settles every step of a tool loop and
+the finished steps of a stopped turn, and scopes Mastra memory to
+the conversation, the workspace and the user:
 
 ```ts
-import { handleChatStream } from "@mastra/ai-sdk";
-import { mastra } from "@/lib/mastra";
-
-streamTurn: async (turn, prepared, { abortSignal }) => {
-  const stream = await handleChatStream({
-    mastra,
-    agentId: turn.agent.id,
-    version: "v7",
-    params: {
-      messages: prepared.messages,
-      // Scoped to the workspace and the user, like every stored
-      // row: a resource of the user alone shares working memory
-      // and recall across every workspace they belong to.
-      memory: {
-        thread: turn.conversationId,
-        resource: `${turn.workspaceId}:${turn.userId}`,
-      },
-      abortSignal,
-    },
-  });
-  // `usage`: settle from the agent's whole-run totals. Mastra reports
-  // them on its finish chunk; read them off the stream, or run
-  // `agent.stream()` yourself and resolve `result.totalUsage`.
-  return { stream, usage };
-},
+streamTurn: mastraStreamTurn({
+  agent: (turn) => mastra.getAgent(turn.agent.id),
+  maxSteps: 6,
+  memory: true,
+}),
 ```
 
 eve: install the `chat-eve` item and bind `eveStreamTurn` from
@@ -3321,7 +3305,31 @@ Anything user-authored that reaches a system prompt — a stored summary, profil
 
 ## With Mastra
 
-`@intelligo-dev/mastra` brackets a native Mastra call without importing Mastra:
+In the chat, a Mastra agent runs the turn through the `chat-mastra` item, and the transport keeps auth, admission, persistence and settlement:
+
+```bash
+pnpm exec shadcn add @intelligo/chat-mastra
+```
+
+```ts title="lib/chat-server-config.ts"
+import { mastraStreamTurn } from "@/lib/chat-mastra";
+import { mastra } from "@/mastra";
+
+export const chatServerConfig: ChatServerConfig = {
+  executions,
+  // The registered model the agent is built on: admission prices it.
+  model: { defaultId: "anthropic/claude-haiku-5-5" },
+  streamTurn: mastraStreamTurn({
+    agent: (turn) => mastra.getAgent(turn.agent.id),
+    maxSteps: 6,
+    memory: true,
+  }),
+};
+```
+
+The turn settles the whole run's usage, every model call of a tool loop rather than the last, and a stopped turn settles the steps that finished. `memory: true` keeps the thread in Mastra memory under the conversation, with the workspace and the user together as the resource, and sends only the new message. `streamOptions(turn, prepared)` passes more of `agent.stream`'s options, such as a `requestContext` that carries the workspace to the tools. Tools that require approval are Mastra's suspend and resume, which the binding does not bridge.
+
+Outside the chat, `@intelligo-dev/mastra` brackets a native Mastra call without importing Mastra:
 
 ```ts
 import { runWithExecution } from "@intelligo-dev/mastra";

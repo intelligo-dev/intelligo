@@ -69,7 +69,31 @@ Anything user-authored that reaches a system prompt — a stored summary, profil
 
 ## With Mastra
 
-`@intelligo-dev/mastra` brackets a native Mastra call without importing Mastra:
+In the chat, a Mastra agent runs the turn through the `chat-mastra` item, and the transport keeps auth, admission, persistence and settlement:
+
+```bash
+pnpm exec shadcn add @intelligo/chat-mastra
+```
+
+```ts title="lib/chat-server-config.ts"
+import { mastraStreamTurn } from "@/lib/chat-mastra";
+import { mastra } from "@/mastra";
+
+export const chatServerConfig: ChatServerConfig = {
+  executions,
+  // The registered model the agent is built on: admission prices it.
+  model: { defaultId: "anthropic/claude-haiku-5-5" },
+  streamTurn: mastraStreamTurn({
+    agent: (turn) => mastra.getAgent(turn.agent.id),
+    maxSteps: 6,
+    memory: true,
+  }),
+};
+```
+
+The turn settles the whole run's usage, every model call of a tool loop rather than the last, and a stopped turn settles the steps that finished. `memory: true` keeps the thread in Mastra memory under the conversation, with the workspace and the user together as the resource, and sends only the new message. `streamOptions(turn, prepared)` passes more of `agent.stream`'s options, such as a `requestContext` that carries the workspace to the tools. Tools that require approval are Mastra's suspend and resume, which the binding does not bridge.
+
+Outside the chat, `@intelligo-dev/mastra` brackets a native Mastra call without importing Mastra:
 
 ```ts
 import { runWithExecution } from "@intelligo-dev/mastra";
