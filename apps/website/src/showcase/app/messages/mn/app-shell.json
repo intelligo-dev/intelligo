@@ -1,0 +1,28 @@
+{
+  "skipToContent": "Агуулга руу шилжих",
+  "sidebar": {
+    "label": "Үндсэн цэс",
+    "toggle": "Хажуугийн самбарыг нээх/хаах",
+    "close": "Хажуугийн самбарыг хаах",
+    "nav": {
+      "dashboard": "Хянах самбар",
+      "chat": "Чат",
+      "artifacts": "Баримт бичиг"
+    }
+  },
+  "userMenu": {
+    "profile": "Профайл",
+    "workspaceSettings": "Ажлын орон зайн тохиргоо",
+    "usage": "Хэрэглээ",
+    "pricing": "Үнэ",
+    "theme": "Загвар харагдац",
+    "themeLight": "Цайвар",
+    "themeDark": "Бараан",
+    "themeSystem": "Систем",
+    "signOut": "Гарах"
+  },
+  "workspaceSwitcher": {
+    "workspacesLabel": "Ажлын орон зайнууд",
+    "switchFailed": "Ажлын орон зайг сольж чадсангүй. Дахин оролдоно уу."
+  }
+}

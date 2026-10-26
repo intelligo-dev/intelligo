@@ -12,7 +12,8 @@ A scaffolded app has `@intelligo-dev/cli` as a dev dependency; run it with `pnpm
 ```text
 intelligo <command>
 intelligo create [dir]      Scaffold an app, then install the registry pages you pick
-                            (--items a,b | --all, --yes, --no-install, --name <name>)
+                            (--items a,b | --all, --locales en,mn, --yes, --no-install,
+                            --name <name>)
 intelligo doctor            Report configuration and migration-chain problems, and,
                             with DATABASE_URL, the database's (--offline skips it;
                             --json for CI)
@@ -56,6 +57,10 @@ dependencies (from the root of a parent pnpm workspace when the app is
 a member of one), and only once you approve the exact commands, or
 pass `--yes`. `--no-install` stops after the scaffold and prints them
 instead.
+
+`--locales en,mn` routes those locales, the first as the default. The
+registry ships English and Mongolian copy; another locale renders in
+English until the app translates it.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/create.ts)
 

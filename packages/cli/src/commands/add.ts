@@ -80,17 +80,26 @@ export type AddOptions = {
   variables?: Record<string, string>;
 };
 
+/**
+ * Placeholders with a value of their own, for an app recorded before the
+ * placeholder existed: it renders as that app's file did then, so
+ * re-generating it is no change.
+ */
+const DEFAULT_VARIABLES: Readonly<Record<string, string>> = {
+  __LOCALES__: '["en"]',
+  __DEFAULT_LOCALE__: '"en"',
+};
+
 export function substitute(
   contents: string,
   variables: Record<string, string> | undefined
 ): string {
-  if (!variables) return contents;
   // An app recorded before its package name had a variable of its own
   // was named `__APP_NAME__`.
-  if (variables.__APP_NAME__ && !variables.__PACKAGE_NAME__) {
+  if (variables?.__APP_NAME__ && !variables.__PACKAGE_NAME__) {
     variables = { ...variables, __PACKAGE_NAME__: variables.__APP_NAME__ };
   }
-  return Object.entries(variables).reduce(
+  return Object.entries({ ...DEFAULT_VARIABLES, ...variables }).reduce(
     (out, [key, value]) => out.split(key).join(value),
     contents
   );

@@ -22,6 +22,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
+import { messageArguments } from "../../packages/cli/src/commands/sync-messages";
 import {
   DISSOLVED_PACKAGES,
   PACKAGES_DIR,
@@ -829,6 +830,78 @@ describe("registry", () => {
           shipsMessages,
           `item "${item.name}" ships no ${target} (per-item next-intl namespace)`
         ).toBe(true);
+      });
+    });
+  });
+
+  /**
+   * A translation the registry ships beside English is held to English:
+   * every message file has its twin in every shipped locale, with the
+   * same keys and the same ICU arguments. A key added in English and
+   * not translated fails here, so a release never ships a locale that
+   * silently falls back.
+   */
+  describe("shipped locales", () => {
+    const items = readSourceItems().items;
+    const english = items.flatMap((item) =>
+      item.files
+        .filter((file) => /^messages\/en\/[^/]+\.json$/.test(file.target ?? ""))
+        .map((file) => ({ item: item.name, file }))
+    );
+    const locales = [
+      ...new Set(
+        items.flatMap((item) =>
+          item.files
+            .map((file) => /^messages\/([^/]+)\//.exec(file.target ?? "")?.[1])
+            .filter((locale): locale is string => !!locale && locale !== "en")
+        )
+      ),
+    ];
+
+    it("ships Mongolian", () => {
+      expect(locales).toContain("mn");
+    });
+
+    type Messages = { [key: string]: string | Messages };
+    const leaves = (messages: Messages, prefix = ""): [string, string][] =>
+      Object.entries(messages).flatMap(([key, value]) =>
+        typeof value === "string"
+          ? [[`${prefix}${key}`, value] as [string, string]]
+          : leaves(value, `${prefix}${key}.`)
+      );
+    const read = (relative: string) =>
+      JSON.parse(
+        readFileSync(path.join(REGISTRY_DIR, relative), "utf8")
+      ) as Messages;
+    // A plural or select branch's body (`one {credit}`) is text, not an
+    // argument: drop the braces that open one before reading names.
+    const argumentsOf = (text: string) =>
+      [
+        ...messageArguments(
+          text.replace(/(\b(?:zero|one|two|few|many|other)|=\d+)\s*\{/g, "$1 (")
+        ),
+      ].sort();
+
+    describe.each(locales)("%s", (locale) => {
+      it.each(english)("translates $item's $file.target", ({ item, file }) => {
+        const twinTarget = file.target!.replace(
+          "messages/en/",
+          `messages/${locale}/`
+        );
+        const twin = items
+          .find((i) => i.name === item)!
+          .files.find((f) => f.target === twinTarget);
+        expect(twin, `item "${item}" ships no ${twinTarget}`).toBeDefined();
+
+        const source = leaves(read(file.path));
+        const translated = new Map(leaves(read(twin!.path)));
+        expect([...translated.keys()]).toEqual(source.map(([key]) => key));
+        for (const [key, text] of source) {
+          expect(
+            argumentsOf(translated.get(key) ?? ""),
+            `${twin!.path} ${key}`
+          ).toEqual(argumentsOf(text));
+        }
       });
     });
   });

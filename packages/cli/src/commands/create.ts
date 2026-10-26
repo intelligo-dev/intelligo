@@ -15,6 +15,10 @@
  * a member of one), and only once you approve the exact commands, or
  * pass `--yes`. `--no-install` stops after the scaffold and prints them
  * instead.
+ *
+ * `--locales en,mn` routes those locales, the first as the default. The
+ * registry ships English and Mongolian copy; another locale renders in
+ * English until the app translates it.
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
@@ -55,6 +59,12 @@ export type CreateOptions = {
    * would otherwise stop the install over.
    */
   packageManager?: PackageManager;
+  /**
+   * The app's locales, the default first — `["en", "mn"]`. The registry
+   * ships English and Mongolian; another locale renders in English until
+   * the app translates it. English alone when unset.
+   */
+  locales?: string[];
 };
 
 /** A package name and product slug derived from the directory name. */
@@ -157,6 +167,7 @@ export function createApp(options: CreateOptions): AddResult {
         : `^${options.frameworkVersion}`,
       ...workspaceRootVariable(target),
       ...registryVariable(options.frameworkVersion, options.linkWorkspace),
+      ...localeVariables(options.locales),
     },
   });
 
@@ -177,6 +188,30 @@ export function createApp(options: CreateOptions): AddResult {
 }
 
 const STANDALONE = "pnpm-standalone";
+
+/** A BCP 47 tag of the shape next-intl routes on: `en`, `mn`, `pt-BR`. */
+const LOCALE = /^[a-z]{2,3}(?:-[A-Z]{2})?$/;
+
+/**
+ * `__LOCALES__` and `__DEFAULT_LOCALE__` for i18n/routing.ts: the first
+ * locale is the default. None given leaves the template's English.
+ */
+export function localeVariables(
+  locales: readonly string[] | undefined
+): Record<string, string> {
+  if (!locales || locales.length === 0) return {};
+  const bad = locales.filter((locale) => !LOCALE.test(locale));
+  if (bad.length > 0) {
+    throw new Error(
+      `--locales takes language tags such as en,mn — not ${bad.join(", ")}.`
+    );
+  }
+  const unique = [...new Set(locales)];
+  return {
+    __LOCALES__: JSON.stringify(unique),
+    __DEFAULT_LOCALE__: JSON.stringify(unique[0]),
+  };
+}
 
 /**
  * `__WORKSPACE_ROOT__` for the scaffold's next.config: a JavaScript

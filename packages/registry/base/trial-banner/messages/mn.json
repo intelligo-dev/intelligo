@@ -1,0 +1,8 @@
+{
+  "label": "Туршилтын хугацаа",
+  "expiresToday": "Өнөөдөр дуусна!",
+  "daysRemaining": "{days, plural, one {# хоног үлдсэн} other {# хоног үлдсэн}}",
+  "creditsLeft": "Туршилтын {initial} кредитээс {remaining} үлдсэн",
+  "upgrade": "Ахиулах",
+  "dismiss": "Мэдэгдлийг хаах"
+}

@@ -25,6 +25,12 @@ previous tag of its series.
 
 ### Added
 
+- **Mongolian copy for every registry item.**
+  - Each item ships `messages/mn/<item>.json` beside its English file. An architecture test holds each translation to the English keys and ICU arguments, so a key added in English fails the build until it is translated.
+  - `intelligo sync` updates a shipped translation the same way it updates English: values the app has not changed take the new text, and reworded ones are kept.
+- **`intelligo create --locales en,mn` routes the app in those locales, with the first as the default.**
+  - The scaffold's `i18n/routing.ts` takes them from the new `__LOCALES__` and `__DEFAULT_LOCALE__` template variables. An app made without the flag renders as before, English alone, and re-generating it changes nothing.
+  - app-scaffold template 1.26.0.
 - **The `chat-mastra` item: a Mastra agent through the chat transport.**
   - `mastraStreamTurn({ agent, maxSteps, memory, streamOptions })` is a `streamTurn` for `lib/chat-server-config.ts`. It runs the turn with `agent.stream` and renders it through `@mastra/ai-sdk` as the AI SDK's chunks. Auth, admission, persistence and settlement stay the transport's.
   - Usage settles from the whole run: every step of a tool loop, never the last step alone. A stopped turn, or one that failed after a step finished, settles the steps that finished. A reader that cancels the stream no longer leaves the turn waiting on Mastra's `totalUsage`.

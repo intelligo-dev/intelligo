@@ -1468,6 +1468,16 @@ Source: https://intelligo.dev/docs/registry/i18n
 
 Each block reads its copy through next-intl under a namespace named after the block, and ships `messages/en/<block>.json`. The scaffold's `i18n/request.ts` merges every file in `messages/<locale>/` by filename, so the namespace is the filename.
 
+## Languages the registry ships
+
+Every block also ships `messages/mn/<block>.json`, its Mongolian copy, kept to the English keys and ICU arguments by an architecture test. Start an app in both with:
+
+```bash
+pnpm dlx @intelligo-dev/cli create my-app --locales mn,en
+```
+
+The first locale is the default. `intelligo sync` updates a shipped translation the way it updates English: a value you have not changed takes the new release's text, and one you reworded is kept.
+
 ## Add a locale
 
 1. Add it to `i18n/routing.ts`. The scaffold writes:
@@ -3029,7 +3039,8 @@ A scaffolded app has `@intelligo-dev/cli` as a dev dependency; run it with `pnpm
 ```text
 intelligo <command>
 intelligo create [dir]      Scaffold an app, then install the registry pages you pick
-                            (--items a,b | --all, --yes, --no-install, --name <name>)
+                            (--items a,b | --all, --locales en,mn, --yes, --no-install,
+                            --name <name>)
 intelligo doctor            Report configuration and migration-chain problems, and,
                             with DATABASE_URL, the database's (--offline skips it;
                             --json for CI)
@@ -3073,6 +3084,10 @@ dependencies (from the root of a parent pnpm workspace when the app is
 a member of one), and only once you approve the exact commands, or
 pass `--yes`. `--no-install` stops after the scaffold and prints them
 instead.
+
+`--locales en,mn` routes those locales, the first as the default. The
+registry ships English and Mongolian copy; another locale renders in
+English until the app translates it.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/create.ts)
 
