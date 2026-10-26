@@ -21,7 +21,10 @@ export {
   triggerTeamMemberJoinedNotification,
 } from "./triggers";
 
-/** Creates a notification; `metadata` is stored as a JSON string. */
+/**
+ * Creates a notification. `metadata` is stored as JSON text; the returned
+ * row carries it parsed, as the reads do.
+ */
 export async function createNotification(params: CreateNotificationParams) {
   const [notification] = await db
     .insert(notifications)
@@ -35,7 +38,7 @@ export async function createNotification(params: CreateNotificationParams) {
     })
     .returning();
 
-  return notification;
+  return parseMetadata(notification!);
 }
 
 /** The user's unread notifications, newest first. */

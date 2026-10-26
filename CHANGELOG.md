@@ -64,9 +64,17 @@ previous tag of its series.
   - `vocabularies` sets the languages read. `ENGLISH_NUMBERS` is the default and `MONGOLIAN_NUMBERS` ships too. `NumberVocabulary` describes another language.
   - `numberCheckStream`, `unsourcedNumbers`, `onRecord`, `sourcesOf` and `createNumberReader` are exported for checks outside the transport.
 
+### Changed
+
+- **`createNotification` returns its metadata parsed**, as `getNotifications` and `getUnreadNotifications` do. It returned the stored JSON text. The column stays JSON text.
+
 ### Fixed
 
 - **The logger keeps token counts.** A key holding the `token` fragment was redacted whatever it held, so `inputTokens`, `outputTokens` and `cacheReadTokens` logged as `[REDACTED]`. A finite number under a key ending in `tokens` or `token_count` is now kept; a string under any key containing `token` is still redacted.
+
+### Upgrading
+
+Code that parsed the metadata `createNotification` returned (`JSON.parse(created.metadata)`) reads `created.metadata` as an object instead.
 
 ## [1.3.0-next.1] — 2026-10-22
 
