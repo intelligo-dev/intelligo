@@ -59,6 +59,7 @@ route to get:
 | `streamTurn(turn, prepared)`  | Another runtime than `streamText` — a Mastra agent, an eve session — returning the AI SDK's chunks and the run's usage; everything else stays the transport's                                                                       |
 | `models`                      | The models a request may pick; anything else is `FEATURE_GATED` (`model_not_allowed`)                                                                                                                                               |
 | `prepareMessages(turn, msgs)` | What the model is shown — windowing, summaries, injected context                                                                                                                                                                    |
+| `numberCheck`                 | Whether a reply's numbers must come from the system prompt, the reader's words or a tool output on record; a reply holding any other gets `note(numbers, turn)` under it. `vocabularies` sets the languages (English by default)    |
 | `agent.generation`            | How the model samples — temperature, a token ceiling, a tool choice, a seed: an allowlist of the `streamText` options that do not touch settlement. `maxOutputTokens` defaults to the registered model's, the figure admission held |
 | `attachments`                 | Which file parts are accepted; `mode: "stored"` uploads them through the storage port and signs URLs for the model only. The upload route applies its own `rateLimit`, the `featureKey` gate, `maxUnclaimedBytes` and `admitUpload` |
 | `maxBodyBytes`                | The largest request body read, after the caller is authenticated; 8 MiB plus four inline files at the policy's size by default                                                                                                      |
@@ -122,6 +123,41 @@ bill at another model's price.
 seam that receives the turn — `resolveAgent`, `prepareMessages`, tools,
 `streamTurn`, `persist`, the `onTurn` events — so what one of them reads
 (a profile, a retrieval result) the next can use without a second query.
+
+### Numbers from tools only
+
+A product whose figures must come from its tools — prices, salaries,
+scores — can forbid made-up numbers in the prompt, and `numberCheck`
+checks it after the fact:
+
+```ts
+numberCheck: {
+  note: (numbers) =>
+    `_Check these figures: ${numbers.join(", ")} came from no tool._`,
+  vocabularies: [ENGLISH_NUMBERS, MONGOLIAN_NUMBERS],
+},
+```
+
+When a reply ends, every number in it is compared by value and unit with
+the system prompt, the reader's own messages and every tool output on
+record, this turn's included. A tool part the client posted counts only
+as the stored transcript says it ran, and the assistant's earlier words
+are never a source. A reply holding any other number gets the note as
+one more text part of the same message, which is persisted with it; the
+text already streamed is not rewritten.
+
+Values match however they are written (`$2,500,000`, `2.5 million`,
+`2 500 000 USD`), and a unit must match too: a tool's `priceUsd: 25` does
+not source "25%". Units come from currency signs and codes, `%`, the
+field's name (`minMnt`, `sharePercent`, `testScore`, `startYear`) and the
+vocabulary's words. A small count (0–12) and a year said as a year pass
+bare; a date is checked whole; an amount spelled out in words is
+refused. Ids, slugs, links and UUIDs source nothing. A `NumberVocabulary`
+is a language's scale words, unit words, year and date phrasing and
+number words; `ENGLISH_NUMBERS` is the default and `MONGOLIAN_NUMBERS`
+ships beside it. `numberCheckStream`, `unsourcedNumbers` and
+`createNumberReader` are exported for a runtime that checks outside the
+transport.
 
 `sanitizeForShare` strips a transcript
 for a public page; who a share link opens for is

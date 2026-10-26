@@ -226,6 +226,58 @@ export const DEFAULT_MODELS: readonly ModelPricing[] = [
     },
   },
   {
+    // Priced for prompts of 100K tokens or fewer. Above that Anthropic
+    // charges $0.50 / $2.50, which one flat rate cannot express: a
+    // product that sends longer prompts registers its own entry at the
+    // higher rate rather than under-bill them.
+    id: "anthropic/claude-haiku-5-5",
+    provider: "anthropic",
+    model: "claude-haiku-5-5",
+    displayName: "Claude Haiku 5.5",
+    costPerMInputTokens: 0.1,
+    costPerMOutputTokens: 0.5,
+    maxOutputTokens: 8_000,
+    capabilities: {
+      thinking: true,
+      toolCall: true,
+      vision: true,
+      webSearch: true,
+      codeExec: true,
+    },
+  },
+  {
+    id: "anthropic/claude-sonnet-5-5",
+    provider: "anthropic",
+    model: "claude-sonnet-5-5",
+    displayName: "Claude Sonnet 5.5",
+    costPerMInputTokens: 2.0,
+    costPerMOutputTokens: 10.0,
+    maxOutputTokens: 8_000,
+    capabilities: {
+      thinking: true,
+      toolCall: true,
+      vision: true,
+      webSearch: true,
+      codeExec: true,
+    },
+  },
+  {
+    id: "anthropic/claude-opus-5-5",
+    provider: "anthropic",
+    model: "claude-opus-5-5",
+    displayName: "Claude Opus 5.5",
+    costPerMInputTokens: 4.0,
+    costPerMOutputTokens: 20.0,
+    maxOutputTokens: 8_000,
+    capabilities: {
+      thinking: true,
+      toolCall: true,
+      vision: true,
+      webSearch: true,
+      codeExec: true,
+    },
+  },
+  {
     id: "openai/text-embedding-3-small",
     kind: "embedding",
     provider: "openai",

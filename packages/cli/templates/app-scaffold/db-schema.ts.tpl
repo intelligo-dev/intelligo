@@ -22,6 +22,12 @@
  * Then `pnpm db:generate` writes the migration into ./drizzle and
  * `pnpm db:migrate` applies it after the framework's chain.
  *
+ * The one exception is reference data every workspace reads the same —
+ * public holidays, rates, published benchmarks — loaded by a script
+ * from outside the app. Such a table has no workspace column, so it
+ * holds nothing that belongs to a workspace or a user. See the
+ * "Reference data" guide.
+ *
  * Intelligo never reads these tables (every table has one
  * owner), so their shape is entirely yours.
  */

@@ -186,6 +186,9 @@ const SHIPPED_CAPABILITIES: Readonly<Record<string, ModelCapabilities>> = {
   "openai/gpt-5.4-mini": EVERY_CAPABILITY,
   "openai/o4-mini": EVERY_CAPABILITY,
   "anthropic/claude-sonnet-4-6": EVERY_CAPABILITY,
+  "anthropic/claude-haiku-5-5": EVERY_CAPABILITY,
+  "anthropic/claude-sonnet-5-5": EVERY_CAPABILITY,
+  "anthropic/claude-opus-5-5": EVERY_CAPABILITY,
   // Embedding models run no turn, so they claim nothing a router reads.
   "openai/text-embedding-3-small": NO_CAPABILITY,
   "openai/text-embedding-3-large": NO_CAPABILITY,
@@ -200,9 +203,9 @@ const EMBEDDING_PRICES: Readonly<Record<string, number>> = {
 };
 
 describe("DEFAULT_MODELS", () => {
-  it("ships six chat models and three embedding models", () => {
+  it("ships nine chat models and three embedding models", () => {
     expect(DEFAULT_MODELS.filter((m) => modelKind(m) === "chat")).toHaveLength(
-      6
+      9
     );
     expect(
       DEFAULT_MODELS.filter((m) => modelKind(m) === "embedding").map(
