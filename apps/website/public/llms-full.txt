@@ -2272,6 +2272,7 @@ route to get:
 | `streamTurn(turn, prepared)`  | Another runtime than `streamText` — a Mastra agent, an eve session — returning the AI SDK's chunks and the run's usage; everything else stays the transport's                                                                       |
 | `models`                      | The models a request may pick; anything else is `FEATURE_GATED` (`model_not_allowed`)                                                                                                                                               |
 | `prepareMessages(turn, msgs)` | What the model is shown — windowing, summaries, injected context                                                                                                                                                                    |
+| `numberCheck`                 | Whether a reply's numbers must come from the system prompt, the reader's words or a tool output on record; a reply holding any other gets `note(numbers, turn)` under it. `vocabularies` sets the languages (English by default)    |
 | `agent.generation`            | How the model samples — temperature, a token ceiling, a tool choice, a seed: an allowlist of the `streamText` options that do not touch settlement. `maxOutputTokens` defaults to the registered model's, the figure admission held |
 | `attachments`                 | Which file parts are accepted; `mode: "stored"` uploads them through the storage port and signs URLs for the model only. The upload route applies its own `rateLimit`, the `featureKey` gate, `maxUnclaimedBytes` and `admitUpload` |
 | `maxBodyBytes`                | The largest request body read, after the caller is authenticated; 8 MiB plus four inline files at the policy's size by default                                                                                                      |
@@ -2335,6 +2336,41 @@ bill at another model's price.
 seam that receives the turn — `resolveAgent`, `prepareMessages`, tools,
 `streamTurn`, `persist`, the `onTurn` events — so what one of them reads
 (a profile, a retrieval result) the next can use without a second query.
+
+### Numbers from tools only
+
+A product whose figures must come from its tools — prices, salaries,
+scores — can forbid made-up numbers in the prompt, and `numberCheck`
+checks it after the fact:
+
+```ts
+numberCheck: {
+  note: (numbers) =>
+    `_Check these figures: ${numbers.join(", ")} came from no tool._`,
+  vocabularies: [ENGLISH_NUMBERS, MONGOLIAN_NUMBERS],
+},
+```
+
+When a reply ends, every number in it is compared by value and unit with
+the system prompt, the reader's own messages and every tool output on
+record, this turn's included. A tool part the client posted counts only
+as the stored transcript says it ran, and the assistant's earlier words
+are never a source. A reply holding any other number gets the note as
+one more text part of the same message, which is persisted with it; the
+text already streamed is not rewritten.
+
+Values match however they are written (`$2,500,000`, `2.5 million`,
+`2 500 000 USD`), and a unit must match too: a tool's `priceUsd: 25` does
+not source "25%". Units come from currency signs and codes, `%`, the
+field's name (`minMnt`, `sharePercent`, `testScore`, `startYear`) and the
+vocabulary's words. A small count (0–12) and a year said as a year pass
+bare; a date is checked whole; an amount spelled out in words is
+refused. Ids, slugs, links and UUIDs source nothing. A `NumberVocabulary`
+is a language's scale words, unit words, year and date phrasing and
+number words; `ENGLISH_NUMBERS` is the default and `MONGOLIAN_NUMBERS`
+ships beside it. `numberCheckStream`, `unsourcedNumbers` and
+`createNumberReader` are exported for a runtime that checks outside the
+transport.
 
 `sanitizeForShare` strips a transcript
 for a public page; who a share link opens for is
@@ -3331,7 +3367,7 @@ Prompts, tools and other runtimes are covered in [Bring your agent](/docs/guides
 
 ## Register every model you run
 
-A model id is a key into a price registry. Nothing registers itself: your [composition root](/docs/concepts/composition-root) does it. The scaffold's `composeIntelligo()` in `lib/intelligo.ts` calls `registerModels(DEFAULT_MODELS)`. The shipped catalogue holds six chat models — `google/gemini-2.5-flash`, `google/gemini-2.5-pro`, `openai/gpt-5-mini`, `openai/gpt-5.4-mini`, `openai/o4-mini` and `anthropic/claude-sonnet-4-6` — and three embedding models: `openai/text-embedding-3-small`, `openai/text-embedding-3-large` and `google/gemini-embedding-001`. Its prices are the providers' published USD rates and go stale, and so does availability: a provider can stop serving a model to newly created keys while existing keys keep it, so try the model you pick with your own key before you ship it. Register your own entry for a contracted rate or a model the catalogue does not know; `registerModel` replaces an entry with the same `id`.
+A model id is a key into a price registry. Nothing registers itself: your [composition root](/docs/concepts/composition-root) does it. The scaffold's `composeIntelligo()` in `lib/intelligo.ts` calls `registerModels(DEFAULT_MODELS)`. The shipped catalogue holds nine chat models — `google/gemini-2.5-flash`, `google/gemini-2.5-pro`, `openai/gpt-5-mini`, `openai/gpt-5.4-mini`, `openai/o4-mini`, `anthropic/claude-sonnet-4-6`, `anthropic/claude-haiku-5-5`, `anthropic/claude-sonnet-5-5` and `anthropic/claude-opus-5-5` — and three embedding models: `openai/text-embedding-3-small`, `openai/text-embedding-3-large` and `google/gemini-embedding-001`. Its prices are the providers' published USD rates and go stale, and so does availability: a provider can stop serving a model to newly created keys while existing keys keep it, so try the model you pick with your own key before you ship it. Register your own entry for a contracted rate or a model the catalogue does not know; `registerModel` replaces an entry with the same `id`. An entry holds one rate: `anthropic/claude-haiku-5-5` carries Anthropic's rate for prompts of 100K tokens or fewer ($0.10 / $0.50 per million), and a product that sends longer prompts registers it at the higher rate ($0.50 / $2.50) so they are not under-billed.
 
 ```ts title="lib/intelligo.ts"
 import {
@@ -4201,6 +4237,108 @@ Most of an app built on the framework is installed source the registry already t
 - **Your tools and prompts** — the functions an agent calls, with the model mocked.
 - **Your Server Actions** — parse, call the service, map its typed error. Mock the service's package and assert the mapping.
 - **Your own tables** — against a real Postgres, skipped when there is none: `describe.skipIf(!process.env.TEST_DATABASE_URL)`.
+
+---
+
+# Reference data
+
+Source: https://intelligo.dev/docs/guides/reference-data
+
+Most of an app's tables hold a workspace's data and are scoped to it. Some hold facts about the world that every workspace reads the same: public holidays, a currency's history, aggregate benchmarks computed elsewhere. This page is about those. At its end the app has a global table, a script that replaces its contents in one transaction, and a tool that reads it.
+
+## The one table without a workspace
+
+`lib/db/schema.ts` says to scope every table to a workspace. A reference table is the exception, and it stays one only while nothing in it belongs to a workspace or a user:
+
+```ts title="lib/db/schema.ts"
+import { date, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
+
+/** Public holidays by country. Global: every workspace reads the same rows. */
+export const publicHolidays = pgTable(
+  "public_holidays",
+  {
+    country: text("country").notNull(),
+    day: date("day").notNull(),
+    name: text("name").notNull(),
+    source: text("source").notNull(),
+    loadedAt: timestamp("loaded_at").defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.country, t.day] })]
+);
+```
+
+Keep a `source` column: when a figure is questioned, the row says where it came from. `pnpm db:generate` writes the migration and `pnpm db:migrate` applies it after the framework's chain.
+
+The rule that keeps it safe is the read path. Workspace tables are filtered by `withWorkspaceFilter`. A reference table has nothing to filter, so it must hold nothing to leak: no ids of people, no workspace's own numbers, no rows built from fewer people than you would publish.
+
+## Load it with a script
+
+Reference data arrives from outside the app: an export, a nightly job, a file a colleague computed. Load it with a script you run, not from a request. Replace the whole table in one transaction, so a reader sees the old rows or the new ones and never half of each. The app already has `pg` as a pinned devDependency, so only its types are added:
+
+```bash
+pnpm add -D @types/pg
+```
+
+```ts title="scripts/load-holidays.ts"
+/**
+ * Replaces public_holidays with data/holidays.json, in one transaction.
+ *
+ *   node --env-file=.env.local scripts/load-holidays.ts
+ */
+import { readFileSync } from "node:fs";
+
+import pg from "pg";
+
+type Holiday = { country: string; day: string; name: string };
+
+const rows = JSON.parse(
+  readFileSync("data/holidays.json", "utf8")
+) as Holiday[];
+const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+await client.connect();
+try {
+  await client.query("begin");
+  await client.query("delete from public_holidays");
+  for (const row of rows) {
+    await client.query(
+      "insert into public_holidays (country, day, name, source) values ($1, $2, $3, $4)",
+      [row.country, row.day, row.name, "data/holidays.json"]
+    );
+  }
+  await client.query("commit");
+  console.log(`public_holidays: ${rows.length} rows`);
+} catch (error) {
+  await client.query("rollback");
+  throw error;
+} finally {
+  await client.end();
+}
+```
+
+Node 22.18 and later run a `.ts` file directly. The script imports nothing from the app, so it needs no path alias and no bundler. Add it to `package.json` as `"data:holidays": "node --env-file=.env.local scripts/load-holidays.ts"`. Keep the data file itself out of the repository when it is large or not yours to publish, and `.gitignore` its folder.
+
+## Read it from a tool
+
+The table is read like any other: through the app's `db`, with no workspace filter, because there is none to apply.
+
+```ts title="lib/holidays.ts"
+import { and, eq, gte } from "drizzle-orm";
+
+import { db } from "@intelligo-dev/core/db";
+
+import { publicHolidays } from "@/lib/db/schema";
+
+export function upcomingHolidays(country: string, from: string) {
+  return db
+    .select()
+    .from(publicHolidays)
+    .where(and(eq(publicHolidays.country, country), gte(publicHolidays.day, from)))
+    .orderBy(publicHolidays.day)
+    .limit(10);
+}
+```
+
+A tool that hands these rows to the model gives it a source for every date and figure it states.
 
 ---
 

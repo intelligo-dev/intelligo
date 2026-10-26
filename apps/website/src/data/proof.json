@@ -4,8 +4,8 @@
   "published": "1.2.4",
   "onNpm": true,
   "packages": 11,
-  "testFiles": 195,
-  "testCases": 1984,
+  "testFiles": 196,
+  "testCases": 2011,
   "architectureTests": 29,
   "registryItems": 29
 }
