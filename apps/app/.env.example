@@ -18,6 +18,11 @@ BETTER_AUTH_SECRET=
 # are built from it, so production needs the public https URL.
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
+# More origins sign-in accepts besides NEXT_PUBLIC_APP_URL: a tunnel or a
+# second port in development. Comma-separated, no spaces. A session
+# belongs to the host it was made on, so sign in again on each.
+# BETTER_AUTH_TRUSTED_ORIGINS=https://my-tunnel.example.dev,http://localhost:3001
+
 # Which product's plans the billing engine bills against. Your
 # composition root also sets this via setDefaultProductSlug(); the
 # variable is here so CLI tooling can check it without booting the app.

@@ -31,6 +31,10 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The dev server refuses its assets to another host. Opening the app
+  // through a tunnel in development needs that host here (and in
+  // BETTER_AUTH_TRUSTED_ORIGINS, for sign-in).
+  // allowedDevOrigins: ["*.my-tunnel.example.dev"],
   // Inside the framework's own workspace these packages resolve to
   // TypeScript source; from npm they are compiled JavaScript, which this
   // leaves as it is.

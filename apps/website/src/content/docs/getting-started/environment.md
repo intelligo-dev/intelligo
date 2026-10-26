@@ -18,6 +18,7 @@ order: 2
 | `DATABASE_POOL_MAX` | Connections the pool may open per server process (default 10). A request waits at most 15 seconds for one before it fails. |
 | `BETTER_AUTH_SECRET` | At least 32 characters. Generate with: openssl rand -base64 32 |
 | `NEXT_PUBLIC_APP_URL` | Where users reach the app. Auth callbacks, email links and redirects are built from it, so production needs the public https URL. The scaffold sets `http://localhost:3000`. |
+| `BETTER_AUTH_TRUSTED_ORIGINS` | More origins sign-in accepts besides NEXT_PUBLIC_APP_URL: a tunnel or a second port in development. Comma-separated, no spaces. A session belongs to the host it was made on, so sign in again on each. The scaffold sets `https://my-tunnel.example.dev,http://localhost:3001`. |
 | `INTELLIGO_BILLING_PRODUCT` | Which product's plans the billing engine bills against. Your composition root also sets this via setDefaultProductSlug(); the variable is here so CLI tooling can check it without booting the app. The scaffold sets `your-app`. |
 
 ## Optional — everything works locally without these

@@ -22,6 +22,15 @@
  *   export const shellConfig: ShellConfig = {
  *     bannerTop: TrialBanner,
  *   };
+ *
+ * With the chat item installed, its conversation history goes in the
+ * sidebar — the chat page has no list of its own:
+ *
+ *   import { ChatHistory } from "@/components/chat/chat-history";
+ *
+ *   export const shellConfig: ShellConfig = {
+ *     sidebarContent: ChatHistory,
+ *   };
  */
 
 import type { ComponentType } from "react";
