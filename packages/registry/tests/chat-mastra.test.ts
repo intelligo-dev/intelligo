@@ -120,11 +120,16 @@ const turn = {
   userId: "user-1",
 } as unknown as ChatTurn;
 
-function context(signal = new AbortController().signal) {
+function context(
+  signal = new AbortController().signal,
+  allow: { reasoning?: boolean; sources?: boolean } = {}
+) {
   return {
     modelId: "mock/mock-model",
     abortSignal: signal,
     writer: {} as never,
+    reasoning: allow.reasoning ?? false,
+    sources: allow.sources ?? false,
   };
 }
 
@@ -165,6 +170,24 @@ describe("mastraStreamTurn", () => {
       outputTokens: 8,
       totalTokens: 38,
     });
+  });
+
+  it("renders reasoning only when the transport allows it", async () => {
+    const reasoningStep: Part[] = [
+      { type: "stream-start", warnings: [] },
+      { type: "reasoning-start", id: "r" },
+      { type: "reasoning-delta", id: "r", delta: "Thinking it over." },
+      { type: "reasoning-end", id: "r" },
+      ...textStep("Done.", 4, 2).slice(1),
+    ];
+    const typesWith = async (reasoning: boolean) => {
+      const produced = await mastraStreamTurn({
+        agent: agentOf([reasoningStep]),
+      })(turn, { messages: [user("Hi")] }, context(undefined, { reasoning }));
+      return (await readAll(produced.stream)).map((c) => c.type);
+    };
+    expect(await typesWith(true)).toContain("reasoning-delta");
+    expect(await typesWith(false)).not.toContain("reasoning-delta");
   });
 
   it("settles the prompt-cache counts Mastra reports", async () => {

@@ -214,6 +214,13 @@ export type StreamTurn = (
     modelId: string;
     abortSignal: AbortSignal;
     writer: UIMessageStreamWriter<ChatUIMessage>;
+    /**
+     * `config.reasoning` and `config.sources`. The transport drops the
+     * returned stream's reasoning and source parts when they are false;
+     * a runtime can also skip producing them.
+     */
+    reasoning: boolean;
+    sources: boolean;
   }
 ) => TurnStream | Promise<TurnStream>;
 
@@ -383,9 +390,15 @@ export interface ChatServerConfig {
   windowing?: ConversationWindowOptions | false;
   /** File parts the transport accepts. Default `false`: any file part is a 400. */
   attachments?: ChatAttachmentPolicy | false;
-  /** Stream the model's reasoning parts to the client. Default false. */
+  /**
+   * Stream the model's reasoning parts to the client, from `streamText`
+   * and from a `streamTurn` runtime alike. Default false.
+   */
   reasoning?: boolean;
-  /** Stream the model's source parts (citations) to the client. Default false. */
+  /**
+   * Stream the model's source parts (citations) to the client, from
+   * `streamText` and from a `streamTurn` runtime alike. Default false.
+   */
   sources?: boolean;
   /**
    * Attach `{ modelId, usage, finishedAt }` to the assistant message as

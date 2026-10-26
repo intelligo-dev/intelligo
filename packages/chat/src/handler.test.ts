@@ -1248,6 +1248,47 @@ describe("POST streaming", () => {
     );
   });
 
+  it("passes a bound runtime's reasoning and sources only as the config allows", async () => {
+    const parts = [
+      { type: "reasoning-start", id: "r" },
+      { type: "reasoning-delta", id: "r", delta: "hmm" },
+      { type: "reasoning-end", id: "r" },
+      { type: "source-url", sourceId: "s", url: "https://example.com" },
+      { type: "text-start", id: "t" },
+      { type: "text-delta", id: "t", delta: "ok" },
+      { type: "text-end", id: "t" },
+      { type: "finish" },
+    ];
+    const run = async (allow: { reasoning?: boolean; sources?: boolean }) => {
+      const seen: { reasoning?: boolean; sources?: boolean }[] = [];
+      const { POST } = createChatHandler({
+        executions: fakeExecutions().executions,
+        model: { defaultId: MODEL_ID },
+        ...allow,
+        streamTurn: (_turn, _prepared, context) => {
+          seen.push({ reasoning: context.reasoning, sources: context.sources });
+          return {
+            stream: uiChunks(parts),
+            usage: Promise.resolve({ inputTokens: 1, outputTokens: 1 }),
+          };
+        },
+      });
+      const body = await (await POST(turn("hello"))).text();
+      return { body, seen: seen[0] };
+    };
+
+    const hidden = await run({});
+    expect(hidden.seen).toEqual({ reasoning: false, sources: false });
+    expect(hidden.body).not.toContain("reasoning-delta");
+    expect(hidden.body).not.toContain("source-url");
+    expect(hidden.body).toContain("text-delta");
+
+    const shown = await run({ reasoning: true, sources: true });
+    expect(shown.seen).toEqual({ reasoning: true, sources: true });
+    expect(shown.body).toContain("reasoning-delta");
+    expect(shown.body).toContain("source-url");
+  });
+
   it("settles the cache counts a bound runtime reports", async () => {
     const fake = fakeExecutions();
     const { POST } = createChatHandler({

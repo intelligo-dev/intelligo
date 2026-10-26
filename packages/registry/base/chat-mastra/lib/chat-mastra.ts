@@ -172,7 +172,7 @@ function withEnd<T>(source: ReadableStream<T>, end: () => void) {
 }
 
 export function mastraStreamTurn(options: MastraStreamTurnOptions): StreamTurn {
-  return async (turn, prepared, { abortSignal }) => {
+  return async (turn, prepared, { abortSignal, reasoning, sources }) => {
     const agent =
       typeof options.agent === "function"
         ? await options.agent(turn)
@@ -245,6 +245,8 @@ export function mastraStreamTurn(options: MastraStreamTurnOptions): StreamTurn {
       toAISdkStream(output, {
         from: "agent",
         version: "v7",
+        sendReasoning: reasoning,
+        sendSources: sources,
       }) as ReadableStream<UIMessageChunk>,
       ended
     );

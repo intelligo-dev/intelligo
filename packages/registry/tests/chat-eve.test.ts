@@ -507,10 +507,46 @@ describe("eveStreamTurn", () => {
         modelId: "m",
         abortSignal: new AbortController().signal,
         writer: {} as never,
+        reasoning: false,
+        sources: false,
       }
     );
     await drain(produced.stream);
     expect(calls[1]!.url).toContain("/session/wrun_1/stream");
+  });
+
+  it("streams reasoning only when the transport allows it", async () => {
+    const typesWith = async (reasoning: boolean) => {
+      const { fetchImpl } = fakeEve([
+        ev("reasoning.appended", { reasoningDelta: "Hmm" }),
+        ev("reasoning.completed", { reasoning: "Hmm" }),
+        ev("message.appended", { messageDelta: "hi" }),
+        ev("turn.completed", {}),
+        ev("session.waiting", {}),
+      ]);
+      const { turn: t } = turn();
+      const produced = await eveStreamTurn({
+        baseUrl: "https://eve.test",
+        fetch: fetchImpl,
+      })(
+        t as never,
+        {
+          messages: [
+            { id: "u", role: "user", parts: [{ type: "text", text: "hi" }] },
+          ],
+        },
+        {
+          modelId: "m",
+          abortSignal: new AbortController().signal,
+          writer: {} as never,
+          reasoning,
+          sources: false,
+        }
+      );
+      return (await drain(produced.stream)).map((c) => c.type);
+    };
+    expect(await typesWith(true)).toContain("reasoning-delta");
+    expect(await typesWith(false)).toEqual(["text-start", "text-delta"]);
   });
 
   it("creates a session, streams the turn, settles usage and stores the cursor", async () => {
@@ -539,6 +575,8 @@ describe("eveStreamTurn", () => {
         modelId: "m",
         abortSignal: new AbortController().signal,
         writer: {} as never,
+        reasoning: false,
+        sources: false,
       }
     );
     const chunks = await drain(produced.stream);
@@ -600,6 +638,8 @@ describe("eveStreamTurn", () => {
         modelId: "m",
         abortSignal: new AbortController().signal,
         writer: {} as never,
+        reasoning: false,
+        sources: false,
       }
     );
     await drain(produced.stream);
@@ -631,6 +671,8 @@ describe("eveStreamTurn", () => {
         modelId: "m",
         abortSignal: new AbortController().signal,
         writer: {} as never,
+        reasoning: false,
+        sources: false,
       }
     );
     const chunks = await drain(produced.stream);
@@ -661,6 +703,8 @@ describe("eveStreamTurn", () => {
       modelId: "m",
       abortSignal: new AbortController().signal,
       writer: {} as never,
+      reasoning: false,
+      sources: false,
     });
     const chunks = await drain(produced.stream);
     expect(chunks).toContainEqual({ type: "error", errorText: "It broke" });
@@ -699,6 +743,8 @@ describe("eveStreamTurn", () => {
       modelId: "m",
       abortSignal: new AbortController().signal,
       writer: {} as never,
+      reasoning: false,
+      sources: false,
     });
     await drain(produced.stream);
     expect(cancelled).toHaveBeenCalled();
@@ -735,6 +781,8 @@ describe("eveStreamTurn", () => {
       modelId: "m",
       abortSignal: abort.signal,
       writer: {} as never,
+      reasoning: false,
+      sources: false,
     });
     const reader = produced.stream.getReader();
     await reader.read();
@@ -761,6 +809,8 @@ describe("eveStreamTurn", () => {
       modelId: "m",
       abortSignal: new AbortController().signal,
       writer: {} as never,
+      reasoning: false,
+      sources: false,
     });
     const chunks = await drain(again.stream);
     expect(calls[1]!.url).toContain("startIndex=5");
