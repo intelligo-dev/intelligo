@@ -25,6 +25,7 @@ import {
   resolveMigrationsDir,
 } from "../migrations-dir.js";
 import { findWorkspaceRoot, workspacePackages } from "../registry-items.js";
+import { checkNavLinks } from "./doctor-nav.js";
 import { checkSeamBoundaries } from "./doctor-seams.js";
 
 export type CheckResult = {
@@ -554,12 +555,23 @@ export function runChecks(options: DoctorOptions = {}): CheckResult[] {
 
     results.push(...checkSeamFeatures(root, requires.seams, plans));
     results.push(...checkSeamBoundaries(root, requires.boundaries));
+    results.push(...checkNavLinks(root, requires));
   }
 
   // 4b. Maintenance route. It refuses to serve without a strong
   //     CRON_SECRET, and a scheduler hitting a 403 every five minutes
-  //     is easy to miss.
-  if (existsSync(path.join(root, "app/api/cron/maintenance/route.ts"))) {
+  //     is easy to miss. Without the route the periodic work never
+  //     runs at all, which is quieter still.
+  if (!existsSync(path.join(root, "app/api/cron/maintenance/route.ts"))) {
+    if (existsSync(path.join(root, "lib/intelligo.ts"))) {
+      results.push({
+        name: "maintenance",
+        status: "warn",
+        detail:
+          "no app/api/cron/maintenance/route.ts — accounts past their deletion grace period are never purged, and lapsed grants, ended trials, stale credit holds and old notifications stay; `intelligo add maintenance` writes the route, then schedule it",
+      });
+    }
+  } else {
     const cronSecret = env.CRON_SECRET ?? "";
     results.push(
       cronSecret.length >= 32

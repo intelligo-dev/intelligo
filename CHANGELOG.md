@@ -41,6 +41,10 @@ previous tag of its series.
   - Usage settles from the whole run: every step of a tool loop, never the last step alone. A stopped turn, or one that failed after a step finished, settles the steps that finished. A reader that cancels the stream no longer leaves the turn waiting on Mastra's `totalUsage`.
   - `memory: true` keeps the thread in Mastra memory, with the conversation as the thread and the workspace and the user as the resource, and sends only the new message. `agent` may be a function of the turn, such as `mastra.getAgent(turn.agent.id)`.
   - The `chat` item's server config points at the item instead of a hand-written binding.
+- **`intelligo doctor` warns about two quiet gaps.**
+  - `nav-links`: a link in `lib/nav-config.ts` or `lib/settings-nav.ts` to a page whose item is not installed, which answers 404. It names the item that provides the page. The seams stay the app's.
+  - `maintenance`: an app with no `app/api/cron/maintenance/route.ts`, where accounts past their deletion grace period are never purged and lapsed grants, ended trials and stale credit holds stay.
+  - The jobs README shows a drain route behind `CRON_SECRET` and a job that schedules its next run.
 - **`recordFact` and `confirmFact` in `@intelligo-dev/core/identity`.** A product stored a fact by writing `user_facts` and `user_memory_audit` itself.
   - `recordFact(actor, input)` stores a fact or replaces the one under the same category and key, with a `create` or `update` audit row in the same transaction. A fact the person wrote (`explicit_user_input`) is not replaced by an `llm_extraction` no more confident than it; the result says `written: false`.
   - `confirmFact(actor, factId)` stamps `lastConfirmedAt`, optionally with a new confidence, and audits it.
