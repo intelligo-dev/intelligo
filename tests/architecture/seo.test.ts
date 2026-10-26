@@ -11,8 +11,13 @@
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
 import path from "node:path";
 
 import { APPS_DIR, walk } from "./tree";
@@ -92,7 +97,11 @@ function readPage(file: string): Page {
 const url = (p: string) => (p === "/" ? `${ORIGIN}/` : `${ORIGIN}${p}`);
 
 beforeAll(() => {
-  out = mkdtempSync(path.join(tmpdir(), "intelligo-seo-"));
+  // Beside .astro/.prerender, not in the OS temp dir: Astro moves the
+  // prerendered assets into the output with a rename, which fails
+  // (EXDEV) where /tmp is another filesystem, as on CI runners.
+  mkdirSync(path.join(SITE_DIR, ".astro"), { recursive: true });
+  out = mkdtempSync(path.join(SITE_DIR, ".astro", "seo-"));
   execFileSync(
     path.join(SITE_DIR, "node_modules/.bin/astro"),
     ["build", "--outDir", out],
