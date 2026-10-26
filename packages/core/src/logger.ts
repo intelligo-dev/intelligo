@@ -67,6 +67,19 @@ export function isCredentialKey(key: string): boolean {
 }
 
 /**
+ * A token count (`inputTokens`, `cache_read_tokens`, `tokenCount`) holding a
+ * number. It contains the "token" fragment but is usage, not a credential;
+ * a string under the same key is still redacted.
+ */
+function isTokenCount(key: string, value: unknown): boolean {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    /tokens$|token_?count$/i.test(key)
+  );
+}
+
+/**
  * An identifier's key: `id`, `userId`, `workspace_id`. Matched as a
  * suffix, not a substring, so `provider` or `paid` keep their values.
  */
@@ -96,7 +109,7 @@ function serializeError(error: Error, depth: number): Record<string, unknown> {
 }
 
 function redactValue(key: string, value: unknown, depth: number): unknown {
-  if (isCredentialKey(key)) return "[REDACTED]";
+  if (isCredentialKey(key) && !isTokenCount(key, value)) return "[REDACTED]";
 
   if (value !== null && typeof value === "object") {
     if (depth >= MAX_REDACT_DEPTH) return "[TRUNCATED]";

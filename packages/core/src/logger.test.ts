@@ -138,6 +138,29 @@ describe("Logger", () => {
       expect(output).toContain("[REDACTED]");
     });
 
+    it("keeps token counts and still redacts token strings", async () => {
+      const { _createLoggerWithStream } = await import("./logger");
+      const { stream, getOutput } = createTestStream();
+      const log = _createLoggerWithStream("Test", stream);
+      log.info("turn settled", {
+        inputTokens: 1234,
+        usage: { cacheReadTokens: 987, cache_write_tokens: 65, tokenCount: 43 },
+        token: 777777,
+        accessToken: "at-secret",
+        refresh_tokens: "rt-secret",
+      });
+      const line = JSON.parse(getOutput().trim());
+      expect(line.inputTokens).toBe(1234);
+      expect(line.usage).toEqual({
+        cacheReadTokens: 987,
+        cache_write_tokens: 65,
+        tokenCount: 43,
+      });
+      expect(line.token).toBe("[REDACTED]");
+      expect(line.accessToken).toBe("[REDACTED]");
+      expect(line.refresh_tokens).toBe("[REDACTED]");
+    });
+
     it("leaves a value whose key merely contains 'id' alone", async () => {
       const { _createLoggerWithStream } = await import("./logger");
       const { stream, getOutput } = createTestStream();
