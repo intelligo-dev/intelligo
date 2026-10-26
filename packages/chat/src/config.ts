@@ -135,11 +135,13 @@ export interface ResolvedAgent {
   featureKey?: string | null;
   capability?: string;
   /**
-   * Passed to `streamText` as-is — the provider's own knobs, e.g. a
-   * thinking budget (`{ google: { thinkingConfig: { includeThoughts: true } } }`,
-   * `{ anthropic: { thinking: { type: "enabled", budgetTokens: 2048 } } }`).
-   * With `reasoning: true` this is what makes a model's thoughts reach
-   * the transcript at all; the transport never names a provider.
+   * Passed to `streamText` as-is — the provider's own knobs, e.g.
+   * `{ google: { thinkingConfig: { includeThoughts: true } } }`. With
+   * `reasoning: true` this is what makes a model's thoughts reach the
+   * transcript at all; the transport never names a provider. Models
+   * that decide their own thinking refuse a fixed budget and may return
+   * empty reasoning unless asked for a summary: the provider's docs say
+   * which. Reasoning tokens settle as output tokens.
    */
   providerOptions?: ProviderOptions;
   /**

@@ -78,6 +78,10 @@ pnpm exec intelligo doctor
 
 `doctor` reports what is still missing: environment, migrations, billing registration, the auth mount, unregistered models, and generated files you have customised.
 
+### Through a tunnel
+
+To open the dev server from a phone or share it through a tunnel, three things change. Sign-in accepts only `NEXT_PUBLIC_APP_URL`, so add the tunnel's origin to `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated, no spaces; `.env.example` has the line). Next's dev server refuses its assets to another host, so add the host to `allowedDevOrigins` in `next.config.mjs`. A session belongs to the host it was made on, and an `https` app URL names the session cookie differently, so sign in again on each.
+
 ## Next
 
 - [The boundary](/docs/concepts/boundary) — what Intelligo owns and what stays yours

@@ -75,6 +75,10 @@ pnpm exec intelligo doctor
 
 `doctor` reports what is still missing: environment, migrations, billing registration, the auth mount, unregistered models, and generated files you have customised.
 
+### Through a tunnel
+
+To open the dev server from a phone or share it through a tunnel, three things change. Sign-in accepts only `NEXT_PUBLIC_APP_URL`, so add the tunnel's origin to `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated, no spaces; `.env.example` has the line). Next's dev server refuses its assets to another host, so add the host to `allowedDevOrigins` in `next.config.mjs`. A session belongs to the host it was made on, and an `https` app URL names the session cookie differently, so sign in again on each.
+
 ## Next
 
 - [The boundary](/docs/concepts/boundary) — what Intelligo owns and what stays yours
@@ -498,6 +502,7 @@ The rate is a fixed number you state, not a live feed. It lives in the single `b
 - The chat page calls `getChatQuotaState`, an estimate, to show a banner before a turn would be refused.
 - After each settlement `checkNotificationTriggers` runs. At 80% and 100% of the allowance, and at 20% left or depletion of a trial, the workspace owner gets an in-app notification and an email, once per period.
 - `getUsageSummary` returns tokens and request counts by model, agent and day, for a dashboard of your own.
+- One conversation's cost is in `usage_records`, whose `conversation_id` is indexed: sum `provider_cost_micros`, `charged_micros`, `input_tokens` and `output_tokens` for the workspace and the conversation, grouped by `currency`. Each assistant message also carries its turn's usage in `metadata.usage`.
 
 ## Next
 
@@ -1510,7 +1515,7 @@ The first locale is the default. `intelligo sync` updates a shipped translation 
 
    Add the locale to `locales`, for example `["en", "de"]`.
 
-2. Copy `messages/en/` to `messages/de/` and translate the values. Keep the keys. You can translate a namespace at a time: `i18n/request.ts` lays each locale over the default locale's messages, so a file or key `de` does not have yet renders in English.
+2. For a language the registry ships (Mongolian, `mn`), there is nothing to copy: run `intelligo sync`, which installs every item's `messages/mn/` file beside the English one. For any other, copy `messages/en/` to `messages/de/` and translate the values. Keep the keys. You can translate a namespace at a time: `i18n/request.ts` lays each locale over the default locale's messages, so a file or key `de` does not have yet renders in English.
 
 3. Install the `language-switcher` block and put it in a shell slot:
 
@@ -1520,6 +1525,8 @@ The first locale is the default. `intelligo sync` updates a shipped translation 
    ```
 
 A missing file or key renders in the default locale; `messages/en` stays the reference, and `intelligo sync --check` lists what a locale has not translated.
+
+Voice input in the composer recognises speech in the page's language, the `lang` on `<html>` that the locale sets.
 
 ## Your own strings
 
@@ -1562,7 +1569,9 @@ There is no `register()` call: the object is plain source, populated at build ti
 
 ## Cards can act
 
-A card receives `actions`: send the next user turn (a quiz option, a suggested reply), answer a tool that runs client-side, approve or deny a gated call, open or close the canvas.
+A card receives `actions`: send the next user turn (a quiz option, a suggested reply), answer a tool that runs client-side, approve or deny a gated call, open or close the canvas. It also receives `isLastMessage`: a card that offers the next turn hides its controls on an earlier message, where the turn after it already answered.
+
+A call's citations come from its output's `sources`. Two sources with the same `url` are listed once; give each section of one document its own `url` with a `#fragment`, or number the sources with `index`, to keep them apart.
 
 ## Data parts
 
@@ -1748,6 +1757,17 @@ A fact the person wrote (`explicit_user_input`) is not replaced by an
 How facts reach a model is the product's: `listFacts(actor)` in
 `prepareMessages`, through `sanitizeForSystemPrompt` into the system prompt,
 or a tool the agent calls when it needs them.
+
+## Notifications
+
+`createNotification` writes an in-app notification for a user; its
+`metadata` is stored as JSON text, and every read, `createNotification`'s
+own result included, returns it parsed. A `metadata.href` makes the row a
+link: a relative path the app's locale-aware navigation resolves, such as
+`/chat?query=…`, which opens a new chat with that question in the
+composer. How often a person hears from the product, and which reminder
+wins, is the product's policy: keep it in a table of your own, keyed by
+workspace, user and kind, beside the `createNotification` call.
 
 ## Environment
 
@@ -3409,6 +3429,27 @@ Every model id must be registered with its pricing before it runs. `registerMode
 
 Anything user-authored that reaches a system prompt — a stored summary, profile context — goes through `sanitizeForSystemPrompt()` from `@intelligo-dev/core/prompt` first.
 
+### What a turn sends
+
+Every model call in a tool loop sends the system prompt, every tool's definition and the whole history again, so a long conversation with large tool outputs grows each turn. The transport leaves these choices to you, because they are prompt decisions:
+
+- **Fewer tools per turn.** `resolveAgent` can return `activeTools` from the turn's state: the tools the conversation's stage needs, not all of them. A set that stays the same within a stage also keeps a prompt cache warm. On Mastra, the agent's `tools` can be a function of its `requestContext`.
+- **Prompt caching.** The transport sets no cache breakpoint, since that would name a provider. `agent.generation.prepareStep` sees each step's model messages: return them with the provider's cache option in `providerOptions` on the newest user message, and the system prompt as a system message carrying the same. On Mastra, pass `instructions` that way through `streamOptions` and leave `prepared.system` unset, because a prepared system prompt replaces them. The cache counts the provider reports are priced at the model's cache rates (see [models and pricing](/docs/guides/models-and-pricing)).
+- **Older tool outputs.** `prepareMessages` can replace the output of a tool call older than the last few turns with a short stand-in, keeping each call and its result paired; the app's own tables still hold the data for a tool to read again. A stand-in that moves with every turn changes the cached prefix each time, so compact at fixed points rather than by a rolling window when you also cache. Tell the model that a shortened output is shortened, not wrong.
+- **Data parts stay out.** `data-*` parts reach the reader, not the model: neither `streamText` nor the Mastra binding converts them into the model's context.
+
+### A card that ends the turn
+
+A tool that draws a question or a choice and waits for the reader should end the turn there, or the model takes another step and writes under the card. Add `hasToolCall("<tool>")` from `ai` to the agent's `stopWhen`; on Mastra, use the agent's own stop condition. The thread does not resend a turn that ended on a server-run tool.
+
+### Tool labels on the server
+
+A tool's `label` in `TOOL_RENDERERS` is a message key the client translates. To use the same words on the server, in a summary the agent writes or a notification, read them with next-intl's `getTranslations({ locale, namespace })`, as `lib/chat-server-config.ts` does for its own strings. Keep the keys in your messages, not in the client module.
+
+### The assistant route
+
+`app/api/assistant`, the `assistantMessage` capability, its feature key and the echo model are the scaffold's worked example of a model call outside chat through the execution boundary. They are one unit: keep them as the pattern for a one-shot call, or remove them together.
+
 ## With Mastra
 
 In the chat, a Mastra agent runs the turn through the `chat-mastra` item, and the transport keeps auth, admission, persistence and settlement:
@@ -4405,6 +4446,20 @@ Most of an app built on the framework is installed source the registry already t
 - **Your tools and prompts** — the functions an agent calls, with the model mocked.
 - **Your Server Actions** — parse, call the service, map its typed error. Mock the service's package and assert the mapping.
 - **Your own tables** — against a real Postgres, skipped when there is none: `describe.skipIf(!process.env.TEST_DATABASE_URL)`.
+
+## Your own tables, against a database
+
+A table scoped to a workspace or a user needs a real `users` row and a real `organization` row to point at. Before the suite, insert one of each with random ids (a `users` row needs `id`, `name`, `email`, `email_verified`, `created_at` and `updated_at`; an `organization` row needs `id`, `name`, `slug`, `created_at` and `updated_at`), add a `member` row only when the code under test checks membership, and after it delete the organization and the user: their rows cascade. The memory-audit trail is append-only and keeps its rows.
+
+Point `TEST_DATABASE_URL` at a database of its own, migrated with `intelligo migrate`, never at the app's `DATABASE_URL`: the fixtures write and delete. Name these files `*.integration.test.ts` and keep them out of `pnpm test`'s default run with an `exclude` in `vitest.config.ts`, so a plain test run needs no database.
+
+## Driving the chat from a script
+
+An eval or a smoke scenario talks to `/api/chat` the way the browser does. Sign in with Better-Auth's `POST /api/auth/sign-in/email`, sending an `Origin` header equal to `NEXT_PUBLIC_APP_URL` (the CSRF check refuses a request without one), and keep the session cookie it sets. Post each turn to `/api/chat` with that cookie and the same `Origin`, in the body the AI SDK's `DefaultChatTransport` sends: `{ id, messages, trigger: "submit-message" }`, where `id` is the conversation and `messages` ends with the new user `UIMessage` (the transport reads the earlier turns from what it stored). The answer is the AI SDK's UI message stream: the SDK's stream reader turns it into the assistant message with its text, tool and `data-*` parts. The turn's token usage is on the message's `metadata.usage`.
+
+## A plan for a test user
+
+`grantPlan` from `@intelligo-dev/billing` puts a workspace on a plan, the same call the admin console makes. Call it from a script that runs the composition root first. A running server caches feature flags for up to a minute, so a grant shows there after that, or at once after a restart.
 
 ---
 

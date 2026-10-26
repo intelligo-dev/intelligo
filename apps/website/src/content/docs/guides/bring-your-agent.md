@@ -67,6 +67,27 @@ Every model id must be registered with its pricing before it runs. `registerMode
 
 Anything user-authored that reaches a system prompt — a stored summary, profile context — goes through `sanitizeForSystemPrompt()` from `@intelligo-dev/core/prompt` first.
 
+### What a turn sends
+
+Every model call in a tool loop sends the system prompt, every tool's definition and the whole history again, so a long conversation with large tool outputs grows each turn. The transport leaves these choices to you, because they are prompt decisions:
+
+- **Fewer tools per turn.** `resolveAgent` can return `activeTools` from the turn's state: the tools the conversation's stage needs, not all of them. A set that stays the same within a stage also keeps a prompt cache warm. On Mastra, the agent's `tools` can be a function of its `requestContext`.
+- **Prompt caching.** The transport sets no cache breakpoint, since that would name a provider. `agent.generation.prepareStep` sees each step's model messages: return them with the provider's cache option in `providerOptions` on the newest user message, and the system prompt as a system message carrying the same. On Mastra, pass `instructions` that way through `streamOptions` and leave `prepared.system` unset, because a prepared system prompt replaces them. The cache counts the provider reports are priced at the model's cache rates (see [models and pricing](/docs/guides/models-and-pricing)).
+- **Older tool outputs.** `prepareMessages` can replace the output of a tool call older than the last few turns with a short stand-in, keeping each call and its result paired; the app's own tables still hold the data for a tool to read again. A stand-in that moves with every turn changes the cached prefix each time, so compact at fixed points rather than by a rolling window when you also cache. Tell the model that a shortened output is shortened, not wrong.
+- **Data parts stay out.** `data-*` parts reach the reader, not the model: neither `streamText` nor the Mastra binding converts them into the model's context.
+
+### A card that ends the turn
+
+A tool that draws a question or a choice and waits for the reader should end the turn there, or the model takes another step and writes under the card. Add `hasToolCall("<tool>")` from `ai` to the agent's `stopWhen`; on Mastra, use the agent's own stop condition. The thread does not resend a turn that ended on a server-run tool.
+
+### Tool labels on the server
+
+A tool's `label` in `TOOL_RENDERERS` is a message key the client translates. To use the same words on the server, in a summary the agent writes or a notification, read them with next-intl's `getTranslations({ locale, namespace })`, as `lib/chat-server-config.ts` does for its own strings. Keep the keys in your messages, not in the client module.
+
+### The assistant route
+
+`app/api/assistant`, the `assistantMessage` capability, its feature key and the echo model are the scaffold's worked example of a model call outside chat through the execution boundary. They are one unit: keep them as the pattern for a one-shot call, or remove them together.
+
 ## With Mastra
 
 In the chat, a Mastra agent runs the turn through the `chat-mastra` item, and the transport keeps auth, admission, persistence and settlement:

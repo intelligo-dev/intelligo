@@ -148,6 +148,17 @@ How facts reach a model is the product's: `listFacts(actor)` in
 `prepareMessages`, through `sanitizeForSystemPrompt` into the system prompt,
 or a tool the agent calls when it needs them.
 
+## Notifications
+
+`createNotification` writes an in-app notification for a user; its
+`metadata` is stored as JSON text, and every read, `createNotification`'s
+own result included, returns it parsed. A `metadata.href` makes the row a
+link: a relative path the app's locale-aware navigation resolves, such as
+`/chat?query=…`, which opens a new chat with that question in the
+composer. How often a person hears from the product, and which reminder
+wins, is the product's policy: keep it in a table of your own, keyed by
+workspace, user and kind, beside the `createNotification` call.
+
 ## Environment
 
 `assertEnv()` from `/env` fails at boot rather than at the first query when
