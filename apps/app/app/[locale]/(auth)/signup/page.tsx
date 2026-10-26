@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { getAuthSession } from "@intelligo-dev/auth";
+import { getAuthSession, listOAuthProviders } from "@intelligo-dev/auth";
 
 import { redirect } from "@/i18n/navigation";
 import { returnPath } from "@/lib/auth-validation";
@@ -59,7 +59,11 @@ export default async function SignupPage({
   return (
     <AuthCard title={t("card.title")} description={t("card.description")}>
       <div className="space-y-6">
-        <SocialLoginButtons providers={providers} next={next} />
+        <SocialLoginButtons
+          providers={providers}
+          oauthProviders={listOAuthProviders()}
+          next={next}
+        />
         <SignupForm next={next} />
       </div>
     </AuthCard>

@@ -55,6 +55,7 @@ Every docs page below is also served as Markdown: the same URL with `.md` append
 - [Auth, workspaces and roles](https://intelligo.dev/docs/guides/auth-and-teams): Guard pages, Server Actions and route handlers by session, workspace and role, and see how sign-in, invitations and workspace switching work.
 - [Deploying](https://intelligo.dev/docs/guides/deploy): Put the app on Vercel with Postgres and pgvector, apply both migration chains on every deploy, and get email, Stripe webhooks and the cron working.
 - [Testing your app](https://intelligo.dev/docs/guides/testing): Run Vitest on an app built on the framework — the server-only stub, why the framework packages are inlined, keeping models out of CI, and what to test.
+- [Reference data](https://intelligo.dev/docs/guides/reference-data): Tables every workspace reads and none owns — holidays, rates, a catalogue of benchmarks — and the script that loads them from outside the app.
 
 ## Security
 
