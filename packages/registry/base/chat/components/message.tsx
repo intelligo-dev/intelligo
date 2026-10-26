@@ -250,6 +250,7 @@ export function Message({
       approvalId: approval?.id,
       messageId: message.id,
       isStreaming: isStreamingThis,
+      isLastMessage,
       isReadonly: readOnly,
       actions: toolActions,
     };
@@ -364,6 +365,7 @@ export function Message({
           data={data.data}
           messageId={message.id}
           isStreaming={isStreamingThis}
+          isLastMessage={isLastMessage}
           isReadonly={readOnly}
           actions={toolActions}
         />
