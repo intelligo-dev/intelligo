@@ -179,12 +179,11 @@ export function ChatArtifactCard({
  * A question on an earlier message was answered by the turn after it,
  * so it shows as answered, after a reload too.
  */
-export function ChatQuestionCard({
-  data,
-  isLastMessage,
-  isReadonly,
-  actions,
-}: DataRendererProps) {
+export function ChatQuestionCard(props: DataRendererProps) {
+  const { data, isReadonly, actions } = props;
+  // Read with `in`: an app's renderer props may predate the field.
+  const isLastMessage =
+    "isLastMessage" in props ? props.isLastMessage !== false : true;
   const t = useTranslations("chat");
   const question = data as ChatQuestionData;
   const [submitted, setSubmitted] = useState(false);

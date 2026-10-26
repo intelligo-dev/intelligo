@@ -187,6 +187,9 @@ export function Message({
   const t = useTranslations("chat");
   const isUser = message.role === "user";
   const isStreamingThis = isLastMessage && isStreaming;
+  // Spread rather than named: an app's `lib/chat-renderers.tsx` is its
+  // own and may declare renderer props from before `isLastMessage`.
+  const lastMessage = { isLastMessage };
   const text = messageText(message);
   const [editing, setEditing] = useState(false);
 
@@ -250,7 +253,7 @@ export function Message({
       approvalId: approval?.id,
       messageId: message.id,
       isStreaming: isStreamingThis,
-      isLastMessage,
+      ...lastMessage,
       isReadonly: readOnly,
       actions: toolActions,
     };
@@ -365,7 +368,7 @@ export function Message({
           data={data.data}
           messageId={message.id}
           isStreaming={isStreamingThis}
-          isLastMessage={isLastMessage}
+          {...lastMessage}
           isReadonly={readOnly}
           actions={toolActions}
         />
