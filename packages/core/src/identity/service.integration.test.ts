@@ -1,7 +1,7 @@
 /**
  * Against a real Postgres; runs only when DATABASE_URL is set. Core does not
- * depend on @intelligo-dev/auth, and the service has no fact-creation entry
- * point, so users, workspaces and facts are inserted with a raw `pg` client.
+ * depend on @intelligo-dev/auth, so users and workspaces are inserted with
+ * a raw `pg` client, and so are the first two facts, one per user.
  *
  * Run:
  *   DATABASE_URL=postgres://intelligo:intelligo@localhost:5432/intelligo \
@@ -27,6 +27,8 @@ d("identity service — real DB integration", () => {
   let exportIdentity: typeof import("./service").exportIdentity;
   let getAuditTrail: typeof import("./service").getAuditTrail;
   let saveProfileSnapshot: typeof import("./service").saveProfileSnapshot;
+  let recordFact: typeof import("./service").recordFact;
+  let confirmFact: typeof import("./service").confirmFact;
   let isIdentityServiceError: typeof import("./errors").isIdentityServiceError;
 
   const actor = { workspaceId, userId };
@@ -42,6 +44,8 @@ d("identity service — real DB integration", () => {
       exportIdentity,
       getAuditTrail,
       saveProfileSnapshot,
+      recordFact,
+      confirmFact,
     } = await import("./service"));
     ({ isIdentityServiceError } = await import("./errors"));
 
@@ -186,6 +190,136 @@ d("identity service — real DB integration", () => {
     expect(theirs.version).toBe(1);
     const mine = await exportIdentity(actor);
     expect(mine.snapshot?.summary).toBe("Profile: 2 skills.");
+  });
+
+  it("recordFact creates a fact, then replaces it, auditing both", async () => {
+    const first = await recordFact(actor, {
+      category: "goal",
+      key: "it.role",
+      value: { label: "Data analyst" },
+      confidence: 0.6,
+      extractionMethod: "llm_extraction",
+      sourceProduct: "it",
+    });
+    expect(first.written).toBe(true);
+    expect(first.fact.lastConfirmedAt).toBeNull();
+
+    const second = await recordFact(actor, {
+      category: "goal",
+      key: "it.role",
+      value: { label: "Data engineer" },
+      confidence: 0.7,
+      extractionMethod: "llm_extraction",
+    });
+    expect(second.fact.id).toBe(first.fact.id);
+    expect(second.fact.value).toEqual({ label: "Data engineer" });
+    expect(second.fact.sourceProduct).toBe("it");
+
+    const trail = await getAuditTrail(actor, { targetId: first.fact.id });
+    expect(trail.map((row) => [row.action, row.actorKind])).toEqual([
+      ["update", "agent"],
+      ["create", "agent"],
+    ]);
+    expect(trail[0]?.beforeValue).toMatchObject({
+      value: { label: "Data analyst" },
+    });
+    expect(trail[0]?.afterValue).toMatchObject({
+      value: { label: "Data engineer" },
+    });
+  });
+
+  it("recordFact keeps what the person wrote over a no more confident extraction", async () => {
+    const stated = await recordFact(actor, {
+      category: "constraint",
+      key: "it.city",
+      value: "Ulaanbaatar",
+      confidence: 1,
+      extractionMethod: "explicit_user_input",
+    });
+    expect(stated.fact.lastConfirmedAt).not.toBeNull();
+
+    const extracted = await recordFact(actor, {
+      category: "constraint",
+      key: "it.city",
+      value: "Darkhan",
+      confidence: 0.9,
+      extractionMethod: "llm_extraction",
+    });
+    expect(extracted.written).toBe(false);
+    expect(extracted.fact.value).toBe("Ulaanbaatar");
+
+    const trail = await getAuditTrail(actor, { targetId: stated.fact.id });
+    expect(trail.map((row) => [row.action, row.actorKind])).toEqual([
+      ["create", "user"],
+    ]);
+    expect(trail[0]?.actorId).toBe(userId);
+  });
+
+  it("recordFact keeps one fact per user under the same key", async () => {
+    const otherActor = { workspaceId, userId: otherUserId };
+    const theirs = await recordFact(otherActor, {
+      category: "goal",
+      key: "it.role",
+      value: "Someone else's goal",
+      confidence: 0.5,
+      extractionMethod: "inline_tool",
+    });
+    const mine = (await listFacts(actor)).find((f) => f.key === "it.role");
+    expect(theirs.fact.id).not.toBe(mine?.id);
+    expect(mine?.value).toEqual({ label: "Data engineer" });
+  });
+
+  it("confirmFact stamps the confirmation and audits it", async () => {
+    const recorded = await recordFact(actor, {
+      category: "skill",
+      key: "it.sql",
+      value: "SQL",
+      confidence: 0.5,
+      extractionMethod: "llm_extraction",
+    });
+    const confirmed = await confirmFact(actor, recorded.fact.id, {
+      confidence: 0.95,
+    });
+    expect(confirmed.lastConfirmedAt).not.toBeNull();
+    expect(confirmed.confidence).toBe(0.95);
+    const [latest] = await getAuditTrail(actor, {
+      targetId: recorded.fact.id,
+    });
+    expect(latest).toMatchObject({
+      action: "update",
+      actorKind: "user",
+      actorId: userId,
+    });
+  });
+
+  it("confirmFact refuses another user's fact", async () => {
+    const theirs = (
+      await listFacts({ workspaceId, userId: otherUserId })
+    ).find((f) => f.key === "it.role")!;
+    await expect(confirmFact(actor, theirs.id)).rejects.toSatisfy(
+      (err: unknown) => isIdentityServiceError(err) && err.code === "not_found"
+    );
+  });
+
+  it("deleteFact attributes a removal to the actor it names", async () => {
+    const recorded = await recordFact(actor, {
+      category: "skill",
+      key: "it.stale",
+      value: "COBOL",
+      confidence: 0.4,
+      extractionMethod: "llm_extraction",
+    });
+    await deleteFact(actor, recorded.fact.id, {
+      actorKind: "system_job",
+      reason: "expired",
+    });
+    const [row] = await getAuditTrail(actor, { targetId: recorded.fact.id });
+    expect(row).toMatchObject({
+      action: "delete",
+      actorKind: "system_job",
+      actorId: null,
+      reason: "expired",
+    });
   });
 
   it("getAuditTrail returns most-recent-first, scoped to the actor", async () => {

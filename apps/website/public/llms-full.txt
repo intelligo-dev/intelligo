@@ -1697,6 +1697,46 @@ URL; unset means AWS). A custom endpoint is addressed path-style; pass
 hashed. A request the bucket does not answer within `timeoutMs` (default 30
 seconds) is abandoned and the call throws.
 
+## Identity
+
+`/identity` keeps what a product learns about a person, scoped to the
+user and the workspace, with every change in the append-only
+`user_memory_audit` trail that the privacy page, the export and erasure
+read:
+
+```ts
+import { confirmFact, recordFact } from "@intelligo-dev/core/identity";
+
+const { fact, written } = await recordFact(actor, {
+  category: "goal",
+  key: "profile.target-role",
+  value: { label: "Data engineer", level: "senior" },
+  confidence: 0.7,
+  extractionMethod: "llm_extraction",
+});
+await confirmFact(actor, fact.id); // the person agreed to it
+```
+
+`recordFact` stores a fact or replaces the one under the same category and
+key, and audits it in the same transaction; `confirmFact` stamps
+`lastConfirmedAt`; `deleteFact` takes who removed it, the user by default.
+A fact the person wrote (`explicit_user_input`) is not replaced by an
+`llm_extraction` no more confident than it: the call returns
+`written: false`.
+
+- **Category** is the shared axis synthesis and display filter on, a closed
+  list (`USER_FACT_CATEGORIES`). A product's own kinds live in the key,
+  namespaced as it likes, and in the value.
+- **Value** is a string, or an object whose `label` is a line a person can
+  read. The privacy page shows that line and nothing else of it.
+- **Provenance** is `extractionMethod` with `lastConfirmedAt`: an
+  unconfirmed `llm_extraction` is what a model read, a confirmed one is what
+  the person agreed to, and `explicit_user_input` is what they wrote.
+
+How facts reach a model is the product's: `listFacts(actor)` in
+`prepareMessages`, through `sanitizeForSystemPrompt` into the system prompt,
+or a tool the agent calls when it needs them.
+
 ## Environment
 
 `assertEnv()` from `/env` fails at boot rather than at the first query when

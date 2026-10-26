@@ -1,7 +1,7 @@
 /**
  * Server-only reads and mutations over the user identity graph: fact
- * listing and deletion, the profile snapshot's write, a full data export,
- * and the memory-audit trail.
+ * listing, recording, confirmation and deletion, the profile snapshot's
+ * write, a full data export, and the memory-audit trail.
  *
  * `deleteFact` does not touch the cached profile snapshot; profile synthesis
  * is the product's AI code, so a caller that owns it re-triggers it and
@@ -15,6 +15,8 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
+  USER_FACT_CATEGORIES,
+  USER_FACT_EXTRACTION_METHODS,
   userFacts,
   userMemories,
   userProfileSnapshots,
@@ -22,14 +24,18 @@ import {
 } from "../db/schema";
 import type {
   UserFact,
+  UserFactExtractionMethod,
   UserMemoryAuditRow,
   UserProfileSnapshot,
 } from "../db/schema";
 import { recordMemoryAudit } from "./audit";
 import { IdentityServiceError } from "./errors";
 import type {
+  FactAuditBy,
   IdentityActor,
   IdentityExport,
+  RecordFactInput,
+  RecordFactResult,
   SaveProfileSnapshotInput,
 } from "./types";
 
@@ -110,10 +116,13 @@ export async function getAuditTrail(
  * names the fact by id and kind only — what the fact said is gone with
  * it. Throws `invalid_input` for an empty id and `not_found` for anything
  * outside the actor's scope. Does not re-trigger profile synthesis.
+ *
+ * `by` names who removed it; without it the user did, at their request.
  */
 export async function deleteFact(
   actor: IdentityActor,
-  factId: string
+  factId: string,
+  by?: FactAuditBy
 ): Promise<void> {
   if (!factId || factId.trim().length === 0) {
     throw new IdentityServiceError("invalid_input", "factId is required");
@@ -130,13 +139,230 @@ export async function deleteFact(
         targetKind: "fact",
         targetId: factId,
         action: "delete",
-        actorKind: "user",
-        actorId: actor.userId,
-        reason: "user requested deletion",
+        ...(by
+          ? { actorKind: by.actorKind ?? "agent", actorId: by.actorId }
+          : { actorKind: "user", actorId: actor.userId }),
+        reason: by ? by.reason : "user requested deletion",
       },
       tx
     );
   });
+}
+
+/** Methods by which the person themselves stated a fact. */
+const STATED_BY_USER = new Set<UserFactExtractionMethod>([
+  "explicit_user_input",
+  "onboarding_form",
+]);
+
+/**
+ * Store a fact for the actor, or replace the one under the same
+ * category and key, with a `create` or `update` audit row in the same
+ * transaction.
+ *
+ * A fact the person wrote (`explicit_user_input`) is ground truth: an
+ * `llm_extraction` no more confident than it leaves it in place, and the
+ * result says `written: false`.
+ *
+ * The audit row names the user for a fact they stated and an agent for
+ * an extracted one, unless the input says otherwise. Throws
+ * `invalid_input` for an empty key, a category outside
+ * `USER_FACT_CATEGORIES`, a method outside `USER_FACT_EXTRACTION_METHODS`,
+ * a confidence outside 0 to 1, a non-integer importance or no value.
+ */
+export async function recordFact(
+  actor: IdentityActor,
+  input: RecordFactInput
+): Promise<RecordFactResult> {
+  validateFact(input);
+
+  const stated = STATED_BY_USER.has(input.extractionMethod);
+  const fields = {
+    value: input.value,
+    confidence: input.confidence,
+    extractionMethod: input.extractionMethod,
+    ...definedOnly({
+      importance: input.importance,
+      sourceProduct: input.sourceProduct,
+      sourceSessionId: input.sourceSessionId,
+      sourceMessageId: input.sourceMessageId,
+      expiresAt: input.expiresAt,
+    }),
+    // Stating a fact is confirming it.
+    ...(stated ? { lastConfirmedAt: new Date() } : {}),
+  };
+
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(userFacts)
+      .where(
+        and(
+          eq(userFacts.userId, actor.userId),
+          eq(userFacts.workspaceId, actor.workspaceId),
+          eq(userFacts.category, input.category),
+          eq(userFacts.key, input.key)
+        )
+      )
+      .limit(1)
+      .for("update");
+
+    if (
+      existing &&
+      existing.extractionMethod === "explicit_user_input" &&
+      input.extractionMethod === "llm_extraction" &&
+      input.confidence <= existing.confidence
+    ) {
+      return { fact: existing, written: false };
+    }
+
+    const [fact] = existing
+      ? await tx
+          .update(userFacts)
+          .set(fields)
+          .where(eq(userFacts.id, existing.id))
+          .returning()
+      : await tx
+          .insert(userFacts)
+          .values({
+            id: crypto.randomUUID(),
+            userId: actor.userId,
+            workspaceId: actor.workspaceId,
+            category: input.category,
+            key: input.key,
+            ...fields,
+          })
+          .returning();
+
+    if (!fact) {
+      throw new IdentityServiceError("database_error", "Failed to record fact");
+    }
+
+    await recordMemoryAudit(
+      {
+        userId: actor.userId,
+        workspaceId: actor.workspaceId,
+        targetKind: "fact",
+        targetId: fact.id,
+        action: existing ? "update" : "create",
+        actorKind: input.actorKind ?? (stated ? "user" : "agent"),
+        actorId: input.actorId ?? (stated ? actor.userId : undefined),
+        beforeValue: existing ? auditedFact(existing) : undefined,
+        afterValue: auditedFact(fact),
+        reason: input.reason,
+      },
+      tx
+    );
+
+    return { fact, written: true };
+  });
+}
+
+/**
+ * Mark a fact as confirmed by the person now, optionally with a new
+ * confidence, and record an `update` audit row. Throws `invalid_input`
+ * for an empty id or a confidence outside 0 to 1, and `not_found` for a
+ * fact outside the actor's scope.
+ */
+export async function confirmFact(
+  actor: IdentityActor,
+  factId: string,
+  options: FactAuditBy & { confidence?: number } = {}
+): Promise<UserFact> {
+  if (!factId || factId.trim().length === 0) {
+    throw new IdentityServiceError("invalid_input", "factId is required");
+  }
+  if (options.confidence !== undefined) assertConfidence(options.confidence);
+
+  const before = await verifyFact(actor, factId);
+  const actorKind = options.actorKind ?? "user";
+
+  return db.transaction(async (tx) => {
+    const [fact] = await tx
+      .update(userFacts)
+      .set({
+        lastConfirmedAt: new Date(),
+        ...definedOnly({ confidence: options.confidence }),
+      })
+      .where(eq(userFacts.id, factId))
+      .returning();
+
+    if (!fact) {
+      throw new IdentityServiceError("not_found", "Fact not found");
+    }
+
+    await recordMemoryAudit(
+      {
+        userId: actor.userId,
+        workspaceId: actor.workspaceId,
+        targetKind: "fact",
+        targetId: factId,
+        action: "update",
+        actorKind,
+        actorId:
+          options.actorId ?? (actorKind === "user" ? actor.userId : undefined),
+        beforeValue: auditedFact(before),
+        afterValue: auditedFact(fact),
+        reason: options.reason,
+      },
+      tx
+    );
+
+    return fact;
+  });
+}
+
+/** What a fact's audit row records of it. */
+function auditedFact(fact: UserFact) {
+  return {
+    category: fact.category,
+    key: fact.key,
+    value: fact.value,
+    confidence: fact.confidence,
+    extractionMethod: fact.extractionMethod,
+    lastConfirmedAt: fact.lastConfirmedAt?.toISOString() ?? null,
+  };
+}
+
+function validateFact(input: RecordFactInput): void {
+  if (!input.key || input.key.trim().length === 0) {
+    throw new IdentityServiceError("invalid_input", "key is required");
+  }
+  if (!(USER_FACT_CATEGORIES as readonly string[]).includes(input.category)) {
+    throw new IdentityServiceError(
+      "invalid_input",
+      `category must be one of ${USER_FACT_CATEGORIES.join(", ")}`
+    );
+  }
+  if (
+    !(USER_FACT_EXTRACTION_METHODS as readonly string[]).includes(
+      input.extractionMethod
+    )
+  ) {
+    throw new IdentityServiceError(
+      "invalid_input",
+      `extractionMethod must be one of ${USER_FACT_EXTRACTION_METHODS.join(", ")}`
+    );
+  }
+  assertConfidence(input.confidence);
+  if (input.importance !== undefined && !Number.isInteger(input.importance)) {
+    throw new IdentityServiceError(
+      "invalid_input",
+      "importance must be an integer"
+    );
+  }
+  if (input.value === undefined || input.value === null) {
+    throw new IdentityServiceError("invalid_input", "value is required");
+  }
+}
+
+function assertConfidence(confidence: number): void {
+  if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) {
+    throw new IdentityServiceError(
+      "invalid_input",
+      "confidence must be between 0 and 1"
+    );
+  }
 }
 
 /**
