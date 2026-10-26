@@ -7,6 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 import { Agent, type AgentExecutionOptions } from "@mastra/core/agent";
+import { RequestContext } from "@mastra/core/request-context";
 import { createTool } from "@mastra/core/tools";
 import type { UIMessage, UIMessageChunk } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
@@ -14,7 +15,10 @@ import { z } from "zod";
 
 import type { ChatTurn, PreparedTurn } from "@intelligo-dev/chat";
 
-import { mastraStreamTurn } from "../base/chat-mastra/lib/chat-mastra";
+import {
+  chatActorOf,
+  mastraStreamTurn,
+} from "../base/chat-mastra/lib/chat-mastra";
 
 type Part = Record<string, unknown>;
 
@@ -172,6 +176,49 @@ describe("mastraStreamTurn", () => {
     });
   });
 
+  it("gives a tool the turn's actor", async () => {
+    const seen: unknown[] = [];
+    const whoAmI = createTool({
+      id: "lookup",
+      description: "Looks something up.",
+      inputSchema: z.object({ q: z.string() }),
+      execute: async (_input, toolContext) => {
+        seen.push(chatActorOf(toolContext));
+        return { ok: true };
+      },
+    });
+    const agent = new Agent({
+      id: "assistant",
+      name: "assistant",
+      instructions: "You help.",
+      model: modelOf([toolStep(1, 1), textStep("Done.", 1, 1)]),
+      tools: { lookup: whoAmI },
+    });
+    const produced = await mastraStreamTurn({ agent, maxSteps: 3 })(
+      turn,
+      { messages: [user("Who am I?")] },
+      context()
+    );
+    await readAll(produced.stream);
+    expect(seen).toEqual([
+      { workspaceId: "ws-1", userId: "user-1", conversationId: "conv-1" },
+    ]);
+  });
+
+  it("refuses a tool call with no actor in its context", () => {
+    expect(() => chatActorOf({})).toThrow(/mastraStreamTurn/);
+    const partial = new RequestContext();
+    partial.set("workspaceId", "ws-1");
+    expect(() => chatActorOf({ requestContext: partial })).toThrow();
+    const noConversation = new RequestContext();
+    noConversation.set("workspaceId", "ws-1");
+    noConversation.set("userId", "user-1");
+    expect(chatActorOf({ requestContext: noConversation })).toEqual({
+      workspaceId: "ws-1",
+      userId: "user-1",
+    });
+  });
+
   it("renders reasoning only when the transport allows it", async () => {
     const reasoningStep: Part[] = [
       { type: "stream-start", warnings: [] },
@@ -287,6 +334,30 @@ describe("mastraStreamTurn", () => {
       ],
       system: "Summary so far: …",
     };
+
+    it("puts the turn's actor in the request context, over the product's own values", async () => {
+      const { agent, calls } = capture();
+      const own = new RequestContext();
+      own.set("plan", "pro");
+      own.set("workspaceId", "ws-forged");
+      const produced = await mastraStreamTurn({
+        agent,
+        streamOptions: () => ({ requestContext: own }),
+      })(turn, prepared, context());
+      await readAll(produced.stream);
+      const sent = calls[0]!.options.requestContext as RequestContext;
+      expect(sent.get("plan")).toBe("pro");
+      expect(chatActorOf({ requestContext: sent })).toEqual({
+        workspaceId: "ws-1",
+        userId: "user-1",
+        conversationId: "conv-1",
+      });
+      expect(JSON.parse(JSON.stringify(sent.toJSON()))).toMatchObject({
+        workspaceId: "ws-1",
+        userId: "user-1",
+        conversationId: "conv-1",
+      });
+    });
 
     it("sends every message without memory, and the prepared system prompt", async () => {
       const { agent, calls } = capture();

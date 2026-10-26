@@ -91,7 +91,11 @@ export const chatServerConfig: ChatServerConfig = {
 };
 ```
 
-The turn settles the whole run's usage, every model call of a tool loop rather than the last, and a stopped turn settles the steps that finished. `memory: true` keeps the thread in Mastra memory under the conversation, with the workspace and the user together as the resource, and sends only the new message. `streamOptions(turn, prepared)` passes more of `agent.stream`'s options, such as a `requestContext` that carries the workspace to the tools. Tools that require approval are Mastra's suspend and resume, which the binding does not bridge.
+The turn settles the whole run's usage, every model call of a tool loop rather than the last, and a stopped turn settles the steps that finished. `memory: true` keeps the thread in Mastra memory under the conversation, with the workspace and the user together as the resource, and sends only the new message. `streamOptions(turn, prepared)` passes more of `agent.stream`'s options, such as `modelSettings` or a `requestContext` with values of your own.
+
+Every run's `requestContext` carries the turn's `workspaceId`, `userId` and `conversationId`, set over yours. A tool reads them with `chatActorOf(context)`, which throws when the workspace or the user is missing, so a tool never runs unscoped. A tool writes a data part, such as a card or an artifact, through Mastra's `context.writer.custom({ type: "data-…", data })`; the reader receives it like any other part. Data parts never reach the model's context, on this path or on `streamText`; a product that wants one there adds it in `prepareMessages`.
+
+The binding passes `reasoning` and `sources` from the chat server config to Mastra, so reasoning reaches the reader only when `reasoning: true` is set. Tools that require approval are Mastra's suspend and resume, which the binding does not bridge: a tool that needs the reader's confirmation asks through a question part and acts on the next turn's answer.
 
 Outside the chat, `@intelligo-dev/mastra` brackets a native Mastra call without importing Mastra:
 
