@@ -26,6 +26,8 @@
     "@intelligo-dev/core": "workspace:*",
     "@intelligo-dev/executions": "workspace:*",
     "@intelligo-dev/next": "workspace:*",
+    "@mastra/ai-sdk": "^1.11.2",
+    "@mastra/core": "^1.79.0",
     "@streamdown/cjk": "^1.0.4",
     "@streamdown/code": "^1.1.1",
     "@streamdown/math": "^1.0.3",

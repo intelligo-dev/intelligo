@@ -70,34 +70,18 @@ import "server-only";
  * Another runtime than `streamText` — a Mastra agent, an eve session —
  * binds `streamTurn` and keeps everything else: auth, the rate limit,
  * the gate, admission, persistence and settlement stay the transport's
- * (the framework carries no helper for any AI framework; the
- * binding is yours, here). Mastra, natively, through `@mastra/ai-sdk`:
+ * (no package imports an AI framework; the binding is a file you own).
  *
- *   import { handleChatStream } from "@mastra/ai-sdk";
- *   import { mastra } from "@/lib/mastra";
+ * Mastra: install the `chat-mastra` item and bind `mastraStreamTurn`
+ * from `@/lib/chat-mastra` — it settles every step of a tool loop and
+ * the finished steps of a stopped turn, and scopes Mastra memory to
+ * the conversation, the workspace and the user:
  *
- *   streamTurn: async (turn, prepared, { abortSignal }) => {
- *     const stream = await handleChatStream({
- *       mastra,
- *       agentId: turn.agent.id,
- *       version: "v7",
- *       params: {
- *         messages: prepared.messages,
- *         // Scoped to the workspace and the user, like every stored
- *         // row: a resource of the user alone shares working memory
- *         // and recall across every workspace they belong to.
- *         memory: {
- *           thread: turn.conversationId,
- *           resource: `${turn.workspaceId}:${turn.userId}`,
- *         },
- *         abortSignal,
- *       },
- *     });
- *     // `usage`: settle from the agent's whole-run totals. Mastra reports
- *     // them on its finish chunk; read them off the stream, or run
- *     // `agent.stream()` yourself and resolve `result.totalUsage`.
- *     return { stream, usage };
- *   },
+ *   streamTurn: mastraStreamTurn({
+ *     agent: (turn) => mastra.getAgent(turn.agent.id),
+ *     maxSteps: 6,
+ *     memory: true,
+ *   }),
  *
  * eve: install the `chat-eve` item and bind `eveStreamTurn` from
  * `@/lib/chat-eve` — the session id and cursor live in the
