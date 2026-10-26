@@ -25,6 +25,9 @@ previous tag of its series.
 
 ### Added
 
+- **A "Reference data" guide covering tables every workspace reads and none owns.**
+  - Covers the global table, why it may hold nothing that belongs to a workspace or a user, a script that replaces its rows in one transaction (`node --env-file=.env.local scripts/load-*.ts`), and reading it from a tool.
+  - The scaffold's `lib/db/schema.ts` comment names the exception beside its "scope them to a workspace" rule. app-scaffold template 1.24.0.
 - **Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 in `DEFAULT_MODELS`.**
   - The ids are `anthropic/claude-haiku-5-5` ($0.10 / $0.50 per million tokens), `anthropic/claude-sonnet-5-5` ($2 / $10) and `anthropic/claude-opus-5-5` ($4 / $20), each with every capability. An app that registered them by hand can drop its own entries.
   - Haiku 5.5 carries the rate for prompts of 100K tokens or fewer. A product that sends longer prompts registers it at Anthropic's higher rate ($0.50 / $2.50).

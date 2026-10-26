@@ -3,7 +3,7 @@
   "frameworkVersion": "1.3.0-next.1",
   "features": {
     "app-scaffold": {
-      "templateVersion": "1.23.0",
+      "templateVersion": "1.24.0",
       "files": [
         {
           "path": "package.json",
@@ -95,7 +95,7 @@
         },
         {
           "path": "lib/db/schema.ts",
-          "hash": "9547da722e59e9dfdfc0c5b14ec97fbacb4b3b983ad6ba31ac63f52b72438055"
+          "hash": "02f8bb1ece41f773c5f075a0b8cb0d5331bd299dbcfb0d95c21490cb24c8ad4e"
         },
         {
           "path": "drizzle/meta/_journal.json",

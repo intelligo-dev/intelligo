@@ -4,8 +4,8 @@
     "hash": "2cc5b8c6e754ecac71224e01cf5d81c809782d19604b64724c183e650fdce395"
   },
   "app-scaffold": {
-    "templateVersion": "1.23.0",
-    "hash": "b0eacf9fcdf3dadd997974cc37c2b0cca12cd70c3a4be04c1694e8b6d5db9d87"
+    "templateVersion": "1.24.0",
+    "hash": "44f28c0b3a641142e2f5d4c8f9e7f985e4569137e36e7c87a2378db3bd3fb7d5"
   },
   "pnpm-standalone": {
     "templateVersion": "1.0.0",
