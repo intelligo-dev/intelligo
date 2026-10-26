@@ -21,7 +21,11 @@ none, or what a consumer changes (with the steps under `### Upgrading`);
 since the previous stable release, or for a prerelease since the
 previous tag of its series.
 
-## [Unreleased]
+## [1.3.0-next.2] — 2026-10-27
+
+- **Upgrade:** recommended — input a provider read from or wrote to its prompt cache was charged at the full input price, and `intelligo sync` lowered dependencies an app had raised
+- **Breaking:** `createNotification` returns its metadata parsed, and a `streamTurn` runtime's reasoning reaches the reader only with `reasoning: true` (steps under Upgrading)
+- **Migrations:** none
 
 ### Added
 

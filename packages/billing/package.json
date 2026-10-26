@@ -1,6 +1,6 @@
 {
   "name": "@intelligo-dev/billing",
-  "version": "1.3.0-next.1",
+  "version": "1.3.0-next.2",
   "description": "Quota engine, credits, Stripe, feature gates, trials and rate limiting.",
   "keywords": [
     "intelligo",
