@@ -50,6 +50,10 @@ export type UsageSettlement = {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
+  /** Of `inputTokens`, those the provider read from its prompt cache; priced at the model's cache rate. */
+  cacheReadTokens?: number;
+  /** Of `inputTokens`, those the provider wrote to its prompt cache. */
+  cacheWriteTokens?: number;
   usingTrialCredits: boolean;
   metadata?: Record<string, unknown>;
   /** The fixed price the run began with: charge this, not the tokens. */

@@ -305,6 +305,33 @@ describe("providerCost", () => {
     expect(providerCost("google/gemini-2.5-flash", 1, 0).amount).toBe(1);
   });
 
+  it("prices cached input at the model's cache rates", () => {
+    // Haiku 5.5: $0.10 in, $0.01 cache read, $0.125 cache write per million.
+    // 100K fresh = 10,000; 600K read = 6,000; 300K written = 37,500 micros.
+    expect(
+      providerCost("anthropic/claude-haiku-5-5", 1_000_000, 0, {
+        cacheReadTokens: 600_000,
+        cacheWriteTokens: 300_000,
+      }).amount
+    ).toBe(53_500);
+  });
+
+  it("clamps cache counts to the input they are part of", () => {
+    // 800K read leaves 200K for writes, whatever is reported: 8,000 +
+    // 25,000 micros, with nothing fresh.
+    expect(
+      providerCost("anthropic/claude-haiku-5-5", 1_000_000, 0, {
+        cacheReadTokens: 800_000,
+        cacheWriteTokens: 500_000,
+      }).amount
+    ).toBe(33_000);
+    expect(
+      providerCost("anthropic/claude-haiku-5-5", 1_000_000, 0, {
+        cacheReadTokens: -5,
+      }).amount
+    ).toBe(100_000);
+  });
+
   it("throws for an unregistered id rather than guessing a price", () => {
     expect(() => providerCost("unknown/model", 1, 1)).toThrow(
       UnknownModelError
@@ -338,6 +365,34 @@ describe("estimateWorstCaseCharge", () => {
     expect(() => estimateWorstCaseCharge("unknown/model", USD_RATE)).toThrow(
       UnknownModelError
     );
+  });
+
+  it("holds the prompt at the cache-write rate when a write costs more", () => {
+    // Haiku 5.5, 1,000 tokens × 2 steps written at $0.125/M = 250 micros,
+    // 8,000 output × 2 at $0.50/M = 8,000: 8,250, 4× is 33,000.
+    expect(
+      estimateWorstCaseCharge("anthropic/claude-haiku-5-5", USD_RATE, {
+        inputTokens: 1_000,
+        steps: 2,
+      })
+    ).toEqual(money(33_000, "USD"));
+  });
+
+  it("holds the prompt at the input rate when a cache write costs less", () => {
+    registerModels([
+      {
+        ...getModelPricing("anthropic/claude-haiku-5-5")!,
+        id: "test/cheap-writes",
+        costPerMCacheWriteInputTokens: 0.05,
+      },
+    ]);
+    // 2,000 × $0.10/M = 200, plus the same 8,000 output: 8,200, 4× is 32,800.
+    expect(
+      estimateWorstCaseCharge("test/cheap-writes", USD_RATE, {
+        inputTokens: 1_000,
+        steps: 2,
+      })
+    ).toEqual(money(32_800, "USD"));
   });
 
   it("holds only the input budget for an embedding model", () => {

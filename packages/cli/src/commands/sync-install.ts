@@ -1,6 +1,8 @@
 /**
  * The install itself: every item through `shadcn add --overwrite`, from
- * the bundled registry served on 127.0.0.1 for the length of it.
+ * the bundled registry served on 127.0.0.1 for the length of it. A
+ * dependency the app already has at or above an item's pin is served
+ * without its range, so the install leaves the app's spec alone.
  */
 
 import { spawn } from "node:child_process";
@@ -10,6 +12,7 @@ import type { AddressInfo } from "node:net";
 import path from "node:path";
 
 import { spawnCommand } from "../spawn-command.js";
+import { keepDeclaredRanges } from "./sync-dependencies.js";
 import {
   clearRestorePoint,
   onInterrupt,
@@ -72,7 +75,7 @@ export async function installItems(
   });
 
   try {
-    const served = await serveRegistry(input.registryDir);
+    const served = await serveRegistry(input.registryDir, appRoot);
     server = served.server;
     setRegistry(`${served.url}/{name}.json`);
     for (const item of input.items) {
@@ -94,7 +97,25 @@ export async function installItems(
   }
 }
 
-function serveRegistry(dir: string): Promise<{ server: Server; url: string }> {
+/** The app's dependencies and devDependencies, read as they are now. */
+function declaredDependencies(appRoot: string): Record<string, string> {
+  try {
+    const manifest = JSON.parse(
+      readFileSync(path.join(appRoot, "package.json"), "utf8")
+    ) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    return { ...manifest.devDependencies, ...manifest.dependencies };
+  } catch {
+    return {};
+  }
+}
+
+function serveRegistry(
+  dir: string,
+  appRoot: string
+): Promise<{ server: Server; url: string }> {
   // The items the directory holds; a request is answered from this list,
   // never by joining what it asked for onto a path.
   const items = new Map(
@@ -119,8 +140,14 @@ function serveRegistry(dir: string): Promise<{ server: Server; url: string }> {
         res.end();
         return;
       }
+      // An earlier item may have added a dependency: read the app's
+      // package.json for every item served.
+      const item = keepDeclaredRanges(
+        JSON.parse(readFileSync(file, "utf8")) as { dependencies?: unknown },
+        declaredDependencies(appRoot)
+      );
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(readFileSync(file));
+      res.end(JSON.stringify(item));
     });
     server.once("error", reject);
     server.listen(0, "127.0.0.1", () => {

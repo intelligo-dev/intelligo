@@ -105,3 +105,17 @@ Most of an app built on the framework is installed source the registry already t
 - **Your tools and prompts** — the functions an agent calls, with the model mocked.
 - **Your Server Actions** — parse, call the service, map its typed error. Mock the service's package and assert the mapping.
 - **Your own tables** — against a real Postgres, skipped when there is none: `describe.skipIf(!process.env.TEST_DATABASE_URL)`.
+
+## Your own tables, against a database
+
+A table scoped to a workspace or a user needs a real `users` row and a real `organization` row to point at. Before the suite, insert one of each with random ids (a `users` row needs `id`, `name`, `email`, `email_verified`, `created_at` and `updated_at`; an `organization` row needs `id`, `name`, `slug`, `created_at` and `updated_at`), add a `member` row only when the code under test checks membership, and after it delete the organization and the user: their rows cascade. The memory-audit trail is append-only and keeps its rows.
+
+Point `TEST_DATABASE_URL` at a database of its own, migrated with `intelligo migrate`, never at the app's `DATABASE_URL`: the fixtures write and delete. Name these files `*.integration.test.ts` and keep them out of `pnpm test`'s default run with an `exclude` in `vitest.config.ts`, so a plain test run needs no database.
+
+## Driving the chat from a script
+
+An eval or a smoke scenario talks to `/api/chat` the way the browser does. Sign in with Better-Auth's `POST /api/auth/sign-in/email`, sending an `Origin` header equal to `NEXT_PUBLIC_APP_URL` (the CSRF check refuses a request without one), and keep the session cookie it sets. Post each turn to `/api/chat` with that cookie and the same `Origin`, in the body the AI SDK's `DefaultChatTransport` sends: `{ id, messages, trigger: "submit-message" }`, where `id` is the conversation and `messages` ends with the new user `UIMessage` (the transport reads the earlier turns from what it stored). The answer is the AI SDK's UI message stream: the SDK's stream reader turns it into the assistant message with its text, tool and `data-*` parts. The turn's token usage is on the message's `metadata.usage`.
+
+## A plan for a test user
+
+`grantPlan` from `@intelligo-dev/billing` puts a workspace on a plan, the same call the admin console makes. Call it from a script that runs the composition root first. A running server caches feature flags for up to a minute, so a grant shows there after that, or at once after a restart.

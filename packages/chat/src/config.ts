@@ -135,11 +135,13 @@ export interface ResolvedAgent {
   featureKey?: string | null;
   capability?: string;
   /**
-   * Passed to `streamText` as-is — the provider's own knobs, e.g. a
-   * thinking budget (`{ google: { thinkingConfig: { includeThoughts: true } } }`,
-   * `{ anthropic: { thinking: { type: "enabled", budgetTokens: 2048 } } }`).
-   * With `reasoning: true` this is what makes a model's thoughts reach
-   * the transcript at all; the transport never names a provider.
+   * Passed to `streamText` as-is — the provider's own knobs, e.g.
+   * `{ google: { thinkingConfig: { includeThoughts: true } } }`. With
+   * `reasoning: true` this is what makes a model's thoughts reach the
+   * transcript at all; the transport never names a provider. Models
+   * that decide their own thinking refuse a fixed budget and may return
+   * empty reasoning unless asked for a summary: the provider's docs say
+   * which. Reasoning tokens settle as output tokens.
    */
   providerOptions?: ProviderOptions;
   /**
@@ -214,6 +216,13 @@ export type StreamTurn = (
     modelId: string;
     abortSignal: AbortSignal;
     writer: UIMessageStreamWriter<ChatUIMessage>;
+    /**
+     * `config.reasoning` and `config.sources`. The transport drops the
+     * returned stream's reasoning and source parts when they are false;
+     * a runtime can also skip producing them.
+     */
+    reasoning: boolean;
+    sources: boolean;
   }
 ) => TurnStream | Promise<TurnStream>;
 
@@ -383,9 +392,15 @@ export interface ChatServerConfig {
   windowing?: ConversationWindowOptions | false;
   /** File parts the transport accepts. Default `false`: any file part is a 400. */
   attachments?: ChatAttachmentPolicy | false;
-  /** Stream the model's reasoning parts to the client. Default false. */
+  /**
+   * Stream the model's reasoning parts to the client, from `streamText`
+   * and from a `streamTurn` runtime alike. Default false.
+   */
   reasoning?: boolean;
-  /** Stream the model's source parts (citations) to the client. Default false. */
+  /**
+   * Stream the model's source parts (citations) to the client, from
+   * `streamText` and from a `streamTurn` runtime alike. Default false.
+   */
   sources?: boolean;
   /**
    * Attach `{ modelId, usage, finishedAt }` to the assistant message as

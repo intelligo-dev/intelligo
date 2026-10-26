@@ -38,12 +38,28 @@
  * store. Without memory the transport's transcript is the context and
  * every prepared message is sent.
  *
+ * Tools: every run's `requestContext` carries the turn's `workspaceId`,
+ * `userId` and `conversationId`, set over any `requestContext` that
+ * `streamOptions` returns. A tool reads them with `chatActorOf`, which
+ * throws when the ids are missing, so a tool never runs unscoped:
+ *
+ *   execute: async (input, context) => {
+ *     const { workspaceId, userId } = chatActorOf(context);
+ *     …
+ *   }
+ *
+ * A tool writes a data part (a card, an artifact) through Mastra's own
+ * `context.writer.custom({ type: "data-…", data })`; the stream passes
+ * it to the reader like any other part. Data parts never reach the
+ * model's context.
+ *
  * Tool approvals are Mastra's suspend and resume, which this binding
  * does not bridge: give the agent no tool that requires approval.
  */
 
 import { toAISdkStream } from "@mastra/ai-sdk";
 import type { Agent, AgentExecutionOptions } from "@mastra/core/agent";
+import { RequestContext } from "@mastra/core/request-context";
 import type { UIMessageChunk } from "ai";
 
 import type {
@@ -76,8 +92,9 @@ export type MastraStreamTurnOptions = {
    */
   memory?: boolean | ((turn: ChatTurn) => MastraMemoryScope);
   /**
-   * More of `agent.stream`'s options for a turn — a `requestContext`
-   * carrying the workspace to the tools, `modelSettings`, `toolChoice`.
+   * More of `agent.stream`'s options for a turn — `modelSettings`,
+   * `toolChoice`, a `requestContext` with values of your own (the
+   * turn's actor is set on it).
    */
   streamOptions?: (
     turn: ChatTurn,
@@ -89,6 +106,52 @@ export type MastraStreamTurnOptions = {
 
 type SettledUsage = TokenUsage & { finishReason?: string };
 
+/** Who a tool runs for: the turn's workspace, user and conversation. */
+export type ChatActor = {
+  workspaceId: string;
+  userId: string;
+  /** Absent when the agent runs outside a chat turn. */
+  conversationId?: string;
+};
+
+/**
+ * The turn's actor set on `into`, a fresh `RequestContext` when none is
+ * given. Only ids: Mastra serializes the request context into traces.
+ */
+export function chatRequestContextOf(
+  turn: ChatTurn,
+  into: RequestContext = new RequestContext()
+): RequestContext {
+  into.set("workspaceId", turn.workspaceId);
+  into.set("userId", turn.userId);
+  into.set("conversationId", turn.conversationId);
+  return into;
+}
+
+/**
+ * The actor in a tool's execution context.
+ *
+ * @throws when the context has no workspace or user: the agent ran
+ * without `mastraStreamTurn` or `chatRequestContextOf`.
+ */
+export function chatActorOf(context: {
+  requestContext?: RequestContext;
+}): ChatActor {
+  const read = (key: string) => {
+    const value = context.requestContext?.get(key);
+    return typeof value === "string" && value !== "" ? value : undefined;
+  };
+  const workspaceId = read("workspaceId");
+  const userId = read("userId");
+  if (!workspaceId || !userId) {
+    throw new Error(
+      "No workspace or user in the request context: run the agent through mastraStreamTurn, or set one with chatRequestContextOf."
+    );
+  }
+  const conversationId = read("conversationId");
+  return { workspaceId, userId, ...(conversationId ? { conversationId } : {}) };
+}
+
 /** The conversation's thread, under the workspace and the user. */
 export function memoryScopeOf(turn: ChatTurn): MastraMemoryScope {
   return {
@@ -97,17 +160,50 @@ export function memoryScopeOf(turn: ChatTurn): MastraMemoryScope {
   };
 }
 
-function addUsage(
-  sum: Required<TokenUsage>,
-  step: TokenUsage | undefined
-): Required<TokenUsage> {
+/** Mastra's usage, whose prompt-cache counts carry their own names. */
+type MastraUsage = {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  cachedInputTokens?: number;
+  cacheCreationInputTokens?: number;
+};
+
+type SpentUsage = Required<
+  Pick<TokenUsage, "inputTokens" | "outputTokens" | "totalTokens">
+> &
+  Pick<TokenUsage, "cacheReadTokens" | "cacheWriteTokens">;
+
+/** The cache counts Mastra reported, under the transport's names. */
+function cacheOf(usage: MastraUsage | undefined) {
+  return {
+    ...(usage?.cachedInputTokens !== undefined
+      ? { cacheReadTokens: usage.cachedInputTokens }
+      : {}),
+    ...(usage?.cacheCreationInputTokens !== undefined
+      ? { cacheWriteTokens: usage.cacheCreationInputTokens }
+      : {}),
+  };
+}
+
+function addUsage(sum: SpentUsage, step: MastraUsage | undefined): SpentUsage {
   const input = step?.inputTokens ?? 0;
   const output = step?.outputTokens ?? 0;
+  const cache = cacheOf(step);
+  const read = addCount(sum.cacheReadTokens, cache.cacheReadTokens);
+  const write = addCount(sum.cacheWriteTokens, cache.cacheWriteTokens);
   return {
     inputTokens: sum.inputTokens + input,
     outputTokens: sum.outputTokens + output,
     totalTokens: sum.totalTokens + (step?.totalTokens ?? input + output),
+    ...(read !== undefined ? { cacheReadTokens: read } : {}),
+    ...(write !== undefined ? { cacheWriteTokens: write } : {}),
   };
+}
+
+/** A cache count summed, absent while neither side reported one. */
+function addCount(a: number | undefined, b: number | undefined) {
+  return a === undefined && b === undefined ? undefined : (a ?? 0) + (b ?? 0);
 }
 
 /**
@@ -139,7 +235,7 @@ function withEnd<T>(source: ReadableStream<T>, end: () => void) {
 }
 
 export function mastraStreamTurn(options: MastraStreamTurnOptions): StreamTurn {
-  return async (turn, prepared, { abortSignal }) => {
+  return async (turn, prepared, { abortSignal, reasoning, sources }) => {
     const agent =
       typeof options.agent === "function"
         ? await options.agent(turn)
@@ -155,16 +251,18 @@ export function mastraStreamTurn(options: MastraStreamTurnOptions): StreamTurn {
     const messages = memory ? prepared.messages.slice(-1) : prepared.messages;
 
     // Every finished step, summed: what a stopped or failed run spent.
-    let spent: Required<TokenUsage> = {
+    let spent: SpentUsage = {
       inputTokens: 0,
       outputTokens: 0,
       totalTokens: 0,
     };
 
+    const extra = options.streamOptions
+      ? await options.streamOptions(turn, prepared)
+      : {};
     const output = await agent.stream(messages, {
-      ...(options.streamOptions
-        ? await options.streamOptions(turn, prepared)
-        : {}),
+      ...extra,
+      requestContext: chatRequestContextOf(turn, extra.requestContext),
       abortSignal,
       ...(prepared.system !== undefined
         ? { instructions: prepared.system }
@@ -190,6 +288,7 @@ export function mastraStreamTurn(options: MastraStreamTurnOptions): StreamTurn {
             totalTokens:
               total.totalTokens ??
               (total.inputTokens ?? 0) + (total.outputTokens ?? 0),
+            ...cacheOf(total),
           }),
         (error: unknown) => {
           // Mastra rejects every pending result of a stopped or failed
@@ -211,6 +310,8 @@ export function mastraStreamTurn(options: MastraStreamTurnOptions): StreamTurn {
       toAISdkStream(output, {
         from: "agent",
         version: "v7",
+        sendReasoning: reasoning,
+        sendSources: sources,
       }) as ReadableStream<UIMessageChunk>,
       ended
     );

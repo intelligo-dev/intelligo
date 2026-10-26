@@ -145,6 +145,12 @@ export interface ToolRendererProps {
   messageId: string;
   /** The message this part belongs to is still streaming. */
   isStreaming: boolean;
+  /**
+   * The message this part belongs to is the conversation's latest. A
+   * card that offers the next turn — a question, suggested replies —
+   * hides its controls on an earlier one.
+   */
+  isLastMessage: boolean;
   /** A read-only surface — the shared page. Cards hide their controls. */
   isReadonly: boolean;
   actions?: ToolRendererActions;
@@ -178,6 +184,8 @@ export interface DataRendererProps {
   data: unknown;
   messageId: string;
   isStreaming: boolean;
+  /** As on `ToolRendererProps`: the part's message is the latest. */
+  isLastMessage: boolean;
   isReadonly: boolean;
   actions?: ToolRendererActions;
 }

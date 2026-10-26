@@ -182,16 +182,27 @@ function rateLimitHeaders(decision: RateLimitDecision): Record<string, string> {
  * around whatever a `streamTurn` produces, so the response id and the
  * message metadata are its own. A runtime whose adapter frames the
  * message itself is not asked to strip anything.
+ *
+ * Reasoning and source parts reach the client only as `config.reasoning`
+ * and `config.sources` allow, as on the `streamText` path, whatever the
+ * runtime sends.
  */
-function withoutFrames<CHUNK extends { type: string }>(
-  stream: ReadableStream<CHUNK>
+function boundTurnChunks<CHUNK extends { type: string }>(
+  stream: ReadableStream<CHUNK>,
+  allow: { reasoning: boolean; sources: boolean }
 ): ReadableStream<CHUNK> {
+  const kept = (type: string) => {
+    if (type === "start" || type === "finish") return false;
+    if (type.startsWith("reasoning-")) return allow.reasoning;
+    if (type === "source-url" || type === "source-document") {
+      return allow.sources;
+    }
+    return true;
+  };
   return stream.pipeThrough(
     new TransformStream<CHUNK, CHUNK>({
       transform(chunk, controller) {
-        if (chunk.type !== "start" && chunk.type !== "finish") {
-          controller.enqueue(chunk);
-        }
+        if (kept(chunk.type)) controller.enqueue(chunk);
       },
     })
   );
@@ -1289,13 +1300,19 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     ) => {
       writer.write({ type: "start" });
       const resolved = { ...prepared, messages: modelMessages };
+      const allow = {
+        reasoning: config.reasoning ?? false,
+        sources: config.sources ?? false,
+      };
       const produced = await streamTurn(turn, resolved, {
         modelId,
         abortSignal: request.signal,
         writer,
+        ...allow,
       });
-      const framed = withoutFrames(
-        produced.stream as ReadableStream<UIMessageChunk>
+      const framed = boundTurnChunks(
+        produced.stream as ReadableStream<UIMessageChunk>,
+        allow
       );
       // The note lands when the reply's stream closes, which can be after
       // the runtime's usage resolved: `finish` waits for it.

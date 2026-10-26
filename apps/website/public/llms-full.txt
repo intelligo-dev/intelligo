@@ -75,6 +75,10 @@ pnpm exec intelligo doctor
 
 `doctor` reports what is still missing: environment, migrations, billing registration, the auth mount, unregistered models, and generated files you have customised.
 
+### Through a tunnel
+
+To open the dev server from a phone or share it through a tunnel, three things change. Sign-in accepts only `NEXT_PUBLIC_APP_URL`, so add the tunnel's origin to `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated, no spaces; `.env.example` has the line). Next's dev server refuses its assets to another host, so add the host to `allowedDevOrigins` in `next.config.mjs`. A session belongs to the host it was made on, and an `https` app URL names the session cookie differently, so sign in again on each.
+
 ## Next
 
 - [The boundary](/docs/concepts/boundary) — what Intelligo owns and what stays yours
@@ -122,6 +126,7 @@ Source: https://intelligo.dev/docs/getting-started/environment
 | `DATABASE_POOL_MAX` | Connections the pool may open per server process (default 10). A request waits at most 15 seconds for one before it fails. |
 | `BETTER_AUTH_SECRET` | At least 32 characters. Generate with: openssl rand -base64 32 |
 | `NEXT_PUBLIC_APP_URL` | Where users reach the app. Auth callbacks, email links and redirects are built from it, so production needs the public https URL. The scaffold sets `http://localhost:3000`. |
+| `BETTER_AUTH_TRUSTED_ORIGINS` | More origins sign-in accepts besides NEXT_PUBLIC_APP_URL: a tunnel or a second port in development. Comma-separated, no spaces. A session belongs to the host it was made on, so sign in again on each. The scaffold sets `https://my-tunnel.example.dev,http://localhost:3001`. |
 | `INTELLIGO_BILLING_PRODUCT` | Which product's plans the billing engine bills against. Your composition root also sets this via setDefaultProductSlug(); the variable is here so CLI tooling can check it without booting the app. The scaffold sets `your-app`. |
 
 ## Optional — everything works locally without these
@@ -497,6 +502,7 @@ The rate is a fixed number you state, not a live feed. It lives in the single `b
 - The chat page calls `getChatQuotaState`, an estimate, to show a banner before a turn would be refused.
 - After each settlement `checkNotificationTriggers` runs. At 80% and 100% of the allowance, and at 20% left or depletion of a trial, the workspace owner gets an in-app notification and an email, once per period.
 - `getUsageSummary` returns tokens and request counts by model, agent and day, for a dashboard of your own.
+- One conversation's cost is in `usage_records`, whose `conversation_id` is indexed: sum `provider_cost_micros`, `charged_micros`, `input_tokens` and `output_tokens` for the workspace and the conversation, grouped by `currency`. Each assistant message also carries its turn's usage in `metadata.usage`.
 
 ## Next
 
@@ -687,6 +693,17 @@ import { TrialBanner } from "@/components/trial/trial-banner";
 
 export const shellConfig: ShellConfig = {
   bannerTop: TrialBanner,
+};
+```
+
+With the chat item installed, its conversation history goes in the
+sidebar — the chat page has no list of its own:
+
+```ts
+import { ChatHistory } from "@/components/chat/chat-history";
+
+export const shellConfig: ShellConfig = {
+  sidebarContent: ChatHistory,
 };
 ```
 
@@ -1498,7 +1515,7 @@ The first locale is the default. `intelligo sync` updates a shipped translation 
 
    Add the locale to `locales`, for example `["en", "de"]`.
 
-2. Copy `messages/en/` to `messages/de/` and translate the values. Keep the keys. You can translate a namespace at a time: `i18n/request.ts` lays each locale over the default locale's messages, so a file or key `de` does not have yet renders in English.
+2. For a language the registry ships (Mongolian, `mn`), there is nothing to copy: run `intelligo sync`, which installs every item's `messages/mn/` file beside the English one. For any other, copy `messages/en/` to `messages/de/` and translate the values. Keep the keys. You can translate a namespace at a time: `i18n/request.ts` lays each locale over the default locale's messages, so a file or key `de` does not have yet renders in English.
 
 3. Install the `language-switcher` block and put it in a shell slot:
 
@@ -1508,6 +1525,8 @@ The first locale is the default. `intelligo sync` updates a shipped translation 
    ```
 
 A missing file or key renders in the default locale; `messages/en` stays the reference, and `intelligo sync --check` lists what a locale has not translated.
+
+Voice input in the composer recognises speech in the page's language, the `lang` on `<html>` that the locale sets.
 
 ## Your own strings
 
@@ -1550,7 +1569,9 @@ There is no `register()` call: the object is plain source, populated at build ti
 
 ## Cards can act
 
-A card receives `actions`: send the next user turn (a quiz option, a suggested reply), answer a tool that runs client-side, approve or deny a gated call, open or close the canvas.
+A card receives `actions`: send the next user turn (a quiz option, a suggested reply), answer a tool that runs client-side, approve or deny a gated call, open or close the canvas. It also receives `isLastMessage`: a card that offers the next turn hides its controls on an earlier message, where the turn after it already answered.
+
+A call's citations come from its output's `sources`. Two sources with the same `url` are listed once; give each section of one document its own `url` with a `#fragment`, or number the sources with `index`, to keep them apart.
 
 ## Data parts
 
@@ -1696,6 +1717,57 @@ URL; unset means AWS). A custom endpoint is addressed path-style; pass
 `createS3Storage({ …, pathStyle })` to choose. Uploads are buffered to be
 hashed. A request the bucket does not answer within `timeoutMs` (default 30
 seconds) is abandoned and the call throws.
+
+## Identity
+
+`/identity` keeps what a product learns about a person, scoped to the
+user and the workspace, with every change in the append-only
+`user_memory_audit` trail that the privacy page, the export and erasure
+read:
+
+```ts
+import { confirmFact, recordFact } from "@intelligo-dev/core/identity";
+
+const { fact, written } = await recordFact(actor, {
+  category: "goal",
+  key: "profile.target-role",
+  value: { label: "Data engineer", level: "senior" },
+  confidence: 0.7,
+  extractionMethod: "llm_extraction",
+});
+await confirmFact(actor, fact.id); // the person agreed to it
+```
+
+`recordFact` stores a fact or replaces the one under the same category and
+key, and audits it in the same transaction; `confirmFact` stamps
+`lastConfirmedAt`; `deleteFact` takes who removed it, the user by default.
+A fact the person wrote (`explicit_user_input`) is not replaced by an
+`llm_extraction` no more confident than it: the call returns
+`written: false`.
+
+- **Category** is the shared axis synthesis and display filter on, a closed
+  list (`USER_FACT_CATEGORIES`). A product's own kinds live in the key,
+  namespaced as it likes, and in the value.
+- **Value** is a string, or an object whose `label` is a line a person can
+  read. The privacy page shows that line and nothing else of it.
+- **Provenance** is `extractionMethod` with `lastConfirmedAt`: an
+  unconfirmed `llm_extraction` is what a model read, a confirmed one is what
+  the person agreed to, and `explicit_user_input` is what they wrote.
+
+How facts reach a model is the product's: `listFacts(actor)` in
+`prepareMessages`, through `sanitizeForSystemPrompt` into the system prompt,
+or a tool the agent calls when it needs them.
+
+## Notifications
+
+`createNotification` writes an in-app notification for a user; its
+`metadata` is stored as JSON text, and every read, `createNotification`'s
+own result included, returns it parsed. A `metadata.href` makes the row a
+link: a relative path the app's locale-aware navigation resolves, such as
+`/chat?query=…`, which opens a new chat with that question in the
+composer. How often a person hears from the product, and which reminder
+wins, is the product's policy: keep it in a table of your own, keyed by
+workspace, user and kind, beside the `createNotification` call.
 
 ## Environment
 
@@ -2661,6 +2733,58 @@ const result = await drain(
 // { claimed, succeeded, failed, unhandled, deferred }
 ```
 
+### Drain on a schedule
+
+The framework runs no worker. The maintenance route that
+`intelligo add maintenance` writes prunes the queue but does not drain it,
+because only the application has the handlers. Give the drain a route of its
+own, behind the same `CRON_SECRET`, and schedule it beside maintenance:
+
+```ts title="app/api/cron/jobs/route.ts"
+import { timingSafeEqual } from "node:crypto";
+
+import { drain } from "@intelligo-dev/jobs";
+
+import { composeIntelligo } from "@/lib/intelligo";
+import { handlers } from "@/lib/jobs";
+
+export const maxDuration = 60;
+
+function authorized(request: Request): boolean {
+  const secret = process.env.CRON_SECRET;
+  const header = request.headers.get("authorization") ?? "";
+  if (!secret || secret.length < 32) return false;
+  const expected = Buffer.from(`Bearer ${secret}`);
+  const given = Buffer.from(header);
+  return given.length === expected.length && timingSafeEqual(given, expected);
+}
+
+export async function GET(request: Request) {
+  if (!authorized(request)) return new Response(null, { status: 403 });
+  composeIntelligo();
+  return Response.json(
+    await drain(handlers, { limit: 25, deadlineMs: 45_000 })
+  );
+}
+```
+
+Recurring work is a handler that enqueues its own next run:
+
+```ts
+"digest.daily": async (job) => {
+  await sendDailyDigests();
+  await enqueue({
+    kind: "digest.daily",
+    workspaceId: null,
+    payload: {},
+    runAt: new Date(Date.now() + 24 * 60 * 60_000),
+  });
+},
+```
+
+In development, call the route by hand or in a loop:
+`curl -H "Authorization: Bearer $CRON_SECRET" localhost:4002/api/cron/jobs`.
+
 ## What the queue guarantees
 
 - **No double-processing.** Claiming is `FOR UPDATE SKIP LOCKED`, so several
@@ -3216,6 +3340,10 @@ shadcn cannot know:
   they match the `@intelligo-dev/*` packages of the same release;
 - the order: an item that imports a sibling's files lands after it
   (requires.json `items`);
+- the app's dependency ranges: each item pins its npm dependencies to
+  the range the registry is tested against, and a dependency the app
+  already has at or above that pin, in the same major, keeps the
+  app's range rather than being taken back to the pin;
 - the seams: files an item ships once for the deployment to own
   (requires.json `seams`) are put back after the install, and message
   files are merged key by key, the app's copy winning;
@@ -3303,6 +3431,27 @@ Every model id must be registered with its pricing before it runs. `registerMode
 
 Anything user-authored that reaches a system prompt — a stored summary, profile context — goes through `sanitizeForSystemPrompt()` from `@intelligo-dev/core/prompt` first.
 
+### What a turn sends
+
+Every model call in a tool loop sends the system prompt, every tool's definition and the whole history again, so a long conversation with large tool outputs grows each turn. The transport leaves these choices to you, because they are prompt decisions:
+
+- **Fewer tools per turn.** `resolveAgent` can return `activeTools` from the turn's state: the tools the conversation's stage needs, not all of them. A set that stays the same within a stage also keeps a prompt cache warm. On Mastra, the agent's `tools` can be a function of its `requestContext`.
+- **Prompt caching.** The transport sets no cache breakpoint, since that would name a provider. `agent.generation.prepareStep` sees each step's model messages: return them with the provider's cache option in `providerOptions` on the newest user message, and the system prompt as a system message carrying the same. On Mastra, pass `instructions` that way through `streamOptions` and leave `prepared.system` unset, because a prepared system prompt replaces them. The cache counts the provider reports are priced at the model's cache rates (see [models and pricing](/docs/guides/models-and-pricing)).
+- **Older tool outputs.** `prepareMessages` can replace the output of a tool call older than the last few turns with a short stand-in, keeping each call and its result paired; the app's own tables still hold the data for a tool to read again. A stand-in that moves with every turn changes the cached prefix each time, so compact at fixed points rather than by a rolling window when you also cache. Tell the model that a shortened output is shortened, not wrong.
+- **Data parts stay out.** `data-*` parts reach the reader, not the model: neither `streamText` nor the Mastra binding converts them into the model's context.
+
+### A card that ends the turn
+
+A tool that draws a question or a choice and waits for the reader should end the turn there, or the model takes another step and writes under the card. Add `hasToolCall("<tool>")` from `ai` to the agent's `stopWhen`; on Mastra, use the agent's own stop condition. The thread does not resend a turn that ended on a server-run tool.
+
+### Tool labels on the server
+
+A tool's `label` in `TOOL_RENDERERS` is a message key the client translates. To use the same words on the server, in a summary the agent writes or a notification, read them with next-intl's `getTranslations({ locale, namespace })`, as `lib/chat-server-config.ts` does for its own strings. Keep the keys in your messages, not in the client module.
+
+### The assistant route
+
+`app/api/assistant`, the `assistantMessage` capability, its feature key and the echo model are the scaffold's worked example of a model call outside chat through the execution boundary. They are one unit: keep them as the pattern for a one-shot call, or remove them together.
+
 ## With Mastra
 
 In the chat, a Mastra agent runs the turn through the `chat-mastra` item, and the transport keeps auth, admission, persistence and settlement:
@@ -3327,7 +3476,11 @@ export const chatServerConfig: ChatServerConfig = {
 };
 ```
 
-The turn settles the whole run's usage, every model call of a tool loop rather than the last, and a stopped turn settles the steps that finished. `memory: true` keeps the thread in Mastra memory under the conversation, with the workspace and the user together as the resource, and sends only the new message. `streamOptions(turn, prepared)` passes more of `agent.stream`'s options, such as a `requestContext` that carries the workspace to the tools. Tools that require approval are Mastra's suspend and resume, which the binding does not bridge.
+The turn settles the whole run's usage, every model call of a tool loop rather than the last, and a stopped turn settles the steps that finished. `memory: true` keeps the thread in Mastra memory under the conversation, with the workspace and the user together as the resource, and sends only the new message. `streamOptions(turn, prepared)` passes more of `agent.stream`'s options, such as `modelSettings` or a `requestContext` with values of your own.
+
+Every run's `requestContext` carries the turn's `workspaceId`, `userId` and `conversationId`, set over yours. A tool reads them with `chatActorOf(context)`, which throws when the workspace or the user is missing, so a tool never runs unscoped. A tool writes a data part, such as a card or an artifact, through Mastra's `context.writer.custom({ type: "data-…", data })`; the reader receives it like any other part. Data parts never reach the model's context, on this path or on `streamText`; a product that wants one there adds it in `prepareMessages`.
+
+The binding passes `reasoning` and `sources` from the chat server config to Mastra, so reasoning reaches the reader only when `reasoning: true` is set. Tools that require approval are Mastra's suspend and resume, which the binding does not bridge: a tool that needs the reader's confirmation asks through a question part and acts on the next turn's answer.
 
 Outside the chat, `@intelligo-dev/mastra` brackets a native Mastra call without importing Mastra:
 
@@ -3428,6 +3581,8 @@ Every field of `ModelPricing` is required:
 | `costPerMOutputTokens` | USD per million output tokens                                            |
 | `maxOutputTokens`      | Output ceiling used for the worst-case estimate at admission             |
 | `capabilities`         | Five booleans: `thinking`, `toolCall`, `vision`, `webSearch`, `codeExec` |
+
+Two optional fields price a provider's prompt cache: `costPerMCacheReadInputTokens` for input tokens read from the cache and `costPerMCacheWriteInputTokens` for input tokens written to it. Settlement takes the cache counts the model reports (the AI SDK's `inputTokenDetails`, or `cacheReadTokens` and `cacheWriteTokens` on a bound runtime's usage) and prices that part of the input at these rates; an unset rate is the input price. The Anthropic entries in `DEFAULT_MODELS` carry them. Admission holds the prompt at the cache-write rate when it is the higher one, so a turn that writes its whole prompt to the cache is still covered. The execution row keeps no cache counts, so a run `reconcile()` settles after a crash is priced at the full input rate.
 
 Prices are plain USD numbers here and nowhere else; everything computed from them is micros with a currency. `isModelRegistered(id)` answers whether an id has a price, `getModelPricing(id)` returns the entry, and `listModels()` returns all of them. They are also exported from `@intelligo-dev/executions/pricing`, a dependency-free subpath a client bundle can import.
 
@@ -4293,6 +4448,20 @@ Most of an app built on the framework is installed source the registry already t
 - **Your tools and prompts** — the functions an agent calls, with the model mocked.
 - **Your Server Actions** — parse, call the service, map its typed error. Mock the service's package and assert the mapping.
 - **Your own tables** — against a real Postgres, skipped when there is none: `describe.skipIf(!process.env.TEST_DATABASE_URL)`.
+
+## Your own tables, against a database
+
+A table scoped to a workspace or a user needs a real `users` row and a real `organization` row to point at. Before the suite, insert one of each with random ids (a `users` row needs `id`, `name`, `email`, `email_verified`, `created_at` and `updated_at`; an `organization` row needs `id`, `name`, `slug`, `created_at` and `updated_at`), add a `member` row only when the code under test checks membership, and after it delete the organization and the user: their rows cascade. The memory-audit trail is append-only and keeps its rows.
+
+Point `TEST_DATABASE_URL` at a database of its own, migrated with `intelligo migrate`, never at the app's `DATABASE_URL`: the fixtures write and delete. Name these files `*.integration.test.ts` and keep them out of `pnpm test`'s default run with an `exclude` in `vitest.config.ts`, so a plain test run needs no database.
+
+## Driving the chat from a script
+
+An eval or a smoke scenario talks to `/api/chat` the way the browser does. Sign in with Better-Auth's `POST /api/auth/sign-in/email`, sending an `Origin` header equal to `NEXT_PUBLIC_APP_URL` (the CSRF check refuses a request without one), and keep the session cookie it sets. Post each turn to `/api/chat` with that cookie and the same `Origin`, in the body the AI SDK's `DefaultChatTransport` sends: `{ id, messages, trigger: "submit-message" }`, where `id` is the conversation and `messages` ends with the new user `UIMessage` (the transport reads the earlier turns from what it stored). The answer is the AI SDK's UI message stream: the SDK's stream reader turns it into the assistant message with its text, tool and `data-*` parts. The turn's token usage is on the message's `metadata.usage`.
+
+## A plan for a test user
+
+`grantPlan` from `@intelligo-dev/billing` puts a workspace on a plan, the same call the admin console makes. Call it from a script that runs the composition root first. A running server caches feature flags for up to a minute, so a grant shows there after that, or at once after a restart.
 
 ---
 

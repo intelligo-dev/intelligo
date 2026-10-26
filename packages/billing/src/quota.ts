@@ -397,7 +397,11 @@ export async function recordTokenUsage(
     params.model ?? "unknown",
     params.inputTokens ?? 0,
     params.outputTokens ?? 0,
-    rate
+    rate,
+    {
+      cacheReadTokens: params.cacheReadTokens,
+      cacheWriteTokens: params.cacheWriteTokens,
+    }
   );
 
   return settleCharge(params, {

@@ -8,7 +8,9 @@
  * Resolve the trusted-origin list from the environment.
  *
  * `NEXT_PUBLIC_APP_URL` is a required variable, and when it is set it
- * is the only origin trusted — in every environment.
+ * is the only origin this list holds — in every environment. Better-Auth
+ * adds the origins in `BETTER_AUTH_TRUSTED_ORIGINS` to it (comma-separated,
+ * no spaces): a tunnel or a second port during development.
  *
  * When it is unset, outside production any loopback port is trusted, so a
  * fresh checkout works on whatever port Next picked (a guessed port would

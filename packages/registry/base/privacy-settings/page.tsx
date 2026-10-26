@@ -35,6 +35,12 @@ export default async function PrivacySettingsPage() {
   const t = await getTranslations("privacy-settings");
   const format = await getFormatter();
   const [facts, auditTrail] = await Promise.all([listFacts(), getAuditTrail()]);
+  // An audit row's action, target and actor from the messages; a value
+  // they do not name shows as stored.
+  const label = (group: "actions" | "targets" | "actors", value: string) => {
+    const key = `page.auditTrail.${group}.${value}`;
+    return t.has(key) ? t(key) : value;
+  };
 
   return (
     <div className="space-y-6">
@@ -82,8 +88,11 @@ export default async function PrivacySettingsPage() {
               {auditTrail.map((row) => (
                 <li key={row.id} className="py-3 text-sm">
                   <div className="flex items-center justify-between gap-4">
-                    <span className="font-medium capitalize">
-                      {row.action} · {row.targetKind}
+                    <span className="font-medium">
+                      {t("page.auditTrail.row", {
+                        action: label("actions", row.action),
+                        target: label("targets", row.targetKind),
+                      })}
                     </span>
                     <time
                       dateTime={new Date(row.createdAt).toISOString()}
@@ -95,11 +104,12 @@ export default async function PrivacySettingsPage() {
                       })}
                     </time>
                   </div>
-                  {row.reason && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {row.reason}
-                    </p>
-                  )}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t("page.auditTrail.by", {
+                      actor: label("actors", row.actorKind),
+                    })}
+                    {row.reason && <span> · {row.reason}</span>}
+                  </p>
                 </li>
               ))}
             </ul>

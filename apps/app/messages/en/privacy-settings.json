@@ -13,7 +13,27 @@
     "auditTrail": {
       "title": "Audit trail",
       "description": "{count, plural, one {The last # change to your data, most recent first.} other {The last # changes to your data, most recent first.}}",
-      "empty": "No changes recorded yet."
+      "empty": "No changes recorded yet.",
+      "row": "{action} · {target}",
+      "by": "By {actor}",
+      "actions": {
+        "create": "Added",
+        "update": "Changed",
+        "delete": "Deleted",
+        "view": "Viewed",
+        "export": "Exported"
+      },
+      "targets": {
+        "fact": "fact",
+        "memory": "memory",
+        "snapshot": "profile"
+      },
+      "actors": {
+        "agent": "the assistant",
+        "user": "you",
+        "system_job": "the system",
+        "admin": "an administrator"
+      }
     }
   },
   "exportButton": {
@@ -26,7 +46,18 @@
     "empty": "Nothing has been recorded about you yet.",
     "metaLine": "confidence {confidence} · importance {importance}",
     "deleteAria": "Delete this fact",
-    "emptyHint": "As you chat, anything the assistant learns about you shows up here — and you can delete any of it."
+    "emptyHint": "As you chat, anything the assistant learns about you shows up here — and you can delete any of it.",
+    "categories": {
+      "interest": "Interests",
+      "skill": "Skills",
+      "goal": "Goals",
+      "constraint": "Constraints",
+      "trait": "Traits",
+      "value": "Values",
+      "preference": "Preferences",
+      "context": "Context",
+      "background": "Background"
+    }
   },
   "errors": {
     "notFound": "That item no longer exists, or isn't yours.",

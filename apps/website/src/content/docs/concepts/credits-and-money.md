@@ -113,6 +113,7 @@ The rate is a fixed number you state, not a live feed. It lives in the single `b
 - The chat page calls `getChatQuotaState`, an estimate, to show a banner before a turn would be refused.
 - After each settlement `checkNotificationTriggers` runs. At 80% and 100% of the allowance, and at 20% left or depletion of a trial, the workspace owner gets an in-app notification and an email, once per period.
 - `getUsageSummary` returns tokens and request counts by model, agent and day, for a dashboard of your own.
+- One conversation's cost is in `usage_records`, whose `conversation_id` is indexed: sum `provider_cost_micros`, `charged_micros`, `input_tokens` and `output_tokens` for the workspace and the conversation, grouped by `currency`. Each assistant message also carries its turn's usage in `metadata.usage`.
 
 ## Next
 

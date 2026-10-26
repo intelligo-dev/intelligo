@@ -52,6 +52,58 @@ const result = await drain(
 // { claimed, succeeded, failed, unhandled, deferred }
 ```
 
+### Drain on a schedule
+
+The framework runs no worker. The maintenance route that
+`intelligo add maintenance` writes prunes the queue but does not drain it,
+because only the application has the handlers. Give the drain a route of its
+own, behind the same `CRON_SECRET`, and schedule it beside maintenance:
+
+```ts title="app/api/cron/jobs/route.ts"
+import { timingSafeEqual } from "node:crypto";
+
+import { drain } from "@intelligo-dev/jobs";
+
+import { composeIntelligo } from "@/lib/intelligo";
+import { handlers } from "@/lib/jobs";
+
+export const maxDuration = 60;
+
+function authorized(request: Request): boolean {
+  const secret = process.env.CRON_SECRET;
+  const header = request.headers.get("authorization") ?? "";
+  if (!secret || secret.length < 32) return false;
+  const expected = Buffer.from(`Bearer ${secret}`);
+  const given = Buffer.from(header);
+  return given.length === expected.length && timingSafeEqual(given, expected);
+}
+
+export async function GET(request: Request) {
+  if (!authorized(request)) return new Response(null, { status: 403 });
+  composeIntelligo();
+  return Response.json(
+    await drain(handlers, { limit: 25, deadlineMs: 45_000 })
+  );
+}
+```
+
+Recurring work is a handler that enqueues its own next run:
+
+```ts
+"digest.daily": async (job) => {
+  await sendDailyDigests();
+  await enqueue({
+    kind: "digest.daily",
+    workspaceId: null,
+    payload: {},
+    runAt: new Date(Date.now() + 24 * 60 * 60_000),
+  });
+},
+```
+
+In development, call the route by hand or in a loop:
+`curl -H "Authorization: Bearer $CRON_SECRET" localhost:4002/api/cron/jobs`.
+
 ## What the queue guarantees
 
 - **No double-processing.** Claiming is `FOR UPDATE SKIP LOCKED`, so several

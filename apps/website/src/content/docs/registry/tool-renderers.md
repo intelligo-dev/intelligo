@@ -31,7 +31,9 @@ There is no `register()` call: the object is plain source, populated at build ti
 
 ## Cards can act
 
-A card receives `actions`: send the next user turn (a quiz option, a suggested reply), answer a tool that runs client-side, approve or deny a gated call, open or close the canvas.
+A card receives `actions`: send the next user turn (a quiz option, a suggested reply), answer a tool that runs client-side, approve or deny a gated call, open or close the canvas. It also receives `isLastMessage`: a card that offers the next turn hides its controls on an earlier message, where the turn after it already answered.
+
+A call's citations come from its output's `sources`. Two sources with the same `url` are listed once; give each section of one document its own `url` with a `#fragment`, or number the sources with `index`, to keep them apart.
 
 ## Data parts
 

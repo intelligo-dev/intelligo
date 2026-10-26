@@ -63,6 +63,10 @@ export type RecordUsageParams = {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
+  /** Of `inputTokens`, those read from the provider's prompt cache; priced at the model's cache rate. */
+  cacheReadTokens?: number;
+  /** Of `inputTokens`, those written to the provider's prompt cache. */
+  cacheWriteTokens?: number;
   metadata?: Record<string, unknown>;
   usingTrialCredits?: boolean;
   /**

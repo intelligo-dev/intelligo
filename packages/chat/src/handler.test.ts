@@ -211,7 +211,19 @@ function stub(reply = "hello there") {
  * the assertions that tell a seam that works from one that only
  * type-checks.
  */
-function recordingModel() {
+function recordingModel(
+  inputTokens: {
+    total: number;
+    noCache: number | undefined;
+    cacheRead: number | undefined;
+    cacheWrite: number | undefined;
+  } = {
+    total: 1,
+    noCache: undefined,
+    cacheRead: undefined,
+    cacheWrite: undefined,
+  }
+) {
   return new MockLanguageModelV3({
     provider: "recording",
     modelId: MODEL_ID,
@@ -227,12 +239,7 @@ function recordingModel() {
             type: "finish",
             finishReason: { unified: "stop", raw: undefined },
             usage: {
-              inputTokens: {
-                total: 1,
-                noCache: undefined,
-                cacheRead: undefined,
-                cacheWrite: undefined,
-              },
+              inputTokens,
               outputTokens: { total: 1, text: 1, reasoning: undefined },
             },
           },
@@ -1211,6 +1218,101 @@ describe("POST streaming", () => {
       expect.objectContaining({
         model: MODEL_ID,
         usage: { inputTokens: 12, outputTokens: 5, totalTokens: 17 },
+      })
+    );
+  });
+
+  it("settles the prompt-cache counts the model reported", async () => {
+    const fake = fakeExecutions();
+    const model = recordingModel({
+      total: 100,
+      noCache: 30,
+      cacheRead: 60,
+      cacheWrite: 10,
+    });
+    const { POST } = createChatHandler(
+      baseConfig(fake.executions, {
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    await (await POST(turn("hello"))).text();
+    await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+    expect(fake.complete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        usage: expect.objectContaining({
+          inputTokens: 100,
+          cacheReadTokens: 60,
+          cacheWriteTokens: 10,
+        }),
+      })
+    );
+  });
+
+  it("passes a bound runtime's reasoning and sources only as the config allows", async () => {
+    const parts = [
+      { type: "reasoning-start", id: "r" },
+      { type: "reasoning-delta", id: "r", delta: "hmm" },
+      { type: "reasoning-end", id: "r" },
+      { type: "source-url", sourceId: "s", url: "https://example.com" },
+      { type: "text-start", id: "t" },
+      { type: "text-delta", id: "t", delta: "ok" },
+      { type: "text-end", id: "t" },
+      { type: "finish" },
+    ];
+    const run = async (allow: { reasoning?: boolean; sources?: boolean }) => {
+      const seen: { reasoning?: boolean; sources?: boolean }[] = [];
+      const { POST } = createChatHandler({
+        executions: fakeExecutions().executions,
+        model: { defaultId: MODEL_ID },
+        ...allow,
+        streamTurn: (_turn, _prepared, context) => {
+          seen.push({ reasoning: context.reasoning, sources: context.sources });
+          return {
+            stream: uiChunks(parts),
+            usage: Promise.resolve({ inputTokens: 1, outputTokens: 1 }),
+          };
+        },
+      });
+      const body = await (await POST(turn("hello"))).text();
+      return { body, seen: seen[0] };
+    };
+
+    const hidden = await run({});
+    expect(hidden.seen).toEqual({ reasoning: false, sources: false });
+    expect(hidden.body).not.toContain("reasoning-delta");
+    expect(hidden.body).not.toContain("source-url");
+    expect(hidden.body).toContain("text-delta");
+
+    const shown = await run({ reasoning: true, sources: true });
+    expect(shown.seen).toEqual({ reasoning: true, sources: true });
+    expect(shown.body).toContain("reasoning-delta");
+    expect(shown.body).toContain("source-url");
+  });
+
+  it("settles the cache counts a bound runtime reports", async () => {
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler({
+      executions: fake.executions,
+      model: { defaultId: MODEL_ID },
+      streamTurn: () => ({
+        stream: uiChunks([{ type: "finish" }]),
+        usage: Promise.resolve({
+          inputTokens: 50,
+          outputTokens: 5,
+          cacheReadTokens: 40,
+        }),
+      }),
+    });
+    await (await POST(turn("hello"))).text();
+    await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+    expect(fake.complete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        usage: {
+          inputTokens: 50,
+          outputTokens: 5,
+          totalTokens: undefined,
+          cacheReadTokens: 40,
+        },
       })
     );
   });

@@ -4,12 +4,10 @@
  * Per-category listing of the caller's own facts, with per-fact
  * delete.
  *
- * Category labels default to Title Case of the schema's category slug rather than a
- * message lookup: categories are open-ended, product-defined data (not
- * UI copy this item authors), so there is no fixed key set to
- * translate. A product that knows its own categories passes
- * `categoryLabels` — an already-localized slug → label map — and gets
- * proper names for the ones it recognizes, Title Case for the rest.
+ * Categories are core's closed list (`USER_FACT_CATEGORIES`), each
+ * named in this item's messages; one the messages lack shows its slug
+ * in Title Case. A fact's value shows as itself when it is a string,
+ * or as its `label` when it is an object with one.
  *
  * Deletion is optimistic — the row disappears immediately — while the
  * `deleteFact` server action records the deletion in the audit trail
@@ -48,15 +46,12 @@ function readableValue(value: unknown): string {
   return JSON.stringify(value);
 }
 
-export function FactList({
-  initialFacts,
-  categoryLabels,
-}: {
-  initialFacts: UserFact[];
-  /** Localized labels for categories this product defines. */
-  categoryLabels?: Record<string, string>;
-}) {
+export function FactList({ initialFacts }: { initialFacts: UserFact[] }) {
   const t = useTranslations("privacy-settings");
+  const categoryLabel = (category: string) => {
+    const key = `factList.categories.${category}`;
+    return t.has(key) ? t(key) : titleCase(category);
+  };
   const [facts, setFacts] = useState(initialFacts);
   const [expanded, setExpanded] = useState<Set<string>>(
     () => new Set(groupByCategory(initialFacts).keys())
@@ -115,7 +110,7 @@ export function FactList({
               className="flex w-full items-center justify-between px-3 py-2 text-left transition-colors hover:bg-muted/50"
             >
               <span className="text-sm font-medium">
-                {categoryLabels?.[category] ?? titleCase(category)}{" "}
+                {categoryLabel(category)}{" "}
                 <span className="text-muted-foreground">({items.length})</span>
               </span>
               {isOpen ? (

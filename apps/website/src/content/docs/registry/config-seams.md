@@ -73,6 +73,17 @@ export const shellConfig: ShellConfig = {
 };
 ```
 
+With the chat item installed, its conversation history goes in the
+sidebar — the chat page has no list of its own:
+
+```ts
+import { ChatHistory } from "@/components/chat/chat-history";
+
+export const shellConfig: ShellConfig = {
+  sidebarContent: ChatHistory,
+};
+```
+
 ### `lib/nav-config.ts`
 
 Bundled for the browser: no server imports, no secrets. Exports `navItems`, `accountItems`. [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/registry/base/app-shell/lib/nav-config.ts)

@@ -2,6 +2,8 @@ import type {
   AuditActorKind,
   SynthesisTriggerReason,
   UserFact,
+  UserFactCategory,
+  UserFactExtractionMethod,
   UserMemory,
   UserProfileSnapshot,
   UserMemoryAuditRow,
@@ -28,6 +30,47 @@ export type IdentityExport = {
   snapshot: UserProfileSnapshot | null;
   audit: UserMemoryAuditRow[];
 };
+
+/** Who a fact's audit row names, and why. */
+export type FactAuditBy = {
+  actorKind?: AuditActorKind;
+  actorId?: string;
+  /** Recorded on the audit row. */
+  reason?: string;
+};
+
+/**
+ * A fact, as `recordFact` stores it. One fact per user, workspace,
+ * category and key: recording the same key again replaces it.
+ */
+export type RecordFactInput = FactAuditBy & {
+  category: UserFactCategory;
+  /** The product's name for the fact, namespaced as it likes (`profile.city`). */
+  key: string;
+  /**
+   * What the fact says. A string, or an object whose `label` is a line a
+   * person can read: the privacy page shows that and nothing else of it.
+   */
+  value: unknown;
+  /** 0 to 1. */
+  confidence: number;
+  /** Default 5. */
+  importance?: number;
+  /**
+   * How the fact entered the system. With `lastConfirmedAt` it is the
+   * fact's provenance: `llm_extraction` unconfirmed is what a model
+   * read, confirmed is what the person agreed to, and
+   * `explicit_user_input` is what they wrote.
+   */
+  extractionMethod: UserFactExtractionMethod;
+  sourceProduct?: string | null;
+  sourceSessionId?: string | null;
+  sourceMessageId?: string | null;
+  expiresAt?: Date | null;
+};
+
+/** The fact as stored, and whether this call wrote it. */
+export type RecordFactResult = { fact: UserFact; written: boolean };
 
 /**
  * A synthesized profile, as `saveProfileSnapshot` stores it. The actor

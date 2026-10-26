@@ -791,7 +791,14 @@ export function eveStreamTurn(options: EveStreamTurnOptions): StreamTurn {
               if (TURN_ENDS.has(event.type)) skipping = false;
               continue;
             }
-            for (const chunk of mapper.map(event)) controller.enqueue(chunk);
+            for (const chunk of mapper.map(event)) {
+              // Reasoning reaches the reader only where the transport's
+              // `reasoning` option allows it.
+              if (!context.reasoning && chunk.type.startsWith("reasoning-")) {
+                continue;
+              }
+              controller.enqueue(chunk);
+            }
             if (mapper.state.done) break;
           }
           await saveCursor(false);

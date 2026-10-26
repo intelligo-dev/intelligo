@@ -176,15 +176,18 @@ export function ChatArtifactCard({
  * own. The answer goes back as the next user turn, so the runtime sees
  * it the way it sees any reply. The Questionnaire gives the
  * choices their keyboard shortcuts and the single/multiple semantics.
+ * A question on an earlier message was answered by the turn after it,
+ * so it shows as answered, after a reload too.
  */
-export function ChatQuestionCard({
-  data,
-  isReadonly,
-  actions,
-}: DataRendererProps) {
+export function ChatQuestionCard(props: DataRendererProps) {
+  const { data, isReadonly, actions } = props;
+  // Read with `in`: an app's renderer props may predate the field.
+  const isLastMessage =
+    "isLastMessage" in props ? props.isLastMessage !== false : true;
   const t = useTranslations("chat");
   const question = data as ChatQuestionData;
-  const [answered, setAnswered] = useState(question.answered ?? false);
+  const [submitted, setSubmitted] = useState(false);
+  const answered = submitted || (question.answered ?? !isLastMessage);
   const canAnswer = !answered && !isReadonly && Boolean(actions);
 
   function submit(answers: ApprovalCardAnswers) {
@@ -199,7 +202,7 @@ export function ChatQuestionCard({
       .join(", ")
       .trim();
     if (!answer) return;
-    setAnswered(true);
+    setSubmitted(true);
     actions?.sendMessage(answer);
   }
 

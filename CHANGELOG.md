@@ -41,6 +41,18 @@ previous tag of its series.
   - Usage settles from the whole run: every step of a tool loop, never the last step alone. A stopped turn, or one that failed after a step finished, settles the steps that finished. A reader that cancels the stream no longer leaves the turn waiting on Mastra's `totalUsage`.
   - `memory: true` keeps the thread in Mastra memory, with the conversation as the thread and the workspace and the user as the resource, and sends only the new message. `agent` may be a function of the turn, such as `mastra.getAgent(turn.agent.id)`.
   - The `chat` item's server config points at the item instead of a hand-written binding.
+- **The guides cover what a turn sends and how to test an app end to end.** The agent guide covers fewer tools per turn, prompt-cache breakpoints through `prepareStep`, shortening old tool outputs, a card that ends the turn and the assistant route as one unit. The testing guide covers database fixtures, driving `/api/chat` from a script and granting a test user a plan. There are also sections on developing through a tunnel, one conversation's cost, notification links and frequency, distinct citations, and adding a locale the registry ships.
+- **Tool and data renderers know whether their message is the latest.** `ToolRendererProps` and `DataRendererProps` gain `isLastMessage`, so a card that offers the next turn (a question, suggested replies) can hide its controls on an earlier message. The `chat` item's question card uses it: a question on an earlier message shows as answered, after a reload too, where it used to become answerable again. Run `intelligo sync chat`.
+- **`intelligo doctor` warns about two quiet gaps.**
+  - `nav-links`: a link in `lib/nav-config.ts` or `lib/settings-nav.ts` to a page whose item is not installed, which answers 404. It names the item that provides the page. The seams stay the app's.
+  - `maintenance`: an app with no `app/api/cron/maintenance/route.ts`, where accounts past their deletion grace period are never purged and lapsed grants, ended trials and stale credit holds stay.
+  - The jobs README shows a drain route behind `CRON_SECRET` and a job that schedules its next run.
+- **`recordFact` and `confirmFact` in `@intelligo-dev/core/identity`.** A product stored a fact by writing `user_facts` and `user_memory_audit` itself.
+  - `recordFact(actor, input)` stores a fact or replaces the one under the same category and key, with a `create` or `update` audit row in the same transaction. A fact the person wrote (`explicit_user_input`) is not replaced by an `llm_extraction` no more confident than it; the result says `written: false`.
+  - `confirmFact(actor, factId)` stamps `lastConfirmedAt`, optionally with a new confidence, and audits it.
+  - `deleteFact` takes an optional third argument naming who removed the fact; without it the user did, as before.
+  - No schema change: provenance is the existing `extractionMethod` with `lastConfirmedAt`. The core README's Identity section describes it, with the category, key and `value.label` conventions.
+- **The `chat-mastra` item puts the turn's actor in every run's `requestContext`.** `workspaceId`, `userId` and `conversationId` are set over any `requestContext` that `streamOptions` returns. `chatActorOf(context)` reads them in a tool and throws when the workspace or the user is missing; `chatRequestContextOf(turn)` builds one for a run outside the binding. The item's header and the agent guide show a tool writing a data part through Mastra's `context.writer`.
 - **Any OAuth 2.0 or OpenID Connect provider beside Google and GitHub.**
   - `OAUTH_PROVIDERS` names the providers. Each one's endpoints come from `OAUTH_<ID>_*`: client id and secret, plus authorization, token and user-info URLs, or one discovery URL. Scopes, a display name, `PKCE=false` and `SUBJECT_FIELD` are optional. `SUBJECT_FIELD` names the field that identifies the account, for a plain OAuth provider that answers with `sub` rather than `id`.
   - They reach Better-Auth through its `genericOAuth` plugin, as social providers. This needs `better-auth` 1.7 or later in the app: `@intelligo-dev/auth` and `@intelligo-dev/next` now accept `~1.7.0` beside `~1.6.30`, and a new app is scaffolded with `~1.7.11` (app-scaffold template 1.25.0). An app on 1.6 keeps Google and GitHub and upgrades `better-auth` to add others. The callback is `/api/auth/callback/<id>`.
@@ -63,6 +75,28 @@ previous tag of its series.
   - Values match however they are written (`$2,500,000`, `2.5 million`), and units must match: currency signs and codes, `%`, field names such as `priceUsd` and `sharePercent`, and the vocabulary's words. Small counts and years said as years pass bare. Dates are checked whole. Amounts spelled out in words are refused. Ids, links and UUIDs source nothing.
   - `vocabularies` sets the languages read. `ENGLISH_NUMBERS` is the default and `MONGOLIAN_NUMBERS` ships too. `NumberVocabulary` describes another language.
   - `numberCheckStream`, `unsourcedNumbers`, `onRecord`, `sourcesOf` and `createNumberReader` are exported for checks outside the transport.
+
+### Changed
+
+- **A `streamTurn` runtime's reasoning and source parts follow `reasoning` and `sources`**, as on the `streamText` path. The transport passed whatever the runtime sent. It now drops reasoning and source parts from the returned stream unless the option is on (both default to false), and hands both flags to the runtime in the `StreamTurn` context. The `chat-mastra` item passes them to `toAISdkStream`; the `chat-eve` item drops eve's reasoning unless `reasoning` is on.
+- **`createNotification` returns its metadata parsed**, as `getNotifications` and `getUnreadNotifications` do. It returned the stored JSON text. The column stays JSON text.
+
+### Fixed
+
+- **The privacy page speaks the reader's language.** Fact categories showed their English slugs, and audit rows their raw action and target (`update · fact`). The `privacy-settings` item now names each category, action, target and actor from its messages, in English and Mongolian, and says who made each change. `FactList` loses its `categoryLabels` prop, which the page never passed. Run `intelligo sync privacy-settings`.
+- **`intelligo sync` no longer lowers a dependency the app had raised.** Every item pins its npm dependencies to the range the registry is tested against, and `shadcn add` wrote that range over the app's, so an app on `lucide-react ^1.61.0` went back to `^1.59.0` on each sync. A dependency the app declares at or above the pin, in the same major, now keeps the app's range; an older one is still raised. An item installed with the shadcn CLI straight from the hosted registry still writes the pinned range.
+- **Input read from or written to a provider's prompt cache is priced at the cache rate.** The cache counts were dropped before settlement, so cached input was charged at the full input price.
+  - `TokenUsage` carries optional `cacheReadTokens` and `cacheWriteTokens`, parts of `inputTokens`. The chat transport reads them from the AI SDK's `inputTokenDetails` or from a bound runtime's usage, and the `chat-mastra` item maps Mastra's counts.
+  - `ModelPricing` gains optional `costPerMCacheReadInputTokens` and `costPerMCacheWriteInputTokens`; an unset rate is the input price, so an entry without them prices as before. `providerCost` and `chargeFor` take the cache counts, clamped to the input.
+  - The Anthropic entries in `DEFAULT_MODELS` carry their cache prices.
+  - Admission holds the prompt at the cache-write rate where that is higher than the input rate.
+- **The logger keeps token counts.** A key holding the `token` fragment was redacted whatever it held, so `inputTokens`, `outputTokens` and `cacheReadTokens` logged as `[REDACTED]`. A finite number under a key ending in `tokens` or `token_count` is now kept; a string under any key containing `token` is still redacted.
+
+### Upgrading
+
+An app on a `streamTurn` runtime that showed its reasoning without setting `reasoning: true` in the chat server config sets it now, or the reasoning no longer reaches the reader. Run `intelligo sync chat-mastra` or `intelligo sync chat-eve` for the bindings that pass the flags on. A `StreamTurn` written by hand receives `reasoning` and `sources` in its context.
+
+Code that parsed the metadata `createNotification` returned (`JSON.parse(created.metadata)`) reads `created.metadata` as an object instead.
 
 ## [1.3.0-next.1] — 2026-10-22
 
