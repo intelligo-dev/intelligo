@@ -80,6 +80,10 @@ export type CompleteExecutionInput = {
     inputTokens?: number;
     outputTokens?: number;
     totalTokens?: number;
+    /** Of `inputTokens`, those read from the provider's prompt cache. */
+    cacheReadTokens?: number;
+    /** Of `inputTokens`, those written to the provider's prompt cache. */
+    cacheWriteTokens?: number;
   };
   model?: string;
   metadata?: Record<string, unknown>;
@@ -305,6 +309,8 @@ export function createExecutions(ports: ExecutionPorts = {}) {
               inputTokens,
               outputTokens,
               totalTokens,
+              cacheReadTokens: result.usage?.cacheReadTokens,
+              cacheWriteTokens: result.usage?.cacheWriteTokens,
               usingTrialCredits,
               metadata: result.metadata ?? input.metadata,
               price: input.price,
@@ -488,7 +494,10 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         metadata: { requestId: row.requestId, how, ...extra },
       });
 
-    /** Charge the usage on the row and mark it succeeded. */
+    /**
+     * Charge the usage on the row and mark it succeeded. The row keeps
+     * no cache counts, so its input is priced at the full input rate.
+     */
     const settleFromRow = async (how: string) => {
       const settled = await ports.settleUsage!({
         workspaceId: row.workspaceId,

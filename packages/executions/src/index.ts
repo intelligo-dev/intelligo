@@ -75,4 +75,5 @@ export type {
   ModelKind,
   ModelCapabilities,
   BillingRate,
+  CachedInput,
 } from "./pricing";

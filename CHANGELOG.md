@@ -70,6 +70,11 @@ previous tag of its series.
 
 ### Fixed
 
+- **Input read from or written to a provider's prompt cache is priced at the cache rate.** The cache counts were dropped before settlement, so cached input was charged at the full input price.
+  - `TokenUsage` carries optional `cacheReadTokens` and `cacheWriteTokens`, parts of `inputTokens`. The chat transport reads them from the AI SDK's `inputTokenDetails` or from a bound runtime's usage, and the `chat-mastra` item maps Mastra's counts.
+  - `ModelPricing` gains optional `costPerMCacheReadInputTokens` and `costPerMCacheWriteInputTokens`; an unset rate is the input price, so an entry without them prices as before. `providerCost` and `chargeFor` take the cache counts, clamped to the input.
+  - The Anthropic entries in `DEFAULT_MODELS` carry their cache prices.
+  - Admission holds the prompt at the cache-write rate where that is higher than the input rate.
 - **The logger keeps token counts.** A key holding the `token` fragment was redacted whatever it held, so `inputTokens`, `outputTokens` and `cacheReadTokens` logged as `[REDACTED]`. A finite number under a key ending in `tokens` or `token_count` is now kept; a string under any key containing `token` is still redacted.
 
 ### Upgrading

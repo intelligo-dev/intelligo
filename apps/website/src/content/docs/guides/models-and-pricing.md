@@ -81,6 +81,8 @@ Every field of `ModelPricing` is required:
 | `maxOutputTokens`      | Output ceiling used for the worst-case estimate at admission             |
 | `capabilities`         | Five booleans: `thinking`, `toolCall`, `vision`, `webSearch`, `codeExec` |
 
+Two optional fields price a provider's prompt cache: `costPerMCacheReadInputTokens` for input tokens read from the cache and `costPerMCacheWriteInputTokens` for input tokens written to it. Settlement takes the cache counts the model reports (the AI SDK's `inputTokenDetails`, or `cacheReadTokens` and `cacheWriteTokens` on a bound runtime's usage) and prices that part of the input at these rates; an unset rate is the input price. The Anthropic entries in `DEFAULT_MODELS` carry them. Admission holds the prompt at the cache-write rate when it is the higher one, so a turn that writes its whole prompt to the cache is still covered. The execution row keeps no cache counts, so a run `reconcile()` settles after a crash is priced at the full input rate.
+
 Prices are plain USD numbers here and nowhere else; everything computed from them is micros with a currency. `isModelRegistered(id)` answers whether an id has a price, `getModelPricing(id)` returns the entry, and `listModels()` returns all of them. They are also exported from `@intelligo-dev/executions/pricing`, a dependency-free subpath a client bundle can import.
 
 ## What an unregistered id does

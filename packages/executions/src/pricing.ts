@@ -50,6 +50,10 @@ export type ModelPricing = {
   costPerMInputTokens: number;
   /** USD per million output tokens; 0 for an embedding model. */
   costPerMOutputTokens: number;
+  /** USD per million input tokens read from the provider's prompt cache; the input price when unset. */
+  costPerMCacheReadInputTokens?: number;
+  /** USD per million input tokens written to the provider's prompt cache; the input price when unset. */
+  costPerMCacheWriteInputTokens?: number;
   /**
    * The ceiling on streamed output used for worst-case pre-request
    * estimation; 0 for an embedding model, which writes no tokens.
@@ -216,6 +220,8 @@ export const DEFAULT_MODELS: readonly ModelPricing[] = [
     displayName: "Claude Sonnet 4.6",
     costPerMInputTokens: 3.0,
     costPerMOutputTokens: 15.0,
+    costPerMCacheReadInputTokens: 0.3,
+    costPerMCacheWriteInputTokens: 3.75,
     maxOutputTokens: 8_000,
     capabilities: {
       thinking: true,
@@ -236,6 +242,8 @@ export const DEFAULT_MODELS: readonly ModelPricing[] = [
     displayName: "Claude Haiku 5.5",
     costPerMInputTokens: 0.1,
     costPerMOutputTokens: 0.5,
+    costPerMCacheReadInputTokens: 0.01,
+    costPerMCacheWriteInputTokens: 0.125,
     maxOutputTokens: 8_000,
     capabilities: {
       thinking: true,
@@ -252,6 +260,8 @@ export const DEFAULT_MODELS: readonly ModelPricing[] = [
     displayName: "Claude Sonnet 5.5",
     costPerMInputTokens: 2.0,
     costPerMOutputTokens: 10.0,
+    costPerMCacheReadInputTokens: 0.2,
+    costPerMCacheWriteInputTokens: 2.5,
     maxOutputTokens: 8_000,
     capabilities: {
       thinking: true,
@@ -268,6 +278,8 @@ export const DEFAULT_MODELS: readonly ModelPricing[] = [
     displayName: "Claude Opus 5.5",
     costPerMInputTokens: 4.0,
     costPerMOutputTokens: 20.0,
+    costPerMCacheReadInputTokens: 0.2,
+    costPerMCacheWriteInputTokens: 5.0,
     maxOutputTokens: 8_000,
     capabilities: {
       thinking: true,
@@ -332,23 +344,44 @@ export const PROVIDER_CURRENCY: CurrencyCode = currency("USD");
  * Fractions of a micro round up, which keeps the cheapest models from
  * pricing a real call at nothing.
  *
+ * `cache` names the part of `inputTokens` the provider read from or
+ * wrote to its prompt cache, priced at the model's cache rates. The
+ * counts are clamped to the input, so a provider that reports them
+ * outside it never prices more tokens than were sent.
+ *
  * @throws {UnknownModelError} when the id has no registered price.
  */
 export function providerCost(
   modelId: string,
   inputTokens: number,
-  outputTokens: number
+  outputTokens: number,
+  cache: CachedInput = {}
 ): Money {
   const config = requireModel(modelId);
   const scaled = (price: number) => Math.round(price * PRICE_SCALE);
+  const read = clamp(cache.cacheReadTokens, inputTokens);
+  const write = clamp(cache.cacheWriteTokens, inputTokens - read);
+  const input = config.costPerMInputTokens;
   return money(
     Math.ceil(
-      (inputTokens * scaled(config.costPerMInputTokens) +
+      ((inputTokens - read - write) * scaled(input) +
+        read * scaled(config.costPerMCacheReadInputTokens ?? input) +
+        write * scaled(config.costPerMCacheWriteInputTokens ?? input) +
         outputTokens * scaled(config.costPerMOutputTokens)) /
         PRICE_SCALE
     ),
     PROVIDER_CURRENCY
   );
+}
+
+/** The part of a call's input the provider served from, or wrote to, its prompt cache. */
+export type CachedInput = {
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
+};
+
+function clamp(count: number | undefined, limit: number): number {
+  return Math.min(Math.max(0, count ?? 0), Math.max(0, limit));
 }
 
 /** Prices carry at most six decimals of a dollar per million tokens. */
@@ -427,9 +460,10 @@ export function chargeFor(
   modelId: string,
   inputTokens: number,
   outputTokens: number,
-  rate: BillingRate
+  rate: BillingRate,
+  cache: CachedInput = {}
 ): { providerCost: Money; charged: Money } {
-  const cost = providerCost(modelId, inputTokens, outputTokens);
+  const cost = providerCost(modelId, inputTokens, outputTokens, cache);
   return { providerCost: cost, charged: applyRate(cost, rate) };
 }
 
@@ -466,7 +500,18 @@ export function estimateWorstCaseCharge(
   );
   const outputBudget =
     modelKind(pricing) === "embedding" ? 0 : pricing.maxOutputTokens;
-  return chargeFor(modelId, input * steps, outputBudget * steps, rate).charged;
+  // A cache write can cost more than plain input; the hold prices the
+  // prompt at whichever rate is higher.
+  const writeRate = pricing.costPerMCacheWriteInputTokens ?? 0;
+  // Stryker disable next-line EqualityOperator: equivalent — at equal rates the prompt is priced the same either way.
+  const writesCostMore = writeRate > pricing.costPerMInputTokens;
+  return chargeFor(
+    modelId,
+    input * steps,
+    outputBudget * steps,
+    rate,
+    writesCostMore ? { cacheWriteTokens: input * steps } : {}
+  ).charged;
 }
 
 const ESTIMATE_INPUT_BUDGET = 16_000;

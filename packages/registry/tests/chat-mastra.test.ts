@@ -18,12 +18,16 @@ import { mastraStreamTurn } from "../base/chat-mastra/lib/chat-mastra";
 
 type Part = Record<string, unknown>;
 
-const usage = (input: number, output: number) => ({
+const usage = (
+  input: number,
+  output: number,
+  cache: { read?: number; write?: number } = {}
+) => ({
   inputTokens: {
     total: input,
     noCache: undefined,
-    cacheRead: undefined,
-    cacheWrite: undefined,
+    cacheRead: cache.read,
+    cacheWrite: cache.write,
   },
   outputTokens: { total: output, text: output, reasoning: undefined },
 });
@@ -160,6 +164,29 @@ describe("mastraStreamTurn", () => {
       inputTokens: 30,
       outputTokens: 8,
       totalTokens: 38,
+    });
+  });
+
+  it("settles the prompt-cache counts Mastra reports", async () => {
+    const cachedText: Part[] = [
+      ...textStep("Hi.", 0, 0).slice(0, -1),
+      {
+        type: "finish",
+        finishReason: { unified: "stop", raw: undefined },
+        usage: usage(100, 5, { read: 70, write: 20 }),
+      },
+    ];
+    const produced = await mastraStreamTurn({ agent: agentOf([cachedText]) })(
+      turn,
+      { messages: [user("Hi")] },
+      context()
+    );
+    await readAll(produced.stream);
+    await expect(produced.usage).resolves.toMatchObject({
+      inputTokens: 100,
+      outputTokens: 5,
+      cacheReadTokens: 70,
+      cacheWriteTokens: 20,
     });
   });
 

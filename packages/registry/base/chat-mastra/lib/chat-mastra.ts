@@ -97,17 +97,50 @@ export function memoryScopeOf(turn: ChatTurn): MastraMemoryScope {
   };
 }
 
-function addUsage(
-  sum: Required<TokenUsage>,
-  step: TokenUsage | undefined
-): Required<TokenUsage> {
+/** Mastra's usage, whose prompt-cache counts carry their own names. */
+type MastraUsage = {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  cachedInputTokens?: number;
+  cacheCreationInputTokens?: number;
+};
+
+type SpentUsage = Required<
+  Pick<TokenUsage, "inputTokens" | "outputTokens" | "totalTokens">
+> &
+  Pick<TokenUsage, "cacheReadTokens" | "cacheWriteTokens">;
+
+/** The cache counts Mastra reported, under the transport's names. */
+function cacheOf(usage: MastraUsage | undefined) {
+  return {
+    ...(usage?.cachedInputTokens !== undefined
+      ? { cacheReadTokens: usage.cachedInputTokens }
+      : {}),
+    ...(usage?.cacheCreationInputTokens !== undefined
+      ? { cacheWriteTokens: usage.cacheCreationInputTokens }
+      : {}),
+  };
+}
+
+function addUsage(sum: SpentUsage, step: MastraUsage | undefined): SpentUsage {
   const input = step?.inputTokens ?? 0;
   const output = step?.outputTokens ?? 0;
+  const cache = cacheOf(step);
+  const read = addCount(sum.cacheReadTokens, cache.cacheReadTokens);
+  const write = addCount(sum.cacheWriteTokens, cache.cacheWriteTokens);
   return {
     inputTokens: sum.inputTokens + input,
     outputTokens: sum.outputTokens + output,
     totalTokens: sum.totalTokens + (step?.totalTokens ?? input + output),
+    ...(read !== undefined ? { cacheReadTokens: read } : {}),
+    ...(write !== undefined ? { cacheWriteTokens: write } : {}),
   };
+}
+
+/** A cache count summed, absent while neither side reported one. */
+function addCount(a: number | undefined, b: number | undefined) {
+  return a === undefined && b === undefined ? undefined : (a ?? 0) + (b ?? 0);
 }
 
 /**
@@ -155,7 +188,7 @@ export function mastraStreamTurn(options: MastraStreamTurnOptions): StreamTurn {
     const messages = memory ? prepared.messages.slice(-1) : prepared.messages;
 
     // Every finished step, summed: what a stopped or failed run spent.
-    let spent: Required<TokenUsage> = {
+    let spent: SpentUsage = {
       inputTokens: 0,
       outputTokens: 0,
       totalTokens: 0,
@@ -190,6 +223,7 @@ export function mastraStreamTurn(options: MastraStreamTurnOptions): StreamTurn {
             totalTokens:
               total.totalTokens ??
               (total.inputTokens ?? 0) + (total.outputTokens ?? 0),
+            ...cacheOf(total),
           }),
         (error: unknown) => {
           // Mastra rejects every pending result of a stopped or failed

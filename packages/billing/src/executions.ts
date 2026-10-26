@@ -70,6 +70,8 @@ export function billingExecutionPorts(): Required<ExecutionPorts> {
             inputTokens: s.inputTokens,
             outputTokens: s.outputTokens,
             totalTokens: s.totalTokens,
+            cacheReadTokens: s.cacheReadTokens,
+            cacheWriteTokens: s.cacheWriteTokens,
             usingTrialCredits: s.usingTrialCredits,
             requestId: s.requestId,
             metadata: s.metadata,

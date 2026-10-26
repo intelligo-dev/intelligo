@@ -15,6 +15,7 @@ import {
   clearModels,
   estimateWorstCaseCharge,
   modelKind,
+  providerCost,
   registerModels,
   type BillingRate,
   type ModelPricing,
@@ -143,6 +144,92 @@ describe("chargeFor", () => {
   });
 });
 
+describe("providerCost with cached input", () => {
+  const cost = (
+    model: ModelPricing,
+    input: number,
+    output: number,
+    cache?: { cacheReadTokens?: number; cacheWriteTokens?: number }
+  ) => providerCost(model.id, input, output, cache).amount;
+
+  /** Input tokens and a cache split of them that may run past the input. */
+  const cached = fc.tuple(runTokens, runTokens, runTokens, runTokens);
+
+  it("prices a call that names no cache counts as it always did", () => {
+    fc.assert(
+      fc.property(anyModel, runTokens, runTokens, (model, input, output) => {
+        expect(cost(model, input, output, {})).toBe(
+          cost(model, input, output)
+        );
+        expect(
+          cost(model, input, output, { cacheReadTokens: 0, cacheWriteTokens: 0 })
+        ).toBe(cost(model, input, output));
+      })
+    );
+  });
+
+  it("prices cache counts at the input rate for a model with no cache prices", () => {
+    const uncached = DEFAULT_MODELS.filter(
+      (m) =>
+        m.costPerMCacheReadInputTokens === undefined &&
+        m.costPerMCacheWriteInputTokens === undefined
+    );
+    fc.assert(
+      fc.property(
+        fc.constantFrom(...uncached),
+        cached,
+        (model, [input, output, read, write]) => {
+          expect(
+            cost(model, input, output, {
+              cacheReadTokens: read,
+              cacheWriteTokens: write,
+            })
+          ).toBe(cost(model, input, output));
+        }
+      )
+    );
+  });
+
+  it("stays between the input priced all at the cheapest rate and all at the dearest", () => {
+    fc.assert(
+      fc.property(chatModel, cached, (model, [input, output, read, write]) => {
+        const rates = [
+          model.costPerMInputTokens,
+          model.costPerMCacheReadInputTokens ?? model.costPerMInputTokens,
+          model.costPerMCacheWriteInputTokens ?? model.costPerMInputTokens,
+        ];
+        const at = (price: number) =>
+          Math.ceil(
+            (input * Math.round(price * 1_000_000) +
+              output * Math.round(model.costPerMOutputTokens * 1_000_000)) /
+              1_000_000
+          );
+        const priced = cost(model, input, output, {
+          cacheReadTokens: read,
+          cacheWriteTokens: write,
+        });
+        expect(priced).toBeGreaterThanOrEqual(at(Math.min(...rates)));
+        expect(priced).toBeLessThanOrEqual(at(Math.max(...rates)));
+      })
+    );
+  });
+
+  it("never charges more for a read than for the same tokens sent fresh", () => {
+    fc.assert(
+      fc.property(chatModel, cached, (model, [input, output, read]) => {
+        if (
+          (model.costPerMCacheReadInputTokens ?? model.costPerMInputTokens) >
+          model.costPerMInputTokens
+        )
+          return;
+        expect(
+          cost(model, input, output, { cacheReadTokens: read })
+        ).toBeLessThanOrEqual(cost(model, input, output));
+      })
+    );
+  });
+});
+
 describe("estimateWorstCaseCharge", () => {
   /** A run inside its declared workload: per step, input and output. */
   const run = fc
@@ -199,6 +286,34 @@ describe("estimateWorstCaseCharge", () => {
           expect(hold(prompt, stepCount + moreSteps)).toBeGreaterThanOrEqual(
             base
           );
+        }
+      )
+    );
+  });
+
+  it("covers a run whose input was read from or written to the prompt cache", () => {
+    fc.assert(
+      fc.property(
+        run,
+        fc.double({ min: 0, max: 1, noNaN: true }),
+        fc.double({ min: 0, max: 1, noNaN: true }),
+        ([model, r, prompt, calls, stepCount], readShare, writeShare) => {
+          const input = calls.reduce((sum, [i]) => sum + i, 0);
+          const output = calls.reduce((sum, [, o]) => sum + o, 0);
+          const cacheReadTokens = Math.floor(input * readShare);
+          const cacheWriteTokens = Math.floor(
+            (input - cacheReadTokens) * writeShare
+          );
+          const hold = estimateWorstCaseCharge(model.id, r, {
+            inputTokens: prompt,
+            steps: stepCount,
+          });
+          expect(
+            chargeFor(model.id, input, output, r, {
+              cacheReadTokens,
+              cacheWriteTokens,
+            }).charged.amount
+          ).toBeLessThanOrEqual(hold.amount);
         }
       )
     );

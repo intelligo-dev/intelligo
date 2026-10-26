@@ -5,20 +5,39 @@ import {
   inFlightTracker,
   pickUsage,
   sumStepUsage,
+  sumUsage,
 } from "./usage";
 
 describe("pickUsage", () => {
-  it("keeps the three fields settlement reads and drops what a provider adds", () => {
+  it("keeps the fields settlement reads, the cache counts among them, and drops what a provider adds", () => {
     const usage = {
       inputTokens: 12,
       outputTokens: 3,
       totalTokens: 15,
-      inputTokenDetails: { cacheReadTokens: 4 },
+      inputTokenDetails: {
+        noCacheTokens: 5,
+        cacheReadTokens: 4,
+        cacheWriteTokens: 3,
+      },
+      reasoningTokens: 2,
     };
     expect(pickUsage(usage)).toStrictEqual({
       inputTokens: 12,
       outputTokens: 3,
       totalTokens: 15,
+      cacheReadTokens: 4,
+      cacheWriteTokens: 3,
+    });
+  });
+
+  it("reads cache counts a runtime reports at the top level", () => {
+    expect(
+      pickUsage({ inputTokens: 10, cacheReadTokens: 6 })
+    ).toStrictEqual({
+      inputTokens: 10,
+      outputTokens: undefined,
+      totalTokens: undefined,
+      cacheReadTokens: 6,
     });
   });
 
@@ -27,6 +46,40 @@ describe("pickUsage", () => {
       inputTokens: undefined,
       outputTokens: undefined,
       totalTokens: undefined,
+    });
+  });
+});
+
+describe("summed cache counts", () => {
+  it("adds the steps' cache counts, and leaves them out when no step reported one", () => {
+    expect(
+      sumStepUsage([
+        { usage: { inputTokens: 100, outputTokens: 5, cacheWriteTokens: 90 } },
+        { usage: { inputTokens: 110, outputTokens: 7, cacheReadTokens: 90 } },
+      ])
+    ).toStrictEqual({
+      inputTokens: 210,
+      outputTokens: 12,
+      totalTokens: 222,
+      cacheReadTokens: 90,
+      cacheWriteTokens: 90,
+    });
+    expect(
+      sumStepUsage([{ usage: { inputTokens: 1, outputTokens: 1 } }])
+    ).toStrictEqual({ inputTokens: 1, outputTokens: 1, totalTokens: 2 });
+  });
+
+  it("carries one side's cache count through a sum", () => {
+    expect(
+      sumUsage(
+        { inputTokens: 50, outputTokens: 0, cacheReadTokens: 40 },
+        { inputTokens: 10, outputTokens: 2 }
+      )
+    ).toStrictEqual({
+      inputTokens: 60,
+      outputTokens: 2,
+      totalTokens: 62,
+      cacheReadTokens: 40,
     });
   });
 });

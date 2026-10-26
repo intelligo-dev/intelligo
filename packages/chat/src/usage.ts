@@ -8,15 +8,47 @@ export type TokenUsage = {
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
+  /** Of `inputTokens`, those read from the provider's prompt cache. */
+  cacheReadTokens?: number;
+  /** Of `inputTokens`, those written to the provider's prompt cache. */
+  cacheWriteTokens?: number;
 };
 
-/** The three fields settlement reads, and nothing else a provider adds. */
-export function pickUsage(usage: TokenUsage | undefined): TokenUsage {
+/** Usage as the AI SDK reports it: the cache counts sit under `inputTokenDetails`. */
+export type ReportedUsage = TokenUsage & {
+  inputTokenDetails?: {
+    cacheReadTokens?: number | undefined;
+    cacheWriteTokens?: number | undefined;
+  };
+};
+
+/** The fields settlement reads, and nothing else a provider adds. */
+export function pickUsage(usage: ReportedUsage | undefined): TokenUsage {
   return {
     inputTokens: usage?.inputTokens,
     outputTokens: usage?.outputTokens,
     totalTokens: usage?.totalTokens,
+    ...cacheCounts(
+      usage?.inputTokenDetails?.cacheReadTokens ?? usage?.cacheReadTokens,
+      usage?.inputTokenDetails?.cacheWriteTokens ?? usage?.cacheWriteTokens
+    ),
   };
+}
+
+/** The cache counts that were reported; a usage without them carries neither key. */
+function cacheCounts(
+  read: number | undefined,
+  write: number | undefined
+): Pick<TokenUsage, "cacheReadTokens" | "cacheWriteTokens"> {
+  return {
+    ...(read !== undefined ? { cacheReadTokens: read } : {}),
+    ...(write !== undefined ? { cacheWriteTokens: write } : {}),
+  };
+}
+
+/** Sums one cache count, keeping it absent when neither side reported it. */
+function addCount(a: number | undefined, b: number | undefined) {
+  return a === undefined && b === undefined ? undefined : (a ?? 0) + (b ?? 0);
 }
 
 /**
@@ -28,11 +60,20 @@ export function sumStepUsage(
 ): TokenUsage {
   let inputTokens = 0;
   let outputTokens = 0;
+  let read: number | undefined;
+  let write: number | undefined;
   for (const step of steps) {
     inputTokens += step.usage?.inputTokens ?? 0;
     outputTokens += step.usage?.outputTokens ?? 0;
+    read = addCount(read, step.usage?.cacheReadTokens);
+    write = addCount(write, step.usage?.cacheWriteTokens);
   }
-  return { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens: inputTokens + outputTokens,
+    ...cacheCounts(read, write),
+  };
 }
 
 /**
@@ -131,5 +172,9 @@ export function sumUsage(a: TokenUsage, b: TokenUsage): TokenUsage {
     inputTokens: (a.inputTokens ?? 0) + (b.inputTokens ?? 0),
     outputTokens: (a.outputTokens ?? 0) + (b.outputTokens ?? 0),
     totalTokens: total(a) + total(b),
+    ...cacheCounts(
+      addCount(a.cacheReadTokens, b.cacheReadTokens),
+      addCount(a.cacheWriteTokens, b.cacheWriteTokens)
+    ),
   };
 }
