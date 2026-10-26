@@ -116,8 +116,8 @@ export function seedIntelligo(): Promise<void> {
     // an existing row is left alone, because changing the currency under
     // a ledger that holds balances is your decision, not a deploy's.
     ensureBillingSettingsRow({
-      currency: "USD",
-      usdRateMicros: 1_000_000,
+      currency: __CURRENCY__,
+      usdRateMicros: __USD_RATE_MICROS__,
       marginBp: DEFAULT_MARGIN_BP,
     }),
   ]).then(

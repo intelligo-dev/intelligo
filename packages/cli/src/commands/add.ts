@@ -88,6 +88,8 @@ export type AddOptions = {
 const DEFAULT_VARIABLES: Readonly<Record<string, string>> = {
   __LOCALES__: '["en"]',
   __DEFAULT_LOCALE__: '"en"',
+  __CURRENCY__: '"USD"',
+  __USD_RATE_MICROS__: "1_000_000",
 };
 
 export function substitute(

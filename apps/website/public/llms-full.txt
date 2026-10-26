@@ -489,7 +489,7 @@ export type BillingRate = {
 
 A turn of 2,000 input and 500 output tokens on `google/gemini-2.5-flash` costs the provider 1,850 micros. At 4× that is 7,400 micros, $0.0074 charged. A euro deployment at `920_000` charges 6,808 micros EUR.
 
-The rate is a fixed number you state, not a live feed. It lives in the single `billing_settings` row. `ensureBillingSettingsRow` in `composeIntelligo()` seeds that row and leaves an existing one alone, so editing the call after the first boot changes nothing. To change them later, call `updateBillingSettings({ usdRateMicros, marginBp })` — from an admin action or a script; it validates the values and drops the cache. Changing `currency` does not convert the balances a ledger already holds. `getBillingSettings` caches it for 60 seconds per process. When the row cannot be read it answers with the last reading the process made; with none, it throws, so admission and settlement fail and are retried rather than charge in another currency. Each `usage_records` row stores the provider cost, margin and rate it was charged at, so a later change never rewrites history.
+The rate is a fixed number you state, not a live feed. It lives in the single `billing_settings` row. `ensureBillingSettingsRow` in `composeIntelligo()` seeds that row and leaves an existing one alone, so editing the call after the first boot changes nothing. Decide before that boot: `intelligo create my-app --currency MNT --usd-rate 3450` writes the currency and its rate per USD into the call, and refuses a currency other than USD without a rate. To change them later, call `updateBillingSettings({ usdRateMicros, marginBp })` — from an admin action or a script; it validates the values and drops the cache. Changing `currency` does not convert the balances a ledger already holds. `getBillingSettings` caches it for 60 seconds per process. When the row cannot be read it answers with the last reading the process made; with none, it throws, so admission and settlement fail and are retried rather than charge in another currency. Each `usage_records` row stores the provider cost, margin and rate it was charged at, so a later change never rewrites history.
 
 ## What the workspace sees
 
@@ -3039,8 +3039,8 @@ A scaffolded app has `@intelligo-dev/cli` as a dev dependency; run it with `pnpm
 ```text
 intelligo <command>
 intelligo create [dir]      Scaffold an app, then install the registry pages you pick
-                            (--items a,b | --all, --locales en,mn, --yes, --no-install,
-                            --name <name>)
+                            (--items a,b | --all, --locales en,mn, --currency MNT
+                            --usd-rate 3450, --yes, --no-install, --name <name>)
 intelligo doctor            Report configuration and migration-chain problems, and,
                             with DATABASE_URL, the database's (--offline skips it;
                             --json for CI)
@@ -3088,6 +3088,10 @@ instead.
 `--locales en,mn` routes those locales, the first as the default. The
 registry ships English and Mongolian copy; another locale renders in
 English until the app translates it.
+
+`--currency MNT --usd-rate 3450` bills in that currency at that rate
+per USD from the first boot; the composition root seeds it once.
+Without them the app bills in USD.
 
 [source](https://github.com/intelligo-dev/intelligo/blob/main/packages/cli/src/commands/create.ts)
 

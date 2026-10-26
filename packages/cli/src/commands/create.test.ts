@@ -19,6 +19,7 @@ import path from "node:path";
 
 import {
   createApp,
+  currencyVariables,
   deriveNames,
   formatNextSteps,
   linksWorkspace,
@@ -298,6 +299,52 @@ describe("locales", () => {
     expect(readFileSync(path.join(target, "i18n/routing.ts"), "utf8")).toBe(
       'locales: ["en"], defaultLocale: "en"\n'
     );
+  });
+
+  it("seeds the currency and rate asked for, and USD at 1 without them", () => {
+    writeFileSync(
+      path.join(templatesDir, "app-scaffold", "billing.tpl"),
+      "currency: __CURRENCY__, usdRateMicros: __USD_RATE_MICROS__\n"
+    );
+    const catalogue = JSON.parse(
+      readFileSync(path.join(templatesDir, "manifest.json"), "utf8")
+    ) as { "app-scaffold": { files: unknown[] } };
+    catalogue["app-scaffold"].files.push({
+      template: "app-scaffold/billing.tpl",
+      target: "lib/billing-seed.ts",
+    });
+    writeFileSync(
+      path.join(templatesDir, "manifest.json"),
+      JSON.stringify(catalogue)
+    );
+
+    const mnt = path.join(workdir, "mnt");
+    createApp({
+      target: mnt,
+      templatesDir,
+      frameworkVersion: "1.2.3",
+      currency: "mnt",
+      usdRate: "3450.5",
+    });
+    expect(readFileSync(path.join(mnt, "lib/billing-seed.ts"), "utf8")).toBe(
+      'currency: "MNT", usdRateMicros: 3_450_500_000\n'
+    );
+
+    const usd = path.join(workdir, "usd");
+    create(usd);
+    expect(readFileSync(path.join(usd, "lib/billing-seed.ts"), "utf8")).toBe(
+      'currency: "USD", usdRateMicros: 1_000_000\n'
+    );
+  });
+
+  it("never guesses a rate", () => {
+    expect(() => currencyVariables("MNT", undefined)).toThrow(
+      /--currency MNT needs --usd-rate/
+    );
+    expect(() => currencyVariables("MNT", "zero")).toThrow(/needs --usd-rate/);
+    expect(() => currencyVariables("tugrik", "3450")).toThrow(/ISO 4217/);
+    expect(() => currencyVariables("USD", "2")).toThrow(/converts at 1/);
+    expect(currencyVariables(undefined, undefined)).toEqual({});
   });
 
   it("refuses what is not a language tag", () => {
