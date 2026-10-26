@@ -33,10 +33,10 @@ The rule that keeps it safe is the read path. Workspace tables are filtered by `
 
 ## Load it with a script
 
-Reference data arrives from outside the app: an export, a nightly job, a file a colleague computed. Load it with a script you run, not from a request. Replace the whole table in one transaction, so a reader sees the old rows or the new ones and never half of each:
+Reference data arrives from outside the app: an export, a nightly job, a file a colleague computed. Load it with a script you run, not from a request. Replace the whole table in one transaction, so a reader sees the old rows or the new ones and never half of each. The app already has `pg` as a pinned devDependency, so only its types are added:
 
 ```bash
-pnpm add -D pg @types/pg
+pnpm add -D @types/pg
 ```
 
 ```ts title="scripts/load-holidays.ts"
