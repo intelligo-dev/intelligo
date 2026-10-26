@@ -77,6 +77,7 @@ previous tag of its series.
 
 ### Fixed
 
+- **`intelligo sync` no longer lowers a dependency the app had raised.** Every item pins its npm dependencies to the range the registry is tested against, and `shadcn add` wrote that range over the app's, so an app on `lucide-react ^1.61.0` went back to `^1.59.0` on each sync. A dependency the app declares at or above the pin, in the same major, now keeps the app's range; an older one is still raised. An item installed with the shadcn CLI straight from the hosted registry still writes the pinned range.
 - **Input read from or written to a provider's prompt cache is priced at the cache rate.** The cache counts were dropped before settlement, so cached input was charged at the full input price.
   - `TokenUsage` carries optional `cacheReadTokens` and `cacheWriteTokens`, parts of `inputTokens`. The chat transport reads them from the AI SDK's `inputTokenDetails` or from a bound runtime's usage, and the `chat-mastra` item maps Mastra's counts.
   - `ModelPricing` gains optional `costPerMCacheReadInputTokens` and `costPerMCacheWriteInputTokens`; an unset rate is the input price, so an entry without them prices as before. `providerCost` and `chargeFor` take the cache counts, clamped to the input.

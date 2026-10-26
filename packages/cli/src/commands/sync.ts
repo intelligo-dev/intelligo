@@ -10,6 +10,10 @@
  *   they match the `@intelligo-dev/*` packages of the same release;
  * - the order: an item that imports a sibling's files lands after it
  *   (requires.json `items`);
+ * - the app's dependency ranges: each item pins its npm dependencies to
+ *   the range the registry is tested against, and a dependency the app
+ *   already has at or above that pin, in the same major, keeps the
+ *   app's range rather than being taken back to the pin;
  * - the seams: files an item ships once for the deployment to own
  *   (requires.json `seams`) are put back after the install, and message
  *   files are merged key by key, the app's copy winning;
