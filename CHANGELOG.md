@@ -28,6 +28,16 @@ previous tag of its series.
 - **A "Reference data" guide covering tables every workspace reads and none owns.**
   - Covers the global table, why it may hold nothing that belongs to a workspace or a user, a script that replaces its rows in one transaction (`node --env-file=.env.local scripts/load-*.ts`), and reading it from a tool.
   - The scaffold's `lib/db/schema.ts` comment names the exception beside its "scope them to a workspace" rule. app-scaffold template 1.24.0.
+- **Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 in `DEFAULT_MODELS`.**
+  - The ids are `anthropic/claude-haiku-5-5` ($0.10 / $0.50 per million tokens), `anthropic/claude-sonnet-5-5` ($2 / $10) and `anthropic/claude-opus-5-5` ($4 / $20), each with every capability. An app that registered them by hand can drop its own entries.
+  - Haiku 5.5 carries the rate for prompts of 100K tokens or fewer. A product that sends longer prompts registers it at Anthropic's higher rate ($0.50 / $2.50).
+  - `anthropic/claude-sonnet-4-6` stays.
+- **`numberCheck` in the chat server config: a reply's numbers must come from what the model was shown.**
+  - When a reply ends, each of its numbers is compared by value and unit with the system prompt, the reader's own messages and every tool output on record, this turn's included. A reply holding any other number gets `note(numbers, turn)` as one more text part of the same message. It runs on `streamText` and `streamTurn` replies alike, and is off when unset.
+  - A tool part the client posted counts only as the stored transcript says it ran. The assistant's earlier words are never a source.
+  - Values match however they are written (`$2,500,000`, `2.5 million`), and units must match: currency signs and codes, `%`, field names such as `priceUsd` and `sharePercent`, and the vocabulary's words. Small counts and years said as years pass bare. Dates are checked whole. Amounts spelled out in words are refused. Ids, links and UUIDs source nothing.
+  - `vocabularies` sets the languages read. `ENGLISH_NUMBERS` is the default and `MONGOLIAN_NUMBERS` ships too. `NumberVocabulary` describes another language.
+  - `numberCheckStream`, `unsourcedNumbers`, `onRecord`, `sourcesOf` and `createNumberReader` are exported for checks outside the transport.
 
 ## [1.3.0-next.1] — 2026-10-22
 
