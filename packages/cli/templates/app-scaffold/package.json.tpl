@@ -24,7 +24,7 @@
     "@intelligo-dev/jobs": "__INTELLIGO_DEP__",
     "@intelligo-dev/next": "__INTELLIGO_DEP__",
     "ai": "^7.0.103",
-    "better-auth": "~1.6.33",
+    "better-auth": "~1.7.11",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
     "drizzle-orm": "^0.45.2",
