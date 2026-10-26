@@ -27,7 +27,7 @@ previous tag of its series.
 
 - **Any OAuth 2.0 or OpenID Connect provider beside Google and GitHub.**
   - `OAUTH_PROVIDERS` names the providers. Each one's endpoints come from `OAUTH_<ID>_*`: client id and secret, plus authorization, token and user-info URLs, or one discovery URL. Scopes, a display name, `PKCE=false` and `SUBJECT_FIELD` are optional. `SUBJECT_FIELD` names the field that identifies the account, for a plain OAuth provider that answers with `sub` rather than `id`.
-  - They reach Better-Auth through its `genericOAuth` plugin, as social providers. This needs `better-auth` 1.7 or later in the app. The callback is `/api/auth/callback/<id>`.
+  - They reach Better-Auth through its `genericOAuth` plugin, as social providers. This needs `better-auth` 1.7 or later in the app: `@intelligo-dev/auth` and `@intelligo-dev/next` now accept `~1.7.0` beside `~1.6.30`, and a new app is scaffolded with `~1.7.11`. An app on 1.6 keeps Google and GitHub and upgrades `better-auth` to add others. The callback is `/api/auth/callback/<id>`.
   - `registerOAuthProfileMapper(providerId, mapper)` from `@intelligo-dev/auth` maps a provider's profile to the user from the composition root. Use it for a provider with phone-only accounts, which have no email. It is read on every sign-in.
   - `listOAuthProviders()` lists the declared providers. `readOAuthProviders(env)` in `@intelligo-dev/core/env` parses them.
   - A provider configured by half is left out, and `validateEnv` warns naming what is missing.
