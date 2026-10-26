@@ -18,10 +18,16 @@ const affix = fc.stringMatching(/^[a-z_]{0,8}$/);
 describe("logger redaction", () => {
   it("redacts any string under a key containing 'token'", () => {
     fc.assert(
-      fc.property(affix, casing, affix, fc.string(), (pre, frag, post, value) => {
-        const key = `${pre}${frag}${post}`;
-        expect(logged({ [key]: value })[key]).toBe("[REDACTED]");
-      })
+      fc.property(
+        affix,
+        casing,
+        affix,
+        fc.string(),
+        (pre, frag, post, value) => {
+          const key = `${pre}${frag}${post}`;
+          expect(logged({ [key]: value })[key]).toBe("[REDACTED]");
+        }
+      )
     );
   });
 

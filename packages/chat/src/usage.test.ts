@@ -31,9 +31,7 @@ describe("pickUsage", () => {
   });
 
   it("reads cache counts a runtime reports at the top level", () => {
-    expect(
-      pickUsage({ inputTokens: 10, cacheReadTokens: 6 })
-    ).toStrictEqual({
+    expect(pickUsage({ inputTokens: 10, cacheReadTokens: 6 })).toStrictEqual({
       inputTokens: 10,
       outputTokens: undefined,
       totalTokens: undefined,

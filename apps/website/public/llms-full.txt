@@ -2762,7 +2762,9 @@ function authorized(request: Request): boolean {
 export async function GET(request: Request) {
   if (!authorized(request)) return new Response(null, { status: 403 });
   composeIntelligo();
-  return Response.json(await drain(handlers, { limit: 25, deadlineMs: 45_000 }));
+  return Response.json(
+    await drain(handlers, { limit: 25, deadlineMs: 45_000 })
+  );
 }
 ```
 

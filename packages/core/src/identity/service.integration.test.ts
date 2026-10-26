@@ -293,9 +293,9 @@ d("identity service — real DB integration", () => {
   });
 
   it("confirmFact refuses another user's fact", async () => {
-    const theirs = (
-      await listFacts({ workspaceId, userId: otherUserId })
-    ).find((f) => f.key === "it.role")!;
+    const theirs = (await listFacts({ workspaceId, userId: otherUserId })).find(
+      (f) => f.key === "it.role"
+    )!;
     await expect(confirmFact(actor, theirs.id)).rejects.toSatisfy(
       (err: unknown) => isIdentityServiceError(err) && err.code === "not_found"
     );

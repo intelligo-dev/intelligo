@@ -25,10 +25,10 @@ describe("markerRoute", () => {
 describe("navHrefs", () => {
   it("reads string-literal hrefs and skips commented ones", () => {
     const source = [
-      "/** e.g. `{ href: \"/settings/ai\" }` */",
+      '/** e.g. `{ href: "/settings/ai" }` */',
       'const a = { href: "/settings/team", titleKey: "x" };',
       "const b = { href: '/usage' };",
-      "// { href: \"/pricing\" }",
+      '// { href: "/pricing" }',
       "const c = { href: base + '/x' };",
     ].join("\n");
     expect(navHrefs(source)).toEqual(["/settings/team", "/usage"]);
@@ -73,7 +73,9 @@ describe("checkNavLinks", () => {
       expect.objectContaining({
         name: "nav-links",
         status: "warn",
-        detail: expect.stringContaining("/settings/team, a page of the team-settings item"),
+        detail: expect.stringContaining(
+          "/settings/team, a page of the team-settings item"
+        ),
       }),
     ]);
     expect(results[0]!.detail).not.toContain("profile-settings");

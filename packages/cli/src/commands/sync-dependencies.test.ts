@@ -15,7 +15,13 @@ describe("rangeFloor", () => {
   });
 
   it("reads nothing from a range it cannot place", () => {
-    for (const range of ["latest", "*", "workspace:*", "^1.2", "1.2.3-beta.1"]) {
+    for (const range of [
+      "latest",
+      "*",
+      "workspace:*",
+      "^1.2",
+      "1.2.3-beta.1",
+    ]) {
       expect(rangeFloor(range)).toBeNull();
     }
   });

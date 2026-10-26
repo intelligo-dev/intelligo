@@ -158,11 +158,12 @@ describe("providerCost with cached input", () => {
   it("prices a call that names no cache counts as it always did", () => {
     fc.assert(
       fc.property(anyModel, runTokens, runTokens, (model, input, output) => {
-        expect(cost(model, input, output, {})).toBe(
-          cost(model, input, output)
-        );
+        expect(cost(model, input, output, {})).toBe(cost(model, input, output));
         expect(
-          cost(model, input, output, { cacheReadTokens: 0, cacheWriteTokens: 0 })
+          cost(model, input, output, {
+            cacheReadTokens: 0,
+            cacheWriteTokens: 0,
+          })
         ).toBe(cost(model, input, output));
       })
     );

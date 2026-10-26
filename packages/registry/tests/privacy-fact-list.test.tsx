@@ -11,13 +11,15 @@ import en from "../base/privacy-settings/messages/en.json";
 
 vi.mock("next-intl", () => {
   const lookup = (key: string): unknown =>
-    key.split(".").reduce<unknown>(
-      (node, part) =>
-        node && typeof node === "object"
-          ? (node as Record<string, unknown>)[part]
-          : undefined,
-      en
-    );
+    key
+      .split(".")
+      .reduce<unknown>(
+        (node, part) =>
+          node && typeof node === "object"
+            ? (node as Record<string, unknown>)[part]
+            : undefined,
+        en
+      );
   const t = Object.assign(
     (key: string) => {
       const value = lookup(key);
