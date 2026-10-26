@@ -26,39 +26,63 @@ type Provider = "google" | "github";
 
 interface SocialLoginButtonsProps {
   providers: string[];
+  /**
+   * Providers declared with OAUTH_PROVIDERS (`listOAuthProviders()` from
+   * `@intelligo-dev/auth`), each a button with its own name. Listed first:
+   * a product that declares one is usually built around it.
+   */
+  oauthProviders?: { id: string; name: string }[];
   /** Where to go once signed in — a path on this site. */
   next?: string;
 }
 
 export function SocialLoginButtons({
   providers,
+  oauthProviders = [],
   next = "/dashboard",
 }: SocialLoginButtonsProps) {
   const t = useTranslations("auth-login");
-  const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
-  if (providers.length === 0) {
+  if (providers.length === 0 && oauthProviders.length === 0) {
     return null;
   }
 
-  async function handleSocialLogin(provider: Provider) {
+  async function signInWith(
+    id: string,
+    start: () => Promise<{ error?: unknown }>
+  ) {
     setFailed(false);
-    setLoadingProvider(provider);
+    setLoadingProvider(id);
     try {
       // On success the browser leaves for the provider. A provider the
       // server does not have configured answers `{ error }` instead of
       // throwing, and the buttons must come back either way.
-      const { error } = await authClient.signIn.social({
-        provider,
-        callbackURL: next,
-      });
+      const { error } = await start();
       if (!error) return;
     } catch {
       // Same outcome as `{ error }`: stay on the page and say so.
     }
     setFailed(true);
     setLoadingProvider(null);
+  }
+
+  function handleSocialLogin(provider: Provider) {
+    return signInWith(provider, () =>
+      authClient.signIn.social({ provider, callbackURL: next })
+    );
+  }
+
+  function handleOAuthLogin(providerId: string) {
+    // A declared provider is a social provider to Better-Auth (1.7 and
+    // later); its id is configuration, so the client's types do not know it.
+    return signInWith(`oauth:${providerId}`, () =>
+      authClient.signIn.social({
+        provider: providerId as Provider,
+        callbackURL: next,
+      })
+    );
   }
 
   return (
@@ -69,6 +93,22 @@ export function SocialLoginButtons({
         </p>
       ) : null}
       <div className="grid gap-2">
+        {oauthProviders.map((provider) => (
+          <Button
+            key={provider.id}
+            type="button"
+            variant="outline"
+            onClick={() => handleOAuthLogin(provider.id)}
+            disabled={loadingProvider !== null}
+            className="w-full"
+          >
+            {loadingProvider === `oauth:${provider.id}` ? <Spinner /> : null}
+            {loadingProvider === `oauth:${provider.id}`
+              ? t("socialLogin.connecting")
+              : t("socialLogin.continueWith", { provider: provider.name })}
+          </Button>
+        ))}
+
         {providers.includes("google") && (
           <Button
             type="button"

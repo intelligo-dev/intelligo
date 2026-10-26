@@ -75,6 +75,8 @@ import {
   fileAccepted,
   parseChatBody,
 } from "./body";
+import { numberCheckStream, onRecord, sourcesOf } from "./number-check";
+import { createNumberReader } from "./numbers";
 import { readJsonUpTo } from "./read-body";
 import type { ChatAttachmentPolicy } from "./body";
 import type { ChatErrorCode, ChatModelOption } from "./client";
@@ -195,6 +197,42 @@ function withoutFrames<CHUNK extends { type: string }>(
   );
 }
 
+/** `stream`, and a promise that settles once it has been read to its end or given up. */
+function untilDrained<CHUNK>(
+  stream: ReadableStream<CHUNK>,
+  signal: AbortSignal
+): { stream: ReadableStream<CHUNK>; drained: Promise<void> } {
+  let done!: () => void;
+  const drained = new Promise<void>((resolve) => {
+    done = resolve;
+  });
+  signal.addEventListener("abort", () => done(), { once: true });
+  const reader = stream.getReader();
+  return {
+    stream: new ReadableStream<CHUNK>({
+      async pull(controller) {
+        try {
+          const { done: end, value } = await reader.read();
+          if (end) {
+            done();
+            controller.close();
+          } else {
+            controller.enqueue(value);
+          }
+        } catch (error) {
+          done();
+          controller.error(error);
+        }
+      },
+      cancel(reason) {
+        done();
+        return reader.cancel(reason);
+      },
+    }),
+    drained,
+  };
+}
+
 type ApprovalAnswer = {
   toolName: string;
   toolCallId: string;
@@ -276,6 +314,9 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
   const attachments = config.attachments ?? false;
   const maxBodyBytes = config.maxBodyBytes ?? defaultBodyLimit(attachments);
   const authenticate = config.authenticate ?? defaultAuthenticate;
+  const numberReader = config.numberCheck
+    ? createNumberReader(config.numberCheck.vocabularies)
+    : undefined;
   const rateLimit =
     config.rateLimit === undefined ? defaultRateLimit : config.rateLimit;
   const deriveTitle = config.deriveTitle;
@@ -1206,6 +1247,37 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     };
 
     /**
+     * The reply, through the number check when the config asks for it:
+     * its sources are the system prompt, the reader's words and the tool
+     * outputs on record — a tool part the client posted counts only as
+     * the stored transcript says it ran.
+     */
+    const checkNumbers = (
+      reply: ReadableStream<UIMessageChunk>
+    ): ReadableStream<UIMessageChunk> => {
+      const check = config.numberCheck;
+      if (!check || !numberReader) return reply;
+      return reply.pipeThrough(
+        numberCheckStream({
+          reader: numberReader,
+          sources: async () =>
+            sourcesOf(
+              prepared.system ?? agent.systemPrompt,
+              onRecord(prepared.messages, await turn.history())
+            ),
+          note: (numbers) => check.note(numbers, turn),
+          onUnknown: async (numbers) => {
+            log.warn("Unsourced numbers in a reply", {
+              conversationId: body.id,
+              numbers,
+            });
+            await emit(() => check.onUnknown?.(numbers, turn));
+          },
+        })
+      );
+    };
+
+    /**
      * A runtime the consumer bound. It gets the whole prepared turn,
      * its stored files resolved as the model would see them, and gives
      * back UI chunks; the frames are ours.
@@ -1222,10 +1294,16 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         abortSignal: request.signal,
         writer,
       });
+      const framed = withoutFrames(
+        produced.stream as ReadableStream<UIMessageChunk>
+      );
+      // The note lands when the reply's stream closes, which can be after
+      // the runtime's usage resolved: `finish` waits for it.
+      const reply = config.numberCheck
+        ? untilDrained(checkNumbers(framed), request.signal)
+        : { stream: framed, drained: Promise.resolve() };
       writer.merge(
-        withoutFrames(
-          produced.stream as ReadableStream<UIMessageChunk>
-        ) as ReadableStream<InferUIMessageChunk<ChatUIMessage>>
+        reply.stream as ReadableStream<InferUIMessageChunk<ChatUIMessage>>
       );
       const usage = await produced.usage;
       captured = {
@@ -1238,6 +1316,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       if (title) {
         writer.write({ type: "data-chat-title", data: title, transient: true });
       }
+      await reply.drained;
       writer.write({
         type: "finish",
         ...(withMetadata
@@ -1366,19 +1445,21 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         });
 
         writer.merge(
-          result.toUIMessageStream({
-            sendReasoning: config.reasoning ?? false,
-            sendSources: config.sources ?? false,
-            onError: () => t("streamError"),
-            ...(withMetadata
-              ? {
-                  messageMetadata: ({ part }) =>
-                    part.type === "finish"
-                      ? finishMetadata(part.totalUsage)
-                      : undefined,
-                }
-              : {}),
-          }) as ReadableStream<InferUIMessageChunk<ChatUIMessage>>
+          checkNumbers(
+            result.toUIMessageStream({
+              sendReasoning: config.reasoning ?? false,
+              sendSources: config.sources ?? false,
+              onError: () => t("streamError"),
+              ...(withMetadata
+                ? {
+                    messageMetadata: ({ part }) =>
+                      part.type === "finish"
+                        ? finishMetadata(part.totalUsage)
+                        : undefined,
+                  }
+                : {}),
+            }) as ReadableStream<UIMessageChunk>
+          ) as ReadableStream<InferUIMessageChunk<ChatUIMessage>>
         );
 
         const title = await applyTitle();

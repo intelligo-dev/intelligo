@@ -26,6 +26,7 @@
     "connecting": "Холбогдож байна…",
     "continueWithGoogle": "Google-ээр үргэлжлүүлэх",
     "continueWithGithub": "GitHub-аар үргэлжлүүлэх",
+    "continueWith": "{provider} ашиглан үргэлжлүүлэх",
     "orContinueWith": "Эсвэл",
     "failed": "Нэвтрэлтийг эхлүүлж чадсангүй. Дахин оролдох эсвэл имэйлээрээ нэвтэрнэ үү."
   },

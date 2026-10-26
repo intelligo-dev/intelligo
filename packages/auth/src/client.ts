@@ -11,6 +11,8 @@ import { organizationClient } from "better-auth/client/plugins";
 // blocked by the app's CSP (`connect-src 'self'`) whenever its port differs
 // from the one the app is served on.
 export const authClient = createAuthClient({
+  // Providers declared with OAUTH_PROVIDERS need no client plugin: from
+  // Better-Auth 1.7 they are social providers, `signIn.social({ provider })`.
   plugins: [organizationClient()],
 });
 

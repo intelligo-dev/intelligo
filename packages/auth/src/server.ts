@@ -6,7 +6,7 @@
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { admin, organization } from "better-auth/plugins";
+import { admin, genericOAuth, organization } from "better-auth/plugins";
 import { createAccessControl } from "better-auth/plugins/access";
 import { defaultStatements, userAc } from "better-auth/plugins/admin/access";
 import { PLATFORM_ADMIN_ROLE } from "./roles";
@@ -58,6 +58,7 @@ import {
 } from "@intelligo-dev/core/email";
 import { eq } from "drizzle-orm";
 import { invitationLinks } from "./invitation-links";
+import { oauthProviderConfigs } from "./oauth-providers";
 import { personalWorkspaceSlug } from "./workspace-slug";
 import { workspaceCreated } from "./workspace-bootstrap";
 import { runInBackground } from "@intelligo-dev/core/request-context";
@@ -74,6 +75,9 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:4000";
  * a guessed port rejects every sign-in. See `resolveTrustedOrigins`.
  */
 const TRUSTED_ORIGINS = resolveTrustedOrigins(process.env);
+
+/** OAuth providers declared with OAUTH_PROVIDERS; see `oauth-providers.ts`. */
+const OAUTH_PROVIDERS = oauthProviderConfigs(process.env);
 
 export const auth = betterAuth({
   // Explicit, so the documented name is the one honoured; AUTH_SECRET is
@@ -344,5 +348,8 @@ export const auth = betterAuth({
       impersonationSessionDuration: IMPERSONATION_SECONDS,
       allowImpersonatingAdmins: false,
     }),
+    ...(OAUTH_PROVIDERS.length > 0
+      ? [genericOAuth({ config: OAUTH_PROVIDERS })]
+      : []),
   ],
 });

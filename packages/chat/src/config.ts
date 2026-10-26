@@ -30,6 +30,7 @@ import type { ChatAttachmentPolicy } from "./body";
 import type { ChatErrorCode, ChatModelOption } from "./client";
 import type { ChatMessages } from "./errors";
 import type { ChatGenerationOptions } from "./generation";
+import type { NumberVocabulary } from "./numbers";
 import type { ChatDataChunk, ChatUIMessage } from "./parts";
 import type { TokenUsage } from "./usage";
 import type { ConversationWindowOptions } from "./windowing";
@@ -292,6 +293,19 @@ export interface ChatModelsConfig {
     | ((actor: ChatActor) => ChatModelOption[] | Promise<ChatModelOption[]>);
 }
 
+export interface ChatNumberCheck {
+  /** The note under a reply holding numbers nothing sourced, in the reader's language. */
+  note: (numbers: string[], turn: ChatTurn) => string;
+  /**
+   * The languages replies are written in: their scale words, unit
+   * words and how they say a year or a date. Default English;
+   * `MONGOLIAN_NUMBERS` ships too.
+   */
+  vocabularies?: NumberVocabulary[];
+  /** Called with the unsourced numbers, before the note is written — a log line, a metric. */
+  onUnknown?: (numbers: string[], turn: ChatTurn) => void | Promise<void>;
+}
+
 export interface ChatServerConfig {
   /** The execution boundary, with its ports bound by the composition root. */
   executions: Executions;
@@ -313,6 +327,15 @@ export interface ChatServerConfig {
    * transport's. See `TurnStream`.
    */
   streamTurn?: StreamTurn;
+  /**
+   * Checks every number in a reply against what the model was shown —
+   * the system prompt, the reader's words, the tool outputs on record —
+   * and puts `note` under a reply that holds any other, in the same
+   * message. For products whose figures must come from tools: prices,
+   * salaries, scores. Runs on `streamText` and `streamTurn` replies
+   * alike. Off when unset.
+   */
+  numberCheck?: ChatNumberCheck;
 
   /** Runs first on every request — the place to call `composeIntelligo()`. */
   onRequest?: () => void | Promise<void>;

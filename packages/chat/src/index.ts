@@ -18,6 +18,7 @@ export type {
   ChatMessageParams,
   ChatMessages,
   ChatModelsConfig,
+  ChatNumberCheck,
   ChatServerConfig,
   ChatTurn,
   ChatTurnContext,
@@ -37,6 +38,29 @@ export type { ChatBody, ParsedChatBody } from "./body";
 
 export { getChatQuotaState, getChatQuotaStates } from "./quota";
 export { lastUserMessage, toUIMessages } from "./messages";
+export {
+  numberCheckStream,
+  onRecord,
+  sourcesOf,
+  unsourcedNumbers,
+} from "./number-check";
+export type {
+  MessageLike,
+  NumberCheckStreamOptions,
+  NumberSources,
+} from "./number-check";
+export {
+  createNumberReader,
+  ENGLISH_NUMBERS,
+  MONGOLIAN_NUMBERS,
+  unitOfField,
+} from "./numbers";
+export type {
+  KnownNumbers,
+  NumberReader,
+  NumberUnit,
+  NumberVocabulary,
+} from "./numbers";
 export { pickUsage, sumStepUsage } from "./usage";
 export type { TokenUsage } from "./usage";
 export {
