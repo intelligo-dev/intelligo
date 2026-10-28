@@ -20,7 +20,7 @@
     "@astrojs/react": "^6.0.6",
     "@astrojs/sitemap": "^3.7.4",
     "@base-ui/react": "^1.9.0",
-    "@hookform/resolvers": "^5.9.1",
+    "@hookform/resolvers": "^6.0.0",
     "@shadcn/react": "^0.3.1",
     "@tailwindcss/vite": "^4.3.3",
     "ai": "^7.0.143",
