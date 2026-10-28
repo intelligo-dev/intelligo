@@ -62,7 +62,7 @@
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
     "@react-email/components": "^1.0.12",
-    "dotenv": "^18.0.8",
+    "dotenv": "^18.0.9",
     "pg": "8.23.1",
     "pino": "^10.4.0",
     "resend": "^6.34.1"
@@ -81,7 +81,7 @@
     "@types/react": "19.3.0",
     "drizzle-kit": "^0.31.11",
     "drizzle-orm": "^0.45.4",
-    "next": "~16.4.2",
+    "next": "~16.4.3",
     "pino-pretty": "^13.2.0",
     "react": "^19.3.1",
     "tsx": "^4.23.15",
