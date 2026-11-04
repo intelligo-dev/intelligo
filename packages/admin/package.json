@@ -48,7 +48,7 @@
     "react": ">=19"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/react": "19.3.0",
     "drizzle-orm": "^0.45.4",
     "react": "^19.3.1",

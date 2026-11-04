@@ -45,8 +45,8 @@
     "ai": "^7.0.0"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
-    "ai": "^7.0.143",
+    "@types/node": "^26.6.6",
+    "ai": "^7.0.159",
     "typescript": "^6.0.3"
   },
   "files": [
