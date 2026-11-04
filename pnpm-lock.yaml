@@ -254,8 +254,8 @@ importers:
         specifier: ^19.3.1
         version: 19.3.1
       react-data-grid:
-        specifier: 7.0.0-beta.61
-        version: 7.0.0-beta.61(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: 7.0.0-canary.49
+        version: 7.0.0-canary.49(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react-dom:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
@@ -514,8 +514,8 @@ importers:
         specifier: ^1.42.6
         version: 1.42.6
       react-data-grid:
-        specifier: 7.0.0-beta.61
-        version: 7.0.0-beta.61(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: 7.0.0-canary.49
+        version: 7.0.0-canary.49(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react-resizable-panels:
         specifier: ^4.14.6
         version: 4.14.6(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -966,8 +966,8 @@ importers:
         specifier: ^19.3.1
         version: 19.3.1
       react-data-grid:
-        specifier: 7.0.0-beta.61
-        version: 7.0.0-beta.61(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: 7.0.0-canary.49
+        version: 7.0.0-canary.49(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react-dom:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
@@ -5821,6 +5821,10 @@ packages:
     resolution: {integrity: sha512-k7ndgKhwoQveBL+/1tqGJYNz097I7WOvwbmmU2AR5+magtbjPWQTS1C5vzGkBC8Ym8UWRzfKUzUUqFLypY4Q+w==}
     engines: {node: '>=20'}
 
+  clsx@1.2.1:
+    resolution: {integrity: sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==}
+    engines: {node: '>=6'}
+
   clsx@2.1.1:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
@@ -8581,11 +8585,11 @@ packages:
     resolution: {integrity: sha512-rZpqkd4ETP3GrQ5mDLzADr14OleeKdb/40lG84WE8absRfsVLJpWt2ifjtYYeoPqeouIkcxhTlurxIXfR5kR5Q==}
     engines: {node: '>=20.0.0'}
 
-  react-data-grid@7.0.0-beta.61:
-    resolution: {integrity: sha512-YTfOzvj/V/3vMoz7A/kaXFp869j7C8JW5PmH4JAnAsfaa2SMzDeOHvuoGezEDBk1G3nwOFXNVyl9tC9sosEIjA==}
+  react-data-grid@7.0.0-canary.49:
+    resolution: {integrity: sha512-Jg83CRnJtnv8FF7XeByke0KiJBdfXbnrsS08yxHcqyfTEICFmMdtQXFK8SCH7prYR3HiGtI6NqYcju/Te2Kl6w==}
     peerDependencies:
-      react: ^19.2
-      react-dom: ^19.2
+      react: ^16.14 || ^17.0
+      react-dom: ^16.14 || ^17.0
 
   react-dom@19.3.1:
     resolution: {integrity: sha512-Y0bARz53lhEC1NMCASs0/j+faB/zqt3R8hpvg1e8+61ZVJ4UL0UdC4cBbXfZMcIuhrfgeILTLe+ZeBCavQPtKQ==}
@@ -15024,6 +15028,8 @@ snapshots:
       strip-ansi: 7.2.0
       wrap-ansi: 9.0.2
 
+  clsx@1.2.1: {}
+
   clsx@2.1.1: {}
 
   cmdk@1.1.1(@types/react-dom@19.3.0(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
@@ -18115,8 +18121,9 @@ snapshots:
 
   re2js@2.9.0: {}
 
-  react-data-grid@7.0.0-beta.61(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  react-data-grid@7.0.0-canary.49(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
+      clsx: 1.2.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
