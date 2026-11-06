@@ -931,13 +931,18 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
     const promptTokens =
       estimateTokenCount(prepared.system ?? agent.systemPrompt ?? "") +
       estimateConversationTokens(prepared.messages);
-    // What one step may write: the agent's own ceiling, else the
-    // registered model's, which is what `streamText` is given below. A
-    // bound runtime sets its own, so its hold keeps the model's.
-    const stepOutputTokens = config.streamTurn
-      ? undefined
-      : (agent.generation?.maxOutputTokens ??
-        getModelPricing(modelId)?.maxOutputTokens);
+    // What one step may write: the agent's own ceiling, never above the
+    // registered model's. `streamText` is given the same number below,
+    // so no step writes more than its hold covers.
+    const modelOutputCeiling = getModelPricing(modelId)?.maxOutputTokens;
+    const agentOutputCap = agent.generation?.maxOutputTokens;
+    const stepOutputCap =
+      agentOutputCap !== undefined && modelOutputCeiling !== undefined
+        ? Math.min(agentOutputCap, modelOutputCeiling)
+        : (agentOutputCap ?? modelOutputCeiling);
+    // A bound runtime sets its own output limit, so its hold keeps the
+    // model's.
+    const stepOutputTokens = config.streamTurn ? undefined : stepOutputCap;
 
     // Entitlement, decided against the model that is about to run, for
     // this prompt and, with tools, every step the loop may take. A
@@ -1054,10 +1059,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       }
     }
 
-    const tools: ToolSet | undefined =
-      agent.tools && Object.keys(agent.tools).length > 0
-        ? agent.tools
-        : undefined;
+    const tools: ToolSet | undefined = looped ? agent.tools : undefined;
     const agentStops: StopCondition<ToolSet>[] = Array.isArray(agent.stopWhen)
       ? agent.stopWhen
       : agent.stopWhen
@@ -1084,8 +1086,8 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       }
       if (!run.extend) return false;
       const last = steps[steps.length - 1];
-      const toolTokens = Math.ceil(
-        JSON.stringify(last?.toolResults.map((r) => r.output) ?? []).length / 4
+      const toolTokens = estimateTokenCount(
+        JSON.stringify(last?.toolResults.map((r) => r.output) ?? [])
       );
       const inputTokens =
         (last?.usage.inputTokens || promptTokens) +
@@ -1437,7 +1439,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         }
 
         const model = await config.model.resolve!(modelId, context);
-        const outputCeiling = getModelPricing(modelId)?.maxOutputTokens;
         const system = prepared.system ?? agent.systemPrompt;
         // The step in flight is billed by the provider and reported by
         // no one: followed here, so stopping a reply is not free.
@@ -1447,18 +1448,17 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         );
         inFlight = tracker;
         const result = streamText({
-          // Admission held the registered model's `maxOutputTokens`;
-          // the same number caps what a step may write unless the
-          // agent's own setting, spread next, replaces it.
-          ...(outputCeiling !== undefined
-            ? { maxOutputTokens: outputCeiling }
-            : {}),
           // The agent's sampling settings, copied by name from the
           // allowlist. First in the literal on purpose: every key the
           // transport sets below is written after it and wins, so a
           // consumer cannot displace the abort signal, the finish
           // handler or the model admission priced.
           ...pickGenerationOptions(agent.generation),
+          // What each step's hold covers: the agent's ceiling, clamped
+          // to the registered model's.
+          ...(stepOutputCap !== undefined
+            ? { maxOutputTokens: stepOutputCap }
+            : {}),
           model,
           system,
           ...(agent.providerOptions

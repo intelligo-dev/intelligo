@@ -85,7 +85,11 @@ export interface ChatGenerationOptions {
   headers?: RequestOptions["headers"];
   /** Picks among the tools the agent already declared; cannot introduce one. */
   toolChoice?: ToolChoice<ToolSet>;
-  /** Per-step adjustment inside a loop the transport still caps with `maxSteps`. */
+  /**
+   * Per-step adjustment inside a loop the transport still caps with
+   * `maxSteps`. Each step is held at the turn's model price before this
+   * runs, so a step moved to a pricier model is held short.
+   */
   prepareStep?: PrepareStepFunction<ToolSet>;
   /** Observation only. The current name; `experimental_telemetry` is the SDK's deprecated alias. */
   telemetry?: TelemetryOptions;

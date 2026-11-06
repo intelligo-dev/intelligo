@@ -24,6 +24,7 @@ import { ELIDED_FILE_URL } from "./elide";
 import { createChatHandler } from "./handler";
 import type { ChatServerConfig } from "./config";
 import { createStubLanguageModel } from "./testing";
+import { estimateTokenCount } from "./windowing";
 
 const mocks = vi.hoisted(() => ({
   requireWorkspace: vi.fn(),
@@ -1644,7 +1645,8 @@ describe("POST streaming", () => {
       fake: ReturnType<typeof fakeExecutions>,
       model: MockLanguageModelV3,
       extra: Partial<ChatServerConfig> = {},
-      stopWhen?: import("ai").StopCondition<import("ai").ToolSet>
+      stopWhen?: import("ai").StopCondition<import("ai").ToolSet>,
+      toolOutput: () => unknown = () => ({ ok: true })
     ) {
       const { jsonSchema, tool } = await import("ai");
       return baseConfig(fake.executions, {
@@ -1659,7 +1661,7 @@ describe("POST streaming", () => {
                 properties: { n: { type: "number" } },
                 required: ["n"],
               }),
-              execute: async () => ({ ok: true }),
+              execute: async () => toolOutput(),
             }),
           },
           generation: { maxOutputTokens: 512 },
@@ -1794,6 +1796,51 @@ describe("POST streaming", () => {
       );
       expect(fake.fail).not.toHaveBeenCalled();
     });
+
+    it("sizes a step's tool results with the script-aware estimate", async () => {
+      const extend = vi.fn().mockResolvedValue({ allowed: false });
+      const fake = fakeExecutions({ extend });
+      const output = { answer: "Сайн байна уу" };
+      const { POST } = createChatHandler(
+        await loopingConfig(fake, loopingModel(3), {}, undefined, () => output)
+      );
+      await (await POST(turn("go"))).text();
+
+      // Cyrillic runs about two characters a token, not four.
+      expect(extend).toHaveBeenCalledWith({
+        workload: expect.objectContaining({
+          inputTokens: 100 + 10 + estimateTokenCount(JSON.stringify([output])),
+        }),
+      });
+    });
+  });
+
+  it("clamps the agent's output ceiling to the registered model's", async () => {
+    registerModel({
+      ...DEFAULT_MODELS[0]!,
+      id: MODEL_ID,
+      maxOutputTokens: 4_000,
+    });
+    const model = recordingModel();
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(
+      baseConfig(fake.executions, {
+        agent: {
+          systemPrompt: "Be brief.",
+          generation: { maxOutputTokens: 64_000 },
+        },
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    await (await POST(turn("go"))).text();
+
+    // A step writes no more than its hold covers.
+    expect(fake.begin).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workload: expect.objectContaining({ outputTokens: 4_000 }),
+      })
+    );
+    expect(model.doStreamCalls[0]!.maxOutputTokens).toBe(4_000);
   });
 
   it("hands the agent's generation settings to the model", async () => {

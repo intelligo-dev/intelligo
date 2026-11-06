@@ -290,11 +290,13 @@ export async function reserveQuota(
  * `workload` — the next step of a tool loop — under admission's rule:
  * the same workspace lock, the same pools, and every active, unexpired
  * reservation subtracted, this request's own included. Allowed, the
- * reservation's amount grows in that transaction and settlement releases
- * it whole; refused, nothing is written.
+ * reservation's amount grows in that transaction, its expiry moves to
+ * RESERVATION_TTL_MS from now, and settlement releases it whole;
+ * refused, nothing is written.
  *
  * Refused as `hold_not_active` when the request has no active, unexpired
- * reservation to grow (settled, released or past RESERVATION_TTL_MS).
+ * reservation to grow (settled, released, or RESERVATION_TTL_MS past
+ * admission or its last extension).
  */
 export async function extendReservation(
   workspaceId: string,
@@ -364,10 +366,13 @@ export async function extendReservation(
         };
       }
 
+      // A run still extending is alive: its hold keeps counting for
+      // another RESERVATION_TTL_MS from this step.
       await tx
         .update(creditReservations)
         .set({
           estimatedMicros: sql`${creditReservations.estimatedMicros} + ${decision.estimated?.amount ?? 0}`,
+          expiresAt: new Date(now.getTime() + RESERVATION_TTL_MS),
         })
         .where(eq(creditReservations.id, own[0].id));
 

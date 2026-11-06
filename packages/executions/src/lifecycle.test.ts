@@ -45,12 +45,24 @@ vi.mock("@intelligo-dev/audit", () => ({
 }));
 
 vi.mock("./db/schema", () => ({
-  executions: { id: "id", status: "status" },
+  executions: {
+    id: "id",
+    status: "status",
+    currency: "currency",
+    reservedMicros: "reserved_micros",
+  },
 }));
 
 vi.mock("drizzle-orm", () => ({
   and: vi.fn((...args: unknown[]) => ({ op: "and", args })),
+  or: vi.fn((...args: unknown[]) => ({ op: "or", args })),
   eq: vi.fn((col: unknown, val: unknown) => ({ op: "eq", col, val })),
+  isNull: vi.fn((col: unknown) => ({ op: "isNull", col })),
+  sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+    op: "sql",
+    text: strings.join("?"),
+    values,
+  })),
 }));
 
 import { money } from "@intelligo-dev/core/money";
@@ -486,6 +498,7 @@ describe("stepwise holds", () => {
     expect(await run.extend!({ workload: next })).toEqual({
       allowed: true,
       estimated: money(40, "MNT"),
+      usingTrialCredits: false,
     });
     expect(extendHold).toHaveBeenCalledWith({
       workspaceId: "ws-1",
@@ -496,16 +509,65 @@ describe("stepwise holds", () => {
       workload: next,
     });
     await run.extend!({ workload: next });
-    // The row keeps the whole hold, written only while it is running.
-    expect(updatedFields(0)).toEqual({ reservedMicros: 140 });
-    expect(updatedFields(1)).toEqual({ reservedMicros: 180 });
+    // The row's hold grows in the database, step by step, only while it
+    // is running and only in the currency it already holds.
+    const grow = {
+      reservedMicros: {
+        op: "sql",
+        text: "coalesce(?, 0) + ?",
+        values: ["reserved_micros", 40],
+      },
+      currency: "MNT",
+    };
+    expect(updatedFields(0)).toEqual(grow);
+    expect(updatedFields(1)).toEqual(grow);
     expect(mocks.updateWhere).toHaveBeenLastCalledWith({
       op: "and",
       args: [
         { op: "eq", col: "id", val: run.id },
         { op: "eq", col: "status", val: "running" },
+        {
+          op: "or",
+          args: [
+            { op: "isNull", col: "currency" },
+            { op: "eq", col: "currency", val: "MNT" },
+          ],
+        },
       ],
     });
+  });
+
+  it("reports trial credits once an extension needs the trial grant", async () => {
+    const settleUsage = vi.fn().mockResolvedValue({});
+    const executions = createExecutions({
+      checkEntitlement: vi.fn().mockResolvedValue({
+        allowed: true,
+        estimated: money(100, "MNT"),
+        usingTrialCredits: false,
+      }),
+      extendHold: vi.fn().mockResolvedValue({
+        allowed: true,
+        estimated: money(40, "MNT"),
+        usingTrialCredits: true,
+      }),
+      settleUsage,
+    });
+    const run = await executions.begin({
+      ...beginInput,
+      workload,
+      stepwise: true,
+    });
+    expect(run.usingTrialCredits).toBe(false);
+
+    expect(await run.extend!({ workload: { steps: 1 } })).toMatchObject({
+      usingTrialCredits: true,
+    });
+    expect(run.usingTrialCredits).toBe(true);
+
+    await run.complete({ usage: { inputTokens: 10, outputTokens: 5 } });
+    expect(settleUsage).toHaveBeenCalledWith(
+      expect.objectContaining({ usingTrialCredits: true })
+    );
   });
 
   it("passes a refused extension back and holds nothing more", async () => {

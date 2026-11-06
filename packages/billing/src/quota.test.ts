@@ -235,6 +235,7 @@ import {
   estimateQuota,
   extendReservation,
   releaseReservation,
+  RESERVATION_TTL_MS,
   reserveQuota,
 } from "./quota";
 import { db } from "@intelligo-dev/core/db";
@@ -584,6 +585,23 @@ describe("extendReservation", () => {
     );
     expect(store.reservations).toHaveLength(1);
     expect(store.reservations[0]!.estimatedMicros).toBe(800_000_000);
+  });
+
+  it("keeps a run that is still extending from expiring under it", async () => {
+    await reserveQuota("ws-1", { modelId: "m", requestId: "req-1" });
+    // Admitted long ago: a minute of its hold is left.
+    const nearlyExpired = new Date(Date.now() + 60_000);
+    store.reservations[0]!.expiresAt = nearlyExpired;
+
+    const r = await extendReservation("ws-1", {
+      modelId: "m",
+      requestId: "req-1",
+    });
+
+    expect(r.allowed).toBe(true);
+    expect(store.reservations[0]!.expiresAt.getTime()).toBeGreaterThanOrEqual(
+      Date.now() + RESERVATION_TTL_MS - 1_000
+    );
   });
 
   it("refuses the step that would exceed the allowance and holds nothing more", async () => {

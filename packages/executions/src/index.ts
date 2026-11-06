@@ -16,15 +16,15 @@
 export { createExecutions } from "./lifecycle";
 export { ExecutionError, isUniqueViolation, requestIdTaken } from "./errors";
 export type { ExecutionErrorCode } from "./errors";
+export type { Executions } from "./lifecycle";
 export type {
-  Executions,
   ExecutionStatus,
   ExecutionRun,
   ReconcileResult,
   BeginExecutionInput,
   CompleteExecutionInput,
   HoldExtension,
-} from "./lifecycle";
+} from "./run";
 
 export type {
   ExecutionPorts,

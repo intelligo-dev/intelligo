@@ -123,7 +123,8 @@ vi.mock("drizzle-orm", () => ({
 
 import { money } from "@intelligo-dev/core/money";
 
-import { createExecutions, type ExecutionRun } from "./lifecycle";
+import { createExecutions } from "./lifecycle";
+import type { ExecutionRun } from "./run";
 import type { ExecutionPorts } from "./ports";
 
 const CUTOFF_MS = 60_000;
