@@ -31,87 +31,17 @@ import { and, eq } from "drizzle-orm";
 
 import { executions } from "./db/schema";
 import { isUniqueViolation, requestIdTaken } from "./errors";
-import type { ExecutionPorts } from "./ports";
-import type { Workload } from "./pricing";
+import { recordExtendedHold } from "./hold";
+import type { EntitlementDecision, ExecutionPorts } from "./ports";
+import type {
+  BeginExecutionInput,
+  CompleteExecutionInput,
+  ExecutionRun,
+  ExecutionStatus,
+  ReconcileResult,
+} from "./run";
 
 const log = createLogger("Executions");
-
-/**
- * Row lifecycle. `settling` is non-terminal and deliberate: it marks
- * the window where usage is being charged, so a second complete() or a
- * racing fail() cannot re-enter it, and a settlement that dies mid-way
- * leaves a state the stale sweep reports rather than a row that claims
- * success for usage nobody recorded.
- */
-export type ExecutionStatus =
-  "running" | "settling" | "succeeded" | "failed" | "refused";
-
-export type BeginExecutionInput = {
-  workspaceId: string;
-  userId?: string | null;
-  /** Product-defined verb, e.g. "support.reply". */
-  capability: string;
-  /** Supply to reuse an existing correlation id; generated otherwise. */
-  requestId?: string;
-  /** Model the caller intends to use — informs the entitlement hold. */
-  model?: string;
-  /**
-   * The prompt's size and the model calls the run may make, so the hold
-   * covers this run rather than a one-call default.
-   */
-  workload?: Workload;
-  /**
-   * The work already ran and its tokens are spent — another model a tool
-   * called mid-turn. Admission is skipped, since refusing cannot unspend
-   * them, nothing is held, and `complete()` charges the usage.
-   */
-  alreadySpent?: boolean;
-  /**
-   * A fixed price for this unit of work — a report, an export — instead
-   * of its tokens' price: entitlement holds exactly this, completion
-   * charges it, failure releases it.
-   */
-  price?: Money;
-  metadata?: Record<string, unknown>;
-};
-
-export type CompleteExecutionInput = {
-  usage?: {
-    inputTokens?: number;
-    outputTokens?: number;
-    totalTokens?: number;
-    /** Of `inputTokens`, those read from the provider's prompt cache. */
-    cacheReadTokens?: number;
-    /** Of `inputTokens`, those written to the provider's prompt cache. */
-    cacheWriteTokens?: number;
-  };
-  model?: string;
-  metadata?: Record<string, unknown>;
-};
-
-export type ExecutionRun = {
-  id: string;
-  requestId: string;
-  /** False when entitlement refused; complete()/fail() are then no-ops. */
-  allowed: boolean;
-  /** Stable refusal code from the entitlement port; set when allowed is false. */
-  code?: string;
-  /** Set when allowed is false. */
-  reason?: string;
-  /** The hold entitlement took for this run. */
-  estimated?: Money;
-  usingTrialCredits: boolean;
-  complete(input?: CompleteExecutionInput): Promise<void>;
-  fail(input: { error: unknown }): Promise<void>;
-  /**
-   * The usage spent so far, written onto the row while it is still
-   * `running` — after each model call of a multi-step run. Nothing is
-   * charged; it is what `reconcile()` settles if the process dies
-   * before `complete()`. Optional, so a hand-built handle need not
-   * implement it.
-   */
-  progress?(input: { usage: CompleteExecutionInput["usage"] }): Promise<void>;
-};
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -123,7 +53,16 @@ export function createExecutions(ports: ExecutionPorts = {}) {
     const id = crypto.randomUUID();
     const startedAt = new Date();
 
-    const decision =
+    // A fixed price is the whole hold; there is no step to add to it.
+    const stepwise = Boolean(
+      input.stepwise &&
+      ports.checkEntitlement &&
+      ports.extendHold &&
+      !input.alreadySpent &&
+      !input.price
+    );
+
+    const decision: EntitlementDecision =
       ports.checkEntitlement && !input.alreadySpent
         ? await ports.checkEntitlement({
             workspaceId: input.workspaceId,
@@ -131,7 +70,9 @@ export function createExecutions(ports: ExecutionPorts = {}) {
             capability: input.capability,
             requestId,
             model: input.model,
-            workload: input.workload,
+            workload: stepwise
+              ? { ...input.workload, steps: 1 }
+              : input.workload,
             price: input.price,
           })
         : { allowed: true };
@@ -172,7 +113,7 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       throw isUniqueViolation(error) ? requestIdTaken(requestId) : error;
     }
 
-    const usingTrialCredits = decision.usingTrialCredits ?? false;
+    let usingTrialCredits = decision.usingTrialCredits ?? false;
 
     if (!decision.allowed) {
       await recordAuditEvent({
@@ -201,6 +142,13 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         async complete() {},
         async fail() {},
         async progress() {},
+        async extend() {
+          return {
+            allowed: false,
+            code: decision.code,
+            reason: decision.reason ?? "refused",
+          };
+        },
       };
     }
 
@@ -237,7 +185,10 @@ export function createExecutions(ports: ExecutionPorts = {}) {
       requestId,
       allowed: true,
       estimated: decision.estimated,
-      usingTrialCredits,
+      // Read live: an extension the trial grant covers turns it on.
+      get usingTrialCredits() {
+        return usingTrialCredits;
+      },
 
       async complete(result: CompleteExecutionInput = {}) {
         const inputTokens = result.usage?.inputTokens ?? 0;
@@ -388,6 +339,50 @@ export function createExecutions(ports: ExecutionPorts = {}) {
             totalTokens: usage?.totalTokens ?? inputTokens + outputTokens,
           })
           .where(and(eq(executions.id, id), eq(executions.status, "running")));
+      },
+
+      async extend({ workload } = {}) {
+        if (!stepwise) return { allowed: true };
+        const extension = await ports.extendHold!({
+          workspaceId: input.workspaceId,
+          userId: input.userId,
+          capability: input.capability,
+          requestId,
+          model: input.model,
+          workload,
+        });
+        if (!extension.allowed) {
+          log.info("Hold extension refused", {
+            executionId: id,
+            requestId,
+            code: extension.code,
+          });
+          return {
+            allowed: false,
+            code: extension.code,
+            reason: extension.reason,
+            estimated: extension.estimated,
+          };
+        }
+        if (extension.usingTrialCredits) usingTrialCredits = true;
+        if (extension.estimated) {
+          // Settlement and release act on the port's own record, so a
+          // failed write here costs nothing.
+          try {
+            await recordExtendedHold(id, extension.estimated);
+          } catch (error) {
+            log.warn("Could not record the extended hold", {
+              executionId: id,
+              requestId,
+              error: errorMessage(error),
+            });
+          }
+        }
+        return {
+          allowed: true,
+          estimated: extension.estimated,
+          usingTrialCredits: extension.usingTrialCredits ?? false,
+        };
       },
 
       async fail({ error }: { error: unknown }) {
@@ -616,21 +611,5 @@ export function createExecutions(ports: ExecutionPorts = {}) {
 
   return { begin, reconcile };
 }
-
-export type ReconcileResult =
-  | {
-      action: "noop";
-      status: ExecutionStatus | "missing";
-      reason?: string;
-    }
-  /** The ledger already held the charge; the row now says so. */
-  | { action: "confirmed"; charged?: Money }
-  /**
-   * Settlement was re-run from the recorded usage — a stuck `settling`
-   * row, or an abandoned `running` row that recorded its progress.
-   */
-  | { action: "settled"; charged?: Money }
-  /** A stale `running` row was failed and its hold released. */
-  | { action: "abandoned" };
 
 export type Executions = ReturnType<typeof createExecutions>;

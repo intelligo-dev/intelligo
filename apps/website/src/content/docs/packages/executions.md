@@ -39,6 +39,7 @@ registerModels(DEFAULT_MODELS);
 
 export const executions = createExecutions({
   checkEntitlement, // may this workspace run this model? takes the hold
+  extendHold, // may it take one more step? grows the hold
   settleUsage, // charge what the run used
   findSettlement, // did that charge already commit?
   releaseHold, // the run failed: give the hold back
@@ -65,11 +66,35 @@ try {
 }
 ```
 
-All four ports are optional, so this package never imports billing; the
+All the ports are optional, so this package never imports billing; the
 reference composition root binds them to `@intelligo-dev/billing`. The
 lifecycle claims each transition with a compare-and-swap before money is
 spent, so a late `complete` racing a `fail` cannot charge twice or release
 twice.
+
+A run that may call the model several times — a tool loop — can be held a
+step at a time. Begun with `stepwise: true`, admission holds the
+`workload`'s first step only (the prompt and one step's output, capped by
+`workload.outputTokens` where that is below the model's own limit), and
+`run.extend({ workload })` asks `extendHold` for each next step before it
+runs. A refused extension holds nothing more, and the caller stops before
+that step; the run settles what it spent, and settlement releases the whole
+hold. Without an `extendHold` port the whole workload is held at admission.
+
+```ts
+const run = await executions.begin({
+  workspaceId,
+  capability: "support.reply",
+  model,
+  workload: { inputTokens: 3_000, steps: 8, outputTokens: 1_024 },
+  stepwise: true,
+});
+// …after a step, before the next one:
+const next = await run.extend?.({
+  workload: { inputTokens: 4_200, steps: 1, outputTokens: 1_024 },
+});
+if (next && !next.allowed) stopTheLoop(next.code);
+```
 
 `executions.reconcile(executionId, { abandonRunningAfterMs? })` repairs a run
 whose process died: it asks `findSettlement` whether the charge committed,

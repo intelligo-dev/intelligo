@@ -253,6 +253,14 @@ export interface ChatTurnEvents {
     rawFinishReason?: string;
     providerMetadata?: unknown;
     warnings?: unknown[];
+    /**
+     * Set when the transport ended the tool loop before the model did:
+     * `hold_refused`, the next step's hold was refused (`holdRefusal`
+     * says why, with the port's code), so the turn settled the steps it
+     * took.
+     */
+    stopReason?: "hold_refused";
+    holdRefusal?: { code?: string; reason?: string };
   }) => void | Promise<void>;
   /** Something threw. `phase` says where; the turn may or may not have an agent yet. */
   fail?: (event: {
@@ -404,7 +412,8 @@ export interface ChatServerConfig {
   sources?: boolean;
   /**
    * Attach `{ modelId, usage, finishedAt }` to the assistant message as
-   * its metadata when the turn finishes. Default true.
+   * its metadata when the turn finishes, with `stopReason` when the
+   * transport ended the tool loop early. Default true.
    */
   messageMetadata?: boolean;
   /**

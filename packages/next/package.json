@@ -44,9 +44,9 @@
     "next": "^15.0.0 || ^16.0.0"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
-    "better-auth": "~1.7.11",
-    "next": "~16.4.2",
+    "@types/node": "^26.6.6",
+    "better-auth": "~1.7.18",
+    "next": "~16.4.5",
     "typescript": "^6.0.3"
   },
   "files": [

@@ -440,6 +440,44 @@ describe("estimateWorstCaseCharge", () => {
     expect(hold({ inputTokens: 1.2 })).toBe((2 + 1_000) * 4);
   });
 
+  it("holds the caller's output cap where it is below the model's", () => {
+    registerModels([
+      {
+        ...DEFAULT_MODELS[0]!,
+        id: "test/flat",
+        costPerMInputTokens: 1,
+        costPerMOutputTokens: 1,
+        maxOutputTokens: 1_000,
+      },
+    ]);
+    const hold = (workload: Parameters<typeof estimateWorstCaseCharge>[2]) =>
+      estimateWorstCaseCharge("test/flat", USD_RATE, workload).amount;
+    // $1/M either way at a 4x margin: 4 micros a token.
+    expect(hold({ inputTokens: 2_000, outputTokens: 256 })).toBe(
+      (2_000 + 256) * 4
+    );
+    expect(hold({ inputTokens: 2_000, outputTokens: 256, steps: 3 })).toBe(
+      3 * (2_000 + 256) * 4
+    );
+    // Never above the registered ceiling, never below nothing.
+    expect(hold({ inputTokens: 2_000, outputTokens: 50_000 })).toBe(
+      (2_000 + 1_000) * 4
+    );
+    expect(hold({ inputTokens: 2_000, outputTokens: -5 })).toBe(2_000 * 4);
+    expect(hold({ inputTokens: 2_000, outputTokens: 0.5 })).toBe(
+      (2_000 + 1) * 4
+    );
+    expect(hold({ inputTokens: 2_000, outputTokens: Number.NaN })).toBe(
+      (2_000 + 1_000) * 4
+    );
+    // An embedding model still writes nothing.
+    expect(
+      estimateWorstCaseCharge("openai/text-embedding-3-small", USD_RATE, {
+        outputTokens: 500,
+      })
+    ).toEqual(money(1_280, "USD"));
+  });
+
   it("scales an embedding model's input hold by its steps alone", () => {
     expect(
       estimateWorstCaseCharge("openai/text-embedding-3-small", USD_RATE, {

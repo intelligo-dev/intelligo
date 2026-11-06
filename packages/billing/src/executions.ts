@@ -1,8 +1,8 @@
 /**
  * The execution boundary bound to this billing engine.
  *
- * `@intelligo-dev/executions` declares ports — admission, settlement,
- * release, settlement lookup — and every app that bills through this
+ * `@intelligo-dev/executions` declares ports — admission, hold
+ * extension, settlement, release, settlement lookup — and every app that bills through this
  * package binds them the same way. Written once here, so an app's
  * composition root says `createBillingExecutions()` instead of copying
  * the binding, and a fix to it reaches every app with the next release.
@@ -14,6 +14,7 @@ import {
 } from "@intelligo-dev/executions";
 
 import {
+  extendReservation,
   findSettlementByRequestId,
   recordFixedCharge,
   recordTokenUsage,
@@ -21,7 +22,7 @@ import {
   reserveQuota,
 } from "./quota";
 
-/** The four execution ports, bound to the quota and credit engine. */
+/** The execution ports, bound to the quota and credit engine. */
 export function billingExecutionPorts(): Required<ExecutionPorts> {
   return {
     async checkEntitlement({ workspaceId, requestId, model, workload, price }) {
@@ -40,6 +41,23 @@ export function billingExecutionPorts(): Required<ExecutionPorts> {
         reason: quota.reason,
         estimated: quota.estimated,
         usingTrialCredits: quota.usingTrialCredits,
+      };
+    },
+
+    // The next step of a stepwise run: the request's reservation grows
+    // under the same lock and rule as admission, or nothing changes.
+    async extendHold({ workspaceId, requestId, model, workload }) {
+      const extension = await extendReservation(workspaceId, {
+        modelId: model,
+        workload,
+        requestId,
+      });
+      return {
+        allowed: extension.allowed,
+        code: extension.code,
+        reason: extension.reason,
+        estimated: extension.estimated,
+        usingTrialCredits: extension.usingTrialCredits,
       };
     },
 

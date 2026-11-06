@@ -16,19 +16,21 @@
 export { createExecutions } from "./lifecycle";
 export { ExecutionError, isUniqueViolation, requestIdTaken } from "./errors";
 export type { ExecutionErrorCode } from "./errors";
+export type { Executions } from "./lifecycle";
 export type {
-  Executions,
   ExecutionStatus,
   ExecutionRun,
   ReconcileResult,
   BeginExecutionInput,
   CompleteExecutionInput,
-} from "./lifecycle";
+  HoldExtension,
+} from "./run";
 
 export type {
   ExecutionPorts,
   EntitlementDecision,
   EntitlementRequest,
+  HoldExtensionRequest,
   UsageSettlement,
   SettlementResult,
   SettlementQuery,

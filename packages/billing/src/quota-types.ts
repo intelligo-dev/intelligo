@@ -54,6 +54,21 @@ export type QuotaAdmission =
   | (QuotaCheckResult & { allowed: true; reservedRequestId: string })
   | (QuotaCheckResult & { allowed: false; code: QuotaRefusalCode });
 
+/**
+ * What `extendReservation` decided. `hold_not_active`: the request has
+ * no active, unexpired reservation to grow.
+ */
+export type HoldExtensionResult = {
+  allowed: boolean;
+  /** Set when `allowed` is false. */
+  code?: QuotaRefusalCode | "hold_not_active";
+  reason?: string;
+  /** The worst case the extension added, or would have. */
+  estimated?: Money;
+  /** True when only the trial grant covers the extension. */
+  usingTrialCredits: boolean;
+};
+
 export type RecordUsageParams = {
   workspaceId: string;
   /** Who ran it; null for work no signed-in user started (a job, an anonymous request). */

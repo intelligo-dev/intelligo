@@ -24,6 +24,7 @@ import { ELIDED_FILE_URL } from "./elide";
 import { createChatHandler } from "./handler";
 import type { ChatServerConfig } from "./config";
 import { createStubLanguageModel } from "./testing";
+import { estimateTokenCount } from "./windowing";
 
 const mocks = vi.hoisted(() => ({
   requireWorkspace: vi.fn(),
@@ -1534,9 +1535,12 @@ describe("POST streaming", () => {
     await (await POST(turn("go"))).text();
     const held = withTools.begin.mock.calls[0]![0] as {
       workload: { inputTokens: number; steps: number };
+      stepwise?: boolean;
     };
     expect(held.workload.steps).toBe(4);
     expect(held.workload.inputTokens).toBeGreaterThan(0);
+    // The loop is held a step at a time.
+    expect(held.stepwise).toBe(true);
 
     const plain = fakeExecutions();
     const { POST: plainPost } = createChatHandler(baseConfig(plain.executions));
@@ -1546,6 +1550,297 @@ describe("POST streaming", () => {
         workload: expect.objectContaining({ steps: 1 }),
       })
     );
+    expect(plain.begin.mock.calls[0]![0]).not.toHaveProperty("stepwise");
+  });
+
+  it("holds the agent's per-step output cap, else the registered model's", async () => {
+    registerModels(DEFAULT_MODELS);
+    const capped = fakeExecutions();
+    const { POST } = createChatHandler(
+      baseConfig(capped.executions, {
+        agent: {
+          systemPrompt: "Be brief.",
+          generation: { maxOutputTokens: 1_024 },
+        },
+      })
+    );
+    await (await POST(turn("go"))).text();
+    expect(capped.begin).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workload: expect.objectContaining({ outputTokens: 1_024 }),
+      })
+    );
+
+    const uncapped = fakeExecutions();
+    const { POST: uncappedPost } = createChatHandler(
+      baseConfig(uncapped.executions)
+    );
+    await (await uncappedPost(turn("go"))).text();
+    expect(uncapped.begin).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workload: expect.objectContaining({
+          outputTokens: DEFAULT_MODELS.find((m) => m.id === MODEL_ID)!
+            .maxOutputTokens,
+        }),
+      })
+    );
+  });
+
+  describe("holding a tool loop a step at a time", () => {
+    /**
+     * A model that calls `ping` on each of its first `toolSteps` calls,
+     * then answers.
+     */
+    function loopingModel(toolSteps: number) {
+      let calls = 0;
+      return new MockLanguageModelV3({
+        provider: "looping",
+        modelId: MODEL_ID,
+        doStream: async () => {
+          calls++;
+          const callsTool = calls <= toolSteps;
+          return {
+            stream: simulateReadableStream({
+              chunkDelayInMs: 0,
+              chunks: [
+                { type: "stream-start", warnings: [] },
+                ...(callsTool
+                  ? [
+                      {
+                        type: "tool-call",
+                        toolCallId: `c-${calls}`,
+                        toolName: "ping",
+                        input: JSON.stringify({ n: calls }),
+                      },
+                    ]
+                  : [
+                      { type: "text-start", id: "1" },
+                      { type: "text-delta", id: "1", delta: "done" },
+                      { type: "text-end", id: "1" },
+                    ]),
+                {
+                  type: "finish",
+                  finishReason: {
+                    unified: callsTool ? "tool-calls" : "stop",
+                    raw: undefined,
+                  },
+                  usage: {
+                    inputTokens: {
+                      total: 100,
+                      noCache: undefined,
+                      cacheRead: undefined,
+                      cacheWrite: undefined,
+                    },
+                    outputTokens: { total: 10, text: 10, reasoning: undefined },
+                  },
+                },
+              ] as never[],
+            }),
+          };
+        },
+      });
+    }
+
+    async function loopingConfig(
+      fake: ReturnType<typeof fakeExecutions>,
+      model: MockLanguageModelV3,
+      extra: Partial<ChatServerConfig> = {},
+      stopWhen?: import("ai").StopCondition<import("ai").ToolSet>,
+      toolOutput: () => unknown = () => ({ ok: true })
+    ) {
+      const { jsonSchema, tool } = await import("ai");
+      return baseConfig(fake.executions, {
+        resolveAgent: async () => ({
+          id: "assistant",
+          systemPrompt: "Use tools.",
+          tools: {
+            ping: tool({
+              description: "ping",
+              inputSchema: jsonSchema<{ n: number }>({
+                type: "object",
+                properties: { n: { type: "number" } },
+                required: ["n"],
+              }),
+              execute: async () => toolOutput(),
+            }),
+          },
+          generation: { maxOutputTokens: 512 },
+          ...(stopWhen ? { stopWhen } : {}),
+        }),
+        model: { defaultId: MODEL_ID, resolve: () => model },
+        maxSteps: 5,
+        ...extra,
+      });
+    }
+
+    it("stops after the step whose successor is refused, and settles it", async () => {
+      const extend = vi.fn().mockResolvedValue({
+        allowed: false,
+        code: "insufficient_credits",
+        reason: "Not enough",
+      });
+      const fake = fakeExecutions({ extend });
+      const model = loopingModel(3);
+      const complete = vi.fn();
+      const { POST } = createChatHandler(
+        await loopingConfig(fake, model, { onTurn: { complete } })
+      );
+      const response = await POST(turn("go"));
+      expect(response.status).toBe(200);
+      const text = await response.text();
+
+      // One step ran; the second was refused before the model saw it.
+      expect(model.doStreamCalls).toHaveLength(1);
+      expect(extend).toHaveBeenCalledTimes(1);
+      expect(extend).toHaveBeenCalledWith({
+        workload: {
+          // The first step's prompt and output, plus its tool result.
+          inputTokens: 100 + 10 + Math.ceil('[{"ok":true}]'.length / 4),
+          steps: 1,
+          outputTokens: 512,
+        },
+      });
+      await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+      expect(fake.complete).toHaveBeenCalledWith(
+        expect.objectContaining({
+          usage: expect.objectContaining({
+            inputTokens: 100,
+            outputTokens: 10,
+          }),
+        })
+      );
+      expect(fake.fail).not.toHaveBeenCalled();
+      // No error reaches the reader; the reply says why it ended.
+      expect(text).not.toContain('"type":"error"');
+      expect(text).toContain('"stopReason":"hold_refused"');
+      await vi.waitFor(() =>
+        expect(complete).toHaveBeenCalledWith(
+          expect.objectContaining({
+            stopReason: "hold_refused",
+            holdRefusal: { code: "insufficient_credits", reason: "Not enough" },
+          })
+        )
+      );
+    });
+
+    it("runs every step while each one is held", async () => {
+      const extend = vi.fn().mockResolvedValue({ allowed: true });
+      const fake = fakeExecutions({ extend });
+      const model = loopingModel(2);
+      const complete = vi.fn();
+      const { POST } = createChatHandler(
+        await loopingConfig(fake, model, { onTurn: { complete } })
+      );
+      const text = await (await POST(turn("go"))).text();
+
+      // Two tool steps and the answer: the second and third were held.
+      expect(model.doStreamCalls).toHaveLength(3);
+      expect(extend).toHaveBeenCalledTimes(2);
+      expect(text).toContain("done");
+      expect(text).not.toContain("stopReason");
+      await vi.waitFor(() => expect(fake.complete).toHaveBeenCalledTimes(1));
+      expect(fake.complete).toHaveBeenCalledWith(
+        expect.objectContaining({
+          usage: expect.objectContaining({
+            inputTokens: 300,
+            outputTokens: 30,
+          }),
+        })
+      );
+      await vi.waitFor(() => expect(complete).toHaveBeenCalled());
+      expect(complete.mock.calls[0]![0]).not.toHaveProperty("stopReason");
+    });
+
+    it("holds nothing more for a step the loop does not take", async () => {
+      const { hasToolCall } = await import("ai");
+      const extend = vi.fn().mockResolvedValue({ allowed: true });
+      const fake = fakeExecutions({ extend });
+      // The agent stops on its own after the first tool call; the step
+      // cap stops a loop that never answers.
+      const stopped = loopingModel(5);
+      const { POST } = createChatHandler(
+        await loopingConfig(fake, stopped, {}, hasToolCall("ping"))
+      );
+      await (await POST(turn("go"))).text();
+      expect(stopped.doStreamCalls).toHaveLength(1);
+      expect(extend).not.toHaveBeenCalled();
+
+      const capped = loopingModel(10);
+      const { POST: cappedPost } = createChatHandler(
+        await loopingConfig(fake, capped)
+      );
+      await (await cappedPost(turn("go"))).text();
+      expect(capped.doStreamCalls).toHaveLength(5);
+      // Held before steps 2–5, never for a sixth.
+      expect(extend).toHaveBeenCalledTimes(4);
+    });
+
+    it("stops before a step whose hold cannot be asked for", async () => {
+      const extend = vi.fn().mockRejectedValue(new Error("db down"));
+      const fake = fakeExecutions({ extend });
+      const model = loopingModel(3);
+      const complete = vi.fn();
+      const { POST } = createChatHandler(
+        await loopingConfig(fake, model, { onTurn: { complete } })
+      );
+      await (await POST(turn("go"))).text();
+
+      expect(model.doStreamCalls).toHaveLength(1);
+      await vi.waitFor(() =>
+        expect(complete).toHaveBeenCalledWith(
+          expect.objectContaining({
+            stopReason: "hold_refused",
+            holdRefusal: { code: "hold_failed", reason: "db down" },
+          })
+        )
+      );
+      expect(fake.fail).not.toHaveBeenCalled();
+    });
+
+    it("sizes a step's tool results with the script-aware estimate", async () => {
+      const extend = vi.fn().mockResolvedValue({ allowed: false });
+      const fake = fakeExecutions({ extend });
+      const output = { answer: "Сайн байна уу" };
+      const { POST } = createChatHandler(
+        await loopingConfig(fake, loopingModel(3), {}, undefined, () => output)
+      );
+      await (await POST(turn("go"))).text();
+
+      // Cyrillic runs about two characters a token, not four.
+      expect(extend).toHaveBeenCalledWith({
+        workload: expect.objectContaining({
+          inputTokens: 100 + 10 + estimateTokenCount(JSON.stringify([output])),
+        }),
+      });
+    });
+  });
+
+  it("clamps the agent's output ceiling to the registered model's", async () => {
+    registerModel({
+      ...DEFAULT_MODELS[0]!,
+      id: MODEL_ID,
+      maxOutputTokens: 4_000,
+    });
+    const model = recordingModel();
+    const fake = fakeExecutions();
+    const { POST } = createChatHandler(
+      baseConfig(fake.executions, {
+        agent: {
+          systemPrompt: "Be brief.",
+          generation: { maxOutputTokens: 64_000 },
+        },
+        model: { defaultId: MODEL_ID, resolve: () => model },
+      })
+    );
+    await (await POST(turn("go"))).text();
+
+    // A step writes no more than its hold covers.
+    expect(fake.begin).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workload: expect.objectContaining({ outputTokens: 4_000 }),
+      })
+    );
+    expect(model.doStreamCalls[0]!.maxOutputTokens).toBe(4_000);
   });
 
   it("hands the agent's generation settings to the model", async () => {

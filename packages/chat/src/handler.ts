@@ -927,20 +927,41 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       }
     };
 
-    // Entitlement, decided against the model that is about to run, held
-    // for this prompt and, with tools, every step the loop may take.
+    const looped = Boolean(agent.tools && Object.keys(agent.tools).length > 0);
+    const promptTokens =
+      estimateTokenCount(prepared.system ?? agent.systemPrompt ?? "") +
+      estimateConversationTokens(prepared.messages);
+    // What one step may write: the agent's own ceiling, never above the
+    // registered model's. `streamText` is given the same number below,
+    // so no step writes more than its hold covers.
+    const modelOutputCeiling = getModelPricing(modelId)?.maxOutputTokens;
+    const agentOutputCap = agent.generation?.maxOutputTokens;
+    const stepOutputCap =
+      agentOutputCap !== undefined && modelOutputCeiling !== undefined
+        ? Math.min(agentOutputCap, modelOutputCeiling)
+        : (agentOutputCap ?? modelOutputCeiling);
+    // A bound runtime sets its own output limit, so its hold keeps the
+    // model's.
+    const stepOutputTokens = config.streamTurn ? undefined : stepOutputCap;
+
+    // Entitlement, decided against the model that is about to run, for
+    // this prompt and, with tools, every step the loop may take. A
+    // `streamText` loop is held a step at a time: admission takes the
+    // first, and each next step is held before it runs (`holdNextStep`).
+    // A bound runtime runs its own loop, so its whole run is held here.
     const run = await config.executions.begin({
       workspaceId: actor.workspaceId,
       userId: actor.userId,
       capability,
       model: modelId,
       workload: {
-        inputTokens:
-          estimateTokenCount(prepared.system ?? agent.systemPrompt ?? "") +
-          estimateConversationTokens(prepared.messages),
-        steps:
-          agent.tools && Object.keys(agent.tools).length > 0 ? maxSteps : 1,
+        inputTokens: promptTokens,
+        steps: looped ? maxSteps : 1,
+        ...(stepOutputTokens !== undefined
+          ? { outputTokens: stepOutputTokens }
+          : {}),
       },
+      ...(looped && !config.streamTurn ? { stepwise: true } : {}),
       metadata,
     });
 
@@ -1038,17 +1059,71 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       }
     }
 
-    const tools: ToolSet | undefined =
-      agent.tools && Object.keys(agent.tools).length > 0
-        ? agent.tools
-        : undefined;
+    const tools: ToolSet | undefined = looped ? agent.tools : undefined;
+    const agentStops: StopCondition<ToolSet>[] = Array.isArray(agent.stopWhen)
+      ? agent.stopWhen
+      : agent.stopWhen
+        ? [agent.stopWhen]
+        : [];
+
+    /** Why the transport ended the loop early, when it did. */
+    let holdRefusal: { code?: string; reason?: string } | null = null;
+
+    /**
+     * The step the loop is about to take, held before it runs: the
+     * previous step's prompt and output, the tool results it gets back,
+     * and one step's output. A refusal ends the turn after the steps it
+     * has, which settle as usual.
+     *
+     * The SDK evaluates every stop condition at once, so the agent's own
+     * conditions are asked here first: a loop that stops anyway holds
+     * nothing more.
+     */
+    const holdNextStep: StopCondition<ToolSet> = async ({ steps }) => {
+      if (steps.length >= maxSteps) return true;
+      for (const stop of agentStops) {
+        if (await stop({ steps })) return true;
+      }
+      if (!run.extend) return false;
+      const last = steps[steps.length - 1];
+      const toolTokens = estimateTokenCount(
+        JSON.stringify(last?.toolResults.map((r) => r.output) ?? [])
+      );
+      const inputTokens =
+        (last?.usage.inputTokens || promptTokens) +
+        (last?.usage.outputTokens ?? 0) +
+        toolTokens;
+      try {
+        const next = await run.extend({
+          workload: {
+            inputTokens,
+            steps: 1,
+            ...(stepOutputTokens !== undefined
+              ? { outputTokens: stepOutputTokens }
+              : {}),
+          },
+        });
+        if (next.allowed) return false;
+        holdRefusal = { code: next.code, reason: next.reason };
+      } catch (error) {
+        // A step that cannot be held is not taken.
+        holdRefusal = { code: "hold_failed", reason: errorMessage(error) };
+      }
+      log.warn("The next step was not held; the turn ends here", {
+        conversationId: body.id,
+        executionId: run.id,
+        steps: steps.length,
+        code: holdRefusal.code,
+        reason: holdRefusal.reason,
+      });
+      return true;
+    };
+
+    // `stepCountIs(maxSteps)` stays first and on its own, whatever the
+    // agent's conditions or the hold decide.
     const stopWhen: StopCondition<ToolSet>[] = [
       stepCountIs(maxSteps),
-      ...(Array.isArray(agent.stopWhen)
-        ? agent.stopWhen
-        : agent.stopWhen
-          ? [agent.stopWhen]
-          : []),
+      holdNextStep,
     ];
 
     await emit(() =>
@@ -1198,6 +1273,9 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
           rawFinishReason: captured?.rawFinishReason,
           providerMetadata: captured?.providerMetadata,
           warnings: captured?.warnings,
+          ...(holdRefusal
+            ? { stopReason: "hold_refused" as const, holdRefusal }
+            : {}),
         })
       );
     };
@@ -1235,6 +1313,7 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
       modelId: captured?.modelId ?? modelId,
       usage: pickUsage(usage),
       finishedAt: new Date().toISOString(),
+      ...(holdRefusal ? { stopReason: "hold_refused" as const } : {}),
     });
 
     /**
@@ -1360,7 +1439,6 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         }
 
         const model = await config.model.resolve!(modelId, context);
-        const outputCeiling = getModelPricing(modelId)?.maxOutputTokens;
         const system = prepared.system ?? agent.systemPrompt;
         // The step in flight is billed by the provider and reported by
         // no one: followed here, so stopping a reply is not free.
@@ -1370,18 +1448,17 @@ export function createChatHandler(config: ChatServerConfig): ChatHandler {
         );
         inFlight = tracker;
         const result = streamText({
-          // Admission held the registered model's `maxOutputTokens`;
-          // the same number caps what a step may write unless the
-          // agent's own setting, spread next, replaces it.
-          ...(outputCeiling !== undefined
-            ? { maxOutputTokens: outputCeiling }
-            : {}),
           // The agent's sampling settings, copied by name from the
           // allowlist. First in the literal on purpose: every key the
           // transport sets below is written after it and wins, so a
           // consumer cannot displace the abort signal, the finish
           // handler or the model admission priced.
           ...pickGenerationOptions(agent.generation),
+          // What each step's hold covers: the agent's ceiling, clamped
+          // to the registered model's.
+          ...(stepOutputCap !== undefined
+            ? { maxOutputTokens: stepOutputCap }
+            : {}),
           model,
           system,
           ...(agent.providerOptions
