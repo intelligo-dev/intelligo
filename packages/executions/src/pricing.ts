@@ -469,20 +469,28 @@ export function chargeFor(
 
 /**
  * What a run is expected to send, when the caller knows: the prompt's
- * size in tokens, and how many model calls it may make (a tool loop
- * calls the model once per step, each with the prompt).
+ * size in tokens, how many model calls it may make (a tool loop calls
+ * the model once per step, each with the prompt), and the most one
+ * call may write.
  */
 export type Workload = {
   inputTokens?: number;
   steps?: number;
+  /**
+   * The caller's own ceiling on what one call may write, such as the
+   * `maxOutputTokens` it passes to the model. The hold uses it where it
+   * is below the registered model's `maxOutputTokens`, never above.
+   */
+  outputTokens?: number;
 };
 
 /**
  * The ceiling one run on this model could charge, for admission: per
  * step, the prompt (`workload.inputTokens`, a 16K budget when unknown)
- * and the model's own output limit, times the steps it may take.
- * Refusing on the ceiling is what stops a run that cannot be paid for
- * from burning provider tokens first. An embedding model writes
+ * and the output limit (the model's own, or the caller's
+ * `workload.outputTokens` where that is lower), times the steps it may
+ * take. Refusing on the ceiling is what stops a run that cannot be paid
+ * for from burning provider tokens first. An embedding model writes
  * nothing, so only the input is held.
  *
  * @throws {UnknownModelError} when the id has no registered price.
@@ -498,8 +506,13 @@ export function estimateWorstCaseCharge(
     0,
     Math.ceil(workload.inputTokens ?? ESTIMATE_INPUT_BUDGET)
   );
+  const cap = workload.outputTokens;
   const outputBudget =
-    modelKind(pricing) === "embedding" ? 0 : pricing.maxOutputTokens;
+    modelKind(pricing) === "embedding"
+      ? 0
+      : cap !== undefined && Number.isFinite(cap)
+        ? Math.min(pricing.maxOutputTokens, Math.max(0, Math.ceil(cap)))
+        : pricing.maxOutputTokens;
   // A cache write can cost more than plain input; the hold prices the
   // prompt at whichever rate is higher.
   const writeRate = pricing.costPerMCacheWriteInputTokens ?? 0;
