@@ -23,12 +23,14 @@ export type {
   ReconcileResult,
   BeginExecutionInput,
   CompleteExecutionInput,
+  HoldExtension,
 } from "./lifecycle";
 
 export type {
   ExecutionPorts,
   EntitlementDecision,
   EntitlementRequest,
+  HoldExtensionRequest,
   UsageSettlement,
   SettlementResult,
   SettlementQuery,

@@ -41,6 +41,7 @@ import { deleteInBatches } from "./batched-delete";
 import { getWorkspaceBilling } from "./queries";
 import type { BillingReader } from "./reader";
 import type {
+  HoldExtensionResult,
   QuotaCheckResult,
   QuotaEstimate,
   QuotaAdmission,
@@ -67,6 +68,7 @@ export type {
   QuotaRefusalCode,
   QuotaEstimate,
   QuotaAdmission,
+  HoldExtensionResult,
 } from "./quota-types";
 import {
   getCurrentMonthlyUsage,
@@ -279,6 +281,112 @@ export async function reserveQuota(
     }
     // An earlier attempt holds this key's reservation.
     if (isUniqueViolation(error)) throw requestIdTaken(requestId);
+    throw error;
+  }
+}
+
+/**
+ * Grow the hold `reserveQuota` took for `requestId` by the worst case of
+ * `workload` — the next step of a tool loop — under admission's rule:
+ * the same workspace lock, the same pools, and every active, unexpired
+ * reservation subtracted, this request's own included. Allowed, the
+ * reservation's amount grows in that transaction and settlement releases
+ * it whole; refused, nothing is written.
+ *
+ * Refused as `hold_not_active` when the request has no active, unexpired
+ * reservation to grow (settled, released or past RESERVATION_TTL_MS).
+ */
+export async function extendReservation(
+  workspaceId: string,
+  options: { modelId?: string; workload?: Workload; requestId: string }
+): Promise<HoldExtensionResult> {
+  const { requestId } = options;
+  if (!requestId) {
+    throw new Error("extendReservation requires the requestId it extends.");
+  }
+  const price = priceOf({
+    modelId: options.modelId,
+    workload: options.workload,
+  });
+  const settings = await getBillingSettings();
+
+  try {
+    return await db.transaction(async (tx): Promise<HoldExtensionResult> => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext(${workspaceId}))`
+      );
+
+      const now = new Date();
+      const own = await tx
+        .select({ id: creditReservations.id })
+        .from(creditReservations)
+        .where(
+          and(
+            eq(creditReservations.workspaceId, workspaceId),
+            eq(creditReservations.requestId, requestId),
+            eq(creditReservations.status, "active"),
+            gt(creditReservations.expiresAt, now)
+          )
+        )
+        .limit(1);
+      if (!own[0]) {
+        return {
+          allowed: false,
+          code: "hold_not_active",
+          reason: "This request holds no active reservation to extend.",
+          usingTrialCredits: false,
+        };
+      }
+
+      const pools = await readPools(workspaceId, tx, settings);
+      const reservedRows = await tx
+        .select({
+          total: sql<number>`coalesce(sum(${creditReservations.estimatedMicros}), 0)`,
+        })
+        .from(creditReservations)
+        .where(
+          and(
+            eq(creditReservations.workspaceId, workspaceId),
+            eq(creditReservations.status, "active"),
+            gt(creditReservations.expiresAt, now)
+          )
+        );
+      const reservedMicros = Number(reservedRows[0]?.total ?? 0);
+
+      const decision = decideQuota(pools, price, reservedMicros);
+      if (!decision.allowed) {
+        return {
+          allowed: false,
+          code: decision.code,
+          reason: decision.reason,
+          estimated: decision.estimated,
+          usingTrialCredits: false,
+        };
+      }
+
+      await tx
+        .update(creditReservations)
+        .set({
+          estimatedMicros: sql`${creditReservations.estimatedMicros} + ${decision.estimated?.amount ?? 0}`,
+        })
+        .where(eq(creditReservations.id, own[0].id));
+
+      return {
+        allowed: true,
+        estimated: decision.estimated,
+        usingTrialCredits: decision.usingTrialCredits,
+      };
+    });
+  } catch (error) {
+    if (error instanceof BillingNotConfiguredError) {
+      const refused = notConfigured();
+      return {
+        allowed: false,
+        code: "billing_not_configured",
+        reason: refused.reason,
+        usingTrialCredits: false,
+      };
+    }
     throw error;
   }
 }

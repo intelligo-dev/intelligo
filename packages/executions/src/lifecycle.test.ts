@@ -458,6 +458,158 @@ describe("progress", () => {
   });
 });
 
+describe("stepwise holds", () => {
+  const workload = { inputTokens: 2_000, steps: 8, outputTokens: 1_024 };
+
+  it("admits on the first step and grows the hold one step at a time", async () => {
+    const checkEntitlement = vi.fn().mockResolvedValue({
+      allowed: true,
+      estimated: money(100, "MNT"),
+    });
+    const extendHold = vi.fn().mockResolvedValue({
+      allowed: true,
+      estimated: money(40, "MNT"),
+    });
+    const executions = createExecutions({ checkEntitlement, extendHold });
+
+    const run = await executions.begin({
+      ...beginInput,
+      requestId: "req-1",
+      workload,
+      stepwise: true,
+    });
+    expect(checkEntitlement).toHaveBeenCalledWith(
+      expect.objectContaining({ workload: { ...workload, steps: 1 } })
+    );
+
+    const next = { inputTokens: 2_500, steps: 1, outputTokens: 1_024 };
+    expect(await run.extend!({ workload: next })).toEqual({
+      allowed: true,
+      estimated: money(40, "MNT"),
+    });
+    expect(extendHold).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      userId: "u-1",
+      capability: "support.reply",
+      requestId: "req-1",
+      model: "google/gemini-2.5-flash",
+      workload: next,
+    });
+    await run.extend!({ workload: next });
+    // The row keeps the whole hold, written only while it is running.
+    expect(updatedFields(0)).toEqual({ reservedMicros: 140 });
+    expect(updatedFields(1)).toEqual({ reservedMicros: 180 });
+    expect(mocks.updateWhere).toHaveBeenLastCalledWith({
+      op: "and",
+      args: [
+        { op: "eq", col: "id", val: run.id },
+        { op: "eq", col: "status", val: "running" },
+      ],
+    });
+  });
+
+  it("passes a refused extension back and holds nothing more", async () => {
+    const executions = createExecutions({
+      checkEntitlement: vi.fn().mockResolvedValue({ allowed: true }),
+      extendHold: vi.fn().mockResolvedValue({
+        allowed: false,
+        code: "insufficient_credits",
+        reason: "Not enough",
+      }),
+    });
+    const run = await executions.begin({
+      ...beginInput,
+      workload,
+      stepwise: true,
+    });
+
+    expect(await run.extend!({ workload: { steps: 1 } })).toEqual({
+      allowed: false,
+      code: "insufficient_credits",
+      reason: "Not enough",
+      estimated: undefined,
+    });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("holds the whole workload at admission without an extendHold port", async () => {
+    const checkEntitlement = vi.fn().mockResolvedValue({ allowed: true });
+    const executions = createExecutions({ checkEntitlement });
+
+    const run = await executions.begin({
+      ...beginInput,
+      workload,
+      stepwise: true,
+    });
+
+    expect(checkEntitlement).toHaveBeenCalledWith(
+      expect.objectContaining({ workload })
+    );
+    // Already held: every extension is allowed and writes nothing.
+    expect(await run.extend!({ workload: { steps: 1 } })).toEqual({
+      allowed: true,
+    });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("holds the whole workload when the run is not stepwise", async () => {
+    const checkEntitlement = vi.fn().mockResolvedValue({ allowed: true });
+    const extendHold = vi.fn();
+    const executions = createExecutions({ checkEntitlement, extendHold });
+
+    const run = await executions.begin({ ...beginInput, workload });
+
+    expect(checkEntitlement).toHaveBeenCalledWith(
+      expect.objectContaining({ workload })
+    );
+    expect(await run.extend!({ workload: { steps: 1 } })).toEqual({
+      allowed: true,
+    });
+    expect(extendHold).not.toHaveBeenCalled();
+  });
+
+  it("never extends a fixed price", async () => {
+    const extendHold = vi.fn();
+    const executions = createExecutions({
+      checkEntitlement: vi.fn().mockResolvedValue({ allowed: true }),
+      extendHold,
+    });
+
+    const run = await executions.begin({
+      ...beginInput,
+      workload,
+      stepwise: true,
+      price: money(500, "MNT"),
+    });
+
+    expect(await run.extend!({ workload: { steps: 1 } })).toEqual({
+      allowed: true,
+    });
+    expect(extendHold).not.toHaveBeenCalled();
+  });
+
+  it("refuses to extend a refused run", async () => {
+    const extendHold = vi.fn();
+    const executions = createExecutions({
+      checkEntitlement: vi.fn().mockResolvedValue({
+        allowed: false,
+        code: "allowance_depleted",
+        reason: "Out",
+      }),
+      extendHold,
+    });
+
+    const run = await executions.begin({ ...beginInput, stepwise: true });
+
+    expect(await run.extend!({ workload: { steps: 1 } })).toEqual({
+      allowed: false,
+      code: "allowance_depleted",
+      reason: "Out",
+    });
+    expect(extendHold).not.toHaveBeenCalled();
+  });
+});
+
 describe("reconcile", () => {
   const settlingRow = (over: Record<string, unknown> = {}) => ({
     id: "e-1",

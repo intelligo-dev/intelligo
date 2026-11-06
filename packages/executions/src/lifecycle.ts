@@ -25,13 +25,13 @@
 
 import { db } from "@intelligo-dev/core/db";
 import { createLogger } from "@intelligo-dev/core/logger";
-import { money, type Money } from "@intelligo-dev/core/money";
+import { add, money, type Money } from "@intelligo-dev/core/money";
 import { recordAuditEvent } from "@intelligo-dev/audit";
 import { and, eq } from "drizzle-orm";
 
 import { executions } from "./db/schema";
 import { isUniqueViolation, requestIdTaken } from "./errors";
-import type { ExecutionPorts } from "./ports";
+import type { EntitlementDecision, ExecutionPorts } from "./ports";
 import type { Workload } from "./pricing";
 
 const log = createLogger("Executions");
@@ -60,6 +60,14 @@ export type BeginExecutionInput = {
    * covers this run rather than a one-call default.
    */
   workload?: Workload;
+  /**
+   * Hold the workload's first step only, and grow the hold one step at a
+   * time with `run.extend()` before each next one, so a run is admitted
+   * on what its first call can cost rather than on every step it may
+   * take. Needs the `extendHold` port; without it the whole workload is
+   * held at admission, as when this is unset.
+   */
+  stepwise?: boolean;
   /**
    * The work already ran and its tokens are spent — another model a tool
    * called mid-turn. Admission is skipped, since refusing cannot unspend
@@ -111,6 +119,27 @@ export type ExecutionRun = {
    * implement it.
    */
   progress?(input: { usage: CompleteExecutionInput["usage"] }): Promise<void>;
+  /**
+   * Grow the hold before work admission did not cover — the next step
+   * of a run begun `stepwise`. `workload` is that work alone. A refusal
+   * holds nothing more, and the caller stops before the work; the run
+   * itself stays open and settles what it spent. Allowed without
+   * holding anything when no `extendHold` port is bound, when the run
+   * has a fixed price, or was begun as already spent. Optional, so a
+   * hand-built handle need not implement it.
+   */
+  extend?(input: { workload?: Workload }): Promise<HoldExtension>;
+};
+
+/** What `run.extend()` decided. */
+export type HoldExtension = {
+  allowed: boolean;
+  /** Stable refusal code from the port; set when allowed is false. */
+  code?: string;
+  /** Set when allowed is false. */
+  reason?: string;
+  /** What this extension added to the hold. */
+  estimated?: Money;
 };
 
 function errorMessage(error: unknown): string {
@@ -123,7 +152,16 @@ export function createExecutions(ports: ExecutionPorts = {}) {
     const id = crypto.randomUUID();
     const startedAt = new Date();
 
-    const decision =
+    // A fixed price is the whole hold; there is no step to add to it.
+    const stepwise = Boolean(
+      input.stepwise &&
+      ports.checkEntitlement &&
+      ports.extendHold &&
+      !input.alreadySpent &&
+      !input.price
+    );
+
+    const decision: EntitlementDecision =
       ports.checkEntitlement && !input.alreadySpent
         ? await ports.checkEntitlement({
             workspaceId: input.workspaceId,
@@ -131,7 +169,9 @@ export function createExecutions(ports: ExecutionPorts = {}) {
             capability: input.capability,
             requestId,
             model: input.model,
-            workload: input.workload,
+            workload: stepwise
+              ? { ...input.workload, steps: 1 }
+              : input.workload,
             price: input.price,
           })
         : { allowed: true };
@@ -201,8 +241,18 @@ export function createExecutions(ports: ExecutionPorts = {}) {
         async complete() {},
         async fail() {},
         async progress() {},
+        async extend() {
+          return {
+            allowed: false,
+            code: decision.code,
+            reason: decision.reason ?? "refused",
+          };
+        },
       };
     }
+
+    /** Everything held for this run so far: admission, then each extension. */
+    let held = decision.estimated;
 
     /**
      * Compare-and-swap the row's status. Returns false when another
@@ -388,6 +438,54 @@ export function createExecutions(ports: ExecutionPorts = {}) {
             totalTokens: usage?.totalTokens ?? inputTokens + outputTokens,
           })
           .where(and(eq(executions.id, id), eq(executions.status, "running")));
+      },
+
+      async extend({ workload } = {}) {
+        if (!stepwise) return { allowed: true };
+        const extension = await ports.extendHold!({
+          workspaceId: input.workspaceId,
+          userId: input.userId,
+          capability: input.capability,
+          requestId,
+          model: input.model,
+          workload,
+        });
+        if (!extension.allowed) {
+          log.info("Hold extension refused", {
+            executionId: id,
+            requestId,
+            code: extension.code,
+          });
+          return {
+            allowed: false,
+            code: extension.code,
+            reason: extension.reason,
+            estimated: extension.estimated,
+          };
+        }
+        if (extension.estimated) {
+          held =
+            held && held.currency === extension.estimated.currency
+              ? add(held, extension.estimated)
+              : extension.estimated;
+          // The row says what is held; settlement and release act on
+          // the port's own record, so a failed write here costs nothing.
+          try {
+            await db
+              .update(executions)
+              .set({ reservedMicros: held.amount })
+              .where(
+                and(eq(executions.id, id), eq(executions.status, "running"))
+              );
+          } catch (error) {
+            log.warn("Could not record the extended hold", {
+              executionId: id,
+              requestId,
+              error: errorMessage(error),
+            });
+          }
+        }
+        return { allowed: true, estimated: extension.estimated };
       },
 
       async fail({ error }: { error: unknown }) {

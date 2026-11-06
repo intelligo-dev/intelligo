@@ -44,6 +44,7 @@ const mocks = vi.hoisted(() => ({
 // In-memory reservation store driving the mocked tx chains.
 const store = vi.hoisted(() => ({
   reservations: [] as Array<{
+    id?: string;
     workspaceId: string;
     requestId: string;
     estimatedMicros: number;
@@ -51,6 +52,50 @@ const store = vi.hoisted(() => ({
     expiresAt: Date;
   }>,
 }));
+
+/**
+ * The conditions and arithmetic the reservation queries build, as data
+ * the in-memory store can evaluate: `eq`, `gt` and `and` filter rows,
+ * and `sql` keeps its pieces so `column + n` can be applied.
+ */
+type Condition =
+  | { op: "eq" | "gt"; col: string; val: unknown }
+  | { op: "and"; args: Array<Condition | undefined> };
+vi.mock("drizzle-orm", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("drizzle-orm")>();
+  return {
+    ...actual,
+    eq: (col: string, val: unknown) => ({ op: "eq", col, val }),
+    gt: (col: string, val: unknown) => ({ op: "gt", col, val }),
+    and: (...args: unknown[]) => ({ op: "and", args }),
+    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
+      op: "sql",
+      strings: [...strings],
+      values,
+    }),
+  };
+});
+
+const query = vi.hoisted(() => {
+  type Row = Record<string, unknown>;
+  const matches = (row: Row, cond: Condition | undefined): boolean => {
+    if (!cond) return true;
+    if (cond.op === "and") return cond.args.every((c) => matches(row, c));
+    const value = row[cond.col] as number | Date | string;
+    return cond.op === "eq"
+      ? value === cond.val
+      : value > (cond.val as number | Date | string);
+  };
+  /** `column + n`, as `sql` above records it. */
+  const apply = (row: Row, key: string, value: unknown) => {
+    const piece = value as { op?: string; values?: unknown[] };
+    row[key] =
+      piece?.op === "sql"
+        ? (row[key] as number) + (piece.values![1] as number)
+        : value;
+  };
+  return { matches, apply };
+});
 
 vi.mock("./queries", () => ({
   getWorkspaceBilling: mocks.getWorkspaceBilling,
@@ -108,6 +153,7 @@ vi.mock("@intelligo-dev/core/db/schema", () => ({
   creditBalances: {},
   trialCredits: {},
   creditReservations: {
+    id: "id",
     workspaceId: "workspaceId",
     requestId: "requestId",
     estimatedMicros: "estimatedMicros",
@@ -117,28 +163,54 @@ vi.mock("@intelligo-dev/core/db/schema", () => ({
 }));
 
 vi.mock("@intelligo-dev/core/db", () => {
-  // A minimal tx whose select() sums the in-memory active reservations
-  // and whose insert() appends to the store. The advisory lock execute()
-  // is a no-op — serialization is simulated by running admissions
+  type Row = Record<string, unknown>;
+  const rows = () => store.reservations as unknown as Row[];
+  // select() reads the in-memory reservations a condition matches: their
+  // sum for a `total`, or the rows themselves; insert() appends and
+  // update() writes the matching rows. The advisory lock execute() is a
+  // no-op — serialization is simulated by running admissions
   // sequentially inside db.transaction.
+  const select = vi.fn((selection: Record<string, unknown>) => ({
+    from: vi.fn(() => ({
+      where: vi.fn((cond: Condition) => {
+        const found = rows().filter((r) => query.matches(r, cond));
+        const result =
+          "total" in selection
+            ? [
+                {
+                  total: found.reduce(
+                    (sum, r) => sum + (r.estimatedMicros as number),
+                    0
+                  ),
+                },
+              ]
+            : found.map((r) => ({ id: r.id }));
+        return Object.assign(Promise.resolve(result), {
+          limit: async (n: number) => result.slice(0, n),
+        });
+      }),
+    })),
+  }));
+  const update = vi.fn(() => ({
+    set: (fields: Row) => ({
+      where: async (cond: Condition) => {
+        for (const row of rows().filter((r) => query.matches(r, cond))) {
+          for (const [key, value] of Object.entries(fields)) {
+            query.apply(row, key, value);
+          }
+        }
+      },
+    }),
+  }));
   const makeTx = () => ({
     execute: vi.fn(async () => []),
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(async () => [
-          {
-            total: store.reservations
-              .filter((r) => r.status === "active" && r.expiresAt > new Date())
-              .reduce((sum, r) => sum + r.estimatedMicros, 0),
-          },
-        ]),
-      })),
-    })),
+    select,
     insert: vi.fn(() => ({
       values: vi.fn(async (row: (typeof store.reservations)[number]) => {
         store.reservations.push({ ...row });
       }),
     })),
+    update,
   });
 
   // Chain queue guarantees transactions run one at a time, like the
@@ -151,13 +223,20 @@ vi.mock("@intelligo-dev/core/db", () => {
         chain = run.catch(() => undefined);
         return run;
       }),
+      update,
     },
   };
 });
 
 import { money } from "@intelligo-dev/core/money";
 
-import { checkQuota, estimateQuota, reserveQuota } from "./quota";
+import {
+  checkQuota,
+  estimateQuota,
+  extendReservation,
+  releaseReservation,
+  reserveQuota,
+} from "./quota";
 import { db } from "@intelligo-dev/core/db";
 
 beforeEach(() => {
@@ -472,5 +551,161 @@ describe("estimateQuota / reserveQuota", () => {
     const e = await estimateQuota("ws-1");
     expect(e.allowed).toBe(false);
     expect(e.code).toBe("billing_not_configured");
+  });
+});
+
+describe("extendReservation", () => {
+  const STEP = money(400_000_000, "MNT");
+  const active = () =>
+    store.reservations
+      .filter((r) => r.status === "active")
+      .reduce((sum, r) => sum + r.estimatedMicros, 0);
+
+  beforeEach(() => {
+    // One step of a tool loop: 400₮. The 2000₮ allowance fits five.
+    mocks.estimateWorstCaseCharge.mockReturnValue(STEP);
+  });
+
+  it("grows the request's own reservation while the allowance covers it", async () => {
+    const workload = { inputTokens: 3_000, steps: 1, outputTokens: 1_024 };
+    await reserveQuota("ws-1", { modelId: "m", requestId: "req-1" });
+
+    const r = await extendReservation("ws-1", {
+      modelId: "m",
+      workload,
+      requestId: "req-1",
+    });
+
+    expect(r).toMatchObject({ allowed: true, estimated: STEP });
+    expect(mocks.estimateWorstCaseCharge).toHaveBeenLastCalledWith(
+      "m",
+      expect.objectContaining({ currency: "MNT" }),
+      workload
+    );
+    expect(store.reservations).toHaveLength(1);
+    expect(store.reservations[0]!.estimatedMicros).toBe(800_000_000);
+  });
+
+  it("refuses the step that would exceed the allowance and holds nothing more", async () => {
+    await reserveQuota("ws-1", { modelId: "m", requestId: "req-1" });
+    // 400 held + four more steps = 2000₮, the whole allowance.
+    for (let step = 0; step < 4; step++) {
+      const r = await extendReservation("ws-1", {
+        modelId: "m",
+        requestId: "req-1",
+      });
+      expect(r.allowed).toBe(true);
+    }
+
+    const refused = await extendReservation("ws-1", {
+      modelId: "m",
+      requestId: "req-1",
+    });
+
+    expect(refused).toMatchObject({
+      allowed: false,
+      code: "insufficient_credits",
+    });
+    expect(active()).toBe(2_000_000_000);
+  });
+
+  it("counts other requests' reservations against the extension", async () => {
+    await reserveQuota("ws-1", { modelId: "m", requestId: "req-1" });
+    // Another turn of the same workspace holds 1500₮.
+    store.reservations.push({
+      id: "other",
+      workspaceId: "ws-1",
+      requestId: "req-other",
+      estimatedMicros: 1_500_000_000,
+      status: "active",
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    const r = await extendReservation("ws-1", {
+      modelId: "m",
+      requestId: "req-1",
+    });
+
+    // 400 + 1500 held, 100 left: a 400₮ step does not fit.
+    expect(r.allowed).toBe(false);
+    expect(
+      store.reservations.find((x) => x.requestId === "req-1")
+    ).toMatchObject({ estimatedMicros: 400_000_000 });
+  });
+
+  it("admits one of two concurrent extensions when the balance fits one", async () => {
+    // 1500₮ admitted; 500₮ left fits one more 400₮ step, not two.
+    mocks.estimateWorstCaseCharge.mockReturnValueOnce(
+      money(1_500_000_000, "MNT")
+    );
+    await reserveQuota("ws-1", { modelId: "m", requestId: "req-1" });
+    mocks.estimateWorstCaseCharge.mockReturnValueOnce(
+      money(100_000_000, "MNT")
+    );
+    await reserveQuota("ws-1", { modelId: "m", requestId: "req-2" });
+
+    const [a, b] = await Promise.all([
+      extendReservation("ws-1", { modelId: "m", requestId: "req-1" }),
+      extendReservation("ws-1", { modelId: "m", requestId: "req-2" }),
+    ]);
+
+    expect([a, b].filter((r) => r.allowed)).toHaveLength(1);
+    expect(active()).toBe(2_000_000_000);
+  });
+
+  it("refuses a request whose reservation is no longer active", async () => {
+    await reserveQuota("ws-1", { modelId: "m", requestId: "req-1" });
+    await releaseReservation("req-1", "ws-1");
+
+    const released = await extendReservation("ws-1", {
+      modelId: "m",
+      requestId: "req-1",
+    });
+    const unknown = await extendReservation("ws-1", {
+      modelId: "m",
+      requestId: "req-never",
+    });
+
+    expect(released).toMatchObject({
+      allowed: false,
+      code: "hold_not_active",
+    });
+    expect(unknown).toMatchObject({ allowed: false, code: "hold_not_active" });
+    expect(store.reservations).toHaveLength(1);
+    expect(store.reservations[0]!.estimatedMicros).toBe(400_000_000);
+  });
+
+  it("is released whole with the reservation it grew", async () => {
+    await reserveQuota("ws-1", { modelId: "m", requestId: "req-1" });
+    await extendReservation("ws-1", { modelId: "m", requestId: "req-1" });
+    expect(active()).toBe(800_000_000);
+
+    await releaseReservation("req-1", "ws-1");
+
+    expect(active()).toBe(0);
+    // The next turn is admitted against the whole allowance again.
+    const next = await reserveQuota("ws-1", {
+      modelId: "m",
+      requestId: "req-2",
+    });
+    expect(next.allowed).toBe(true);
+  });
+
+  it("refuses with billing_not_configured instead of throwing", async () => {
+    await reserveQuota("ws-1", { modelId: "m", requestId: "req-1" });
+    mocks.getWorkspaceBilling.mockResolvedValue({
+      plan: { slug: "unconfigured" },
+      creditBalance: { balanceMicros: 0, currency: "MNT" },
+    });
+
+    const r = await extendReservation("ws-1", {
+      modelId: "m",
+      requestId: "req-1",
+    });
+
+    expect(r).toMatchObject({
+      allowed: false,
+      code: "billing_not_configured",
+    });
   });
 });

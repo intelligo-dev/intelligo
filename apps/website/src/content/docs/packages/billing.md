@@ -63,8 +63,8 @@ await requireFeature(workspace.id, "exports"); // throws FeatureNotAvailableErro
 A row in `feature_flags` overrides the registered matrix — `isActive: false`
 is a kill switch for every plan — and while the flags cannot be read, a
 feature is refused rather than granted. AI spend goes through the execution boundary
-instead: the composition root binds `reserveQuota`, `recordTokenUsage` and
-`releaseReservation` to the ports of
+instead: the composition root binds `reserveQuota`, `extendReservation`,
+`recordTokenUsage` and `releaseReservation` to the ports of
 [`@intelligo-dev/executions`](https://www.npmjs.com/package/@intelligo-dev/executions),
 so a run is admitted against the plan's allowance and the credit balance, and
 settled exactly once.

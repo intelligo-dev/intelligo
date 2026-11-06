@@ -41,6 +41,21 @@ export type EntitlementRequest = {
   price?: Money;
 };
 
+/**
+ * More of a running execution's hold, asked before work its admission
+ * did not cover — the next step of a tool loop. `workload` is that work
+ * alone, not the run so far.
+ */
+export type HoldExtensionRequest = {
+  workspaceId: string;
+  userId?: string | null;
+  capability: string;
+  /** The request whose hold grows. */
+  requestId: string;
+  model?: string;
+  workload?: Workload;
+};
+
 export type UsageSettlement = {
   workspaceId: string;
   userId?: string | null;
@@ -78,6 +93,17 @@ export type ExecutionPorts = {
   checkEntitlement?: (
     request: EntitlementRequest
   ) => Promise<EntitlementDecision>;
+
+  /**
+   * Add `workload`'s worst case to the hold admission took for
+   * `requestId`, under the same rule as `checkEntitlement`: allowed only
+   * when what the workspace has left, less every hold outstanding
+   * (this run's own included), covers it. A refusal changes nothing,
+   * and the run stops before that work. The grown hold is released
+   * with the rest at settlement. Optional; without it a run begun
+   * `stepwise` is held whole at admission instead.
+   */
+  extendHold?: (request: HoldExtensionRequest) => Promise<EntitlementDecision>;
 
   /**
    * Record real usage and release the hold. Must be idempotent per
