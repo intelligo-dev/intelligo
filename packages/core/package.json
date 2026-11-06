@@ -65,7 +65,7 @@
     "dotenv": "^18.0.9",
     "pg": "8.23.1",
     "pino": "^10.4.0",
-    "resend": "^6.34.1"
+    "resend": "^6.37.0"
   },
   "peerDependencies": {
     "drizzle-orm": "^0.45.1",
