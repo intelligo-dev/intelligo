@@ -21,6 +21,16 @@ none, or what a consumer changes (with the steps under `### Upgrading`);
 since the previous stable release, or for a prerelease since the
 previous tag of its series.
 
+## [Unreleased]
+
+### Fixed
+
+- **A chat turn with tools is held a step at a time, at the agent's own output cap.** Admission held every step the loop might take, each at the registered model's output ceiling, so a plan with a small monthly allowance could not start an ordinary tool-using turn that would have cost a fraction of the hold.
+  - `Workload` gains `outputTokens`, the caller's ceiling on what one call may write. `estimateWorstCaseCharge` holds it where it is below the model's `maxOutputTokens`, never above. The chat transport passes the agent's `generation.maxOutputTokens`, else the registered model's.
+  - `executions.begin({ stepwise: true })` holds the workload's first step only. `run.extend({ workload })` grows the hold before each next step through the new optional `extendHold` port, under admission's rule; a refusal holds nothing more and the caller stops before that step. Without an `extendHold` port the whole workload is held at admission, as before.
+  - `@intelligo-dev/billing` binds the port to the new `extendReservation`: the request's own reservation grows under the workspace lock, with every outstanding reservation counted, and settlement or release frees it whole. A request with no active reservation is refused as `hold_not_active`.
+  - The transport begins a `streamText` turn with tools stepwise and holds each next step in its stop condition, after `stepCountIs(maxSteps)` and the agent's own `stopWhen`, so a loop that stops anyway holds nothing more. A refused step ends the turn with the steps it took, settled as usual: the reply's metadata carries `stopReason: "hold_refused"`, and `onTurn.complete` gets `stopReason` and `holdRefusal` with the port's code. A `streamTurn` runtime runs its own loop and is still held whole.
+
 ## [1.3.0-next.2] — 2026-10-27
 
 - **Upgrade:** recommended — input a provider read from or wrote to its prompt cache was charged at the full input price, and `intelligo sync` lowered dependencies an app had raised

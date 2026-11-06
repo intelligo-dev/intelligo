@@ -111,6 +111,12 @@ export type ChatMessageMetadata = {
   usage?: TokenUsage;
   /** ISO-8601. */
   finishedAt?: string;
+  /**
+   * Set when the transport ended the tool loop before the model did:
+   * `hold_refused`, the workspace could not cover another step, so the
+   * reply ends with the steps it took.
+   */
+  stopReason?: "hold_refused";
   /** The reader's feedback, folded in by the UI from the votes table. */
   vote?: "up" | "down";
 };
