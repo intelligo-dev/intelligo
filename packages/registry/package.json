@@ -42,7 +42,7 @@
     "cn": "^0.5.2",
     "codemirror": "^6.0.2",
     "drizzle-orm": "^0.45.4",
-    "eslint": "^10.10.0",
+    "eslint": "^10.14.0",
     "katex": "^0.19.0",
     "lucide-react": "^1.59.0",
     "motion": "^14.4.0",
